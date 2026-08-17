@@ -16,3 +16,8 @@ Thumbs.db
 
 # Local pre-rewrite safety snapshots (not part of the product)
 _backups/
+
+# Tool caches / generated indexes (not product source)
+.ua/
+graphify-out/
+research/.fetch/
