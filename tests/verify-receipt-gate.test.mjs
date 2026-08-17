@@ -144,6 +144,41 @@ test('receipt rejects empty evidence and escalated state', () => {
   });
 });
 
+test('check rejects malformed input before touching Git state', () => {
+  withFixture((root) => {
+    const relative = '.vibe/receipts/bad.json';
+    const absolute = join(root, ...relative.split('/'));
+    mkdirSync(dirname(absolute), { recursive: true });
+    writeFileSync(absolute, '{ not valid json');
+    const result = gate(root, 'check', relative);
+    assert.equal(result.status, 1, 'invalid JSON must reject');
+    assert.match(result.output, /not valid JSON/);
+  });
+  withFixture((root) => {
+    const receipt = writeReceipt(root, { terminalState: 'pending' });
+    const result = gate(root, 'check', receipt);
+    assert.equal(result.status, 1, 'unknown terminal_state must reject');
+    assert.match(result.output, /terminal_state must be approved\|escalated/);
+  });
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    writeFileSync(join(root, 'tracked.txt'), 'new commit content\n');
+    gitOk(root, 'add', '--', 'tracked.txt');
+    gitOk(root, 'commit', '-qm', 'moves HEAD past the receipt');
+    const result = gate(root, 'check', receipt);
+    assert.equal(result.status, 1, 'stale git_head must reject');
+    assert.match(result.output, /stale receipt: git_head is/);
+  });
+});
+
+test('CLI with no recognized command prints usage and exits 2', () => {
+  withFixture((root) => {
+    const result = gate(root);
+    assert.equal(result.status, 2, 'no args must exit 2');
+    assert.match(result.output, /usage: verify-receipt\.mjs/);
+  });
+});
+
 test('receipt tracks a staged rename destination and supports SHA-256 repositories when Git does', (t) => {
   withFixture((root) => {
     gitOk(root, 'mv', 'orig.txt', 'renamed.txt');
