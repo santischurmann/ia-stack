@@ -2,6 +2,7 @@
   "feature": "<feature-name>",
   "spec": "docs/spec.md",
   "created": "YYYY-MM-DD",
+  "_schema_note": "Every field below is read/written by the orchestrator with Read/Write — no external task-tracker, no server. status lifecycle: pending->red->green->triangulate->refactor->done (or blocked). role/verifier/approval_criteria/rollback/handoff/blocked_reason are the minimal operable AI-company task model (SKILL.md rule: labels alone don't count) — see orchestrator-opus.md § MINIMAL AI-COMPANY TASK MODEL for the full protocol these fields plug into.",
   "tasks": [
     {
       "id": "T01",
@@ -10,9 +11,19 @@
       "files_to_modify": [],
       "test_files": ["src/__tests__/module.unit.test.ts"],
       "test_types": ["unit"],
-      "subagents": ["red", "green", "refactor"],
+      "subagents": ["red", "green", "triangulate", "refactor"],
       "depends_on": [],
-      "status": "pending"
+      "status": "pending",
+      "goal": "<project mission> → <spec.md AC this serves> → <plan.md item>",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "<spec.md AC-id this task closes, verbatim, e.g. 'AC-2: rejects empty input'>",
+      "evidence": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE, derives edge cases from approval_criteria) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
     },
     {
       "id": "T02",
@@ -21,9 +32,19 @@
       "files_to_modify": ["src/feature/module.ts"],
       "test_files": ["src/__tests__/module.integration.test.ts"],
       "test_types": ["integration"],
-      "subagents": ["red", "green", "refactor"],
+      "subagents": ["red", "green", "triangulate", "refactor"],
       "depends_on": ["T01"],
-      "status": "pending"
+      "status": "pending",
+      "goal": "<project mission> → <spec.md AC this serves> → <plan.md item>",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical)",
+      "approval_criteria": "<spec.md AC-id>",
+      "evidence": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
     },
     {
       "id": "T03",
@@ -32,9 +53,19 @@
       "files_to_modify": [],
       "test_files": ["e2e/feature.e2e.test.ts"],
       "test_types": ["e2e"],
-      "subagents": ["red", "green", "refactor"],
+      "subagents": ["red", "green", "triangulate", "refactor"],
       "depends_on": ["T02"],
-      "status": "pending"
+      "status": "pending",
+      "goal": "<project mission> → <spec.md AC this serves> → <plan.md item>",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical)",
+      "approval_criteria": "<spec.md AC-id>",
+      "evidence": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
     }
   ]
 }

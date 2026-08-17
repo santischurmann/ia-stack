@@ -9,6 +9,8 @@ allowed-tools: Read, Write, Edit, Bash
 # VCP Memory Protocol — .vibe/
 
 Zero dependencies. All memory is plain Markdown files versioned with the project.
+Engram (external MCP memory, if the tool is present in session) is an optional mirror for
+gate-state recall across compaction/restart — never a replacement for the files below.
 
 ## FOLDER STRUCTURE
 
@@ -19,6 +21,12 @@ Zero dependencies. All memory is plain Markdown files versioned with the project
 ├── PATTERNS.md     # How things are done in this project (living doc)
 ├── SESSION.md      # Current session log (reset each session)
 ├── DEBT.md         # Technical debt backlog (managed)
+├── RETRO.md        # Reflection log per shipped feature, Phase 4.8 (append-only)
+├── LESSONS.md      # Cross-project error memory — Reflexion-schema, confirm-gated, retire not delete
+├── COMPANY.md      # Org chart, budget policy, goal ancestry note — paperclip-style AI company layer
+├── AUDIT.md        # Append-only accountability trail: role, action, evidence, phase/task ref
+├── receipts/
+│   └── <feature-slug>-<fecha>.json   # Phase 4.5 risk/adversarial/coverage receipt
 └── sessions/
     └── YYYY-MM-DD-<topic>.md   # Archived session snapshots
 ```
@@ -30,7 +38,7 @@ Zero dependencies. All memory is plain Markdown files versioned with the project
 ### If .vibe/ does not exist:
 
 ```bash
-mkdir -p .vibe/sessions
+mkdir -p .vibe/sessions .vibe/receipts
 cat > .vibe/PROJECT.md << 'EOF'
 # Project Memory
 **Name:** (fill in)
@@ -40,7 +48,8 @@ cat > .vibe/PROJECT.md << 'EOF'
 **Owner:** (fill in)
 EOF
 
-touch .vibe/DECISIONS.md .vibe/PATTERNS.md .vibe/SESSION.md .vibe/DEBT.md
+touch .vibe/DECISIONS.md .vibe/PATTERNS.md .vibe/SESSION.md .vibe/DEBT.md .vibe/RETRO.md .vibe/LESSONS.md .vibe/AUDIT.md
+cp templates/vibe/COMPANY.md .vibe/COMPANY.md   # org chart is fixed shape, not a scratch file — copy, don't touch
 
 cat > .vibe/SESSION.md << 'EOF'
 # Session — YYYY-MM-DD
@@ -57,6 +66,9 @@ cat .vibe/PROJECT.md
 cat .vibe/DECISIONS.md
 cat .vibe/PATTERNS.md
 cat .vibe/DEBT.md
+cat .vibe/RETRO.md
+cat .vibe/LESSONS.md
+cat .vibe/COMPANY.md    # budget policy line + org chart, read once, not re-echoed every phase
 cat .vibe/SESSION.md
 ```
 
@@ -72,9 +84,15 @@ Show user a 3-5 line summary of what the memory contains.
 | Discovering how the project does X | `PATTERNS.md` | Pattern name + example + when to apply |
 | Completing a phase | `SESSION.md` | Phase, what was done, output, issues |
 | Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
+| Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
-| cyber-neo Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + CWE/OWASP ref + severity + why not fixed now |
+| security-baseline.md/cyber-neo Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + CWE/OWASP ref + severity + why not fixed now |
 | Session end | `sessions/` | Archive SESSION.md with date prefix |
+| End of Phase 4 (4.8), always | `RETRO.md` | 5-line entry: shipped/plan vs actual/friction/keep/change |
+| RED took 2+ attempts / adversarial finding fixed / user correction | `SESSION.md` (scratch) | `⚠ signal: <1-line>` — passive capture only, not a LESSONS.md write |
+| End of Phase 4 (4.8), always | `LESSONS.md` | draft candidates from this session's `⚠ signal` lines → 🔵 confirm gate → write only confirmed (see LESSONS PROTOCOL) |
+| Every gate/decision (same moments as `SESSION.md`) | `AUDIT.md` | one line: `[timestamp] <role> \| <action> \| <evidence/decision> \| <phase/task ref>` — accountability trail, append-only, never edited/deleted |
+| Session budget set by user (`+Nk` or explicit ask) | `COMPANY.md` | update the one `**Session budget:**` line under § BUDGET POLICY — this is the only field in COMPANY.md that changes per session, org chart itself is fixed |
 
 ---
 
@@ -116,17 +134,127 @@ Show user a 3-5 line summary of what the memory contains.
 
 ### DEBT.md entry:
 ```markdown
-## [YYYY-MM-DD] Debt: <title>
+## [YYYY-MM-DD] Debt: <title> `id:<hash6>`
 **Location:** file:line
 **Severity:** low | medium | high
 **Description:** [what needs to be done]
 **Why deferred:** [reason]
 ---
 ```
+`id` = short hash (6 hex) of `category+location+rule` (e.g. category "security-baseline",
+location "auth.js:42", rule "no-hardcoded-secret" → hash those 3 joined). Purpose: quick
+reference in conversation/commits ("fixed debt id:a3f9c1") without re-typing the full title. Not
+the only uniqueness key — two findings CAN collide on `id` by hash coincidence, tell them apart
+by date+location same as before, `id` is a convenience, not a database key.
+
+### RETRO.md entry (Phase 4.8, always, not a gate):
+```markdown
+## [YYYY-MM-DD] <feature-name>
+**Shipped:** <1 línea, qué salió>
+**Plan vs actual:** est. <N sesiones de docs/plan.md> → actual <M sesiones — o "N/A (sessions no archivadas)">
+**Friction:** <1-2 cosas que costaron más de lo esperado>
+**Keep:** <1 patrón que vale repetir — si es nuevo, también a PATTERNS.md>
+**Change:** <1 cosa a hacer distinto la próxima>
+---
+```
+
+### LESSONS.md entry (Reflexion-schema, cross-project error memory):
+```markdown
+## [YYYY-MM-DD] LESSON-<n> <title> — status: active
+**Project/phase/run:** <project-slug>/<phase>/<feature-slug or session date>   # provenance, always
+**What happened:** [observed failure/correction, factual]
+**Why (root cause):** [not the symptom — the actual cause]
+**How to avoid:** [concrete rule, checkable]
+**Detection signal:** [what would flag this recurring — grep pattern, test name, error string]
+**Confidence:** high | medium | low
+---
+```
+
+### AUDIT.md entry (append-only, one line per gate/decision):
+```
+[YYYY-MM-DD HH:MM] <role> | <action> | <evidence or decision> | <phase/task ref>
+```
+Example: `[2026-08-13 14:02] Builder | GREEN gate | pytest -q -> 12 passed | T03`. Written at
+the exact same checkpoints as `SESSION.md` gate lines (§ WHEN TO WRITE WHAT) — same event, two
+files: `SESSION.md` is the resume ledger (what to do next), `AUDIT.md` is the accountability
+trail (who did what, never edited once written). Full org-chart/budget/checkout context:
+`skills/orchestrator-opus.md` § AI COMPANY LAYER.
+
+## LESSONS PROTOCOL — confirm-gated, deduped, never silently deleted
+
+Source of the "learn from own errors across projects" goal. Runs at Phase 4.8 (Reflect) and on
+demand (`/vibe-lessons` or user asks "qué aprendimos"). Applies equally when VCP is reused on a
+different project — `LESSONS.md` in the *global* `.vibe/` equivalent (or a project-local copy
+promoted manually) is what makes an error learned once stop repeating on the next project.
+
+**1. Passive capture (during Build/Test, not a write yet).** When a RED→GREEN cycle needed 2+
+attempts, a cyber-neo/adversarial finding needed a real fix, or the user issued an explicit
+correction — append one line to a scratch buffer in `SESSION.md` (`⚠ signal: <1-line>`). This is
+capture only. It does **not** touch `LESSONS.md`.
+
+**2. Draft candidates (Phase 4.8).** From this session's `⚠ signal` lines, draft 0-15 candidate
+lessons using the schema above. Cap at 15 — force prioritization over dumping everything.
+
+**3. Dedup before proposing.** Grep `LESSONS.md` for overlapping `Detection signal` or title
+keywords. **Normalize first** (lowercase both the candidate and existing entries, collapse
+repeated whitespace) before comparing — a duplicate with trivial formatting differences (extra
+space, different case) must still match (source: engram's `hashNormalized`, verified portable —
+no DB/index needed, VCP compares against a human-sized file). Match found → don't draft a new
+entry, instead prepare a note `[overlaps with: LESSON-<n>]` for the confirm step (annotate,
+never silently merge/drop).
+
+**Sensitive-content pre-check.** Before showing a candidate in the confirm gate, grep its text
+for `token|authorization|cookie|secret|hash|password|bearer` (source: engram's fail-closed
+audit-metadata rejector, adapted — VCP has human confirmation already, so this warns instead of
+auto-rejecting, since a keyword match alone can't prove something is genuinely sensitive). A
+match doesn't block the candidate, it flags it: `⚠ possible sensitive content`.
+
+**4. Confirm gate — hard rule, no exceptions.** Never write a candidate straight to
+`LESSONS.md`. Present the numbered list (title + confidence, sensitive-content warning if any)
+to the user:
+```
+🔵 LESSONS learned this session — confirm which to keep:
+1) [title] (confidence: high) — <1-line>
+2) [title] (confidence: medium) [overlaps with: LESSON-3] — <1-line>
+3) [title] (confidence: high) [⚠ possible sensitive content] — <1-line>
+A) all  B) none  C) pick by number  D) edit [n]
+```
+A false positive locked into memory is worse than repeating a correction three times — bias
+toward under-writing. Nothing is appended without this answer.
+
+**5. Write (only confirmed).** Append full entries to `LESSONS.md` with today's date, next
+`LESSON-<n>`, provenance line filled in.
+
+**6. Retire, never delete.** A lesson later found wrong/obsolete: change `status: active` →
+`status: retired (<date>, reason: <why>)` in place. Never remove the entry — keeps the audit
+trail and stops the same wrong lesson from being re-proposed as "new" later.
+
+**7. Decay flag, not auto-delete.** At Bootstrap, when re-reading `LESSONS.md`: a lesson whose
+provenance run is >90 days old and hasn't been the `Detection signal` match for any gate since →
+mark inline `[stale? — unseen 90d]` next time the file is rewritten (during a confirm-gate pass,
+never as a silent background edit). Surface stale-flagged lessons to the user during Reflect as
+"still relevant?" — user call, not automatic removal.
+
+**8. Recall.** Phase 0 Bootstrap reads `LESSONS.md` alongside the others (already wired above).
+When Spec/Plan/Build touches a file:line or pattern matching an active lesson's `Detection
+signal`, surface it inline before the relevant gate — this is the actual "don't repeat the
+mistake" payoff, not just accumulation.
+
+---
+
+## ENGRAM GUARDRAIL (si el MCP de Engram está presente)
+
+NUNCA pegar código `.mq5`, lógica de licencia, tokens o passwords dentro de un `content` de
+`mem_save` — la DB de Engram (`~/.engram/engram.db`) es SQLite local sin cifrado confirmado, y
+`engram sync` no filtra por scope (`personal` también se exporta). Describí el comportamiento o
+la decisión en prosa; nunca el código fuente ni la lógica de licencia.
 
 ---
 
 ## RESUME (killed session / compacted context)
+
+Si `mem_context`/`mem_search` de Engram están disponibles, llamalos primero como señal
+adicional — nunca como reemplazo del re-detect por evidencia de abajo.
 
 `SESSION.md` is the checkpoint ledger. Read it bottom-up: the last gate line is the last
 verified state. Cross-check against `docs/tasks.json` `status` fields, then re-detect the

@@ -31,14 +31,17 @@ echo "✓ skills/ → $TARGET_DIR/vcp-skills/"
 SCRIPTS_TARGET="$HOME/.claude/vcp-scripts"
 mkdir -p "$SCRIPTS_TARGET"
 cp "$PACKAGE_DIR/scripts/"*.sh "$SCRIPTS_TARGET/"
+cp "$PACKAGE_DIR/scripts/"*.mjs "$SCRIPTS_TARGET/" 2>/dev/null || true
+cp "$PACKAGE_DIR/scripts/"*.ps1 "$SCRIPTS_TARGET/" 2>/dev/null || true
 chmod +x "$SCRIPTS_TARGET/"*.sh
-echo "✓ scripts/ → $SCRIPTS_TARGET/"
+echo "✓ scripts/ → $SCRIPTS_TARGET/ (incl. verify-receipt.mjs, verify-red.ps1)"
 
 # Initialize .vibe/ in current project (if in a project)
 if [ -f "package.json" ] || [ -f "pyproject.toml" ] || [ -f "go.mod" ] || [ -f "Cargo.toml" ]; then
   if [ ! -d ".vibe" ]; then
-    mkdir -p .vibe/sessions
+    mkdir -p .vibe/sessions .vibe/receipts
     cp "$PACKAGE_DIR/templates/vibe/"* .vibe/
+    touch .vibe/AUDIT.md   # no template — append-only log starts empty
     sed -i "s/(fill in)/$(basename "$(pwd)")/1" .vibe/PROJECT.md 2>/dev/null || true
     sed -i "s/YYYY-MM-DD/$(date +%Y-%m-%d)/g" .vibe/PROJECT.md 2>/dev/null || true
     echo "✓ .vibe/ initialized in current project"

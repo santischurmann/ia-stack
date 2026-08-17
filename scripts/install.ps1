@@ -34,7 +34,8 @@ $ScriptsTarget = "$HOME\.claude\vcp-scripts"
 New-Item -ItemType Directory -Force -Path $ScriptsTarget | Out-Null
 Copy-Item "$PackageDir\scripts\*.sh" $ScriptsTarget -Force -ErrorAction SilentlyContinue
 Copy-Item "$PackageDir\scripts\*.ps1" $ScriptsTarget -Force
-Write-Host "OK scripts\ -> $ScriptsTarget\" -ForegroundColor Green
+Copy-Item "$PackageDir\scripts\*.mjs" $ScriptsTarget -Force -ErrorAction SilentlyContinue
+Write-Host "OK scripts\ -> $ScriptsTarget\ (incl. verify-receipt.mjs, verify-red.ps1)" -ForegroundColor Green
 
 # Initialize .vibe/ in current project
 $manifestFiles = @("package.json", "pyproject.toml", "go.mod", "Cargo.toml")
@@ -42,7 +43,9 @@ $hasManifest = $manifestFiles | Where-Object { Test-Path $_ }
 
 if ($hasManifest -and -not (Test-Path ".vibe")) {
   New-Item -ItemType Directory -Force -Path ".vibe\sessions" | Out-Null
+  New-Item -ItemType Directory -Force -Path ".vibe\receipts" | Out-Null
   Copy-Item "$PackageDir\templates\vibe\*" ".vibe\" -Force
+  if (-not (Test-Path ".vibe\AUDIT.md")) { New-Item -ItemType File -Path ".vibe\AUDIT.md" | Out-Null }
   $projectName = Split-Path -Leaf (Get-Location)
   $today = Get-Date -Format "yyyy-MM-dd"
   (Get-Content ".vibe\PROJECT.md") -replace '\(fill in\)', $projectName |

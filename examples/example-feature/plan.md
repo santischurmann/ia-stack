@@ -44,5 +44,5 @@ Note: T01 and T02 can be run in parallel (no overlap).
 
 ## Subagent assignments
 
-Each task: RED → GREEN → REFACTOR
+Each task: RED → GREEN → TRIANGULATE → REFACTOR
 After all tasks: DOCS (update README auth section) + CHORE (lint + typecheck + coverage + build)

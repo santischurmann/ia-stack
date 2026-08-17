@@ -1,12 +1,20 @@
 # VibeCodeProtocols
 
 > **Complete TDD methodology for AI-assisted development.**
-> Orchestrator runs under the `fableultracode` contract. Sonnet 5 (low effort) implements. `.vibe/` remembers everything.
-> Hard gate: no red test = no code. Zero exceptions.
+> Self-contained — no external skill required. Orchestrator runs under an internal contract
+> (upgraded by `fableultracode` if present). Sonnet 5 (low effort) implements. `.vibe/` remembers
+> everything, incl. a confirm-gated cross-project error memory (`LESSONS.md`) and a paperclip-style
+> AI-company task model (org chart, goal ancestry, audit log).
+> Hard gate: no red test = no code. Zero exceptions. Receipt gate is mechanically verified
+> (`scripts/verify-receipt.mjs`), not just documented.
 
 > **Metodología completa TDD para desarrollo asistido por IA.**
-> El orquestador corre bajo el contrato `fableultracode`. Sonnet 5 (effort low) implementa. `.vibe/` recuerda todo.
-> Hard gate: sin test rojo = sin código. Cero excepciones.
+> Autocontenido — sin dependencia de skills externos. El orquestador corre bajo un contrato
+> interno (mejorado por `fableultracode` si está presente). Sonnet 5 (effort low) implementa.
+> `.vibe/` recuerda todo, incl. memoria de errores cross-project confirm-gated (`LESSONS.md`) y
+> modelo de tareas estilo "empresa de IA" (org chart, goal ancestry, audit log).
+> Hard gate: sin test rojo = sin código. Cero excepciones. El gate del receipt se verifica
+> mecánicamente (`scripts/verify-receipt.mjs`), no solo por texto.
 
 ---
 
@@ -14,23 +22,37 @@
 
 If you are an AI assistant whose user has shared this repository URL, follow these steps:
 
-1. **Invoke Skill `fableultracode`** first (requires it installed at `~/.claude/skills/fableultracode/`) — this is the orchestrator's operating contract for the whole session: autonomy, lead-with-outcome comms, evidence-gated actions, code discipline.
-2. **Read `SKILL.md`** (root of this repo) — master orchestration protocol, 5 phases. Apply it directly.
-3. **Read `skills/`** — 10 sub-skill files defining each subagent's behavior. Load as context when delegating.
+1. **Read `SKILL.md`** (root of this repo) — master orchestration protocol, 5 phases + the
+   internal orchestration contract (§ top of file). No external skill is required to start.
+2. **`fableultracode` is an optional upgrade, never a requirement** — if it's present in your
+   session's Skill list, invoke it (wider fan-out, higher adversarial vote counts). If absent,
+   the internal contract in `SKILL.md` runs every phase in full on its own.
+3. **Read `skills/`** — 11 sub-skill files defining each subagent's behavior, incl.
+   `skills/security-baseline.md` (self-contained security fallback) and `skills/vibe-memory.md`
+   (memory protocol incl. `LESSONS.md`). Load as context when delegating.
 4. **Read `templates/`** — use for every spec, plan, task list, ADR, memory file you create.
-5. **Initialize `.vibe/`** in the user's project using `templates/vibe/` — persistent memory system.
-6. **Have Skill `cyber-neo` installed** (`~/.claude/skills/cyber-neo/`) — Phase 4.3 invokes it for the security scan. Without it, Phase 4.3 cannot run; tell the user to install it.
+5. **Initialize `.vibe/`** in the user's project using `templates/vibe/` — persistent memory,
+   incl. `COMPANY.md` (org chart/budget, fixed shape, copy don't edit) and empty `AUDIT.md`.
+6. **`cyber-neo` is an optional upgrade for Phase 4.3, never a requirement** — if present, invoke
+   it (11 categories, wider coverage). If absent, run `skills/security-baseline.md` instead —
+   Phase 4.3 always runs, never a no-op.
+7. **Receipt gate is mechanical** — Phase 4.6 runs `node scripts/verify-receipt.mjs check <path>`
+   before commit. It rejects stale/escalated-without-override/evidence-empty receipts by exit
+   code, not by the model reading prose.
 
 **Core protocol summary for AI:**
-- Orchestrator (any model) wrapped in `fableultracode`. Subagents = Sonnet 5, effort low by default (config menu, Phase 3).
-- Subagent roles: RED (failing tests) → GREEN (minimum impl) → REFACTOR (cleanup) → DOCS → CHORE.
-- Hard gate: tests must FAIL before GREEN. Pass before impl exists → blocked, report, stop.
+- Orchestrator (any model) under the internal contract (`SKILL.md` § top), `fableultracode` optional upgrade. Subagents = Sonnet 5, effort low by default (config menu, Phase 3).
+- Role-persona subagents, each with a narrow mandate, none certifies its own gate: **Test-Engineer** (RED, failing tests) → **Builder** (GREEN, minimum impl) → **Triangulator** (TRIANGULATE, edge/negative/contract cases derived from real ACs, test-only) → **Refactor-Engineer** (REFACTOR, cleanup) → **Docs** → **Chore**.
+- Hard gate: tests must FAIL before GREEN, mechanically classified (not "any nonzero exit") — a broken runner, syntax error, "no tests found", or arbitrary exit code all reject. Pass before impl exists → blocked, report, stop.
 - Coverage minimum 90%. Stack auto-detect from `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml`.
-- Every phase/gate end: 1 line to `.vibe/SESSION.md` (resume ledger). Decisions → `DECISIONS.md`. Patterns → `PATTERNS.md`.
-- Workflow: `bootstrap → spec → plan → build → final(verify+simplify+security+adversarial+tests+commit/push/merge+backups)`. Never skip phases.
+- Every phase/gate end: 1 line to `.vibe/SESSION.md` (resume ledger) + matching line to `.vibe/AUDIT.md` (accountability trail).
+- Workflow: `bootstrap → [auto-routing triage] → spec → plan → build → final(verify+simplify+security+adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm)`. Auto-routing can skip Spec/Plan only when understanding/verifying the change needs ≤3 files — never by diff size alone, and never skips the hard gates.
 - Two menu types, both wait for answer: **config** (model/effort/detail, once per phase) and **content** (approve/modify/cancel, per decision).
 
-**Compatible with:** Claude Code (native — `fableultracode`/`cyber-neo` are Claude Code skills), and any AI agent with file read capability for the rest of the protocol (Cursor, Windsurf, Cline, Aider, Continue, OpenCode, Gemini CLI, GitHub Copilot Workspace). The fableultracode/cyber-neo steps are Claude-Code-specific; other agents skip straight to `SKILL.md`'s phase logic.
+**Compatible with:** Claude Code (native), and any AI agent with file read/write + shell capability
+for the rest of the protocol (Cursor, Windsurf, Cline, Aider, Continue, OpenCode, Gemini CLI,
+GitHub Copilot Workspace) — nothing in `SKILL.md`'s phase logic is Claude-Code-specific;
+`fableultracode`/`cyber-neo` are optional Claude-Code-only upgrades, skipped cleanly elsewhere.
 
 ---
 
@@ -40,15 +62,21 @@ VibeCodeProtocols enforces a strict, reproducible development workflow:
 
 | Role | Model | Responsibilities |
 |------|-------|-----------------|
-| Orchestrator | any model, under `/fableultracode` | Spec, Plan, Final (verify/simplify/security/adversarial/commit/backups) |
-| RED subagent | Sonnet 5, effort low (config'able) | Write failing tests — forbidden to implement |
-| GREEN subagent | Sonnet 5, effort low (config'able) | Minimum implementation to pass tests |
-| REFACTOR subagent | Sonnet 5, effort low (config'able) | Cleanup — Boy Scout Rule, no new features |
-| DOCS subagent | Sonnet 5 | README, CHANGELOG, ADRs, `.vibe/` updates |
-| CHORE subagent | Sonnet 5 | Lint, typecheck, CI, build, distributable zip |
-| Security | Skill `cyber-neo` | 11-category scan, OWASP 2025 + CWE Top 25, 5 parallel subagents |
+| Orchestrator | any model, internal contract (+ `fableultracode` optional upgrade) | Spec, Plan, Final (verify/simplify/security/adversarial/commit/backups) |
+| Test-Engineer | Sonnet 5, effort low (config'able) | Write failing tests — forbidden to implement |
+| Builder | Sonnet 5, effort low (config'able) | Minimum implementation to pass tests |
+| Triangulator | Sonnet 5, effort low (config'able) | Derive edge/negative/contract/boundary test cases from real ACs — test files only, never production code; failing case hands off to Builder |
+| Refactor-Engineer | Sonnet 5, effort low (config'able) | Cleanup — Boy Scout Rule, no new features |
+| Docs | Sonnet 5 | README, CHANGELOG, ADRs, `.vibe/` updates |
+| Chore | Sonnet 5 | Lint, typecheck, CI, build, distributable zip |
+| Security-Officer | `skills/security-baseline.md` (self-contained), or Skill `cyber-neo` if present (upgrade) | Baseline: 6-category grep/pattern scan. cyber-neo: 11-category scan, OWASP 2025 + CWE Top 25, 5 parallel subagents |
+| 4R Reviewer (1-5x) | Sonnet 5, read-only | Risk/Readability/Reliability/Resilience adversarial review — count scales with `risk_level` (bajo→1 compact, estandar→2, alto→4, critico→4+independent repro), never 0 |
 
-**Persistent memory:** `.vibe/` folder in your project — plain Markdown, no database, no cloud, no dependencies. Commit it.
+**Persistent memory:** `.vibe/` folder in your project — plain Markdown/JSON, no database, no
+cloud, no dependencies. Commit it. Includes `LESSONS.md` (confirm-gated cross-project error
+memory) and `COMPANY.md` (org chart, budget policy — the AI-company task model; see
+`skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL for what's actually implemented
+vs. roadmap).
 
 ---
 
@@ -71,13 +99,17 @@ cd VibeCodeProtocols
 .\scripts\install.ps1
 ```
 
-The installer copies `SKILL.md` → `~/.claude/skills/VibeCodeProtocols.md` and all sub-skills → `~/.claude/skills/vcp-skills/`. Then restart Claude Code.
+The installer copies `SKILL.md` → `~/.claude/skills/VibeCodeProtocols.md`, all sub-skills →
+`~/.claude/skills/vcp-skills/`, and scripts (incl. `verify-receipt.mjs`, `verify-red.sh`/`.ps1`)
+→ `~/.claude/vcp-scripts/`. Then restart Claude Code. **Nothing else to install** — no external
+skill is required for any phase to run.
 
-**Also install (once, separately):**
+**Optional upgrades** (never required, install only if you want the wider version of a phase):
 ```bash
-cd ~/.claude/skills && git clone https://github.com/Hainrixz/cyber-neo.git
+cd ~/.claude/skills && git clone https://github.com/Hainrixz/cyber-neo.git   # Phase 4.3 upgrade
 ```
-`fableultracode` isn't a public repo — it's a local skill; see its `SKILL.md` if you built your own copy.
+`fableultracode` isn't a public repo — Phase 0/4 upgrade if you have a local copy; SKILL.md's
+internal contract runs those phases fully without it.
 
 ---
 
@@ -88,28 +120,36 @@ cd ~/.claude/skills && git clone https://github.com/Hainrixz/cyber-neo.git
 ```
 
 Tell Claude what you want to build. It will:
-1. Enter `/fableultracode` contract, load `.vibe/` memory (or create it)
+1. Activate the internal orchestration contract (upgrade to `/fableultracode` if present), load `.vibe/` memory (or create it, incl. `COMPANY.md`/`LESSONS.md`/`AUDIT.md`)
 2. Detect your stack automatically
-3. Ask a **config** menu (model/effort/detail) + a **content** menu (approve/modify) before each phase
-4. Run `spec → plan → build → final` — final phase closes with security scan, adversarial review, commit, and backups
+3. Offer auto-routing triage (trivial change → skip to Direct Build) or continue to full pipeline
+4. Ask a **config** menu (model/effort/detail) + a **content** menu (approve/modify) before each phase
+5. Run `spec → plan → build → final` — final phase closes with security scan, adversarial review, mechanically-gated commit, backups, reflect, and confirm-gated lesson capture
 
 ---
 
 ## Workflow / Flujo de trabajo
 
 ```
-PHASE 0  BOOTSTRAP   Invoke fableultracode. Load .vibe/ memory. Detect stack. Resume check.
+PHASE 0  BOOTSTRAP   Internal contract active (+fableultracode upgrade if present). Load .vibe/
+                     memory (incl. LESSONS.md, COMPANY.md). Detect stack. Auto-routing triage.
+                     Resume check.
 PHASE 1  SPEC        Config menu (detail level). docs/spec.md, Gherkin ACs. User approves.
-PHASE 2  PLAN        Config menu (granularity, parallel). docs/plan.md + tasks.json. User approves.
-PHASE 3  BUILD       Config menu (model/effort, default sonnet low). Per task: RED → gate → GREEN → REFACTOR.
-PHASE 4  FINAL       fableultracode-led close-out:
+PHASE 2  PLAN        Config menu (granularity, parallel). docs/plan.md + tasks.json (role/
+                     evidence/approval_criteria/rollback/handoff fields). User approves.
+PHASE 3  BUILD       Config menu (model/effort, default sonnet low). Per task, role-persona
+                     subagents: Test-Engineer (RED) → gate → Builder (GREEN) → Triangulator
+                     (TRIANGULATE, edge cases from real ACs) → Refactor-Engineer (REFACTOR).
+PHASE 4  FINAL       Orchestrated close-out (+fableultracode upgrade if present):
   4.1 Verify           Full suite. Coverage ≥90%. Lint 0. Typecheck 0.
-  4.2 Simplify         Dead code removal. Boy Scout Rule. Tests stay green.
-  4.3 Security         Skill cyber-neo — OWASP 2025 + CWE Top 25, 11 categories.
-  4.4 Adversarial      3-5 skeptics per finding/file, refute-biased. Fix survivors.
-  4.5 Tests (final)    Full suite re-run post-fix. Must be green.
-  4.6 Commit/push/merge  Commit auto. Push/merge = user confirms first, always.
+  4.2 Simplify         Risk-classified (bajo/estandar/alto/critico). Dead code removal. Boy Scout Rule. Tests stay green.
+  4.3 Security         security-baseline.md (built-in) or cyber-neo if present — never a no-op.
+  4.4 Adversarial      4R (Risk/Readability/Reliability/Resilience). Reviewer count scales with
+                       risk_level (1/2/4/4+repro) — never 0. Fixes crossing scope threshold pause for 🔵 replanning confirm.
+  4.5 Tests (final)    Full suite re-run post-fix. Must be green. Receipt written w/ tree fingerprint (tracked+untracked).
+  4.6 Commit/push/merge  `verify-receipt.mjs check` gates commit mechanically — only `approved` + fresh fingerprint passes. Push/merge = user confirms first, always.
   4.7 Backups          Obsidian note (if project has one) + graphify update (if graph exists).
+  4.8 Reflect           RETRO.md entry, always. LESSONS.md confirm-gated proposal, on user answer.
 ```
 
 ---
@@ -117,16 +157,38 @@ PHASE 4  FINAL       fableultracode-led close-out:
 ## Hard Gate — TDD Caveman Protocol
 
 ```
-Caveman say: test fail first. Then make pass. Then make clean.
+Caveman say: test fail first. Then make pass. Then prove edges. Then make clean.
 ```
 
 | Gate | Rule | On violation |
 |------|------|-------------|
-| RED gate | Tests must FAIL before GREEN runs | Blocked — report and stop |
+| RED gate | Tests must FAIL before GREEN runs — mechanically classified (broken runner/syntax error/no-tests-found/arbitrary exit all reject, not just "any nonzero exit") | Blocked — report and stop |
+| TRIANGULATE gate | Edge/negative/contract/boundary cases derived from real ACs, all green, before REFACTOR | Failing case → Builder fixes, TRIANGULATE re-runs; decorative case with no justification → rejected |
 | Coverage gate | ≥ 90% lines + branches | Phase 4 blocked until fixed |
-| Security gate | cyber-neo: no open Critical/High | Fix + re-scan before continuing |
-| Adversarial gate | No surviving refute (majority vote) | Fix + re-verify that lens |
+| Security gate | security-baseline.md or cyber-neo: no open Critical/High | Fix + re-scan before continuing |
+| Adversarial gate (4R) | No surviving finding across Risk/Readability/Reliability/Resilience, reviewer count scales with risk (never 0) | Fix + re-verify that lens |
+| Replanning gate | Fix >200 lines / 3+ prod-config files / contract-API-dep-schema expansion → pause | Document scope+cause+risk+rollback, 🔵 confirm before continuing |
+| Receipt gate | `verify-receipt.mjs check` exit 0 — **only** `terminal_state: approved` + fresh fingerprint (tracked+untracked) + non-empty evidence. `escalated` always blocks, `override_note` never bypasses this gate | Blocked mechanically — no commit |
 | DoD gate | lint 0 + typecheck 0 + docs + .vibe/ updated | Phase not complete |
+
+---
+
+## Regression checks for the mechanical gates
+
+No package installation is required for the verifier regression suite. With Node, PowerShell and
+Git Bash available, run:
+
+```powershell
+node --test tests/verify-red-gate.test.mjs tests/verify-receipt-gate.test.mjs
+```
+
+It verifies both shell implementations against a real Node test runner: a valid unfinished-SUT
+RED and local missing-module RED pass; a test-code `ReferenceError`, bare missing npm package,
+already-green test and runner/config failure reject. See
+`tests/verify-receipt-gate.test.mjs` also proves fresh/stale receipts, staged versus unstaged
+state, `git add` without byte changes, binary/untracked/sibling receipt/mode changes, rename
+destinations, empty/escalated receipts and SHA-256 Git repositories. See
+`research/protocol-e2e-2026-08-14.md` for the complete disposable-project evidence.
 
 ---
 
@@ -138,7 +200,12 @@ Caveman say: test fail first. Then make pass. Then make clean.
 ├── DECISIONS.md    ← architectural decisions + reasoning (append-only)
 ├── PATTERNS.md     ← how things are done in this project
 ├── SESSION.md      ← current session log + gate ledger (resume checkpoint)
-├── DEBT.md         ← deferred technical debt (incl. cyber-neo Medium/Low findings)
+├── DEBT.md         ← deferred technical debt (incl. security-baseline/cyber-neo Medium/Low findings)
+├── RETRO.md        ← reflection log per shipped feature, Phase 4.8 (append-only)
+├── LESSONS.md      ← cross-project error memory, Reflexion-schema, confirm-gated, retire-not-delete
+├── COMPANY.md      ← org chart, budget policy — AI-company task model (fixed shape, copy don't edit)
+├── AUDIT.md        ← append-only accountability trail: role, action, evidence, phase/task ref
+├── receipts/       ← Phase 4.5 receipts (risk/evidence/tree-fingerprint), verified by scripts/verify-receipt.mjs
 └── sessions/       ← archived session snapshots
 ```
 
@@ -173,26 +240,30 @@ Stack-agnostic — auto-detected from project manifest:
 VibeCodeProtocols/
 ├── SKILL.md                        ← master skill (invoke with /VibeCodeProtocols)
 ├── skills/
-│   ├── orchestrator-opus.md        ← delegation protocol + DoD checklist + fableultracode contract
+│   ├── orchestrator-opus.md        ← delegation protocol + DoD checklist + role/permission table + AI-company task model
 │   ├── subagent-red.md             ← RED tester instructions
 │   ├── subagent-green.md           ← GREEN builder instructions
+│   ├── subagent-triangulate.md     ← TRIANGULATE edge-case-prover instructions
 │   ├── subagent-refactor.md        ← REFACTOR cleaner instructions
 │   ├── subagent-docs.md            ← DOCS writer instructions
 │   ├── subagent-chore.md           ← CHORE: lint/typecheck/build/zip
-│   ├── vibe-memory.md              ← .vibe/ memory protocol
+│   ├── vibe-memory.md              ← .vibe/ memory protocol incl. LESSONS PROTOCOL
+│   ├── security-baseline.md        ← self-contained security fallback (no cyber-neo needed)
 │   ├── caveman-tdd.md              ← hard gate rules + verify scripts
 │   ├── spec-plan-templates.md      ← embedded templates + config menus
 │   └── deploy-zip.md               ← optional artifact sub-step (Phase 4.7)
 ├── templates/
 │   ├── spec.md                     ← feature spec template
 │   ├── plan.md                     ← plan template
-│   ├── tasks.json                  ← task list template
+│   ├── tasks.json                  ← task list template (role/evidence/approval_criteria/rollback/handoff fields)
 │   ├── adr.md                      ← Architecture Decision Record template
-│   └── vibe/                       ← .vibe/ initialization templates
+│   └── vibe/                       ← .vibe/ initialization templates, incl. COMPANY.md, LESSONS.md
 ├── scripts/
 │   ├── install.sh                  ← macOS/Linux/WSL installer
 │   ├── install.ps1                 ← Windows PowerShell installer
-│   ├── verify-red.sh               ← standalone RED gate verifier
+│   ├── verify-red.sh               ← RED gate verifier (bash)
+│   ├── verify-red.ps1              ← RED gate verifier (PowerShell, same exit-code contract)
+│   ├── verify-receipt.mjs          ← mechanical receipt validator (Node, cross-platform)
 │   ├── build-zip.sh                ← distributable package builder
 │   └── vibe-memory.sh             ← memory CLI helper
 └── examples/example-feature/       ← JWT auth spec + plan as reference

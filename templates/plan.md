@@ -31,5 +31,5 @@
 
 ## Subagent assignments
 
-Each task runs: RED → GREEN → REFACTOR → (DOCS if needed)
+Each task runs: RED → GREEN → TRIANGULATE → REFACTOR → (DOCS if needed)
 CHORE runs once after all tasks: lint + typecheck + coverage + build

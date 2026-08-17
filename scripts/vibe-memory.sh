@@ -20,14 +20,17 @@ case "$cmd" in
       echo ".vibe/ already exists. Not overwriting."
       exit 0
     fi
-    mkdir -p "$VIBE_DIR/sessions"
+    mkdir -p "$VIBE_DIR/sessions" "$VIBE_DIR/receipts"
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
     if [ -d "$PACKAGE_DIR/templates/vibe" ]; then
       cp "$PACKAGE_DIR/templates/vibe/"* "$VIBE_DIR/"
+      touch "$VIBE_DIR/AUDIT.md"   # no template — append-only log starts empty, not copied
     else
       touch "$VIBE_DIR/PROJECT.md" "$VIBE_DIR/DECISIONS.md" \
-            "$VIBE_DIR/PATTERNS.md" "$VIBE_DIR/SESSION.md" "$VIBE_DIR/DEBT.md"
+            "$VIBE_DIR/PATTERNS.md" "$VIBE_DIR/SESSION.md" "$VIBE_DIR/DEBT.md" \
+            "$VIBE_DIR/RETRO.md" "$VIBE_DIR/LESSONS.md" "$VIBE_DIR/AUDIT.md"
+      echo "⚠ templates/vibe/ not found next to this script — .vibe/ created with empty files only, no COMPANY.md (org chart). Run from inside the VibeCodeProtocols repo, or copy templates/vibe/COMPANY.md manually."
     fi
     PROJECT=$(basename "$(pwd)")
     sed -i "s/(fill in)/$PROJECT/1" "$VIBE_DIR/PROJECT.md" 2>/dev/null || true
@@ -58,8 +61,18 @@ case "$cmd" in
           >> "$VIBE_DIR/DEBT.md"
         echo "✓ Saved to DEBT.md"
         ;;
+      audit)
+        echo "[$TODAY $TIME] $text" >> "$VIBE_DIR/AUDIT.md"
+        echo "✓ Saved to AUDIT.md"
+        ;;
+      lesson)
+        echo "Refused: LESSONS.md is confirm-gated by design (skills/vibe-memory.md § LESSONS PROTOCOL)."
+        echo "This script never writes it directly — that would bypass the 🔵 confirm-before-write rule."
+        echo "The orchestrator drafts candidates and asks you; write to LESSONS.md yourself with an editor if scripting this on purpose."
+        exit 1
+        ;;
       *)
-        echo "Unknown type: $type. Use: decision | pattern | session | debt"
+        echo "Unknown type: $type. Use: decision | pattern | session | debt | audit (lesson is confirm-gated, not scriptable)"
         exit 1
         ;;
     esac
@@ -67,7 +80,7 @@ case "$cmd" in
 
   read)
     echo "=== .vibe/ MEMORY ==="
-    for f in PROJECT.md DECISIONS.md PATTERNS.md DEBT.md SESSION.md; do
+    for f in PROJECT.md DECISIONS.md PATTERNS.md DEBT.md RETRO.md LESSONS.md COMPANY.md AUDIT.md SESSION.md; do
       if [ -f "$VIBE_DIR/$f" ]; then
         echo ""
         echo "--- $f ---"

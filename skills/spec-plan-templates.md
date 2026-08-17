@@ -26,10 +26,16 @@ Use verbatim. Replace `<placeholders>`. Config menu (Phase 1 SPEC / Phase 2 PLAN
 <Who, role, context, frequency.>
 
 ## Acceptance Criteria
-GIVEN/WHEN/THEN, each testable:
+Each criterion must be testable and use one of these forms:
+- Event/flow: `GIVEN <state>, WHEN <action>, THEN <observable result>`
+- Invariant: `THE SYSTEM SHALL <observable invariant>`
 - [ ] **AC1:** GIVEN <state>, WHEN <action>, THEN <result>
 - [ ] **AC2 (edge case):** ...
 - [ ] **AC3 (error):** GIVEN <invalid input>, THEN <error type + message>
+
+Draft-only ambiguity marker: `[NEEDS CLARIFICATION: <specific question>]`. A marker is a hard
+spec gate: resolve it with the user or remove its affected scope before Status becomes Approved;
+Plan and Build never proceed with one present.
 
 ## Constraints
 - <library/API constraint, perf budget, security constraint>
@@ -41,9 +47,10 @@ GIVEN/WHEN/THEN, each testable:
 - Runtime: <detected> · Test runner: <vitest|pytest|go test|...> · New deps: <none|pkg@ver — why>
 
 ## Definition of Done
+- [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
 - [ ] Coverage ≥90%, lint 0, typecheck 0
-- [ ] Security clean (cyber-neo, Phase 4.3) + adversarial pass (Phase 4.4)
+- [ ] Security clean (security-baseline.md or cyber-neo, Phase 4.3) + adversarial pass (Phase 4.4)
 - [ ] README/CHANGELOG/.vibe updated
 ```
 
@@ -59,8 +66,8 @@ GIVEN/WHEN/THEN, each testable:
 ## Task Breakdown
 | ID | Description | Files | Subagents | Depends on |
 |----|---|---|---|---|
-| T01 | <atomic task> | <files> | RED,GREEN,REFACTOR | — |
-| T02 | <atomic task> | <files> | RED,GREEN,REFACTOR | T01 |
+| T01 | <atomic task> | <files> | RED,GREEN,TRIANGULATE,REFACTOR | — |
+| T02 | <atomic task> | <files> | RED,GREEN,TRIANGULATE,REFACTOR | T01 |
 
 ## Execution Order (topological)
 1. T01 — <description>
@@ -90,16 +97,26 @@ GIVEN/WHEN/THEN, each testable:
       "files_to_modify": [],
       "test_files": ["src/__tests__/module.test.ts"],
       "test_types": ["unit", "integration", "e2e"],
-      "subagents": ["red", "green", "refactor"],
+      "subagents": ["red", "green", "triangulate", "refactor"],
       "model_effort": "low",
       "depends_on": [],
-      "status": "pending"
+      "status": "pending",
+      "goal": "<project mission> → <spec.md AC this serves> → <plan.md item>",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona)",
+      "approval_criteria": "<spec.md AC-id this task closes, verbatim>",
+      "evidence": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
     }
   ]
 }
 ```
 
-`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here.
+`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. Full field reference (role/verifier/approval_criteria/evidence/handoff/blocked_reason/rollback): `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
 
 ---
 

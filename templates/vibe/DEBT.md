@@ -4,7 +4,7 @@ Managed backlog. One entry per deferred item.
 
 ---
 
-## [YYYY-MM-DD] Debt: (first item)
+## [YYYY-MM-DD] Debt: (first item) `id:<hash6>`
 
 **Location:** file:line
 **Severity:** low | medium | high

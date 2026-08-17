@@ -12,15 +12,16 @@ allowed-tools: Read, Bash
 
 ---
 
-## THE THREE LAWS
+## THE FOUR LAWS
 
 1. **RED before GREEN.** No implementation without a failing test. Ever.
-2. **GREEN before REFACTOR.** No cleanup on broken code.
-3. **REFACTOR before DOCS.** Document the clean version.
+2. **GREEN before TRIANGULATE.** No edge-case proving on unimplemented code.
+3. **TRIANGULATE before REFACTOR.** No cleanup on code that only proves the happy path.
+4. **REFACTOR before DOCS.** Document the clean version.
 
-**Hard gate #4, same rank: coverage ≥ 90% before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
+**Hard gate #5, same rank: coverage ≥ 90% before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
 
-**Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 4 Final, full DoD), `skills/subagent-{red,green,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
+**Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 4 Final, full DoD), `skills/subagent-{red,green,triangulate,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
 
 ---
 
@@ -29,15 +30,23 @@ allowed-tools: Read, Bash
 Before every GREEN subagent spawn, the orchestrator MUST run this check:
 
 ```bash
-scripts/verify-red.sh "<test_pattern>" "<test_command>"
-# Example: scripts/verify-red.sh "src/__tests__/auth.test.ts" "npx vitest run"
+scripts/verify-red.sh "<test_pattern>" "<test_command>"     # bash
+scripts\verify-red.ps1 -TestPattern "<pattern>" -TestCmd "<command>"   # PowerShell, same contract
 ```
 
-Script on disk = single source of truth — do NOT re-embed copies (they drift). Tests exit 0 (all pass) → 🚫 gate FAIL, no GREEN; nonzero → ✅ gate PASS.
+Script on disk = single source of truth — do NOT re-embed copies (they drift). The gate is
+mechanical, not "any nonzero exit passes": it rejects tests-passed (exit 0), broken/missing
+runner, syntax/parse/collection errors, "no tests found", and any nonzero exit with no
+recognizable test-failure evidence in the output. A real assertion failure, a local
+missing-module/import error, or a runtime error that has both a non-test local SUT stack frame
+and a statically assertion-bearing test file is a valid RED PASS. The last condition covers an
+intentional unimplemented SUT throwing before the assertion itself executes; generic
+runner/config errors still fail. The script itself checks this mechanically — it is not a manual
+eyeball step anymore.
 
-**Blind spot — manual check mandatory:** ANY nonzero exit counts as PASS, but syntax/collection errors also exit nonzero. Failure output must show assertion failures or import-of-missing-module, NOT parse/collection errors. Parse error = fix test, re-run gate. Garbage tests make GREEN meaningless.
-
-**Checkpoint (long tasks):** after every gate result, append one line to `.vibe/SESSION.md` (`T<id> RED gate PASS` / `GREEN ✅` / `REFACTOR green` / `coverage NN%`). Killed session must never skip a gate or blindly re-run a passed one.
+**Checkpoint (long tasks):** after every gate result, append one line to `.vibe/SESSION.md`
+(`T<id> RED gate PASS` / `GREEN ✅` / `TRIANGULATE N cases green` / `REFACTOR green` /
+`coverage NN%`). Killed session must never skip a gate or blindly re-run a passed one.
 
 ---
 
@@ -49,17 +58,17 @@ Script on disk = single source of truth — do NOT re-embed copies (they drift).
 
 ---
 
-## RED/GREEN/REFACTOR CHECKLIST
+## RED/GREEN/TRIANGULATE/REFACTOR CHECKLIST
 
 ### RED Phase ✓
 - [ ] Test file created at correct path
 - [ ] Tests import the module under test (file may not exist yet — that's fine)
-- [ ] Each Acceptance Criterion has at least one test
-- [ ] Unit tests: one per AC minimum
-- [ ] Integration tests: one per flow minimum
-- [ ] E2E tests: one per user scenario minimum
+- [ ] Exactly one test per explicit AC in `docs/spec.md` — named/commented with the AC id, statically countable (`grep -c`) and cross-checked against the spec's AC count
+- [ ] Integration tests: one per flow, if the task's `test_types` calls for integration
+- [ ] E2E tests: one per user scenario, if the task's `test_types` calls for e2e
 - [ ] Tests run and FAIL (not error-out due to syntax — fail due to missing impl)
 - [ ] Failure output captured and visible
+- [ ] Failure SHAPE correctly identified and reported: (a) file-level module-missing failure (runner collapses all tests into 1 failing unit — report static AC-test count separately, never claim "N tests failed") vs (b) real per-test assertion failures (runner's fail-count is a true per-test claim) — see `skills/subagent-red.md` § Step 3
 
 ### GREEN Phase ✓
 - [ ] Implementation file created at correct path
@@ -67,6 +76,16 @@ Script on disk = single source of truth — do NOT re-embed copies (they drift).
 - [ ] All targeted tests PASS
 - [ ] No previously-passing tests now fail (no regressions)
 - [ ] No extra code beyond what tests require
+
+### TRIANGULATE Phase ✓
+- [ ] Baseline (GREEN's tests) pass BEFORE deriving any new case
+- [ ] RED's test file read first — every AC it already tests 1:1 is off-limits for re-derivation (no duplicate coverage disguised as edge-case analysis)
+- [ ] Candidate cases written down with `derived from: <AC-id/risk_reason/contract/boundary>` BEFORE any test is written — no case without a stated reason
+- [ ] AC RED skipped (if any) reported as a RED defect, never silently backfilled here
+- [ ] Compact mode used only for genuinely trivial tasks, and stated explicitly (never silent skip)
+- [ ] New cases added as tests only — zero production-file edits
+- [ ] Failing case → handoff to Builder for minimal fix, loop back to re-run TRIANGULATE (not fixed by Triangulator itself)
+- [ ] All derived cases green with evidence recorded before handoff to REFACTOR
 
 ### REFACTOR Phase ✓
 - [ ] Baseline tests pass BEFORE any refactor edit
@@ -85,6 +104,8 @@ Script on disk = single source of truth — do NOT re-embed copies (they drift).
 | GREEN skips RED | Tests pass without implementation | RED gate script exits 0 |
 | RED writes passing test | Gate fails at wrong place | Gate output shows 0 failures |
 | GREEN over-engineers | Adds features not in tests | `git diff --stat` vs task JSON `files_to_create`/`files_to_modify` |
+| TRIANGULATE skipped/decorative | REFACTOR runs on happy-path-only coverage, or cases exist with no `derived from` | Check task report for Step 1 case list — no list or no justification = violation |
+| Triangulator edits production code | Edge case "fixed" without Builder handoff | `git diff` on non-test files during TRIANGULATE step |
 | REFACTOR adds feature | New code not covered by tests | Coverage drops on new lines — run COVERAGE GATE cmd |
 | Subagent modifies tests | Tests change between RED and GREEN | `git diff` on test files |
 
@@ -127,4 +148,4 @@ go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | g
 
 If coverage < 90%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
 
-Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + cyber-neo clean + adversarial pass.
+Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + security clean (security-baseline.md or cyber-neo, whichever is present) + adversarial pass.

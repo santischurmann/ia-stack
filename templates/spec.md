@@ -26,6 +26,12 @@
 - [ ] **AC3 (edge):** GIVEN <edge condition>, WHEN <action>, THEN <result>
 - [ ] **AC4 (error):** GIVEN <invalid input>, WHEN <action>, THEN <error type + message>
 
+**Requirement grammar and ambiguity gate:** write every event-driven AC as
+`GIVEN …, WHEN …, THEN …`; write invariants as `THE SYSTEM SHALL …`. During drafting only, an
+unresolved requirement must be written verbatim as `[NEEDS CLARIFICATION: <specific question>]`.
+A spec containing that marker cannot move to **Approved**, Plan, or Build — resolve it with the
+user or explicitly remove the affected scope first.
+
 ---
 
 ## Constraints / Restricciones
@@ -54,6 +60,7 @@ This spec does NOT cover:
 
 ## Definition of Done (DoD)
 
+- [ ] Forcing Questions: 6/6 respondidas, o "skipped(N)" (ambos son estados válidos)
 - [ ] All ACs: unit + integration + e2e tests
 - [ ] Coverage ≥ 90%
 - [ ] Lint: 0 errors | Typecheck: 0 errors
