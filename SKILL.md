@@ -35,7 +35,7 @@ that skips the hard gates below (LAWS, receipt, role permissions still apply ver
 4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
 5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail).
 6. DoD: coverage ≥90% + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass.
-7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer.
+7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (4.6). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
 
 **IRON LAW — sin claims de completitud sin evidencia fresca.** Refuerzo textual de "trust what's
