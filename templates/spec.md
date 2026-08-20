@@ -4,6 +4,9 @@
 **Version:** 1.0
 **Author:** Opus (VibeCodeProtocols)
 **Status:** Draft
+**Word cap:** ~650 words for this document (excl. tables/code blocks). A spec nobody reads
+poisons every phase that follows — tables before narration, headers organize, they don't explain.
+(source: `research/sources/protocolo-muralla.md` point #8)
 
 ---
 

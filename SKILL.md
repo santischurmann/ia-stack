@@ -33,7 +33,7 @@ that skips the hard gates below (LAWS, receipt, role permissions still apply ver
 2. 1 subagent = 1 atomic task. Never more.
 3. Subagents don't decide architecture.
 4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
-5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail).
+5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
 6. DoD: coverage ≥90% + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass.
 7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (4.6). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
@@ -46,6 +46,17 @@ Ninguna de estas 4 frases es una razón válida para saltar verificación real:
 - "Ya lo probé antes" → el código cambió desde entonces, re-verificar.
 - "Es un cambio trivial" → los cambios triviales también rompen producción.
 Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
+
+**Al evolucionar este propio protocolo** (source: `research/sources/protocolo-muralla.md` points
+#22/#23) — dos reglas meta que aplican a cualquier LAW/regla nueva que se agregue a `SKILL.md`/
+`skills/*.md` en el futuro:
+1. **Toda regla nueva trae su detector.** No "evitá el over-engineering" sino "over-engineering →
+   `git diff --stat` contra los archivos declarados en la tarea". Una regla sin método de
+   verificación es decorativa — se olvida en la primera sesión bajo presión de contexto.
+2. **El comentario de un gate cuenta la herida, con el número de veces que pasó.** Un gate que
+   nace de una buena práctica genérica se borra con el tiempo; uno que nace de un bug real
+   documentado se respeta — ver los comentarios de origen en `scripts/verify-receipt.mjs`,
+   `scripts/ratchet.mjs`, `scripts/pretooluse-red.mjs`.
 
 ---
 
@@ -61,6 +72,18 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 5. **Resume check** — `SESSION.md` shows unfinished gate or `tasks.json` has non-`done` task → do NOT restart at SPEC. Re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Full protocol: `skills/caveman-tdd.md` § RESUME.
 6. No `.vibe/` → create from `templates/vibe/` (incl. `COMPANY.md` org-chart/budget copy — fixed shape, not a scratch file — and empty `AUDIT.md`). AI-company layer detail: `skills/orchestrator-opus.md` § AI COMPANY LAYER.
 7. Report 1 line: memory loaded / new project / Engram no detectado (nunca omitir esta rama en silencio).
+7b. **Nivel de rigor del proyecto** (source: `research/sources/protocolo-muralla.md` point #24) —
+   una sola vez por proyecto, no por cambio, si `.vibe/PROJECT.md` todavía no lo tiene declarado.
+   Complementa a `risk_level` (que es por-cambio, Phase 4.2) — este es el piso general:
+   ```
+   🔵 Nivel del proyecto (una vez, se guarda en PROJECT.md):
+   A) Vidriera — si algo falla se ve feo un rato, nadie pierde nada real
+   B) Herramienta — alguien toma una decisión con un número mal si esto falla
+   C) Producto con plata — alguien pierde dinero o confianza real si esto falla
+   ```
+   La rigurosidad se paga y solo se paga cuando hay algo que perder — un nivel `A` no debería
+   terminar arrastrando el aparato completo de un `C` salvo que un cambio puntual lo dispare por
+   `risk_level` propio (Phase 4.2, ortogonal a esto).
 8. 🔵 confirm detected stack (A approve / B correct).
 9. **Auto-routing triage** — mecánico, nunca a criterio del modelo: primero enumerá los archivos
    que hay que **entender o verificar** para decidir con seguridad (archivo a cambiar + sus tests,
@@ -174,6 +197,40 @@ top-level import missing → runner reports `tests 1, fail 1`, not 6) — report
 AC-test count and the missing-module classification as two separate facts, never as "N tests
 failed" (that claim is only true when tests actually ran and failed on their own assertions).
 
+**Banned assertion patterns** (source: `research/sources/protocolo-muralla.md` point #6 —
+verify-red.sh/.ps1 only prove the RED is real, not that the test is a good test): tautologies
+(`expect(true).toBe(true)`), `toBeDefined()`/`assert x is not None` as the only assertion, an
+assertion inside a loop that can iterate zero times (passes without having tested anything if the
+input is empty), "renders without crashing"/"doesn't throw" as the entire test, assertions on
+CSS classes or other implementation details instead of behavior. None of these fail
+`verify-red.sh`/`.ps1` mechanically — Test-Engineer avoids them by rule, TRIANGULATE/4R Reviewer
+flag them if they slip through.
+
+**Mock-count discipline** (point #6): up to 3 mocks in one test is healthy. 4-6 → extract a pure
+function. **7 or more → stop, you're testing at the wrong layer** — that many mocks to cover a
+few lines of logic means those lines want to be a pure function tested with zero mocks.
+
+**Pre-existing-test baseline** (point #18) — before touching any EXISTING file (not a brand-new
+one), run its current tests first and note the baseline ("N tests green"). If something already
+fails, **stop and report it as a pre-existing failure** — never fix it inline inside this task's
+diff. A fix that rides along inside another task's changes is a fix nobody reviewed as its own
+change.
+
+**Scope check after GREEN** (point #19): `git diff --stat` against the files declared for this
+task. Anything outside that list is scope creep — report it, don't silently keep it.
+
+**Optional: PreToolUse enforcement** (point #1, `scripts/pretooluse-red.mjs`) — if
+`.claude/settings.json` wires this script as a `PreToolUse` hook (see `README.md` § Optional
+hardening), immediately after `verify-red.sh`/`.ps1` confirms a genuine RED, run:
+```bash
+node scripts/pretooluse-red.mjs emit --tests <red-test-file-1,red-test-file-2>
+```
+This is optional and degrades cleanly when absent — same pattern as `fableultracode`/`cyber-neo`
+— but when present it makes RED-before-write a harness-level block, not something the model has
+to remember to check. If a test file listed in the receipt changes after this point, the receipt
+self-invalidates (its own content hash won't match) — that is the exact "assertion loosened after
+RED" failure mode this closes.
+
 **3.2 GREEN** (role: Builder) — `skills/subagent-green.md`. Verify PASS, no regressions.
 
 **3.3 TRIANGULATE** (role: Triangulator) — `skills/subagent-triangulate.md`. Runs after GREEN,
@@ -235,6 +292,16 @@ Gate: coverage ≥90%, unit/integration/e2e all pass. Any fail → spawn `subage
    - **Nothing declared, no typed-language marker found** → **N/A**, logged with the exact
      detection commands run above and their (negative) output as evidence in `.vibe/SESSION.md`
      — "N/A" is a conclusion backed by commands, never an unstated assumption.
+
+**Gate falsification ritual** (source: `research/sources/protocolo-muralla.md` point #21) — if
+the target project has its own CI/lint/typecheck gate you didn't write this session, it counts as
+*verified* only after it's been broken on purpose and confirmed to actually go red. A green gate
+you've never watched fail is written, not verified — the exact failure mode that motivated the
+hardening of this repo's own `verify-red.sh`/`.ps1`/`verify-receipt.mjs`/`ratchet.mjs`/
+`pretooluse-red.mjs` (all 4 ship with `FALSIFICACIÓN ·`-prefixed tests, `grep FALSIFICACIÓN
+tests/` answers "is this actually adversarially tested" in one command). Applying the same
+discipline to a target project's own gates is optional (costs time you may not have on every
+project) but if you skip it, say so explicitly instead of reporting the gate as verified.
 
 **4.2 Risk classification + Simplify** — antes de tocar un solo archivo, clasificá el
 changeset. Mecánico, basado en evidencia — nunca "se ve grande":
@@ -301,6 +368,29 @@ not a skip):
   allowed into the receipt. A finding whose independent reproduction fails to confirm it gets
   demoted to refuted, not silently kept.
 
+**Precision rule** (source: `research/sources/protocolo-muralla.md` point #13) — report a finding
+only if it's a real defect that would actually hit a user, and you'd defend it with concrete
+evidence. **When in doubt, stay silent.** Style/preference findings are prohibited unless they
+hide a real defect — noise here costs more triage time than the bug it might catch.
+
+**Read-only separation** (point #14) — every 4R Reviewer is read-only: it reports, it never
+edits. The role that can veto (block a finding as unresolved) is never the same role that can fix
+it — if the same agent both finds and patches, the patch has no adversarial check left on it.
+
+**Refutador** (point #12) — for `alto`/`critico` tiers, the reproduction step above IS the
+refutador: an agent blind to the original reviewer's conclusion, biased toward refuting, that
+re-derives the finding's `reproduction` independently and returns `corroborado | refutado | no
+concluyente`. Only `corroborado` gets fixed. For `bajo`/`estandar` this role is implicit in the
+reviewer's own `verdict` field — no separate agent, cheaper tiers don't carry the extra pass.
+
+**Finding id** (point #15) — every finding in the 4R report gets a short id (same
+`id:<hash6>` convention as `.vibe/DEBT.md`, see `skills/vibe-memory.md`), so a finding can be
+tracked across review rounds instead of silently reappearing under different wording.
+
+**Strengths registry** (point #16) — the 4R report also names what's explicitly fine (and
+therefore NOT a finding), so the next round doesn't re-litigate or regress something already
+judged correct.
+
 Findings surviving their tier's review → fix, re-verify, re-run that lens. Nunca saltear el pase
 adversarial completo para ahorrar tokens — degradar cobertura dentro de un tier (menos detalle
 por lente) antes que soltar el mecanismo, y nunca por debajo de 1 revisor real.
@@ -348,12 +438,27 @@ escribe con Read/Write — sin script de shell, sin dependencia de `jq`):
   "adversarial_reviewers": "<N real usado — 1 (bajo) | 2 (estandar) | 4 (alto) | 4+repro (critico) — nunca 0>",
   "adversarial_findings": ["<lens>: <finding> — verdict: fixed|refuted, evidence: <...>", "..."],
   "evidence": ["<comando real corrido en 4.4/4.5, ej. 'pytest -q -> 47 passed'>"],
+  "spec_coverage": ["<AC-id>: <archivo-de-test> — COMPLIANT|FAILING|UNTESTED|PARTIAL"],
   "coverage_pct": <numero>,
   "git_head": "<git rev-parse HEAD>",
   "tree_fingerprint": "<sha256 sobre HEAD + bytes-en-disco de cada path tracked cambiado (staged+unstaged) + path/contenido de cada untracked no ignorado, ver scripts/verify-receipt.mjs>",
   "terminal_state": "approved"
 }
 ```
+
+**`spec_coverage` — un veredicto por AC, `UNTESTED` incluido** (source: `research/sources/
+protocolo-muralla.md` points #11/#47) — cada AC de `docs/spec.md` aparece una vez: `COMPLIANT`
+(test pasa y prueba exactamente ese AC), `FAILING` (test existe, falla), `UNTESTED` (ningún test
+cubre este AC — el caso que atrapa un gate que dice verificar algo sin verificarlo), `PARTIAL`
+(cubierto parcialmente). Un receipt con cualquier `UNTESTED` no es motivo de bloqueo mecánico
+(eso sigue siendo `terminal_state`), pero es una señal que el usuario tiene que ver antes de 🔵
+aprobar push — nunca queda implícito.
+
+**Cada string de `evidence`/`adversarial_findings` se marca `verificado:` o `leído:`** (point
+#20) — "verificado: pytest -q -> 47 passed" (un comando real corrió) vs "leído: revisé
+`auth.py:40-60`, la lógica se ve correcta" (inspección sin ejecución). Mezclarlos sin distinguir
+es cómo nace un falso verde — una inspección leída no es lo mismo que una corrida verificada, y
+el receipt no debe dejar que parezcan lo mismo.
 
 **LIFECYCLE DEL RECEIPT — orden exacto, no ambiguo:**
 
@@ -417,6 +522,19 @@ actual Y `evidence` no vacío → proceder. Exit 1 en cualquier otro caso (recei
 evidence vacío, o `terminal_state: escalated` — **siempre**, tenga o no `override_note`, el
 script nunca lo trata como pasable) → frenar acá, reportar al usuario, no commitear (LAW 8). El
 script imprime la razón exacta del rechazo.
+
+**Qué NO se declara cerrado** (source: `research/sources/protocolo-muralla.md` point #45) —
+ninguno de estos permite un 🔵 de cierre, aunque el receipt mecánico pase:
+- Una ronda de fixes cuya última tanda no se volvió a revisar (4.4 corrió antes del último fix,
+  no después).
+- Un gate propio del target-project (no de VCP) escrito pero nunca falsificado a propósito
+  (ver el ritual en Phase 4.1 arriba).
+- Cualquier AC en `spec_coverage` con veredicto `UNTESTED`.
+Decirlo en el reporte de cierre cuesta menos que el usuario descubriéndolo después.
+
+**El mensaje de commit cuenta qué cambió y por qué, con los números medidos** (point #44) — no
+"arreglé el bug", sino la evidencia del receipt: "antes: X, después: Y" cuando hay una métrica
+real; si algo quedó abierto, va nombrado en el cuerpo del commit, no solo en `DEBT.md`.
 
 **Ausente vs corrupto — 2 categorías, no cambia el script, solo aclara qué hacer con cada
 mensaje:**

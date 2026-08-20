@@ -1,0 +1,4 @@
+{
+  "_note": "No backslashes inside patterns. A `\\b` inside JSON is the backspace character, not a word boundary — the pattern silently breaks and the counter counts zero forever, in green. Use lookarounds instead, e.g. (?<![A-Za-z]) / (?![A-Za-z]). This gate is opt-in: copy this file to .vibe/counters.json only if the project wants a debt ratchet, then `node scripts/ratchet.mjs --freeze` once to declare today's baseline.",
+  "counters": []
+}

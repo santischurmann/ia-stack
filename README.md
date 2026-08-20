@@ -179,16 +179,52 @@ No package installation is required for the verifier regression suite. With Node
 Git Bash available, run:
 
 ```powershell
-node --test tests/verify-red-gate.test.mjs tests/verify-receipt-gate.test.mjs
+node --test tests/*.test.mjs
 ```
 
-It verifies both shell implementations against a real Node test runner: a valid unfinished-SUT
-RED and local missing-module RED pass; a test-code `ReferenceError`, bare missing npm package,
-already-green test and runner/config failure reject. See
+(explicit file glob required — `node --test tests/` treats the directory as a module and dies
+before running anything.) It verifies both shell implementations against a real Node test runner:
+a valid unfinished-SUT RED and local missing-module RED pass; a test-code `ReferenceError`, bare
+missing npm package, already-green test and runner/config failure reject.
 `tests/verify-receipt-gate.test.mjs` also proves fresh/stale receipts, staged versus unstaged
 state, `git add` without byte changes, binary/untracked/sibling receipt/mode changes, rename
-destinations, empty/escalated receipts and SHA-256 Git repositories. See
+destinations, empty/escalated receipts and SHA-256 Git repositories. `tests/ratchet.test.mjs` and
+`tests/pretooluse-red.test.mjs` cover the optional gates below the same way. Tests prefixed
+`FALSIFICACIÓN ·` prove a gate goes red when it must — `grep FALSIFICACIÓN tests/*.test.mjs`
+answers "is this gate actually adversarially tested" in one command (convention adopted from
+`research/sources/protocolo-muralla.md` point #50). Coverage: `node --experimental-test-coverage
+--test tests/*.test.mjs` — currently 100% line/branch/function on every `.mjs` gate. See
 `research/protocol-e2e-2026-08-14.md` for the complete disposable-project evidence.
+
+---
+
+## Optional hardening — PreToolUse enforcement and a debt ratchet
+
+Both opt-in, same "never required, degrades cleanly" pattern as `fableultracode`/`cyber-neo`.
+Adopted from `research/sources/protocolo-muralla.md` after adversarial analysis of that repo
+(52 points examined, see the file for the full breakdown of what was and wasn't ported).
+
+**PreToolUse gate** (`scripts/pretooluse-red.mjs`) — `verify-red.sh`/`.ps1` correctly classify a
+genuine RED, but nothing forces the orchestrator to actually call them before writing production
+code; a LAW in `SKILL.md` is a request the model can decline, even by accident. Wiring this
+script as a `PreToolUse` hook makes it a harness-level block instead:
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "node scripts/pretooluse-red.mjs" }] }
+    ]
+  }
+}
+```
+in `.claude/settings.json`. Once wired, Phase 3.1 calls `node scripts/pretooluse-red.mjs emit
+--tests <files>` right after a confirmed RED — see `SKILL.md` Phase 3.1.
+
+**Debt ratchet** (`scripts/ratchet.mjs`) — freezes today's count of a declared pattern (stray
+hex colors, `TODO`s, whatever a project wants to watch) and fails only if it grows. Copy
+`templates/vibe/COUNTERS.json` to `.vibe/counters.json`, declare counters, then
+`node scripts/ratchet.mjs --freeze` once. A gate that demands zero debt never turns on — freezing
+today's number and forbidding it from rising is what actually holds.
 
 ---
 
@@ -264,10 +300,32 @@ VibeCodeProtocols/
 │   ├── verify-red.sh               ← RED gate verifier (bash)
 │   ├── verify-red.ps1              ← RED gate verifier (PowerShell, same exit-code contract)
 │   ├── verify-receipt.mjs          ← mechanical receipt validator (Node, cross-platform)
+│   ├── pretooluse-red.mjs          ← optional PreToolUse hook — RED-before-write, harness-enforced
+│   ├── ratchet.mjs                 ← optional debt ratchet gate
 │   ├── build-zip.sh                ← distributable package builder
 │   └── vibe-memory.sh             ← memory CLI helper
 └── examples/example-feature/       ← JWT auth spec + plan as reference
 ```
+
+---
+
+## What this repo intentionally doesn't have
+
+Said here so nobody discovers it the hard way (convention borrowed from
+`research/sources/protocolo-muralla.md` point #51 — that repo does the same for itself):
+
+- **No canonical, delta-merged system spec.** `docs/spec.md` is per-feature; there's no single
+  `specs/{domain}/spec.md` that always describes "what the system does today" without reading the
+  code. Evaluated (point #9), deferred — real structural change, bigger than a text edit.
+- **No visual-design phase.** VCP is TDD for logic/backend, not UI/UX — SAFE/RISK design
+  proposals, anti-convergence rules, etc. are out of scope by design, not an oversight.
+- **The debt ratchet counts with regex, not an AST.** It counts what a pattern can detect; it
+  doesn't understand code. For debt that requires understanding intent, it doesn't help — same
+  limitation the source repo confesses about its own version.
+- **`PreToolUse` enforcement is opt-in, not default.** A fresh `git clone` of this repo has zero
+  hooks wired — the harness-level block only exists once a project's own
+  `.claude/settings.json` wires it (see "Optional hardening" above). Without that wiring, VCP's
+  RED-before-write discipline is still a LAW the orchestrator follows, not a mechanical block.
 
 ---
 

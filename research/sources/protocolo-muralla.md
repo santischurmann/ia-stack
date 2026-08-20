@@ -367,7 +367,39 @@ punto de la crítica sigue siendo **cierto hoy**: ver punto #1 abajo.
 
 **Total de puntos analizados: 52.** 27 gaps reales adoptables (A+D), 8 ya cubiertos en VCP (B),
 5 evaluados y rechazados con razón concreta (C), el resto son notas de contexto/transparencia.
-Ninguno de los 52 se adoptó todavía en código — este documento es investigación, no
-implementación. Siguiente paso si el usuario quiere avanzar: spec formal (mismo formato que
-`research/vcp-implementation-spec.md`) para los candidatos marcados "Adoptar" arriba, con 🔵
-fase-por-fase como el resto de esta metodología exige.
+
+## Estado de implementación (2026-08-20)
+
+Usuario eligió 🔵 "Todos los 27 gaps" — aplicado en la misma sesión, sin código teatral: cada
+gate nuevo tiene tests `FALSIFICACIÓN ·` reales, 100% line/branch/function en los 3 scripts
+nuevos/tocados (`node --experimental-test-coverage --test tests/*.test.mjs`).
+
+- **#1 PreToolUse hook** → `scripts/pretooluse-red.mjs` + `tests/pretooluse-red.test.mjs` (19
+  tests). Opt-in, wiring documentado en `README.md` § Optional hardening.
+- **#4 Trinquete de deuda** → `scripts/ratchet.mjs` + `tests/ratchet.test.mjs` (14 tests) +
+  `templates/vibe/COUNTERS.json`. **Bug real encontrado y arreglado durante el porteo**: el glob
+  `**/*.ext` nunca matcheaba archivos en la raíz (exigía una barra literal) — cazado por el propio
+  test `FALSIFICACIÓN · matches() must match a root-level file against **/*.ext`.
+- **#5/#6 mock threshold + aserciones prohibidas** → `SKILL.md` Phase 3.1.
+- **#8 techo de palabras en spec** → `templates/spec.md`.
+- **#11/#20/#47 UNTESTED verdict + verificado/leído** → `SKILL.md` schema del receipt (campo
+  `spec_coverage`, convención `verificado:`/`leído:` en `evidence`).
+- **#12/#13/#14/#15/#16 refutador, precisión, solo-lectura, id, fortalezas** → `SKILL.md` Phase
+  4.4.
+- **#17 ledger solo-orchestrator** → `SKILL.md` LAW 5.
+- **#18/#19 baseline pre-existente + scope check** → `SKILL.md` Phase 3.1.
+- **#21 ritual de falsificación de gates propios** → `SKILL.md` Phase 4.1.
+- **#22/#23 meta-reglas (detector + comentario-herida)** → `SKILL.md`, después de IRON LAW.
+- **#24 nivel de rigor por proyecto** → `SKILL.md` Phase 0, paso 7b.
+- **#44/#45 commit con números + qué NO cerrar** → `SKILL.md` Phase 4.6.
+- **#48 archivo causante en items abiertos** → `templates/vibe/RETRO.md`.
+- **#50 prefijo FALSIFICACIÓN·** → todos los `tests/*.test.mjs` existentes y nuevos.
+- **#51 "qué no tiene este repo"** → `README.md`, sección nueva.
+- **#9/#10 spec canónica por delta** → **evaluado, diferido** (cambio estructural real, no un
+  edit de texto) — documentado explícitamente en `README.md` § What this repo intentionally
+  doesn't have, para que quede trazable y no se pierda.
+- **#25-27, #36-43** → sin acción, como ya estaba clasificado arriba (no aplica / rechazado con
+  razón).
+
+Siguiente paso si el usuario quiere avanzar con lo diferido: spec formal (mismo formato que
+`research/vcp-implementation-spec.md`) para la spec canónica por delta, con 🔵 fase-por-fase.

@@ -14,5 +14,8 @@ siempre corre, nunca bloquea.
 **Friction:** (1-2 items)
 **Keep:** (1 patrón — si es nuevo, también va a PATTERNS.md)
 **Change:** (1 cosa a hacer distinto la próxima)
+**Open:** (qué quedó abierto, nombrando el archivo que lo causa — no un ticket que nadie relee
+  seis meses después; "Ninguno" si no queda nada. Source: research/sources/protocolo-muralla.md
+  point #48)
 
 ---

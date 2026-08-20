@@ -91,10 +91,10 @@ for (const [label, run, available] of runners) {
       for (const [pattern, command, expected, label] of [
         ['test/sut-runtime.test.js', 'node --test', 0, 'SUT runtime RED must pass'],
         ['test/local-module.test.js', 'node --test', 0, 'local missing module must pass'],
-        ['test/test-bug.test.js', 'node --test', 1, 'ReferenceError in test must reject'],
-        ['test/bare-package.test.cjs', 'node --test', 1, 'bare npm package must reject'],
-        ['test/green.test.js', 'node --test', 1, 'green test must reject'],
-        ['ignored', 'node test/config-runner.mjs', 1, 'runner/config failure must reject'],
+        ['test/test-bug.test.js', 'node --test', 1, 'FALSIFICACIÓN · ReferenceError in test must reject'],
+        ['test/bare-package.test.cjs', 'node --test', 1, 'FALSIFICACIÓN · bare npm package must reject'],
+        ['test/green.test.js', 'node --test', 1, 'FALSIFICACIÓN · green test must reject'],
+        ['ignored', 'node test/config-runner.mjs', 1, 'FALSIFICACIÓN · runner/config failure must reject'],
       ]) {
         const result = run(pattern, command, root);
         assert.equal(result.status, expected, `${label}\n${result.output}`);

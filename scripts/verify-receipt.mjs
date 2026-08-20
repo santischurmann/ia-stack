@@ -84,6 +84,15 @@ function toGitPath(p) {
 const RAW_HEADER = /^:(\d{6}) (\d{6}) ([0-9a-f]+) ([0-9a-f]+) ([A-Z])(\d*)$/;
 const isZeroSha = (sha) => /^0+$/.test(sha);
 
+// Shared by both the staged and unstaged sections of currentFingerprint() — extracted (instead
+// of duplicated inline per section) so each is a single, directly unit-testable unit instead of
+// two copies whose branches can only be exercised by whatever a real `git diff` happens to emit
+// (e.g. unstaged rename detection off by default with the flags this script uses — see tests).
+export const byPath = (a, b) => (a.path < b.path ? -1 : 1);
+export const formatEntry = (e) =>
+  `${e.path}\0${e.oldMode}:${e.oldSha}->${e.newMode}:${e.newSha}\0${e.status}` +
+  (e.renamedFrom ? `\0renamed-from:${e.renamedFrom}` : '');
+
 // Parse `git diff --raw --no-abbrev -z` output. MUST use -z (NUL-delimited), not plain newline
 // splitting: a rename/copy record (status R/C) carries TWO paths (source, destination), and
 // either path can itself contain characters that plain tab/newline parsing can't distinguish
@@ -95,7 +104,7 @@ const isZeroSha = (sha) => /^0+$/.test(sha);
 // source) means a later edit to the destination file can go undetected by existsSync()/
 // hash-object on a stale path, silently keeping a zero/absent placeholder — this is exactly the
 // gap that made a post-rename edit invisible to the fingerprint before this fix.
-function parseRawDiff(text) {
+export function parseRawDiff(text) {
   const tokens = text.split('\0');
   const records = [];
   let i = 0;
@@ -132,14 +141,8 @@ function currentFingerprint(excludePath) {
   // -z is required for correct R/C (rename/copy) parsing — see parseRawDiff.
   const staged = parseRawDiff(git(['diff', '--raw', '--cached', '--no-abbrev', '-z']))
     .filter((e) => e.path !== exclude)
-    .sort((a, b) => (a.path < b.path ? -1 : 1));
-  const stagedEntries = staged
-    .map(
-      (e) =>
-        `${e.path}\0${e.oldMode}:${e.oldSha}->${e.newMode}:${e.newSha}\0${e.status}` +
-        (e.renamedFrom ? `\0renamed-from:${e.renamedFrom}` : '')
-    )
-    .join('\n');
+    .sort(byPath);
+  const stagedEntries = staged.map(formatEntry).join('\n');
 
   // --- INDEX -> WORKTREE (unstaged) — mode is real; newSha is a placeholder (all zeros) that
   // we replace with the actual current on-disk blob hash via `git hash-object`, read from the
@@ -147,19 +150,13 @@ function currentFingerprint(excludePath) {
   // one) — deleted files keep the zero/absent marker, nothing to hash.
   const unstagedRaw = parseRawDiff(git(['diff', '--raw', '--no-abbrev', '-z']))
     .filter((e) => e.path !== exclude)
-    .sort((a, b) => (a.path < b.path ? -1 : 1));
+    .sort(byPath);
   const unstaged = unstagedRaw.map((e) => {
     const realNewSha =
       isZeroSha(e.newSha) && e.status !== 'D' && existsSync(e.path) ? gitHashObject(e.path) : e.newSha;
     return { ...e, newSha: realNewSha };
   });
-  const unstagedEntries = unstaged
-    .map(
-      (e) =>
-        `${e.path}\0${e.oldMode}:${e.oldSha}->${e.newMode}:${e.newSha}\0${e.status}` +
-        (e.renamedFrom ? `\0renamed-from:${e.renamedFrom}` : '')
-    )
-    .join('\n');
+  const unstagedEntries = unstaged.map(formatEntry).join('\n');
 
   // --- UNTRACKED (not ignored) — path + sha256 of on-disk bytes.
   const untrackedList = git(['ls-files', '--others', '--exclude-standard'])
@@ -190,60 +187,64 @@ function fail(reason) {
   process.exit(1);
 }
 
-const [, , cmd, arg] = process.argv;
+// CLI entry point — guarded so tests can `import` this module's functions (parseRawDiff, etc.)
+// without triggering process.exit() as a side effect of the import.
+if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
+  const [, , cmd, arg] = process.argv;
 
-if (cmd === 'fingerprint') {
-  console.log(JSON.stringify(currentFingerprint(arg), null, 2));
-  process.exit(0);
+  if (cmd === 'fingerprint') {
+    console.log(JSON.stringify(currentFingerprint(arg), null, 2));
+    process.exit(0);
+  }
+
+  if (cmd === 'check') {
+    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
+    if (!existsSync(arg)) fail(`receipt not found: ${arg}`);
+
+    let receipt;
+    try {
+      receipt = JSON.parse(readFileSync(arg, 'utf8'));
+    } catch (e) {
+      fail(`receipt is not valid JSON: ${e.message}`);
+    }
+
+    const required = ['schema', 'feature', 'risk_level', 'evidence', 'git_head', 'tree_fingerprint', 'terminal_state'];
+    for (const f of required) {
+      if (!(f in receipt)) fail(`missing required field: ${f}`);
+    }
+
+    if (receipt.schema !== 'vcp.receipt/v1') fail(`unknown schema: ${receipt.schema}`);
+
+    if (!Array.isArray(receipt.evidence) || receipt.evidence.length === 0) {
+      fail('evidence array is empty — no receipt without a real command output backing it');
+    }
+
+    if (!['approved', 'escalated'].includes(receipt.terminal_state)) {
+      fail(`terminal_state must be approved|escalated, got: ${receipt.terminal_state}`);
+    }
+
+    // escalated is ALWAYS rejected by this gate, unconditionally — no override_note shortcut.
+    // The only path past an escalated finding is: user approves explicitly, orchestrator writes
+    // a NEW receipt with terminal_state:"approved" (override_note/override_timestamp kept as
+    // audit metadata on that new receipt), and THAT receipt is what gets checked here.
+    if (receipt.terminal_state === 'escalated') {
+      fail('terminal_state is escalated — this gate never passes an escalated receipt, regardless of override_note. Regenerate a NEW receipt with terminal_state:"approved" after explicit user sign-off (LAW 8).');
+    }
+
+    // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
+    // guard) — every other file, including siblings in the same receipts/ directory, still counts.
+    const now = currentFingerprint(arg);
+    if (receipt.git_head !== now.git_head) {
+      fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
+    }
+    if (receipt.tree_fingerprint !== now.tree_fingerprint) {
+      fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
+    }
+
+    console.log(`OK: receipt valid for ${receipt.feature} — terminal_state=approved, risk_level=${receipt.risk_level}`);
+    process.exit(0);
+  }
+
+  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json>');
+  process.exit(2);
 }
-
-if (cmd === 'check') {
-  if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
-  if (!existsSync(arg)) fail(`receipt not found: ${arg}`);
-
-  let receipt;
-  try {
-    receipt = JSON.parse(readFileSync(arg, 'utf8'));
-  } catch (e) {
-    fail(`receipt is not valid JSON: ${e.message}`);
-  }
-
-  const required = ['schema', 'feature', 'risk_level', 'evidence', 'git_head', 'tree_fingerprint', 'terminal_state'];
-  for (const f of required) {
-    if (!(f in receipt)) fail(`missing required field: ${f}`);
-  }
-
-  if (receipt.schema !== 'vcp.receipt/v1') fail(`unknown schema: ${receipt.schema}`);
-
-  if (!Array.isArray(receipt.evidence) || receipt.evidence.length === 0) {
-    fail('evidence array is empty — no receipt without a real command output backing it');
-  }
-
-  if (!['approved', 'escalated'].includes(receipt.terminal_state)) {
-    fail(`terminal_state must be approved|escalated, got: ${receipt.terminal_state}`);
-  }
-
-  // escalated is ALWAYS rejected by this gate, unconditionally — no override_note shortcut.
-  // The only path past an escalated finding is: user approves explicitly, orchestrator writes
-  // a NEW receipt with terminal_state:"approved" (override_note/override_timestamp kept as
-  // audit metadata on that new receipt), and THAT receipt is what gets checked here.
-  if (receipt.terminal_state === 'escalated') {
-    fail('terminal_state is escalated — this gate never passes an escalated receipt, regardless of override_note. Regenerate a NEW receipt with terminal_state:"approved" after explicit user sign-off (LAW 8).');
-  }
-
-  // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
-  // guard) — every other file, including siblings in the same receipts/ directory, still counts.
-  const now = currentFingerprint(arg);
-  if (receipt.git_head !== now.git_head) {
-    fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
-  }
-  if (receipt.tree_fingerprint !== now.tree_fingerprint) {
-    fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
-  }
-
-  console.log(`OK: receipt valid for ${receipt.feature} — terminal_state=approved, risk_level=${receipt.risk_level}`);
-  process.exit(0);
-}
-
-console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json>');
-process.exit(2);
