@@ -88,6 +88,7 @@ Files created/modified:
 Test results:
   <paste relevant test output lines>
 GREEN GATE: PASS — [N] tests passing. No regressions. Ready for REFACTOR.
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 ## FORBIDDEN

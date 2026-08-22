@@ -113,6 +113,7 @@ RED GATE: PASS —
              failure (expected — see scripts/verify-red.sh classification above)
   shape (b): [M] of [N] tests failing on real assertions, as reported by the runner
 Ready for GREEN.
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 ## FORBIDDEN

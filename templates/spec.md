@@ -65,7 +65,7 @@ This spec does NOT cover:
 
 - [ ] Forcing Questions: 6/6 respondidas, o "skipped(N)" (ambos son estados válidos)
 - [ ] All ACs: unit + integration + e2e tests
-- [ ] Coverage ≥ 90%
+- [ ] Coverage 100% for every metric the runner measures (lines/branches/functions)
 - [ ] Lint: 0 errors | Typecheck: 0 errors
 - [ ] README updated (if user-facing)
 - [ ] CHANGELOG entry added

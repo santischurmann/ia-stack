@@ -86,6 +86,7 @@ Changes made:
 Tests after refactor:
   [N] passing, 0 failing
 REFACTOR GATE: PASS — Code clean, tests green.
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 ## FORBIDDEN

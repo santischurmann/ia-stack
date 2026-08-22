@@ -106,6 +106,7 @@ Cases derived: [N] (compact mode: yes/no)
   2. ...
 Loops back to Builder: [count, 0 if none]
 TRIANGULATE GATE: PASS — all derived cases green, evidence recorded.
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 This report's `STATUS`/`EVIDENCE` per case feeds the same evidence array as other gates

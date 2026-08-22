@@ -34,7 +34,7 @@ that skips the hard gates below (LAWS, receipt, role permissions still apply ver
 3. Subagents don't decide architecture.
 4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
 5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
-6. DoD: coverage ≥90% + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass.
+6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
 7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (4.6). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
 
@@ -69,7 +69,27 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 2. Detect stack: `ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null`.
 3. Read `.vibe/PROJECT.md` + `SESSION.md` + `DECISIONS.md` + `RETRO.md` (últimas 2 entradas) + `LESSONS.md` (entradas `status: active`) if exist. Full lesson protocol (confirm-gate, dedup, retire, decay, recall-on-touch): `skills/vibe-memory.md` § LESSONS PROTOCOL.
 4. **Engram recall (opcional, best-effort, nunca bloqueante)** — buscá `mem_context`/`mem_search` en tu tool list (directas o diferidas). Si aparecen: `ToolSearch` para cargarlas, `mem_context` con el proyecto actual, ojeá 1-2 hits de `mem_search("vcp/<project>/<feature-slug>/gate-state")`. Si no aparecen: seguir sin más, sin reintento — pero SÍ mencionarlo en el paso 7. Esto es color adicional, **nunca** reemplaza el re-detect por evidencia del paso 5.
-5. **Resume check** — `SESSION.md` shows unfinished gate or `tasks.json` has non-`done` task → do NOT restart at SPEC. Re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Full protocol: `skills/caveman-tdd.md` § RESUME.
+5. **Resume identity + evidence check** — `SESSION.md` shows unfinished gate or `tasks.json` has non-`done` task → do NOT restart at SPEC. Before reading the checkpoint, establish the requested `<feature-slug>`: a short lowercase kebab-case name for the feature actually requested. If the request covers multiple plausible features, do not invent one; ask the user to name it.
+
+   Run the mechanical identity gate first:
+   ```bash
+   node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+   ```
+   Exit `0` is the only identity result that may resume: then re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Exit `1` means **never resume silently**; show exactly the matching 🔵 choice below, wait for the user, make only the approved change, then re-run the gate before any resume:
+   ```
+   🔵 SESSION.md belongs to another feature
+   A) Archive the existing session, start a clean session for <requested-feature-slug> (recommended)
+   B) Continue the declared feature instead; keep its slug and scope
+   C) Retag only if it is genuinely the same work under a renamed feature; record the explicit reason in DECISIONS.md
+   D) Stop and inspect the state
+   ```
+   ```
+   🔵 SESSION.md has no valid feature identity (legacy or malformed state)
+   A) Inspect it, explicitly assign its real feature slug, then re-run the gate
+   B) Archive it and start a clean session for <requested-feature-slug>
+   C) Stop and inspect the state
+   ```
+   Do not archive, retag, or choose an option on the user's behalf. If there is no resumable state, write `**Feature slug:** <feature-slug>` in `SESSION.md` before the first gate. Full evidence protocol: `skills/caveman-tdd.md` § RESUME.
 6. No `.vibe/` → create from `templates/vibe/` (incl. `COMPANY.md` org-chart/budget copy — fixed shape, not a scratch file — and empty `AUDIT.md`). AI-company layer detail: `skills/orchestrator-opus.md` § AI COMPANY LAYER.
 7. Report 1 line: memory loaded / new project / Engram no detectado (nunca omitir esta rama en silencio).
 7b. **Nivel de rigor del proyecto** (source: `research/sources/protocolo-muralla.md` point #24) —
@@ -151,6 +171,18 @@ B) Parallel build allowed for independent tasks? Y/N (default Y — see orchestr
 
 Generate `docs/plan.md` + `docs/tasks.json` — template: `skills/spec-plan-templates.md`. Status lifecycle per task: `pending→red→green→triangulate→refactor→done`.
 
+**Preflight de conflictos (gate mecánico, antes de pedir aprobación):**
+```bash
+node scripts/verify-plan-conflicts.mjs check docs/tasks.json
+```
+El gate usa como writers los tres campos declarados por tarea: `files_to_create`,
+`files_to_modify` y `test_files`. Dos tareas que declaran el mismo path sólo pasan si existe
+una ruta `depends_on` directa o transitiva entre ellas; el output las marca `SERIALIZED`, por lo
+que no se pueden despachar en paralelo. Cualquier overlap sin orden, id duplicado, dependencia
+desconocida/cíclica, campo no-array o path fuera del proyecto devuelve exit 1: corregí el plan
+(serializá o dividí las tareas) y re-ejecutá el gate. No reemplaces este chequeo con la afirmación
+del orchestrator de que las tareas “parecen independientes”.
+
 🔵 **CONTENT** review:
 ```
 A) Approved — start Build
@@ -169,7 +201,9 @@ A) Model/effort: sonnet low (default, fast+cheap) / sonnet standard / sonnet hig
 B) Override per-task later if a task looks harder than expected? Y/N
 ```
 
-Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`.
+Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`. Si Phase 2
+permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto
+de escritura no serializado; un `SERIALIZED` conserva su orden topológico.
 
 Role-persona per subagent (named mandate, not a generic sub-agent — hardens the "who's allowed
 to certify what" boundary): **Test-Engineer** writes failing tests only, never touches impl.
@@ -246,7 +280,21 @@ code itself, does not proceed to REFACTOR until all derived cases are green with
 **3.4 REFACTOR** (role: Refactor-Engineer) — `skills/subagent-refactor.md`. Verify still green
 (full suite, including TRIANGULATE's derived cases — not just the original happy-path test).
 
-Checkpoint after each gate: 1 line `.vibe/SESSION.md` (`T<id> RED PASS` / `GREEN ✅` / `TRIANGULATE N cases green` / `REFACTOR green`), `tasks.json` status bump.
+**Handoff disclosure gate (every role and phase transition)** — a report that recommends the
+next role or phase is an artifact, not disposable chat. Persist its exact text at
+`.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md` (or
+`.vibe/handoffs/<feature-slug>-PHASE-<n>.md` for a phase-level handoff), then run:
+```bash
+node scripts/verify-handoff-report.mjs check .vibe/handoffs/<feature-slug>-<task-id>-<gate>.md
+```
+The report must declare exactly one `NOT_REVIEWED:` line: either a concrete omitted surface, or
+`none — <specific reviewed scope>`. Missing, blank, duplicate, or placeholder declarations fail
+closed. On exit `0`, append `{gate, declaration, report_path}` to
+`tasks.json[task].not_reviewed`; on exit `1`, do not transition. This exposes the boundary of
+every evidence claim without letting a role self-certify its substance — the next role and 4R
+review still assess whether the declared boundary is acceptable.
+
+Checkpoint after each gate: 1 line `.vibe/SESSION.md` (`T<id> RED PASS` / `GREEN ✅` / `TRIANGULATE N cases green` / `REFACTOR green`) including the `NOT_REVIEWED` summary and report path, then `tasks.json` status bump. The final Phase 4 handoff follows the same disclosure gate before it offers a commit/push decision.
 
 Parallel: tasks with no `depends_on` overlap → spawn simultaneously (if config B=Y).
 
@@ -263,7 +311,7 @@ runs 4.1-4.8 in full, just with the default (not upgraded) vote counts in 4.4.
 ```bash
 <test_command_with_coverage>
 ```
-Gate: coverage ≥90%, unit/integration/e2e all pass. Any fail → spawn `subagent-chore.md`, re-run.
+Gate: coverage 100% de cada métrica medible (líneas/ramas/funciones), unit/integration/e2e all pass. Any fail → spawn `subagent-chore.md`, re-run. El porcentaje no reemplaza ACs ni revisión adversarial: mide ejecución, no intención.
 
 **Lint/typecheck gate — mechanical detection, three outcomes, never a silent skip:**
 

@@ -53,7 +53,7 @@ mkdir -p ~/.claude/skills/vcp-skills
 cp -r skills/. ~/.claude/skills/vcp-skills/
 
 # Init .vibe/ in your project (run from project root)
-mkdir -p .vibe/sessions
+mkdir -p .vibe/sessions .vibe/receipts .vibe/handoffs
 cp templates/vibe/* .vibe/
 ```
 

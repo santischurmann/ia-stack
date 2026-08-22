@@ -49,7 +49,7 @@ Plan and Build never proceed with one present.
 ## Definition of Done
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
-- [ ] Coverage ≥90%, lint 0, typecheck 0
+- [ ] Coverage 100% for every metric the runner measures (lines/branches/functions), lint 0, typecheck 0
 - [ ] Security clean (security-baseline.md or cyber-neo, Phase 4.3) + adversarial pass (Phase 4.4)
 - [ ] README/CHANGELOG/.vibe updated
 ```
@@ -72,6 +72,19 @@ Plan and Build never proceed with one present.
 ## Execution Order (topological)
 1. T01 — <description>
 2. T02 — <description> (needs T01)
+
+## Write-conflict preflight
+Run `node scripts/verify-plan-conflicts.mjs check docs/tasks.json` before approval.
+
+| Result | Task pair | Shared path | Action |
+|---|---|---|---|
+| CLEAR | — | — | eligible for configured parallel dispatch |
+| SERIALIZED | T01 → T02 | `src/example.ts` | keep topological order; do not dispatch together |
+
+`CONFLICT` is a hard Plan block: two tasks share a declared writer path without a dependency
+route. Split the writes or add the real dependency, then rerun the command. The verifier includes
+`files_to_create`, `files_to_modify`, and `test_files`; declaring a path twice inside the same
+task is not a conflict with itself.
 
 ## Risk Notes
 <skip if CONFIG=coarse> — shared-module touches, external API mocks, etc.
@@ -108,6 +121,7 @@ Plan and Build never proceed with one present.
       "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona)",
       "approval_criteria": "<spec.md AC-id this task closes, verbatim>",
       "evidence": [],
+      "not_reviewed": [],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
@@ -116,7 +130,7 @@ Plan and Build never proceed with one present.
 }
 ```
 
-`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. Full field reference (role/verifier/approval_criteria/evidence/handoff/blocked_reason/rollback): `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
+`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by the preflight. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
 
 ---
 

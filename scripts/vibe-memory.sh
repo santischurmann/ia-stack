@@ -20,7 +20,7 @@ case "$cmd" in
       echo ".vibe/ already exists. Not overwriting."
       exit 0
     fi
-    mkdir -p "$VIBE_DIR/sessions" "$VIBE_DIR/receipts"
+    mkdir -p "$VIBE_DIR/sessions" "$VIBE_DIR/receipts" "$VIBE_DIR/handoffs"
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
     if [ -d "$PACKAGE_DIR/templates/vibe" ]; then
@@ -93,7 +93,13 @@ case "$cmd" in
     TOPIC="${2:-session}"
     ARCHIVE="$VIBE_DIR/sessions/${TODAY}-$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').md"
     cp "$VIBE_DIR/SESSION.md" "$ARCHIVE"
-    echo "# Session — (next)" > "$VIBE_DIR/SESSION.md"
+    cat > "$VIBE_DIR/SESSION.md" <<'EOF'
+# Session — (next)
+
+**Feature slug:** (set before first gate; lowercase kebab-case, e.g. `billing-fix`)
+**Goal:**
+**Status:** in progress
+EOF
     echo "✓ Archived: $ARCHIVE"
     ;;
 

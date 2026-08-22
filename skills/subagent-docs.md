@@ -99,6 +99,7 @@ Documentation updated:
 CHANGELOG: [entry added or "no user-facing changes"]
 .vibe/: SESSION.md updated
 DOCS GATE: COMPLETE
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 ## FORBIDDEN

@@ -7,6 +7,49 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+### Hardening pass 10 (2026-08-22, full measurable coverage gate)
+- **VCP now requires 100% for every coverage metric a stack can actually report.** Lines,
+  branches, and functions must each be full where the runner exposes them; a missing metric is a
+  documented runner limitation, never an assumed pass. The same standard is now carried through
+  Phase 4, the task templates, the Chore role, examples, and the TDD protocol.
+- **The VCP repository enforces its own standard mechanically.**
+  `verify-vcp-coverage.mjs` runs Node's native coverage suite and rejects any `scripts/*.mjs`
+  row below 100% in lines, branches, or functions. Its executable falsifications cover malformed
+  reports, command failures, missing metrics, and each individual metric below threshold.
+
+### Hardening pass 9 (2026-08-21, mechanical plan write-conflict preflight)
+- **Parallel work now proves its write sets are safe before build.**
+  `verify-plan-conflicts.mjs` reads `files_to_create`, `files_to_modify`, and `test_files` from
+  `docs/tasks.json`; two distinct tasks claiming the same normalized project path fail closed
+  unless direct or transitive `depends_on` ordering serializes them. Duplicate ids, unknown or
+  cyclic dependencies, malformed writer declarations, and out-of-project paths also block Plan.
+- **The parallel contract distinguishes authority from file safety.** Atomic task checkout still
+  prevents two owners from claiming one task, while the new preflight prevents two independent
+  tasks from racing on the same file. Executable falsification covers production and test-file
+  conflicts, direct/transitive serialization, separator normalization, duplicate/unknown/cyclic
+  dependencies, malformed fields, and CLI misuse.
+
+### Hardening pass 8 (2026-08-21, explicit handoff review boundaries)
+- **Every advancing handoff declares its review limit.** `verify-handoff-report.mjs` requires
+  exactly one non-placeholder `NOT_REVIEWED` declaration, including a concrete basis when no
+  area was omitted. The exact report is retained in `.vibe/handoffs/` and only a passing gate can
+  add its `{gate, declaration, report_path}` record to `tasks.json.not_reviewed`.
+- **The contract is carried by every role template.** RED, GREEN, TRIANGULATE, REFACTOR, DOCS,
+  CHORE, phase-level handoffs, bootstrap memory, and the task schema now expose the same
+  boundary, so a narrow review cannot be mistaken for an exhaustive one.
+
+### Hardening pass 7 (2026-08-21, feature identity for session resume)
+- **Resume state is feature-bound mechanically.** `scripts/verify-resume-state.mjs` accepts a
+  resume only when `SESSION.md` declares the exact requested lowercase-kebab-case feature slug.
+  Mismatched, legacy, and malformed state fails closed; Phase 0 presents user-owned archive,
+  continue, retag, or inspect choices rather than silently reusing another feature's gate state.
+- **Fresh and archived session templates carry the identity field.** The template, bootstrap
+  instructions, and `vibe-memory.sh archive` preserve the old snapshot and reset the next session
+  to an explicitly unassigned feature identity.
+- **Executable regressions cover the actual failure.** The suite proves `auth-refactor` cannot
+  resume as `billing-fix`, rejects missing/malformed identity and invalid requested slugs, and
+  exercises the Git-Bash archive path.
+
 ### Hardening pass 6 (2026-08-17, research-derived low-risk gates)
 Sourced from a 13-source real multi-agent research pass (`research/source-matrix.md`,
 `research/vcp-improvement-proposal.md`), 5 candidates adopted after adversarial refutation —

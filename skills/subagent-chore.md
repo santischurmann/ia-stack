@@ -81,7 +81,7 @@ jobs:
       - name: Typecheck
         run: <typecheck_command>
       - name: Coverage gate
-        run: # fail if coverage < 90%
+        run: # fail if any measurable coverage metric is < 100%
 ```
 
 Create or update as needed.
@@ -121,10 +121,10 @@ echo "Build complete: $(du -sh dist.zip | cut -f1) — $(cat checksums.txt)"
 ```bash
 <test_command_with_coverage_json>
 # Parse coverage percentage from output
-# Fail if < 90%
+# Fail if any measurable metric is < 100%
 ```
 
-If coverage < 90%:
+If any measurable coverage metric < 100%:
 1. Identify uncovered lines/branches
 2. Report which test types are missing (unit/integration/e2e)
 3. Do NOT write tests yourself — report to orchestrator for RED/GREEN cycle
@@ -143,6 +143,7 @@ Tasks completed:
   [F] zip: dist.zip ([size]), checksums.txt written
   [G] Coverage: [X]% ([pass/FAIL — report issues if fail])
 CHORE GATE: COMPLETE
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 ```
 
 If any task letter could NOT reach its target (e.g. lint errors remain), say so with the

@@ -44,7 +44,7 @@ If you are an AI assistant whose user has shared this repository URL, follow the
 - Orchestrator (any model) under the internal contract (`SKILL.md` § top), `fableultracode` optional upgrade. Subagents = Sonnet 5, effort low by default (config menu, Phase 3).
 - Role-persona subagents, each with a narrow mandate, none certifies its own gate: **Test-Engineer** (RED, failing tests) → **Builder** (GREEN, minimum impl) → **Triangulator** (TRIANGULATE, edge/negative/contract cases derived from real ACs, test-only) → **Refactor-Engineer** (REFACTOR, cleanup) → **Docs** → **Chore**.
 - Hard gate: tests must FAIL before GREEN, mechanically classified (not "any nonzero exit") — a broken runner, syntax error, "no tests found", or arbitrary exit code all reject. Pass before impl exists → blocked, report, stop.
-- Coverage minimum 90%. Stack auto-detect from `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml`.
+- Coverage hard gate: **100% of every metric the stack can measure** (lines, branches and functions where available). Stack auto-detect from `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml`; a runner that cannot measure a metric must state that limitation explicitly, never pretend it is covered.
 - Every phase/gate end: 1 line to `.vibe/SESSION.md` (resume ledger) + matching line to `.vibe/AUDIT.md` (accountability trail).
 - Workflow: `bootstrap → [auto-routing triage] → spec → plan → build → final(verify+simplify+security+adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm)`. Auto-routing can skip Spec/Plan only when understanding/verifying the change needs ≤3 files — never by diff size alone, and never skips the hard gates.
 - Two menu types, both wait for answer: **config** (model/effort/detail, once per phase) and **content** (approve/modify/cancel, per decision).
@@ -133,15 +133,16 @@ Tell Claude what you want to build. It will:
 ```
 PHASE 0  BOOTSTRAP   Internal contract active (+fableultracode upgrade if present). Load .vibe/
                      memory (incl. LESSONS.md, COMPANY.md). Detect stack. Auto-routing triage.
-                     Resume check.
+                     Resume identity gate, then evidence-based resume check.
 PHASE 1  SPEC        Config menu (detail level). docs/spec.md, Gherkin ACs. User approves.
-PHASE 2  PLAN        Config menu (granularity, parallel). docs/plan.md + tasks.json (role/
-                     evidence/approval_criteria/rollback/handoff fields). User approves.
+  PHASE 2  PLAN        Config menu (granularity, parallel). docs/plan.md + tasks.json (role/
+                       evidence/approval_criteria/rollback/handoff fields). `verify-plan-conflicts.mjs`
+                       blocks unsequenced shared writer paths. User approves.
 PHASE 3  BUILD       Config menu (model/effort, default sonnet low). Per task, role-persona
                      subagents: Test-Engineer (RED) → gate → Builder (GREEN) → Triangulator
                      (TRIANGULATE, edge cases from real ACs) → Refactor-Engineer (REFACTOR).
 PHASE 4  FINAL       Orchestrated close-out (+fableultracode upgrade if present):
-  4.1 Verify           Full suite. Coverage ≥90%. Lint 0. Typecheck 0.
+  4.1 Verify           Full suite. Coverage 100% of measurable lines, branches and functions. Lint 0. Typecheck 0.
   4.2 Simplify         Risk-classified (bajo/estandar/alto/critico). Dead code removal. Boy Scout Rule. Tests stay green.
   4.3 Security         security-baseline.md (built-in) or cyber-neo if present — never a no-op.
   4.4 Adversarial      4R (Risk/Readability/Reliability/Resilience). Reviewer count scales with
@@ -164,7 +165,7 @@ Caveman say: test fail first. Then make pass. Then prove edges. Then make clean.
 |------|------|-------------|
 | RED gate | Tests must FAIL before GREEN runs — mechanically classified (broken runner/syntax error/no-tests-found/arbitrary exit all reject, not just "any nonzero exit") | Blocked — report and stop |
 | TRIANGULATE gate | Edge/negative/contract/boundary cases derived from real ACs, all green, before REFACTOR | Failing case → Builder fixes, TRIANGULATE re-runs; decorative case with no justification → rejected |
-| Coverage gate | ≥ 90% lines + branches | Phase 4 blocked until fixed |
+| Coverage gate | 100% of every measurable metric: lines, branches, functions | Phase 4 blocked until fixed |
 | Security gate | security-baseline.md or cyber-neo: no open Critical/High | Fix + re-scan before continuing |
 | Adversarial gate (4R) | No surviving finding across Risk/Readability/Reliability/Resilience, reviewer count scales with risk (never 0) | Fix + re-verify that lens |
 | Replanning gate | Fix >200 lines / 3+ prod-config files / contract-API-dep-schema expansion → pause | Document scope+cause+risk+rollback, 🔵 confirm before continuing |
@@ -177,6 +178,15 @@ Caveman say: test fail first. Then make pass. Then prove edges. Then make clean.
 
 No package installation is required for the verifier regression suite. With Node, PowerShell and
 Git Bash available, run:
+
+```bash
+# VCP itself: executes the full suite and rejects any scripts/*.mjs metric below 100%.
+node scripts/verify-vcp-coverage.mjs
+```
+
+The protocol applies the same 100% measurable-metric standard to projects it builds. Coverage
+alone proves executed control paths, not product correctness; RED, TRIANGULATE, security and 4R
+review remain independent gates.
 
 ```powershell
 node --test tests/*.test.mjs
@@ -193,8 +203,9 @@ destinations, empty/escalated receipts and SHA-256 Git repositories. `tests/ratc
 `FALSIFICACIÓN ·` prove a gate goes red when it must — `grep FALSIFICACIÓN tests/*.test.mjs`
 answers "is this gate actually adversarially tested" in one command (convention adopted from
 `research/sources/protocolo-muralla.md` point #50). Coverage: `node --experimental-test-coverage
---test tests/*.test.mjs` — currently 100% line/branch/function on every `.mjs` gate. See
-`research/protocol-e2e-2026-08-14.md` for the complete disposable-project evidence.
+--test tests/*.test.mjs`. The command's emitted table is the source of truth — never copy a
+percentage into a completion claim without rerunning it; lines and branches must both remain at
+least 90%. See `research/protocol-e2e-2026-08-14.md` for the complete disposable-project evidence.
 
 ---
 
@@ -235,12 +246,13 @@ today's number and forbidding it from rising is what actually holds.
 ├── PROJECT.md      ← project identity, stack, goals
 ├── DECISIONS.md    ← architectural decisions + reasoning (append-only)
 ├── PATTERNS.md     ← how things are done in this project
-├── SESSION.md      ← current session log + gate ledger (resume checkpoint)
+├── SESSION.md      ← current session log + feature slug + gate ledger (resume checkpoint)
 ├── DEBT.md         ← deferred technical debt (incl. security-baseline/cyber-neo Medium/Low findings)
 ├── RETRO.md        ← reflection log per shipped feature, Phase 4.8 (append-only)
 ├── LESSONS.md      ← cross-project error memory, Reflexion-schema, confirm-gated, retire-not-delete
 ├── COMPANY.md      ← org chart, budget policy — AI-company task model (fixed shape, copy don't edit)
 ├── AUDIT.md        ← append-only accountability trail: role, action, evidence, phase/task ref
+├── handoffs/       ← exact role/phase reports with a verified NOT_REVIEWED boundary
 ├── receipts/       ← Phase 4.5 receipts (risk/evidence/tree-fingerprint), verified by scripts/verify-receipt.mjs
 └── sessions/       ← archived session snapshots
 ```
@@ -334,7 +346,8 @@ Said here so nobody discovers it the hard way (convention borrowed from
 - **No test rojo → no implementación.** Hard gate. No override. No exceptions.
 - **Un subagente = una tarea atómica.** Subagents never make architectural decisions.
 - **Orchestrator no codea features.** Only spec / plan / final (verify/simplify/security/adversarial/deploy).
-- **Memoria después de cada gate.** `.vibe/SESSION.md` updated at every gate — killed sessions resume from evidence, not memory.
+- **Memoria después de cada gate.** `.vibe/SESSION.md` updated at every gate — killed sessions first prove the requested feature slug matches, then resume from evidence, not memory.
+- **Los límites de revisión se declaran.** Cada handoff que avanza de rol/fase guarda un `NOT_REVIEWED` verificable; “pass” no significa que alguien revisó más de lo que dice.
 - **Config + content menus.** Config (model/effort/detail) once per phase; content (approve/modify) per decision. Both wait for the user.
 - **Security and adversarial review are gates, not suggestions.** Phase 4 doesn't close with an open Critical/High finding or a surviving adversarial refute.
 

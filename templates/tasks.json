@@ -2,7 +2,7 @@
   "feature": "<feature-name>",
   "spec": "docs/spec.md",
   "created": "YYYY-MM-DD",
-  "_schema_note": "Every field below is read/written by the orchestrator with Read/Write — no external task-tracker, no server. status lifecycle: pending->red->green->triangulate->refactor->done (or blocked). role/verifier/approval_criteria/rollback/handoff/blocked_reason are the minimal operable AI-company task model (SKILL.md rule: labels alone don't count) — see orchestrator-opus.md § MINIMAL AI-COMPANY TASK MODEL for the full protocol these fields plug into.",
+  "_schema_note": "Every field below is read/written by the orchestrator with Read/Write — no external task-tracker, no server. Before plan approval, run node scripts/verify-plan-conflicts.mjs check docs/tasks.json: files_to_create + files_to_modify + test_files are the complete writer set, and a shared path needs a direct/transitive depends_on route. status lifecycle: pending->red->green->triangulate->refactor->done (or blocked). role/verifier/approval_criteria/rollback/handoff/blocked_reason are the minimal operable AI-company task model (SKILL.md rule: labels alone don't count) — see orchestrator-opus.md § MINIMAL AI-COMPANY TASK MODEL for the full protocol these fields plug into.",
   "tasks": [
     {
       "id": "T01",
@@ -21,6 +21,7 @@
       "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
       "approval_criteria": "<spec.md AC-id this task closes, verbatim, e.g. 'AC-2: rejects empty input'>",
       "evidence": [],
+      "not_reviewed": [],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE, derives edge cases from approval_criteria) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
@@ -42,6 +43,7 @@
       "verifier": "scripts/verify-red.sh|.ps1 (mechanical)",
       "approval_criteria": "<spec.md AC-id>",
       "evidence": [],
+      "not_reviewed": [],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
@@ -63,6 +65,7 @@
       "verifier": "scripts/verify-red.sh|.ps1 (mechanical)",
       "approval_criteria": "<spec.md AC-id>",
       "evidence": [],
+      "not_reviewed": [],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null

@@ -41,6 +41,7 @@ name pasted on top of the old schema:
 | `verifier` | the mechanical check that certifies this task's current gate — **never** the role that wrote the artifact being checked | fixed per task type (script/test-runner), never a persona self-certifying |
 | `approval_criteria` | the spec.md AC-id this task closes, verbatim | Planner, at Phase 2 plan generation |
 | `evidence` | array of `{gate, command, output_tail, timestamp}`, one entry per gate passed | orchestrator, appended on each `STATUS: pass` with real `EVIDENCE` (§ below) |
+| `not_reviewed` | array of `{gate, declaration, report_path}`, one explicit review boundary per accepted handoff | orchestrator, only after `verify-handoff-report.mjs check` exits 0 |
 | `handoff` | mechanical next step on gate pass — which role spawns next, doing what | fixed per task type, read not improvised |
 | `blocked_reason` | `null`, or why (failed gate 3x, budget hit, ambiguity) | orchestrator, on hard-stop (§ AI COMPANY LAYER budget policy) |
 | `rollback` | `git revert <sha>` once this task's commit lands — how to undo *this task specifically* if it needs reverting later | orchestrator, filled after 4.6 commit, per-task not per-feature |
@@ -99,13 +100,18 @@ transition programmatically instead of reading free text:
 ```
 STATUS: pass | fail | blocked
 EVIDENCE: <exact command run + exact output tail, e.g. "pytest -q -> 3 failed, 0 passed">
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 CONFIDENCE: high | medium | low   # only for adversarial/security roles, omit otherwise
 NOTES: <1-2 lines, only if STATUS != pass>
 ```
 
 `STATUS: pass` without a matching `EVIDENCE` line (an actual command output, not "tests should
 pass now") is treated as `STATUS: blocked` by the orchestrator — self-reported success without
-proof doesn't gate anything (see "trust what's derived, not narrated" — SKILL.md § LAWS).
+proof doesn't gate anything (see "trust what's derived, not narrated" — SKILL.md § LAWS). A
+handoff missing a valid `NOT_REVIEWED` declaration is also blocked: persist the exact report as
+`.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md`, run
+`node scripts/verify-handoff-report.mjs check <report>`, and append its
+declaration plus path to `tasks.json[task].not_reviewed` only after exit `0`.
 
 ---
 
@@ -157,6 +163,7 @@ Spec: [read docs/spec.md]
 ## OUTPUT FORMAT (end your report with this block)
 STATUS: pass | fail | blocked
 EVIDENCE: <exact command + exact output tail>
+NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
 NOTES: <only if STATUS != pass>
 """
 )
@@ -179,9 +186,10 @@ Task T01:
   4. GREEN pass → spawn TRIANGULATE → wait → verify derived cases
      4a. Case fails → handoff to Builder for minimal fix → re-run TRIANGULATE (loop until all green)
   5. TRIANGULATE pass (all derived cases green) → spawn REFACTOR → wait → verify still pass (full suite)
-  6. Spawn DOCS → wait → confirm .vibe/ updated
-  7. .vibe/SESSION.md += 1 line per gate (resume ledger); .vibe/AUDIT.md += matching line (role|action|evidence|ref)
-  8. tasks.json: T01 status → done (pending→red→green→triangulate→refactor→done), owner cleared, locked → false
+  6. Persist the terminal report to .vibe/handoffs/<feature-slug>-T01-<gate>.md → verify-handoff-report exit 0 → append `{gate,declaration,report_path}` to `not_reviewed`
+  7. Spawn DOCS → wait → confirm .vibe/ updated
+  8. .vibe/SESSION.md += 1 line per gate (resume ledger, including NOT_REVIEWED summary/path); .vibe/AUDIT.md += matching line (role|action|evidence|ref)
+  9. tasks.json: T01 status → done (pending→red→green→triangulate→refactor→done), owner cleared, locked → false
 ```
 
 ---
@@ -190,7 +198,7 @@ Task T01:
 
 **Sequential, always:** RED → GREEN → TRIANGULATE (incl. its Builder-fix loop) → REFACTOR within one task.
 
-**Parallel, if Phase 2 CONFIG allowed it:** tasks with no `depends_on` overlap spawn simultaneously. T01 + T03 no overlap → both RED subagents at once. Atomic checkout (§ AI COMPANY LAYER) is what makes this safe — check `locked` before spawning, never spawn against a task already claimed.
+**Parallel, if Phase 2 CONFIG allowed it:** run `node scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
 
 **CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 4.1/4.3 for fixes.
 
@@ -204,7 +212,7 @@ Task T01:
 | GREEN fails (still red) | Read error. Orchestrator can fix → respawn GREEN w/ diagnosis. Can't → ask user. |
 | TRIANGULATE finds a failing derived case | Not a failure of TRIANGULATE — expected. Handoff to Builder for minimal fix, re-run TRIANGULATE (full case set, regression check). |
 | TRIANGULATE case has no `derived from` justification | Reject the case, do not write it — decorative coverage is forbidden. |
-| Coverage < 90% (Phase 4.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
+| Any measurable coverage metric < 100% (Phase 4.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
 | Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
 | security-baseline.md/cyber-neo finds Critical/High (Phase 4.3) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
 | 4R adversarial finding survives its tier's review (Phase 4.4) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
@@ -217,11 +225,12 @@ Task T01:
 
 ## RESUME AFTER RESTART / COMPACTION
 
-1. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
-2. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
-3. `git diff` its test files — changed since RED = violation, stop, report.
-4. Continue sequencing from detected step. Gate rules: `skills/caveman-tdd.md`.
-5. If restart lands inside Phase 4 (Final) — re-check which of 4.1-4.8 last completed via `SESSION.md`, resume from next.
+1. Establish the requested lowercase-kebab-case feature slug and run `node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 0 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
+2. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
+3. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
+4. `git diff` its test files — changed since RED = violation, stop, report.
+5. Continue sequencing from detected step. Gate rules: `skills/caveman-tdd.md`.
+6. If restart lands inside Phase 4 (Final) — re-check which of 4.1-4.8 last completed via `SESSION.md`, resume from next.
 
 ---
 
@@ -232,10 +241,11 @@ Task T01:
 - [ ] GREEN report: pass shown
 - [ ] TRIANGULATE report: derived cases listed with `derived from`, all green, evidence recorded
 - [ ] REFACTOR report: still green (full suite incl. TRIANGULATE cases)
+- [ ] Every accepted handoff passed `verify-handoff-report.mjs`; its concrete review boundary is in `tasks.json.not_reviewed`
 - [ ] No regressions full suite
 
 ### Phase 4 FINAL:
-- [ ] 4.1 coverage ≥90%; lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
+- [ ] 4.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
 - [ ] 4.2 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify
 - [ ] 4.3 security-baseline.md/cyber-neo clean (no open Critical/High)
 - [ ] 4.4 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 4.4.1 replanning threshold got 🔵 confirm before continuing

@@ -112,3 +112,36 @@ esta pasada corrige de la anterior.
 - Siguiente acción mínima para subir las 10 restantes: pasadas adicionales focalizadas por
   chunks con presupuesto explícito, registrando por archivo funciones, entradas, efectos, tests
   y conclusión de aplicabilidad a VCP.
+
+---
+
+## Ronda 2 (2026-08-21) — 10 fuentes nuevas del segundo encargo del usuario
+
+Lote separado, no forma parte de las 13 originales de arriba. `protocolo` (nahuelangeles) ya
+tenía su propio análisis exhaustivo previo (`sources/protocolo-muralla.md`, 27 mejoras
+adoptadas en v1.3.0) — no se re-investigó acá. Los otros 9 son nuevos. **Corrección aplicada**:
+una primera pasada declaró "10/10 completos" incorrectamente — corregido a estados honestos
+PARCIAL/EXHAUSTIVA por evidencia real de `files_read/files_total`, ver
+`research/sources/multi-repo-2026-08-21.md` para el detalle completo (cobertura por ronda,
+verificación adversarial, candidatos con score corregido).
+
+| # | Fuente | SHA/pin | Cobertura | Estado |
+|---|---|---|---|---|
+| 14 | [protocolo-muralla](sources/protocolo-muralla.md) | `5a04aeede0c2ef47aaf76e583e50740cf18a9144` | 15/15 archivos (100%) | **EXHAUSTIVA** — ya aplicada, 27 mejoras en v1.3.0 |
+| 15 | [caveman](sources/caveman.md) | `a42ef766cedef6160407418a359a52939b2d20b9` | 19/1416 (1.3%) | PARCIAL — resto es motor Go de compresión, confirmado sin overlap |
+| 16 | [superpowers](sources/superpowers.md) | `b36e0829c6d0140e93cfef2ca599b1b07d4a7797` | 55/195 (28%) | PARCIAL — `docs/superpowers/` (34/34) cerrado al 100% en ronda 3; resto sin overlap esperado |
+| 17 | [i-have-adhd](sources/i-have-adhd.md) | `e7555fcaf612dfa1739dc86610ea926a906db614` | ~45/57 (79%) | PARCIAL — total corregido (era 52), LICENSE sin justificar |
+| 18 | [omniroute](sources/omniroute.md) | `cbf23772ec2d9842420ff454f599b1a5a2884602` | 21/12445 (0.17%) | PARCIAL — deliberadamente permanente, código de producto confirmado sin overlap |
+| 19 | [reverse-skill](sources/reverse-skill.md) | `a3bdfffcf2e6a611a1cbdcc9a312be44527ac043` | 29/572 (5%) | PARCIAL — resto es referencia de dominio de seguridad |
+| 20 | [book-to-skill](sources/book-to-skill.md) | `3a97a7115ab3c82edf47f315b544fbcefdd8559c` | ~19/85 (22%) | PARCIAL — total corregido (era 51) |
+| 21 | [airllm](sources/airllm.md) | `8e456235884821f3bfcba9c9f3f1671d10290ad5` | 86/90 (96%) | PARCIAL — total corregido (era 86), ya no EXHAUSTIVA |
+| 22 | [jcode](sources/jcode.md) | commit `bfaca427d53ca8e0c9a39fe603eb5c613a5305c1` + SHA-256 tarball `d9dc8d20ff87f4e68a59dac6769b40de1964363cdbbb1ac691447f553f9ccbbe` | 73/1930 (3.8%) | PARCIAL — `docs/*.md` (62/62) cerrado al 100% en ronda 3; resto es motor Rust/app iOS/infra |
+| 23 | [mattpocock-skills](sources/mattpocock-skills.md) | `0ab1b63a410a03d3627979a109c8695de27af954` | 104/159 (65%) | PARCIAL, mayoría cubierta |
+
+**Total ronda 2, ledger cerrado: 431/16.949 archivos (2.5%), 78 candidatos, 100% con veredicto
+final de 1 de 5 estados permitidos** (24 VALIDADO + 23 YA_CUBIERTO + 24 RECHAZADO +
+6 CONFLICTO_DE_DISEÑO + 1 EVIDENCIA_INSUFICIENTE = 78, verificado mecánicamente,
+`node -e` exit 0). **Ningún repo de esta ronda queda EXHAUSTIVA.** Objetivo de 100
+candidatos/top-50: **no alcanzado** — 78 candidatos reales (no 100), 24 VALIDADO reales (no 50).
+Ver `sources/multi-repo-2026-08-21.md` § "LEDGER ÚNICO" para el detalle completo con file:line
+por candidato.

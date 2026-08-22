@@ -19,12 +19,14 @@ gate-state recall across compaction/restart — never a replacement for the file
 ├── PROJECT.md      # Project identity, stack, goals (stable)
 ├── DECISIONS.md    # Architectural decisions + reasoning (append-only)
 ├── PATTERNS.md     # How things are done in this project (living doc)
-├── SESSION.md      # Current session log (reset each session)
+├── SESSION.md      # Current session log + declared feature identity (reset each session)
 ├── DEBT.md         # Technical debt backlog (managed)
 ├── RETRO.md        # Reflection log per shipped feature, Phase 4.8 (append-only)
 ├── LESSONS.md      # Cross-project error memory — Reflexion-schema, confirm-gated, retire not delete
 ├── COMPANY.md      # Org chart, budget policy, goal ancestry note — paperclip-style AI company layer
 ├── AUDIT.md        # Append-only accountability trail: role, action, evidence, phase/task ref
+├── handoffs/
+│   └── <feature-slug>-<task-id>-<gate>.md   # Exact report + review boundary, no cross-feature overwrite
 ├── receipts/
 │   └── <feature-slug>-<fecha>.json   # Phase 4.5 risk/adversarial/coverage receipt
 └── sessions/
@@ -38,7 +40,7 @@ gate-state recall across compaction/restart — never a replacement for the file
 ### If .vibe/ does not exist:
 
 ```bash
-mkdir -p .vibe/sessions .vibe/receipts
+mkdir -p .vibe/sessions .vibe/receipts .vibe/handoffs
 cat > .vibe/PROJECT.md << 'EOF'
 # Project Memory
 **Name:** (fill in)
@@ -53,6 +55,7 @@ cp templates/vibe/COMPANY.md .vibe/COMPANY.md   # org chart is fixed shape, not 
 
 cat > .vibe/SESSION.md << 'EOF'
 # Session — YYYY-MM-DD
+**Feature slug:** (set before first gate; lowercase kebab-case, e.g. `billing-fix`)
 **Goal:**
 **Status:** in progress
 EOF
@@ -83,6 +86,8 @@ Show user a 3-5 line summary of what the memory contains.
 | Choosing between two approaches | `DECISIONS.md` | Decision + reasoning + tradeoffs considered |
 | Discovering how the project does X | `PATTERNS.md` | Pattern name + example + when to apply |
 | Completing a phase | `SESSION.md` | Phase, what was done, output, issues |
+| Starting a feature (before its first gate) | `SESSION.md` | Set the single `**Feature slug:** <lowercase-kebab-case>` declaration |
+| Role/phase handoff that recommends advancing | `handoffs/<feature-slug>-<task-id>-<gate>.md` | Exact report with one `NOT_REVIEWED:` declaration; run `verify-handoff-report.mjs` before transition |
 | Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
 | Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
@@ -256,9 +261,23 @@ la decisión en prosa; nunca el código fuente ni la lógica de licencia.
 Si `mem_context`/`mem_search` de Engram están disponibles, llamalos primero como señal
 adicional — nunca como reemplazo del re-detect por evidencia de abajo.
 
-`SESSION.md` is the checkpoint ledger. Read it bottom-up: the last gate line is the last
-verified state. Cross-check against `docs/tasks.json` `status` fields, then re-detect the
-current phase with evidence (run the task's tests) — never from memory. Full protocol:
+`SESSION.md` is the checkpoint ledger, but it is usable only for the feature it declares. If it
+contains unfinished work or `docs/tasks.json` has a non-`done` task, establish the requested
+lowercase-kebab-case feature slug and run:
+
+```bash
+node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+```
+
+Only exit `0` permits reading the ledger bottom-up. Exit `1` is a fail-closed identity conflict:
+never resume it silently. Present the Phase 0 🔵 menu in `SKILL.md` (archive cleanly, continue its
+declared feature, explicitly retag with a recorded user reason, or inspect). A legacy/malformed
+session has `UNKNOWN` identity and gets its own assign/archive/inspect menu. After the user
+chooses, re-run this command; do not proceed until it exits `0`.
+
+On a fresh session, write `**Feature slug:** <feature-slug>` before the first gate. Then read the
+last gate line, cross-check `docs/tasks.json` status fields, and re-detect the current phase with
+evidence (run the task's tests) — never from memory. Full evidence protocol:
 `skills/caveman-tdd.md` → RESUME AFTER COMPACTION / RESTART.
 
 ---
@@ -269,8 +288,13 @@ current phase with evidence (run the task's tests) — never from memory. Full p
 SESSION_FILE=".vibe/sessions/$(date +%Y-%m-%d)-$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').md"
 cp .vibe/SESSION.md "$SESSION_FILE"
 echo "Archived session to $SESSION_FILE"
-# Reset SESSION.md for next time
-echo "# Session — (next session date)" > .vibe/SESSION.md
+# Reset SESSION.md for next time (the placeholder is not a valid identity)
+cat > .vibe/SESSION.md << 'EOF'
+# Session — (next session date)
+**Feature slug:** (set before first gate; lowercase kebab-case, e.g. `billing-fix`)
+**Goal:**
+**Status:** in progress
+EOF
 ```
 
 ---

@@ -59,7 +59,7 @@ Registered users who need to authenticate to access protected routes.
 ## Definition of Done (DoD)
 
 - [ ] All 6 ACs: unit + integration + e2e tests
-- [ ] Coverage ≥ 90%
+- [ ] Coverage 100% for every metric the runner measures (lines/branches/functions)
 - [ ] Lint: 0 errors | Typecheck: 0 errors
 - [ ] JWT_SECRET never appears in logs or responses
 - [ ] CHANGELOG entry added

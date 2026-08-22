@@ -19,7 +19,7 @@ allowed-tools: Read, Bash
 3. **TRIANGULATE before REFACTOR.** No cleanup on code that only proves the happy path.
 4. **REFACTOR before DOCS.** Document the clean version.
 
-**Hard gate #5, same rank: coverage ≥ 90% before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
+**Hard gate #5, same rank: coverage 100% de cada métrica medible before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
 
 **Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 4 Final, full DoD), `skills/subagent-{red,green,triangulate,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
 
@@ -52,9 +52,10 @@ eyeball step anymore.
 
 ## RESUME AFTER COMPACTION / RESTART
 
-1. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
-2. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
-3. `git diff` test files. Changed since RED = violation → stop, report.
+1. Establish the requested lowercase-kebab-case feature slug, then run `node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 0 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
+2. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
+3. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
+4. `git diff` test files. Changed since RED = violation → stop, report.
 
 ---
 
@@ -127,25 +128,26 @@ These are common excuses to skip RED gate. All rejected.
 
 ## COVERAGE GATE
 
-Minimum: **90%** (lines + branches)
+Required: **100% of every metric the runner can measure** (lines + branches + functions when available). A tool that cannot expose a metric must name that limitation in the evidence; it never becomes an assumed pass.
 
 ```bash
 # Node/TS — vitest (don't hide stderr — failures stay visible)
 npx vitest run --coverage --coverage.reporter=json-summary
 node -e "
   const d = JSON.parse(require('fs').readFileSync('coverage/coverage-summary.json','utf8'));
-  const pct = d.total.lines.pct;
-  console.log('Coverage:', pct + '%');
-  process.exit(pct >= 90 ? 0 : 1);
+  const metrics = ['lines', 'branches', 'functions'];
+  const failures = metrics.filter((name) => d.total[name] && d.total[name].pct !== 100);
+  console.log('Coverage:', Object.fromEntries(metrics.map((name) => [name, d.total[name]?.pct ?? 'not-measured'])));
+  process.exit(failures.length === 0 ? 0 : 1);
 "
 
 # Python — pytest-cov
-pytest --cov --cov-fail-under=90 2>&1 | tail -5
+pytest --cov --cov-branch --cov-fail-under=100 2>&1 | tail -5
 
 # Go
 go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | grep total
 ```
 
-If coverage < 90%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
+If any measurable coverage metric < 100%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
 
 Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + security clean (security-baseline.md or cyber-neo, whichever is present) + adversarial pass.
