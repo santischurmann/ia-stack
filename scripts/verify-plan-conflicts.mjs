@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { posix } from 'node:path';
 
 const USAGE = 'usage: node scripts/verify-plan-conflicts.mjs check <tasks.json>';
 const WRITE_FIELDS = ['files_to_create', 'files_to_modify', 'test_files'];
@@ -13,11 +14,13 @@ function normalizePath(value, taskId, field) {
     throw new Error(`${taskId}.${field} contains an empty or non-string path`);
   }
 
-  const normalized = value.trim().replaceAll('\\', '/').replace(/^(\.\/)+/, '').replace(/\/{2,}/g, '/');
-  if (normalized === '' || normalized.startsWith('/') || /^[a-zA-Z]:\//.test(normalized) || normalized === '..' || normalized.startsWith('../')) {
+  const input = value.trim().replaceAll('\\', '/').replace(/^(\.\/)+/, '').replace(/\/{2,}/g, '/');
+  const normalized = posix.normalize(input);
+  if (normalized === '' || normalized === '.' || normalized.startsWith('/') || /^[a-zA-Z]:\//.test(normalized) || normalized === '..' || normalized.startsWith('../')) {
     throw new Error(`${taskId}.${field} contains a non-project path: ${value}`);
   }
-  return normalized;
+  // Case-fold everywhere: a false serialization is safe; a case-only missed overlap is not.
+  return normalized.toLowerCase();
 }
 
 function validatePlan(plan) {

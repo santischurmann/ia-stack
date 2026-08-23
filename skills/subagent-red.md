@@ -90,7 +90,7 @@ Valid evidence here is TWO separate facts, both stated, never merged into a fals
   - **Static AC coverage**: `grep -c "test(" <file>` (or equivalent) == number of ACs in
     `docs/spec.md` — count tests written, don't count them as "failed".
   - **RED gate classification**: the missing-module/import error, exactly as
-    `scripts/verify-red.sh`/`.ps1` classifies it (mechanical, not narrated).
+    `.vibe/vcp-runtime/scripts/verify-red.sh`/`.ps1` classifies it (mechanical, not narrated).
 
 **(b) SUT exists (stub/partial) — real per-test assertion failures.** Each `test()` actually
 runs and its own assertion fails independently. Here the runner's fail-count IS a true
@@ -110,7 +110,7 @@ Failure output:
 <paste first 30 lines of test runner output>
 RED GATE: PASS —
   shape (a): N tests written (static count), SUT not present, runner reports 1 file-level
-             failure (expected — see scripts/verify-red.sh classification above)
+             failure (expected — see the Node-native RED adapter classification above)
   shape (b): [M] of [N] tests failing on real assertions, as reported by the runner
 Ready for GREEN.
 NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">

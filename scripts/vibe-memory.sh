@@ -91,8 +91,18 @@ case "$cmd" in
 
   archive)
     TOPIC="${2:-session}"
-    ARCHIVE="$VIBE_DIR/sessions/${TODAY}-$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').md"
-    cp "$VIBE_DIR/SESSION.md" "$ARCHIVE"
+    STEM="$VIBE_DIR/sessions/${TODAY}-$(echo "$TOPIC" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')"
+    ARCHIVE="$STEM.md"
+    NUMBER=2
+    while [ -e "$ARCHIVE" ]; do
+      ARCHIVE="$STEM-$NUMBER.md"
+      NUMBER=$((NUMBER + 1))
+    done
+    # noclobber makes a racing archive fail rather than silently overwriting evidence.
+    (set -C; cat "$VIBE_DIR/SESSION.md" > "$ARCHIVE") || {
+      echo "Refused: archive target already exists: $ARCHIVE" >&2
+      exit 1
+    }
     cat > "$VIBE_DIR/SESSION.md" <<'EOF'
 # Session — (next)
 

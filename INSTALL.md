@@ -1,97 +1,87 @@
-# Installation Guide / Guía de instalación
+# Instalar VibeCodeProtocols
 
-## Requirements / Requisitos
+Necesitás Claude Code, Git y Node. Bash o PowerShell se usan sólo para el instalador y las
+entradas de RED; el runtime no instala dependencias globales.
 
-- Claude Code (Desktop or CLI) — any recent version
-- Git (for clone method)
-- bash or PowerShell (for install scripts)
-- No other runtime dependencies — `.vibe/` memory is plain Markdown
+## Instalación recomendada
 
----
-
-## Method 1 — Git clone (recommended)
+Cloná VCP y apuntá al proyecto donde lo vas a usar:
 
 ```bash
-# Clone the package
 git clone <repo-url> vibecodeprotocols
 cd vibecodeprotocols
-
-# Install (macOS/Linux/WSL)
-chmod +x scripts/install.sh
-./scripts/install.sh
-
-# Install (Windows PowerShell)
-.\scripts\install.ps1
+./scripts/install.sh --project /ruta/a/mi-proyecto
 ```
 
-Optional: specify a custom install directory:
+Windows PowerShell:
+
+```powershell
+git clone <repo-url> vibecodeprotocols
+cd vibecodeprotocols
+.\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto
+```
+
+El instalador hace dos copias distintas:
+
+1. El skill y sus sub-skills en `~/.claude/skills/`, para que Claude Code lo vea.
+2. Un runtime autocontenido en `<proyecto>/.vibe/vcp-runtime/`, para que cada comando y template
+   exista dentro del proyecto que lo usa.
+
+No se inicializa `.vibe/` por accidente en el clone de VCP: tenés que pasar el proyecto de forma
+explícita.
+
+## Después
+
+1. Reiniciá Claude Code.
+2. Abrí el proyecto destino.
+3. Invocá `/VibeCodeProtocols`.
+
+Los comandos de protocolo se ejecutan desde el proyecto:
+
 ```bash
-./scripts/install.sh ~/.claude/skills/my-skills
+node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
+.vibe/vcp-runtime/scripts/vibe-memory.sh read
 ```
 
----
+En PowerShell usá los `.mjs` con `node`; el instalador de PowerShell crea el runtime igual que el
+de Bash.
 
-## Method 2 — Download zip
-
-1. Download `vibecodeprotocols-<version>.zip`
-2. Extract: `unzip vibecodeprotocols-<version>.zip`
-3. Enter directory: `cd vibecodeprotocols`
-4. Run installer (see Method 1 commands above)
-
----
-
-## Method 3 — Manual copy
-
-If scripts don't work on your system:
+## Opciones
 
 ```bash
-# Copy master skill
-cp SKILL.md ~/.claude/skills/VibeCodeProtocols.md
-
-# Copy sub-skills
-mkdir -p ~/.claude/skills/vcp-skills
-cp -r skills/. ~/.claude/skills/vcp-skills/
-
-# Init .vibe/ in your project (run from project root)
-mkdir -p .vibe/sessions .vibe/receipts .vibe/handoffs
-cp templates/vibe/* .vibe/
+./scripts/install.sh \
+  --target-dir /ruta/a/skills \
+  --runtime-dir /ruta/a/runtime-global \
+  --project /ruta/a/proyecto
 ```
 
----
+```powershell
+.\scripts\install.ps1 `
+  -TargetDir C:\ruta\skills `
+  -RuntimeDir C:\ruta\runtime-global `
+  -ProjectDir C:\ruta\proyecto
+```
 
-## Post-install
+`--runtime-dir`/`-RuntimeDir` guarda además una copia global de referencia. El runtime que usa el
+proyecto es siempre `.vibe/vcp-runtime`; no depende de esa ruta global.
 
-1. **Restart Claude Code** — skills load at startup
-2. **Verify** — in Claude Code, type `/` and look for `VibeCodeProtocols` in the list
-3. **Initialize memory** — run from your project root:
-   ```bash
-   ./scripts/vibe-memory.sh init
-   ```
-   Or let VibeCodeProtocols create `.vibe/` automatically on first use.
+## Problemas comunes
 
----
+- **El skill no aparece:** reiniciá Claude Code y verificá
+  `~/.claude/skills/VibeCodeProtocols.md`.
+- **Un comando dice “file not found”:** ejecutalo desde el proyecto y usá
+  `.vibe/vcp-runtime/scripts/...`, no `./scripts/...`.
+- **RED rechaza mi comando:** el adapter incluido acepta sólo `node --test` con un archivo de
+  test literal. Es intencional: otro runner necesita un adapter probado.
+- **No hay `.vibe/`:** volvé a correr el instalador con `--project`/`-ProjectDir`; no copies
+  archivos sueltos.
 
-## Uninstall
+## Desinstalar
+
+Podés borrar el skill y el runtime global. Conservá `.vibe/` del proyecto: ahí quedan sus
+decisiones y evidencia.
 
 ```bash
 rm ~/.claude/skills/VibeCodeProtocols.md
-rm -rf ~/.claude/skills/vcp-skills/
-rm -rf ~/.claude/vcp-scripts/
-# Keep .vibe/ in your project — it contains project memory
+rm -rf ~/.claude/skills/vcp-skills ~/.claude/vcp-runtime
 ```
-
----
-
-## Troubleshooting
-
-**Skill not appearing in `/` menu:**
-- Restart Claude Code completely
-- Check that `VibeCodeProtocols.md` is in `~/.claude/skills/` (not a subdirectory)
-
-**Sub-skills not found:**
-- Verify `~/.claude/skills/vcp-skills/` contains all 10 `.md` files
-- The orchestrator reads them via `Read` tool — path must be accessible
-
-**`.vibe/` init failed:**
-- Run `./scripts/vibe-memory.sh init` from your project root
-- Or manually: `mkdir -p .vibe/sessions && cp templates/vibe/* .vibe/`

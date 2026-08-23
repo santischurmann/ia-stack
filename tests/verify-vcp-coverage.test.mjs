@@ -6,7 +6,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const coverageGate = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
-const { evaluateCoverageRun, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
+const { evaluateCoverageRun, listMjsScripts, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
 
 const perfectCoverage = `
 ℹ  verify-example.mjs | 100.00 | 100.00 | 100.00 |
@@ -15,6 +15,12 @@ const perfectCoverage = `
 
 function fakeResult({ status = 0, stdout = perfectCoverage, stderr = '', error } = {}) {
   return { status, stdout, stderr, error };
+}
+
+function currentPerfectCoverage(overrides = {}) {
+  return listMjsScripts(repoRoot)
+    .map((file) => `ℹ  ${file} | ${overrides[file] ?? '100.00'} | 100.00 | 100.00 |`)
+    .join('\n');
 }
 
 test('parses every script row from Node native coverage output', () => {
@@ -55,6 +61,18 @@ test('FALSIFICACIÓN · rejects missing coverage rows and a failed coverage comm
   assert.match(launchFailure.message, /could not launch/i);
 });
 
+test('FALSIFICACIÓN · rejects a new or omitted Node script even when every reported row is 100%', () => {
+  const result = evaluateCoverageRun(fakeResult({ stdout: 'ℹ  verified.mjs | 100.00 | 100.00 | 100.00 |' }), ['verified.mjs', 'new-uncovered.mjs']);
+  assert.equal(result.ok, false);
+  assert.match(result.message, /new-uncovered\.mjs/);
+});
+
+test('accepts a complete report even when no explicit inventory was supplied', () => {
+  const result = evaluateCoverageRun(fakeResult());
+  assert.equal(result.ok, true);
+  assert.match(result.message, /2 expected Node script/u);
+});
+
 test('runCoverage invokes Node native coverage from the supplied project root', () => {
   let received;
   const result = runCoverage((node, args, options) => {
@@ -64,30 +82,42 @@ test('runCoverage invokes Node native coverage from the supplied project root', 
 
   assert.equal(result.status, 0);
   assert.equal(received.node, process.execPath);
-  assert.deepEqual(received.args, ['--experimental-test-coverage', '--test']);
+  assert.deepEqual(received.args, ['--experimental-test-coverage', '--test', '--test-concurrency=32']);
   assert.equal(received.options.cwd, 'C:/fixture/vcp');
   assert.equal(received.options.encoding, 'utf8');
+});
+
+test('listMjsScripts includes only executable Node files from its explicit inventory', () => {
+  const entries = [
+    { name: 'good.mjs', isFile: () => true }, { name: 'skip.js', isFile: () => true }, { name: 'folder.mjs', isFile: () => false },
+  ];
+  assert.deepEqual(listMjsScripts('C:/fixture', () => entries), ['good.mjs']);
 });
 
 test('main reports both the pass result and a failure without trusting narration', () => {
   const output = [];
   const errors = [];
-  const pass = main([], () => fakeResult(), (line) => output.push(line), (line) => errors.push(line));
+  const pass = main([], () => fakeResult({ stdout: currentPerfectCoverage() }), (line) => output.push(line), (line) => errors.push(line));
   assert.equal(pass, 0);
   assert.match(output.join('\n'), /OK:.*100%/i);
   assert.deepEqual(errors, []);
 
-  const fail = main([], () => fakeResult({ stdout: 'ℹ  x.mjs | 99.00 | 100.00 | 100.00 |' }), (line) => output.push(line), (line) => errors.push(line));
+  const lowFile = listMjsScripts(repoRoot)[0];
+  const fail = main([], () => fakeResult({ stdout: currentPerfectCoverage({ [lowFile]: '99.00' }) }), (line) => output.push(line), (line) => errors.push(line));
   assert.equal(fail, 1);
-  assert.match(errors.join('\n'), /x\.mjs.*lines 99\.00/i);
+  assert.match(errors.join('\n'), new RegExp(`${lowFile.replace('.', '\\.')}: lines 99\\.00`, 'i'));
 
-  const usage = main(['unexpected'], () => fakeResult(), (line) => output.push(line), (line) => errors.push(line));
+  const usage = main(['unexpected'], () => fakeResult({ stdout: currentPerfectCoverage() }), (line) => output.push(line), (line) => errors.push(line));
   assert.equal(usage, 2);
   assert.match(errors.join('\n'), /usage:/i);
 
   const silentFailure = main([], () => fakeResult({ status: 1, stdout: '', stderr: '' }), (line) => output.push(line), (line) => errors.push(line));
   assert.equal(silentFailure, 1);
   assert.match(errors.join('\n'), /exited 1/i);
+
+  const inventoryFailure = main([], () => fakeResult({ stdout: currentPerfectCoverage() }), (line) => output.push(line), (line) => errors.push(line), join(repoRoot, 'missing-root'));
+  assert.equal(inventoryFailure, 1);
+  assert.match(errors.at(-1), /Unable to inventory/);
 });
 
 test('CLI usage is fast and rejects arguments without launching the coverage suite', () => {

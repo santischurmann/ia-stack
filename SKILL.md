@@ -73,7 +73,7 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 
    Run the mechanical identity gate first:
    ```bash
-   node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+   node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
    ```
    Exit `0` is the only identity result that may resume: then re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Exit `1` means **never resume silently**; show exactly the matching 🔵 choice below, wait for the user, make only the approved change, then re-run the gate before any resume:
    ```
@@ -173,7 +173,7 @@ Generate `docs/plan.md` + `docs/tasks.json` — template: `skills/spec-plan-temp
 
 **Preflight de conflictos (gate mecánico, antes de pedir aprobación):**
 ```bash
-node scripts/verify-plan-conflicts.mjs check docs/tasks.json
+node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 ```
 El gate usa como writers los tres campos declarados por tarea: `files_to_create`,
 `files_to_modify` y `test_files`. Dos tareas que declaran el mismo path sólo pasan si existe
@@ -210,21 +210,19 @@ to certify what" boundary): **Test-Engineer** writes failing tests only, never t
 **Builder** writes impl only, never edits the test it must satisfy. **Triangulator** derives
 edge/negative/contract/boundary test cases from real ACs and writes tests only, never touches
 production code. **Refactor-Engineer** touches neither's contract, only structure. None of the
-four certifies its own gate — `scripts/verify-red.sh`/`.ps1` and the test runner do, mechanically
+four certifies its own gate — `.vibe/vcp-runtime/scripts/verify-red.sh`/`.ps1` and the test runner do, mechanically
 (§ "trust what's derived, not narrated" — never accept a subagent's self-report of pass/fail as
 the gate).
 
 **3.1 RED** (role: Test-Engineer) — `skills/subagent-red.md`. Spawn `model: sonnet, effort: <config>`.
 Writes exactly one test per explicit AC in `docs/spec.md` (not "minimum" — every AC gets its own
-test, statically countable). Gate: `scripts/verify-red.sh` (bash) or `scripts/verify-red.ps1`
-(PowerShell) `"<pattern>" "<cmd>"`. Gate rejects: tests passing (exit 0), broken/missing runner,
-syntax/parse/collection errors, "no tests found", or any nonzero exit with no recognizable
-test-failure evidence — a bare nonzero exit code is never sufficient. A real assertion failure,
-a missing-module/import error attributable to the not-yet-implemented code, **or an error with a
-non-test local SUT stack frame from a test file that statically contains an assertion** passes.
-The last case is essential when the intended RED starts at an explicit `throw new Error("not
-implemented")`: the assertion cannot execute yet, but the runner and stack prove the test reached
-the SUT. A generic runner/config error still fails closed.
+test, statically countable). Gate: `.vibe/vcp-runtime/scripts/verify-red.sh` (bash) or
+`.vibe/vcp-runtime/scripts/verify-red.ps1` (PowerShell), with a literal test file and the exact
+command `node --test`. The shipped adapter executes that exact Node-native invocation itself;
+it rejects every other runner command instead of guessing from arbitrary output. A real assertion
+failure, a local missing-module error, or a local SUT stack frame from an assertion-bearing test
+passes. A generic runner/config error and all unsupported runners fail closed. Add another stack
+only by adding a dedicated, falsified adapter — never by broadening a regex.
 Rejected → 🚫 blocked, report to user. **Reporting note**: when the SUT doesn't exist yet, the
 runner collapses ALL tests in the file into one file-level failure (verified: 6 `test()` calls,
 top-level import missing → runner reports `tests 1, fail 1`, not 6) — report the static
@@ -257,13 +255,14 @@ task. Anything outside that list is scope creep — report it, don't silently ke
 `.claude/settings.json` wires this script as a `PreToolUse` hook (see `README.md` § Optional
 hardening), immediately after `verify-red.sh`/`.ps1` confirms a genuine RED, run:
 ```bash
-node scripts/pretooluse-red.mjs emit --tests <red-test-file-1,red-test-file-2>
+node .vibe/vcp-runtime/scripts/pretooluse-red.mjs emit --feature <feature-slug> --task <task-id> --tests <red-test-file-1,red-test-file-2> --files <declared-production-path-1,declared-production-path-2> --command "node --test"
 ```
 This is optional and degrades cleanly when absent — same pattern as `fableultracode`/`cyber-neo`
 — but when present it makes RED-before-write a harness-level block, not something the model has
-to remember to check. If a test file listed in the receipt changes after this point, the receipt
-self-invalidates (its own content hash won't match) — that is the exact "assertion loosened after
-RED" failure mode this closes.
+to remember to check. The receipt is feature/task/path-scoped, expires after 30 minutes, includes
+the verified Node RED proof, and self-invalidates if a listed test changes. A RED for `T01` never
+authorizes a write declared only by `T02`. Paths are both lexical and physical: `..`, an external
+symlink, or a dangling symlink is rejected before Node runs or the hook authorizes a write.
 
 **3.2 GREEN** (role: Builder) — `skills/subagent-green.md`. Verify PASS, no regressions.
 
@@ -285,7 +284,7 @@ next role or phase is an artifact, not disposable chat. Persist its exact text a
 `.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md` (or
 `.vibe/handoffs/<feature-slug>-PHASE-<n>.md` for a phase-level handoff), then run:
 ```bash
-node scripts/verify-handoff-report.mjs check .vibe/handoffs/<feature-slug>-<task-id>-<gate>.md
+node .vibe/vcp-runtime/scripts/verify-handoff-report.mjs check .vibe/handoffs/<feature-slug>-<task-id>-<gate>.md
 ```
 The report must declare exactly one `NOT_REVIEWED:` line: either a concrete omitted surface, or
 `none — <specific reviewed scope>`. Missing, blank, duplicate, or placeholder declarations fail
@@ -382,7 +381,9 @@ green after each file. Diff summary + `risk_level` + `risk_reasons` → `.vibe/S
 changeset (11 categories, OWASP 2025 + CWE Top 25, 5 parallel subagents) — strict upgrade over
 the baseline below. If absent, run `skills/security-baseline.md` instead (self-contained,
 smaller category set, same Critical/High/Medium/Low severity model and same gate behavior —
-never skipped, only narrower). Either way: Critical/High finding → fix before continuing,
+never skipped, only narrower). Run `node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs
+check --base <merge-base-or-origin/main>`; it scans base delta plus staged, unstaged and untracked
+files, not only committed history. Either way: Critical/High finding → fix before continuing,
 re-scan. A fixed Critical finding retroactively bumps `risk_level` to `critico` for 4.4 if it
 wasn't already (evidence-based, not optional). Medium/Low → log to `.vibe/DEBT.md`, ask user
 severity call.
@@ -520,14 +521,14 @@ el receipt no debe dejar que parezcan lo mismo.
    se va a escribir (aunque ese archivo todavía no exista en disco — el flag solo importa para
    la exclusión, no requiere que el archivo ya esté ahí):
    ```bash
-   node scripts/verify-receipt.mjs fingerprint .vibe/receipts/<feature-slug>-<fecha>.json
+   node .vibe/vcp-runtime/scripts/verify-receipt.mjs fingerprint .vibe/receipts/<feature-slug>-<fecha>.json
    ```
 3. **El receipt se escribe con ese `git_head`+`tree_fingerprint` exactos**, inmediatamente — no
    hay paso intermedio entre calcular el fingerprint y escribir el JSON que lo contiene.
 4. **`git add -A` de nuevo, ahora incluyendo el receipt recién escrito** — el receipt mismo debe
    quedar staged para el commit de 4.6 (`git add -A && git commit`, el receipt es parte de lo que
    se commitea, es evidencia permanente en el repo).
-5. **`node scripts/verify-receipt.mjs check <receipt>` (4.6)** — vuelve a calcular el fingerprint
+5. **`node .vibe/vcp-runtime/scripts/verify-receipt.mjs check <receipt>` (4.6)** — vuelve a calcular el fingerprint
    del estado actual (excluyendo el mismo path del receipt) y lo compara. Si nada cambió entre
    el paso 2 y este paso, matchea → exit 0.
 
@@ -563,7 +564,7 @@ validador de 4.6 lo rechaza mecánicamente (no hace falta acordarse de regenerar
 
 **4.6 Commit/push/merge** — gate previo, mecánico, no de lectura:
 ```bash
-node scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
+node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
 ```
 Exit 0 **únicamente** si `terminal_state: approved` Y el fingerprint matchea el estado evaluado
 actual Y `evidence` no vacío → proceder. Exit 1 en cualquier otro caso (receipt ausente, stale,
@@ -605,7 +606,15 @@ C) Hold — don't push yet
 
 **4.7 Backups**:
 - Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).
-- Graphify: if `graphify-out/` exists → `graphify update .` (AST-only, no API cost).
+- Graphify/Obsidian: after the commit, run `graphify update .` and `graphify export obsidian --dir graphify-out/obsidian`.
+  Bind that generated backup to the committed tree — it is stale if HEAD, the report, or the graph
+  changes:
+  ```bash
+  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
+    --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
+    --manifest graphify-out/backup-state.json
+  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
+  ```
 - `.vibe/SESSION.md` archived to `.vibe/sessions/YYYY-MM-DD-<topic>.md`, reset for next session.
 - Optional distributable artifact (dist.zip+checksums): `skills/deploy-zip.md`, only if project ships one.
 

@@ -110,7 +110,7 @@ pass now") is treated as `STATUS: blocked` by the orchestrator — self-reported
 proof doesn't gate anything (see "trust what's derived, not narrated" — SKILL.md § LAWS). A
 handoff missing a valid `NOT_REVIEWED` declaration is also blocked: persist the exact report as
 `.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md`, run
-`node scripts/verify-handoff-report.mjs check <report>`, and append its
+`node .vibe/vcp-runtime/scripts/verify-handoff-report.mjs check <report>`, and append its
 declaration plus path to `tasks.json[task].not_reviewed` only after exit `0`.
 
 ---
@@ -198,7 +198,7 @@ Task T01:
 
 **Sequential, always:** RED → GREEN → TRIANGULATE (incl. its Builder-fix loop) → REFACTOR within one task.
 
-**Parallel, if Phase 2 CONFIG allowed it:** run `node scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
+**Parallel, if Phase 2 CONFIG allowed it:** run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
 
 **CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 4.1/4.3 for fixes.
 
@@ -225,7 +225,7 @@ Task T01:
 
 ## RESUME AFTER RESTART / COMPACTION
 
-1. Establish the requested lowercase-kebab-case feature slug and run `node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 0 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
+1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 0 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
 2. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
 3. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
 4. `git diff` its test files — changed since RED = violation, stop, report.

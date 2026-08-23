@@ -30,19 +30,17 @@ allowed-tools: Read, Bash
 Before every GREEN subagent spawn, the orchestrator MUST run this check:
 
 ```bash
-scripts/verify-red.sh "<test_pattern>" "<test_command>"     # bash
-scripts\verify-red.ps1 -TestPattern "<pattern>" -TestCmd "<command>"   # PowerShell, same contract
+.vibe/vcp-runtime/scripts/verify-red.sh "<literal-test-file>" "node --test"     # bash
+.vibe/vcp-runtime/scripts/verify-red.ps1 -TestPattern "<literal-test-file>" -TestCmd "node --test"   # PowerShell
 ```
 
 Script on disk = single source of truth — do NOT re-embed copies (they drift). The gate is
-mechanical, not "any nonzero exit passes": it rejects tests-passed (exit 0), broken/missing
-runner, syntax/parse/collection errors, "no tests found", and any nonzero exit with no
-recognizable test-failure evidence in the output. A real assertion failure, a local
-missing-module/import error, or a runtime error that has both a non-test local SUT stack frame
-and a statically assertion-bearing test file is a valid RED PASS. The last condition covers an
-intentional unimplemented SUT throwing before the assertion itself executes; generic
-runner/config errors still fail. The script itself checks this mechanically — it is not a manual
-eyeball step anymore.
+mechanical, not "any nonzero exit passes": it executes only the literal Node-native command
+`node --test <file>`. It rejects unsupported runners, tests-passed (exit 0), broken/missing
+runner, syntax/parse/collection errors, "no tests found", and output without real RED evidence.
+A real assertion failure, local missing-module error, or non-test local SUT stack frame from an
+assertion-bearing test is a valid RED PASS. Another stack needs its own tested adapter; never
+relax this one into a generic output regex.
 
 **Checkpoint (long tasks):** after every gate result, append one line to `.vibe/SESSION.md`
 (`T<id> RED gate PASS` / `GREEN ✅` / `TRIANGULATE N cases green` / `REFACTOR green` /
@@ -52,7 +50,7 @@ eyeball step anymore.
 
 ## RESUME AFTER COMPACTION / RESTART
 
-1. Establish the requested lowercase-kebab-case feature slug, then run `node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 0 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
+1. Establish the requested lowercase-kebab-case feature slug, then run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 0 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
 2. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
 3. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
 4. `git diff` test files. Changed since RED = violation → stop, report.

@@ -266,7 +266,7 @@ contains unfinished work or `docs/tasks.json` has a non-`done` task, establish t
 lowercase-kebab-case feature slug and run:
 
 ```bash
-node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
 ```
 
 Only exit `0` permits reading the ledger bottom-up. Exit `1` is a fail-closed identity conflict:

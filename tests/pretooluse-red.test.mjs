@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -7,219 +8,221 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const scriptPath = fileURLToPath(new URL('../scripts/pretooluse-red.mjs', import.meta.url));
-const { isUnderGate, hash16, receiptValid, decide, asHook, emit } = await import(pathToFileURL(scriptPath).href);
-
-function run(cwd, args, stdin) {
-  const env = { ...process.env };
-  delete env.NODE_TEST_CONTEXT;
-  const result = spawnSync(process.execPath, [scriptPath, ...args], { cwd, encoding: 'utf8', env, input: stdin });
-  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
-}
+const { RECEIPT_DIR, RECEIPT_TTL_MS, asHook, decide, emit, main, receiptValid } = await import(pathToFileURL(scriptPath).href);
+const sha = (value) => createHash('sha256').update(value).digest('hex');
+const NOW = Date.parse('2026-08-23T12:00:00.000Z');
 
 function fixture() {
   return mkdtempSync(join(tmpdir(), 'vcp-pretooluse-red-'));
 }
 
-// ── isUnderGate ─────────────────────────────────────────────────────────────────────────────
+function write(root, relative, content) {
+  const file = join(root, ...relative.split('/'));
+  mkdirSync(join(file, '..'), { recursive: true });
+  writeFileSync(file, content);
+}
 
-test('isUnderGate covers multiple stacks, not just JS/TS', () => {
-  assert.equal(isUnderGate('src/foo.py'), true);
-  assert.equal(isUnderGate('src/foo.go'), true);
-  assert.equal(isUnderGate('src/Foo.java'), true);
-  assert.equal(isUnderGate('src/foo.rs'), true);
-  assert.equal(isUnderGate('src/foo.ts'), true);
-});
+function session(root, feature = 'billing-fix') {
+  write(root, '.vibe/SESSION.md', `# Session\n\n**Feature slug:** ${feature}\n`);
+}
 
-test('FALSIFICACIÓN · test files themselves are never under the gate — writing a test is the prior step', () => {
-  assert.equal(isUnderGate('src/foo.test.js'), false);
-  assert.equal(isUnderGate('tests/foo.py'), false);
-  assert.equal(isUnderGate('src/test_foo.py'), false);
-  assert.equal(isUnderGate('src/foo_test.go'), false);
-  assert.equal(isUnderGate('src/FooTest.java'), false);
-  assert.equal(isUnderGate('__tests__/foo.js'), false);
-});
+function validReceipt(overrides = {}) {
+  const testContent = 'import test from \'node:test\'; import assert from \'node:assert/strict\'; test(\'x\', () => assert.equal(1, 2));\n';
+  return {
+    schema: 'vcp.red-receipt/v2', feature: 'billing-fix', task: 'T01',
+    emitted_at: new Date(NOW).toISOString(), expires_at: new Date(NOW + RECEIPT_TTL_MS).toISOString(),
+    tests: { 'test/billing.test.mjs': sha(testContent) }, allowed_paths: ['src/billing.mjs'],
+    red_proofs: [{ test_path: 'test/billing.test.mjs', command: 'node --test', exit_code: 1, output_sha256: 'a'.repeat(64) }],
+    ...overrides,
+  };
+}
 
-test('FALSIFICACIÓN · generated/vendored/dependency paths are never under the gate', () => {
-  assert.equal(isUnderGate('node_modules/pkg/index.js'), false);
-  assert.equal(isUnderGate('dist/bundle.js'), false);
-  assert.equal(isUnderGate('vendor/lib.go'), false);
-  assert.equal(isUnderGate('.venv/lib/site-packages/x.py'), false);
-});
+function seedValidState(root, feature = 'billing-fix') {
+  const testContent = 'import test from \'node:test\'; import assert from \'node:assert/strict\'; test(\'x\', () => assert.equal(1, 2));\n';
+  session(root, feature);
+  write(root, 'test/billing.test.mjs', testContent);
+  return testContent;
+}
 
-test('docs and non-code files are never under the gate', () => {
-  assert.equal(isUnderGate('README.md'), false);
-  assert.equal(isUnderGate('package.json'), false);
-});
+function run(root, args = [], stdin) {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(process.execPath, [scriptPath, ...args], { cwd: root, encoding: 'utf8', env, input: stdin });
+  assert.equal(result.error, undefined, result.error?.message);
+  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
+}
 
-// ── receiptValid / decide (pure) ────────────────────────────────────────────────────────────
-
-test('FALSIFICACIÓN · no receipt at all denies writing a production file', () => {
-  const result = decide({ path: 'src/foo.py', receipt: null, read: undefined });
-  assert.equal(result.allow, false);
-  assert.match(result.reason, /No RED receipt/);
-});
-
-test('a receipt with no declared test files is invalid', () => {
-  const v = receiptValid({ tests: {} });
-  assert.equal(v.ok, false);
-  assert.match(v.reason, /declares no test files/);
-});
-
-test('FALSIFICACIÓN · a receipt is invalidated the moment its test file content changes', () => {
-  const receipt = { tests: { 'test/foo.test.py': hash16('original content') } };
-  const read = (p) => (p === 'test/foo.test.py' ? 'CHANGED — assertion loosened' : (() => { throw new Error('unexpected'); })());
-  const v = receiptValid(receipt, read);
-  assert.equal(v.ok, false, 'a changed test file must invalidate the receipt');
-  assert.match(v.reason, /changed since the RED/);
-});
-
-test('FALSIFICACIÓN · a receipt is invalidated if its test file was deleted', () => {
-  const receipt = { tests: { 'test/foo.test.py': hash16('x') } };
-  const read = () => { throw new Error('ENOENT'); };
-  const v = receiptValid(receipt, read);
-  assert.equal(v.ok, false);
-  assert.match(v.reason, /no longer exists/);
-});
-
-test('an intact receipt over an unchanged test file remains valid', () => {
-  const content = 'def test_x(): assert False';
-  const receipt = { tests: { 'test/foo.test.py': hash16(content) } };
-  const v = receiptValid(receipt, () => content);
-  assert.equal(v.ok, true);
-});
-
-test('FALSIFICACIÓN · decide() denies through the receiptValid path, not just the no-receipt path', () => {
-  const receipt = { tests: { 'test/foo.test.py': hash16('original') } };
-  const read = () => 'DIFFERENT — assertion was loosened after the RED';
-  const result = decide({ path: 'src/foo.py', receipt, read });
-  assert.equal(result.allow, false);
-  assert.match(result.reason, /Stale RED receipt/);
-});
-
-test('decide() allows writing a test file even with no receipt — writing the RED test is the prior step', () => {
-  const result = decide({ path: 'src/foo.test.js', receipt: null, read: undefined });
-  assert.equal(result.allow, true);
-});
-
-// ── CLI: emit ───────────────────────────────────────────────────────────────────────────────
-
-test('emit writes a receipt pinned to the given test files current content', () => {
+test('receiptValid accepts a complete fresh scoped receipt and detects test mutation', () => {
   const root = fixture();
   try {
-    mkdirSync(join(root, 'test'), { recursive: true });
-    writeFileSync(join(root, 'test', 'foo.test.py'), 'def test_x(): assert False\n');
-    const result = run(root, ['emit', '--tests', 'test/foo.test.py']);
-    assert.equal(result.status, 0, result.output);
-    const receipt = JSON.parse(readFileSync(join(root, '.vibe', 'red-receipt.json'), 'utf8'));
-    assert.equal(Object.keys(receipt.tests).length, 1);
+    seedValidState(root);
+    const receipt = validReceipt();
+    assert.equal(receiptValid(receipt, { cwd: root, feature: 'billing-fix', now: NOW }).ok, true);
+    write(root, 'test/billing.test.mjs', 'changed\n');
+    const result = receiptValid(receipt, { cwd: root, feature: 'billing-fix', now: NOW });
+    assert.equal(result.ok, false);
+    assert.match(result.reason, /changed since the RED/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('FALSIFICACIÓN · emit rejects a test file that does not exist', () => {
+test('default arguments and malformed session state fail closed instead of creating an implicit scope', () => {
   const root = fixture();
   try {
-    const result = run(root, ['emit', '--tests', 'test/ghost.test.py']);
-    assert.equal(result.status, 1);
-    assert.match(result.output, /does not exist/);
+    write(root, '.vibe/SESSION.md', '**Feature slug:** INVALID FEATURE\n');
+    assert.equal(asHook({ tool_name: 'Write', tool_input: { file_path: 'src/a.mjs' } }, root, NOW).hookSpecificOutput.permissionDecision, 'deny');
+    assert.equal(receiptValid(validReceipt()).ok, false);
+    assert.equal(decide({ path: 'src/a.mjs', receipts: [], feature: null }).allow, false);
+    assert.equal(emit({ feature: 'BAD', task: 'T01', tests: [], files: [], command: 'node --test' }).ok, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('FALSIFICACIÓN · emit with no --tests files rejects instead of writing an empty receipt', () => {
+test('FALSIFICACIÓN · receipt validation fails closed for corrupt schema, feature, targets, proofs and expiry', () => {
   const root = fixture();
   try {
-    const result = run(root, ['emit', '--tests', '']);
-    assert.equal(result.status, 1);
-    assert.match(result.output, /no test files given/);
+    seedValidState(root);
+    const invalid = [
+      null, validReceipt({ schema: 'other' }), validReceipt({ feature: null }), validReceipt({ feature: 'BAD' }), validReceipt({ feature: 'auth-fix' }), validReceipt({ task: null }), validReceipt({ task: '../T01' }),
+      validReceipt({ tests: null }), validReceipt({ tests: [] }), validReceipt({ tests: {} }), validReceipt({ allowed_paths: [] }), validReceipt({ allowed_paths: ['../a.mjs'] }), validReceipt({ allowed_paths: ['src/../../outside.mjs'] }), validReceipt({ allowed_paths: ['test/billing.test.mjs'] }), validReceipt({ tests: { 'test/../../outside.test.mjs': 'a'.repeat(64) } }),
+      validReceipt({ red_proofs: [] }), validReceipt({ red_proofs: [{ command: 'node -e nope', exit_code: 1, output_sha256: 'a'.repeat(64) }] }), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 0, output_sha256: 'a'.repeat(64) }] }), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 1 }]}), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 1, output_sha256: 'short' }] }),
+      validReceipt({ red_proofs: [null] }),
+      validReceipt({ emitted_at: 'invalid' }), validReceipt({ expires_at: 'invalid' }), validReceipt({ expires_at: new Date(NOW - 1).toISOString() }),
+      validReceipt({ tests: { 'README.md': 'a'.repeat(64) } }), validReceipt({ tests: { 'test/billing.test.mjs': 42 } }), validReceipt({ tests: { 'test/ghost.test.mjs': 'a'.repeat(64) } }), validReceipt({ allowed_paths: ['README.md'] }),
+    ];
+    for (const receipt of invalid) assert.equal(receiptValid(receipt, { cwd: root, feature: 'billing-fix', now: NOW }).ok, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-// ── CLI: hook mode (stdin JSON in, decision JSON out) ──────────────────────────────────────
-
-test('FALSIFICACIÓN · hook mode denies a Write to production code with no receipt on disk', () => {
+test('decide allows tests and docs but only the exact declared production target', () => {
   const root = fixture();
   try {
-    const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'src/foo.py' } });
-    const result = run(root, [], payload);
-    assert.equal(result.status, 0, 'the hook process itself exits 0 even when it denies — the JSON carries the decision');
-    const decision = JSON.parse(result.output);
+    seedValidState(root);
+    const receipts = [validReceipt()];
+    assert.equal(decide({ path: 'test/new.test.mjs', receipts, feature: 'billing-fix', cwd: root, now: NOW }).allow, true);
+    assert.equal(decide({ path: 'README.md', receipts, feature: 'billing-fix', cwd: root, now: NOW }).allow, true);
+    assert.equal(decide({ path: 'src/billing.mjs', receipts, feature: 'billing-fix', cwd: root, now: NOW }).allow, true);
+    const foreign = decide({ path: 'src/auth.mjs', receipts, feature: 'billing-fix', cwd: root, now: NOW });
+    assert.equal(foreign.allow, false);
+    assert.match(foreign.reason, /no live scoped RED receipt/);
+    assert.equal(decide({ path: '../outside.mjs', receipts, feature: 'billing-fix', cwd: root, now: NOW }).allow, false);
+    assert.equal(decide({ path: 'src/../../outside.mjs', receipts, feature: 'billing-fix', cwd: root, now: NOW }).allow, false);
+    assert.equal(decide({ path: 'src/billing.mjs', receipts, feature: null, cwd: root, now: NOW }).allow, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · hook fails closed for malformed Write/Edit payloads yet ignores a known unrelated tool', () => {
+  const root = fixture();
+  try {
+    for (const input of [null, {}, [], { tool_name: 'Write' }, { tool_name: 'Edit', tool_input: { file_path: '../escape.js' } }, { tool_name: 'Edit', tool_input: { file_path: 'src/../../outside.js' } }, { tool_name: 'Write', tool_input: { file_path: 'src/a.mjs' } }]) {
+      assert.equal(asHook(input, root, NOW).hookSpecificOutput.permissionDecision, 'deny');
+    }
+    session(root);
+    assert.equal(asHook({ tool_name: 'Write', tool_input: { file_path: 'src/a.mjs' } }, root, NOW).hookSpecificOutput.permissionDecision, 'deny');
+    write(root, '.vibe/red-receipts/billing-fix/not-json.txt', 'ignored');
+    mkdirSync(join(root, '.vibe/red-receipts/billing-fix/folder.json'));
+    assert.equal(asHook({ tool_name: 'Edit', tool_input: { file_path: 'src/a.mjs' } }, root, NOW).hookSpecificOutput.permissionDecision, 'deny');
+    assert.deepEqual(asHook({ tool_name: 'Read', tool_input: {} }, root, NOW), {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('emit runs the strict RED adapter, writes one task receipt, and the hook refuses another task path', () => {
+  const root = fixture();
+  try {
+    seedValidState(root);
+    const result = emit({ feature: 'billing-fix', task: 'T01', tests: ['test/billing.test.mjs'], files: ['src/billing.mjs'], command: 'node --test', cwd: root, now: NOW });
+    assert.equal(result.ok, true, result.reason);
+    assert.equal(result.path, join(root, RECEIPT_DIR, 'billing-fix', 'T01.json'));
+    const persisted = JSON.parse(readFileSync(result.path, 'utf8'));
+    assert.equal(persisted.red_proofs[0].output_sha256.length, 64);
+    const allowed = asHook({ tool_name: 'Write', tool_input: { file_path: 'src/billing.mjs' } }, root, NOW);
+    assert.deepEqual(allowed, {});
+    const denied = asHook({ tool_name: 'Write', tool_input: { file_path: 'src/other.mjs' } }, root, NOW);
+    assert.equal(denied.hookSpecificOutput.permissionDecision, 'deny');
+    const escaped = asHook({ tool_name: 'Write', tool_input: { file_path: 'src/../../outside.mjs' } }, root, NOW);
+    assert.equal(escaped.hookSpecificOutput.permissionDecision, 'deny');
+    write(root, '.vibe/red-receipts/billing-fix/corrupt.json', '{ nope');
+    assert.deepEqual(asHook({ tool_name: 'Edit', tool_input: { file_path: 'src/billing.mjs' } }, root, NOW), {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · a receipt cannot authorize a production symlink that leaves the project', () => {
+  const root = fixture();
+  const outside = fixture();
+  try {
+    seedValidState(root);
+    mkdirSync(join(root, 'src'));
+    writeFileSync(join(outside, 'outside.mjs'), 'export const outside = true;\n');
+    symlinkSync(outside, join(root, 'src', 'external'), process.platform === 'win32' ? 'junction' : 'dir');
+    const receipt = validReceipt({ allowed_paths: ['src/external/outside.mjs'] });
+    assert.equal(receiptValid(receipt, { cwd: root, feature: 'billing-fix', now: NOW }).ok, false);
+    write(root, '.vibe/red-receipts/billing-fix/T01.json', JSON.stringify(receipt));
+    const decision = asHook({ tool_name: 'Write', tool_input: { file_path: 'src/external/outside.mjs' } }, root, NOW);
     assert.equal(decision.hookSpecificOutput.permissionDecision, 'deny');
   } finally {
     rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });
 
-test('hook mode allows a Write once a valid receipt exists for the file', () => {
+test('FALSIFICACIÓN · emit rejects invalid scope, session mismatch, missing tests and unsupported runner without writing a receipt', () => {
   const root = fixture();
   try {
-    mkdirSync(join(root, 'test'), { recursive: true });
-    writeFileSync(join(root, 'test', 'foo.test.py'), 'def test_x(): assert False\n');
-    assert.equal(run(root, ['emit', '--tests', 'test/foo.test.py']).status, 0);
-    const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'src/foo.py' } });
-    const result = run(root, [], payload);
-    const decision = JSON.parse(result.output);
-    assert.deepEqual(decision, {}, 'an empty object means allow — no hookSpecificOutput at all');
+    seedValidState(root, 'auth-fix');
+    const cases = [
+      { feature: null, task: 'T01', tests: ['test/billing.test.mjs'], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'Billing Fix', task: 'T01', tests: ['test/billing.test.mjs'], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: null, tests: ['test/billing.test.mjs'], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: '../T01', tests: ['test/billing.test.mjs'], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: 'T01', tests: [], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: 'T01', tests: ['test/../../outside.test.mjs'], files: ['src/a.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: 'T01', tests: ['test/billing.test.mjs'], files: ['src/../../outside.mjs'], command: 'node --test' },
+      { feature: 'billing-fix', task: 'T01', tests: ['test/billing.test.mjs'], files: ['src/a.mjs'], command: 'node -e fake' },
+    ];
+    for (const candidate of cases) assert.equal(emit({ ...candidate, cwd: root, now: NOW }).ok, false);
+    seedValidState(root);
+    assert.equal(emit({ feature: 'billing-fix', task: 'T01', tests: ['test/billing.test.mjs'], files: ['README.md'], command: 'node --test', cwd: root, now: NOW }).ok, false);
+    assert.equal(emit({ feature: 'billing-fix', task: 'T01', tests: ['README.md'], files: ['src/a.mjs'], command: 'node --test', cwd: root, now: NOW }).ok, false);
+    write(root, 'test/billing.test.mjs', 'changed\n');
+    assert.equal(receiptValid(validReceipt(), { cwd: root, feature: 'billing-fix', now: NOW }).ok, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('hook mode allows a Write to a test file even with no receipt', () => {
+test('CLI emits a scoped receipt and malformed stdin is a deny decision, never an implicit allow', () => {
   const root = fixture();
   try {
-    const payload = JSON.stringify({ tool_name: 'Write', tool_input: { file_path: 'test/new.test.py' } });
-    const result = run(root, [], payload);
-    assert.deepEqual(JSON.parse(result.output), {});
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('hook mode with invalid stdin lets the write through rather than crashing the tool call', () => {
-  const root = fixture();
-  try {
-    const result = run(root, [], 'not json');
-    assert.equal(result.status, 0);
-    assert.deepEqual(JSON.parse(result.output), {});
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('hook mode with completely empty stdin also lets the write through', () => {
-  const root = fixture();
-  try {
-    const result = run(root, [], '');
-    assert.equal(result.status, 0);
-    assert.deepEqual(JSON.parse(result.output), {});
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('asHook() with a corrupt on-disk receipt treats it as absent, not a crash', () => {
-  const root = fixture();
-  try {
-    mkdirSync(join(root, '.vibe'), { recursive: true });
-    writeFileSync(join(root, '.vibe', 'red-receipt.json'), '{ not valid json');
-    const decision = asHook({ tool_input: { file_path: 'src/foo.py' } }, root);
-    assert.equal(decision.hookSpecificOutput.permissionDecision, 'deny');
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('CLI with an unrecognized subcommand prints usage and exits 2', () => {
-  const root = fixture();
-  try {
-    const result = run(root, ['bogus']);
-    assert.equal(result.status, 2);
-    assert.match(result.output, /usage: pretooluse-red\.mjs/);
+    seedValidState(root);
+    const emitted = run(root, ['emit', '--feature', 'billing-fix', '--task', 'T01', '--tests', 'test/billing.test.mjs', '--files', 'src/billing.mjs', '--command', 'node --test']);
+    assert.equal(emitted.status, 0, emitted.output);
+    assert.match(emitted.output, /scoped RED receipt written/);
+    const malformed = run(root, [], 'not json');
+    assert.equal(malformed.status, 0);
+    assert.equal(JSON.parse(malformed.output).hookSpecificOutput.permissionDecision, 'deny');
+    const usage = run(root, ['emit', '--feature', 'billing-fix']);
+    assert.equal(usage.status, 2);
+    const rejected = run(root, ['emit', '--feature', 'billing-fix', '--task', 'T02', '--tests', 'test/billing.test.mjs', '--files', 'src/billing.mjs', '--command', 'node -e fake']);
+    assert.equal(rejected.status, 1);
+    const oldError = console.error;
+    console.error = () => {};
+    try {
+      assert.equal(main(['emit', '--feature', 'billing-fix'], root), 2);
+      assert.equal(main(['emit', '--feature', 'billing-fix', '--task', 'T03', '--tests', 'test/billing.test.mjs', '--files', 'src/billing.mjs', '--command', 'node -e fake'], root), 1);
+      assert.equal(main(['emit', '--feature', 'billing-fix', '--feature', 'billing-fix', '--tests', 'test/billing.test.mjs', '--files', 'src/billing.mjs', '--command', 'node --test'], root), 2);
+    } finally {
+      console.error = oldError;
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -59,3 +59,22 @@ test('archive preserves the old feature identity and resets SESSION.md to an una
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('FALSIFICACIÓN · archiving the same topic twice preserves both snapshots', { skip: !existsSync(gitBash) }, () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-memory-archive-twice-'));
+  const vibe = join(root, '.vibe');
+  mkdirSync(join(vibe, 'sessions'), { recursive: true });
+  try {
+    writeFileSync(join(vibe, 'SESSION.md'), '**Feature slug:** first-pass\n');
+    assert.equal(runMemory(root, 'archive', 'same-topic').status, 0);
+    writeFileSync(join(vibe, 'SESSION.md'), '**Feature slug:** second-pass\n');
+    assert.equal(runMemory(root, 'archive', 'same-topic').status, 0);
+    const archives = readdirSync(join(vibe, 'sessions')).sort();
+    assert.equal(archives.length, 2);
+    const contents = archives.map((file) => readFileSync(join(vibe, 'sessions', file), 'utf8')).join('\n');
+    assert.match(contents, /first-pass/);
+    assert.match(contents, /second-pass/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -108,12 +108,13 @@ export function compare(current, baseline) {
   return { ok: grew.length === 0 && newCounters.length === 0, grew, shrank, newCounters };
 }
 
-/** Versioned files, read via git so .gitignore is respected without reimplementing it. */
+/** Versioned plus untracked, non-ignored files; a pre-commit ratchet must see new code too. */
 export function repoFiles(root = '.') {
-  const out = execFileSync('git', ['-C', root, 'ls-files', '-z'], { encoding: 'utf8' });
-  return out
+  const tracked = execFileSync('git', ['-C', root, 'ls-files', '-z'], { encoding: 'utf8' });
+  const untracked = execFileSync('git', ['-C', root, 'ls-files', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' });
+  return [...new Set(`${tracked}${untracked}`
     .split('\0')
-    .filter(Boolean)
+    .filter(Boolean))]
     .map((path) => {
       try {
         return { path, content: readFileSync(`${root}/${path}`, 'utf8') };

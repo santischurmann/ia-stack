@@ -22,6 +22,20 @@
 
 ---
 
+## Write-conflict preflight
+
+Before approval, run:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
+```
+
+`CONFLICT` blocks the plan. `SERIALIZED` means the declared dependency order must be preserved;
+those tasks are never dispatched together. The complete writer set is `files_to_create`,
+`files_to_modify`, and `test_files` in `docs/tasks.json`.
+
+---
+
 ## Risk Notes
 
 - <Risk: T02 touches shared module — run full suite after>

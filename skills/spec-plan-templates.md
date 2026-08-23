@@ -74,7 +74,7 @@ Plan and Build never proceed with one present.
 2. T02 — <description> (needs T01)
 
 ## Write-conflict preflight
-Run `node scripts/verify-plan-conflicts.mjs check docs/tasks.json` before approval.
+Run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` before approval.
 
 | Result | Task pair | Shared path | Action |
 |---|---|---|---|
@@ -118,7 +118,7 @@ task is not a conflict with itself.
       "owner": null,
       "locked": false,
       "role": "Test-Engineer",
-      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona)",
+      "verifier": ".vibe/vcp-runtime/scripts/verify-red.sh|.ps1 (Node-native mechanical adapter, not a persona)",
       "approval_criteria": "<spec.md AC-id this task closes, verbatim>",
       "evidence": [],
       "not_reviewed": [],

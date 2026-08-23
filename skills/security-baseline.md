@@ -13,14 +13,26 @@ set. This is a floor, not a replacement for a real SAST/SCA tool — if `cyber-n
 project-installed scanner) is present, prefer it; this exists so Phase 4.3 never has zero
 security gate when nothing else is installed.
 
-## CATEGORIES (run all, on the changeset diff only — `git diff --name-only <base>...HEAD`)
+## COMMAND (mechanical, required)
+
+From the project root, run:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-or-origin/main>
+```
+
+It scans the union of the base delta, staged, unstaged and untracked non-ignored paths. A newly
+written secret must block **before** `git add`; scanning only `<base>...HEAD` is not acceptable.
+The script exits `1` for Critical/High and redacts values from its output.
+
+## CATEGORIES IMPLEMENTED
 
 1. **Hardcoded secrets** — grep changed files for patterns: `(?i)(api[_-]?key|secret|password|token|private[_-]?key)\s*[:=]\s*['"][^'"]{8,}`, AWS-style `AKIA[0-9A-Z]{16}`, generic base64-looking blobs assigned to a var named `*key*`/`*secret*`. Any hit = Critical, block.
 2. **Injection surface** — string-concatenated SQL (`"SELECT .* " + `/f-string with raw input into a query), `eval(`/`exec(`/`child_process.exec(`/`os.system(` fed by request/user input, unescaped template into `innerHTML`/`dangerouslySetInnerHTML`. Hit = High.
-3. **Auth/authorization gaps** — new route/endpoint/handler added in the diff with no visible auth check (grep for the project's existing auth-decorator/middleware pattern near other routes; absent on the new one = flag) — Medium, human call (framework conventions vary too much for a mechanical Critical here).
-4. **Insecure deserialization / unsafe file ops** — `pickle.loads` on external input, `yaml.load` without `Loader=SafeLoader`, `JSON.parse` fine (safe by default) but `eval(`-based parsing is not, path-join with unsanitized user input (`../` traversal risk). Hit = High.
-5. **Dependency additions** — new entries in `package.json`/`requirements.txt`/`go.mod`/`Cargo.toml` in this diff: no live CVE lookup (no network call assumed) — flag as `needs_manual_check: <package>@<version>` at Medium, don't fabricate a CVE that wasn't actually looked up.
-6. **Committed build/env artifacts** — diff adds `.env`, `*.pem`, `*.key`, `id_rsa*`, or anything matching the repo's own `.gitignore` patterns despite the ignore rule (means someone force-added it) = Critical, block.
+3. **Committed build/env artifacts** — `.env`, `*.pem`, `*.key`, `id_rsa*` in the live release surface = Critical, block.
+
+Auth gaps, unsafe deserialization beyond dynamic execution, and dependency CVEs still require
+`cyber-neo` or a project scanner. They are not claimed as mechanically covered here.
 
 ## OUTPUT
 

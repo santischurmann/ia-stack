@@ -64,6 +64,17 @@ test('FALSIFICACIÓN · rejects production-file overlap without dependency order
   });
 });
 
+test('FALSIFICACIÓN · canonicalizes dot segments so equivalent writer paths cannot bypass the conflict check', () => {
+  withPlan([
+    task('T01', { modify: ['src/../shared.js'] }),
+    task('T02', { modify: ['shared.js'] }),
+  ], (plan) => {
+    const result = run(['check', plan]);
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /CONFLICT: T01.*T02.*shared\.js/i);
+  });
+});
+
 test('FALSIFICACIÓN · rejects test-file overlap without dependency ordering', () => {
   withPlan([
     task('T01', { tests: ['tests/shared.test.js'] }),

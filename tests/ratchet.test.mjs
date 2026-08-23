@@ -131,6 +131,26 @@ test('FALSIFICACIÓN · CLI fails when a frozen counter grows after new code lan
   }
 });
 
+test('FALSIFICACIÓN · CLI fails before git add when an untracked source file grows a counter', () => {
+  const root = gitFixture();
+  try {
+    mkdirSync(join(root, '.vibe'), { recursive: true });
+    writeFileSync(join(root, '.vibe', 'counters.json'), JSON.stringify({
+      counters: [{ name: 'todo', pattern: 'TODO', include: ['**/*.js'] }],
+    }));
+    writeFileSync(join(root, 'a.js'), 'export const clean = true;\n');
+    commitAll(root, 'baseline without debt');
+    assert.equal(run(root, '--freeze').status, 0);
+
+    writeFileSync(join(root, 'new-untracked.js'), '// TODO must be seen before git add\n');
+    const result = run(root);
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /todo: 0 → 1/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('CLI reports a shrunk counter and passes', () => {
   const root = gitFixture();
   try {
