@@ -54,6 +54,25 @@ test('scanFile redacts secret values and reports artifact and injection categori
   assert.deepEqual(scanFile('README.md', `const ${'to' + 'ken'} = 'secretsecret';`), []);
 });
 
+test('scanFile does not flag the literal git CLI command "update-index --chmod=+x" as string-built SQL', () => {
+  // Regression for a real false positive found auditing this repo's own test suite: bare
+  // "update" (from "update-index", a git subcommand) followed later on the same line by an
+  // unrelated "+" inside a different string literal ("--chmod=+x") matched the SQL/"+"
+  // heuristic before the (?!-) lookahead fix.
+  assert.deepEqual(scanFile('x.mjs', "gitOk(root, 'update-index', '--chmod=+x', 'tracked.txt');"), []);
+});
+
+test('FALSIFICACIÓN · real string-built SQL via "+" concatenation is still blocked after the CLI-subcommand fix', () => {
+  // Keyword text is split with `+` (same convention as the rest of this file) so this test's own
+  // source doesn't trip the live gate when it scans this very repo's changed files.
+  const selectQuery = `const query = "${'SEL' + 'ECT'} * FROM users WHERE id=" + userId;`;
+  const findings = scanFile('src/db.mjs', selectQuery);
+  assert.deepEqual(findings.map((item) => item.category), ['injection-surface']);
+  const updateQuery = `const query = "${'UPD' + 'ATE'} users SET name=" + name;`;
+  const updateFindings = scanFile('src/db.mjs', updateQuery);
+  assert.deepEqual(updateFindings.map((item) => item.category), ['injection-surface']);
+});
+
 test('FALSIFICACIÓN · an uncommitted secret blocks the release surface before git add', () => {
   const root = fixture();
   try {

@@ -192,8 +192,19 @@ function fail(reason) {
 if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
   const [, , cmd, arg] = process.argv;
 
+  // git plumbing throws (e.g. `git rev-parse HEAD` on a repo with zero commits) rather than
+  // returning an error value; wrap both CLI call sites so that case is a clean `REJECTED:`
+  // message on stderr with exit 1, not an uncaught stack trace leaking internal paths.
+  function safeFingerprint(exclude) {
+    try {
+      return currentFingerprint(exclude);
+    } catch (error) {
+      fail(`unable to evaluate the current repository state: ${error.message}`);
+    }
+  }
+
   if (cmd === 'fingerprint') {
-    console.log(JSON.stringify(currentFingerprint(arg), null, 2));
+    console.log(JSON.stringify(safeFingerprint(arg), null, 2));
     process.exit(0);
   }
 
@@ -233,7 +244,7 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
 
     // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
     // guard) — every other file, including siblings in the same receipts/ directory, still counts.
-    const now = currentFingerprint(arg);
+    const now = safeFingerprint(arg);
     if (receipt.git_head !== now.git_head) {
       fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
     }

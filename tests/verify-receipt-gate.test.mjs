@@ -305,6 +305,26 @@ test('FALSIFICACIÓN · CLI with no recognized command prints usage and exits 2'
   });
 });
 
+test('FALSIFICACIÓN · a repository with zero commits fails closed with a controlled REJECTED message, not an uncaught stack trace', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-receipt-nohead-'));
+  try {
+    const init = git(root, 'init', '-q');
+    assert.equal(init.status, 0, init.output);
+    const fingerprint = gate(root, 'fingerprint');
+    assert.equal(fingerprint.status, 1);
+    assert.match(fingerprint.output, /REJECTED: unable to evaluate the current repository state/);
+    writeFileSync(join(root, 'receipt.json'), JSON.stringify({
+      schema: 'vcp.receipt/v1', feature: 'x', risk_level: 'low', evidence: ['x'],
+      git_head: 'deadbeef', tree_fingerprint: 'x', terminal_state: 'approved',
+    }));
+    const check = gate(root, 'check', 'receipt.json');
+    assert.equal(check.status, 1);
+    assert.match(check.output, /REJECTED: unable to evaluate the current repository state/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('receipt tracks a staged rename destination and supports SHA-256 repositories when Git does', (t) => {
   withFixture((root) => {
     gitOk(root, 'mv', 'orig.txt', 'renamed.txt');

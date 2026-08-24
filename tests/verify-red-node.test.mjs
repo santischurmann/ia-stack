@@ -6,10 +6,57 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const scriptPath = fileURLToPath(new URL('../scripts/verify-red-node.mjs', import.meta.url));
-const { USAGE, classifyNodeRed, isContainedProjectPath, isTestPath, main, normalizeProjectPath, verifyNodeRed } = await import(pathToFileURL(scriptPath).href);
+const { USAGE, classifyNodeRed, isContainedProjectPath, isTestPath, main, normalizeProjectPath, realDiagnosticBlocks, verifyNodeRed } = await import(pathToFileURL(scriptPath).href);
 
 function failed(stdout) {
   return { status: 1, stdout, stderr: '' };
+}
+
+function failedSplit(stdout, stderr) {
+  return { status: 1, stdout, stderr };
+}
+
+// Synthetic TAP fixtures matching the exact structural shape Node's own `--test-reporter=tap`
+// produces (verified empirically against real `node --test` runs before writing this file — see
+// research/adversarial-productivity-audit-2026-08-23.md and the P0 fix it drove). Used only to
+// exercise classifyNodeRed's branches directly; end-to-end acceptance/rejection is additionally
+// proven against a REAL spawned `node --test` process further down in this file.
+function tapAssertionFailure() {
+  return [
+    'TAP version 13', '# Subtest: x', 'not ok 1 - x',
+    '  ---', "  duration_ms: 1", "  type: 'test'", "  failureType: 'testCodeFailure'",
+    "  error: 'boom'", "  code: 'ERR_ASSERTION'", "  name: 'AssertionError'",
+    '  ...', '1..1', '# tests 1', '# suites 0', '# pass 0', '# fail 1',
+    '# cancelled 0', '# skipped 0', '# todo 0', '# duration_ms 1', '',
+  ].join('\n');
+}
+
+function tapTestCodeFailure() {
+  return [
+    'TAP version 13', '# Subtest: x', 'not ok 1 - x',
+    '  ---', "  duration_ms: 1", "  type: 'test'", "  failureType: 'testCodeFailure'",
+    '  exitCode: 1', "  error: 'test failed'", "  code: 'ERR_TEST_FAILURE'",
+    '  ...', '1..1', '# tests 1', '# suites 0', '# pass 0', '# fail 1',
+    '# cancelled 0', '# skipped 0', '# todo 0', '# duration_ms 1', '',
+  ].join('\n');
+}
+
+function tapHeaderNoFooter() {
+  return ['TAP version 13', '# Subtest: x', 'not ok 1 - x', '  ---', "  code: 'ERR_ASSERTION'", '  ...'].join('\n');
+}
+
+// A structurally valid-looking block that is NOT immediately preceded by its own `not ok N - `
+// line — e.g. separated by a blank line or attached to an unrelated line — must not be treated
+// as evidence, even though the block's own delimiters and content are byte-identical to a real one.
+function tapUnassociatedBlock() {
+  return [
+    'TAP version 13', '# Subtest: x', 'not ok 1 - x',
+    '  ---', "  duration_ms: 1", "  code: 'ERR_TEST_FAILURE'", '  ...',
+    'some unrelated line',
+    '  ---', "  code: 'ERR_ASSERTION'", '  ...',
+    '1..1', '# tests 1', '# suites 0', '# pass 0', '# fail 1',
+    '# cancelled 0', '# skipped 0', '# todo 0', '# duration_ms 1', '',
+  ].join('\n');
 }
 
 test('normalizes only safe project-relative paths and recognizes literal test paths', () => {
@@ -43,7 +90,7 @@ test('FALSIFICACIÓN · physical links cannot escape the project, while an inter
     assert.equal(isContainedProjectPath('../outside.test.mjs', root), false);
     assert.equal(isContainedProjectPath('test/new.test.mjs', join(root, 'missing-root')), false);
     let escapedRunnerCalled = false;
-    const result = verifyNodeRed({ testPath: 'test/external/outside.test.mjs', command: 'node --test', cwd: root, run: () => { escapedRunnerCalled = true; return failed('AssertionError\nℹ tests 1\nℹ fail 1'); } });
+    const result = verifyNodeRed({ testPath: 'test/external/outside.test.mjs', command: 'node --test', cwd: root, run: () => { escapedRunnerCalled = true; return failed(tapAssertionFailure()); } });
     assert.equal(result.ok, false);
     assert.equal(escapedRunnerCalled, false);
     rmSync(outside, { recursive: true, force: true });
@@ -54,47 +101,63 @@ test('FALSIFICACIÓN · physical links cannot escape the project, while an inter
   }
 });
 
-test('classifyNodeRed accepts only collected assertion, local-module, or SUT-runtime RED evidence', () => {
-  const assertion = classifyNodeRed({ testPath: 'test/a.test.mjs', testSource: 'assert.equal(x, y)', result: failed('AssertionError\nℹ tests 1\nℹ fail 1') });
-  assert.equal(assertion.ok, true);
-  const localModule = classifyNodeRed({ testPath: 'test/a.test.mjs', testSource: 'import x', result: failed("Cannot find module './missing.mjs'\nℹ tests 1\nℹ fail 1") });
-  assert.equal(localModule.ok, true);
-  const runtime = classifyNodeRed({ testPath: 'test/a.test.mjs', testSource: 'assert.equal(x, y)', result: failed('Error: unfinished\n    at f (file:///tmp/src/a.mjs:1:1)\nℹ tests 1\nℹ fail 1') });
-  assert.equal(runtime.ok, true);
+test('realDiagnosticBlocks extracts only the harness-delimited YAML block, never text printed by the file under test', () => {
+  assert.deepEqual(realDiagnosticBlocks(tapAssertionFailure()).at(0)?.includes("  code: 'ERR_ASSERTION'"), true);
+  assert.deepEqual(realDiagnosticBlocks('no blocks here'), []);
+  assert.deepEqual(realDiagnosticBlocks('  ---\nunterminated'), [], 'an unterminated block (no closing "  ..." line) is not extracted');
 });
 
-test('FALSIFICACIÓN · classification rejects passed, parser, empty, generic, runner and test-code failures', () => {
+test('classifyNodeRed accepts only a genuine structural AssertionError block from a real TAP run', () => {
+  assert.equal(classifyNodeRed(failed(tapAssertionFailure())).ok, true);
+});
+
+test('FALSIFICACIÓN · classification rejects launch failure, pass, missing TAP header, syntax errors, missing footer, and non-assertion structural failures', () => {
   const cases = [
-    { result: { status: 0, stdout: '', stderr: '' }, source: 'assert.equal(x, y)' },
-    { result: failed('SyntaxError\nℹ tests 1\nℹ fail 1'), source: 'assert.equal(x, y)' },
-    { result: failed('0 tests found'), source: 'assert.equal(x, y)' },
-    { result: failed('AssertionError'), source: 'assert.equal(x, y)' },
-    { result: failed('ReferenceError\nℹ tests 1\nℹ fail 1'), source: 'test(\'x\', () => nope())' },
-    { result: failed("Cannot find module 'missing-package'\nℹ tests 1\nℹ fail 1"), source: 'test(\'x\', () => {})' },
-    { result: failed("Cannot find package 'package'\nℹ tests 1\nℹ fail 1"), source: 'test(\'x\', () => {})' },
-    { result: failed("Cannot find module './missing.mjs'\nnode_modules\nℹ tests 1\nℹ fail 1"), source: 'test(\'x\', () => {})' },
-    { result: failed('Error\n    at f (node:internal/x:1:1)\nℹ tests 1\nℹ fail 1'), source: 'assert.equal(x, y)' },
-    { result: { status: 1, stdout: '', stderr: '', error: new Error('missing node') }, source: 'assert.equal(x, y)' },
-    { result: { status: 1 }, source: 'assert.equal(x, y)' },
+    { status: 1, stdout: '', stderr: '', error: new Error('missing node') },
+    { status: 1 },
+    { status: 0, stdout: tapAssertionFailure(), stderr: '' },
+    failed('no TAP header at all, just crash text'),
+    failed('TAP version 13\nSyntaxError: Unexpected token\n' + tapAssertionFailure()),
+    failed(tapHeaderNoFooter()),
+    failed(tapTestCodeFailure()),
+    // Forged text that prints TAP-shaped lines is always re-emitted as `#`-prefixed comments by
+    // Node's own harness — it can never land inside a real "  ---".."  ..." block or replace the
+    // real footer, so it is indistinguishable from any other non-assertion failure here.
+    failed(`TAP version 13\n#   ---\n#   code: 'ERR_ASSERTION'\n#   ...\n${tapTestCodeFailure()}`),
   ];
-  for (const candidate of cases) assert.equal(classifyNodeRed({ testPath: 'test/a.test.mjs', testSource: candidate.source, result: candidate.result }).ok, false);
+  for (const candidate of cases) assert.equal(classifyNodeRed(candidate).ok, false);
 });
 
-test('verifyNodeRed rejects unknown runners and test paths before it can run arbitrary commands', () => {
+test('FALSIFICACIÓN · a diagnostic block not immediately preceded by its own not-ok line is not accepted, even with byte-identical content', () => {
+  assert.equal(classifyNodeRed(failed(tapUnassociatedBlock())).ok, false);
+});
+
+test('FALSIFICACIÓN · a real-looking TAP diagnostic block placed on stderr is never accepted — only stdout decides RED', () => {
+  // stdout alone reports a genuine, but non-assertion, test-code failure (ERR_TEST_FAILURE);
+  // stderr separately carries a byte-identical copy of a real ERR_ASSERTION block. If this gate
+  // decided from merged stdout+stderr, that stderr block would smuggle acceptance through.
+  const result = classifyNodeRed(failedSplit(tapTestCodeFailure(), tapAssertionFailure()));
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /on stdout/);
+});
+
+test('verifyNodeRed rejects unknown runners and test paths before it can run arbitrary commands, then accepts a real RED', () => {
   const root = mkdtempSync(join(tmpdir(), 'vcp-red-node-'));
   try {
     writeFileSync(join(root, 'a.test.mjs'), '');
     assert.equal(verifyNodeRed({ testPath: '../a.test.mjs', command: 'node --test', cwd: root }).ok, false);
     let escapedRunnerCalled = false;
-    assert.equal(verifyNodeRed({ testPath: 'test/../../outside.test.mjs', command: 'node --test', cwd: root, run: () => { escapedRunnerCalled = true; return failed('AssertionError\nℹ tests 1\nℹ fail 1'); } }).ok, false);
+    assert.equal(verifyNodeRed({ testPath: 'test/../../outside.test.mjs', command: 'node --test', cwd: root, run: () => { escapedRunnerCalled = true; return failed(tapAssertionFailure()); } }).ok, false);
     assert.equal(escapedRunnerCalled, false, 'unsafe test path must reject before invoking Node');
     assert.equal(verifyNodeRed({ testPath: 'a.test.mjs', command: 'node -e "fake"', cwd: root }).ok, false);
     assert.equal(verifyNodeRed({ testPath: 'test/missing.test.mjs', command: 'node --test', cwd: root }).ok, false);
     mkdirSync(join(root, 'test', 'directory.test.mjs'), { recursive: true });
     assert.equal(verifyNodeRed({ testPath: 'test/directory.test.mjs', command: 'node --test', cwd: root }).ok, false);
-    writeFileSync(join(root, 'test', 'runner.test.mjs'), 'assert.equal(1, 2);\n');
-    const proof = verifyNodeRed({ testPath: 'test/runner.test.mjs', command: 'node --test', cwd: root, run: () => failed('AssertionError\nℹ tests 1\nℹ fail 1') });
-    assert.equal(proof.ok, true);
+    writeFileSync(join(root, 'test', 'runner.test.mjs'), [
+      "import test from 'node:test';", "import assert from 'node:assert/strict';", "test('red', () => assert.equal(1, 2));", '',
+    ].join('\n'));
+    const proof = verifyNodeRed({ testPath: 'test/runner.test.mjs', command: 'node --test', cwd: root });
+    assert.equal(proof.ok, true, proof.reason);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -122,6 +185,48 @@ test('main reports the strict adapter pass only after a real requested test file
     assert.equal(main(['check', '--test', 'test/main.test.mjs', '--command', 'node --test'], { cwd: root, write: (line) => output.push(line), writeError: (line) => errors.push(line) }), 0);
     assert.match(output.at(-1), /RED gate passed/);
     assert.deepEqual(errors, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · a real process cannot forge RED by printing text instead of registering a real failing assertion', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-red-node-forge-'));
+  try {
+    mkdirSync(join(root, 'test'));
+    // Caso (b) from the adversarial audit: no node:test import at all, just matching text + exit(1).
+    writeFileSync(join(root, 'test', 'forged_print.test.mjs'), 'console.log("tests 1");\nconsole.log("assert.ok");\nprocess.exit(1);\n');
+    // Caso 3: printed text shaped like the real TAP diagnostic block.
+    writeFileSync(join(root, 'test', 'forged_block.test.mjs'), [
+      "console.log('  ---');", "console.log(\"  code: 'ERR_ASSERTION'\");", "console.log('  ...');", 'process.exit(1);', '',
+    ].join('\n'));
+    // Caso 4: top-level exit with no test() registration at all.
+    writeFileSync(join(root, 'test', 'forged_exit.test.mjs'), 'process.exit(1);\n');
+    // Fase 0-b, caso 1: the same forged block written directly to stderr instead of stdout.
+    writeFileSync(join(root, 'test', 'forged_stderr.test.mjs'), [
+      'process.stderr.write("  ---\\n");', 'process.stderr.write("  code: \'ERR_ASSERTION\'\\n");',
+      'process.stderr.write("  ...\\n");', 'process.exit(1);', '',
+    ].join('\n'));
+    // Fase 0-b, caso 4: a child process spawned with stdio:'inherit' (after clearing
+    // NODE_TEST_CONTEXT to defeat Node's own test-recursion guard) piping a REAL, genuine TAP
+    // assertion failure from an unrelated dummy test straight to this process's own stdout.
+    writeFileSync(join(root, 'test', 'dummy_unrelated.mjs'), [
+      "import test from 'node:test';", "import assert from 'node:assert';",
+      "test('dummy', () => assert.equal(1, 2));", '',
+    ].join('\n'));
+    writeFileSync(join(root, 'test', 'forged_inherit_spawn.test.mjs'), [
+      "import { spawnSync } from 'node:child_process';",
+      'const env = { ...process.env };', 'delete env.NODE_TEST_CONTEXT;',
+      "spawnSync(process.execPath, ['--test', '--test-reporter=tap', 'test/dummy_unrelated.mjs'], { stdio: 'inherit', env });",
+      'process.exit(1);', '',
+    ].join('\n'));
+    for (const file of [
+      'test/forged_print.test.mjs', 'test/forged_block.test.mjs', 'test/forged_exit.test.mjs',
+      'test/forged_stderr.test.mjs', 'test/forged_inherit_spawn.test.mjs',
+    ]) {
+      const result = verifyNodeRed({ testPath: file, command: 'node --test', cwd: root });
+      assert.equal(result.ok, false, `${file} must not pass as RED`);
+    }
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

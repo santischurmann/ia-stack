@@ -15,7 +15,12 @@ const AWS_KEY = /AKIA[0-9A-Z]{16}/u;
 // the final detection pattern behind an exclusion.
 const DYNAMIC_TERMS = ['ev' + 'al', 'ex' + 'ec', 'child_' + 'process\\.ex' + 'ec', 'os\\.sys' + 'tem'];
 const SQL_TERMS = ['SEL' + 'ECT', 'INS' + 'ERT', 'UPD' + 'ATE', 'DEL' + 'ETE'].join('|');
-const INJECTION = new RegExp(`(?:\\b${DYNAMIC_TERMS[0]}\\s*\\(|\\b${DYNAMIC_TERMS[1]}\\s*\\(|${DYNAMIC_TERMS[2]}\\s*\\(|\\b${DYNAMIC_TERMS[3]}\\s*\\(|(?:${SQL_TERMS})\\b[^\\n]*\\+)`, 'iu');
+// `(?!-)` after the SQL keyword excludes hyphenated CLI/API verb-noun compounds — a `git
+// <verb>-index` style subcommand followed later on the line by an unrelated `+` inside a
+// different quoted flag used to match with no lookahead. Real string-built SQL never continues a
+// keyword straight into a hyphen; it's followed by a space and more query text instead. See
+// tests/verify-security-baseline.test.mjs for the regression this closes.
+const INJECTION = new RegExp(`(?:\\b${DYNAMIC_TERMS[0]}\\s*\\(|\\b${DYNAMIC_TERMS[1]}\\s*\\(|${DYNAMIC_TERMS[2]}\\s*\\(|\\b${DYNAMIC_TERMS[3]}\\s*\\(|(?:${SQL_TERMS})\\b(?!-)[^\\n]*\\+)`, 'iu');
 
 function git(args, cwd = '.') {
   return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });

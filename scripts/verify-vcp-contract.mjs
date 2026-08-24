@@ -19,6 +19,15 @@ export const REQUIREMENTS = [
   ['skills/spec-plan-templates.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'embedded plan gate command'],
 ];
 
+// Narrow, phrase-level bans — never a bare word ban — so legitimate uses of "genuine" elsewhere
+// (e.g. "a receipt produced by a genuine emit() run", "genuinely the same work") stay untouched.
+// Each entry targets the exact collocation that overclaims what the PreToolUse RED gate proves;
+// see scripts/pretooluse-red.mjs's own header comment for the honest claim these must match.
+export const FORBIDDEN_PHRASES = [
+  ['SKILL.md', /confirms a genuine RED/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
+  ['SKILL.md', /\bgenuine RED\b/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
+];
+
 export function contractViolations(read) {
   const violations = [];
   for (const [path, required, label] of REQUIREMENTS) {
@@ -31,6 +40,16 @@ export function contractViolations(read) {
     }
     if (!required.test(content)) violations.push(`${path}: missing ${label}`);
     if (/at least 90%/iu.test(content)) violations.push(`${path}: stale 90% coverage policy`);
+  }
+  for (const [path, forbidden, label] of FORBIDDEN_PHRASES) {
+    let content;
+    try {
+      content = read(path);
+    } catch (error) {
+      violations.push(`${path}: cannot read (${error.message})`);
+      continue;
+    }
+    if (forbidden.test(content)) violations.push(`${path}: ${label}`);
   }
   return violations;
 }
@@ -45,7 +64,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     for (const violation of violations) writeError(`REJECTED: ${violation}`);
     return 1;
   }
-  write(`OK: ${REQUIREMENTS.length} user-visible protocol contract checks pass.`);
+  write(`OK: ${REQUIREMENTS.length + FORBIDDEN_PHRASES.length} user-visible protocol contract checks pass.`);
   return 0;
 }
 

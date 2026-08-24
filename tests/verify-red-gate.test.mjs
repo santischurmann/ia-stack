@@ -55,11 +55,15 @@ function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'vcp-red-gate-'));
   write(root, 'package.json', '{"type":"module"}\n');
   write(root, 'src/unfinished.js', "export function unfinished() { throw new Error('not implemented'); }\n");
+  // A bare uncaught SUT throw is deliberately NOT accepted as RED any more (removed after the
+  // 2026-08-24 adversarial audit showed that acceptance path was forgeable by printed text alone
+  // — see verify-red-node.mjs's classifyNodeRed doc comment). Wrapping the expected failure in a
+  // real `assert.doesNotThrow` is exactly the documented way to keep this a valid RED.
   write(root, 'test/sut-runtime.test.js', [
     "import test from 'node:test';",
     "import assert from 'node:assert/strict';",
     "import { unfinished } from '../src/unfinished.js';",
-    "test('reaches an unfinished SUT', () => assert.equal(unfinished(), 'ok'));",
+    "test('reaches an unfinished SUT', () => assert.doesNotThrow(() => unfinished()));",
     '',
   ].join('\n'));
   write(root, 'test/test-bug.test.js', [
@@ -68,7 +72,14 @@ function fixture() {
     '',
   ].join('\n'));
   write(root, 'test/bare-package.test.cjs', "require('vcp-missing-third-party-package');\n");
-  write(root, 'test/local-module.test.js', "import './missing-local-sut.js';\n");
+  // Same reasoning as sut-runtime.test.js above: a bare failing import is no longer accepted;
+  // assert.doesNotReject turns the same missing-module failure into a genuine assertion RED.
+  write(root, 'test/local-module.test.js', [
+    "import test from 'node:test';",
+    "import assert from 'node:assert/strict';",
+    "test('missing local module', () => assert.doesNotReject(() => import('./missing-local-sut.js')));",
+    '',
+  ].join('\n'));
   write(root, 'test/green.test.js', [
     "import test from 'node:test';",
     "import assert from 'node:assert/strict';",

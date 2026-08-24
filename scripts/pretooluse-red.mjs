@@ -1,6 +1,15 @@
 #!/usr/bin/env node
-// PreToolUse RED enforcement. A receipt is not a project-wide permission: it is bound to one
-// feature, one task and the exact production paths declared for that task.
+// PreToolUse guard for Write/Edit. NOT a trust anchor and NOT proof of provenance: a receipt is
+// a contextual, human-reviewable record that its declared test(s) hashed to something and some
+// `node --test` run exited non-zero at emit() time — nothing here cryptographically ties a
+// receipt on disk to an actual invocation of emit(). Confirmed by falsification: on the same
+// filesystem Bash can write, a hand-crafted receipt with correct schema, correct test hash,
+// correct feature/task, and TTL math consistent with RECEIPT_TTL_MS authorizes a production
+// Write with no RED ever having run (research/adversarial-productivity-audit-2026-08-23.md).
+// This module still blocks that same forged receipt from being written THROUGH Write/Edit
+// itself, and still requires a shape-valid, hash-matching, TTL-consistent receipt before
+// authorizing any other Write/Edit — that is useful friction against accidental/careless misuse,
+// not a security boundary against a deliberately adversarial agent with Bash access.
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -8,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { isContainedProjectPath, isTestPath, normalizeProjectPath, verifyNodeRed } from './verify-red-node.mjs';
 
 export const RECEIPT_DIR = '.vibe/red-receipts';
+const RECEIPT_TREE = `${RECEIPT_DIR}/`;
 export const SESSION_PATH = '.vibe/SESSION.md';
 export const RECEIPT_TTL_MS = 30 * 60 * 1000;
 const FEATURE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
@@ -62,9 +72,16 @@ export function receiptValid(receipt, { cwd = '.', feature, now = Date.now() } =
   if (allowedPaths.some((path) => !/\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql)$/iu.test(path))) {
     return { ok: false, reason: 'receipt declares a non-production allowed path' };
   }
-  if (!Number.isFinite(Date.parse(receipt.emitted_at)) || !Number.isFinite(Date.parse(receipt.expires_at)) || Date.parse(receipt.expires_at) <= now) {
-    return { ok: false, reason: 'receipt expired or has invalid timestamps' };
+  const emittedAt = Date.parse(receipt.emitted_at);
+  const expiresAt = Date.parse(receipt.expires_at);
+  // expires_at is recomputed from emitted_at, never trusted verbatim: a receipt whose two
+  // timestamps are internally inconsistent with RECEIPT_TTL_MS is rejected. This narrows the
+  // TTL window a forger has to hit; it does not establish who or what wrote emitted_at.
+  if (!Number.isFinite(emittedAt) || !Number.isFinite(expiresAt) || expiresAt !== emittedAt + RECEIPT_TTL_MS) {
+    return { ok: false, reason: 'receipt expiry does not match the fixed TTL computed from its own emission time' };
   }
+  if (emittedAt > now) return { ok: false, reason: 'receipt was emitted in the future' };
+  if (expiresAt <= now) return { ok: false, reason: 'receipt expired or has invalid timestamps' };
   if (!Array.isArray(receipt.red_proofs) || receipt.red_proofs.length !== tests.length || receipt.red_proofs.some((proof) => proof?.command !== 'node --test' || proof?.exit_code === 0 || !/^[0-9a-f]{64}$/u.test(proof?.output_sha256 ?? ''))) {
     return { ok: false, reason: 'receipt has no verified Node-native RED proof for every test' };
   }
@@ -84,6 +101,14 @@ export function decide({ path, receipts, feature, cwd = '.', now = Date.now() })
   const normalized = normalizeProjectPath(path);
   if (!normalized) return { allow: false, reason: 'Write/Edit payload has no safe project-relative file_path' };
   if (!isContainedProjectPath(normalized, cwd)) return { allow: false, reason: 'Write/Edit payload resolves outside the project or through a dangling link' };
+  // Blocking Write/Edit on the receipt tree is friction against an accidental or careless
+  // in-band write, not a provenance guarantee: this hook only ever sees Write/Edit tool calls,
+  // so a receipt written through Bash (or any channel other than Write/Edit) lands on disk
+  // untouched by this check and is then judged by receiptValid() on shape alone — see the module
+  // header comment and README.md "Gates que sí son código" for the documented, falsified limit.
+  // This check still runs before the extension allowlist below, so a receipt's .json extension
+  // doesn't quietly fall through as an unguarded file type for the one channel this hook does see.
+  if (normalized.startsWith(RECEIPT_TREE)) return { allow: false, reason: 'writing directly to the receipt tree via Write/Edit is blocked; use pretooluse-red.mjs emit' };
   if (isTestPath(normalized) || !/\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql)$/iu.test(normalized)) return { allow: true };
   if (!feature) return { allow: false, reason: 'no active feature in .vibe/SESSION.md; cannot select a scoped RED receipt' };
   for (const receipt of receipts) {

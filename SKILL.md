@@ -252,17 +252,41 @@ change.
 task. Anything outside that list is scope creep — report it, don't silently keep it.
 
 **Optional: PreToolUse enforcement** (point #1, `scripts/pretooluse-red.mjs`) — if
-`.claude/settings.json` wires this script as a `PreToolUse` hook (see `README.md` § Optional
-hardening), immediately after `verify-red.sh`/`.ps1` confirms a genuine RED, run:
+`.claude/settings.json` wires this script as a `PreToolUse` hook (see `README.md`, section
+"Gates que sí son código", for the exact `settings.json` snippet), immediately after
+`verify-red.sh`/`.ps1` confirms RED evidence accepted by the applicable adapter, run:
 ```bash
 node .vibe/vcp-runtime/scripts/pretooluse-red.mjs emit --feature <feature-slug> --task <task-id> --tests <red-test-file-1,red-test-file-2> --files <declared-production-path-1,declared-production-path-2> --command "node --test"
 ```
 This is optional and degrades cleanly when absent — same pattern as `fableultracode`/`cyber-neo`
 — but when present it makes RED-before-write a harness-level block, not something the model has
-to remember to check. The receipt is feature/task/path-scoped, expires after 30 minutes, includes
-the verified Node RED proof, and self-invalidates if a listed test changes. A RED for `T01` never
-authorizes a write declared only by `T02`. Paths are both lexical and physical: `..`, an external
-symlink, or a dangling symlink is rejected before Node runs or the hook authorizes a write.
+to remember to check. The receipt is feature/task/path-scoped, expires after 30 minutes computed
+from `emitted_at` (not from the receipt's own self-declared `expires_at`), includes a Node RED
+proof accepted by `verify-red-node.mjs`, and self-invalidates if a listed test's hash changes. A
+receipt for `T01` never authorizes a write declared only by `T02`. Paths are both lexical and
+physical: `..`, an external symlink, or a dangling symlink is rejected before Node runs or the
+hook authorizes a write.
+
+**Scope, stated exactly — this is a guard, not a trust anchor or a sandbox.** The hook only fires
+on `Write`/`Edit` tool calls, and `receiptValid()` checks shape/hashes/TTL math, never provenance:
+- A model that runs `Bash`/PowerShell to write a production file (`sed -i`, `cat > file`, a
+  script, `cp`) is not intercepted at all.
+- A model that writes a receipt JSON directly onto disk via `Bash` (rather than through
+  `pretooluse-red.mjs emit`) is not intercepted either — the receipt-tree Write/Edit block only
+  covers the one channel this hook can see. A hand-written receipt with correct schema, a real
+  test's hash, and TTL math consistent with `RECEIPT_TTL_MS` then authorizes a Write/Edit through
+  the normal path, with no RED ever having run. Confirmed by falsification, documented as an
+  accepted limit of the advisory model in `research/adversarial-productivity-audit-2026-08-23.md`
+  and in `scripts/pretooluse-red.mjs`'s own header comment — not a bug pending a fix.
+- Even a receipt produced by a genuine `emit()` run only proves `verify-red-node.mjs` saw a real
+  `test()` fail with metadata shaped like `AssertionError`. A test file that manually constructs
+  `Object.assign(new Error('x'), { code: 'ERR_ASSERTION' })` inside a real `test()` is
+  indistinguishable from a real `node:assert` failure to this gate — no signal in the tested
+  process's own stdout can tell them apart, because the process under test is the same process
+  whose author controls the artifact being verified.
+
+Treat all three as protocol/review responsibilities (scope check, receipts as evidence to be
+read, not trusted), not as guarantees this technical gate provides.
 
 **3.2 GREEN** (role: Builder) — `skills/subagent-green.md`. Verify PASS, no regressions.
 

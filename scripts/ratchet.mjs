@@ -11,7 +11,7 @@
 // use: where no new code was written, a fixed count held (167 fractional sizes -> 0 -> 0);
 // where new surface was added, the debt came back (50 -> 0 -> 29) because nothing covered it.
 //
-// Counters are declared in `.vibe/counters.json` (see templates/vibe/COUNTERS.json) as
+// Counters are declared in `.vibe/counters.json` (see templates/vibe/counters.json) as
 // {name, pattern, include, exclude} — regex over versioned files, glob-filtered. This is opt-in:
 // VCP does not ship a default counter set, a project only gets this gate once it declares what
 // to watch.
@@ -130,7 +130,7 @@ export function main(argv = process.argv.slice(2), cwd = '.') {
   const baselinePath = `${cwd}/.vibe/counters-baseline.json`;
 
   if (!existsSync(configPath)) {
-    console.error(`${configPath} does not exist. No counters declared, nothing to ratchet — this gate is opt-in, see templates/vibe/COUNTERS.json.`);
+    console.error(`${configPath} does not exist. No counters declared, nothing to ratchet — this gate is opt-in, see templates/vibe/counters.json.`);
     return 2;
   }
 

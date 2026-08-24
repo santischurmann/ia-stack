@@ -66,39 +66,79 @@ alcance o autoridad.
 
 Estos no son checklists de buena voluntad:
 
-- `verify-red-node.mjs`: corre **exactamente** `node --test <archivo>`; no acepta texto falso de
-  un wrapper ni runners no soportados. Bash y PowerShell son entradas equivalentes. Para otro
-  stack hay que sumar un adapter dedicado y falsificado; no se habilita por regex genérico. El
-  archivo debe permanecer físicamente dentro del proyecto: bloquea `..`, symlinks externos y
-  links colgantes.
-- `pretooluse-red.mjs`: hook opcional. Un RED sólo habilita los paths productivos declarados para
-  una feature y tarea; vence a los 30 minutos, vuelve a validar los tests y no sigue links fuera
-  del proyecto.
+- `verify-red-node.mjs`: corre **exactamente** `node --test --test-reporter=tap <archivo>` y
+  exige la evidencia estructural que produce el propio harness de `node:test` — un bloque TAP
+  `  ---`/`  ...` real con `code: 'ERR_ASSERTION'` — no un match de texto sobre stdout/stderr
+  combinados. Bash y PowerShell son entradas equivalentes. Para otro stack hay que sumar un
+  adapter dedicado y falsificado; no se habilita por regex genérico. El archivo debe permanecer
+  físicamente dentro del proyecto: bloquea `..`, symlinks externos y links colgantes.
+  **Límite honesto:** el gate prueba que un `test()` real registrado falló con un error con forma
+  de `AssertionError`. No prueba que ese error vino de `node:assert` genuino — un archivo de test
+  que arma un `Error` a mano con `code:'ERR_ASSERTION'` dentro de un `test()` real produce la
+  misma evidencia estructural (falsificado y documentado en
+  `research/adversarial-productivity-audit-2026-08-23.md`). Eso queda como responsabilidad de
+  revisión/protocolo, no de este gate técnico.
+- `pretooluse-red.mjs`: guard opcional del tipo `PreToolUse` para las tools `Write`/`Edit`.
+  **No es un control de integridad ni de procedencia, y no es un sandbox.** Los receipts son
+  evidencia contextual y revisable — un registro de que ciertos tests hashean a determinado
+  contenido y que algún `node --test` salió con error al momento declarado — no una prueba
+  criptográfica de que `emit()` los produjo. En el mismo filesystem que el agente puede escribir
+  con `Bash`/PowerShell, un receipt con forma válida, hash de test real y matemática de TTL
+  consistente (`emitted_at + 30 minutos`) autoriza una escritura de producción sin que haya
+  corrido ningún RED real — falsificado y documentado en
+  `research/adversarial-productivity-audit-2026-08-23.md`. Esto es un límite esperado del modelo
+  asesorado (decisión explícita: revisión humana/protocolo, no un boundary técnico), no un bug
+  pendiente. Lo que el guard sí hace, como fricción útil contra error accidental: bloquea
+  `Write`/`Edit` directo sobre `.vibe/red-receipts/**` (para el único canal que el hook ve),
+  exige que el receipt referencie tests reales cuyo hash siga coincidiendo, y rechaza matemática
+  de TTL inconsistente.
 - `verify-plan-conflicts.mjs`: detecta writers compartidos, inclusive paths con `../` disfrazado.
 - `verify-receipt.mjs`: hashea por separado HEAD→index, index→worktree, cambios de modo,
   binarios y untracked. Un cambio posterior invalida el receipt.
 - `verify-security-baseline.mjs`: escanea el delta de base más staged, unstaged y untracked.
-  Bloquea secretos obvios, artefactos sensibles y ejecución dinámica/SQL concatenado. Es un piso
-  grep, no un reemplazo de SAST.
+  Bloquea secretos obvios, artefactos sensibles y ejecución dinámica/SQL concatenado **cuando
+  aparecen con comillas simples/dobles y concatenación con `+` en una sola línea**. Es un piso
+  grep literal, no un reemplazo de SAST: no normaliza template literals (backticks), no evalúa
+  contenido partido en varias líneas, y no reconoce despacho dinámico vía notación de corchetes
+  (`globalThis['ev'+'al']`). Para riesgo alto, sumá un scanner real y conservá este gate como piso
+  mínimo, no como cobertura completa.
 - `verify-vcp-coverage.mjs`: exige 100% de líneas, ramas y funciones para **cada script Node
   inventariado**. Los scripts Bash/PowerShell tienen pruebas funcionales de paridad; no se los
   declara cubiertos por líneas porque Node no los instrumenta.
 - `verify-backup-state.mjs`: guarda un recibo del backup de Graphify y comprueba que el reporte,
-  el grafo y el commit siguen siendo exactamente los que se revisaron.
+  el grafo y el commit siguen siendo exactamente los que se revisaron. Esto valida **integridad y
+  frescura de dos archivos locales** (sus hashes no cambiaron desde que se registró el manifest, y
+  el commit declarado en el reporte coincide con `HEAD`). No valida **completitud semántica**:
+  no verifica que el grafo realmente contenga todos los nodos/relaciones del árbol de código, sólo
+  que el `graph.json` grabado es el mismo que se referenció. `graphify-out/` está en
+  `.gitignore`, así que en un clone limpio sin backup local `check` falla — esto es esperado, no
+  un bug: el gate certifica el backup de *esta* máquina, no lo reconstruye.
 
-Ejemplos desde el proyecto:
+Ejemplos desde el proyecto. Un proyecto recién instalado necesita un único paso manual antes del
+primer receipt: fijar el feature slug activo en `.vibe/SESSION.md` (la instalación lo deja como
+placeholder a propósito, para no inventar una feature falsa):
 
 ```bash
+# Paso único, manual, antes del primer gate — reemplazá el placeholder por el slug real
+# ("**Feature slug:** (set before first gate...)" -> "**Feature slug:** auth-fix")
+
 # Antes de aprobar el plan
 node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 
 # RED estricto para Node nativo
 .vibe/vcp-runtime/scripts/verify-red.sh test/auth.test.mjs "node --test"
 
-# Receipt de RED opcional para el hook PreToolUse
+# Receipt de RED opcional para el hook PreToolUse (requiere el feature slug del paso único de
+# arriba ya seteado en .vibe/SESSION.md; --feature debe coincidir exactamente)
 node .vibe/vcp-runtime/scripts/pretooluse-red.mjs emit \
   --feature auth-fix --task T01 --tests test/auth.test.mjs \
   --files src/auth.mjs --command "node --test"
+
+# Cablear el hook (opcional, endurece Write/Edit — no cubre Bash/PowerShell, ver arriba):
+# agregar a .claude/settings.json del proyecto:
+#   { "hooks": { "PreToolUse": [ { "matcher": "Write|Edit",
+#       "hooks": [ { "type": "command",
+#         "command": "node .vibe/vcp-runtime/scripts/pretooluse-red.mjs" } ] } ] } }
 
 # Seguridad sobre lo que realmente se va a liberar
 node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base origin/main

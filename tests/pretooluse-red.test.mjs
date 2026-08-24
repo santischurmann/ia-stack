@@ -9,6 +9,7 @@ import test from 'node:test';
 
 const scriptPath = fileURLToPath(new URL('../scripts/pretooluse-red.mjs', import.meta.url));
 const { RECEIPT_DIR, RECEIPT_TTL_MS, asHook, decide, emit, main, receiptValid } = await import(pathToFileURL(scriptPath).href);
+const ZERO_SHA = '0'.repeat(64);
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const NOW = Date.parse('2026-08-23T12:00:00.000Z');
 
@@ -90,6 +91,14 @@ test('FALSIFICACIÓN · receipt validation fails closed for corrupt schema, feat
       validReceipt({ red_proofs: [] }), validReceipt({ red_proofs: [{ command: 'node -e nope', exit_code: 1, output_sha256: 'a'.repeat(64) }] }), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 0, output_sha256: 'a'.repeat(64) }] }), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 1 }]}), validReceipt({ red_proofs: [{ command: 'node --test', exit_code: 1, output_sha256: 'short' }] }),
       validReceipt({ red_proofs: [null] }),
       validReceipt({ emitted_at: 'invalid' }), validReceipt({ expires_at: 'invalid' }), validReceipt({ expires_at: new Date(NOW - 1).toISOString() }),
+      // TTL math is internally consistent (emitted_at + RECEIPT_TTL_MS === expires_at) but the
+      // window has genuinely elapsed relative to `now` — must still reject on the expiry check.
+      validReceipt({ emitted_at: new Date(NOW - RECEIPT_TTL_MS - 1000).toISOString(), expires_at: new Date(NOW - 1000).toISOString() }),
+      // P0 regression: a hand-written receipt with a self-declared long-lived window (never
+      // produced by emit()'s own now+RECEIPT_TTL_MS computation) must be rejected even when every
+      // other field is well-formed and the referenced test file genuinely hashes to what it claims.
+      validReceipt({ emitted_at: new Date(NOW - 60 * 60 * 1000).toISOString(), expires_at: new Date(NOW + 365 * 24 * 60 * 60 * 1000).toISOString() }),
+      validReceipt({ emitted_at: new Date(NOW + 60 * 60 * 1000).toISOString(), expires_at: new Date(NOW + 60 * 60 * 1000 + RECEIPT_TTL_MS).toISOString() }),
       validReceipt({ tests: { 'README.md': 'a'.repeat(64) } }), validReceipt({ tests: { 'test/billing.test.mjs': 42 } }), validReceipt({ tests: { 'test/ghost.test.mjs': 'a'.repeat(64) } }), validReceipt({ allowed_paths: ['README.md'] }),
     ];
     for (const receipt of invalid) assert.equal(receiptValid(receipt, { cwd: root, feature: 'billing-fix', now: NOW }).ok, false);
@@ -195,6 +204,51 @@ test('FALSIFICACIÓN · emit rejects invalid scope, session mismatch, missing te
     assert.equal(emit({ feature: 'billing-fix', task: 'T01', tests: ['README.md'], files: ['src/a.mjs'], command: 'node --test', cwd: root, now: NOW }).ok, false);
     write(root, 'test/billing.test.mjs', 'changed\n');
     assert.equal(receiptValid(validReceipt(), { cwd: root, feature: 'billing-fix', now: NOW }).ok, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('DOCUMENTED LIMIT (advisory model, not a bypass to fix) · a receipt written outside Write/Edit — e.g. via Bash — with plausible shape, matching test hash, and TTL math consistent with RECEIPT_TTL_MS authorizes a production write with no RED ever run', () => {
+  const root = fixture();
+  try {
+    const testContent = seedValidState(root);
+    const forgedNow = Date.now();
+    const forged = {
+      schema: 'vcp.red-receipt/v2', feature: 'billing-fix', task: 'T01',
+      emitted_at: new Date(forgedNow).toISOString(), expires_at: new Date(forgedNow + RECEIPT_TTL_MS).toISOString(),
+      tests: { 'test/billing.test.mjs': sha(testContent) }, allowed_paths: ['src/billing.mjs'],
+      red_proofs: [{ test_path: 'test/billing.test.mjs', command: 'node --test', exit_code: 1, output_sha256: ZERO_SHA }],
+    };
+    // This bypasses asHook/decide entirely on purpose: it is the fs-level equivalent of a Bash
+    // heredoc, the exact channel this hook cannot see (only Write/Edit tool calls reach it).
+    write(root, '.vibe/red-receipts/billing-fix/T01.json', JSON.stringify(forged));
+    const decision = asHook({ tool_name: 'Write', tool_input: { file_path: 'src/billing.mjs' } }, root, forgedNow);
+    // ALLOW is the expected, documented outcome here — not a bug. receiptValid() checks shape,
+    // hash, and TTL math, none of which prove this file was ever produced by emit(). See the
+    // module header comment, README.md "Gates que sí son código", and
+    // research/adversarial-productivity-audit-2026-08-23.md for why this is an accepted limit of
+    // an advisory-model guard, not a security boundary — Fase 1 decision C.
+    assert.deepEqual(decision, {});
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('direct Write/Edit to the receipt tree is denied — friction against the one channel this hook can see, not a provenance guarantee (Bash is untouched, see the limit documented above)', () => {
+  const root = fixture();
+  try {
+    seedValidState(root);
+    for (const tool of ['Write', 'Edit']) {
+      const decision = asHook({ tool_name: tool, tool_input: { file_path: '.vibe/red-receipts/billing-fix/T99.json' } }, root, NOW);
+      assert.equal(decision.hookSpecificOutput.permissionDecision, 'deny');
+      assert.match(decision.hookSpecificOutput.permissionDecisionReason, /blocked; use pretooluse-red\.mjs emit/);
+    }
+    // The guard fires before any feature/session lookup — no active feature required to deny it.
+    rmSync(join(root, '.vibe', 'SESSION.md'), { force: true });
+    const noSession = asHook({ tool_name: 'Write', tool_input: { file_path: '.vibe/red-receipts/any-feature/T01.json' } }, root, NOW);
+    assert.equal(noSession.hookSpecificOutput.permissionDecision, 'deny');
+    assert.equal(decide({ path: '.vibe/red-receipts/x/y.json', receipts: [], feature: 'billing-fix', cwd: root, now: NOW }).allow, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
