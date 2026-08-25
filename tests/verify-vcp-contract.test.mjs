@@ -10,7 +10,7 @@ const { FORBIDDEN_PHRASES, REQUIREMENTS, contractViolations, main } = await impo
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {
@@ -52,6 +52,23 @@ test('FALSIFICACIÓN · contract rejects "confirms a genuine RED" / "genuine RED
     ? `${completeRead(path)}\na receipt produced by a genuine emit() run\nretag only if it is genuinely the same work`
     : completeRead(path));
   assert.deepEqual(legitimateOnly, []);
+});
+
+test('FALSIFICACIÓN · contract rejects SKILL.md missing the receipt v2 all-AC-COMPLIANT rule, the command/result honest-evidence limit, or the scope honest limit', () => {
+  const missingAllCompliant = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingAllCompliant.some((item) => /SKILL\.md: missing receipt v2: all-AC-COMPLIANT requirement/u.test(item)), true);
+
+  const missingCryptoLimit = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('nunca re-ejecuta el comando ni prueba criptográficamente', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingCryptoLimit.some((item) => /SKILL\.md: missing receipt v2: command\/result is reviewable evidence/u.test(item)), true);
+
+  const missingScopeLimit = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('no lo llames "el scope\nreal del plan"', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingScopeLimit.some((item) => /SKILL\.md: missing receipt v2: scope\.declared_paths honest limit/u.test(item)), true);
 });
 
 test('main reports pass, invalid usage and a real repository contract failure without trusting narration', () => {

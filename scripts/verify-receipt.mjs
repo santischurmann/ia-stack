@@ -209,6 +209,172 @@ function fail(reason) {
   process.exit(1);
 }
 
+// ---------------------------------------------------------------------------------------------
+// vcp.receipt/v2 — strict schema for gates that authorize a commit/publish decision.
+//
+// HONEST SCOPE (do not oversell): `command`, `result`, `measurements` and `reproduction` are
+// structured, human-reviewable evidence — a record of what an author claims ran and what it
+// produced. Nothing in this validator re-executes a command or cryptographically proves it ran;
+// that is the same procedural-not-cryptographic disclosure this project already makes for
+// `evidence` on v1 (see SKILL.md). `scope.declared_paths` is a self-declared writer set, not
+// cross-checked against a plan/task source of truth — that requires research item #24
+// (verify-plan-conflicts.mjs-equivalent cross-check), not implemented here.
+// ---------------------------------------------------------------------------------------------
+
+const V2_SCHEMA = 'vcp.receipt/v2';
+const V1_SCHEMA = 'vcp.receipt/v1';
+const AC_VERDICTS = new Set(['COMPLIANT', 'FAILING', 'UNTESTED', 'PARTIAL']);
+const SHA256_HEX = /^[0-9a-f]{64}$/u;
+const NOT_REVIEWED_PLACEHOLDERS = new Set(['n/a', 'unknown', 'nothing']);
+
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+/** Same disclosure discipline as scripts/verify-handoff-report.mjs's NOT_REVIEWED, applied to a
+ * plain string field instead of a markdown declaration line. */
+export function validateNotReviewedField(value) {
+  if (!nonEmptyString(value)) return { ok: false, reason: 'not_reviewed must be a non-empty string' };
+  const trimmed = value.trim();
+  const normalized = trimmed.toLowerCase();
+  if (NOT_REVIEWED_PLACEHOLDERS.has(normalized)) return { ok: false, reason: `not_reviewed placeholder ${JSON.stringify(trimmed)} hides review limits` };
+  if (normalized === 'none') return { ok: false, reason: 'not_reviewed cannot be bare "none"; state the reviewed scope after "none —"' };
+  if (normalized.startsWith('none') && !/^none\s*(?:—|-)\s*\S.*$/iu.test(trimmed)) {
+    return { ok: false, reason: 'not_reviewed uses "none" without a reviewed-scope basis' };
+  }
+  return { ok: true };
+}
+
+/** One acceptance-criteria entry. `verdict !== 'COMPLIANT'` blocks by itself — a receipt with any
+ * UNTESTED/PARTIAL/FAILING AC can exist as a draft, but never reaches an approved `check`. */
+export function validateAcceptanceCriterion(ac, cwd, { readFile = readFileSync } = {}) {
+  if (!ac || typeof ac !== 'object' || Array.isArray(ac)) return { ok: false, reason: 'acceptance_criteria entry must be an object' };
+  if (!nonEmptyString(ac.ac_id)) return { ok: false, reason: 'acceptance_criteria entry missing ac_id' };
+  const label = ac.ac_id;
+  if (!nonEmptyString(ac.scenario)) return { ok: false, reason: `${label}: scenario must be a non-empty string` };
+  if (!AC_VERDICTS.has(ac.verdict)) return { ok: false, reason: `${label}: verdict must be one of ${[...AC_VERDICTS].join('|')}` };
+  if (ac.verdict !== 'COMPLIANT') return { ok: false, reason: `${label}: verdict is ${ac.verdict}, not COMPLIANT — an approved v2 receipt requires every AC to be COMPLIANT` };
+  if (!nonEmptyString(ac.test_file)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty test_file` };
+  if (!SHA256_HEX.test(ac.test_hash_sha256 ?? '')) return { ok: false, reason: `${label}: test_hash_sha256 must be a full 64-character hex sha256` };
+  if (!nonEmptyString(ac.command)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty command` };
+  if (!nonEmptyString(ac.result)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty result` };
+  let file;
+  try {
+    file = safeRegularFile(ac.test_file, cwd);
+  } catch (error) {
+    return { ok: false, reason: `${label}: test_file is unsafe: ${error.message}` };
+  }
+  const actualHash = createHash('sha256').update(readFile(file)).digest('hex');
+  if (actualHash !== ac.test_hash_sha256) {
+    return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk — the test changed since this AC was verified, regenerate the AC entry` };
+  }
+  return { ok: true, testPath: file };
+}
+
+export function validateAcceptanceCriteria(acceptanceCriteria, cwd, options, declaredPaths) {
+  if (!Array.isArray(acceptanceCriteria) || acceptanceCriteria.length === 0) {
+    return { ok: false, reason: 'acceptance_criteria must be a non-empty array' };
+  }
+  const ids = new Set();
+  for (const ac of acceptanceCriteria) {
+    const result = validateAcceptanceCriterion(ac, cwd, options);
+    if (!result.ok) return result;
+    const id = ac.ac_id.trim();
+    if (ids.has(id)) return { ok: false, reason: `duplicate ac_id: ${id}` };
+    ids.add(id);
+    if (declaredPaths && !declaredPaths.has(result.testPath)) {
+      return { ok: false, reason: `${id}: test_file is not declared in scope.declared_paths` };
+    }
+  }
+  return { ok: true };
+}
+
+/** measured=false requires before/after pinned to -1 plus a non-empty reason — "-1" is only
+ * honest when it's paired with why nothing was measured, never a silent default. */
+export function validateMeasurements(measurements) {
+  if (!Array.isArray(measurements)) return { ok: false, reason: 'measurements must be an array' };
+  for (const m of measurements) {
+    if (!m || typeof m !== 'object' || Array.isArray(m) || !nonEmptyString(m.metric)) {
+      return { ok: false, reason: 'measurement entry missing a non-empty metric name' };
+    }
+    if (typeof m.measured !== 'boolean') return { ok: false, reason: `${m.metric}: measured must be a boolean` };
+    if (m.measured) {
+      if (typeof m.before !== 'number' || typeof m.after !== 'number') {
+        return { ok: false, reason: `${m.metric}: measured=true requires numeric before/after` };
+      }
+    } else {
+      if (m.before !== -1 || m.after !== -1) return { ok: false, reason: `${m.metric}: measured=false requires before and after to both be -1` };
+      if (!nonEmptyString(m.reason)) return { ok: false, reason: `${m.metric}: measured=false requires a non-empty reason` };
+    }
+  }
+  return { ok: true };
+}
+
+/** scope.declared_paths — project-local, regular, no symlink/junction escape. Self-declared by
+ * the receipt's own author: NOT cross-checked against a plan/task file (see module header). */
+export function validateScope(scope, cwd) {
+  if (!scope || typeof scope !== 'object' || Array.isArray(scope)) return { ok: false, reason: 'scope must be an object' };
+  if (!Array.isArray(scope.declared_paths) || scope.declared_paths.length === 0) {
+    return { ok: false, reason: 'scope.declared_paths must be a non-empty array' };
+  }
+  const declaredPaths = new Set();
+  for (const path of scope.declared_paths) {
+    if (!nonEmptyString(path)) return { ok: false, reason: 'scope.declared_paths entries must be non-empty strings' };
+    try {
+      declaredPaths.add(safeRegularFile(path, cwd));
+    } catch (error) {
+      return { ok: false, reason: `scope.declared_paths entry is unsafe: ${error.message}` };
+    }
+  }
+  return { ok: true, declaredPaths };
+}
+
+/** review_4r — shape-only: an object carrying the 4 named lenses. This gate does not grade
+ * their content (no invariant for that was specified), only that the record exists structurally
+ * so an approved receipt cannot omit the 4R pass entirely. */
+export function validateReview4r(review) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) return { ok: false, reason: 'review_4r must be an object' };
+  for (const lens of ['risk', 'readability', 'reliability', 'resilience']) {
+    if (!review[lens] || typeof review[lens] !== 'object' || Array.isArray(review[lens])) {
+      return { ok: false, reason: `review_4r.${lens} must be an object` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Full vcp.receipt/v2 validation, everything the module header's honest-scope note applies to.
+ * Does NOT check git_head/tree_fingerprint — the caller compares those against a live
+ * fingerprint the same way it already does for v1. */
+export function validateReceiptV2(receipt, cwd, options) {
+  if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt)) return { ok: false, reason: 'receipt must be an object' };
+  const required = ['feature', 'task', 'scope', 'acceptance_criteria', 'review_4r', 'measurements', 'reproduction', 'not_reviewed', 'evidence', 'git_head', 'tree_fingerprint', 'terminal_state'];
+  for (const f of required) {
+    if (!(f in receipt)) return { ok: false, reason: `missing required field: ${f}` };
+  }
+  if (!nonEmptyString(receipt.feature)) return { ok: false, reason: 'feature must be a non-empty string' };
+  if (!nonEmptyString(receipt.task)) return { ok: false, reason: 'task must be a non-empty string' };
+  if (!Array.isArray(receipt.evidence) || receipt.evidence.length === 0) return { ok: false, reason: 'evidence array is empty — no receipt without real evidence backing it' };
+  if (receipt.evidence.some((entry) => !nonEmptyString(entry))) return { ok: false, reason: 'evidence entries must be non-empty strings' };
+  if (!nonEmptyString(receipt.reproduction)) return { ok: false, reason: 'reproduction must be a non-empty string' };
+  if (!['approved', 'escalated'].includes(receipt.terminal_state)) return { ok: false, reason: `terminal_state must be approved|escalated, got: ${receipt.terminal_state}` };
+  if (receipt.terminal_state === 'escalated') {
+    return { ok: false, reason: 'terminal_state is escalated — this gate never passes an escalated receipt, regardless of override_note. Regenerate a NEW receipt with terminal_state:"approved" after explicit user sign-off (LAW 8).' };
+  }
+
+  const scope = validateScope(receipt.scope, cwd);
+  if (!scope.ok) return scope;
+  const ac = validateAcceptanceCriteria(receipt.acceptance_criteria, cwd, options, scope.declaredPaths);
+  if (!ac.ok) return ac;
+  const review = validateReview4r(receipt.review_4r);
+  if (!review.ok) return review;
+  const measurements = validateMeasurements(receipt.measurements);
+  if (!measurements.ok) return measurements;
+  const notReviewed = validateNotReviewedField(receipt.not_reviewed);
+  if (!notReviewed.ok) return notReviewed;
+
+  return { ok: true };
+}
+
 // CLI entry point — guarded so tests can `import` this module's functions (parseRawDiff, etc.)
 // without triggering process.exit() as a side effect of the import.
 if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
@@ -230,59 +396,37 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     process.exit(0);
   }
 
-  if (cmd === 'check') {
-    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
-    if (!existsSync(arg)) fail(`receipt not found: ${arg}`);
-
-    // The receipt itself is input to an approval gate, so it has the same containment rule as
-    // release files. An external or linked JSON document cannot be excluded from the fingerprint
-    // or used to influence a project-local release decision.
-    //
-    // Reads through the resolved path safeRegularFile returns (same convention as
-    // hashFileContent above), instead of re-deriving the path from the original `arg` string a
-    // second time. This closes the most trivially exploitable extra window — a second string-to-
-    // path resolution that could itself observe a different filesystem state — but it is NOT a
-    // claim that the TOCTOU race is eliminated: neither Node's fs API nor this project's
-    // supported platforms (Windows lacks a portable O_NOFOLLOW-equivalent open flag) guarantee an
-    // atomic "verify-then-read" primitive, so a symlink swapped in at the exact resolved path
-    // between the lstat/realpath checks inside safeRegularFile and this readFileSync call is
-    // still a live theoretical race. See research/adversarial-productivity-audit-2026-08-23.md.
+  // Shared by `check` and `inspect-legacy`: resolve+read the receipt path safely, parse JSON.
+  // Same TOCTOU disclosure as before — see the module header note near safeRegularFile.
+  function readReceiptSafely(path) {
+    if (!existsSync(path)) fail(`receipt not found: ${path}`);
     let safePath;
     try {
-      safePath = safeRegularFile(arg, realpathSync('.'));
+      safePath = safeRegularFile(path, realpathSync('.'));
     } catch (error) {
       fail(`receipt path is unsafe: ${error.message}`);
     }
-
-    let receipt;
     try {
-      receipt = JSON.parse(readFileSync(safePath, 'utf8'));
+      return JSON.parse(readFileSync(safePath, 'utf8'));
     } catch (e) {
       fail(`receipt is not valid JSON: ${e.message}`);
     }
+  }
 
-    const required = ['schema', 'feature', 'risk_level', 'evidence', 'git_head', 'tree_fingerprint', 'terminal_state'];
-    for (const f of required) {
-      if (!(f in receipt)) fail(`missing required field: ${f}`);
+  if (cmd === 'check') {
+    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
+    const receipt = readReceiptSafely(arg);
+
+    // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
+    // regardless of its content. Point the caller at the read-only inspector instead of leaving
+    // it looking like a transient rejection.
+    if (receipt.schema === V1_SCHEMA) {
+      fail(`schema vcp.receipt/v1 is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${arg}`);
     }
+    if (receipt.schema !== V2_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
 
-    if (receipt.schema !== 'vcp.receipt/v1') fail(`unknown schema: ${receipt.schema}`);
-
-    if (!Array.isArray(receipt.evidence) || receipt.evidence.length === 0) {
-      fail('evidence array is empty — no receipt without a real command output backing it');
-    }
-
-    if (!['approved', 'escalated'].includes(receipt.terminal_state)) {
-      fail(`terminal_state must be approved|escalated, got: ${receipt.terminal_state}`);
-    }
-
-    // escalated is ALWAYS rejected by this gate, unconditionally — no override_note shortcut.
-    // The only path past an escalated finding is: user approves explicitly, orchestrator writes
-    // a NEW receipt with terminal_state:"approved" (override_note/override_timestamp kept as
-    // audit metadata on that new receipt), and THAT receipt is what gets checked here.
-    if (receipt.terminal_state === 'escalated') {
-      fail('terminal_state is escalated — this gate never passes an escalated receipt, regardless of override_note. Regenerate a NEW receipt with terminal_state:"approved" after explicit user sign-off (LAW 8).');
-    }
+    const shape = validateReceiptV2(receipt, realpathSync('.'));
+    if (!shape.ok) fail(shape.reason);
 
     // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
     // guard) — every other file, including siblings in the same receipts/ directory, still counts.
@@ -294,10 +438,24 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
       fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
     }
 
-    console.log(`OK: receipt valid for ${receipt.feature} — terminal_state=approved, risk_level=${receipt.risk_level}`);
+    console.log(`OK: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`);
     process.exit(0);
   }
 
-  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json>');
+  if (cmd === 'inspect-legacy') {
+    if (!arg) fail('usage: verify-receipt.mjs inspect-legacy <receipt.json>');
+    const receipt = readReceiptSafely(arg);
+    if (receipt.schema !== V1_SCHEMA) {
+      fail(`inspect-legacy is for schema vcp.receipt/v1 only, got: ${receipt.schema} — use check for vcp.receipt/v2`);
+    }
+    // Read-only report — no fingerprint recomputation, no exit-1 path past this point, no write
+    // of any kind. This is archival evidence: it never authorizes a commit/publish decision.
+    console.log(`ARCHIVAL: vcp.receipt/v1 receipt for feature="${receipt.feature ?? '(missing)'}", terminal_state="${receipt.terminal_state ?? '(missing)'}".`);
+    console.log('This receipt predates the vcp.receipt/v2 schema. It is archival evidence only —');
+    console.log('it cannot pass `check` and does not authorize any commit, publish, or gate decision.');
+    process.exit(0);
+  }
+
+  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> | inspect-legacy <receipt.json>');
   process.exit(2);
 }

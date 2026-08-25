@@ -494,40 +494,77 @@ de este finding" y pasa a ser un cambio de scope no planeado.
 
 **4.5 Tests (final)** — re-run full suite post-fixes from 4.3/4.4. Must be green — this is
 the last check before commit. Después, escribí el receipt (el propio orchestrator lo lee/
-escribe con Read/Write — sin script de shell, sin dependencia de `jq`):
+escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
+
+**Schema `vcp.receipt/v2` — el único que `verify-receipt.mjs check` puede aprobar** (schema
+`vcp.receipt/v1` es archivístico: cualquier receipt v1 existente se lee con `inspect-legacy`,
+nunca con `check` — ver más abajo):
 
 ```
 .vibe/receipts/<feature-slug>-<fecha>.json
 {
-  "schema": "vcp.receipt/v1",
+  "schema": "vcp.receipt/v2",
   "feature": "<de docs/spec.md>",
-  "risk_level": "bajo|estandar|alto|critico",
-  "risk_reasons": ["<code>: <path:lineas>", "..."],
-  "simplify_ignore_respected": true,
-  "adversarial_reviewers": "<N real usado — 1 (bajo) | 2 (estandar) | 4 (alto) | 4+repro (critico) — nunca 0>",
-  "adversarial_findings": ["<lens>: <finding> — verdict: fixed|refuted, evidence: <...>", "..."],
+  "task": "<id de tasks.json, ej. T02>",
+  "scope": { "declared_paths": ["<paths tocados, autodeclarados>"] },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC-2",
+      "scenario": "<qué prueba, en una frase>",
+      "test_file": "<path del test que lo prueba>",
+      "test_hash_sha256": "<sha256 completo, 64 hex, del archivo de test tal como quedó>",
+      "command": "<comando exacto corrido>",
+      "result": "<salida real, ej. '47 passed'>",
+      "verdict": "COMPLIANT|FAILING|UNTESTED|PARTIAL"
+    }
+  ],
+  "review_4r": {
+    "risk": { "level": "bajo|estandar|alto|critico", "reasons": ["<code>: <path:lineas>"] },
+    "readability": { "verdict": "fixed|no_findings", "notes": "<...>" },
+    "reliability": { "verdict": "fixed|no_findings", "notes": "<...>" },
+    "resilience": { "verdict": "fixed|no_findings", "notes": "<...>" }
+  },
+  "measurements": [
+    { "metric": "<nombre>", "before": <numero>, "after": <numero>, "measured": true },
+    { "metric": "<nombre>", "before": -1, "after": -1, "measured": false, "reason": "<por qué no se midió>" }
+  ],
+  "reproduction": "<comando(s) exacto(s) para reproducir el estado verificado>",
+  "not_reviewed": "<'none — <base concreta>' o los límites reales de esta revisión>",
   "evidence": ["<comando real corrido en 4.4/4.5, ej. 'pytest -q -> 47 passed'>"],
-  "spec_coverage": ["<AC-id>: <archivo-de-test> — COMPLIANT|FAILING|UNTESTED|PARTIAL"],
-  "coverage_pct": <numero>,
   "git_head": "<git rev-parse HEAD>",
   "tree_fingerprint": "<sha256 sobre HEAD + bytes-en-disco de cada path tracked cambiado (staged+unstaged) + path/contenido de cada untracked no ignorado, ver scripts/verify-receipt.mjs>",
   "terminal_state": "approved"
 }
 ```
 
-**`spec_coverage` — un veredicto por AC, `UNTESTED` incluido** (source: `research/sources/
-protocolo-muralla.md` points #11/#47) — cada AC de `docs/spec.md` aparece una vez: `COMPLIANT`
-(test pasa y prueba exactamente ese AC), `FAILING` (test existe, falla), `UNTESTED` (ningún test
-cubre este AC — el caso que atrapa un gate que dice verificar algo sin verificarlo), `PARTIAL`
-(cubierto parcialmente). Un receipt con cualquier `UNTESTED` no es motivo de bloqueo mecánico
-(eso sigue siendo `terminal_state`), pero es una señal que el usuario tiene que ver antes de 🔵
-aprobar push — nunca queda implícito.
+**Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC
+`COMPLIANT`.** Un AC `UNTESTED`, `PARTIAL` o `FAILING` bloquea `check` incondicionalmente — no
+hay excepción "aprobar con AC pendiente". Un receipt con AC no-`COMPLIANT` puede existir como
+borrador/evidencia de trabajo en progreso, pero nunca habilita commit ni publicación. Cada AC
+`COMPLIANT` exige `test_file`+`test_hash_sha256`+`command`+`result`+`scenario` no vacíos, y el
+hash debe coincidir con el archivo real en disco al momento de `check` — si el test cambió
+después de escribir el AC, `check` rechaza (mismo modelo que el hash de test de
+`pretooluse-red.mjs`). `test_file` (y cada entrada de `scope.declared_paths`) debe ser
+project-local, un archivo regular, sin symlinks ni junctions que escapen del checkout —
+`verify-receipt.mjs` lo rechaza con el mismo `safeRegularFile` que ya protege el resto del gate.
 
-**Cada string de `evidence`/`adversarial_findings` se marca `verificado:` o `leído:`** (point
-#20) — "verificado: pytest -q -> 47 passed" (un comando real corrió) vs "leído: revisé
-`auth.py:40-60`, la lógica se ve correcta" (inspección sin ejecución). Mezclarlos sin distinguir
-es cómo nace un falso verde — una inspección leída no es lo mismo que una corrida verificada, y
-el receipt no debe dejar que parezcan lo mismo.
+**Límite honesto — no sobreactuar lo que el schema puede probar:** `command`, `result`,
+`measurements` y `reproduction` son evidencia **estructurada y revisable**, escrita por quien
+generó el receipt — el gate mecánico nunca re-ejecuta el comando ni prueba criptográficamente
+que corrió. Es disciplina procedural auditable (un humano puede releer y correr `reproduction`
+él mismo), no una garantía de ejecución. `scope.declared_paths` es un writer set autodeclarado
+por el propio receipt — **no** está cruzado contra `tasks.json`/`plan.md` como fuente de verdad
+(eso es el ítem #24 del backlog de research, no implementado todavía); no lo llames "el scope
+real del plan" hasta que exista ese cruce.
+
+**`-1` sólo es válido junto con `measured: false` y un motivo no vacío** — un `-1` sin
+`measured: false` explícito, o sin `reason`, es rechazado. La combinación existe para que "no se
+midió" quede declarado, no inferido de un número mágico.
+
+**`not_reviewed` no admite placeholders** (`"n/a"`, `"unknown"`, `"nothing"`, string vacío,
+`"none"` sin base) — debe decir `"none — <base concreta de por qué se cubrió todo>"` o listar los
+límites reales de la revisión. Mismo mecanismo que `verify-handoff-report.mjs` ya exige para
+handoffs de fase, ahora también sobre el campo del receipt.
 
 **LIFECYCLE DEL RECEIPT — orden exacto, no ambiguo:**
 
@@ -586,11 +623,24 @@ validador de 4.6 lo rechaza mecánicamente (no hace falta acordarse de regenerar
 ```bash
 node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
 ```
-Exit 0 **únicamente** si `terminal_state: approved` Y el fingerprint matchea el estado evaluado
-actual Y `evidence` no vacío → proceder. Exit 1 en cualquier otro caso (receipt ausente, stale,
-evidence vacío, o `terminal_state: escalated` — **siempre**, tenga o no `override_note`, el
-script nunca lo trata como pasable) → frenar acá, reportar al usuario, no commitear (LAW 8). El
-script imprime la razón exacta del rechazo.
+Exit 0 **únicamente** si `schema: vcp.receipt/v2` Y `terminal_state: approved` Y **todos** los
+`acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
+estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed` pasan su validación de forma →
+proceder. Exit 1 en cualquier otro caso — receipt ausente, stale, `schema: vcp.receipt/v1`
+(archivístico, nunca pasable por `check` — ver abajo), cualquier AC no-`COMPLIANT`, hash de test
+desactualizado, medición `-1` sin motivo, `not_reviewed` placeholder, o `terminal_state:
+escalated` (**siempre**, tenga o no `override_note`) → frenar acá, reportar al usuario, no
+commitear (LAW 8). El script imprime la razón exacta del rechazo.
+
+**Receipts `vcp.receipt/v1` son archivo, no evidencia viva.** Un proyecto con receipts v1 de
+antes de este schema los conserva sin migración automática — nadie los borra ni los reescribe.
+Para leerlos sin intentar aprobarlos:
+```bash
+node .vibe/vcp-runtime/scripts/verify-receipt.mjs inspect-legacy .vibe/receipts/<archivo-viejo>.json
+```
+Comando de solo lectura: informa que es evidencia archivística de un schema anterior, no
+modifica nada, y **nunca** habilita un commit/publish — `check` sigue siendo la única puerta, y
+`check` rechaza todo receipt `v1` sin excepción.
 
 **Qué NO se declara cerrado** (source: `research/sources/protocolo-muralla.md` point #45) —
 ninguno de estos permite un 🔵 de cierre, aunque el receipt mecánico pase:
@@ -598,8 +648,9 @@ ninguno de estos permite un 🔵 de cierre, aunque el receipt mecánico pase:
   no después).
 - Un gate propio del target-project (no de VCP) escrito pero nunca falsificado a propósito
   (ver el ritual en Phase 4.1 arriba).
-- Cualquier AC en `spec_coverage` con veredicto `UNTESTED`.
-Decirlo en el reporte de cierre cuesta menos que el usuario descubriéndolo después.
+Decirlo en el reporte de cierre cuesta menos que el usuario descubriéndolo después. (Un AC
+`UNTESTED`/`PARTIAL`/`FAILING` ya no es "una señal a mostrar antes de cerrar" — con el schema v2,
+directamente bloquea `check`, no llega a esta lista.)
 
 **El mensaje de commit cuenta qué cambió y por qué, con los números medidos** (point #44) — no
 "arreglé el bug", sino la evidencia del receipt: "antes: X, después: Y" cuando hay una métrica
