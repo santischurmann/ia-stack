@@ -75,7 +75,15 @@ test('FALSIFICACIÓN · real string-built SQL via "+" concatenation is still blo
 
 test('FALSIFICACIÓN · provider credential shapes and private-key content block even outside a sensitive filename', () => {
   const github = ['gh', 'p_', 'abcdefghijklmnopqrstuvwxyz0123456789AB'].join('');
-  const privateKey = ['-----BEGIN', ' OPENSSH', ' PRIVATE', ' KEY-----'].join('');
+  // A bare BEGIN header with no real PEM structure nearby is prose describing a key shape, not
+  // a real leaked key (see privateKeyIndex) — this fixture includes two consecutive base64-shaped
+  // body lines so it still represents a genuinely leaked key, not the isolated-hash-mention false
+  // positive that check now avoids (real PEM bodies always wrap across multiple lines).
+  const privateKey = [
+    ['-----BEGIN', ' OPENSSH', ' PRIVATE', ' KEY-----'].join(''),
+    'b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW',
+    'QyNTUxOQAAACBAK7lPGmhO8IldsRUyq9Pm3iM3EudNQhwFsA0O0iL4dQAAAJhwZXJzaXN0',
+  ].join('\n');
   const assignment = `${'to' + 'ken'} = '${github}'`;
   const findings = scanFile('src/credentials.mjs', `const ${assignment};\n${privateKey}\n`);
   assert.deepEqual(findings.map((item) => item.category), ['hardcoded-secret', 'private-key-content', 'github-token']);
@@ -104,6 +112,178 @@ test('FALSIFICACIÓN · GitHub workflow supply-chain hazards block while local a
     '      - uses: actions/checkout@0123456789abcdef0123456789abcdef01234567', '      - uses: ./local-action', '',
   ].join('\n');
   assert.deepEqual(scanFile('.github/workflows/safe.yaml', safe), []);
+});
+
+test('FALSIFICACIÓN · a secret hidden in a template literal (backtick), with or without interpolation, blocks like plain-quoted secrets already did', () => {
+  const bare = `${'to' + 'ken'} = \`sk_test_ABCDEFGH12345678901234\`;`;
+  assert.deepEqual(scanFile('src/a.js', bare).map((item) => item.category), ['hardcoded-secret']);
+  const interpolated = `${'to' + 'ken'} = \`Bearer \${prefix}ABCDEFGH12345678901234\`;`;
+  assert.deepEqual(scanFile('src/a.js', interpolated).map((item) => item.category), ['hardcoded-secret']);
+  // Parity with the pre-existing quote behavior: a short backtick value below the 8-char
+  // lookahead is not flagged, same as a short single/double-quoted value never was.
+  const short = `${'to' + 'ken'} = \`short\`;`;
+  assert.deepEqual(scanFile('src/a.js', short), []);
+});
+
+test('FALSIFICACIÓN · a direct/bare HTML-sink assignment blocks, while a static literal with no dynamic data does not', () => {
+  assert.deepEqual(scanFile('src/view.mjs', `${[...'inner'].join('')}${[...'HTML'].join('')} = userInput;`).map((item) => item.category), ['html-injection-surface']);
+  assert.deepEqual(scanFile('src/view.mjs', `${[...'outer'].join('')}${[...'HTML'].join('')} = data;`).map((item) => item.category), ['html-injection-surface']);
+  const jsxSink = `${'dangerously' + 'SetInnerHTML'}={{__html: userInput}}`;
+  assert.deepEqual(scanFile('src/App.jsx', jsxSink).map((item) => item.category), ['html-injection-surface']);
+  // Static literals — no dynamic data reaches the sink — must not block.
+  assert.deepEqual(scanFile('src/view.mjs', `${[...'inner'].join('')}${[...'HTML'].join('')} = "<b>static</b>";`), []);
+  assert.deepEqual(scanFile('src/view.mjs', `${[...'inner'].join('')}${[...'HTML'].join('')} = "a, b, c";`), [], 'a comma inside a static string must not truncate the value and misclassify it as dynamic');
+  assert.deepEqual(scanFile('src/view.mjs', `${[...'inner'].join('')}${[...'HTML'].join('')} = \`<b>static</b>\`;`), []);
+  const jsxStatic = `${'dangerously' + 'SetInnerHTML'}={{__html: "<b>static</b>"}}`;
+  assert.deepEqual(scanFile('src/App.jsx', jsxStatic), []);
+  // Concatenation (already covered before this fix) must still block, and must still capture
+  // the FULL dynamic expression rather than stopping at the first quoted segment.
+  const concatSink = `${[...'inner'].join('')}${[...'HTML'].join('')} = 'x' + userInput;`;
+  assert.deepEqual(scanFile('src/view.mjs', concatSink).map((item) => item.category), ['html-injection-surface']);
+});
+
+test('FALSIFICACIÓN · github.event interpolation inside a YAML block-scalar run: | or run: > body blocks, indentation-scoped to that step only', () => {
+  const pipeBlock = [
+    'on:', '  pull_request_target:', 'jobs:', '  x:', '    steps:',
+    '      - run: |', '          echo "${{ github.event.issue.title }}"', '      - run: echo done', '',
+  ].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/pipe.yml', pipeBlock).map((item) => item.category), ['ci-untrusted-trigger', 'ci-expression-in-run']);
+  const foldBlock = [
+    'on:', '  pull_request_target:', 'jobs:', '  x:', '    steps:',
+    '      - run: >', '          echo "${{ github.event.pull_request.title }}"', '',
+  ].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/fold.yml', foldBlock).map((item) => item.category), ['ci-untrusted-trigger', 'ci-expression-in-run']);
+  // Indentation-scoped: the expression sits in the NEXT step's inline run, not inside the first
+  // step's block body — it must still be found (block ends at the sibling `- run:` line), and
+  // its own location must be its own line, not swallowed into the prior block's scan.
+  const nextStepOnly = [
+    'jobs:', '  x:', '    steps:',
+    '      - run: |', '          echo safe', '      - run: echo ${{ github.event.issue.title }}', '',
+  ].join('\n');
+  const nextStepFindings = scanFile('.github/workflows/next.yml', nextStepOnly);
+  assert.deepEqual(nextStepFindings.map((item) => item.category), ['ci-expression-in-run']);
+  assert.equal(nextStepFindings[0].location, '.github/workflows/next.yml:6');
+  // A block body with no github.event reference must not block.
+  const safeBlock = ['jobs:', '  x:', '    steps:', '      - run: |', '          echo hello', '          echo world', ''].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/safe-block.yml', safeBlock), []);
+  // A plain inline run: with no github.event at all (exercises the inline non-matching branch).
+  const plainInline = ['jobs:', '  x:', '    steps:', '      - run: echo hello', ''].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/plain.yml', plainInline), []);
+});
+
+test('extractAssignmentValue handles an escaped quote inside an HTML-sink string literal without ending the value early', () => {
+  const escaped = `${[...'inner'].join('')}${[...'HTML'].join('')} = "a\\"b, still one string";`;
+  assert.deepEqual(scanFile('src/view.mjs', escaped), [], 'an escaped quote must not be treated as the string terminator');
+  // A trailing backslash with no following character (content ends mid-escape) must not throw.
+  const truncated = `${[...'inner'].join('')}${[...'HTML'].join('')} = "a\\`;
+  assert.doesNotThrow(() => scanFile('src/view.mjs', truncated));
+});
+
+test('FALSIFICACIÓN · a bare PEM header quoted in documentation prose does not block, but the same header with real key material still does', () => {
+  // Fragmented with `+`, same convention as the rest of this file (see DYNAMIC_TERMS/SQL_TERMS
+  // in verify-security-baseline.mjs), so this test file's own literal source text never contains
+  // the contiguous BEGIN/PRIVATE-KEY-with-body shape the live gate scans for.
+  const header = '-----BEGIN' + ' PRIVATE KEY-----';
+  const body1 = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj';
+  const body2 = 'Q2VydFRlc3RTZWNyZXRLZXlNYXRlcmlhbEZvclZDUFRlc3RGaXh0dXJlWFlaMTIz';
+  const footer = '-----END' + ' PRIVATE KEY-----';
+
+  const prose = `Our redactor masks PEM blocks like \`${header}\` before logging errors.\n`;
+  assert.deepEqual(scanFile('docs/notes.md', prose), []);
+
+  const realKey = [header, body1, body2, footer, ''].join('\n');
+  assert.deepEqual(scanFile('leaked/key.txt', realKey).map((item) => item.category), ['private-key-content']);
+
+  // A header immediately followed by two consecutive base64-shaped body lines, even without an
+  // END marker in the scanned window, still counts as real key material (real PEM bodies always
+  // wrap across multiple lines).
+  const bodyOnly = [header, body1, body2, ''].join('\n');
+  assert.deepEqual(scanFile('leaked/key2.txt', bodyOnly).map((item) => item.category), ['private-key-content']);
+});
+
+test('FALSIFICACIÓN · an isolated hash/id line next to a documented PEM header does not block, but multi-line body or a footer still does', () => {
+  const header = '-----BEGIN' + ' PRIVATE KEY-----';
+  const footer = '-----END' + ' PRIVATE KEY-----';
+  const body1 = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj';
+  const body2 = 'Q2VydFRlc3RTZWNyZXRLZXlNYXRlcmlhbEZvclZDUFRlc3RGaXh0dXJlWFlaMTIz';
+
+  // 1. header + nearby SHA-1 hash (40 lowercase hex chars) — allowed.
+  const sha1 = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
+  assert.deepEqual(scanFile('docs/a.md', [`See \`${header}\` (commit`, sha1, ')'].join('\n')), []);
+
+  // 2. header + nearby SHA-256 hash (64 lowercase hex chars) — allowed.
+  const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'.slice(0, 64);
+  assert.deepEqual(scanFile('docs/b.md', [`See \`${header}\` (digest`, sha256, ')'].join('\n')), []);
+
+  // 3. header + one isolated alphanumeric identifier line — allowed.
+  const isolatedId = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4';
+  assert.deepEqual(scanFile('docs/c.md', [`\`${header}\` id:`, isolatedId, ''].join('\n')), []);
+
+  // 4. header + real multi-line PEM body (no footer) — blocked.
+  assert.deepEqual(scanFile('leaked/d.txt', [header, body1, body2, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // 5. header + real footer — blocked, even with only a single body line in between.
+  assert.deepEqual(scanFile('leaked/e.txt', [header, body1, footer, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+  assert.deepEqual(scanFile('leaked/f.txt', [header, footer, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // 6. the exact research/sources/paperclip.md false positive shape (header quoted in prose,
+  // describing what a redactor looks for, no body/footer nearby) — still allowed.
+  const paperclipShape = [
+    '  pasa el error por `redact()` (`:93-98`, que además detecta y enmascara bloques PEM',
+    `  \`${header}\`) antes de devolverlo al modelo — un secreto que se cuela en`,
+    '  un mensaje de error nunca llega al transcript.',
+    '',
+  ].join('\n');
+  assert.deepEqual(scanFile('research/sources/paperclip.md', paperclipShape), []);
+
+  // 7. secrets, SQL, dynamic HTML and dangerous GitHub Actions already covered elsewhere in this
+  // file keep blocking — spot-checked here since this test targets the same detector module.
+  assert.deepEqual(scanFile('a.js', `const apiKey = \`${'sk_test_' + 'ABCDEFGH12345678901234'}\`;`).map((item) => item.category), ['hardcoded-secret']);
+  assert.deepEqual(scanFile('db.mjs', `const q = "${'SEL' + 'ECT'} * FROM users WHERE id=" + userId;`).map((item) => item.category), ['injection-surface']);
+  assert.deepEqual(scanFile('a.js', `el.${[...'inner'].join('')}${[...'HTML'].join('')} = userInput;`).map((item) => item.category), ['html-injection-surface']);
+  const unsafeWorkflow = [
+    'on:', '  pull_request_target:', 'jobs:', '  x:', '    steps:',
+    '      - run: |', '          echo "${{ github.event.issue.title }}"', '',
+  ].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/x.yml', unsafeWorkflow).map((item) => item.category), ['ci-untrusted-trigger', 'ci-expression-in-run']);
+});
+
+test('FALSIFICACIÓN · a blank line breaks the consecutive-base64-line streak, so two unrelated tokens near a documented PEM header do not block', () => {
+  const header = '-----BEGIN' + ' PRIVATE KEY-----';
+  const footer = '-----END' + ' PRIVATE KEY-----';
+  const body1 = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj';
+  const body2 = 'Q2VydFRlc3RTZWNyZXRLZXlNYXRlcmlhbEZvclZDUFRlc3RGaXh0dXJlWFlaMTIz';
+
+  // 1. two REAL, physically consecutive base64 body lines — blocks.
+  assert.deepEqual(scanFile('leaked/a.txt', [header, body1, body2, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // 2. two unrelated base64-shaped tokens separated by a blank line — no longer blocks (the
+  // confirmed false positive this fix closes: a blank paragraph break means they are not a
+  // contiguous PEM body).
+  const unrelatedToken1 = 'CommitAbcDefGhiJklMnoPqrStuVwxYz01234';
+  const unrelatedToken2 = 'AnotherUnrelatedIdentifierValueHereABC';
+  assert.deepEqual(scanFile('docs/g.md', [header, unrelatedToken1, '', unrelatedToken2, ''].join('\n')), []);
+
+  // 3. header + footer alone — still blocks.
+  assert.deepEqual(scanFile('leaked/b.txt', [header, footer, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // 4. the real paperclip.md false-positive shape — still allowed.
+  const paperclipShape = [
+    '  pasa el error por `redact()` (`:93-98`, que además detecta y enmascara bloques PEM',
+    `  \`${header}\`) antes de devolverlo al modelo — un secreto que se cuela en`,
+    '  un mensaje de error nunca llega al transcript.',
+    '',
+  ].join('\n');
+  assert.deepEqual(scanFile('research/sources/paperclip.md', paperclipShape), []);
+
+  // 5. secret in backtick, dynamic HTML, and multi-line GitHub Actions still block.
+  assert.deepEqual(scanFile('a.js', `const apiKey = \`${'sk_test_' + 'ABCDEFGH12345678901234'}\`;`).map((item) => item.category), ['hardcoded-secret']);
+  assert.deepEqual(scanFile('a.js', `el.${[...'inner'].join('')}${[...'HTML'].join('')} = userInput;`).map((item) => item.category), ['html-injection-surface']);
+  const unsafeWorkflow2 = [
+    'on:', '  pull_request_target:', 'jobs:', '  x:', '    steps:',
+    '      - run: >', '          echo "${{ github.event.pull_request.title }}"', '',
+  ].join('\n');
+  assert.deepEqual(scanFile('.github/workflows/y.yml', unsafeWorkflow2).map((item) => item.category), ['ci-untrusted-trigger', 'ci-expression-in-run']);
 });
 
 test('FALSIFICACIÓN · an uncommitted secret blocks the release surface before git add', () => {
