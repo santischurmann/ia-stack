@@ -10,7 +10,7 @@ const { FORBIDDEN_PHRASES, REQUIREMENTS, contractViolations, main } = await impo
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {

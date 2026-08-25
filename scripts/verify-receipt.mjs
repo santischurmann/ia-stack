@@ -53,7 +53,8 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' }).replace(/\r\n/g, '\n');
@@ -62,13 +63,34 @@ function git(args) {
 // Deterministic content hash for one file's bytes (binary-safe — reads the raw buffer, never
 // decodes as text). Used for untracked files only; tracked file content is hashed via
 // `git hash-object` instead, so it matches git's own blob addressing exactly.
-function hashFileContent(path) {
-  const buf = readFileSync(path);
+export function isWithin(root, candidate) {
+  const remainder = relative(root, candidate);
+  return remainder !== '' && remainder !== '..' && !remainder.startsWith(`..${sep}`) && !isAbsolute(remainder);
+}
+
+// Git may list a path that is lexically inside the checkout but reaches outside through a
+// junction/symlink. Receipts must never follow it while calculating evidence: reject the whole
+// fingerprint rather than hashing an arbitrary external file and calling that project state.
+export function safeRegularFile(path, root) {
+  if (typeof path !== 'string' || path === '' || isAbsolute(path)) throw new Error(`unsafe repository path: ${path}`);
+  const file = resolve(root, path);
+  if (!isWithin(root, file)) throw new Error(`repository path escapes the checkout: ${path}`);
+  const stat = lstatSync(file);
+  if (stat.isSymbolicLink()) throw new Error(`repository path is a symbolic link: ${path}`);
+  if (!stat.isFile()) throw new Error(`repository path is not a regular file: ${path}`);
+  if (!isWithin(root, realpathSync(file))) throw new Error(`repository path resolves outside the checkout: ${path}`);
+  return file;
+}
+
+function hashFileContent(path, root) {
+  const buf = readFileSync(safeRegularFile(path, root));
   return createHash('sha256').update(buf).digest('hex');
 }
 
-function gitHashObject(path) {
-  return git(['hash-object', path]).trim();
+function gitHashObject(path, root) {
+  // `--` prevents a Git-tracked filename beginning with `-` from becoming an option.
+  safeRegularFile(path, root);
+  return git(['hash-object', '--', path]).trim();
 }
 
 // Normalize a filesystem path (possibly Windows backslashes, possibly with ./ prefix) to the
@@ -134,6 +156,7 @@ export function parseRawDiff(text) {
 }
 
 function currentFingerprint(excludePath) {
+  const root = realpathSync('.');
   const head = git(['rev-parse', 'HEAD']).trim();
   const exclude = excludePath ? toGitPath(excludePath) : null;
 
@@ -152,8 +175,7 @@ function currentFingerprint(excludePath) {
     .filter((e) => e.path !== exclude)
     .sort(byPath);
   const unstaged = unstagedRaw.map((e) => {
-    const realNewSha =
-      isZeroSha(e.newSha) && e.status !== 'D' && existsSync(e.path) ? gitHashObject(e.path) : e.newSha;
+    const realNewSha = isZeroSha(e.newSha) && e.status !== 'D' ? gitHashObject(e.path, root) : e.newSha;
     return { ...e, newSha: realNewSha };
   });
   const unstagedEntries = unstaged.map(formatEntry).join('\n');
@@ -164,7 +186,7 @@ function currentFingerprint(excludePath) {
     .filter(Boolean)
     .filter((p) => p !== exclude)
     .sort();
-  const untrackedEntries = untrackedList.map((p) => `${p}\0${hashFileContent(p)}`).join('\n');
+  const untrackedEntries = untrackedList.map((p) => `${p}\0${hashFileContent(p, root)}`).join('\n');
 
   const combined =
     `HEAD:${head}\n` +
@@ -211,6 +233,15 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
   if (cmd === 'check') {
     if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
     if (!existsSync(arg)) fail(`receipt not found: ${arg}`);
+
+    // The receipt itself is input to an approval gate, so it has the same containment rule as
+    // release files. An external or linked JSON document cannot be excluded from the fingerprint
+    // or used to influence a project-local release decision.
+    try {
+      safeRegularFile(arg, realpathSync('.'));
+    } catch (error) {
+      fail(`receipt path is unsafe: ${error.message}`);
+    }
 
     let receipt;
     try {

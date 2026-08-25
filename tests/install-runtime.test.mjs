@@ -34,7 +34,9 @@ function fixture() {
 function assertRuntime(project, target, runtime) {
   assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
+  assert.equal(existsSync(join(runtime, 'SECURITY.md')), true, 'runtime docs must carry the native security contract they reference');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'pretooluse-red.mjs')), true);
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'SECURITY.md')), true);
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'templates', 'vibe', 'COMPANY.md')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'scripts')), false, 'runtime must not nest scripts on reinstall');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'scripts')), false, 'project runtime must not nest scripts on reinstall');

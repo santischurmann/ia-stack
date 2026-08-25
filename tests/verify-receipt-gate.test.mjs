@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const receiptGate = join(repoRoot, 'scripts', 'verify-receipt.mjs');
-const { parseRawDiff, byPath, formatEntry } = await import(pathToFileURL(receiptGate).href);
+const { parseRawDiff, byPath, formatEntry, isWithin, safeRegularFile } = await import(pathToFileURL(receiptGate).href);
 
 function run(command, args, cwd) {
   const env = { ...process.env };
@@ -348,5 +348,61 @@ test('receipt tracks a staged rename destination and supports SHA-256 repositori
     assert.equal(gate(shaRoot, 'check', receipt).status, 1, 'SHA-256 git add must invalidate');
   } finally {
     rmSync(shaRoot, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · receipts neither hash external links nor accept an external receipt path', () => {
+  const root = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-receipt-outside-'));
+  try {
+    writeFileSync(join(outside, 'secret.js'), 'export const secret = true;\n');
+    symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    const linked = gate(root, 'fingerprint');
+    assert.equal(linked.status, 1, 'an untracked junction/symlink must fail closed, not hash outside bytes');
+    assert.match(linked.output, /resolves outside the checkout/i);
+
+    const externalReceipt = join(outside, 'receipt.json');
+    writeFileSync(externalReceipt, '{}\n');
+    const external = gate(root, 'check', externalReceipt);
+    assert.equal(external.status, 1, 'an external receipt must never influence the local approval gate');
+    assert.match(external.output, /receipt path is unsafe/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · a Git filename beginning with a dash is data, never a hash-object option', () => {
+  withFixture((root) => {
+    writeFileSync(join(root, '-receipt-probe.txt'), 'baseline\n');
+    gitOk(root, 'add', '--', '-receipt-probe.txt');
+    gitOk(root, 'commit', '-qm', 'adds dash-prefixed filename');
+    writeFileSync(join(root, '-receipt-probe.txt'), 'first edit\n');
+    const receipt = writeReceipt(root);
+    assert.equal(gate(root, 'check', receipt).status, 0, 'hash-object must safely hash a dash-prefixed filename');
+    writeFileSync(join(root, '-receipt-probe.txt'), 'second edit\n');
+    assert.equal(gate(root, 'check', receipt).status, 1, 'a later dash-prefixed filename edit must invalidate');
+  });
+});
+
+test('FALSIFICACIÓN · receipt file hashing accepts only regular files physically inside its checkout', () => {
+  const root = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-receipt-safe-file-'));
+  try {
+    mkdirSync(join(root, 'directory'));
+    writeFileSync(join(outside, 'outside.txt'), 'outside\n');
+    symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(isWithin(root, root), false, 'the checkout root itself is never a file candidate');
+    assert.equal(isWithin(root, join(root, 'tracked.txt')), true);
+    assert.equal(isAbsolute(safeRegularFile('tracked.txt', root)), true);
+    assert.throws(() => safeRegularFile('', root), /unsafe repository path/i);
+    assert.throws(() => safeRegularFile(join(outside, 'outside.txt'), root), /unsafe repository path/i);
+    assert.throws(() => safeRegularFile('../outside.txt', root), /escapes the checkout/i);
+    assert.throws(() => safeRegularFile('directory', root), /not a regular file/i);
+    assert.throws(() => safeRegularFile('linked', root), /symbolic link/i);
+    assert.throws(() => safeRegularFile('linked/outside.txt', root), /resolves outside the checkout/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

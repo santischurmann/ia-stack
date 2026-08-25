@@ -50,7 +50,7 @@ Plan and Build never proceed with one present.
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
 - [ ] Coverage 100% for every metric the runner measures (lines/branches/functions), lint 0, typecheck 0
-- [ ] Security clean (security-baseline.md or cyber-neo, Phase 4.3) + adversarial pass (Phase 4.4)
+- [ ] Native security gate clean (`security-baseline.md`, Phase 4.3) + adversarial pass (Phase 4.4)
 - [ ] README/CHANGELOG/.vibe updated
 ```
 

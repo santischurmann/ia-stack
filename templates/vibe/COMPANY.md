@@ -21,7 +21,7 @@ Board (human, you)              — sets goals, approves push/merge (LAW 8), fin
        ├─ Refactor-Engineer     — Phase 3.4 REFACTOR, structure only
        ├─ Docs                  — Phase 3.5, .vibe/ + doc updates
        ├─ Chore                 — Phase 4.1, lint/typecheck/coverage fixes
-       ├─ Security-Officer      — Phase 4.3, security-baseline.md or cyber-neo (read-only)
+       ├─ Security-Officer      — Phase 4.3, native security-baseline.md (read-only)
        ├─ 4R Reviewer (1-5x)    — Phase 4.4, Risk/Readability/Reliability/Resilience adversarial
        │                          review (read-only), count scales with risk_level, never 0
        └─ Release-Engineer      — Phase 4.6-4.7, commit/push-ask/backups

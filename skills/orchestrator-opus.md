@@ -1,14 +1,14 @@
 ---
 name: vcp-orchestrator-opus
 description: |
-  ES: Referencia técnica del orquestador — protocolo de delegación, DoD, flujo de subagentes, contrato interno de orquestación (fableultracode como upgrade opcional).
-  EN: Orchestrator technical reference — delegation protocol, DoD, subagent flow, internal orchestration contract (fableultracode as optional upgrade).
+  ES: Referencia técnica del orquestador — protocolo de delegación, DoD, flujo de subagentes y contrato interno nativo.
+  EN: Orchestrator technical reference — delegation protocol, DoD, subagent flow and native internal orchestration contract.
 allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite, Skill
 ---
 
 # VCP Orchestrator Reference
 
-Orchestrator = single responsible agent, runs under the internal orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 0 → session-long): autonomy, lead-with-outcome comms, evidence-gated actions. `fableultracode` is a strict upgrade if present in the session's Skill list — never required. Subagents (Sonnet 5, effort per Phase 3 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
+Orchestrator = single responsible agent, runs under the internal VCP orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 0 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 3 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
 
 ---
 
@@ -24,7 +24,7 @@ Named mandate per role — none certifies its own gate, the gate script/test-run
 | Refactor-Engineer | 3.4 REFACTOR | Edit (structure only) | No — test runner (must stay green, incl. TRIANGULATE's cases) |
 | Docs | 3.5 (post-task) | Write (`.vibe/`, docs) | N/A, no gate |
 | Chore | 4.1 fixes | Edit (lint/typecheck fixes) | No — linter/tsc does |
-| Security-Officer | 4.3 | Read/Grep only (security-baseline.md/cyber-neo subagents are read-only) | No — finding severity is mechanical (CWE/OWASP mapped) |
+| Security-Officer | 4.3 | Read/Grep only (native `security-baseline.md`, read-only) | No — finding severity is mechanical |
 | 4R Reviewer (adversarial) | 4.4 | Read only | No — reproduction-gated verdict, not self-report; count scales with `risk_level`, never 0 |
 | Orchestrator | all | Read/Write/Edit/Bash/Task — but writes zero feature code | Issues final `terminal_state`, itself gated by receipt evidence (4.5) |
 
@@ -214,7 +214,7 @@ Task T01:
 | TRIANGULATE case has no `derived from` justification | Reject the case, do not write it — decorative coverage is forbidden. |
 | Any measurable coverage metric < 100% (Phase 4.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
 | Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
-| security-baseline.md/cyber-neo finds Critical/High (Phase 4.3) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
+| native security gate finds Critical/High (Phase 4.3) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
 | 4R adversarial finding survives its tier's review (Phase 4.4) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
 | Session killed / compacted mid-task | RESUME protocol below. Never re-run a passed gate blind, never skip a pending one. Clear stale `locked: true` by re-detecting via evidence, never by trusting the flag. |
 | 3 respawns on same task, no passing gate | Hard stop (§ AI COMPANY LAYER budget policy) — escalate to user, never a silent 4th retry. |
@@ -247,7 +247,7 @@ Task T01:
 ### Phase 4 FINAL:
 - [ ] 4.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
 - [ ] 4.2 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify
-- [ ] 4.3 security-baseline.md/cyber-neo clean (no open Critical/High)
+- [ ] 4.3 native `security-baseline.md` clean (no open Critical/High)
 - [ ] 4.4 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 4.4.1 replanning threshold got 🔵 confirm before continuing
 - [ ] 4.5 full suite green (post-fix) + receipt written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)
 - [ ] 4.6 `verify-receipt.mjs check` exit 0 (terminal_state approved, fingerprint matches, evidence non-empty) BEFORE committing; push/merge only after user 🔵 confirm
@@ -280,14 +280,14 @@ Esperando tu respuesta antes de continuar.
 ## TODO TRACKING
 
 ```
-Phase 0 Bootstrap (internal contract, +fableultracode upgrade if present) → [x]
+Phase 0 Bootstrap (native internal contract) → [x]
 Phase 1 SPEC                        → [ ]
 Phase 2 PLAN                        → [ ]
 Phase 3 BUILD T01..TNN (RED→GREEN→TRIANGULATE→REFACTOR per task) → [ ]
 Phase 4 FINAL
   4.1 Verify   → [ ]
   4.2 Risk classification (bajo/estandar/alto/critico) + Simplify → [ ]
-  4.3 Security (security-baseline.md/cyber-neo) → [ ]
+  4.3 Security (native security-baseline.md) → [ ]
   4.4 Adversarial review (4R: Risk/Readability/Reliability/Resilience) → [ ]
   4.5 Tests (final) + receipt w/ fingerprint → [ ]
   4.6 Commit/push/merge (verify-receipt.mjs mechanical gate) → [ ]

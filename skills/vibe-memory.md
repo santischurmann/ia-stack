@@ -91,7 +91,7 @@ Show user a 3-5 line summary of what the memory contains.
 | Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
 | Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
-| security-baseline.md/cyber-neo Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + CWE/OWASP ref + severity + why not fixed now |
+| native security gate Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + category + severity + why not fixed now |
 | Session end | `sessions/` | Archive SESSION.md with date prefix |
 | End of Phase 4 (4.8), always | `RETRO.md` | 5-line entry: shipped/plan vs actual/friction/keep/change |
 | RED took 2+ attempts / adversarial finding fixed / user correction | `SESSION.md` (scratch) | `⚠ signal: <1-line>` — passive capture only, not a LESSONS.md write |
@@ -193,7 +193,7 @@ different project — `LESSONS.md` in the *global* `.vibe/` equivalent (or a pro
 promoted manually) is what makes an error learned once stop repeating on the next project.
 
 **1. Passive capture (during Build/Test, not a write yet).** When a RED→GREEN cycle needed 2+
-attempts, a cyber-neo/adversarial finding needed a real fix, or the user issued an explicit
+attempts, a security/adversarial finding needed a real fix, or the user issued an explicit
 correction — append one line to a scratch buffer in `SESSION.md` (`⚠ signal: <1-line>`). This is
 capture only. It does **not** touch `LESSONS.md`.
 

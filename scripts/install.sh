@@ -31,6 +31,7 @@ copy_runtime() {
   cp -R "$PACKAGE_DIR/templates/." "$destination/templates/"
   cp -R "$PACKAGE_DIR/skills/." "$destination/skills/"
   cp "$PACKAGE_DIR/SKILL.md" "$destination/SKILL.md"
+  cp "$PACKAGE_DIR/SECURITY.md" "$destination/SECURITY.md"
 }
 
 echo "=== VibeCodeProtocols Installer ==="

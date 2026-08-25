@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const ratchetScript = join(repoRoot, 'scripts', 'ratchet.mjs');
-const { Counter, count, compare, matches } = await import(pathToFileURL(ratchetScript).href);
+const { Counter, count, compare, isWithin, main, matches, safeProjectFile } = await import(pathToFileURL(ratchetScript).href);
 
 function run(cwd, ...args) {
   const env = { ...process.env };
@@ -46,6 +46,29 @@ test('matches() handles ** and single-segment * globs', () => {
   assert.equal(matches('src/deep/nested/file.js', 'src/**'), true);
   assert.equal(matches('src/file.js', 'src/*.js'), true);
   assert.equal(matches('src/deep/file.js', 'src/*.js'), false);
+});
+
+test('FALSIFICACIÓN · project containment rejects the checkout root, its direct parent and another volume', () => {
+  const root = 'C:\\vcp\\project';
+  assert.equal(isWithin(root, root), false);
+  assert.equal(isWithin(root, dirname(root)), false);
+  assert.equal(isWithin(root, 'Z:\\outside'), false);
+  assert.equal(isWithin(root, join(root, 'src', 'safe.js')), true);
+});
+
+test('FALSIFICACIÓN · ratchet file paths reject lexical and physical escapes before they can be counted', () => {
+  const root = gitFixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-ratchet-path-outside-'));
+  try {
+    symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(safeProjectFile(root, 'missing.txt'), null);
+    assert.equal(safeProjectFile(root, 'missing/deep/file.txt', { allowMissing: true }).endsWith('file.txt'), true);
+    assert.throws(() => safeProjectFile(root, '../outside.txt'), /escapes the project/i);
+    assert.throws(() => safeProjectFile(root, 'linked/missing.txt', { allowMissing: true }), /resolves outside the project/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
 });
 
 test('FALSIFICACIÓN · matches() must match a root-level file against **/*.ext', () => {
@@ -216,6 +239,60 @@ test('repoFiles() skips a tracked path that is unreadable on disk instead of cra
     assert.equal(result.status, 0, `a missing-on-disk tracked file must not crash the ratchet\n${result.output}`);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · ratchet fails closed instead of following an untracked junction outside the project', () => {
+  const root = gitFixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-ratchet-outside-'));
+  try {
+    mkdirSync(join(root, '.vibe'), { recursive: true });
+    writeFileSync(join(root, '.vibe', 'counters.json'), JSON.stringify({
+      counters: [{ name: 'todo', pattern: 'TODO', include: ['**/*.js'] }],
+    }));
+    commitAll(root, 'declares counter');
+    writeFileSync(join(outside, 'outside.js'), '// TODO must not be read outside the checkout\n');
+    symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    const result = run(root, '--freeze');
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /REJECTED: unable to read.*safely/i);
+    assert.match(result.output, /resolves outside the project/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · ratchet reports state, write and baseline-read failures instead of continuing', () => {
+  const root = gitFixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-ratchet-state-outside-'));
+  try {
+    mkdirSync(join(outside, '.vibe'), { recursive: true });
+    writeFileSync(join(outside, '.vibe', 'counters.json'), JSON.stringify({ counters: [] }));
+    symlinkSync(join(outside, '.vibe'), join(root, '.vibe'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(main([], root), 1, 'linked .vibe state must fail before its config is read');
+    rmSync(join(root, '.vibe'), { recursive: true, force: true });
+    mkdirSync(join(root, '.vibe'), { recursive: true });
+    writeFileSync(join(root, '.vibe', 'counters.json'), JSON.stringify({ counters: [] }));
+    assert.equal(main(['--freeze'], root, { readFile: readFileSync, writeFile: () => { throw new Error('disk full'); } }), 1, 'baseline write failure must be explicit');
+    writeFileSync(join(root, '.vibe', 'counters-baseline.json'), '{}\n');
+    assert.equal(main([], root, {
+      readFile: (path, encoding) => path.endsWith('counters-baseline.json') ? (() => { throw new Error('read denied'); })() : readFileSync(path, encoding),
+      writeFile: writeFileSync,
+    }), 1, 'baseline read failure must be explicit');
+
+    writeFileSync(join(root, '.vibe', 'counters.json'), '{ bad');
+    assert.equal(main([], root), 1, 'malformed counter config must be explicit, not an empty baseline');
+    writeFileSync(join(root, '.vibe', 'counters.json'), JSON.stringify({ counters: [] }));
+    rmSync(join(root, '.vibe', 'counters.json'));
+    mkdirSync(join(root, '.vibe', 'counters.json'));
+    assert.equal(main([], root), 1, 'a directory can never be the counter config');
+    rmSync(join(root, '.vibe', 'counters.json'), { recursive: true, force: true });
+    symlinkSync(outside, join(root, '.vibe', 'counters.json'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(main([], root), 1, 'a direct linked counter config must be rejected before reading it');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });
 

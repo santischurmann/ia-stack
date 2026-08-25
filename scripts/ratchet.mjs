@@ -16,8 +16,9 @@
 // VCP does not ship a default counter set, a project only gets this gate once it declares what
 // to watch.
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 /** One counter: what to search for, where, and its report name. */
 export class Counter {
@@ -108,37 +109,81 @@ export function compare(current, baseline) {
   return { ok: grew.length === 0 && newCounters.length === 0, grew, shrank, newCounters };
 }
 
+export function isWithin(root, candidate) {
+  const remainder = relative(root, candidate);
+  return remainder !== '' && remainder !== '..' && !remainder.startsWith(`..${sep}`) && !isAbsolute(remainder);
+}
+
+export function safeProjectFile(root, path, { allowMissing = false } = {}) {
+  const file = resolve(root, path);
+  if (!isWithin(root, file)) throw new Error(`ratchet path escapes the project: ${path}`);
+  if (!existsSync(file)) {
+    if (!allowMissing) return null;
+    let ancestor = dirname(file);
+    while (!existsSync(ancestor)) ancestor = dirname(ancestor);
+    if (realpathSync(ancestor) !== root && !isWithin(root, realpathSync(ancestor))) {
+      throw new Error(`ratchet path resolves outside the project: ${path}`);
+    }
+    return file;
+  }
+  const stat = lstatSync(file);
+  if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`ratchet path is not a regular project file: ${path}`);
+  if (!isWithin(root, realpathSync(file))) throw new Error(`ratchet path resolves outside the project: ${path}`);
+  return file;
+}
+
 /** Versioned plus untracked, non-ignored files; a pre-commit ratchet must see new code too. */
 export function repoFiles(root = '.') {
-  const tracked = execFileSync('git', ['-C', root, 'ls-files', '-z'], { encoding: 'utf8' });
-  const untracked = execFileSync('git', ['-C', root, 'ls-files', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' });
+  const projectRoot = realpathSync(root);
+  const tracked = execFileSync('git', ['-C', projectRoot, 'ls-files', '-z'], { encoding: 'utf8' });
+  const untracked = execFileSync('git', ['-C', projectRoot, 'ls-files', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' });
   return [...new Set(`${tracked}${untracked}`
     .split('\0')
     .filter(Boolean))]
     .map((path) => {
       try {
-        return { path, content: readFileSync(`${root}/${path}`, 'utf8') };
-      } catch {
-        return null; // binary or unreadable: doesn't participate
-      }
+        const file = safeProjectFile(projectRoot, path);
+        return file ? { path, content: readFileSync(file, 'utf8') } : null;
+      } catch (error) { throw error; }
     })
     .filter(Boolean);
 }
 
-export function main(argv = process.argv.slice(2), cwd = '.') {
-  const configPath = `${cwd}/.vibe/counters.json`;
-  const baselinePath = `${cwd}/.vibe/counters-baseline.json`;
+export function main(argv = process.argv.slice(2), cwd = '.', io = { readFile: readFileSync, writeFile: writeFileSync }) {
+  let root;
+  let configPath;
+  let baselinePath;
+  try {
+    root = realpathSync(cwd);
+    configPath = safeProjectFile(root, '.vibe/counters.json', { allowMissing: true });
+    baselinePath = safeProjectFile(root, '.vibe/counters-baseline.json', { allowMissing: true });
+  } catch (error) {
+    console.error(`REJECTED: unable to locate project-local ratchet state safely: ${error.message}`);
+    return 1;
+  }
 
   if (!existsSync(configPath)) {
     console.error(`${configPath} does not exist. No counters declared, nothing to ratchet — this gate is opt-in, see templates/vibe/counters.json.`);
     return 2;
   }
 
-  const counters = JSON.parse(readFileSync(configPath, 'utf8')).counters.map((c) => new Counter(c));
-  const current = count(repoFiles(cwd), counters);
+  let counters;
+  let current;
+  try {
+    counters = JSON.parse(io.readFile(configPath, 'utf8')).counters.map((c) => new Counter(c));
+    current = count(repoFiles(root), counters);
+  } catch (error) {
+    console.error(`REJECTED: unable to read the ratchet release surface safely: ${error.message}`);
+    return 1;
+  }
 
   if (argv.includes('--freeze')) {
-    writeFileSync(baselinePath, JSON.stringify(current, null, 2) + '\n');
+    try {
+      io.writeFile(baselinePath, JSON.stringify(current, null, 2) + '\n');
+    } catch (error) {
+      console.error(`REJECTED: unable to write a project-local ratchet baseline safely: ${error.message}`);
+      return 1;
+    }
     console.log('Baseline frozen:');
     for (const [n, v] of Object.entries(current)) console.log(`  ${n}: ${v}`);
     return 0;
@@ -149,7 +194,13 @@ export function main(argv = process.argv.slice(2), cwd = '.') {
     return 2;
   }
 
-  const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
+  let baseline;
+  try {
+    baseline = JSON.parse(io.readFile(baselinePath, 'utf8'));
+  } catch (error) {
+    console.error(`REJECTED: unable to read the ratchet baseline safely: ${error.message}`);
+    return 1;
+  }
   const { ok, grew, shrank, newCounters } = compare(current, baseline);
 
   for (const s of shrank) {

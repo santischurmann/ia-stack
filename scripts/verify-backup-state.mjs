@@ -4,8 +4,8 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 export const USAGE = 'usage: verify-backup-state.mjs record --report <GRAPH_REPORT.md> --graph <graph.json> --manifest <backup.json> | check <backup.json>';
 
@@ -25,16 +25,64 @@ function isCurrent(graphSha, head) {
   return typeof graphSha === 'string' && graphSha.length >= 7 && head.startsWith(graphSha);
 }
 
-function fullPath(cwd, path) {
-  return isAbsolute(path) ? path : join(cwd, path);
+export function isWithin(root, candidate) {
+  const remainder = relative(root, candidate);
+  return remainder !== '' && remainder !== '..' && !remainder.startsWith(`..${sep}`) && !isAbsolute(remainder);
+}
+
+function isWithinOrRoot(root, candidate) {
+  return candidate === root || isWithin(root, candidate);
+}
+
+// Graphify artifacts and their receipt are local evidence. Never read or create them outside the
+// checkout through an absolute path, `..`, symlink or Windows junction: otherwise a manifest
+// could attest to arbitrary host files rather than to this project's backup.
+export function projectPath(cwd, path) {
+  if (typeof path !== 'string' || path === '') throw new Error('backup path is missing');
+  const root = realpathSync(cwd);
+  const file = resolve(root, path);
+  if (!isWithin(root, file)) throw new Error(`backup path escapes the project: ${path}`);
+  let ancestor = file;
+  while (!existsSync(ancestor)) {
+    const parent = dirname(ancestor);
+    ancestor = parent;
+  }
+  if (!isWithinOrRoot(root, realpathSync(ancestor))) throw new Error(`backup path resolves outside the project: ${path}`);
+  return { root, file };
+}
+
+export function readableProjectFile(cwd, path) {
+  const { root, file } = projectPath(cwd, path);
+  if (!existsSync(file)) throw new Error(`backup file not found: ${path}`);
+  const stat = lstatSync(file);
+  if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`backup file is not a regular project file: ${path}`);
+  return file;
+}
+
+export function writableProjectFile(cwd, path) {
+  const { root, file } = projectPath(cwd, path);
+  if (existsSync(file)) {
+    const stat = lstatSync(file);
+    if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`backup manifest is not a regular project file: ${path}`);
+  }
+  return file;
+}
+
+function graphifyReportFile(cwd, path) {
+  try {
+    return readableProjectFile(cwd, path);
+  } catch (error) {
+    if (/backup file not found/u.test(error.message)) throw new Error(`Graphify report not found: ${path}`);
+    throw error;
+  }
 }
 
 function storedPath(cwd, path) {
-  return isAbsolute(path) ? relative(cwd, path).replaceAll('\\', '/') : path.replaceAll('\\', '/');
+  const { root, file } = projectPath(cwd, path);
+  return relative(root, file).replaceAll('\\', '/');
 }
 
 function requireCurrentReport(reportPath, cwd) {
-  if (!existsSync(reportPath)) throw new Error(`Graphify report not found: ${reportPath}`);
   const head = gitHead(cwd);
   const built = graphCommit(readFileSync(reportPath, 'utf8'));
   if (!isCurrent(built, head)) throw new Error(`Graphify report is stale: built ${built ?? 'missing'}, HEAD ${head}`);
@@ -42,10 +90,15 @@ function requireCurrentReport(reportPath, cwd) {
 }
 
 export function record({ reportPath, graphPath, manifestPath, cwd = '.', now = new Date().toISOString() }) {
-  const reportFile = fullPath(cwd, reportPath);
-  const graphFile = fullPath(cwd, graphPath);
-  const manifestFile = fullPath(cwd, manifestPath);
-  if (!existsSync(graphFile)) throw new Error(`Graphify graph not found: ${graphPath}`);
+  const reportFile = graphifyReportFile(cwd, reportPath);
+  let graphFile;
+  try {
+    graphFile = readableProjectFile(cwd, graphPath);
+  } catch (error) {
+    if (/backup file not found/u.test(error.message)) throw new Error(`Graphify graph not found: ${graphPath}`);
+    throw error;
+  }
+  const manifestFile = writableProjectFile(cwd, manifestPath);
   const head = requireCurrentReport(reportFile, cwd);
   const manifest = {
     schema: 'vcp.graphify-backup/v1', git_head: head, recorded_at: now,
@@ -57,8 +110,14 @@ export function record({ reportPath, graphPath, manifestPath, cwd = '.', now = n
 }
 
 export function verify(manifestPath, cwd = '.') {
-  const manifestFile = fullPath(cwd, manifestPath);
-  if (!existsSync(manifestFile)) return { ok: false, reason: `backup manifest not found: ${manifestPath}` };
+  let manifestFile;
+  try {
+    const { file } = projectPath(cwd, manifestPath);
+    if (!existsSync(file)) return { ok: false, reason: `backup manifest not found: ${manifestPath}` };
+    manifestFile = readableProjectFile(cwd, manifestPath);
+  } catch (error) {
+    return { ok: false, reason: error.message };
+  }
   let manifest;
   try {
     manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
@@ -69,8 +128,8 @@ export function verify(manifestPath, cwd = '.') {
   const required = ['git_head', 'graph_report', 'graph_report_sha256', 'graph', 'graph_sha256'];
   if (required.some((field) => typeof manifest[field] !== 'string' || manifest[field] === '')) return { ok: false, reason: 'backup manifest has missing required fields' };
   try {
-    const reportFile = fullPath(cwd, manifest.graph_report);
-    const graphFile = fullPath(cwd, manifest.graph);
+    const reportFile = graphifyReportFile(cwd, manifest.graph_report);
+    const graphFile = readableProjectFile(cwd, manifest.graph);
     const head = requireCurrentReport(reportFile, cwd);
     if (manifest.git_head !== head) return { ok: false, reason: `backup manifest HEAD ${manifest.git_head} is stale against ${head}` };
     if (sha256(reportFile) !== manifest.graph_report_sha256) return { ok: false, reason: 'Graphify report hash changed after backup' };

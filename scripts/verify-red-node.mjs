@@ -11,6 +11,8 @@ const FOOTER_TESTS = /^# tests? (\d+)$/mu;
 const FOOTER_FAIL = /^# fail (\d+)$/mu;
 const NOT_OK_LINE = /^not ok \d+ - /u;
 const BLOCK_ASSERTION_LINE = "  code: 'ERR_ASSERTION'";
+const HOST_ENVIRONMENT_KEYS = ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'SystemDrive', 'ComSpec', 'PATHEXT', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR'];
+const EXPLICIT_ENVIRONMENT_NAME = /^[A-Z_][A-Z0-9_]*$/u;
 
 export function normalizeProjectPath(value) {
   if (typeof value !== 'string' || value.trim() === '') return null;
@@ -53,6 +55,28 @@ export function isContainedProjectPath(value, cwd = '.') {
       probe = dirname(probe);
     }
   }
+}
+
+/**
+ * Target test files are executable project code. Do not pass every secret from the parent agent
+ * process into that code by default: only OS bootstrap variables survive, plus names an operator
+ * explicitly opts into with VCP_RED_ENV_ALLOW=NAME_A,NAME_B. NODE_* values are never forwarded
+ * because NODE_OPTIONS/NODE_PATH can alter the runner itself. This reduces ambient-secret leaks;
+ * it is deliberately NOT a filesystem, network, or process sandbox for an untrusted project.
+ */
+export function redTestEnvironment(source = process.env) {
+  const environment = {};
+  for (const key of HOST_ENVIRONMENT_KEYS) {
+    if (typeof source[key] === 'string') environment[key] = source[key];
+  }
+  const allowed = typeof source.VCP_RED_ENV_ALLOW === 'string' ? source.VCP_RED_ENV_ALLOW.split(',') : [];
+  for (const rawName of allowed) {
+    const name = rawName.trim();
+    if (EXPLICIT_ENVIRONMENT_NAME.test(name) && !name.startsWith('NODE_') && typeof source[name] === 'string') {
+      environment[name] = source[name];
+    }
+  }
+  return environment;
 }
 
 /**
@@ -136,7 +160,7 @@ export function classifyNodeRed(result) {
   return { ok: true, output, reason: 'Node-native TAP runner registered a real test() that failed with AssertionError-shaped metadata (not proof the assertion itself is genuine — see doc comment)' };
 }
 
-export function verifyNodeRed({ testPath, command, cwd = '.', run = spawnSync, read = readFileSync }) {
+export function verifyNodeRed({ testPath, command, cwd = '.', run = spawnSync, read = readFileSync, environment = process.env }) {
   const normalized = normalizeProjectPath(testPath);
   if (!normalized || !isTestPath(normalized)) return { ok: false, reason: 'test path must be a project-relative, literal test file' };
   if (!isContainedProjectPath(normalized, cwd)) return { ok: false, reason: 'test path resolves outside the project or through a dangling link' };
@@ -148,7 +172,7 @@ export function verifyNodeRed({ testPath, command, cwd = '.', run = spawnSync, r
   } catch (error) {
     return { ok: false, reason: `test file cannot be read: ${error.message}` };
   }
-  const result = run(process.execPath, ['--test', '--test-reporter=tap', normalized], { cwd, encoding: 'utf8', env: { ...process.env, NODE_TEST_CONTEXT: undefined } });
+  const result = run(process.execPath, ['--test', '--test-reporter=tap', normalized], { cwd, encoding: 'utf8', env: redTestEnvironment(environment) });
   return classifyNodeRed(result);
 }
 

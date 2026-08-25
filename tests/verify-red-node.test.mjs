@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const scriptPath = fileURLToPath(new URL('../scripts/verify-red-node.mjs', import.meta.url));
-const { USAGE, classifyNodeRed, isContainedProjectPath, isTestPath, main, normalizeProjectPath, realDiagnosticBlocks, verifyNodeRed } = await import(pathToFileURL(scriptPath).href);
+const { USAGE, classifyNodeRed, isContainedProjectPath, isTestPath, main, normalizeProjectPath, realDiagnosticBlocks, redTestEnvironment, verifyNodeRed } = await import(pathToFileURL(scriptPath).href);
 
 function failed(stdout) {
   return { status: 1, stdout, stderr: '' };
@@ -65,6 +65,17 @@ test('normalizes only safe project-relative paths and recognizes literal test pa
   for (const path of ['', '   ', '../outside.mjs', 'src/./safe.mjs', 'src/../../outside.mjs', 'test/../test/a.test.mjs', 'test/../../outside.test.mjs', '/root/a.mjs', 'C:/root/a.mjs', '..', 42]) assert.equal(normalizeProjectPath(path), null);
   assert.equal(isTestPath('test/a.test.mjs'), true);
   assert.equal(isTestPath('src/a.mjs'), false);
+});
+
+test('FALSIFICACIÓN · RED runner strips ambient secrets and Node injection variables unless an operator allowlists a safe name', () => {
+  const source = { PATH: '/safe/bin', HOME: '/sensitive/home', NODE_OPTIONS: '--require attacker' };
+  source['APP_' + 'TOKEN'] = 'explicit-value';
+  source.VCP_RED_ENV_ALLOW = ['APP_' + 'TOKEN', 'NODE_OPTIONS', 'lowercase', 'MISSING', ''].join(',');
+  const environment = redTestEnvironment(source);
+  const expected = { PATH: '/safe/bin' };
+  expected['APP_' + 'TOKEN'] = 'explicit-value';
+  assert.deepEqual(environment, expected);
+  assert.deepEqual(redTestEnvironment({}), {});
 });
 
 test('FALSIFICACIÓN · physical links cannot escape the project, while an internal link remains usable', () => {
@@ -158,6 +169,26 @@ test('verifyNodeRed rejects unknown runners and test paths before it can run arb
     ].join('\n'));
     const proof = verifyNodeRed({ testPath: 'test/runner.test.mjs', command: 'node --test', cwd: root });
     assert.equal(proof.ok, true, proof.reason);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('verifyNodeRed passes only the reduced environment into the spawned test runner', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-red-node-env-'));
+  try {
+    mkdirSync(join(root, 'test'));
+    writeFileSync(join(root, 'test', 'runner.test.mjs'), 'export {}\n');
+    let options;
+    const environment = { PATH: '/safe/bin', DATABASE_URL: 'do-not-forward', EXPLICIT: 'yes' };
+    environment.VCP_RED_ENV_ALLOW = 'EXPLICIT';
+    const result = verifyNodeRed({
+      testPath: 'test/runner.test.mjs', command: 'node --test', cwd: root,
+      environment,
+      run: (_command, _args, received) => { options = received; return failed(tapAssertionFailure()); },
+    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(options.env, { PATH: '/safe/bin', EXPLICIT: 'yes' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

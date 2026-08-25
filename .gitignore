@@ -1,5 +1,6 @@
 # Distribution artifacts (build locally, don't commit)
 *.zip
+*.sha256
 checksums.txt
 dist/
 

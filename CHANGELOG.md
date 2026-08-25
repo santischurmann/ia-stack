@@ -7,6 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+### Hardening pass 11 (2026-08-24, native security boundaries)
+- **Phase 4.3 is now fully native to VCP.** The live protocol no longer requires or invokes
+  external skills. Its security gate blocks known provider-token/private-key shapes, sensitive
+  artifacts, dynamic execution, SQL/template/HTML injection patterns, unsafe GitHub Actions
+  configuration, unsafe scanner inputs and unscannable release files.
+- **Executable inputs now fail closed at the filesystem boundary.** Receipts, Graphify backup
+  manifests and ratchet counters reject external paths, symbolic links/junctions and non-regular
+  files rather than reading or writing outside a checkout. RED test execution strips inherited
+  secrets and Node control variables unless an operator explicitly allowlists a name.
+- **Distribution is allowlisted.** The ZIP builder packages only VCP runtime/docs/templates,
+  validates version input, emits a per-archive checksum and excludes local `.env`, `.vibe`,
+  Graphify/Obsidian and research state by construction. Its checksum detects accidental
+  corruption; it is not publisher authentication.
+- **Security claims are bounded and tested.** `SECURITY.md` explains the external-artifact
+  trust rule and the remaining limits: no native SAST/SCA/CVE database, no sandbox, and no
+  cryptographic receipt provenance. The suite includes falsifications for these native gates and
+  retains 100% lines/branches/functions over every Node script.
+
 ### Hardening pass 10 (2026-08-22, full measurable coverage gate)
 - **VCP now requires 100% for every coverage metric a stack can actually report.** Lines,
   branches, and functions must each be full where the runner exposes them; a missing metric is a

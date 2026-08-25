@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-backup-state.mjs');
-const { graphCommit, main, record, sha256, verify } = await import(pathToFileURL(script).href);
+const { graphCommit, isWithin, main, projectPath, readableProjectFile, record, sha256, verify, writableProjectFile } = await import(pathToFileURL(script).href);
 
 function run(command, args, cwd) {
   const env = { ...process.env };
@@ -113,6 +113,10 @@ test('FALSIFICACIÓN · relative paths and every mutable backup input are bound'
     assert.equal(manifest.graph_report, 'graphify-out/GRAPH_REPORT.md');
     assert.equal(manifest.graph, 'graphify-out/graph.json');
     assert.equal(verify('.vibe/backup.json', root).ok, true);
+    assert.equal(record({
+      reportPath: 'graphify-out/GRAPH_REPORT.md', graphPath: 'graphify-out/graph.json',
+      manifestPath: '.vibe/backup.json', cwd: root, now: '2026-08-23T00:01:00.000Z',
+    }).recorded_at, '2026-08-23T00:01:00.000Z', 'an existing regular manifest is the only overwrite allowed');
 
     const manifestPath = join(root, '.vibe', 'backup.json');
     const changedHead = { ...manifest, git_head: `${head[0] === '0' ? '1' : '0'}${head.slice(1)}` };
@@ -132,5 +136,70 @@ test('FALSIFICACIÓN · relative paths and every mutable backup input are bound'
     assert.equal(graphCommit('no Graphify metadata'), null);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · backup evidence never reads, writes or follows a path outside the project', () => {
+  const { root } = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-backup-outside-'));
+  try {
+    writeFileSync(join(outside, 'GRAPH_REPORT.md'), '- Built from commit: `deadbeef`\n');
+    writeFileSync(join(outside, 'graph.json'), '{}\n');
+    assert.throws(() => record({
+      reportPath: join(outside, 'GRAPH_REPORT.md'), graphPath: join(outside, 'graph.json'),
+      manifestPath: '.vibe/backup.json', cwd: root,
+    }), /escapes the project/i, 'absolute external input must reject before it is read');
+    assert.throws(() => record({
+      reportPath: 'graphify-out/GRAPH_REPORT.md', graphPath: 'graphify-out/graph.json',
+      manifestPath: join(outside, 'backup.json'), cwd: root,
+    }), /escapes the project/i, 'manifest output must stay inside the checkout');
+
+    symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.throws(() => record({
+      reportPath: 'linked/GRAPH_REPORT.md', graphPath: 'linked/graph.json',
+      manifestPath: '.vibe/backup.json', cwd: root,
+    }), /resolves outside the project/i, 'junction/symlink input must reject before it is read');
+
+    mkdirSync(join(root, '.vibe'), { recursive: true });
+    writeFileSync(join(root, '.vibe', 'backup.json'), JSON.stringify({
+      schema: 'vcp.graphify-backup/v1', git_head: 'x', graph_report: '../outside.md', graph_report_sha256: 'x', graph: '../outside.json', graph_sha256: 'x',
+    }));
+    assert.match(verify('.vibe/backup.json', root).reason, /escapes the project/i, 'manifest fields cannot redirect verification outside the checkout');
+    assert.match(verify(join(outside, 'missing.json'), root).reason, /escapes the project/i, 'check itself rejects an external manifest path');
+    mkdirSync(join(root, '.vibe', 'not-a-file'), { recursive: true });
+    assert.throws(() => record({
+      reportPath: 'graphify-out/GRAPH_REPORT.md', graphPath: 'graphify-out/graph.json',
+      manifestPath: '.vibe/not-a-file', cwd: root,
+    }), /not a regular project file/i, 'a directory can never become a manifest output');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · backup path helpers only resolve regular files within a real checkout', () => {
+  const { root } = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-backup-helper-outside-'));
+  try {
+    writeFileSync(join(outside, 'outside.json'), '{}\n');
+    mkdirSync(join(root, 'directory.json'));
+    symlinkSync(outside, join(root, 'linked.json'), process.platform === 'win32' ? 'junction' : 'dir');
+    symlinkSync(join(root, 'directory.json'), join(root, 'inside-link.json'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal(isWithin(root, root), false);
+    assert.equal(isWithin(root, dirname(root)), false);
+    assert.equal(isWithin(root, 'Z:\\outside'), false);
+    assert.equal(isWithin(root, join(root, 'tracked.txt')), true);
+    assert.equal(isAbsolute(projectPath(root, 'missing/deep/backup.json').file), true, 'missing output still resolves below the checkout');
+    assert.equal(readableProjectFile(root, 'tracked.txt').endsWith('tracked.txt'), true);
+    assert.equal(writableProjectFile(root, 'new/backup.json').endsWith('backup.json'), true);
+    assert.throws(() => projectPath(root, ''), /missing/i);
+    assert.throws(() => projectPath(root, join(outside, 'outside.json')), /escapes the project/i);
+    assert.throws(() => readableProjectFile(root, 'directory.json'), /not a regular project file/i);
+    assert.throws(() => readableProjectFile(root, 'linked.json'), /resolves outside the project/i);
+    assert.throws(() => readableProjectFile(root, 'inside-link.json'), /not a regular project file/i);
+    assert.throws(() => writableProjectFile(root, 'directory.json'), /not a regular project file/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
   }
 });

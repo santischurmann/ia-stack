@@ -148,4 +148,4 @@ go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | g
 
 If any measurable coverage metric < 100%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
 
-Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + security clean (security-baseline.md or cyber-neo, whichever is present) + adversarial pass.
+Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + native security gate clean (`security-baseline.md`) + adversarial pass.

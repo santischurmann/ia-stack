@@ -16,6 +16,7 @@ function Copy-Runtime([string]$Destination) {
   Copy-Item "$PackageDir\templates\*" "$Destination\templates" -Recurse -Force
   Copy-Item "$PackageDir\skills\*" "$Destination\skills" -Recurse -Force
   Copy-Item "$PackageDir\SKILL.md" "$Destination\SKILL.md" -Force
+  Copy-Item "$PackageDir\SECURITY.md" "$Destination\SECURITY.md" -Force
 }
 
 Write-Host '=== VibeCodeProtocols Installer ===' -ForegroundColor Cyan

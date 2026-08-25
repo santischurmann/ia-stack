@@ -14,6 +14,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-security-baseline\.mjs/u, 'mechanical security baseline'],
   ['SKILL.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
   ['README.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
+  ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
+  ['SECURITY.md', /dato no confiable/u, 'external-artifact trust boundary'],
+  ['SECURITY.md', /no hace taint analysis/u, 'honest native-security limit'],
   ['templates/plan.md', /## Write-conflict preflight/u, 'canonical plan preflight section'],
   ['templates/plan.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],
   ['skills/spec-plan-templates.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'embedded plan gate command'],
@@ -26,6 +29,12 @@ export const REQUIREMENTS = [
 export const FORBIDDEN_PHRASES = [
   ['SKILL.md', /confirms a genuine RED/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
   ['SKILL.md', /\bgenuine RED\b/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
+  ['SKILL.md', /if Skill `cyber-neo` is present/iu, 'depends on an external security skill'],
+  ['skills/security-baseline.md', /fallback when cyber-neo/i, 'describes the native gate as an external-skill fallback'],
+  ['SKILL.md', /fableultracode|cyber-neo/iu, 'depends on a named external skill in the live protocol'],
+  ['skills/caveman-tdd.md', /cyber-neo/iu, 'depends on a named external security skill in a live checklist'],
+  ['skills/orchestrator-opus.md', /fableultracode|cyber-neo/iu, 'depends on a named external skill in the orchestrator contract'],
+  ['skills/vibe-memory.md', /cyber-neo/iu, 'depends on a named external security skill in the memory protocol'],
 ];
 
 export function contractViolations(read) {
