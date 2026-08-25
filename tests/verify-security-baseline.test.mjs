@@ -286,6 +286,35 @@ test('FALSIFICACIÓN · a blank line breaks the consecutive-base64-line streak, 
   assert.deepEqual(scanFile('.github/workflows/y.yml', unsafeWorkflow2).map((item) => item.category), ['ci-untrusted-trigger', 'ci-expression-in-run']);
 });
 
+test('FALSIFICACIÓN · two physically consecutive but unrelated non-hex tokens no longer block — the first candidate line must decode to a real key encoding (DER SEQUENCE or OpenSSH magic)', () => {
+  const header = '-----BEGIN' + ' PRIVATE KEY-----';
+  const opensshHeader = ['-----BEGIN', ' OPENSSH', ' PRIVATE', ' KEY-----'].join('');
+  const derBody1 = 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC7VJTUt9Us8cKj';
+  const derBody2 = 'Q2VydFRlc3RTZWNyZXRLZXlNYXRlcmlhbEZvclZDUFRlc3RGaXh0dXJlWFlaMTIz';
+  const opensshBody1 = 'b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW';
+  const opensshBody2 = 'QyNTUxOQAAACBAK7lPGmhO8IldsRUyq9Pm3iM3EudNQhwFsA0O0iL4dQAAAJhwZXJzaXN0';
+
+  // No longer blocks: two consecutive, unrelated, non-hex 20+ char tokens whose decoded bytes
+  // are NOT a real key encoding (this is the L01 residual — physically consecutive, no blank
+  // line between them, previously enough to trigger on line-shape alone).
+  const unrelated1 = 'CommitAbcDefGhiJklMnoPqrStuVwxYz01234';
+  const unrelated2 = 'AnotherUnrelatedIdentifierValueHereABC';
+  assert.deepEqual(scanFile('docs/h.md', [header, unrelated1, unrelated2, ''].join('\n')), []);
+
+  // Still blocks: a real DER-encoded key (PKCS#8/PKCS#1/EC — outer ASN.1 SEQUENCE, tag 0x30).
+  assert.deepEqual(scanFile('leaked/c.txt', [header, derBody1, derBody2, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // Still blocks: a real OpenSSH-format key (`openssh-key-v1\0` magic bytes) — this format is
+  // NOT ASN.1/DER, so a DER-only replacement would have missed it; kept as an additional
+  // accepted encoding precisely to avoid that false negative.
+  assert.deepEqual(scanFile('leaked/d.txt', [opensshHeader, opensshBody1, opensshBody2, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+
+  // Still blocks: a DER SEQUENCE using the SHORT-form length encoding (length byte < 0x80),
+  // not just the long-form encoding the other fixtures above happen to use.
+  const shortFormDer = 'MA0BAgMEBQYHCAkKCwwN'; // 0x30 0x0d ... — SEQUENCE, length 13, short form
+  assert.deepEqual(scanFile('leaked/e.txt', [header, shortFormDer, derBody2, ''].join('\n')).map((item) => item.category), ['private-key-content']);
+});
+
 test('FALSIFICACIÓN · an uncommitted secret blocks the release surface before git add', () => {
   const root = fixture();
   try {

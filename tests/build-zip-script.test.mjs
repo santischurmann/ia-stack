@@ -68,6 +68,12 @@ test('FALSIFICACIÓN · package builder gives zip only the native allowlist, nev
     assert.equal(archiveArgs.some((item) => item.includes('.env') || item.includes('.vibe') || item.includes('graphify-out') || item === 'VCP'), false);
     assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.zip')), true);
     assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.sha256')), true);
+    // FALSIFICACIÓN: the printed recipient instructions must `cd` into the package's REAL
+    // directory case ("VCP" here — mixed case on purpose), never a hardcoded lowercase literal
+    // that breaks the instructions verbatim on a case-sensitive filesystem (the primary target,
+    // since scripts/install.sh is the Linux/macOS installer).
+    assert.match(result.output, /cd VCP && \.\/scripts\/install\.sh/u);
+    assert.equal(result.output.includes('cd vibecodeprotocols'), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

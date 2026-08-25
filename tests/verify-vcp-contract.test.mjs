@@ -10,7 +10,7 @@ const { FORBIDDEN_PHRASES, REQUIREMENTS, contractViolations, main } = await impo
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {
@@ -23,6 +23,23 @@ test('FALSIFICACIÓN · contract rejects unreadable, missing and stale-policy do
   assert.equal(missing.some((item) => /stale 90%/u.test(item)), true);
   const unreadable = contractViolations(() => { throw new Error('ENOENT'); });
   assert.equal(unreadable.length, REQUIREMENTS.length + FORBIDDEN_PHRASES.length);
+});
+
+test('FALSIFICACIÓN · contract rejects SECURITY.md missing the GitHub Actions scope, PreToolUse limit, or ZIP checksum limit statements', () => {
+  const missingScope = contractViolations((path) => path === 'SECURITY.md'
+    ? completeRead(path).replace('configuraciones peligrosas de GitHub Actions', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingScope.some((item) => /SECURITY\.md: missing documented GitHub Actions detection scope/u.test(item)), true);
+
+  const missingHookLimit = contractViolations((path) => path === 'SECURITY.md'
+    ? completeRead(path).replace('no una frontera de confianza', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingHookLimit.some((item) => /SECURITY\.md: missing PreToolUse hook honest limit/u.test(item)), true);
+
+  const missingChecksumLimit = contractViolations((path) => path === 'SECURITY.md'
+    ? completeRead(path).replace('no autentica a quien', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingChecksumLimit.some((item) => /SECURITY\.md: missing ZIP checksum honest limit/u.test(item)), true);
 });
 
 test('FALSIFICACIÓN · contract rejects "confirms a genuine RED" / "genuine RED" while leaving unrelated legitimate uses of "genuine" untouched', () => {

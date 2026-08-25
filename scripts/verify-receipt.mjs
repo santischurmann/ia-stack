@@ -237,15 +237,26 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     // The receipt itself is input to an approval gate, so it has the same containment rule as
     // release files. An external or linked JSON document cannot be excluded from the fingerprint
     // or used to influence a project-local release decision.
+    //
+    // Reads through the resolved path safeRegularFile returns (same convention as
+    // hashFileContent above), instead of re-deriving the path from the original `arg` string a
+    // second time. This closes the most trivially exploitable extra window — a second string-to-
+    // path resolution that could itself observe a different filesystem state — but it is NOT a
+    // claim that the TOCTOU race is eliminated: neither Node's fs API nor this project's
+    // supported platforms (Windows lacks a portable O_NOFOLLOW-equivalent open flag) guarantee an
+    // atomic "verify-then-read" primitive, so a symlink swapped in at the exact resolved path
+    // between the lstat/realpath checks inside safeRegularFile and this readFileSync call is
+    // still a live theoretical race. See research/adversarial-productivity-audit-2026-08-23.md.
+    let safePath;
     try {
-      safeRegularFile(arg, realpathSync('.'));
+      safePath = safeRegularFile(arg, realpathSync('.'));
     } catch (error) {
       fail(`receipt path is unsafe: ${error.message}`);
     }
 
     let receipt;
     try {
-      receipt = JSON.parse(readFileSync(arg, 'utf8'));
+      receipt = JSON.parse(readFileSync(safePath, 'utf8'));
     } catch (e) {
       fail(`receipt is not valid JSON: ${e.message}`);
     }

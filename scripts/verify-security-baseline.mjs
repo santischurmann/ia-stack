@@ -205,23 +205,57 @@ function htmlSinkIndex(content) {
 }
 
 /**
+ * Two structurally distinct real private-key encodings, both native to Node's Buffer — no
+ * external ASN.1/DER library. PKCS#1/PKCS#8/EC keys are always an outer ASN.1 SEQUENCE (tag
+ * byte 0x30); OpenSSH's own format starts with the literal 15-byte magic `openssh-key-v1\0`.
+ * Evaluated (per the 2026-08-24 adversarial audit) against replacing the line-shape heuristic
+ * outright with a DER-only check: that regresses OpenSSH-format keys to a false negative (their
+ * body never starts with 0x30), so this is used as an ADDITIONAL requirement alongside the
+ * existing two-consecutive-lines structural check, never as a replacement — an isolated random
+ * 44-char string only satisfies the DER check in an empirically measured ~0.2% of cases
+ * (2000-sample fixture check), so requiring it on the first candidate line closes the residual
+ * false positive where two unrelated non-hex identifiers sit next to each other undetected by
+ * the line-shape check alone.
+ */
+function looksLikeRealKeyFirstLine(line) {
+  // Buffer.from(str, 'base64') never throws for a string input — Node's decoder is lenient by
+  // design (invalid characters are simply skipped) — so there is no error path to guard here.
+  // No length guard before the magic-byte comparison either: the only caller only ever passes a
+  // line that already matched PRIVATE_KEY_BODY_LINE (20+ base64 chars => at least 15 decoded
+  // bytes), and subarray/toString on a shorter buffer simply yields a shorter string that fails
+  // the equality check on its own.
+  const bytes = Buffer.from(line.trim(), 'base64');
+  if (bytes.subarray(0, 15).toString('latin1') === 'openssh-key-v1\0') return true;
+  if (bytes.length < 4 || bytes[0] !== 0x30) return false;
+  const lengthByte = bytes[1];
+  if (lengthByte < 0x80) return true;
+  const lengthByteCount = lengthByte & 0x7f;
+  return lengthByteCount >= 1 && lengthByteCount <= 4 && bytes.length > 2 + lengthByteCount;
+}
+
+/**
  * A single isolated line matching the base64 shape is exactly what an adjacent hash/UUID/commit
  * id mention looks like — real PEM bodies are always wrapped across multiple lines (base64 of
  * arbitrary binary, conventionally 64 chars/line), so requiring two in a row is a structural
  * property genuine keys have and isolated identifiers never do, without hardcoding a specific
- * line length or any file/path exclusion.
+ * line length or any file/path exclusion. The first line of that streak is additionally required
+ * to decode to a real key encoding (see looksLikeRealKeyFirstLine) — two consecutive unrelated
+ * tokens that both happen to be non-hex are not enough on their own.
  */
 function hasConsecutiveBase64BodyLines(window) {
   let streak = 0;
+  let streakStart = null;
   for (const line of window.split(/\r?\n/u)) {
     if (PRIVATE_KEY_BODY_LINE.test(line)) {
+      if (streak === 0) streakStart = line;
       streak += 1;
-      if (streak >= 2) return true;
+      if (streak >= 2) return looksLikeRealKeyFirstLine(streakStart);
     } else {
       // Any non-candidate line resets the streak, blank included: two unrelated base64-shaped
       // tokens separated by a paragraph break are not a contiguous PEM body — confirmed false
       // positive when the blank line was previously exempted from resetting the count.
       streak = 0;
+      streakStart = null;
     }
   }
   return false;
