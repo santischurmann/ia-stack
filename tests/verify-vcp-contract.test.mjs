@@ -10,7 +10,7 @@ const { FORBIDDEN_PHRASES, REQUIREMENTS, contractViolations, main } = await impo
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {
@@ -69,6 +69,13 @@ test('FALSIFICACIÓN · contract rejects SKILL.md missing the receipt v2 all-AC-
     ? completeRead(path).replace('no lo llames "el scope\nreal del plan"', 'algo distinto')
     : completeRead(path));
   assert.equal(missingScopeLimit.some((item) => /SKILL\.md: missing receipt v2: scope\.declared_paths honest limit/u.test(item)), true);
+});
+
+test('FALSIFICACIÓN · contract rejects SKILL.md missing the mechanical spec word-cap gate command', () => {
+  const missingWordcap = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs', 'algo distinto')
+    : completeRead(path));
+  assert.equal(missingWordcap.some((item) => /SKILL\.md: missing mechanical spec word-cap gate/u.test(item)), true);
 });
 
 test('main reports pass, invalid usage and a real repository contract failure without trusting narration', () => {

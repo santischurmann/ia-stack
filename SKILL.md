@@ -144,6 +144,16 @@ Before offering CONTENT review, grep the draft for `[NEEDS CLARIFICATION:`. Any 
 approval and transition to Plan/Build: present each exact question to the user, resolve it in the
 spec, then re-check. Do not silently translate ambiguity into a guessed acceptance criterion.
 
+**Word cap gate — mechanical, not just the note in the template** (the cap was documented in
+`templates/spec.md` since an earlier hardening round but never enforced; a spec nobody reads
+poisons every phase that follows, see `research/sources/protocolo-muralla.md` point #8):
+```bash
+node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md
+```
+Exit 0 only if the spec is at or under 650 words, excluding fenced code blocks and table rows
+(same exclusion the template already states). Exit 1 → trim narration before CONTENT review, not
+after — a draft that fails this never reaches the 🔵 below.
+
 🔵 **CONTENT** review:
 ```
 A) Approved — proceed to Plan
