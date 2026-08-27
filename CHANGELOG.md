@@ -11,6 +11,9 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   implementado con referencias verificables a `98d2058`; el spec y la propuesta ya no describen
   un estado histórico falso. El backlog restante conserva estado explícito y no se promociona a
   completado sin un ciclo independiente de VCP.
+- Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
+  de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
+  deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
 
 ### Discovery workflow (2026-08-27, evidence before specification)
 - **Discovery now precedes Spec for non-trivial work.** The protocol requires traceable research,

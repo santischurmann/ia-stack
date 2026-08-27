@@ -216,9 +216,9 @@ function fail(reason) {
 // structured, human-reviewable evidence — a record of what an author claims ran and what it
 // produced. Nothing in this validator re-executes a command or cryptographically proves it ran;
 // that is the same procedural-not-cryptographic disclosure this project already makes for
-// `evidence` on v1 (see SKILL.md). `scope.declared_paths` is a self-declared writer set, not
-// cross-checked against a plan/task source of truth — that requires research item #24
-// (verify-plan-conflicts.mjs-equivalent cross-check), not implemented here.
+// `evidence` on v1 (see SKILL.md). `scope.declared_paths` is a self-declared writer set inside
+// the receipt. The separate `verify-scope-diff.mjs` gate compares the task's planned writers
+// with the real Git delta; this validator deliberately stays focused on receipt integrity.
 // ---------------------------------------------------------------------------------------------
 
 const V2_SCHEMA = 'vcp.receipt/v2';
@@ -311,7 +311,7 @@ export function validateMeasurements(measurements) {
 }
 
 /** scope.declared_paths — project-local, regular, no symlink/junction escape. Self-declared by
- * the receipt's own author: NOT cross-checked against a plan/task file (see module header). */
+ * the receipt's own author; plan-vs-delta comparison belongs to verify-scope-diff.mjs. */
 export function validateScope(scope, cwd) {
   if (!scope || typeof scope !== 'object' || Array.isArray(scope)) return { ok: false, reason: 'scope must be an object' };
   if (!Array.isArray(scope.declared_paths) || scope.declared_paths.length === 0) {

@@ -34,6 +34,16 @@ node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 those tasks are never dispatched together. The complete writer set is `files_to_create`,
 `files_to_modify`, and `test_files` in `docs/tasks.json`.
 
+After GREEN, compare that writer set with the real Git delta (including untracked files):
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+  --tasks docs/tasks.json --task <task-id> --base <git-ref>
+```
+
+Pass each operational file that is intentionally outside the task as its own explicit
+`--ignore <path>`. The gate has no implicit `.vibe/` exclusion and rejects unsafe ignored paths.
+
 ---
 
 ## Risk Notes

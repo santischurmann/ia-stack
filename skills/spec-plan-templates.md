@@ -86,6 +86,17 @@ route. Split the writes or add the real dependency, then rerun the command. The 
 `files_to_create`, `files_to_modify`, and `test_files`; declaring a path twice inside the same
 task is not a conflict with itself.
 
+After each task reaches GREEN, verify that the declaration matches the real checkout, including
+untracked files:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+  --tasks docs/tasks.json --task <task-id> --base <git-ref>
+```
+
+Every operational exception must be an explicit `--ignore <project-relative-file>`. Never use a
+directory-wide ignore to hide undeclared writers.
+
 ## Risk Notes
 <skip if CONFIG=coarse> — shared-module touches, external API mocks, etc.
 
@@ -130,7 +141,7 @@ task is not a conflict with itself.
 }
 ```
 
-`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by the preflight. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
+`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs` and `verify-scope-diff.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by either gate. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
 
 ---
 

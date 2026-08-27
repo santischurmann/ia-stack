@@ -46,7 +46,7 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 #22/#23) — dos reglas meta que aplican a cualquier LAW/regla nueva que se agregue a `SKILL.md`/
 `skills/*.md` en el futuro:
 1. **Toda regla nueva trae su detector.** No "evitá el over-engineering" sino "over-engineering →
-   `git diff --stat` contra los archivos declarados en la tarea". Una regla sin método de
+   `verify-scope-diff.mjs` contra los writers declarados y el delta real de Git". Una regla sin método de
    verificación es decorativa — se olvida en la primera sesión bajo presión de contexto.
 2. **El comentario de un gate cuenta la herida, con el número de veces que pasó.** Un gate que
    nace de una buena práctica genérica se borra con el tiempo; uno que nace de un bug real
@@ -297,8 +297,18 @@ fails, **stop and report it as a pre-existing failure** — never fix it inline 
 diff. A fix that rides along inside another task's changes is a fix nobody reviewed as its own
 change.
 
-**Scope check after GREEN** (point #19): `git diff --stat` against the files declared for this
-task. Anything outside that list is scope creep — report it, don't silently keep it.
+**Scope check after GREEN** (point #19): compare the declared writers with the real Git delta;
+`git diff --stat` is only a summary and cannot see untracked files. Run:
+```bash
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+  --tasks docs/tasks.json --task <task-id> --base <git-ref> \
+  --ignore <explicit-operational-file-if-needed>
+```
+The gate compares `files_to_create`, `files_to_modify` and `test_files` exactly with tracked and
+untracked paths since `<git-ref>`. Exit `1` is scope creep or a missing declared writer: report it,
+update the plan through the 🔵 choice, and do not silently continue. Every ignored path must be
+listed with its own `--ignore`; there is no implicit `.vibe/` exclusion, and ignored files must be
+regular project-local files. Run it again before the receipt if the tree changes.
 
 **Optional: PreToolUse enforcement** (point #1, `scripts/pretooluse-red.mjs`) — if
 `.claude/settings.json` wires this script as a `PreToolUse` hook (see `README.md`, section
@@ -607,10 +617,10 @@ project-local, un archivo regular, sin symlinks ni junctions que escapen del che
 `measurements` y `reproduction` son evidencia **estructurada y revisable**, escrita por quien
 generó el receipt — el gate mecánico nunca re-ejecuta el comando ni prueba criptográficamente
 que corrió. Es disciplina procedural auditable (un humano puede releer y correr `reproduction`
-él mismo), no una garantía de ejecución. `scope.declared_paths` es un writer set autodeclarado
-por el propio receipt — **no** está cruzado contra `tasks.json`/`plan.md` como fuente de verdad
-(eso es el ítem #24 del backlog de research, no implementado todavía); no lo llames "el scope
-real del plan" hasta que exista ese cruce.
+él mismo), no una garantía de ejecución. `scope.declared_paths` sigue siendo un writer set
+autodeclarado dentro del receipt; el cruce contra `tasks.json`/`plan.md` ocurre en el gate separado
+`verify-scope-diff.mjs` después de GREEN, usando el diff real de Git. No llames al campo del receipt
+"el scope real del plan" si no corriste ese gate con la base y el task correctos.
 
 **`-1` sólo es válido junto con `measured: false` y un motivo no vacío** — un `-1` sin
 `measured: false` explícito, o sin `reason`, es rechazado. La combinación existe para que "no se

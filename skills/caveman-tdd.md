@@ -102,7 +102,7 @@ relax this one into a generic output regex.
 |---|---|---|
 | GREEN skips RED | Tests pass without implementation | RED gate script exits 0 |
 | RED writes passing test | Gate fails at wrong place | Gate output shows 0 failures |
-| GREEN over-engineers | Adds features not in tests | `git diff --stat` vs task JSON `files_to_create`/`files_to_modify` |
+| GREEN over-engineers | Adds features not in tests | `verify-scope-diff.mjs check` vs task JSON writers and the real Git delta |
 | TRIANGULATE skipped/decorative | REFACTOR runs on happy-path-only coverage, or cases exist with no `derived from` | Check task report for Step 1 case list — no list or no justification = violation |
 | Triangulator edits production code | Edge case "fixed" without Builder handoff | `git diff` on non-test files during TRIANGULATE step |
 | REFACTOR adds feature | New code not covered by tests | Coverage drops on new lines — run COVERAGE GATE cmd |

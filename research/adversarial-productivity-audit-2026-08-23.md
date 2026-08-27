@@ -46,7 +46,7 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 21 | Receipt schema verifica AC/evidence/4R estructurados | `bf2e14b`, `verify-receipt.mjs` v2 + tests | **HECHO** |
 | 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | SIGUIENTE |
 | 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | SIGUIENTE |
-| 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | SIGUIENTE |
+| 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | **HECHO** — `scripts/verify-scope-diff.mjs` compara writers con tracked+untracked, con `--ignore` explícito |
 | 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | SIGUIENTE |
 | 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | SIGUIENTE |
 | 27 | Audit log con hash chain | “append-only” es hoy una convención | SIGUIENTE |

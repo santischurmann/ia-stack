@@ -200,6 +200,8 @@ Task T01:
 
 **Parallel, if Phase 2 CONFIG allowed it:** run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
 
+After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>`. This compares the complete writer set with tracked and untracked paths in the real checkout; operational files are ignored only by an explicit repeated `--ignore <path>`. A rejection pauses the task and returns it to the 🔵 plan choice; never explain it away as a harmless extra file.
+
 **CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 4.1/4.3 for fixes.
 
 ---

@@ -112,6 +112,13 @@ Ejemplo mínimo desde un proyecto ya instalado:
 # Antes de construir: evita que dos tareas escriban lo mismo sin dependencia declarada.
 node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 
+# Después de GREEN: el diff real debe coincidir con los writers de la tarea.
+# Elegí una base explícita (por ejemplo origin/main) y declarà sólo artefactos operativos
+# que no son parte del cambio, uno por --ignore.
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+  --tasks docs/tasks.json --task T01 --base origin/main \
+  --ignore docs/tasks.json
+
 # RED estricto para un test Node nativo.
 .vibe/vcp-runtime/scripts/verify-red.sh test/auth.test.mjs "node --test"
 
@@ -129,6 +136,13 @@ node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup
 
 Antes del primer receipt, reemplazá el placeholder de feature en `.vibe/SESSION.md` por el slug
 real. VCP no lo inventa porque una feature falsa vuelve inútil la trazabilidad.
+
+`verify-scope-diff.mjs` compara los tres campos escritores de la tarea (`files_to_create`,
+`files_to_modify`, `test_files`) con los paths trackeados y untracked que Git observa desde la
+base elegida. Exit `1` si falta un writer, aparece un archivo extra o el plan es inseguro.
+`--ignore` es obligatorio y explícito para cada artefacto operativo que deba quedar fuera; no hay
+una exclusión global de `.vibe/`. Corré este gate después de GREEN y otra vez antes del receipt si
+el working tree cambió.
 
 ## Los gates mecánicos
 
