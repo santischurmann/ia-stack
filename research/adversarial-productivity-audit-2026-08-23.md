@@ -45,14 +45,14 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 20 | Falsificación propia por cada gate nuevo | fallas RED/receipt previas se hallaron así | **HECHO** en cambios de esta ronda |
 | 21 | Receipt schema verifica AC/evidence/4R estructurados | `bf2e14b`, `verify-receipt.mjs` v2 + tests | **HECHO** |
 | 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | SIGUIENTE |
-| 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | SIGUIENTE |
+| 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | **HECHO** — `verify-receipt.mjs check --require-clean-worktree` rechaza unstaged/untracked en 4.6; angosta la ventana TOCTOU de #22, no la cierra |
 | 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | **HECHO** — `scripts/verify-scope-diff.mjs` compara writers con tracked+untracked, con `--ignore` explícito |
 | 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | SIGUIENTE |
 | 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | SIGUIENTE |
 | 27 | Audit log con hash chain | “append-only” es hoy una convención | SIGUIENTE |
 | 28 | ZIP desde allowlist | `07557e7`, `build-zip.sh:31-41` | **HECHO** |
 | 29 | Manifest de backup Graphify post-commit | grafo local estaba en `4df2a302`, no `ad29447` | **HECHO** |
-| 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | SIGUIENTE |
+| 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | **HECHO** — `verify-graphify-manifest.mjs` exige que cada archivo rastreado esté indexado o excluido con razón, y rechaza fantasmas; prueba contabilidad, no comprensión |
 | 31 | Destino Obsidian explícito y validado | export actual usa `--dir graphify-out/obsidian`; falta gate de destino | **PARCIAL** |
 | 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | SIGUIENTE |
 | 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | SIGUIENTE |
@@ -70,7 +70,7 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 45 | Árbol de decisión de límite de fase | `mattpocock-1`, reduce ambigüedad de orquestación | SIGUIENTE |
 | 46 | Redacción canónica reutilizable | `mattpocock-6`/`gstack`, evita patrones duplicados | SIGUIENTE |
 | 47 | Baseline diff de findings | `paperclip`/`gstack`, separa deuda vieja de nueva | SIGUIENTE |
-| 48 | Evidence locator seguro (URL sin credenciales) | `paperclip P07/P08` | SIGUIENTE |
+| 48 | Evidence locator seguro (URL sin credenciales) | `paperclip P07/P08` | **HECHO** — REQ-G12: el locator de un claim exige https sin credenciales o path project-relative, y rechaza caracteres de control |
 | 49 | Tier de modelo sólo para razonamiento difícil | `superpowers-7/8`, optimiza costo sin bajar gates | SIGUIENTE |
 | 50 | No implementar runtime Paperclip ficticio | research confirma que requiere server/telemetría real | **NO AUTOMATIZAR** |
 | 51 | Contención física de paths RED/hook | review independiente encontró escape por symlink tras cerrar `..` | **HECHO** |
