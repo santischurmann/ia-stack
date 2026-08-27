@@ -8,7 +8,7 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-test-bindings.mjs');
 const {
-  TAP_TIMEOUT_MS, checkActiveBindings, checkTestBinding, hasLiteralTestDeclaration, main, parseTapResults, validateTestReference,
+  TAP_TIMEOUT_MS, checkActiveBindings, checkTestBinding, createCachedBindingCheck, hasLiteralTestDeclaration, main, parseTapResults, validateTestReference,
 } = await import(pathToFileURL(script).href);
 
 function withFixture(callback) {
@@ -116,6 +116,48 @@ test('checkActiveBindings rejects duplicate names and main reports usage, failur
   assert.equal(main(['check'], '.', { readInventory: () => ({ requirements: rows }), check: () => ({ ok: true }) }, () => {}, (line) => messages.push(line)), 1);
   assert.match(messages.at(-1), /DUPLICATE/u);
   assert.equal(main(['check'], '.', { readInventory: () => ({ requirements: [row({ status: 'planned' })] }), check: () => ({ ok: true }) }, () => {}, () => {}), 0);
+});
+
+test('checkActiveBindings executes a shared test_ref exactly once while checking every exact TAP name', () => {
+  withFixture((root) => {
+    const testRef = writeTest(root, 'shared.test.mjs', [
+      "import test from 'node:test';",
+      "test('REQ-I01 · binding verde aislado', () => {});",
+      "test('REQ-I02 · segundo binding verde', () => {});",
+      '',
+    ].join('\n'));
+    let launches = 0;
+    const result = checkActiveBindings([
+      row({ test_ref: testRef }),
+      row({ req_id: 'REQ-I02', test_ref: testRef, test_name: 'REQ-I02 · segundo binding verde' }),
+    ], root, {
+      spawn: () => {
+        launches += 1;
+        return { status: 0, stdout: 'ok 1 - REQ-I01 · binding verde aislado\nok 2 - REQ-I02 · segundo binding verde\n', stderr: '' };
+      },
+    });
+    assert.deepEqual(result, { ok: true });
+    assert.equal(launches, 1);
+  });
+});
+
+test('createCachedBindingCheck reutiliza TAP por cwd/test_ref sin omitir la verificación exacta de cada nombre', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-binding-cache-'));
+  try {
+    mkdirSync(join(root, 'tests'));
+    writeFileSync(join(root, 'tests', 'shared.test.mjs'), "import test from 'node:test';\ntest('REQ-A01 · uno', () => {});\ntest('REQ-A02 · dos', () => {});\n");
+    let launches = 0;
+    const check = createCachedBindingCheck(checkTestBinding, () => {
+      launches += 1;
+      return { status: 0, stdout: "ok 1 - REQ-A01 · uno\nok 2 - REQ-A02 · dos\n" };
+    });
+    assert.deepEqual(check(row({ req_id: 'REQ-A01', test_name: 'REQ-A01 · uno', test_ref: 'tests/shared.test.mjs' }), root), { ok: true });
+    assert.deepEqual(check(row({ req_id: 'REQ-A02', test_name: 'REQ-A02 · dos', test_ref: 'tests/shared.test.mjs' }), root), { ok: true });
+    assert.equal(launches, 1);
+    assert.equal(createCachedBindingCheck(() => ({ ok: true }))(row(), root).ok, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('static declaration scanning ignores comments and strings, while safe references reject missing files, directories and symlinks', () => {

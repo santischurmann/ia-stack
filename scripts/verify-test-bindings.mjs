@@ -104,7 +104,22 @@ export function checkTestBinding(row, cwd, { spawn = spawnSync } = {}) {
   return { ok: true };
 }
 
-export function checkActiveBindings(rows, cwd, { check = checkTestBinding } = {}) {
+// A TAP file is an execution unit, while each requirement still needs an exact
+// title lookup in that TAP output. Reuse the immutable process result per
+// cwd/test_ref, then preserve every per-requirement static and TAP check.
+export function createCachedBindingCheck(check = checkTestBinding, spawn = spawnSync) {
+  if (check !== checkTestBinding) return (row, cwd) => check(row, cwd);
+  const executions = new Map();
+  return (row, cwd) => checkTestBinding(row, cwd, {
+    spawn: (command, args, options) => {
+      const key = `${cwd}\u0000${args.at(-1)}`;
+      if (!executions.has(key)) executions.set(key, spawn(command, args, options));
+      return executions.get(key);
+    },
+  });
+}
+
+export function checkActiveBindings(rows, cwd, { check = checkTestBinding, spawn = spawnSync } = {}) {
   if (!Array.isArray(rows)) return failed('DISCOVERY_TEST_BINDING_STATIC_INVALID', 'requirements must be an array');
   const active = rows.filter((row) => row?.status === 'active');
   const names = new Set();
@@ -112,8 +127,9 @@ export function checkActiveBindings(rows, cwd, { check = checkTestBinding } = {}
     if (names.has(row.test_name)) return failed('DISCOVERY_TEST_BINDING_DUPLICATE', `test_name is shared by active requirements: ${row.test_name}`);
     names.add(row.test_name);
   }
+  const cachedCheck = createCachedBindingCheck(check, spawn);
   for (const row of active) {
-    const result = check(row, cwd);
+    const result = cachedCheck(row, cwd);
     if (!result.ok) return result;
   }
   return { ok: true };

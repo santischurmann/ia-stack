@@ -34,11 +34,14 @@ function fixture() {
 function assertRuntime(project, target, runtime) {
   assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
+  assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-core.mjs')), true, 'runtime needs the I1 immutable Discovery verifier');
   assert.equal(existsSync(join(runtime, 'contracts', 'discovery-requirements.json')), true, 'runtime needs the Discovery inventory contract');
   assert.equal(existsSync(join(runtime, 'contracts', 'discovery-phase-plan.json')), true, 'runtime needs the Discovery phase plan');
   assert.equal(existsSync(join(runtime, 'tests', 'verify-discovery-requirements.test.mjs')), true, 'runtime carries its I0 self-tests');
+  assert.equal(existsSync(join(runtime, 'tests', 'verify-discovery-requirements-selftest.mjs')), true, 'runtime carries the non-recursive I0 gate self-test');
   assert.equal(existsSync(join(runtime, 'SECURITY.md')), true, 'runtime docs must carry the native security contract they reference');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'pretooluse-red.mjs')), true);
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'verify-discovery-core.mjs')), true, 'project runtime needs the I1 immutable Discovery verifier');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'contracts', 'discovery-requirements.json')), true);
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'tests', 'verify-test-bindings.test.mjs')), true);
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'SECURITY.md')), true);

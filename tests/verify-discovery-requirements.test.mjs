@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -9,7 +10,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-discovery-requirements.mjs');
 const {
   BASE_68_REQ_IDS, EXPECTED_PHASE_PLAN, EXPECTED_REQ_BY_PHASE, PHASE_ORDER,
-  assertPhaseClosed, assertReplacementTopology, createCheckRegistry, main, parseArgs,
+  assertPhaseClosed, assertReplacementTopology, createCheckRegistry, createPreviousPhasesChecker, main, parseArgs,
   readPreviousInventory, resolveRequirement, runSelfTest, docsContract, validateInventory, validateLifecycle, validatePhasePlan,
 } = await import(pathToFileURL(script).href);
 
@@ -18,6 +19,22 @@ const planPath = join(repoRoot, 'contracts', 'discovery-phase-plan.json');
 
 function readInventory() {
   return JSON.parse(readFileSync(inventoryPath, 'utf8'));
+}
+
+// I0 is a historical, self-contained contract: its tests must keep proving the
+// original all-planned baseline after later phases legitimately activate rows.
+// Never derive that baseline from the mutable current inventory state.
+function plannedInventory() {
+  const inventory = readInventory();
+  inventory.requirements = inventory.requirements.map((row) => ({
+    ...row,
+    status: 'planned',
+    implemented_phase: null,
+    superseded_by: null,
+    test_ref: null,
+    test_name: null,
+  }));
+  return inventory;
 }
 
 function readPlan() {
@@ -30,6 +47,11 @@ function copy(value) {
 
 function expectCode(fn, code) {
   assert.throws(fn, (error) => error?.code === code, `expected ${code}`);
+}
+
+function git(root, args) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  assert.equal(result.status, 0, `${result.stdout}${result.stderr}`);
 }
 
 function binding(row) {
@@ -59,19 +81,20 @@ function nonBase(id, phase = 'I1') {
   };
 }
 
-test('I0 inventory preserves exactly the 68 planned base requirements and the canonical phase plan', () => {
-  const inventory = readInventory();
+test('I0 baseline and el inventario actual preservan los 68 requisitos base y el plan canónico', () => {
+  const inventory = plannedInventory();
   assert.equal(BASE_68_REQ_IDS.length, 68);
   assert.deepEqual(Object.fromEntries(Object.entries(EXPECTED_REQ_BY_PHASE).map(([phase, ids]) => [phase, ids.length])), {
     I0: 0, I1: 53, 'I1.5': 6, I2: 9, I3: 0,
   });
   assert.deepEqual(PHASE_ORDER, ['I0', 'I1', 'I1.5', 'I2', 'I3']);
   assert.deepEqual(validateInventory(inventory), { ok: true });
+  assert.deepEqual(validateInventory(readInventory()), { ok: true });
   assert.deepEqual(validatePhasePlan(readPlan()), { ok: true });
 });
 
 test('FALSIFICACIÓN · inventory rejects duplicate/missing/misphased/base-rejected and malformed planned rows', () => {
-  const inventory = readInventory();
+  const inventory = plannedInventory();
   const duplicate = copy(inventory);
   duplicate.requirements.push(copy(duplicate.requirements[0]));
   expectCode(() => validateInventory(duplicate), 'DISCOVERY_REQUIREMENT_ID_DUPLICATE');
@@ -130,7 +153,7 @@ test('FALSIFICACIÓN · phase plan is exact, ordered and closed over the registr
 });
 
 test('I0 closes only when its live prereqs pass; I1 remains incomplete while its 53 base requirements are planned', () => {
-  const context = { inventory: readInventory(), plan: readPlan(), registry: registry(), checkBinding: binding };
+  const context = { inventory: plannedInventory(), plan: readPlan(), registry: registry(), checkBinding: binding };
   assert.deepEqual(assertPhaseClosed('I0', context), { ok: true });
   expectCode(() => assertPhaseClosed('I1', context), 'DISCOVERY_PHASE_INCOMPLETE');
   expectCode(() => assertPhaseClosed('unknown', context), 'DISCOVERY_PHASE_UNKNOWN');
@@ -138,7 +161,7 @@ test('I0 closes only when its live prereqs pass; I1 remains incomplete while its
 });
 
 test('FALSIFICACIÓN · lifecycle permits only staged, phase-safe transitions and detects replacement topology loss', () => {
-  const previous = readInventory();
+  const previous = plannedInventory();
   const plannedToActive = copy(previous);
   const target = plannedToActive.requirements.find((row) => row.req_id === 'REQ-A01');
   target.status = 'active';
@@ -165,6 +188,18 @@ test('FALSIFICACIÓN · lifecycle permits only staged, phase-safe transitions an
   expectCode(() => validateInventory(merge), 'DISCOVERY_REQUIREMENT_REPLACEMENT_MERGE');
 });
 
+test('createPreviousPhasesChecker ejecuta un prerequisito por fase una sola vez y memoriza éxito o fallo', () => {
+  let calls = 0;
+  const checker = createPreviousPhasesChecker({}, () => { calls += 1; });
+  assert.equal(checker('I0'), true);
+  assert.equal(checker('I1'), true);
+  assert.equal(checker('I1'), true);
+  assert.equal(calls, 1);
+  const failing = createPreviousPhasesChecker({}, () => { throw new Error('red'); });
+  assert.equal(failing('I1'), false);
+  assert.equal(failing('I1'), false);
+});
+
 test('resolveRequirement detects missing/cyclic/unresolved replacements and accepts a linear active successor', () => {
   const active = { req_id: 'R-002', status: 'active', target_phase: 'I1', implemented_phase: 'I1', decision_ref: 'd', superseded_by: null, test_ref: 'tests/x.mjs', test_name: 'R-002 · green', rule: 'rule' };
   const replaced = { ...active, req_id: 'R-001', status: 'replaced', superseded_by: 'R-002' };
@@ -176,27 +211,27 @@ test('resolveRequirement detects missing/cyclic/unresolved replacements and acce
 
 test('FALSIFICACIÓN · schema and row-shape validators reject unknown statuses, paths and replacement references', () => {
   expectCode(() => validateInventory(null), 'DISCOVERY_REQUIREMENT_SCHEMA_INVALID');
-  const malformedId = copy(readInventory());
+  const malformedId = plannedInventory();
   malformedId.requirements[0] = null;
   expectCode(() => validateInventory(malformedId), 'DISCOVERY_REQUIREMENT_ID_INVALID');
 
-  const unknownStatus = copy(readInventory());
+  const unknownStatus = plannedInventory();
   unknownStatus.requirements[0].status = 'done';
   expectCode(() => validateInventory(unknownStatus), 'DISCOVERY_REQUIREMENT_LIFECYCLE_INVALID');
 
-  const missingPhase = copy(readInventory());
+  const missingPhase = plannedInventory();
   missingPhase.requirements[0].target_phase = '';
   expectCode(() => validateInventory(missingPhase), 'DISCOVERY_PHASE_ASSIGNMENT_MISSING');
 
-  const unknownPhase = copy(readInventory());
+  const unknownPhase = plannedInventory();
   unknownPhase.requirements[0].target_phase = 'I9';
   expectCode(() => validateInventory(unknownPhase), 'DISCOVERY_PHASE_ASSIGNMENT_INVALID');
 
-  const missingMetadata = copy(readInventory());
+  const missingMetadata = plannedInventory();
   missingMetadata.requirements[0].rule = '';
   expectCode(() => validateInventory(missingMetadata), 'DISCOVERY_REQUIREMENT_SCHEMA_INVALID');
 
-  const missingSuccessor = copy(readInventory());
+  const missingSuccessor = plannedInventory();
   Object.assign(missingSuccessor.requirements[0], active(missingSuccessor.requirements[0]), { status: 'replaced', superseded_by: 'R-missing' });
   expectCode(() => validateInventory(missingSuccessor), 'DISCOVERY_REQUIREMENT_REPLACEMENT_MISSING');
 });
@@ -224,7 +259,7 @@ test('FALSIFICACIÓN · phase plan rejects malformed, unknown, duplicate and shi
 });
 
 test('all phases close only with all active requirements, live bindings and a complete closed registry', () => {
-  const inventory = copy(readInventory());
+  const inventory = plannedInventory();
   inventory.requirements = inventory.requirements.map(active);
   const context = { inventory, plan: readPlan(), registry: registry(), checkBinding: binding };
   assert.deepEqual(assertPhaseClosed('I2', context), { ok: true });
@@ -234,7 +269,7 @@ test('all phases close only with all active requirements, live bindings and a co
 });
 
 test('FALSIFICACIÓN · lifecycle rejects removals, terminal edits, unsafe active mutations and invalid status edges', () => {
-  const baseline = readInventory();
+  const baseline = plannedInventory();
   const removed = copy(baseline);
   removed.requirements.pop();
   expectCode(() => validateLifecycle(baseline, removed), 'DISCOVERY_REQUIREMENT_REMOVED');
@@ -275,7 +310,7 @@ test('FALSIFICACIÓN · lifecycle rejects removals, terminal edits, unsafe activ
 });
 
 test('lifecycle accepts three-stage replacement and non-base rejection, but rejects regressing/replacing across phases', () => {
-  const baseline = readInventory();
+  const baseline = plannedInventory();
   const activeBaseline = copy(baseline);
   activeBaseline.requirements[0] = active(activeBaseline.requirements[0]);
   const stageOne = copy(activeBaseline);
@@ -332,6 +367,13 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
   assert.equal(main(['check', '--completed-phase', 'I0'], repoRoot, { registry: registry(), checkBinding: binding }, () => {}, (line) => errors.push(line)), 0);
   assert.equal(main(['check', '--diff-against', 'not-a-ref'], repoRoot, {}, () => {}, (line) => errors.push(line)), 1);
   assert.match(errors.at(-1), /DISCOVERY_DIFF_REF_INVALID/u);
+  const activeI1 = plannedInventory();
+  activeI1.requirements = activeI1.requirements.map((row) => row.target_phase === 'I1' ? active(row) : row);
+  assert.equal(main(['check', '--completed-phase', 'I1'], repoRoot, {
+    readInventory: () => activeI1,
+    readPlan,
+    checkBinding: binding,
+  }, () => {}, (line) => errors.push(line)), 0);
   const copiedRuntimeProject = mkdtempSync(join(tmpdir(), 'vcp-discovery-runtime-diff-'));
   try {
     assert.equal(main(['check', '--diff-against', 'HEAD'], copiedRuntimeProject, { runtimeRoot: repoRoot }, () => {}, (line) => errors.push(line)), 1);
@@ -339,6 +381,20 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
     expectCode(() => readPreviousInventory(repoRoot, 'HEAD', join(copiedRuntimeProject, 'missing-runtime')), 'DISCOVERY_DIFF_RUNTIME_UNTRACKED');
   } finally {
     rmSync(copiedRuntimeProject, { recursive: true, force: true });
+  }
+  const sourceWithoutInventory = mkdtempSync(join(tmpdir(), 'vcp-discovery-empty-history-'));
+  try {
+    git(sourceWithoutInventory, ['init', '--quiet']);
+    git(sourceWithoutInventory, ['config', 'user.email', 'tests@example.test']);
+    git(sourceWithoutInventory, ['config', 'user.name', 'VCP tests']);
+    writeFileSync(join(sourceWithoutInventory, 'README.md'), 'no inventory in this historical commit\n');
+    git(sourceWithoutInventory, ['add', 'README.md']);
+    git(sourceWithoutInventory, ['commit', '--quiet', '-m', 'fixture']);
+    assert.deepEqual(readPreviousInventory(sourceWithoutInventory, 'HEAD', sourceWithoutInventory), {
+      schema: 'vcp.discovery-requirements/1', requirements: [],
+    });
+  } finally {
+    rmSync(sourceWithoutInventory, { recursive: true, force: true });
   }
   const closed = createCheckRegistry(repoRoot, readInventory());
   assert.equal(typeof closed.inventory_verifier_selftest, 'function');
@@ -353,7 +409,7 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
   assert.equal(injectedRegistry.inventory_verifier_selftest(), true);
   assert.equal(injectedRegistry.test_bindings_selftest(), true);
   assert.equal(injectedRegistry.discovery_docs_contract(), true);
-  assert.deepEqual(selfTests, ['tests/verify-discovery-requirements.test.mjs', 'tests/verify-test-bindings.test.mjs']);
+  assert.deepEqual(selfTests, ['tests/verify-discovery-requirements-selftest.mjs', 'tests/verify-test-bindings.test.mjs']);
   const inventoryWithActiveCore = copy(readInventory());
   inventoryWithActiveCore.requirements[0] = active(inventoryWithActiveCore.requirements[0]);
   const coreRows = [];
@@ -361,9 +417,9 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
     bindingsCheck: (rows) => { coreRows.push(...rows); return { ok: true }; },
   });
   assert.equal(coreRegistry.discovery_core_contract(), true);
-  assert.deepEqual(coreRows.map((row) => row.req_id), ['REQ-A01']);
+  assert.deepEqual(coreRows.map((row) => row.req_id), EXPECTED_REQ_BY_PHASE.I1);
 
-  const activation = copy(readInventory());
+  const activation = plannedInventory();
   activation.requirements[0] = active(activation.requirements[0]);
   assert.equal(main(['check', '--diff-against', 'HEAD'], repoRoot, {
     readInventory: () => activation,
@@ -375,7 +431,7 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
   assert.equal(main(['check'], repoRoot, { readInventory: () => { throw new Error('untyped failure'); } }, () => {}, (line) => errors.push(line)), 1);
   assert.match(errors.at(-1), /DISCOVERY_REQUIREMENT_SCHEMA_INVALID/u);
 
-  const i0Previous = copy(readInventory());
+  const i0Previous = plannedInventory();
   i0Previous.requirements.push(nonBase('R-I0', 'I0'));
   const i0Current = copy(i0Previous);
   i0Current.requirements[i0Current.requirements.length - 1] = active(i0Current.requirements.at(-1));
@@ -396,13 +452,13 @@ test('FALSIFICACIÓN · replacement resolution rejects phase drift, failed bindi
   expectCode(() => resolveRequirement('R-002', new Map([['R-002', activeRow]]), { checkBinding: () => ({}) }), 'DISCOVERY_TEST_BINDING_FAILED');
   expectCode(() => resolveRequirement('R-002', new Map([['R-002', activeRow]]), {}), 'DISCOVERY_TEST_BINDING_STATIC_INVALID');
   expectCode(() => resolveRequirement('R-001', new Map([['R-001', { ...replacedRow, superseded_by: '' }]]), { checkBinding: binding }), 'DISCOVERY_REQUIREMENT_REPLACEMENT_UNRESOLVED');
-  const invalidReplaced = copy(readInventory());
+  const invalidReplaced = plannedInventory();
   invalidReplaced.requirements.push({ ...nonBase('R-001'), status: 'replaced' });
   expectCode(() => validateInventory(invalidReplaced), 'DISCOVERY_REQUIREMENT_LIFECYCLE_INVALID');
-  const invalidRejected = copy(readInventory());
+  const invalidRejected = plannedInventory();
   invalidRejected.requirements.push({ ...nonBase('R-001'), status: 'rejected', implemented_phase: 'I0' });
   expectCode(() => validateInventory(invalidRejected), 'DISCOVERY_PHASE_ASSIGNMENT_INVALID');
-  assert.doesNotThrow(() => assertReplacementTopology(readInventory().requirements));
+  assert.doesNotThrow(() => assertReplacementTopology(plannedInventory().requirements));
 });
 
 test('phase registry exercises selftests, docs contract and live diff activation using only injected fixed checks', () => {
@@ -423,7 +479,7 @@ test('phase registry exercises selftests, docs contract and live diff activation
     rmSync(docsRoot, { recursive: true, force: true });
   }
   // Use an injected registry for the diff activation; it stays closed over code-defined check IDs.
-  const inventory = copy(readInventory());
+  const inventory = plannedInventory();
   const previous = copy(inventory);
   inventory.requirements[0] = active(inventory.requirements[0]);
   const messages = [];

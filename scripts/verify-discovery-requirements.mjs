@@ -8,7 +8,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkActiveBindings, checkTestBinding } from './verify-test-bindings.mjs';
+import { checkActiveBindings, checkTestBinding, createCachedBindingCheck } from './verify-test-bindings.mjs';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -322,6 +322,30 @@ export function validateLifecycle(previousInventory, currentInventory, context =
   return { ok: true };
 }
 
+// A lifecycle diff can activate many requirements in one phase. Prior phases
+// are immutable for that validation run, so execute their live closure once
+// per target phase instead of repeating the same test subprocesses per row.
+export function createPreviousPhasesChecker(context, close = assertPhaseClosed) {
+  const results = new Map();
+  return (targetPhase) => {
+    if (results.has(targetPhase)) return results.get(targetPhase);
+    const index = PHASE_ORDER.indexOf(targetPhase);
+    if (index <= 0) {
+      results.set(targetPhase, true);
+      return true;
+    }
+    let result = false;
+    try {
+      close(PHASE_ORDER[index - 1], context);
+      result = true;
+    } catch {
+      result = false;
+    }
+    results.set(targetPhase, result);
+    return result;
+  };
+}
+
 export function runSelfTest(testRef, cwd) {
   const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', testRef], { cwd, encoding: 'utf8', timeout: 30_000 });
   return !result.error && result.status === 0;
@@ -340,7 +364,10 @@ export function createCheckRegistry(cwd, inventory, { selfTest = runSelfTest, do
   const activeGroupsPass = (groups) => bindingsCheck(requirementsOf(inventory)
     .filter((row) => row.status === 'active' && groups.includes(row.req_id.slice(4, 5))), cwd).ok;
   return {
-    inventory_verifier_selftest: () => selfTest('tests/verify-discovery-requirements.test.mjs', cwd),
+    // Keep the I0 proof non-recursive. The broader unit suite deliberately
+    // exercises `main(... --completed-phase I0)`, so using it as the runtime
+    // self-test would recursively start the same phase gate.
+    inventory_verifier_selftest: () => selfTest('tests/verify-discovery-requirements-selftest.mjs', cwd),
     test_bindings_selftest: () => selfTest('tests/verify-test-bindings.test.mjs', cwd),
     discovery_core_contract: () => activeGroupsPass(['A', 'B', 'C', 'D', 'E', 'G']),
     discovery_views_contract: () => activeGroupsPass(['F', 'H']),
@@ -400,22 +427,18 @@ export function main(args = process.argv.slice(2), cwd = '.', dependencies = {},
     const plan = (dependencies.readPlan ?? ((root) => readJson(root, 'contracts/discovery-phase-plan.json')))(runtimeRoot);
     validateInventory(inventory);
     validatePhasePlan(plan);
-    const registry = dependencies.registry ?? createCheckRegistry(runtimeRoot, inventory);
-    const context = { cwd: runtimeRoot, inventory, plan, registry, checkBinding: dependencies.checkBinding ?? checkTestBinding };
+    const rawCheckBinding = dependencies.checkBinding ?? checkTestBinding;
+    const checkBinding = dependencies.checkBinding ?? createCachedBindingCheck(rawCheckBinding);
+    const registry = dependencies.registry ?? createCheckRegistry(runtimeRoot, inventory, {
+      bindingsCheck: (rows, root) => checkActiveBindings(rows, root, { check: checkBinding }),
+    });
+    const context = { cwd: runtimeRoot, inventory, plan, registry, checkBinding };
     if (parsed.diffAgainst !== null) {
       const previous = (dependencies.readPreviousInventory ?? readPreviousInventory)(cwd, parsed.diffAgainst, runtimeRoot);
+      const assertPreviousPhases = createPreviousPhasesChecker(context);
       validateLifecycle(previous, inventory, {
         ...context,
-        assertPreviousPhases: (targetPhase) => {
-          const index = PHASE_ORDER.indexOf(targetPhase);
-          if (index <= 0) return true;
-          try {
-            assertPhaseClosed(PHASE_ORDER[index - 1], context);
-            return true;
-          } catch {
-            return false;
-          }
-        },
+        assertPreviousPhases,
       });
     }
     if (parsed.completedPhase !== null) assertPhaseClosed(parsed.completedPhase, context);
