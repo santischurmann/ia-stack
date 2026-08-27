@@ -3,7 +3,8 @@
 **Date:** 2026-08-17
 **Version:** 1.0
 **Author:** Opus (VibeCodeProtocols) — meta: VCP mejorándose a sí mismo, formato de spec.md real de VCP
-**Status:** Draft — **NADA de esto se implementó todavía, espera tu 🔵 en cada AC/tarea**
+**Status:** Implemented — T01–T05 fueron aplicadas en `98d2058`; esta revisión reconcilia el
+estado documental y cierra T06–T07.
 
 ---
 
@@ -27,30 +28,30 @@ mensajes de rechazo más claros, dedup de lecciones más confiable.
 
 ## Acceptance Criteria / Criterios de aceptación
 
-- [ ] **AC1 (IRON LAW):** GIVEN el orchestrator está por cerrar Phase 4.4 o 4.6, WHEN redacta su
+- [x] **AC1 (IRON LAW):** GIVEN el orchestrator está por cerrar Phase 4.4 o 4.6, WHEN redacta su
   reporte de verificación, THEN `SKILL.md` contiene una lista verbatim de 4 racionalizaciones
   prohibidas ("debería funcionar ahora" / "estoy seguro" / "ya lo probé antes" / "es un cambio
   trivial") junto al principio "trust what's derived, not narrated" existente.
-- [ ] **AC2 (dedup LESSONS):** GIVEN una lección candidata en el 🔵 confirm-gate de Phase 4.8,
+- [x] **AC2 (dedup LESSONS):** GIVEN una lección candidata en el 🔵 confirm-gate de Phase 4.8,
   WHEN se compara contra `LESSONS.md` existente para detectar duplicados, THEN
   `skills/vibe-memory.md` § LESSONS PROTOCOL especifica explícitamente normalización
   (minúsculas + espacios colapsados) antes de la comparación.
-- [ ] **AC3 (pre-chequeo sensible):** GIVEN una lección candidata contiene alguna de las palabras
+- [x] **AC3 (pre-chequeo sensible):** GIVEN una lección candidata contiene alguna de las palabras
   `token|authorization|cookie|secret|hash|password|bearer`, WHEN se muestra en el 🔵 confirm-gate,
   THEN aparece marcada con una advertencia visible (⚠) en vez de mostrarse sin señalizar.
-- [ ] **AC4 (missing vs corrupt receipt, documentación):** GIVEN alguien lee
+- [x] **AC4 (missing vs corrupt receipt, documentación):** GIVEN alguien lee
   `scripts/verify-receipt.mjs` o `SKILL.md` § 4.5/4.6, WHEN busca entender qué significa cada
   mensaje de rechazo, THEN existe una nota explícita agrupando los 3 mensajes de error actuales
   en 2 categorías (ausente=reparable regenerando / corrupto=siempre requiere receipt nuevo) —
   **sin cambiar el comportamiento del script**, solo documentándolo.
-- [ ] **AC5 (baseline-diff DEBT.md):** GIVEN Phase 4.3 loguea un finding Medium/Low a
+- [x] **AC5 (baseline-diff DEBT.md):** GIVEN Phase 4.3 loguea un finding Medium/Low a
   `.vibe/DEBT.md`, WHEN se escribe la entrada, THEN incluye un campo `id` corto (hash de
   categoría+ubicación+regla) además de los campos ya existentes (Location/Severity/
   Description/Why deferred).
-- [ ] **AC6 (edge, AC1):** GIVEN el orchestrator ya tenía texto sobre "trust what's derived" antes
+- [x] **AC6 (edge, AC1):** GIVEN el orchestrator ya tenía texto sobre "trust what's derived" antes
   de este cambio, WHEN se agrega la lista de 4 frases, THEN el texto existente NO se borra ni
   se contradice — se complementa.
-- [ ] **AC7 (error, AC5):** GIVEN dos findings distintos generan el mismo `id` corto por
+- [x] **AC7 (error, AC5):** GIVEN dos findings distintos generan el mismo `id` corto por
   coincidencia de hash, THEN el formato de DEBT.md permite distinguirlos igual por
   fecha+ubicación (el `id` es una ayuda, no la única clave de unicidad).
 
@@ -91,21 +92,19 @@ Este spec NO cubre:
 
 - **Stack:** Markdown (SKILL.md, skills/*.md) — sin código ejecutable nuevo salvo el formato de
   entrada de DEBT.md (sigue siendo Markdown, no JSON).
-- **Test runner:** N/A — no hay código para testear, la verificación es lectura humana del texto
-  resultante contra los ACs.
+- **Test runner:** `verify-vcp-contract.mjs` (33 checks) + tests de contrato; los AC de wording se
+  verifican mediante el contrato textual y revisión de diff.
 - **New dependencies:** none
 
 ---
 
 ## Definition of Done (DoD)
 
-- [ ] Los 5 ACs (AC1-AC5) reflejados en los archivos correspondientes, verificados por lectura
-- [ ] AC6/AC7 (edge/error) confirmados por revisión — no hay test automatizado posible para texto
-- [ ] `CHANGELOG.md` con una entrada nueva describiendo los 5 cambios
-- [ ] `research/vcp-improvement-proposal.md` actualizado marcando estos 5 candidatos como
-  "implementado" en vez de "pendiente de elección"
-- [ ] Ningún archivo de `scripts/` con código nuevo (solo `.md` tocados, salvo confirmación
-  explícita en contrario)
+- [x] Los 5 ACs (AC1-AC5) reflejados en los archivos correspondientes, verificados por lectura
+- [x] AC6/AC7 (edge/error) confirmados por revisión y contrato textual
+- [x] `CHANGELOG.md` con una entrada nueva describiendo los 5 cambios
+- [x] `research/vcp-improvement-proposal.md` reconciliado con el estado implementado
+- [x] Ningún archivo de `scripts/` con código nuevo en esta ronda documental
 
 ---
 
@@ -113,7 +112,7 @@ Este spec NO cubre:
 
 **Date:** 2026-08-17
 **Spec:** este mismo documento (arriba)
-**Status:** Draft — esperando aprobación 🔵 por tarea
+**Status:** Complete — T01–T07 reconciliadas con el árbol actual.
 
 ---
 

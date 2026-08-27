@@ -369,11 +369,11 @@ verificó los candidatos más fuertes de cada una con mecánica exacta, no aprox
 correspondiente arriba):
 | Candidato | Fuente | Veredicto final |
 |---|---|---|
-| IRON LAW — 4 frases prohibidas | gstack | **Adoptar** — texto verbatim confirmado, costo mínimo |
-| Dedup por normalización exacta | engram | **Adoptar** — función pura, portable como regla de texto |
-| Pre-chequeo keywords sensibles pre-LESSONS | engram | **Adoptar** — mecánico, barato, refuerza regla ya existente |
-| Missing-vs-corrupt receipt | gentle-ai | **Ya mayormente implementado** — solo falta documentar la distinción |
-| Baseline-diff schema para DEBT.md | paperclip | **Adoptar formato** (id+reason), no el motor SQL |
+| IRON LAW — 4 frases prohibidas | gstack | **IMPLEMENTADO** en `98d2058` — wording presente en `SKILL.md:36-43` |
+| Dedup por normalización exacta | engram | **IMPLEMENTADO** en `98d2058` — `skills/vibe-memory.md:203-209` |
+| Pre-chequeo keywords sensibles pre-LESSONS | engram | **IMPLEMENTADO** en `98d2058` — `skills/vibe-memory.md:211-215` |
+| Missing-vs-corrupt receipt | gentle-ai | **IMPLEMENTADO** en `98d2058` — documentación en `SKILL.md` §4.6 |
+| Baseline-diff schema para DEBT.md | paperclip | **IMPLEMENTADO (formato parcial)** en `98d2058` — `id` corto; no motor SQL |
 | PreToolUse write-guard hook | claude-seo-ai + gstack | Fuerte (2 fuentes independientes) — verificar soporte de plataforma primero |
 | Capability-tiering generalizado | claude-seo-ai | Válido, extender el patrón ya usado en lint/typecheck |
 | Checklist mecánico de spec | gstack (adaptado) | Válido sin segundo modelo |
@@ -385,6 +385,7 @@ correspondiente arriba):
 | Decay automático de LESSONS | gstack | Válido pero requiere campo de tracking nuevo, no es trivial |
 | agency-agents (formato persona-file) | agency-agents | **Cerrado, sin acción** — verdict estable confirmado en 17/17 divisiones |
 
-Ningún candidato de este documento se implementó todavía — todos esperan tu elección 🔵. Ver
-`research/vcp-implementation-spec.md` para el spec+plan de los candidatos con veredicto
-**Adoptar** (los de costo bajo/medio, listos para pasar a Phase 3 si los apruebas).
+Estado reconciliado: los cinco candidatos de bajo costo de esta tabla ya están implementados y
+verificados en `98d2058`. El resto conserva su menú 🔵 y no se presenta como implementado: son
+propuestas pendientes que requieren un spec independiente, evidencia nueva y su propio ciclo
+SPEC → PLAN → falsificación → implementación → revisión.

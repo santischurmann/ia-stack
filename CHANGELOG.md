@@ -7,6 +7,11 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- Reconciliación documental del hardening round 5: T01–T05 pasan de estado pendiente a
+  implementado con referencias verificables a `98d2058`; el spec y la propuesta ya no describen
+  un estado histórico falso. El backlog restante conserva estado explícito y no se promociona a
+  completado sin un ciclo independiente de VCP.
+
 ### Discovery workflow (2026-08-27, evidence before specification)
 - **Discovery now precedes Spec for non-trivial work.** The protocol requires traceable research,
   a CAIO diagnosis, current→target loop map, PRD, implementation/adoption/recurrence plan before

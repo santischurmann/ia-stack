@@ -43,17 +43,17 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 18 | Un template de plan con preflight | `templates/plan.md` y template embebido divergían | **HECHO** |
 | 19 | README corto y honesto | uso real mostró confusión sobre qué es VCP | **HECHO** |
 | 20 | Falsificación propia por cada gate nuevo | fallas RED/receipt previas se hallaron así | **HECHO** en cambios de esta ronda |
-| 21 | Receipt schema verifica AC/evidence/4R estructurados | `verify-receipt.mjs` admite receipt mínimo | SIGUIENTE |
+| 21 | Receipt schema verifica AC/evidence/4R estructurados | `bf2e14b`, `verify-receipt.mjs` v2 + tests | **HECHO** |
 | 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | SIGUIENTE |
 | 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | SIGUIENTE |
 | 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | SIGUIENTE |
 | 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | SIGUIENTE |
 | 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | SIGUIENTE |
 | 27 | Audit log con hash chain | “append-only” es hoy una convención | SIGUIENTE |
-| 28 | ZIP desde allowlist | denylist de build puede filtrar `.env` | SIGUIENTE |
+| 28 | ZIP desde allowlist | `07557e7`, `build-zip.sh:31-41` | **HECHO** |
 | 29 | Manifest de backup Graphify post-commit | grafo local estaba en `4df2a302`, no `ad29447` | **HECHO** |
 | 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | SIGUIENTE |
-| 31 | Destino Obsidian explícito y validado | no se halló vault en rutas estándar | SIGUIENTE |
+| 31 | Destino Obsidian explícito y validado | export actual usa `--dir graphify-out/obsidian`; falta gate de destino | **PARCIAL** |
 | 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | SIGUIENTE |
 | 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | SIGUIENTE |
 | 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | SIGUIENTE |
