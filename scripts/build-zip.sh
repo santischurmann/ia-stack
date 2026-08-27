@@ -36,6 +36,8 @@ INCLUDE=(
   "$PACKAGE_NAME/CHANGELOG.md"
   "$PACKAGE_NAME/LICENSE"
   "$PACKAGE_NAME/scripts"
+  "$PACKAGE_NAME/contracts"
+  "$PACKAGE_NAME/tests"
   "$PACKAGE_NAME/skills"
   "$PACKAGE_NAME/templates"
   "$PACKAGE_NAME/examples"

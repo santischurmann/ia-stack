@@ -34,14 +34,28 @@ function fixture() {
 function assertRuntime(project, target, runtime) {
   assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
+  assert.equal(existsSync(join(runtime, 'contracts', 'discovery-requirements.json')), true, 'runtime needs the Discovery inventory contract');
+  assert.equal(existsSync(join(runtime, 'contracts', 'discovery-phase-plan.json')), true, 'runtime needs the Discovery phase plan');
+  assert.equal(existsSync(join(runtime, 'tests', 'verify-discovery-requirements.test.mjs')), true, 'runtime carries its I0 self-tests');
   assert.equal(existsSync(join(runtime, 'SECURITY.md')), true, 'runtime docs must carry the native security contract they reference');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'pretooluse-red.mjs')), true);
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'contracts', 'discovery-requirements.json')), true);
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'tests', 'verify-test-bindings.test.mjs')), true);
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'SECURITY.md')), true);
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'templates', 'vibe', 'COMPANY.md')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'scripts')), false, 'runtime must not nest scripts on reinstall');
+  assert.equal(existsSync(join(runtime, 'contracts', 'contracts')), false, 'runtime must not nest contracts on reinstall');
+  assert.equal(existsSync(join(runtime, 'tests', 'tests')), false, 'runtime must not nest tests on reinstall');
   assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'scripts', 'scripts')), false, 'project runtime must not nest scripts on reinstall');
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'contracts', 'contracts')), false, 'project runtime must not nest contracts on reinstall');
+  assert.equal(existsSync(join(project, '.vibe', 'vcp-runtime', 'tests', 'tests')), false, 'project runtime must not nest tests on reinstall');
   const check = run(process.execPath, ['.vibe/vcp-runtime/scripts/verify-red-node.mjs'], { cwd: project });
   assert.equal(check.status, 2, check.output);
+  const discovery = run(process.execPath, ['.vibe/vcp-runtime/scripts/verify-discovery-requirements.mjs', 'check', '--completed-phase', 'I0'], { cwd: project });
+  assert.equal(discovery.status, 0, discovery.output);
+  const sourceOnlyDiff = run(process.execPath, ['.vibe/vcp-runtime/scripts/verify-discovery-requirements.mjs', 'check', '--diff-against', 'HEAD'], { cwd: project });
+  assert.equal(sourceOnlyDiff.status, 1, sourceOnlyDiff.output);
+  assert.match(sourceOnlyDiff.output, /DISCOVERY_DIFF_RUNTIME_UNTRACKED/u);
 }
 
 test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !existsSync(gitBash) }, () => {

@@ -1,0 +1,34 @@
+{
+  "schema": "vcp.discovery-phase-plan/2",
+  "phases": [
+    {
+      "phase_id": "I0",
+      "prerequisites": [
+        { "prereq_id": "INF-I0-01", "check_id": "inventory_verifier_selftest" },
+        { "prereq_id": "INF-I0-02", "check_id": "test_bindings_selftest" }
+      ]
+    },
+    {
+      "phase_id": "I1",
+      "prerequisites": [
+        { "prereq_id": "INF-I1-01", "check_id": "discovery_core_contract" }
+      ]
+    },
+    {
+      "phase_id": "I1.5",
+      "prerequisites": [
+        { "prereq_id": "INF-I15-01", "check_id": "discovery_views_contract" }
+      ]
+    },
+    {
+      "phase_id": "I2",
+      "prerequisites": [
+        { "prereq_id": "INF-I2-01", "check_id": "discovery_docs_contract" }
+      ]
+    },
+    {
+      "phase_id": "I3",
+      "prerequisites": []
+    }
+  ]
+}

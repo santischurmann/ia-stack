@@ -26,8 +26,10 @@ done
 
 copy_runtime() {
   local destination="$1"
-  mkdir -p "$destination/scripts" "$destination/templates" "$destination/skills"
+  mkdir -p "$destination/scripts" "$destination/contracts" "$destination/tests" "$destination/templates" "$destination/skills"
   cp -R "$PACKAGE_DIR/scripts/." "$destination/scripts/"
+  cp -R "$PACKAGE_DIR/contracts/." "$destination/contracts/"
+  cp -R "$PACKAGE_DIR/tests/." "$destination/tests/"
   cp -R "$PACKAGE_DIR/templates/." "$destination/templates/"
   cp -R "$PACKAGE_DIR/skills/." "$destination/skills/"
   cp "$PACKAGE_DIR/SKILL.md" "$destination/SKILL.md"

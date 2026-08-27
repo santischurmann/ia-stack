@@ -41,7 +41,7 @@ test('FALSIFICACIÓN · package builder gives zip only the native allowlist, nev
     mkdirSync(scriptsDir, { recursive: true });
     mkdirSync(binDir, { recursive: true });
     for (const name of ['README.md', 'SECURITY.md', 'INSTALL.md', 'SKILL.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(join(packageDir, name), `${name}\n`);
-    for (const name of ['skills', 'templates', 'examples']) mkdirSync(join(packageDir, name));
+    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples']) mkdirSync(join(packageDir, name));
     writeFileSync(join(packageDir, '.env'), 'must-not-ship\n');
     mkdirSync(join(packageDir, '.vibe'));
     mkdirSync(join(packageDir, 'graphify-out'));
@@ -63,7 +63,7 @@ test('FALSIFICACIÓN · package builder gives zip only the native allowlist, nev
     assert.deepEqual(archiveArgs.slice(0, 2), ['-r', 'vibecodeprotocols-security-test.zip']);
     assert.deepEqual(archiveArgs.slice(2).sort(), [
       'VCP/CHANGELOG.md', 'VCP/INSTALL.md', 'VCP/LICENSE', 'VCP/README.md', 'VCP/SECURITY.md', 'VCP/SKILL.md',
-      'VCP/examples', 'VCP/scripts', 'VCP/skills', 'VCP/templates',
+      'VCP/contracts', 'VCP/examples', 'VCP/scripts', 'VCP/skills', 'VCP/templates', 'VCP/tests',
     ].sort());
     assert.equal(archiveArgs.some((item) => item.includes('.env') || item.includes('.vibe') || item.includes('graphify-out') || item === 'VCP'), false);
     assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.zip')), true);

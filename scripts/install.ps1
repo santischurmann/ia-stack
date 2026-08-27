@@ -11,8 +11,10 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PackageDir = Split-Path -Parent $ScriptDir
 
 function Copy-Runtime([string]$Destination) {
-  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\templates", "$Destination\skills" | Out-Null
+  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills" | Out-Null
   Copy-Item "$PackageDir\scripts\*" "$Destination\scripts" -Recurse -Force
+  Copy-Item "$PackageDir\contracts\*" "$Destination\contracts" -Recurse -Force
+  Copy-Item "$PackageDir\tests\*" "$Destination\tests" -Recurse -Force
   Copy-Item "$PackageDir\templates\*" "$Destination\templates" -Recurse -Force
   Copy-Item "$PackageDir\skills\*" "$Destination\skills" -Recurse -Force
   Copy-Item "$PackageDir\SKILL.md" "$Destination\SKILL.md" -Force
