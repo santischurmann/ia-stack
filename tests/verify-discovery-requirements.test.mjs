@@ -83,9 +83,9 @@ function nonBase(id, phase = 'I1') {
 
 test('I0 baseline and el inventario actual preservan los requisitos base y el plan canónico', () => {
   const inventory = plannedInventory();
-  assert.equal(BASE_REQ_IDS.length, 69);
+  assert.equal(BASE_REQ_IDS.length, 70);
   assert.deepEqual(Object.fromEntries(Object.entries(EXPECTED_REQ_BY_PHASE).map(([phase, ids]) => [phase, ids.length])), {
-    I0: 0, I1: 54, 'I1.5': 6, I2: 9, I3: 0,
+    I0: 0, I1: 55, 'I1.5': 6, I2: 9, I3: 0,
   });
   assert.deepEqual(PHASE_ORDER, ['I0', 'I1', 'I1.5', 'I2', 'I3']);
   assert.deepEqual(validateInventory(inventory), { ok: true });
@@ -152,7 +152,7 @@ test('FALSIFICACIÓN · phase plan is exact, ordered and closed over the registr
   expectCode(() => validatePhasePlan(unknown), 'DISCOVERY_PHASE_CHECK_UNKNOWN');
 });
 
-test('I0 closes only when its live prereqs pass; I1 remains incomplete while its 53 base requirements are planned', () => {
+test('I0 closes only when its live prereqs pass; I1 remains incomplete while its base requirements are planned', () => {
   const context = { inventory: plannedInventory(), plan: readPlan(), registry: registry(), checkBinding: binding };
   assert.deepEqual(assertPhaseClosed('I0', context), { ok: true });
   expectCode(() => assertPhaseClosed('I1', context), 'DISCOVERY_PHASE_INCOMPLETE');

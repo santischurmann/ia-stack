@@ -596,6 +596,17 @@
       "rule": "El locator de evidencia rechaza credenciales, esquemas y paths inseguros."
     },
     {
+      "req_id": "REQ-G13",
+      "status": "planned",
+      "target_phase": "I1",
+      "implemented_phase": null,
+      "decision_ref": "docs/discovery/integridad-verificable/discovery-packet.md",
+      "superseded_by": null,
+      "test_ref": null,
+      "test_name": null,
+      "rule": "Un locator repo_file admite una línea entera positiva y rechaza toda otra forma."
+    },
+    {
       "req_id": "REQ-F01",
       "status": "active",
       "target_phase": "I1.5",

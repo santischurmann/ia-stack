@@ -27,7 +27,7 @@ function range(prefix, end) {
 
 export const EXPECTED_REQ_BY_PHASE = Object.freeze({
   I0: Object.freeze([]),
-  I1: Object.freeze([...range('A', 16), ...range('B', 4), ...range('C', 4), ...range('D', 12), ...range('E', 6), ...range('G', 12)]),
+  I1: Object.freeze([...range('A', 16), ...range('B', 4), ...range('C', 4), ...range('D', 12), ...range('E', 6), ...range('G', 13)]),
   'I1.5': Object.freeze([...range('F', 3), ...range('H', 3)]),
   I2: Object.freeze(range('I', 9)),
   I3: Object.freeze([]),

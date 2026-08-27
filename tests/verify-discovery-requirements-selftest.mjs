@@ -16,10 +16,10 @@ function readJson(relativePath) {
 test('I0 selftest · el inventario y plan Discovery conservan el contrato canónico', () => {
   const inventory = readJson('contracts/discovery-requirements.json');
   const plan = readJson('contracts/discovery-phase-plan.json');
-  assert.equal(BASE_REQ_IDS.length, 69);
+  assert.equal(BASE_REQ_IDS.length, 70);
   assert.deepEqual(PHASE_ORDER, ['I0', 'I1', 'I1.5', 'I2', 'I3']);
   assert.deepEqual(Object.fromEntries(Object.entries(EXPECTED_REQ_BY_PHASE).map(([phase, ids]) => [phase, ids.length])), {
-    I0: 0, I1: 54, 'I1.5': 6, I2: 9, I3: 0,
+    I0: 0, I1: 55, 'I1.5': 6, I2: 9, I3: 0,
   });
   assert.deepEqual(validateInventory(inventory), { ok: true });
   assert.deepEqual(validatePhasePlan(plan), { ok: true });
