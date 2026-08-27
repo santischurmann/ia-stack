@@ -1,0 +1,24 @@
+{
+  "schema": "vcp.discovery-decision/3",
+  "run_id": "run-001",
+  "feature_slug": "integridad-verificable",
+  "decision_id": "d003",
+  "evaluated_at": "2026-08-27",
+  "status": "completed",
+  "transition_kind": "correction",
+  "supersedes": "d002",
+  "predecessor_hash": "a3260e9fb1def6d409e07e07ca7880b1a91261c42ce9fe92c910af9f1bd41697",
+  "previous_status": "completed",
+  "activation_result": "required",
+  "triggers_observed": [
+    "ventana-toctou-declarada",
+    "convencion-sin-detector",
+    "deuda-indistinguible-de-hallazgo-nuevo",
+    "limite-honesto-sin-fijar"
+  ],
+  "correction_reason": "Los locators citaban la linea dentro del path (\"SKILL.md#L693\") porque el schema no tenia campo line. REQ-G13 lo agrego, asi que esta correccion registra path y line por separado y recaptura el hash de cada fuente.",
+  "skip": null,
+  "override": null,
+  "packet_ref": "packets/d003.json",
+  "packet_sha256": "31a5855013455e5ccff831aefa49aa4e403b40699149f36944e5cde3158f6d84"
+}

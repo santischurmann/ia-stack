@@ -8,8 +8,9 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Project memory (optional: commit .vibe/ if you want shared memory)
-# .vibe/sessions/
+# Project memory is versioned: it is the evidence that VCP ran on itself.
+# The installed runtime is not — it is a copy of this very repo and would duplicate it.
+.vibe/vcp-runtime/
 
 # Editor
 .vscode/

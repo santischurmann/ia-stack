@@ -1,0 +1,93 @@
+{
+  "schema": "vcp.discovery-packet/1",
+  "decision_id": "d002",
+  "research_snapshot": {
+    "captured_at": "2026-08-27",
+    "claims": [
+      {
+        "claim_id": "claim-toctou",
+        "source_id": "src-skill-md",
+        "locator": {
+          "kind": "repo_file",
+          "path": "SKILL.md#L693"
+        },
+        "retrieved_at": "2026-08-27",
+        "content_identity": {
+          "kind": "sha256",
+          "value": "6fa7db39a79f247590e770e07cda6f3eca5acb0bfa876863d5f71652802299c8",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "SKILL.md declara textualmente que --require-clean-worktree \"angosta, sin cerrarla, la ventana entre check y git commit\". El propio protocolo documenta un hueco que ningun gate cubre: entre validar el receipt y commitear, cualquier escritura pasa sin deteccion.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "ventana-toctou-declarada"
+        ]
+      },
+      {
+        "claim_id": "claim-audit-sin-gate",
+        "source_id": "src-vibe-memory-md",
+        "locator": {
+          "kind": "repo_file",
+          "path": "skills/vibe-memory.md#L99"
+        },
+        "retrieved_at": "2026-08-27",
+        "content_identity": {
+          "kind": "sha256",
+          "value": "57dc9faaa39570f16af16415d386e9bb75c4bf0fa55af1e90503bb80cc1e1136",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "vibe-memory.md describe AUDIT.md como \"accountability trail, append-only, never edited/deleted\". Un grep sobre scripts/ no encuentra ningun verificador: los unicos hits son install.sh, install.ps1 y vibe-memory.sh, que lo crean pero nunca comprueban que una linea pasada no fue reescrita. Es una convencion sin detector.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "convencion-sin-detector"
+        ]
+      },
+      {
+        "claim_id": "claim-baseline-ausente",
+        "source_id": "src-security-baseline",
+        "locator": {
+          "kind": "repo_file",
+          "path": "scripts/verify-security-baseline.mjs#L314"
+        },
+        "retrieved_at": "2026-08-27",
+        "content_identity": {
+          "kind": "sha256",
+          "value": "999a368e78110daba806b127bdb065a944e3c8226f9aac59f734cdff81dce7ac",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "scanChangedFiles escanea unicamente el delta contra una base Git. No existe registro de hallazgos ya conocidos, asi que el gate no puede distinguir deuda preexistente de un hallazgo nuevo: o falla por algo viejo ya aceptado, o se corre la base y deja de ver lo nuevo.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "deuda-indistinguible-de-hallazgo-nuevo"
+        ]
+      },
+      {
+        "claim_id": "claim-wording-parcial",
+        "source_id": "src-vcp-contract",
+        "locator": {
+          "kind": "repo_file",
+          "path": "scripts/verify-vcp-contract.mjs#L8"
+        },
+        "retrieved_at": "2026-08-27",
+        "content_identity": {
+          "kind": "sha256",
+          "value": "25a058562f15a41a7bff8abcaba79abff061f4b26d8904e37c2617de46f689b3",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "verify-vcp-contract fija 30 REQUIREMENTS y 8 FORBIDDEN_PHRASES elegidas a mano. Las frases que declaran limites honestos (\"no prueba\", \"no es una frontera de confianza\") no estan cubiertas de forma sistematica: una edicion futura puede debilitar una sin que ningun gate falle.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-honesto-sin-fijar"
+        ]
+      }
+    ]
+  }
+}

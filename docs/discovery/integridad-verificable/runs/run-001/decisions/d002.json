@@ -1,0 +1,24 @@
+{
+  "schema": "vcp.discovery-decision/3",
+  "run_id": "run-001",
+  "feature_slug": "integridad-verificable",
+  "decision_id": "d002",
+  "evaluated_at": "2026-08-27",
+  "status": "completed",
+  "transition_kind": "activation",
+  "supersedes": "d001",
+  "predecessor_hash": "d3315bac0bb749666e1567da86f44073ec7c37fd13773f3342a1b9072cee0503",
+  "previous_status": "pending",
+  "activation_result": "required",
+  "triggers_observed": [
+    "ventana-toctou-declarada",
+    "convencion-sin-detector",
+    "deuda-indistinguible-de-hallazgo-nuevo",
+    "limite-honesto-sin-fijar"
+  ],
+  "correction_reason": null,
+  "skip": null,
+  "override": null,
+  "packet_ref": "packets/d002.json",
+  "packet_sha256": "8e79d46557202ba34a36746426eafa106c901ff2f58b0416a680a64b69ae9333"
+}
