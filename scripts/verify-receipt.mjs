@@ -414,7 +414,16 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
   }
 
   if (cmd === 'check') {
-    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json>');
+    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]');
+    // Opt-in release strictness. A plain `check` attests whatever state was evaluated, including
+    // unstaged edits and untracked files — that is correct for a mid-task receipt. At the commit
+    // boundary the reviewed tree and the committed tree must be the same one, so 4.5 asks for this
+    // flag. It narrows, but does not close, the window between `check` and `git commit`: nothing
+    // stops a write landing in between. Unknown flags are rejected rather than silently ignored.
+    const extraFlags = process.argv.slice(4);
+    const requireCleanWorktree = extraFlags.includes('--require-clean-worktree');
+    const unknownFlag = extraFlags.find((flag) => flag !== '--require-clean-worktree');
+    if (unknownFlag) fail(`unknown option ${unknownFlag}; usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]`);
     const receipt = readReceiptSafely(arg);
 
     // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
@@ -438,7 +447,12 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
       fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
     }
 
-    console.log(`OK: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`);
+    if (requireCleanWorktree && (now.unstaged_count > 0 || now.untracked_count > 0)) {
+      fail(`release requires a clean worktree: ${now.unstaged_count} unstaged and ${now.untracked_count} untracked path(s) remain — stage or remove them so the reviewed tree is the committed tree`);
+    }
+
+    const cleanliness = requireCleanWorktree ? ', clean worktree' : '';
+    console.log(`OK: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT${cleanliness}`);
     process.exit(0);
   }
 

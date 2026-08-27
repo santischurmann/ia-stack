@@ -14,6 +14,10 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- `verify-receipt.mjs check` acepta `--require-clean-worktree` (backlog #23): en 4.6 exige que no
+  queden paths unstaged ni untracked, de modo que el árbol revisado sea el árbol commiteado. El
+  `check` sin la flag no cambia: un receipt intermedio debe poder atestiguar trabajo sin stagear.
+  La flag angosta la ventana entre `check` y `git commit`; no la cierra.
 - Nuevo gate `verify-graphify-manifest.mjs`: cierra el backlog #30. Antes, "100% extracted" no
   distinguía un archivo excluido a propósito de uno perdido por accidente. Ahora cada archivo
   rastreado debe estar en el manifest del grafo o llevar una exclusión con razón en

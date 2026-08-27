@@ -686,8 +686,14 @@ validador de 4.6 lo rechaza mecánicamente (no hace falta acordarse de regenerar
 
 **4.6 Commit/push/merge** — gate previo, mecánico, no de lectura:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
+node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json \
+  --require-clean-worktree
 ```
+`--require-clean-worktree` exige además que no queden paths unstaged ni untracked: el árbol
+revisado y el árbol commiteado deben ser el mismo. Angosta, sin cerrarla, la ventana entre `check`
+y `git commit` — nada impide una escritura en el medio. Un `check` sin la flag sigue siendo válido
+para un receipt intermedio, donde atestiguar trabajo sin stagear es exactamente lo correcto.
+
 Exit 0 **únicamente** si `schema: vcp.receipt/v2` Y `terminal_state: approved` Y **todos** los
 `acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
 estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed` pasan su validación de forma →

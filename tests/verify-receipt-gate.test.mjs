@@ -695,3 +695,35 @@ test('inspect-legacy rejects a missing argument and reports "(missing)" for a v1
     assert.match(result.output, /terminal_state="\(missing\)"/);
   });
 });
+
+test('--require-clean-worktree exige que lo atestiguado sea exactamente lo que se va a commitear', () => {
+  withFixture((root) => {
+    // A receipt written over a clean-but-staged tree is valid evidence, yet a release gate needs
+    // more: nothing unstaged and nothing untracked may remain, or the commit can differ from
+    // what a human reviewed. The default `check` keeps attesting the evaluated state as-is.
+    const receipt = writeReceipt(root);
+    const clean = gate(root, 'check', receipt, '--require-clean-worktree');
+    assert.equal(clean.status, 0, clean.output);
+    assert.match(clean.output, /clean worktree/);
+
+    writeFileSync(join(root, 'tracked.txt'), 'unstaged drift\n');
+    const drifted = writeReceipt(root);
+    assert.equal(gate(root, 'check', drifted).status, 0, 'plain check still attests the evaluated state');
+    const rejected = gate(root, 'check', drifted, '--require-clean-worktree');
+    assert.equal(rejected.status, 1, rejected.output);
+    assert.match(rejected.output, /1 unstaged/);
+
+    gitOk(root, 'add', '--', 'tracked.txt');
+    const stagedOnly = writeReceipt(root);
+    assert.equal(gate(root, 'stagedOnly-placeholder', stagedOnly).status, 2, 'unknown command still reports usage');
+    assert.equal(gate(root, 'check', stagedOnly, '--require-clean-worktree').status, 0, 'staged-only work is releasable');
+
+    writeFileSync(join(root, 'stray.txt'), 'untracked leftover\n');
+    const withStray = writeReceipt(root);
+    const strayRejected = gate(root, 'check', withStray, '--require-clean-worktree');
+    assert.equal(strayRejected.status, 1, strayRejected.output);
+    assert.match(strayRejected.output, /1 untracked/);
+
+    assert.equal(gate(root, 'check', withStray, '--unknown-flag').status, 1, 'unknown flags must not be ignored');
+  });
+});
