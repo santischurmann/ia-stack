@@ -27,13 +27,13 @@ function range(prefix, end) {
 
 export const EXPECTED_REQ_BY_PHASE = Object.freeze({
   I0: Object.freeze([]),
-  I1: Object.freeze([...range('A', 16), ...range('B', 4), ...range('C', 4), ...range('D', 12), ...range('E', 6), ...range('G', 11)]),
+  I1: Object.freeze([...range('A', 16), ...range('B', 4), ...range('C', 4), ...range('D', 12), ...range('E', 6), ...range('G', 12)]),
   'I1.5': Object.freeze([...range('F', 3), ...range('H', 3)]),
   I2: Object.freeze(range('I', 9)),
   I3: Object.freeze([]),
 });
-export const BASE_68_REQ_IDS = Object.freeze(PHASE_ORDER.flatMap((phase) => EXPECTED_REQ_BY_PHASE[phase]));
-const BASE_REQUIREMENT_IDS = new Set(BASE_68_REQ_IDS);
+export const BASE_REQ_IDS = Object.freeze(PHASE_ORDER.flatMap((phase) => EXPECTED_REQ_BY_PHASE[phase]));
+const BASE_REQUIREMENT_IDS = new Set(BASE_REQ_IDS);
 const VALID_STATUSES = new Set(['planned', 'active', 'replaced', 'rejected']);
 const KNOWN_CHECK_IDS = new Set(Object.values(EXPECTED_PHASE_PLAN).flatMap((checks) => Object.values(checks)));
 const INVENTORY_SCHEMA = 'vcp.discovery-requirements/1';
@@ -157,7 +157,7 @@ export function validateInventory(inventory) {
       reject('DISCOVERY_PHASE_ASSIGNMENT_INVALID', `${row.req_id}: expected ${expectedPhase}, got ${row.target_phase}`);
     }
   }
-  for (const id of BASE_68_REQ_IDS) {
+  for (const id of BASE_REQ_IDS) {
     if (!index.has(id)) reject('DISCOVERY_REQUIREMENT_ID_MISSING', `missing base requirement ${id}`);
   }
   for (const phase of PHASE_ORDER) {

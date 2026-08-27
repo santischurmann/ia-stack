@@ -9,7 +9,7 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-discovery-requirements.mjs');
 const {
-  BASE_68_REQ_IDS, EXPECTED_PHASE_PLAN, EXPECTED_REQ_BY_PHASE, PHASE_ORDER,
+  BASE_REQ_IDS, EXPECTED_PHASE_PLAN, EXPECTED_REQ_BY_PHASE, PHASE_ORDER,
   assertPhaseClosed, assertReplacementTopology, createCheckRegistry, createPreviousPhasesChecker, main, parseArgs,
   readPreviousInventory, resolveRequirement, runSelfTest, docsContract, validateInventory, validateLifecycle, validatePhasePlan,
 } = await import(pathToFileURL(script).href);
@@ -81,11 +81,11 @@ function nonBase(id, phase = 'I1') {
   };
 }
 
-test('I0 baseline and el inventario actual preservan los 68 requisitos base y el plan canónico', () => {
+test('I0 baseline and el inventario actual preservan los requisitos base y el plan canónico', () => {
   const inventory = plannedInventory();
-  assert.equal(BASE_68_REQ_IDS.length, 68);
+  assert.equal(BASE_REQ_IDS.length, 69);
   assert.deepEqual(Object.fromEntries(Object.entries(EXPECTED_REQ_BY_PHASE).map(([phase, ids]) => [phase, ids.length])), {
-    I0: 0, I1: 53, 'I1.5': 6, I2: 9, I3: 0,
+    I0: 0, I1: 54, 'I1.5': 6, I2: 9, I3: 0,
   });
   assert.deepEqual(PHASE_ORDER, ['I0', 'I1', 'I1.5', 'I2', 'I3']);
   assert.deepEqual(validateInventory(inventory), { ok: true });
@@ -417,7 +417,13 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
     bindingsCheck: (rows) => { coreRows.push(...rows); return { ok: true }; },
   });
   assert.equal(coreRegistry.discovery_core_contract(), true);
-  assert.deepEqual(coreRows.map((row) => row.req_id), EXPECTED_REQ_BY_PHASE.I1);
+  // The core contract binds exactly the active I1 rows. Comparing against the fixed phase map
+  // would assume no row is ever staged as planned, which the activation lifecycle explicitly
+  // allows: a newly added requirement lands planned first and only then earns its binding.
+  const activeI1Ids = inventoryWithActiveCore.requirements
+    .filter((row) => row.status === 'active' && EXPECTED_REQ_BY_PHASE.I1.includes(row.req_id))
+    .map((row) => row.req_id);
+  assert.deepEqual(coreRows.map((row) => row.req_id), activeI1Ids);
 
   const activation = plannedInventory();
   activation.requirements[0] = active(activation.requirements[0]);
