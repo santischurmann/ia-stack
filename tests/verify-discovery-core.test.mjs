@@ -132,6 +132,27 @@ test('REQ-G12 · El locator de evidencia rechaza credenciales, esquemas y paths 
   }
 }));
 
+test('REQ-G13 · Un locator repo_file admite una línea entera positiva y rechaza toda otra forma', () => withFixture({}, (x) => {
+  // Found by running Discovery for real: without a `line` field the only way to record a line was
+  // to bury it in the path ("SKILL.md#L693"), which the path rules then had to treat as a filename.
+  for (const locator of [{ kind: 'repo_file', path: 'research/source.md', line: 1 }, { kind: 'repo_file', path: 'research/source.md', line: 693 }]) {
+    rewritePacket(x.d2Path, x.p2Path, (v) => { v.research_snapshot.claims[0].locator = locator; });
+    assert.deepEqual(verify(x), { ok: true, runs: 1 });
+  }
+  const invalid = [
+    { kind: 'repo_file', path: 'research/source.md', line: 0 },
+    { kind: 'repo_file', path: 'research/source.md', line: -3 },
+    { kind: 'repo_file', path: 'research/source.md', line: 1.5 },
+    { kind: 'repo_file', path: 'research/source.md', line: '12' },
+    { kind: 'repo_file', path: 'research/source.md', line: null },
+    { kind: 'web', url: 'https://example.test/source', line: 12 },
+  ];
+  for (const locator of invalid) {
+    rewritePacket(x.d2Path, x.p2Path, (v) => { v.research_snapshot.claims[0].locator = locator; });
+    expectCode(() => verify(x), 'DISCOVERY_SNAPSHOT_INVALID');
+  }
+}));
+
 test('core CLI rejects malformed use and reports a valid feature', () => withFixture({}, (x) => { assert.equal(parseArgs(['check', '--feature', feature]).featureSlug, feature); assert.equal(parseArgs(['check']), null); const errors = []; assert.equal(main(['check'], x.root, () => {}, (line) => errors.push(line)), 2); assert.equal(main(['check', '--feature', feature], x.root, () => {}, (line) => errors.push(line)), 0); }));
 
 test('FALSIFICACIÓN · core rejects malformed paths, unreadable nodes and invalid JSON without falling back', () => withFixture({}, (x) => {

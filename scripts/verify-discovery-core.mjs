@@ -219,8 +219,17 @@ function assertRepoFileLocator(path) {
 
 function assertLocator(locator) {
   if (!isObject(locator) || !['web', 'repo_file'].includes(locator.kind)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator is invalid');
-  const expected = locator.kind === 'web' ? new Set(['kind', 'url']) : new Set(['kind', 'path']);
+  // `line` is optional and repo-only: a claim may cite a whole file. Running Discovery for real
+  // showed that without it the line had to be buried in the path ("SKILL.md#L693"), which the
+  // path rules then had to treat as part of a filename.
+  const hasLine = Object.hasOwn(locator, 'line');
+  const expected = locator.kind === 'web'
+    ? new Set(['kind', 'url'])
+    : new Set(hasLine ? ['kind', 'path', 'line'] : ['kind', 'path']);
   if (!exactKeys(locator, expected) || !nonEmpty(locator.url ?? locator.path)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator is incomplete');
+  if (hasLine && (!Number.isInteger(locator.line) || locator.line < 1)) {
+    reject('DISCOVERY_SNAPSHOT_INVALID', `claim locator line must be a positive integer: ${locator.line}`);
+  }
   const reference = locator.url ?? locator.path;
   if (CONTROL_CHARACTERS.test(reference)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator contains control characters');
   if (locator.kind === 'web') assertWebLocator(reference);
