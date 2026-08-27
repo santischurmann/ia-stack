@@ -14,6 +14,13 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- Nuevo gate `verify-graphify-manifest.mjs`: cierra el backlog #30. Antes, "100% extracted" no
+  distinguía un archivo excluido a propósito de uno perdido por accidente. Ahora cada archivo
+  rastreado debe estar en el manifest del grafo o llevar una exclusión con razón en
+  `contracts/graphify-exclusions.json`, y una entrada del manifest que Git ya no rastrea se
+  rechaza como fantasma. El gate prueba contabilidad, no comprensión: un archivo indexado todavía
+  puede haber producido cero nodos. Se eliminó `templates/vibe/COUNTERS.json`, un fantasma
+  producido por un rename que sólo cambiaba mayúsculas en un filesystem case-insensitive.
 - Nuevo requisito `REQ-G12`: el locator de un claim de evidencia rechaza credenciales embebidas,
   esquemas distintos de `https`, URLs no parseables, caracteres de control y paths que escapan del
   checkout. El gate registra la referencia, nunca la resuelve: no hace red ni abre el path.

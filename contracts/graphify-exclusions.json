@@ -1,0 +1,17 @@
+{
+  "schema": "vcp.graphify-exclusions/1",
+  "exclusions": [
+    {
+      "path": ".gitattributes",
+      "reason": "Git line-ending configuration. It declares no protocol behaviour and holds no relationship worth a graph node."
+    },
+    {
+      "path": ".gitignore",
+      "reason": "Git ignore rules. Indexing them would add path patterns, not protocol concepts or cross-file relationships."
+    },
+    {
+      "path": "LICENSE",
+      "reason": "Verbatim upstream license text, identical across projects. It carries no VCP-specific concept to relate."
+    }
+  ]
+}

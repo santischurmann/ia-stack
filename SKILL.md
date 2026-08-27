@@ -751,6 +751,14 @@ C) Hold — don't push yet
     --manifest graphify-out/backup-state.json
   node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
   ```
+  Después del reindexado, probá que la cobertura declarada del grafo sea honesta:
+  ```bash
+  node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
+  ```
+  Cada archivo rastreado debe estar en `graphify-out/manifest.json` o llevar una exclusión con
+  razón en `contracts/graphify-exclusions.json`; una entrada del manifest que Git ya no rastrea es
+  un fantasma y se rechaza. El gate prueba contabilidad, no comprensión: un archivo indexado
+  todavía puede haber producido cero nodos, así que "cubierto" nunca significa "entendido".
 - `.vibe/SESSION.md` archived to `.vibe/sessions/YYYY-MM-DD-<topic>.md`, reset for next session.
 - Optional distributable artifact (dist.zip+checksums): `skills/deploy-zip.md`, only if project ships one.
 

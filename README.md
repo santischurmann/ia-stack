@@ -132,6 +132,7 @@ node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
   --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
   --manifest graphify-out/backup-state.json
 node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
+node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
 ```
 
 Antes del primer receipt, reemplazá el placeholder de feature en `.vibe/SESSION.md` por el slug
@@ -154,6 +155,7 @@ el working tree cambió.
 | `verify-security-baseline.mjs` | El delta no contiene secretos conocidos, rutas sensibles, ejecución dinámica, patrones SQL/HTML riesgosos ni configuraciones GitHub Actions básicas peligrosas. | Es un piso nativo de patrones; no es SAST, SCA, taint analysis ni una base de CVEs. |
 | `verify-vcp-coverage.mjs` | Cada script Node inventariado mantiene 100% de líneas, ramas y funciones. | Bash y PowerShell tienen pruebas funcionales de paridad, no cobertura por instrumentación Node. |
 | `verify-backup-state.mjs` | El reporte Graphify, el grafo y el commit local son los mismos que se registraron. | Verifica frescura e integridad local, no completitud semántica del grafo. |
+| `verify-graphify-manifest.mjs` | Cada archivo rastreado está indexado o excluido con razón declarada, y el manifest no conserva entradas que Git ya no rastrea. | Prueba contabilidad, no comprensión: un archivo indexado puede haber producido cero nodos. |
 
 El hook opcional `pretooluse-red.mjs` agrega fricción a `Write` y `Edit`: exige receipts
 consistentes, tests reales hasheados y TTL válido. No es un sandbox ni un límite de confianza:
