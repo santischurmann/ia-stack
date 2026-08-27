@@ -115,6 +115,51 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 
 ---
 
+## PHASE 0.5 — DISCOVERY (antes de Spec)
+
+Para un cambio que excede Direct Build, Discovery es entrada obligatoria de la spec: no se entrega
+como una narración retrospectiva. El objetivo es decidir qué producto/proceso conviene construir
+antes de comprometer tareas de implementación.
+
+1. **Research verificable:** inventariar fuentes, versión/fecha/locator, alcance realmente leído y
+   claims. Separar `SUPPORTED`, `CONTRADICTED`, `INFERRED`, `INSUFFICIENT_EVIDENCE` y
+   `NOT_APPLICABLE`; nunca convertir una fuente no leída en una recomendación.
+2. **CAIO:** escribir proceso roto, pérdida de información, trabajo repetido y bucle abierto con
+   evidencia observable. Si no hay evidencia, queda como hipótesis, no como diagnóstico.
+3. **Mapa de bucle actual→objetivo:** para ambos, declarar entrada, medida, quién decide, acción,
+   control y aprendizaje. El primer bucle a cerrar debe tener dueño, métrica y cadencia.
+4. **PRD + implementación:** delimitar problema, usuario, resultado operativo, tecnología,
+   funciones, dependencias, accesos, orden y validaciones. No improvisar instalaciones frente al
+   cliente: un acceso desconocido bloquea el plan, no se asume.
+5. **Adopción + recurrencia:** identificar responsable interno, cambio de hábito, señal de uso,
+   mantenimiento y siguiente proceso candidato. Entregar software sin estas condiciones es un
+   riesgo declarado, no éxito.
+
+Guardar cada decisión en `docs/discovery/<feature-slug>/runs/run-NNN/decisions/dNNN.json` y, si
+termina `completed`, su snapshot de claims en
+`docs/discovery/<feature-slug>/runs/run-NNN/packets/dNNN.json`. No editar una decisión cerrada:
+una corrección agrega un sucesor con hash del predecesor. Antes de Spec:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
+node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
+node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
+```
+
+Al evolucionar el propio VCP, el inventario de requisitos Discovery también se comprueba contra la
+fase que se pretende cerrar; no se declara una fase active sólo porque sus tests existan:
+
+```bash
+node scripts/verify-discovery-requirements.mjs check --completed-phase I2
+```
+
+`views/*.md` es sólo una vista derivada y reproducible: no admite timestamps, rutas absolutas ni
+datos del entorno, y jamás sustituye los JSON inmutables. Los gates prueban forma, cadena, hashes y
+reproducibilidad; no prueban por sí mismos suficiencia semántica de un claim. La decisión de pasar
+a Spec sigue siendo humana y se presenta con 🔵.
+
+---
+
 ## PHASE 1 — SPEC
 
 🔵 **FORCING QUESTIONS** (una por vez, esperar respuesta antes de la siguiente):

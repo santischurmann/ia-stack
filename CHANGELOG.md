@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+### Discovery workflow (2026-08-27, evidence before specification)
+- **Discovery now precedes Spec for non-trivial work.** The protocol requires traceable research,
+  a CAIO diagnosis, current→target loop map, PRD, implementation/adoption/recurrence plan before
+  a product spec is approved. The new section distinguishes supported evidence from hypotheses and
+  makes a human decision, rather than a prose report, the boundary into Phase 1.
+- **Immutable decision history is native and executable.**
+  `verify-discovery-core.mjs` validates append-only run chains, hashes, transition/state payloads,
+  packet snapshots, claim/trigger coverage and filesystem boundaries. It does not treat mutable
+  research ledgers as historical evidence.
+- **Derived Discovery views are reproducible.** `verify-discovery-views.mjs` renders only
+  deterministic Markdown views from the immutable JSON history and rejects stale, malformed,
+  unexpected or unsafe view artifacts. VCP ships the runtime and tests with both installers.
+- **Phase closure is no longer slow or recursive.** Binding evidence now runs each shared Node TAP
+  file once while still checking every exact requirement title. I0 self-validation uses a dedicated
+  non-recursive selftest, and prerequisite phase closure is memoized per static validation run.
+
 ### Hardening pass 11 (2026-08-24, native security boundaries)
 - **Phase 4.3 is now fully native to VCP.** The live protocol no longer requires or invokes
   external skills. Its security gate blocks known provider-token/private-key shapes, sensitive

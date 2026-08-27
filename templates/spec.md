@@ -16,6 +16,20 @@ poisons every phase that follows — tables before narration, headers organize, 
 
 ---
 
+## Discovery / Investigación previa
+
+- **Research y fuentes:** <claims relevantes, locator/version o razón explícita si faltan>
+- **CAIO:** <proceso roto, pérdida de información, repetición y bucle abierto observados>
+- **Mapa de bucle:** <actual → objetivo: entrada, medida, decisión, acción, control, aprendizaje>
+- **PRD operativo:** <resultado que debe producir dentro del proyecto/empresa>
+- **Implementación, adopción y recurrencia:** <dependencias/accesos, responsable interno, métrica y siguiente bucle>
+
+Si esta feature no necesitó Discovery por el triage de Phase 0, escribir `N/A — Direct Build
+aprobado` con la evidencia del triage. Nunca completar esta sección con una fuente no leída ni una
+hipótesis presentada como hecho.
+
+---
+
 ## Target Users / Usuarios
 
 <Who uses this? Role, context, how often.>

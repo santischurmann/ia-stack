@@ -63,6 +63,41 @@ comandos desde `.vibe/vcp-runtime/scripts/`, no desde el clone original de VCP.
 Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El
 agente recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
 
+## Discovery: investigar antes de especificar
+
+Para un cambio que no sea claramente trivial, VCP no empieza escribiendo código ni una spec a
+ciegas. Primero hace una pasada de **Discovery**. Su salida es la evidencia que alimenta la spec;
+no es un reporte decorativo al final.
+
+1. **Research trazable:** fuentes, versión/fecha, límites de lectura y claims que sí o no sostienen
+   una decisión.
+2. **Diagnóstico CAIO:** qué proceso está roto, dónde se pierde información, qué trabajo se repite
+   y qué bucle queda abierto.
+3. **Mapa de bucle:** entrada, medida, responsable de decidir, acción, control y aprendizaje; se
+   compara el flujo actual con el flujo objetivo.
+4. **PRD y planes:** problema, usuarios, resultado operativo, dependencias, implementación,
+   adopción y recurrencia del primer bucle a cerrar.
+
+Cada decisión se guarda como JSON inmutable bajo
+`docs/discovery/<feature>/runs/run-NNN/{decisions,packets}/`. Un packet completed conserva su
+snapshot de research y hash; la validación nunca relee un ledger mutable para reinterpretar la
+historia. Las vistas Markdown bajo `docs/discovery/<feature>/views/` son derivadas, no fuente de
+verdad: se regeneran y se comparan byte a byte.
+
+```bash
+# Verifica la cadena inmutable de decisiones y snapshots.
+node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
+
+# Genera y luego comprueba vistas reproducibles (sin timestamps ni paths del entorno).
+node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
+node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
+```
+
+Discovery puede terminar en `completed`, `skipped` u `overridden`, siempre con evidencia y motivo.
+No prueba que una fuente sea suficiente semánticamente ni sustituye a quien decide el producto:
+hace visible qué evidencia se usó, qué quedó fuera y qué decisión humana falta antes de pasar a
+Spec.
+
 ## Uso diario
 
 1. Elegí una sola feature y completá su spec.

@@ -466,7 +466,7 @@ test('phase registry exercises selftests, docs contract and live diff activation
   assert.equal(runSelfTest('tests/verify-test-bindings.test.mjs', repoRoot), true);
   assert.equal(typeof real.inventory_verifier_selftest, 'function');
   assert.equal(typeof real.test_bindings_selftest, 'function');
-  assert.equal(real.discovery_docs_contract(), false);
+  assert.equal(real.discovery_docs_contract(), true);
 
   const docsRoot = mkdtempSync(join(tmpdir(), 'vcp-discovery-docs-'));
   try {

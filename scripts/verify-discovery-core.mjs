@@ -262,7 +262,7 @@ export function readPacket(projectRoot, runId, decision, previousPacket, assertF
       if (!hasNewClaim) reject('DISCOVERY_SNAPSHOT_TRIGGER_UNSUPPORTED', `${decision.decision_id}: new trigger lacks a new claim`);
     }
   }
-  return { ...snapshot, decision };
+  return { ...snapshot, decision, packet };
 }
 
 export function runDirectoryEntries(directory) {
@@ -300,6 +300,7 @@ function readRun(projectRoot, featureSlug, runId) {
   let previous = null;
   let previousPacket = null;
   const completed = new Set();
+  const history = [];
   for (const [index, entry] of decisions.entries()) {
     const { decision, bytes } = entry;
     const expectedId = `d${String(index + 1).padStart(3, '0')}`;
@@ -335,14 +336,15 @@ function readRun(projectRoot, featureSlug, runId) {
       previousPacket = readPacket(projectRoot, runId, decision, previousPacket);
       completed.add(`${decision.decision_id}.json`);
     }
+    history.push({ decision, packet: previousPacket?.decision.decision_id === decision.decision_id ? previousPacket.packet : null });
     previous = { decision, bytes };
   }
   const packetFiles = runDirectoryEntries(packetDir);
   if (packetFiles.some((file) => !DECISION_FILE.test(file)) || !sameStrings(packetFiles, [...completed].sort())) reject('DISCOVERY_PACKET_UNREFERENCED', `${runId}: packets do not match completed decisions`);
-  return { runId, leaf: previous.decision.status };
+  return { runId, leaf: previous.decision.status, history };
 }
 
-export function verifyDiscoveryFeature(projectRoot, featureSlug) {
+export function readDiscoveryHistory(projectRoot, featureSlug) {
   if (!FEATURE_SLUG.test(featureSlug)) reject('DISCOVERY_PATH_ESCAPE', 'feature slug is invalid');
   const runsDir = assertTrustedDirectory(projectRoot, ['docs', 'discovery', featureSlug, 'runs'], 'DISCOVERY_DECISION_SYMLINK');
   const runIds = runDirectoryEntries(runsDir);
@@ -352,7 +354,12 @@ export function verifyDiscoveryFeature(projectRoot, featureSlug) {
     if (run.runId !== `run-${String(index + 1).padStart(3, '0')}`) reject('DISCOVERY_RUN_ID_GAP', 'run ids must be contiguous');
     if (index > 0 && runs[index - 1].leaf === 'pending') reject('DISCOVERY_RUN_MULTIPLE_PENDING', 'a pending run blocks a later run');
   }
-  return { ok: true, runs: runs.length };
+  return { featureSlug, runs };
+}
+
+export function verifyDiscoveryFeature(projectRoot, featureSlug) {
+  const result = readDiscoveryHistory(projectRoot, featureSlug);
+  return { ok: true, runs: result.runs.length };
 }
 
 export function parseArgs(args) {
