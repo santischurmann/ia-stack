@@ -14,6 +14,9 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- Nuevo requisito `REQ-G12`: el locator de un claim de evidencia rechaza credenciales embebidas,
+  esquemas distintos de `https`, URLs no parseables, caracteres de control y paths que escapan del
+  checkout. El gate registra la referencia, nunca la resuelve: no hace red ni abre el path.
 
 ### Discovery workflow (2026-08-27, evidence before specification)
 - **Discovery now precedes Spec for non-trivial work.** The protocol requires traceable research,

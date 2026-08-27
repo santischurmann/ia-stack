@@ -193,10 +193,38 @@ function assertContentIdentity(identity) {
   }
 }
 
+// Evidence locators are recorded, not fetched: this gate never resolves a URL and never opens a
+// repo path. It only proves the recorded string is a safe, unambiguous reference — an https URL
+// carrying no embedded credentials, or a project-relative path that cannot escape the checkout.
+const CONTROL_CHARACTERS = /[ -]/u;
+
+function assertWebLocator(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    reject('DISCOVERY_SNAPSHOT_INVALID', `claim locator is not a parseable URL: ${url}`);
+  }
+  if (parsed.protocol !== 'https:') reject('DISCOVERY_SNAPSHOT_INVALID', `claim locator must use https: ${url}`);
+  if (parsed.username !== '' || parsed.password !== '') reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator must not embed credentials');
+}
+
+function assertRepoFileLocator(path) {
+  const normalized = path.trim().replaceAll('\\', '/');
+  if (normalized.startsWith('/') || /^[a-z]:\//iu.test(normalized)) reject('DISCOVERY_SNAPSHOT_INVALID', `claim locator must be project-relative: ${path}`);
+  if (normalized === '..' || normalized.startsWith('../') || normalized.includes('/../') || normalized.endsWith('/..')) {
+    reject('DISCOVERY_SNAPSHOT_INVALID', `claim locator must not escape the project: ${path}`);
+  }
+}
+
 function assertLocator(locator) {
   if (!isObject(locator) || !['web', 'repo_file'].includes(locator.kind)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator is invalid');
   const expected = locator.kind === 'web' ? new Set(['kind', 'url']) : new Set(['kind', 'path']);
   if (!exactKeys(locator, expected) || !nonEmpty(locator.url ?? locator.path)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator is incomplete');
+  const reference = locator.url ?? locator.path;
+  if (CONTROL_CHARACTERS.test(reference)) reject('DISCOVERY_SNAPSHOT_INVALID', 'claim locator contains control characters');
+  if (locator.kind === 'web') assertWebLocator(reference);
+  else assertRepoFileLocator(reference);
 }
 
 function validateSnapshot(snapshot, decision) {

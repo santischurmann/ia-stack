@@ -109,6 +109,29 @@ test('REQ-G09 · Cada trigger_id pertenece a la decisión', () => withFixture({}
 test('REQ-G10 · Cada trigger observado tiene al menos un claim', () => withFixture({ correction: true, newTrigger: true }, (x) => { rewritePacket(x.d3Path, x.p3Path, (v) => { v.research_snapshot.claims[1].trigger_ids = ['scope']; }); expectCode(() => verify(x), 'DISCOVERY_TRIGGER_UNCOVERED'); }));
 test('REQ-G11 · Un trigger agregado se cubre con un claim nuevo', () => withFixture({ correction: true, newTrigger: true }, (x) => { rewritePacket(x.d3Path, x.p3Path, (v) => { v.research_snapshot.claims = [c({ trigger_ids: ['scope', 'new-trigger'] })]; }); expectCode(() => verify(x), 'DISCOVERY_SNAPSHOT_TRIGGER_UNSUPPORTED'); }));
 
+test('REQ-G12 · El locator de evidencia rechaza credenciales, esquemas y paths inseguros', () => withFixture({}, (x) => {
+  const unsafe = [
+    { kind: 'web', url: 'https://user:secret@example.test/source' },
+    { kind: 'web', url: 'https://user@example.test/source' },
+    { kind: 'web', url: 'http://example.test/source' },
+    { kind: 'web', url: 'file:///etc/passwd' },
+    { kind: 'web', url: 'example.test/source' },
+    { kind: 'web', url: 'https://example.test/so\u0001urce' },
+    { kind: 'repo_file', path: '../outside.md' },
+    { kind: 'repo_file', path: '/etc/passwd' },
+    { kind: 'repo_file', path: 'C:/Windows/system.ini' },
+    { kind: 'repo_file', path: 'research/so\u0000urce.md' },
+  ];
+  for (const locator of unsafe) {
+    rewritePacket(x.d2Path, x.p2Path, (v) => { v.research_snapshot.claims[0].locator = locator; });
+    expectCode(() => verify(x), 'DISCOVERY_SNAPSHOT_INVALID');
+  }
+  for (const locator of [{ kind: 'web', url: 'https://example.test/source?q=1#frag' }, { kind: 'repo_file', path: 'research/source.md' }]) {
+    rewritePacket(x.d2Path, x.p2Path, (v) => { v.research_snapshot.claims[0].locator = locator; });
+    assert.deepEqual(verify(x), { ok: true, runs: 1 });
+  }
+}));
+
 test('core CLI rejects malformed use and reports a valid feature', () => withFixture({}, (x) => { assert.equal(parseArgs(['check', '--feature', feature]).featureSlug, feature); assert.equal(parseArgs(['check']), null); const errors = []; assert.equal(main(['check'], x.root, () => {}, (line) => errors.push(line)), 2); assert.equal(main(['check', '--feature', feature], x.root, () => {}, (line) => errors.push(line)), 0); }));
 
 test('FALSIFICACIÓN · core rejects malformed paths, unreadable nodes and invalid JSON without falling back', () => withFixture({}, (x) => {

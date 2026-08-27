@@ -586,13 +586,13 @@
     },
     {
       "req_id": "REQ-G12",
-      "status": "planned",
+      "status": "active",
       "target_phase": "I1",
-      "implemented_phase": null,
+      "implemented_phase": "I1",
       "decision_ref": "research/adversarial-productivity-audit-2026-08-23.md#48",
       "superseded_by": null,
-      "test_ref": null,
-      "test_name": null,
+      "test_ref": "tests/verify-discovery-core.test.mjs",
+      "test_name": "REQ-G12 · El locator de evidencia rechaza credenciales, esquemas y paths inseguros",
       "rule": "El locator de evidencia rechaza credenciales, esquemas y paths inseguros."
     },
     {
