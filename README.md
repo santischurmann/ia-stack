@@ -156,6 +156,7 @@ el working tree cambió.
 | `verify-vcp-coverage.mjs` | Cada script Node inventariado mantiene 100% de líneas, ramas y funciones. | Bash y PowerShell tienen pruebas funcionales de paridad, no cobertura por instrumentación Node. |
 | `verify-backup-state.mjs` | El reporte Graphify, el grafo y el commit local son los mismos que se registraron. | Verifica frescura e integridad local, no completitud semántica del grafo. |
 | `verify-graphify-manifest.mjs` | Cada archivo rastreado está indexado o excluido con razón declarada, y el manifest no conserva entradas que Git ya no rastrea. | Prueba contabilidad, no comprensión: un archivo indexado puede haber producido cero nodos. |
+| `verify-audit-chain.mjs` | Cada línea de `.vibe/AUDIT.md` lleva el hash de la anterior: editar una línea vieja rompe la cadena y el gate nombra la línea exacta. `append` sella y se niega a escribir sobre una traza ya rota. | No detecta borrar los sufijos enteros de toda la traza, recortar sus últimas líneas, ni recalcular la cadena completa sobre contenido falso: los tres exigen un ancla fuera del archivo. |
 
 El hook opcional `pretooluse-red.mjs` agrega fricción a `Write` y `Edit`: exige receipts
 consistentes, tests reales hasheados y TTL válido. No es un sandbox ni un límite de confianza:

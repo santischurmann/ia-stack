@@ -1,0 +1,181 @@
+{
+  "feature": "integridad-verificable",
+  "spec": "docs/spec.md",
+  "created": "2026-08-27",
+  "_schema_note": "Every field below is read/written by the orchestrator with Read/Write — no external task-tracker, no server. Before plan approval, run node scripts/verify-plan-conflicts.mjs check docs/tasks.json: files_to_create + files_to_modify + test_files are the complete writer set, and a shared path needs a direct/transitive depends_on route. After GREEN, run node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>; it compares those three writer fields with every tracked/untracked path, and each operational exception needs an explicit --ignore. status lifecycle: pending->red->green->triangulate->refactor->done (or blocked). role/verifier/approval_criteria/rollback/handoff/blocked_reason are the minimal operable AI-company task model (SKILL.md rule: labels alone don't count) — see orchestrator-opus.md § MINIMAL AI-COMPANY TASK MODEL for the full protocol these fields plug into.",
+  "tasks": [
+    {
+      "id": "T01",
+      "description": "Gate de hash-chain para .vibe/AUDIT.md: cada línea encadena el hash de su predecesora",
+      "files_to_create": [
+        "scripts/verify-audit-chain.mjs"
+      ],
+      "files_to_modify": [
+        "skills/vibe-memory.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "test_files": [
+        "tests/verify-audit-chain.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [],
+      "status": "done",
+      "goal": "Disciplina verificable → AC1-AC4 de docs/spec.md → slice mínimo del plan: valida el enfoque antes de invertir en las otras tres tareas",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC1: cadena válida -> exit 0. AC2: línea editada -> exit 1 nombrando la línea. AC3: audit vacío o inexistente -> exit 0. AC4: líneas heredadas sin hash -> aceptadas, encadena desde la primera que declara hash. AC11: append sella la linea nueva y el gate la verifica. AC12: sello mal formado -> exit 1.",
+      "evidence": [
+        "RED gate exit 0: 9 tests, 0 pass, 9 fail, 9/9 bloques ERR_ASSERTION",
+        "GREEN: 9/9 pass, cobertura 100/100/100, test intacto sha256 E8C6D6AD26F9FB97",
+        "TRIANGULATE: 14 tests, ataque de falsificacion cerrado (exit 0 -> exit 1)",
+        "19 tests, cobertura 100%, 6 mutantes muertos, ataque de falsificacion cerrado y verificado sobre el AUDIT.md real"
+      ],
+      "not_reviewed": [
+        "Agujero P0 reproducido: manglar todos los sufijos chain degrada el archivo a traza heredada y una linea editada pasa exit 0. Cierre asignado a TRIANGULATE."
+      ],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE, derives edge cases from approval_criteria) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T02",
+      "description": "Baseline de findings: verify-security-baseline distingue deuda aceptada de hallazgo nuevo",
+      "files_to_create": [
+        "contracts/security-baseline.json"
+      ],
+      "files_to_modify": [
+        "scripts/verify-security-baseline.mjs",
+        "tests/verify-security-baseline.test.mjs",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs"
+      ],
+      "test_files": [
+        "tests/verify-security-baseline.test.mjs"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T01"
+      ],
+      "status": "pending",
+      "goal": "Disciplina verificable → AC5-AC7 de docs/spec.md → separar deuda vieja de regresión nueva sin correr la base",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "approval_criteria": "AC5: hallazgo en el baseline -> no falla. AC6: hallazgo ausente del baseline -> exit 1. AC7: entrada del baseline sin hallazgo real -> exit 1.",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T03",
+      "description": "Commit atómico: verify-receipt revalida y commitea en una sola invocación",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-receipt.mjs",
+        "tests/verify-receipt-gate.test.mjs",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs"
+      ],
+      "test_files": [
+        "tests/verify-receipt-gate.test.mjs"
+      ],
+      "test_types": [
+        "integration"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T02"
+      ],
+      "status": "pending",
+      "goal": "Disciplina verificable → AC8-AC9 de docs/spec.md → angostar la ventana entre validar y escribir sin prometer cerrarla",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "approval_criteria": "AC8: receipt aprobado y árbol sin cambios -> revalida y commitea en una invocación. AC9: árbol cambió tras escribir el receipt -> aborta sin commitear y explica qué cambió.",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T04",
+      "description": "Microtests de wording crítico: las frases de límite honesto no pueden debilitarse en silencio",
+      "files_to_create": [
+        "contracts/honest-limits.json"
+      ],
+      "files_to_modify": [
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "test_files": [
+        "tests/verify-vcp-contract.test.mjs"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T03"
+      ],
+      "status": "pending",
+      "goal": "Disciplina verificable → AC10 de docs/spec.md → una edición futura que borre un límite declarado falla en vez de pasar inadvertida",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "approval_criteria": "AC10: THE SYSTEM SHALL fallar si una frase de límite honesto declarada desaparece o se debilita en README.md, SKILL.md o SECURITY.md.",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha, filled after this task's commit lands>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
+      "blocked_reason": null
+    }
+  ]
+}

@@ -185,6 +185,23 @@ files: `SESSION.md` is the resume ledger (what to do next), `AUDIT.md` is the ac
 trail (who did what, never edited once written). Full org-chart/budget/checkout context:
 `skills/orchestrator-opus.md` § AI COMPANY LAYER.
 
+**"Append-only" dejó de ser una convención y pasó a ser verificable.** Escribí cada línea con el
+sellador, nunca a mano — así el escritor y el verificador comparten la misma función de hash y no
+pueden divergir:
+```bash
+node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs append .vibe/AUDIT.md "[fecha] Rol | acción | evidencia | ref"
+node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs check .vibe/AUDIT.md
+```
+Cada línea sellada lleva el hash de la anterior, así editar una línea vieja rompe la cadena y el
+gate nombra la línea exacta. `append` se niega a sellar sobre una traza ya rota: un sello nuevo
+encima de historia manipulada sólo certificaría la manipulación.
+
+Las líneas heredadas sin sello se aceptan (un proyecto que ya tenía traza no se rompe), pero un
+sufijo `chain:` mal formado es manipulación, no una línea vieja. **Lo que el gate no detecta**:
+borrar los sufijos enteros de toda la traza, recortar sus últimas líneas, o recalcular la cadena
+completa sobre contenido falso. Los tres exigen un ancla fuera del archivo; están declarados, no
+resueltos.
+
 ## LESSONS PROTOCOL — confirm-gated, deduped, never silently deleted
 
 Source of the "learn from own errors across projects" goal. Runs at Phase 4.8 (Reflect) and on

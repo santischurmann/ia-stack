@@ -28,7 +28,7 @@ No external skill is required or invoked for this. The VCP-native floor, always 
 2. 1 subagent = 1 atomic task. Never more.
 3. Subagents don't decide architecture.
 4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
-5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
+5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail, escrita con `verify-audit-chain.mjs append`, nunca a mano — el sello encadena cada línea con la anterior y `check` detecta una edición posterior; ver `skills/vibe-memory.md`). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
 6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
 7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (4.6). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
@@ -268,15 +268,28 @@ Writes exactly one test per explicit AC in `docs/spec.md` (not "minimum" — eve
 test, statically countable). Gate: `.vibe/vcp-runtime/scripts/verify-red.sh` (bash) or
 `.vibe/vcp-runtime/scripts/verify-red.ps1` (PowerShell), with a literal test file and the exact
 command `node --test`. The shipped adapter executes that exact Node-native invocation itself;
-it rejects every other runner command instead of guessing from arbitrary output. A real assertion
-failure, a local missing-module error, or a local SUT stack frame from an assertion-bearing test
-passes. A generic runner/config error and all unsupported runners fail closed. Add another stack
-only by adding a dedicated, falsified adapter — never by broadening a regex.
-Rejected → 🚫 blocked, report to user. **Reporting note**: when the SUT doesn't exist yet, the
-runner collapses ALL tests in the file into one file-level failure (verified: 6 `test()` calls,
-top-level import missing → runner reports `tests 1, fail 1`, not 6) — report the static
-AC-test count and the missing-module classification as two separate facts, never as "N tests
-failed" (that claim is only true when tests actually ran and failed on their own assertions).
+it rejects every other runner command instead of guessing from arbitrary output. **Sólo pasa una
+prueba que corrió y falló en su propia comprobación** — el gate exige un bloque de diagnóstico con
+`code: 'ERR_ASSERTION'` atado a su línea `not ok`. Un error de carga (el archivo bajo prueba
+todavía no existe, o no parsea) **no** pasa: fail-closed deliberado, porque un archivo de test
+vacío que importa algo inexistente produciría el mismo error sin contener una sola prueba. Un
+error genérico del runner y todo runner no soportado también fallan cerrado. Para sumar otro stack
+hay que agregar un adaptador propio y falsificado — nunca ensanchar un regex.
+
+**Cómo se llega a un RED válido cuando el archivo bajo prueba todavía no existe** (verificado en la
+primera corrida real del protocolo, 2026-08-27: el gate rechazó un RED de 9 pruebas por
+`ERR_MODULE_NOT_FOUND` mientras este párrafo afirmaba lo contrario): el Test-Engineer crea el
+archivo como **esqueleto que no implementa nada** — exporta los símbolos del contrato y cada
+función lanza `not implemented`. Así las pruebas corren de verdad y fallan por su propia
+comprobación. Las funciones del esqueleto **lanzan**, nunca devuelven un valor vacío: una que
+devolviera `0` o `{ok:true}` haría pasar por coincidencia a las pruebas de los casos vacíos, y un
+RED donde algunas pruebas pasan de casualidad no prueba nada.
+
+Rejected → 🚫 blocked, report to user. **Reporting note**: con un error de carga el runner colapsa
+TODAS las pruebas del archivo en un único fallo de archivo (verificado: 9 `test()` declarados,
+import de nivel superior faltante → el runner reporta `tests 1, fail 1`, no 9) — reportar el conteo
+estático de pruebas y la clasificación del error como dos hechos separados, nunca como "N pruebas
+fallaron" (eso sólo es cierto cuando las pruebas efectivamente corrieron y fallaron solas).
 
 **Banned assertion patterns** (source: `research/sources/protocolo-muralla.md` point #6 —
 verify-red.sh/.ps1 only prove the RED is real, not that the test is a good test): tautologies

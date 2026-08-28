@@ -14,6 +14,18 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- Nuevo gate `verify-audit-chain.mjs` (backlog #27), construido con el protocolo completo sobre el
+  propio VCP. `.vibe/AUDIT.md` era append-only por convención y nada lo verificaba: una línea vieja
+  podía reescribirse sin dejar rastro. Ahora cada línea lleva el hash de la anterior, `append` la
+  sella (escritor y verificador comparten la función de hash, así no pueden divergir) y `check`
+  nombra la línea exacta donde se rompe la cadena.
+  Durante TRIANGULATE se reprodujo un ataque real: manglar todos los sufijos `chain:` degradaba el
+  archivo a "traza heredada" y una línea con contenido falsificado pasaba con exit 0. Cerrado: un
+  sufijo mal formado es manipulación, no una línea vieja. Verificado sobre el `AUDIT.md` real de la
+  sesión que lo construyó.
+  Límites declarados, no resueltos: borrar los sufijos enteros de toda la traza, recortar sus
+  últimas líneas o recalcular la cadena completa siguen pasando. Los tres exigen un ancla fuera del
+  archivo.
 - `verify-receipt.mjs check` acepta `--require-clean-worktree` (backlog #23): en 4.6 exige que no
   queden paths unstaged ni untracked, de modo que el árbol revisado sea el árbol commiteado. El
   `check` sin la flag no cambia: un receipt intermedio debe poder atestiguar trabajo sin stagear.
