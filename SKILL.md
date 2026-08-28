@@ -809,6 +809,19 @@ C) Hold — don't push yet
 - `.vibe/SESSION.md` archived to `.vibe/sessions/YYYY-MM-DD-<topic>.md`, reset for next session.
 - Optional distributable artifact (dist.zip+checksums): `skills/deploy-zip.md`, only if project ships one.
 
+**Límites honestos como dato revisable.** Las frases que declaran lo que un gate **no** prueba
+viven en `contracts/honest-limits.json`, cada una con el `why` de qué garantía se pierde si
+desaparece:
+```bash
+node .vibe/vcp-runtime/scripts/verify-vcp-contract.mjs check
+```
+Debilitar una de esas frases pone el gate en rojo y el mensaje imprime el motivo, para que quien la
+tocó entienda qué está sacando. La comparación es de texto literal, nunca un patrón que alguien
+pueda aflojar. Al agregar un gate nuevo, declarar su límite ahí es parte de la tarea, no un extra:
+una promesa sin su límite escrito es la forma más barata de mentir. **Lo que no cubre**: verifica
+que la frase esté, no que el párrafo que la rodea siga siendo cierto; y un límite que nadie declaró
+en el contrato tampoco se protege.
+
 **4.8 Reflect** — 5 líneas, siempre corre, NO es gate (no bloquea nada, sin menú approve/modify).
 Append a `.vibe/RETRO.md` (crear desde `templates/vibe/RETRO.md` si no existe). Inmediatamente
 después, correr el LESSONS PROTOCOL completo (`skills/vibe-memory.md` § LESSONS PROTOCOL): draft

@@ -46,7 +46,8 @@
         "19 tests, cobertura 100%, 6 mutantes muertos, ataque de falsificacion cerrado y verificado sobre el AUDIT.md real"
       ],
       "not_reviewed": [
-        "Agujero P0 reproducido: manglar todos los sufijos chain degrada el archivo a traza heredada y una linea editada pasa exit 0. Cierre asignado a TRIANGULATE."
+        "Agujero P0 CERRADO en TRIANGULATE: manglar los sufijos chain degradaba el archivo a traza heredada y una linea editada pasaba exit 0. Ahora un sufijo mal formado es manipulacion, no una linea vieja. Verificado sobre el AUDIT.md real.",
+        "Limites declarados y NO resueltos: borrar los sufijos enteros de toda la traza, recortar sus ultimas lineas, o recalcular la cadena completa. Los tres exigen un ancla fuera del archivo."
       ],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE, derives edge cases from approval_criteria) -> Refactor-Engineer (REFACTOR)",
@@ -174,15 +175,23 @@
       "depends_on": [
         "T03"
       ],
-      "status": "pending",
+      "status": "done",
       "goal": "Disciplina verificable → AC10 de docs/spec.md → una edición futura que borre un límite declarado falla en vez de pasar inadvertida",
       "owner": null,
       "locked": false,
       "role": "Test-Engineer",
       "verifier": "scripts/verify-red-node.mjs (mechanical)",
       "approval_criteria": "AC10: THE SYSTEM SHALL fallar si una frase de límite honesto declarada desaparece o se debilita en README.md, SKILL.md o SECURITY.md.",
-      "evidence": [],
-      "not_reviewed": [],
+      "evidence": [
+        "RED: 18 tests (8 verdes + 10 rojos)",
+        "GREEN: 18/18, 16 limites declarados en 4 archivos, cobertura 100%",
+        "Verificado debilitando una frase real del README: el gate frena e imprime el motivo"
+      ],
+      "not_reviewed": [
+        "El gate verifica que la frase este, no que el parrafo que la rodea siga siendo cierto.",
+        "Un limite que nadie declaro en contracts/honest-limits.json tampoco se protege.",
+        "Hallazgo del RED: 2 de los 6 limites previos fijaban titulos de seccion, no afirmaciones. Corregido agregando la oracion sustantiva de cada uno."
+      ],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null

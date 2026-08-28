@@ -122,3 +122,17 @@
   se alineó para no romper las 33 pruebas de `check`.
 - **Límite declarado**: la ventana pasa de minutos a milisegundos, no desaparece. La confirmación
   prueba que el commit contiene el índice revisado, no que no hubo escritura concurrente.
+
+## Phase 3 — T04 (límites honestos como dato revisable) · DONE
+
+- **RED**: 10 pruebas nuevas. El Test-Engineer relevó el repo y encontró que **dos de los seis
+  límites que ya existían fijaban títulos de sección, no afirmaciones**: se podía dejar el título
+  y vaciar el párrafo sin que nada fallara. Es exactamente el agujero que T04 vino a tapar.
+- **GREEN**: 18/18. 16 límites declarados en SECURITY.md, README.md, SKILL.md y vibe-memory.md,
+  cada uno con el `why` de qué garantía se pierde si desaparece.
+- **Verificado debilitando una frase real**: cambié "un receipt es evidencia local, no una firma de
+  procedencia" por "evidencia sólida de procedencia" en README.md y el gate frenó imprimiendo el
+  motivo completo, no sólo el nombre del test. Archivo restaurado byte a byte después.
+- Gates finales: 365 tests · cobertura 100% · contrato 48 checks + 16 límites · scope 6 paths.
+- Límites del propio gate: verifica que la frase esté, no que el párrafo que la rodea siga siendo
+  cierto; y un límite que nadie declaró tampoco se protege.

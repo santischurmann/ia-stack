@@ -14,6 +14,18 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- `contracts/honest-limits.json` (backlog #40), cuarta y última feature construida con el protocolo
+  completo sobre el propio VCP. Las frases que declaran lo que un gate **no** prueba se protegían a
+  mano en un array del código, sin decir por qué importaba cada una: una edición futura que
+  "mejorara la redacción" podía debilitar una garantía sin que nada fallara.
+  Ahora son 16 límites declarados como dato revisable, cada uno con el `why` de qué se pierde si
+  desaparece. El rechazo imprime ese motivo, para que quien tocó la frase entienda qué está
+  sacando. La comparación es de texto literal, nunca un patrón que alguien pueda aflojar.
+  El RED encontró de paso que dos de los seis límites que existían fijaban **títulos de sección**,
+  no afirmaciones: se podía dejar el título y vaciar el párrafo. Ahora la oración sustantiva de cada
+  uno también está fijada.
+  Límites del propio gate: verifica que la frase esté, no que el párrafo que la rodea siga siendo
+  cierto; y un límite que nadie declaró tampoco se protege.
 - `verify-receipt.mjs commit` (backlog #22), tercera feature construida con el protocolo completo
   sobre el propio VCP. `check` validaba el árbol y después el operador corría `git commit` a mano:
   entre esas dos cosas pasaban minutos y nada impedía una escritura. Ahora una sola corrida valida,

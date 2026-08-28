@@ -1,0 +1,101 @@
+{
+  "schema": "vcp.honest-limits/1",
+  "limits": [
+    {
+      "limit_id": "pretooluse-hook-is-not-a-trust-boundary",
+      "file": "SECURITY.md",
+      "phrase": "no una frontera de confianza",
+      "why": "El hook agrega fricción a Write y Edit, pero Bash, PowerShell y cualquier proceso con acceso al mismo filesystem lo eluden. Sin esta frase un lector puede tomarlo por un sandbox y dejar de mirar justo lo que el hook no puede ver."
+    },
+    {
+      "limit_id": "security-scanner-does-no-taint-analysis",
+      "file": "SECURITY.md",
+      "phrase": "no hace taint analysis",
+      "why": "El escáner es de patrones sobre el delta: no sigue el flujo de un dato hasta su sink ni prueba ausencia de vulnerabilidades. Sin el límite, un gate en verde se lee como \"el código está auditado\" y la revisión que falta nunca se contrata."
+    },
+    {
+      "limit_id": "zip-checksum-does-not-authenticate-publisher",
+      "file": "SECURITY.md",
+      "phrase": "no autentica a quien",
+      "why": "El checksum detecta corrupción accidental del archivo distribuido, no procedencia: quien pueda reemplazar el ZIP también publica el hash nuevo. Sin el límite, comparar el hash se confunde con haber verificado el origen."
+    },
+    {
+      "limit_id": "vcp-does-not-replace-specialist-review",
+      "file": "SECURITY.md",
+      "phrase": "no reemplaza una revisión especializada",
+      "why": "VCP vuelve el trabajo más verificable; no vuelve seguro un proyecto inseguro. Sin esta frase, pasar los gates se lee como una auditoría de seguridad ya hecha, que es la lectura que deja al proyecto sin revisión real."
+    },
+    {
+      "limit_id": "red-node-evidence-is-not-test-quality",
+      "file": "README.md",
+      "phrase": "no demuestra intención ni calidad del test",
+      "why": "verify-red-node.mjs sólo confirma que un node:test produjo evidencia TAP de fallo con forma de assertion. Sin el límite, un rojo trivial o accidental cuenta como prueba de que el test describe el comportamiento pedido."
+    },
+    {
+      "limit_id": "receipt-is-local-evidence-not-provenance",
+      "file": "README.md",
+      "phrase": "Un receipt es evidencia local, no una firma de procedencia",
+      "why": "El receipt lo escribe la misma sesión que hizo el trabajo y nadie lo firma. Sin el límite se lee como cadena de custodia, y un tercero terminaría confiando en evidencia que no tiene forma de verificar por su cuenta."
+    },
+    {
+      "limit_id": "security-baseline-is-not-sast-sca-or-cve",
+      "file": "README.md",
+      "phrase": "no es SAST, SCA, taint analysis ni una base de CVEs",
+      "why": "Es un piso nativo de patrones. Sin esta frase, el proyecto queda con la impresión de tener cubierto el análisis estático y el de dependencias, que es exactamente lo que este gate no hace, y nadie suma la herramienta que falta."
+    },
+    {
+      "limit_id": "backup-state-is-freshness-not-graph-semantics",
+      "file": "README.md",
+      "phrase": "no completitud semántica del grafo",
+      "why": "verify-backup-state.mjs compara reporte, grafo y commit local: prueba frescura e integridad, no que el grafo represente bien el código. Sin el límite, un backup en verde se lee como un grafo correcto y completo."
+    },
+    {
+      "limit_id": "graphify-manifest-proves-bookkeeping",
+      "file": "README.md",
+      "phrase": "Prueba contabilidad, no comprensión",
+      "why": "El manifest sólo verifica que cada archivo rastreado esté indexado o excluido con razón declarada. Un archivo indexado puede haber producido cero nodos: sin el límite, \"cubierto\" se lee como \"entendido\"."
+    },
+    {
+      "limit_id": "pretooluse-hook-is-not-a-sandbox",
+      "file": "README.md",
+      "phrase": "No es un sandbox ni un límite de confianza",
+      "why": "Es el límite del hook dicho donde el usuario lo lee primero. Sin esta frase, la fricción sobre Write y Edit se presenta en el README como aislamiento garantizado, cuando Bash y PowerShell la eluden en el mismo filesystem."
+    },
+    {
+      "limit_id": "graphify-gate-proves-bookkeeping",
+      "file": "SKILL.md",
+      "phrase": "El gate prueba contabilidad, no comprensión",
+      "why": "Es el mismo límite en el lugar operativo que lee quien corre el gate. Sin esta frase el agente reporta cobertura del grafo como si fuera entendimiento del código, y los archivos que dieron cero nodos no los revisa nadie."
+    },
+    {
+      "limit_id": "receipt-command-is-never-re-executed",
+      "file": "SKILL.md",
+      "phrase": "nunca re-ejecuta el comando ni prueba criptográficamente",
+      "why": "El par comando/resultado es evidencia estructurada escrita por quien la generó. Sin el límite se lee como prueba de que el comando corrió con ese resultado, que es justo lo que el gate mecánico no comprueba."
+    },
+    {
+      "limit_id": "sealed-commit-window-shrinks-but-stays-open",
+      "file": "SKILL.md",
+      "phrase": "la ventana pasa de minutos a milisegundos, no desaparece",
+      "why": "Sellar el commit acorta el intervalo entre validar y escribir, pero otro proceso todavía puede escribir en ese instante. Sin el límite, el commit sellado se vende como atómico y nadie considera la escritura concurrente."
+    },
+    {
+      "limit_id": "red-must-fail-for-the-declared-reason",
+      "file": "SKILL.md",
+      "phrase": "RED donde algunas pruebas pasan de casualidad no prueba nada",
+      "why": "Es la razón por la que el esqueleto lanza en vez de devolver un valor vacío. Sin esta frase, un rojo donde parte de la suite pasa por coincidencia cuenta como hard gate cumplido y el ciclo RED queda vacío de evidencia."
+    },
+    {
+      "limit_id": "security-baseline-accepts-file-and-category",
+      "file": "SKILL.md",
+      "phrase": "aceptar un secreto cubre archivo y categoría, no un valor",
+      "why": "Es la oración sustantiva de la sección \"Lo que no cubre\", cuyo título ya está fijado aparte: reemplazar un secreto aceptado por otro en el mismo archivo sigue aceptado. Sin la oración, el título puede quedar sobre un párrafo vacío."
+    },
+    {
+      "limit_id": "audit-chain-misses-wholesale-rewrites",
+      "file": "skills/vibe-memory.md",
+      "phrase": "borrar los sufijos enteros de toda la traza, recortar sus últimas líneas",
+      "why": "Es la oración sustantiva de la sección \"Lo que el gate no detecta\", cuyo título ya está fijado aparte: los tres ataques exigen un ancla fuera del archivo. Sin ella, la cadena de hashes se lee como inmutabilidad completa."
+    }
+  ]
+}

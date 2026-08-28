@@ -21,6 +21,8 @@ export const REQUIREMENTS = [
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
   ['SKILL.md', /verify-receipt\.mjs commit/u, 'validate-and-write in one run'],
+  ['SKILL.md', /contracts\/honest-limits\.json/u, 'honest limits declared as reviewable data'],
+  ['README.md', /contracts\/honest-limits\.json/u, 'honest limits declared as reviewable data'],
   ['SKILL.md', /nunca reescribe historial por su cuenta/u, 'sealed commit never rewrites history'],
   ['SKILL.md', /Lo que no cubre/u, 'security baseline honest limit'],
   ['SKILL.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
@@ -61,6 +63,105 @@ export const FORBIDDEN_PHRASES = [
   ['skills/vibe-memory.md', /cyber-neo/iu, 'depends on a named external security skill in the memory protocol'],
 ];
 
+// --- Honest limits declared as reviewable data -------------------------------------------------
+// The REQUIREMENTS above pin phrases without saying WHY each one matters, so an edit that
+// "improves the wording" can weaken a limit and nobody learns which guarantee was lost. This half
+// moves the limits into a data file where each one carries the reason it exists.
+export const HONEST_LIMITS_FILE = 'contracts/honest-limits.json';
+export const HONEST_LIMITS_SCHEMA = 'vcp.honest-limits/1';
+const LIMIT_FIELDS = ['limit_id', 'file', 'phrase', 'why'];
+const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const WINDOWS_DRIVE = /^[a-z]:/iu;
+const MIN_WHY_LENGTH = 20;
+// Padded filler defeats a length floor on its own ('placeholder placeholder' clears 20 characters),
+// so the test is "the whole reason is nothing but filler tokens" rather than an anchored blocklist:
+// at this floor an anchored list could only ever match strings the floor already rejected.
+const FILLER_REASONS = new Set([
+  'todo', 'tbd', 'tbc', 'na', 'n/a', 'none', 'null', 'nil', 'ninguno', 'ninguna', 'pendiente',
+  'placeholder', 'relleno', 'lorem', 'ipsum', 'xxx', 'yyy', 'zzz', 'foo', 'bar', 'fixme', 'wip',
+  'unknown', 'desconocido', 'porque', 'because', 'reason', 'motivo', 'razon', 'why', 'etc',
+]);
+
+function isWellFormedLimit(limit) {
+  if (limit === null || typeof limit !== 'object') return false;
+  return Object.keys(limit).length === LIMIT_FIELDS.length
+    && LIMIT_FIELDS.every((field) => typeof limit[field] === 'string');
+}
+
+function escapesProject(file) {
+  const normalized = file.trim().replaceAll('\\', '/');
+  return normalized === ''
+    || normalized.startsWith('/')
+    || WINDOWS_DRIVE.test(normalized)
+    || normalized.split('/').includes('..');
+}
+
+function isPlaceholderReason(why) {
+  const tokens = why.toLowerCase().split(/\s+/u)
+    .map((token) => token.replace(/^\W+|\W+$/gu, ''))
+    .filter((token) => token !== '');
+  return tokens.every((token) => FILLER_REASONS.has(token));
+}
+
+export function readHonestLimits(read) {
+  let raw;
+  try {
+    raw = read(HONEST_LIMITS_FILE);
+  } catch (error) {
+    // A missing contract is a configuration error, never "zero limits to verify": degrading here
+    // would make deleting one file the way to delete every guarantee it protects.
+    throw new Error(`${HONEST_LIMITS_FILE}: cannot read (${error.message})`);
+  }
+  let document;
+  try {
+    document = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`${HONEST_LIMITS_FILE} is not valid JSON: ${error.message}`);
+  }
+  if (document?.schema !== HONEST_LIMITS_SCHEMA) {
+    throw new Error(`${HONEST_LIMITS_FILE} must declare schema ${HONEST_LIMITS_SCHEMA}`);
+  }
+  if (!Array.isArray(document.limits)) throw new Error(`${HONEST_LIMITS_FILE} must contain a limits array`);
+  if (document.limits.length === 0) throw new Error(`${HONEST_LIMITS_FILE} must declare at least one honest limit`);
+  const seen = new Set();
+  for (const limit of document.limits) {
+    if (!isWellFormedLimit(limit)) {
+      throw new Error(`every honest limit needs exactly a limit_id, file, phrase and why: ${JSON.stringify(limit)}`);
+    }
+    if (!KEBAB_CASE.test(limit.limit_id)) throw new Error(`limit_id must be kebab-case: ${limit.limit_id}`);
+    if (limit.phrase.trim() === '') throw new Error(`phrase must not be empty: ${limit.limit_id}`);
+    if (escapesProject(limit.file)) throw new Error(`the guarded file must stay inside the project: ${limit.file}`);
+    if (limit.why.trim().length < MIN_WHY_LENGTH || isPlaceholderReason(limit.why)) {
+      throw new Error(`${limit.limit_id} needs a real reason, not a placeholder`);
+    }
+    // Two entries under one id cannot both be reviewed as "the" reason for that limit, and the
+    // second silently shadows the first in every report that keys by limit_id.
+    if (seen.has(limit.limit_id)) throw new Error(`duplicate honest limit: ${limit.limit_id}`);
+    seen.add(limit.limit_id);
+  }
+  return document.limits;
+}
+
+export function honestLimitViolations(read, limits) {
+  const violations = [];
+  for (const limit of limits) {
+    let content;
+    try {
+      content = read(limit.file);
+    } catch (error) {
+      violations.push(`${limit.file}: honest limit ${limit.limit_id} cannot read (${error.message})`);
+      continue;
+    }
+    // Literal containment, never a regex: an honest limit must not rest on a pattern somebody can
+    // loosen. The reason travels with the violation because whoever broke the phrase needs to know
+    // which guarantee was lost, not just that a test turned red.
+    if (!content.includes(limit.phrase)) {
+      violations.push(`${limit.file}: honest limit ${limit.limit_id} is no longer stated — ${limit.why}`);
+    }
+  }
+  return violations;
+}
+
 export function contractViolations(read) {
   const violations = [];
   for (const [path, required, label] of REQUIREMENTS) {
@@ -92,12 +193,23 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     writeError(USAGE);
     return 2;
   }
-  const violations = contractViolations((path) => readFileSync(join(cwd, path), 'utf8'));
+  // The declared limits are wired here and never inside contractViolations: that helper is called
+  // with readers that answer prose for every path, so making it read the JSON contract would turn
+  // its own callers into parse failures.
+  const read = (path) => readFileSync(join(cwd, path), 'utf8');
+  const violations = contractViolations(read);
+  let limits = [];
+  try {
+    limits = readHonestLimits(read);
+    violations.push(...honestLimitViolations(read, limits));
+  } catch (error) {
+    violations.push(error.message);
+  }
   if (violations.length > 0) {
     for (const violation of violations) writeError(`REJECTED: ${violation}`);
     return 1;
   }
-  write(`OK: ${REQUIREMENTS.length + FORBIDDEN_PHRASES.length} user-visible protocol contract checks pass.`);
+  write(`OK: ${REQUIREMENTS.length + FORBIDDEN_PHRASES.length} user-visible protocol contract checks pass; ${limits.length} honest limit${limits.length === 1 ? '' : 's'} verified.`);
   return 0;
 }
 

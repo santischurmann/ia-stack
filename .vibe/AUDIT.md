@@ -32,3 +32,7 @@
 [2026-08-28 01:20] Orchestrator | T03 arranca | commit sellado: valida+commitea en un paso y confirma post-commit; nunca revierte solo (usuario) | T03 | chain:edc4b899e6d1b3d6d61676a2de803e95656d4a1b4a476179fdd8aa0b75ab68b6
 [2026-08-28 01:45] Test-Engineer | T03 RED aceptado | 42 tests: 33 verdes + 9 rojos; 6 verifican que NO commitea, no solo el exit code | T03 | chain:2eb7ae75019ec329bac51e496885fd3d0efdc77ab1e2624b2f9e3c9af648870a
 [2026-08-28 02:15] Orchestrator | T03 done | 42 tests, contrato 46 checks, scope 7 paths; ventana angostada no cerrada, declarado | T03 | chain:d61948a8b5e4dd4d28648dd3b169eb21d9b783139a64f2f0926635533418599f
+[2026-08-28 02:30] Orchestrator | T04 arranca | microtests de wording; T01 not_reviewed corregido: el agujero P0 estaba cerrado, la nota decia pendiente | T04 | chain:e0e7004568db9c1d4fe74ece02b53cf46bb4fb84bc57a434065e961371afe49b
+[2026-08-28 02:32] Orchestrator | T04 diseno | contracts/honest-limits.json: frases como dato revisable con motivo, no hardcodeadas en el gate | T04 | chain:e4ab8cdaf289576c329e744e7cf896aacf4bcc0c21c817e7fa8ae25745158375
+[2026-08-28 02:55] Test-Engineer | T04 RED aceptado | 18 tests: 8 verdes + 10 rojos; hallazgo: 2 limites actuales fijan titulos de seccion, no afirmaciones | T04 | chain:7208da60572828fa99c1d260f1ae50f74f4eb57b7dccc6d418ecb6c594726e04
+[2026-08-28 03:20] Orchestrator | T04 done | 16 limites declarados, contrato 48 checks; verificado debilitando una frase real del README | T04 | chain:5fd49c6a06fcb92d9d740701ea4422771f0e289fd95aadf1c7438f7d0e96fa6a
