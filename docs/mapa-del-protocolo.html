@@ -1,0 +1,628 @@
+<title>Qué prueba VCP y qué no</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+  :root {
+    --paper:      #EEF1F4;
+    --card:       #FAFBFC;
+    --ink:        #16202B;
+    --ink-soft:   #4A5A6A;
+    --ink-faint:  #7C8B99;
+    --rule:       #D2DAE1;
+    --rule-soft:  #E3E9ED;
+    --accent:     #2C5B7C;
+    --accent-dim: #7FA3BC;
+
+    --ok:         #35705F;
+    --ok-bg:      #DCE9E4;
+    --empty:      #9A6A1C;
+    --empty-bg:   #F2E7D2;
+    --stop:       #9E453F;
+    --stop-bg:    #F1DEDC;
+
+    --shadow: 0 1px 2px rgba(22, 32, 43, .06), 0 8px 24px rgba(22, 32, 43, .05);
+    --measure: 66ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #10171F;
+      --card:       #17212C;
+      --ink:        #E4EAEF;
+      --ink-soft:   #A3B2BE;
+      --ink-faint:  #6F808E;
+      --rule:       #2A3846;
+      --rule-soft:  #202C38;
+      --accent:     #7FB0D4;
+      --accent-dim: #3E5F79;
+
+      --ok:         #6FBBA2;
+      --ok-bg:      #1B2E2A;
+      --empty:      #D9A75A;
+      --empty-bg:   #2E2618;
+      --stop:       #DE8480;
+      --stop-bg:    #311F1F;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #10171F;
+    --card:       #17212C;
+    --ink:        #E4EAEF;
+    --ink-soft:   #A3B2BE;
+    --ink-faint:  #6F808E;
+    --rule:       #2A3846;
+    --rule-soft:  #202C38;
+    --accent:     #7FB0D4;
+    --accent-dim: #3E5F79;
+
+    --ok:         #6FBBA2;
+    --ok-bg:      #1B2E2A;
+    --empty:      #D9A75A;
+    --empty-bg:   #2E2618;
+    --stop:       #DE8480;
+    --stop-bg:    #311F1F;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 24px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  h1, h2, h3, .label, .pill, th, .num, .metric-n {
+    font-family: "IBM Plex Sans Condensed", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .label {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- cabecera ---------- */
+
+  header { padding: 72px 0 40px; border-bottom: 2px solid var(--ink); }
+
+  h1 {
+    font-size: clamp(40px, 7vw, 76px);
+    font-weight: 700;
+    line-height: .98;
+    letter-spacing: -.02em;
+    margin: 14px 0 0;
+    text-wrap: balance;
+  }
+
+  .thesis {
+    max-width: var(--measure);
+    margin: 22px 0 0;
+    font-size: 20px;
+    color: var(--ink-soft);
+  }
+
+  .thesis strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- los tres estados ---------- */
+
+  .states {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin: 40px 0 0;
+  }
+
+  .state {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-top: 4px solid var(--sc);
+    border-radius: 3px;
+    padding: 18px 20px 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .state.ok    { --sc: var(--ok); }
+  .state.empty { --sc: var(--empty); }
+  .state.stop  { --sc: var(--stop); }
+
+  .state .mono {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--sc);
+    background: var(--sb);
+    padding: 3px 9px;
+    border-radius: 3px;
+  }
+
+  .state.ok    { --sb: var(--ok-bg); }
+  .state.empty { --sb: var(--empty-bg); }
+  .state.stop  { --sb: var(--stop-bg); }
+
+  .state p { margin: 12px 0 0; font-size: 15.5px; line-height: 1.5; color: var(--ink-soft); }
+  .state p b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- secciones ---------- */
+
+  section { margin: 72px 0 0; }
+
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+
+  .h2sub {
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-size: clamp(26px, 3.4vw, 36px);
+    font-weight: 600;
+    letter-spacing: -.01em;
+    margin: 0 0 8px;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .lede { max-width: var(--measure); color: var(--ink-soft); margin: 0 0 30px; }
+
+  /* ---------- fases ---------- */
+
+  .phases { border-top: 1px solid var(--rule); }
+
+  .phase {
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    gap: 0 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: baseline;
+  }
+
+  .num {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+  }
+
+  .phase h3 {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    letter-spacing: -.005em;
+  }
+
+  .phase p { margin: 0; color: var(--ink-soft); font-size: 16px; }
+  .phase p code { font-size: .85em; color: var(--accent); }
+
+  /* ---------- tabla de gates ---------- */
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--card); }
+
+  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+
+  th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-faint);
+    padding: 14px 18px;
+    border-bottom: 2px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  th.limit { color: var(--empty); }
+
+  td {
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    font-size: 15.5px;
+    line-height: 1.5;
+  }
+
+  tr:last-child td { border-bottom: 0; }
+
+  td.gate { white-space: nowrap; }
+  td.gate code { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+  td.limit { color: var(--ink-soft); }
+  td.limit b { color: var(--empty); font-weight: 600; }
+
+  /* ---------- hallazgos ---------- */
+
+  .finds { display: grid; gap: 12px; }
+
+  .find {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 0 22px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent-dim);
+    border-radius: 3px;
+    padding: 16px 20px;
+    align-items: start;
+  }
+
+  .find.grave { border-left-color: var(--stop); }
+
+  .find .label { padding-top: 3px; }
+  .find.grave .label { color: var(--stop); }
+  .find h3 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  .find p { margin: 0; color: var(--ink-soft); font-size: 15.5px; }
+  .find p code { font-size: .86em; color: var(--accent); }
+
+  /* ---------- métricas ---------- */
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .metric { background: var(--card); padding: 20px; }
+  .metric-n {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .metric-l { font-size: 14px; color: var(--ink-soft); margin-top: 7px; line-height: 1.35; }
+
+  /* ---------- lo no resuelto ---------- */
+
+  .open {
+    background: var(--empty-bg);
+    border: 1px solid var(--empty);
+    border-radius: 3px;
+    padding: 26px 28px;
+  }
+
+  .open h3 { font-size: 18px; font-weight: 600; margin: 0 0 14px; color: var(--ink); }
+  .open ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+  .open li { color: var(--ink); font-size: 15.5px; line-height: 1.5; }
+  .open li b { font-weight: 600; }
+
+  footer {
+    margin: 72px 0 0;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: 14px;
+    max-width: var(--measure);
+  }
+
+  footer code { font-size: .88em; }
+
+  @media (max-width: 620px) {
+    .phase { grid-template-columns: 52px 1fr; gap: 0 14px; }
+    .find { grid-template-columns: 1fr; gap: 8px; }
+    header { padding-top: 48px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>3e9554a</code></div>
+    <h1>Qué prueba VCP<br>y qué no</h1>
+    <p class="thesis">
+      VCP es un protocolo de trabajo con chequeos automáticos. Cada regla tiene un programa que la
+      detecta: <strong>una regla sin detector es decoración</strong>. Este mapa muestra las ocho
+      fases, los veintidós chequeos, y —con el mismo espacio— lo que cada uno
+      <strong>deliberadamente no puede probar</strong>.
+    </p>
+
+    <div class="states">
+      <div class="state ok">
+        <span class="mono">OK:</span>
+        <p><b>Comparé y pasó.</b> Había algo que revisar, se revisó, y no encontró violaciones.</p>
+      </div>
+      <div class="state empty">
+        <span class="mono">VACÍO:</span>
+        <p><b>No había nada que comparar.</b> El archivo no existía. Sale con código 0 igual que un
+          verde, pero se escribe distinto, porque no es lo mismo.</p>
+      </div>
+      <div class="state stop">
+        <span class="mono">REJECTED:</span>
+        <p><b>Frenó, y dice por qué.</b> Nombra el archivo, la línea y qué esperaba encontrar ahí.</p>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <h2>El recorrido</h2>
+    <p class="h2sub">Ocho fases, en orden, sin saltos</p>
+    <p class="lede">
+      El orden importa: cada fase produce lo que la siguiente necesita para poder verificar algo.
+      Ninguna cierra sin una decisión registrada de la persona.
+    </p>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="num">01</div>
+        <div>
+          <h3>Bootstrap</h3>
+          <p>Detectar el terreno: qué lenguaje, qué pruebas, qué había antes. Se lee la memoria del proyecto y la retro de las últimas sesiones.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">02</div>
+        <div>
+          <h3>Research — investigar antes de especificar</h3>
+          <p>Juntar evidencia con su procedencia: de dónde salió cada dato, con qué huella de contenido. Las decisiones quedan encadenadas y no se borran: se marcan reemplazadas.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">03</div>
+        <div>
+          <h3>Spec</h3>
+          <p>Qué tiene que pasar, en criterios numerados y comprobables. Con tope de palabras: si no entra, es que todavía no está claro.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">04</div>
+        <div>
+          <h3>Plan</h3>
+          <p>Tareas con dueño, dependencias y qué archivos va a tocar cada una. Dos tareas que escriben lo mismo sin dependencia declarada se detectan antes de empezar.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">05</div>
+        <div>
+          <h3>Build — rojo, verde, atacar, limpiar</h3>
+          <p>La prueba primero, y hay que <em>verla fallar de verdad</em>: un fallo por módulo inexistente no cuenta. Después el código. Después alguien distinto ataca lo construido.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">06</div>
+        <div>
+          <h3>Test</h3>
+          <p>Suite completa, cobertura, escaneo de seguridad sobre lo que realmente cambió, revisión adversarial, y cada criterio de la spec nombrado por al menos una prueba.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">07</div>
+        <div>
+          <h3>Simplify</h3>
+          <p>Sacar lo que sobra, recién ahora: simplificar antes de la revisión adversarial es reordenar código que todavía puede estar mal. Y la suite vuelve a correr después, porque simplificar sin re-verificar es cómo se rompe algo en silencio.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">08</div>
+        <div>
+          <h3>Deploy</h3>
+          <p>Publicar es una fase con sus propios chequeos: commit sellado, grafo del código regenerado y respaldo atado al commit que lo registra. Esconderlo adentro de otra fase es lo que hizo que un sello quedara apuntando al commit equivocado.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Los chequeos</h2>
+    <p class="h2sub">Cada uno con su límite escrito al lado</p>
+    <p class="lede">
+      La columna de la derecha no es letra chica: es parte del chequeo. Están guardados como datos
+      revisables en <code>contracts/honest-limits.json</code>, así que borrar uno rompe el contrato
+      en vez de pasar desapercibido.
+    </p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Chequeo</th>
+            <th>Qué prueba</th>
+            <th class="limit">Qué NO prueba</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="gate"><code>audit-chain</code></td>
+            <td>Cada línea del registro lleva la huella de la anterior. Editar una vieja rompe la
+              cadena y nombra la línea exacta.</td>
+            <td class="limit"><b>No detecta</b> recortar las últimas líneas ni recalcular la cadena
+              entera sobre contenido falso. Los dos exigen un ancla fuera del archivo, y no hay
+              ninguna portable.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>phase-decisions</code></td>
+            <td>Ninguna fase cierra sin una elección registrada, dentro del menú que se mostró, en
+              orden y encadenada.</td>
+            <td class="limit"><b>No demuestra</b> que la persona haya querido esa opción ni que haya
+              entendido sus consecuencias. Una decisión inventada de punta a punta pasa.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>evidence-trace</code></td>
+            <td>Cada criterio de la spec está nombrado por al menos una prueba real, con el id como
+              segmento del título.</td>
+            <td class="limit"><b>Es trazabilidad, no suficiencia.</b> Una prueba que nombra el
+              criterio y verifica otra cosa cuenta igual.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>security-baseline</code></td>
+            <td>Escanea lo que realmente cambió contra una base explícita. Los valores de secretos se
+              redactan, nunca se guardan.</td>
+            <td class="limit"><b>Aceptar un hallazgo</b> cubre archivo y categoría, no un valor
+              concreto. No hace análisis de flujo de datos.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>session-state</code></td>
+            <td>La sesión quedó retomable: dónde se cortó, qué falta, y qué comprobación no se pudo
+              hacer.</td>
+            <td class="limit"><b>Verifica lo declarado, no lo verdadero.</b> Una sesión que miente
+              en su propio archivo pasa.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>red-node</code></td>
+            <td>La prueba falló <em>por una afirmación rota</em>, no porque faltara el archivo. Es la
+              diferencia entre una prueba que probó algo y una que no llegó a correr.</td>
+            <td class="limit"><b>No juzga</b> si la afirmación era la correcta.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>scope-diff</code></td>
+            <td>Lo que la tarea dijo que iba a tocar es lo que tocó.</td>
+            <td class="limit"><b>Es un conjunto de escritura</b>, no el alcance real del plan.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>empty-probe</code></td>
+            <td>Corre cada chequeo en una carpeta vacía. Uno que diga <code>OK:</code> ahí está
+              afirmando haber verificado algo cuando no había nada.</td>
+            <td class="limit"><b>Prueba una sola invocación</b> por chequeo, y sólo el caso extremo
+              de la carpeta vacía. Un proyecto a medio llenar puede tener vacíos que no ve.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>graphify-manifest</code></td>
+            <td>El grafo del código cubre todos los archivos versionados, y cada exclusión tiene
+              motivo escrito.</td>
+            <td class="limit"><b>Prueba contabilidad, no comprensión.</b> Que un archivo esté
+              indexado no dice que el grafo lo represente bien.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>receipt</code></td>
+            <td>El recibo declara qué se corrió y qué dio, y el commit sellado confirma que el árbol
+              no cambió entre la validación y el registro.</td>
+            <td class="limit"><b>Nunca re-ejecuta</b> el comando ni prueba criptográficamente nada.
+              Es evidencia para revisar, y nadie la firma.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>La noche del 28</h2>
+    <p class="h2sub">Leer el código encontró seis. Ejecutarlo encontró seis más</p>
+    <p class="lede">
+      Los primeros seis salieron de leer con cuidado. Los que siguen no: aparecieron corriendo la
+      batería completa, sondeando una carpeta vacía, instalando en un destino limpio y clonando
+      desde GitHub. Cada método nuevo encontró lo que el anterior no podía ver.
+    </p>
+
+    <div class="finds">
+      <div class="find">
+        <div class="label">Leyendo código</div>
+        <div>
+          <h3>Seis chequeos decían “OK” sin haber comparado nada</h3>
+          <p>Sin spec, sin criterios declarados, sin investigación previa, sin paquete de evidencia,
+            sin identificadores contra los cuales resolver, y sin archivo de estado de sesión.</p>
+        </div>
+      </div>
+      <div class="find">
+        <div class="label">Corriendo todo</div>
+        <div>
+          <h3>El séptimo</h3>
+          <p>Apareció en el chequeo agregado <em>horas antes, esa misma noche</em>. La lista de
+            huecos ya estaba desactualizada cuando se escribió.</p>
+        </div>
+      </div>
+      <div class="find grave">
+        <div class="label">Sonda · grave</div>
+        <div>
+          <h3>Borrar el registro entero pasaba como “cadena íntegra”</h3>
+          <p><code>audit-chain</code> sobre un archivo de auditoría borrado verificaba cero líneas y
+            decía que la cadena estaba intacta. No hacía falta falsificar nada: alcanzaba con borrar.</p>
+        </div>
+      </div>
+      <div class="find grave">
+        <div class="label">Clon desde GitHub</div>
+        <div>
+          <h3>La suite no estaba verde para quien clonara el repo</h3>
+          <p>Verificar el push no fue mirar el identificador del commit: fue clonar desde GitHub y
+            correr las pruebas ahí. Dieron <b>dos rojas invisibles desde la máquina de origen</b>.
+            Una prueba leía el instalador asumiendo un tipo de salto de línea que git cambia al
+            descargar, así que pasaba <em>sólo donde el archivo casualmente lo tenía</em>. La otra
+            exigía un archivo que el repo no publica, o sea no podía pasar nunca fuera de acá.</p>
+        </div>
+      </div>
+      <div class="find grave">
+        <div class="label">Instalación limpia</div>
+        <div>
+          <h3>El instalador exponía su propio runtime como código del usuario</h3>
+          <p>Los 114 archivos de la herramienta quedaban dentro de lo que git considera superficie
+            viva. Un secreto plantado ahí <em>bloqueaba el proyecto del usuario</em> con un hallazgo
+            crítico que no había escrito. Era invisible desde el repo de VCP.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Estado verificado</h2>
+    <p class="h2sub">Los números, corridos, no recordados</p>
+
+    <div class="metrics">
+      <div class="metric"><div class="metric-n">536</div><div class="metric-l">pruebas, ninguna roja</div></div>
+      <div class="metric"><div class="metric-n">535</div><div class="metric-l">pasan en un clon nuevo, más 1 salteada con motivo a la vista</div></div>
+      <div class="metric"><div class="metric-n">100%</div><div class="metric-l">cobertura en 24 programas</div></div>
+      <div class="metric"><div class="metric-n">75</div><div class="metric-l">promesas del contrato</div></div>
+      <div class="metric"><div class="metric-n">29</div><div class="metric-l">límites honestos declarados</div></div>
+      <div class="metric"><div class="metric-n">0</div><div class="metric-l">capacidades perdidas en 46 commits</div></div>
+      <div class="metric"><div class="metric-n">2,05%</div><div class="metric-l">del research externo leído</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo que sigue abierto</h2>
+    <p class="h2sub">Dónde hay que inventar, no copiar</p>
+    <p class="lede">
+      Se leyeron 320 archivos de 14 proyectos ajenos buscando soluciones. Estas tres no las resuelve
+      ninguno, y todas las que funcionan exigen infraestructura que VCP no quiere tener.
+    </p>
+
+    <div class="open">
+      <h3>Sin respuesta portable</h3>
+      <ul>
+        <li><b>Ancla externa contra el borrado total.</b> Cualquier cadena de huellas guardada en el
+          mismo archivo que protege se puede refabricar entera. Las soluciones reales viven fuera de
+          la máquina.</li>
+        <li><b>Cadena de custodia.</b> Nadie firma un recibo. Una huella sin clave no sirve: quien
+          edita el recibo recalcula la huella en la misma línea. Custodia de verdad necesita una
+          clave privada fuera del alcance de quien escribe.</li>
+        <li><b>Consentimiento humano real.</b> Se puede probar que una decisión quedó registrada y
+          coherente. Probar que la tomó una persona que entendió lo que elegía necesita un canal
+          fuera de este proceso.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Todo número de esta página salió de correr los chequeos, no de recordarlos. El research externo
+    está declarado <b>parcial</b> fuente por fuente: 320 archivos leídos de 15.581, y ese porcentaje
+    está inflado porque varias lecturas parciales se cuentan como archivo entero.
+        <br><br>
+    Publicado en <code>origin/main</code>, commit <code>3e9554a</code>. Las cifras de arriba salieron de
+    correr los chequeos dos veces: en el árbol de trabajo y sobre un clon recién bajado de GitHub, que
+    es donde aparecieron los dos últimos defectos.
+  </footer>
+
+</div>
