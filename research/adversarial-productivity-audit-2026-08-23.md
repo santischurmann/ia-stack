@@ -17,7 +17,7 @@ validadas de forma independiente.
 
 ## Las 50 mejoras encontradas
 
-Estado: **HECHO** = implementado y falsificado en esta rama; **SIGUIENTE** = evidencia suficiente
+Estado: **HECHO** = implementado y falsificado en esta rama; ****HECHO** — `verify-receipt.mjs commit` valida y escribe en una corrida y confirma despues; la ventana se angosta, no se cierra (declarado)** = evidencia suficiente
 pero requiere un cambio independiente; **NO AUTOMATIZAR** = sería prosa, infraestructura externa
 o ampliación de alcance sin una garantía mecánica nueva.
 
@@ -44,11 +44,11 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 19 | README corto y honesto | uso real mostró confusión sobre qué es VCP | **HECHO** |
 | 20 | Falsificación propia por cada gate nuevo | fallas RED/receipt previas se hallaron así | **HECHO** en cambios de esta ronda |
 | 21 | Receipt schema verifica AC/evidence/4R estructurados | `bf2e14b`, `verify-receipt.mjs` v2 + tests | **HECHO** |
-| 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | SIGUIENTE |
+| 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | **HECHO** — `verify-audit-chain.mjs`: cada linea lleva el hash de la anterior; `append` sella y se niega sobre una traza rota |
 | 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | **HECHO** — `verify-receipt.mjs check --require-clean-worktree` rechaza unstaged/untracked en 4.6; angosta la ventana TOCTOU de #22, no la cierra |
 | 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | **HECHO** — `scripts/verify-scope-diff.mjs` compara writers con tracked+untracked, con `--ignore` explícito |
-| 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | SIGUIENTE |
-| 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | SIGUIENTE |
+| 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | **HECHO** — `contracts/honest-limits.json`: 18 limites como dato revisable, cada uno con el motivo de por que existe |
+| 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | **HECHO** — `verify-security-baseline.mjs --baseline`: lo aceptado no bloquea, lo nuevo si, y una entrada muerta tambien bloquea |
 | 27 | Audit log con hash chain | “append-only” es hoy una convención | SIGUIENTE |
 | 28 | ZIP desde allowlist | `07557e7`, `build-zip.sh:31-41` | **HECHO** |
 | 29 | Manifest de backup Graphify post-commit | grafo local estaba en `4df2a302`, no `ad29447` | **HECHO** |
@@ -97,3 +97,28 @@ sí mismo, con la feature `integridad-verificable`.
 | 52 | El escáner de seguridad dispara sobre el comentario que explica cómo evitarlo | `INJECTION` es `\bexec\s*\(` sobre el texto crudo del archivo, sin distinguir código de comentario. Un comentario que decía ``evita `.exec(` `` disparó el mismo hallazgo que documentaba | **DOCUMENTED_LIMIT** — convención del repo: fragmentar el literal (`'ex' + 'ec'`), como ya hace el propio escáner en su línea 52 |
 | 53 | `.vibe/vcp-runtime/` se desincroniza del repo fuente sin detección | El gate de Discovery falló con `DISCOVERY_SNAPSHOT_INVALID` usando el runtime instalado y pasó con `scripts/`. Un proyecto consumidor puede correr gates de una versión vieja sin enterarse | **HECHO** — T06: nuevo gate `scripts/verify-runtime-sync.mjs check [--runtime <ruta>]`. Compara por hash de contenido la superficie exacta que copia `copy_runtime()` (`scripts/`, `contracts/`, `tests/`, `templates/`, `skills/` + `SKILL.md` + `SECURITY.md`) contra la copia instalada, y nombra las tres clases: los que difieren, los que faltan en el runtime y los que **sobran** —un gate borrado arriba que el proyecto sigue ejecutando. Sin runtime instalado sale `0`: un checkout fuente limpio es normal. La lista no se inventa: `tests/verify-runtime-sync.test.mjs` parsea `install.sh` y `install.ps1` y se pone rojo si cualquiera de los dos empieza a copiar otra cosa. Verificado que el instalador **no transforma** nada dentro del runtime (instalación fresca byte-idéntica en las 5 carpetas y los 2 archivos); el `sed`/`-replace` de `(fill in)`/`YYYY-MM-DD` toca sólo `<proyecto>/.vibe/PROJECT.md`, que está fuera de `vcp-runtime/`. Cableado en `SKILL.md` Phase 0 paso 1b, antes de cualquier otro gate, y **desde el checkout fuente**: correrlo desde `.vibe/vcp-runtime/` compararía la copia consigo misma, siempre verde. Corrido en este repo el día del arreglo listó 11 archivos divergentes (incluida la versión vieja de `verify-red-node.mjs` con el defecto del hallazgo 51) y 3 ausentes |
 | 54 | El schema de `locator` no tenía campo de línea: había que enterrarla en el path (`SKILL.md#L693`) | detectado al registrar los claims reales del Discovery | **HECHO** — REQ-G13, `line` entero positivo opcional |
+
+## Políticas decididas (2026-08-28)
+
+Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión
+de política que sólo el dueño del proyecto puede tomar. Tomadas y registradas para que ninguna
+sesión futura vuelva a preguntarlas.
+
+| Items | Decisión | Motivo |
+|---|---|---|
+| 25, 26 (locks) | **NO APLICA** al modo actual | Operador único, una sesión por vez. El problema exige dos sesiones simultáneas sobre el mismo proyecto. Se reabre si alguna vez trabaja alguien más en paralelo — no antes. |
+| 34, 35, 38 (cuota) | **Checkpoint al cortarse, sin topes** | Al agotarse la cuota se escribe dónde quedó y qué falta, para retomar sin reconstruir. **No** se ponen presupuestos por fase: un tope mal calibrado frena trabajo legítimo, y no hay datos históricos para calibrarlo. |
+| 43 (reintentos) | **3 intentos, después pregunta** | Al tercer fallo sobre el mismo problema, frenar y mostrar qué se probó y por qué falló cada vez. Tres alcanza para descartar un error tonto sin quemar tiempo en un callejón sin salida. |
+| 49 (modelo) | **Siempre el más potente** | Coherente con el nivel del proyecto (producto con plata). Descartado el automático por tipo de tarea: en la corrida real, agujeros graves aparecieron en tareas que desde afuera parecían mecánicas. |
+| 36, 37 (contexto) | **Prohibido pasar conversaciones enteras** | Si existe un resumen, se pasa el resumen. Regla de trabajo, no código. Descartada la plantilla fija de encargo: los encargos de la corrida real salieron bien justamente por adaptarse a cada caso. |
+| 33, 41 | **Implementar** | 41 (criterio ↔ prueba) es el único hueco sin cubrir. 33 (research con fuentes citadas) se hizo a mano en la corrida real y funcionó, pero nada obliga a la próxima sesión. |
+| 39, 42 | **NO por ahora** | Ya cubiertos parcialmente por los controles de contrato y las pruebas de instalación. Rendimiento decreciente frente al costo de mantener un gate más al 100% para siempre. |
+| 44, 45, 46 (disciplina) | **Los tres, como texto** | 44 (reproducir antes de diagnosticar) fue lo que más valor dio en la corrida real: cada agujero grave se reprodujo con un comando antes de escribir el arreglo. Cuestan poco: son reglas, no código. |
+| 32 (red) | **Registrar "no verificado"** | Si la comprobación contra el remoto falla, se anota explícitamente en vez de seguir como si nada. No agrega dependencia de red. |
+
+**Queda por implementar**: checkpoint de cuota (34/35/38), límite de 3 reintentos (43), regla de
+contexto (36/37), gate criterio↔prueba (41), gate de research ledger (33), las tres reglas de
+disciplina (44/45/46) y el registro de red no verificada (32).
+
+**Cerrado sin implementar, con motivo**: 25, 26 (no aplica al modo actual), 39, 42 (cubiertos),
+49 (decidido, no requiere código).

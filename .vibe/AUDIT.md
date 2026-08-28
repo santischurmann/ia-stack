@@ -38,3 +38,4 @@
 [2026-08-28 03:20] Orchestrator | T04 done | 16 limites declarados, contrato 48 checks; verificado debilitando una frase real del README | T04 | chain:5fd49c6a06fcb92d9d740701ea4422771f0e289fd95aadf1c7438f7d0e96fa6a
 [2026-08-28 04:30] Orchestrator | T05 done | hallazgo 51 cerrado: el titulo de un test ya no lo incapacita; archivo roto sigue rechazado | T05 | chain:aadd9bb801853f2340ae4fb223db2aa4f3921b0dbe4ee2028d7fbc7c82719f4a
 [2026-08-28 04:31] Orchestrator | T06 done | hallazgo 53 cerrado: 11 archivos viejos y 5 ausentes detectados; runtime reinstalado, 98 al dia | T06 | chain:5b30b0a47aacdcb27113a7140320b58f259aea1e8f906217fb07a822cf3f8fc0
+[2026-08-28 05:10] Orchestrator | politicas decididas | 18 items abiertos: 8 a implementar, 5 cerrados con motivo, 5 fusionados en decisiones de politica | backlog | chain:176bb8262c7d830432ecd8da3a7a7e900de3b216dbd606e65205ad821be9c096
