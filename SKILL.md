@@ -42,6 +42,30 @@ Ninguna de estas 4 frases es una razón válida para saltar verificación real:
 - "Es un cambio trivial" → los cambios triviales también rompen producción.
 Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 
+**Reproducir antes de diagnosticar** (item #44 del backlog; decidido tras la primera corrida real
+del protocolo, 2026-08-28). Antes de escribir una línea de arreglo, reproducí el problema con un
+comando cuyo output puedas mostrar.
+**Un diagnóstico sin reproducción es una hipótesis con tono de conclusión.**
+En la corrida real, cada agujero grave —falsificar el historial de auditoría, tapar una
+vulnerabilidad crítica con una descripción falsa, el título de un test que lo incapacitaba— se
+reprodujo primero con un comando y recién después se arregló; ninguno se habría encontrado
+razonando sobre el código. Si no podés reproducirlo, decilo: "no reproducible en este entorno" es
+un resultado honesto, "seguramente pasa por X" no.
+
+**Contexto acotado por agente** (items #36/#37). A un subagente se le pasa el encargo, no la
+conversación. Si existe un resumen, se pasa el resumen — nunca el transcript completo. Un encargo
+dice qué hacer, qué no tocar, cómo verificar y qué reportar; todo lo demás es ruido que compite por
+la atención del agente y por la cuota.
+
+**Cuándo una fase está terminada** (item #45). Una fase cierra cuando sus gates dan verde con
+output real y su decisión 🔵 fue respondida — no cuando "parece lista". Si un gate no se pudo
+correr, la fase no cerró: se reporta qué faltó verificar. Terminar por cansancio o por presión de
+contexto es la forma más común de que un protocolo se degrade sin que nadie lo note.
+
+**Redacción reutilizable** (item #46). Un límite honesto, un mensaje de rechazo o una advertencia
+que ya existe se reusa citándola, no se reescribe con otras palabras. Dos redacciones distintas de
+la misma garantía divergen con el tiempo y nadie sabe cuál es la vigente.
+
 **Al evolucionar este propio protocolo** (source: `research/sources/protocolo-muralla.md` points
 #22/#23) — dos reglas meta que aplican a cualquier LAW/regla nueva que se agregue a `SKILL.md`/
 `skills/*.md` en el futuro:

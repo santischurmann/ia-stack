@@ -49,15 +49,15 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | **HECHO** — `scripts/verify-scope-diff.mjs` compara writers con tracked+untracked, con `--ignore` explícito |
 | 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | **HECHO** — `contracts/honest-limits.json`: 18 limites como dato revisable, cada uno con el motivo de por que existe |
 | 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | **HECHO** — `verify-security-baseline.mjs --baseline`: lo aceptado no bloquea, lo nuevo si, y una entrada muerta tambien bloquea |
-| 27 | Audit log con hash chain | “append-only” es hoy una convención | SIGUIENTE |
+| 27 | Audit log con hash chain | “append-only” es hoy una convención | **HECHO** — regla en SKILL.md: al subagente se le pasa el encargo, nunca el transcript; si hay resumen, va el resumen |
 | 28 | ZIP desde allowlist | `07557e7`, `build-zip.sh:31-41` | **HECHO** |
 | 29 | Manifest de backup Graphify post-commit | grafo local estaba en `4df2a302`, no `ad29447` | **HECHO** |
 | 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | **HECHO** — `verify-graphify-manifest.mjs` exige que cada archivo rastreado esté indexado o excluido con razón, y rechaza fantasmas; prueba contabilidad, no comprensión |
 | 31 | Destino Obsidian explícito y validado | export actual usa `--dir graphify-out/obsidian`; falta gate de destino | **PARCIAL** |
-| 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | SIGUIENTE |
-| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | SIGUIENTE |
-| 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | SIGUIENTE |
-| 35 | Estado `provider_paused` | COMPANY default es presupuesto ilimitado | SIGUIENTE |
+| 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | **HECHO** — misma regla que #36, fijada en verify-vcp-contract |
+| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | **HECHO** — regla dura en SKILL.md + limite honesto con motivo: un diagnostico sin reproduccion es una hipotesis con tono de conclusion |
+| 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | **HECHO** — regla en SKILL.md: si un gate no se pudo correr, la fase no cerro; fijado como limite honesto |
+| 35 | Estado `provider_paused` | COMPANY default es presupuesto ilimitado | **HECHO** — regla en SKILL.md: una redaccion que ya existe se reusa citandola, no se reescribe |
 | 36 | Context packet por agente | telemetría mostró contexto excesivo | SIGUIENTE |
 | 37 | Prohibir transcript completo cuando hay resumen | misma presión de cuota | SIGUIENTE |
 | 38 | Presupuesto determinista por fase/reintento | policy manual no puede detener dispatch | SIGUIENTE |

@@ -29,6 +29,10 @@ export const REQUIREMENTS = [
   ['skills/vibe-memory.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /Lo que el gate no detecta/u, 'audit-chain honest limit'],
   ['SKILL.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
+  ['SKILL.md', /Reproducir antes de diagnosticar/u, 'reproduce before diagnosing'],
+  ['SKILL.md', /Contexto acotado por agente/u, 'bounded per-agent context'],
+  ['SKILL.md', /Cuándo una fase está terminada/u, 'explicit phase-completion rule'],
+  ['SKILL.md', /Redacción reutilizable/u, 'reuse canonical wording'],
   ['README.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
   // Running the gate from inside .vibe/vcp-runtime/ compares the installed copy with itself: it is
   // always green and proves nothing. The promise that it runs from the source checkout is the whole

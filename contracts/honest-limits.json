@@ -108,6 +108,18 @@
       "file": "skills/vibe-memory.md",
       "phrase": "borrar los sufijos enteros de toda la traza, recortar sus últimas líneas",
       "why": "Es la oración sustantiva de la sección \"Lo que el gate no detecta\", cuyo título ya está fijado aparte: los tres ataques exigen un ancla fuera del archivo. Sin ella, la cadena de hashes se lee como inmutabilidad completa."
+    },
+    {
+      "limit_id": "reproduce-before-diagnosing",
+      "file": "SKILL.md",
+      "phrase": "Un diagnóstico sin reproducción es una hipótesis con tono de conclusión.",
+      "why": "En la primera corrida real del protocolo, cada agujero grave se encontro reproduciendolo con un comando, no razonando sobre el codigo: falsificar el historial de auditoria, tapar una vulnerabilidad critica con una descripcion falsa, un titulo de test que lo incapacitaba. Sin esta frase, la proxima sesion escribe el arreglo desde una hipotesis y cree que verifico algo."
+    },
+    {
+      "limit_id": "phase-closes-on-real-output",
+      "file": "SKILL.md",
+      "phrase": "la fase no cerró: se reporta qué faltó verificar",
+      "why": "Terminar por cansancio o por presion de contexto es la forma mas comun de que un protocolo se degrade sin que nadie lo note. Sin esta frase, una fase con un gate sin correr se reporta como cerrada y el resto del trabajo se apoya en evidencia que no existe."
     }
   ]
 }

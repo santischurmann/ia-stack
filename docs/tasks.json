@@ -287,6 +287,127 @@
       "status": "done",
       "goal": "Disciplina verificable -> hallazgo 53 del backlog -> un proyecto no puede correr gates de una version vieja sin enterarse",
       "approval_criteria": "Un runtime instalado que difiere del repo fuente se detecta y se nombra el archivo. Un runtime al dia pasa. Sin runtime instalado no es un error."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Orchestrator",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "55 checks de contrato + 20 limites honestos; 393 tests verdes"
+      ],
+      "not_reviewed": [
+        "El gate de limites honestos me freno dos veces: las frases cruzaban salto de linea. Reformateado SKILL.md para que la frase entre completa en un renglon."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T07",
+      "description": "Reglas de protocolo: contexto acotado (36/37) y disciplina (44/45/46)",
+      "files_to_create": [],
+      "files_to_modify": [
+        "SKILL.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md",
+        "research/adversarial-productivity-audit-2026-08-23.md"
+      ],
+      "test_files": [],
+      "depends_on": [
+        "T06"
+      ],
+      "status": "done",
+      "goal": "Disciplina verificable -> items 36/37/44/45/46 -> reglas de trabajo fijadas en el contrato, no sueltas en prosa",
+      "approval_criteria": "Las 4 reglas estan escritas en SKILL.md y fijadas en verify-vcp-contract para que no puedan borrarse en silencio."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T08",
+      "description": "Trazabilidad de evidencia: criterio-prueba (41) y research con fuentes citadas (33)",
+      "files_to_create": [
+        "scripts/verify-evidence-trace.mjs",
+        "tests/verify-evidence-trace.test.mjs"
+      ],
+      "files_to_modify": [
+        "SKILL.md",
+        "README.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md",
+        "research/adversarial-productivity-audit-2026-08-23.md"
+      ],
+      "test_files": [],
+      "depends_on": [
+        "T07"
+      ],
+      "status": "pending",
+      "goal": "Disciplina verificable -> items 41 y 33 -> cada criterio tiene su prueba y cada claim su fuente",
+      "approval_criteria": "Un criterio sin prueba se detecta. Un claim sin fuente citada se detecta. Ambos nombran el elemento exacto."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T09",
+      "description": "Estado ante interrupcion: reintentos (43), checkpoint de cuota (34/35/38), red no verificada (32)",
+      "files_to_create": [
+        "scripts/verify-session-state.mjs",
+        "tests/verify-session-state.test.mjs"
+      ],
+      "files_to_modify": [
+        "SKILL.md",
+        "README.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md",
+        "research/adversarial-productivity-audit-2026-08-23.md",
+        "templates/vibe/SESSION.md"
+      ],
+      "test_files": [],
+      "depends_on": [
+        "T08"
+      ],
+      "status": "pending",
+      "goal": "Disciplina verificable -> items 43/34/35/38/32 -> una sesion interrumpida deja estado retomable, no ambiguo",
+      "approval_criteria": "Tres intentos fallidos sobre lo mismo se detectan. Un corte por cuota deja checkpoint. Una verificacion de red fallida queda registrada como no verificada, nunca como exito."
     }
   ]
 }
