@@ -295,6 +295,14 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   gate de seguridad del usuario con un CRITICAL que no escribió.
 - Arreglado en los dos instaladores, idempotente. Superficie: 124 archivos → 11, 0 del runtime.
 
+## Verificado desde afuera
+
+- `install.ps1` corrido en PowerShell real sobre una carpeta limpia: `.gitignore` respetando lo
+  previo, 0 archivos del runtime en la superficie, idempotente en tres corridas.
+- `tests/protocolo-e2e.test.mjs`: instala VCP en un proyecto nuevo y corre los gates en orden.
+  Comprueba que ninguno escribe `OK:` sobre un proyecto donde no hay nada, y que recortar la traza
+  pasa `check` y cae en `history`. Lo que **no** cubre está escrito en la cabecera del archivo.
+
 ## No verificado
 
 - Comportamiento de `verify-vcp-coverage.mjs` sin entradas: **no verificado**, excluido de la
@@ -303,5 +311,3 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   prueba una invocación por gate.
 - Las citas `archivo:línea` del research: **no verificado** por mí; las verificó cada agente
   lector contra su clone pineado, y el sintetizador declara que no las revalidó.
-- Instalación limpia por PowerShell (`install.ps1`): **no verificado** ejecutando. El cambio es
-  simétrico al de Bash y una prueba comprueba que el texto está, pero no se corrió en Windows.
