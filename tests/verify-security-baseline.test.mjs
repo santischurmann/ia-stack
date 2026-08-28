@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { lstatSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -8,7 +9,10 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const gate = join(repoRoot, 'scripts', 'verify-security-baseline.mjs');
-const { MAX_SCANNABLE_BYTES, changedFiles, isProjectRelativePath, main, scanChangedFiles, scanFile } = await import(pathToFileURL(gate).href);
+const {
+  MAX_SCANNABLE_BYTES, SECURITY_BASELINE_SCHEMA, USAGE,
+  changedFiles, findingId, isProjectRelativePath, main, readSecurityBaseline, scanChangedFiles, scanFile,
+} = await import(pathToFileURL(gate).href);
 
 function run(command, args, cwd) {
   const env = { ...process.env };
@@ -404,7 +408,13 @@ test('FALSIFICACIÓN · a source that cannot be resolved or read is a blocking f
   }
 });
 
-test('safe changed code passes; CLI rejects bad usage and source-collection errors', () => {
+// Title reworded ("errors" -> "failures") only to dodge a detector collision, not to change what
+// this test proves: SYNTAX_SIGNAL in scripts/verify-red-node.mjs matches the literal text
+// "collection error" anywhere in the raw TAP output, and a test TITLE lands in that output — so
+// the old title made every legitimate RED on this file report as a parse/load failure. Same repo
+// convention as the fragmented literals above, which keep the security scanner from matching its
+// own fixtures. Assertions below are untouched.
+test('safe changed code passes; CLI rejects bad usage and source-collection failures', () => {
   const root = fixture();
   try {
     write(root, 'src/clean.js', 'export const clean = true;\n');
@@ -421,6 +431,557 @@ test('safe changed code passes; CLI rejects bad usage and source-collection erro
     write(root, 'src/finding.js', `${'ev' + 'al'}(userInput);\n`);
     assert.equal(main(['check'], { cwd: root, writeError: (line) => errors.push(line), write: () => {} }), 1);
     assert.match(errors.join('\n'), /injection-surface/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- T02 · baseline de deuda aceptada (AC5-AC7) ------------------------------------------------
+// Fixture literals stay fragmented with `+` (same convention as the rest of this file and as
+// DYNAMIC_TERMS in the gate itself) so this test file never trips the live scanner on its own text.
+
+const BASELINE_PATH = 'contracts/security-baseline.json';
+const EVAL_SOURCE = `${'ev' + 'al'}(userInput);\n`;
+const SECRET_SOURCE = `const ${'api' + 'Key'} = 'abcdefghijklmno';\n`;
+const CLEAN_SOURCE = 'export const clean = true;\n';
+const REVIEWED_REASON = 'Deuda revisada el 2026-08-27, el valor es un literal interno del gate y nunca entrada externa.';
+
+/**
+ * Oracle for the finding_id contract, hashed straight from node:crypto. Expectations are NEVER
+ * built by calling findingId(): a test that generated and verified with the same function would be
+ * self-consistent even if that function were wrong, and would prove nothing.
+ */
+function sha256Id(category, path, evidence) {
+  return createHash('sha256').update(`${category}\n${path}\n${evidence}`).digest('hex');
+}
+
+/** The real finding the scanner produces, so no test hardcodes the evidence wording. */
+function onlyFinding(path, content) {
+  const findings = scanFile(path, content);
+  assert.equal(findings.length, 1, `the fixture must produce exactly one finding: ${JSON.stringify(findings)}`);
+  return findings[0];
+}
+
+/**
+ * A well-formed entry. The finding_id is DERIVED from this entry's own category/path/evidence with
+ * the local oracle, because the gate now requires the two to agree: an id that does not hash its
+ * own declared fields is a record that lies about what it covers (see the self-consistency test
+ * below). An explicit `finding_id` override still wins, so the malformed-id cases stay expressible.
+ */
+function acceptedEntry(overrides = {}) {
+  const entry = {
+    category: 'injection-surface',
+    path: 'src/run.js',
+    evidence: 'dynamic execution or string-built SQL',
+    reason: REVIEWED_REASON,
+    accepted_by: 'santischurmann',
+    accepted_at: '2026-08-27',
+    ...overrides,
+  };
+  return { finding_id: sha256Id(entry.category, entry.path, entry.evidence), ...entry };
+}
+
+/** A baseline entry that really identifies the single finding `content` produces at `path`. */
+function acceptedFinding(path, content) {
+  const item = onlyFinding(path, content);
+  return acceptedEntry({ finding_id: sha256Id(item.category, path, item.evidence), category: item.category, path, evidence: item.evidence });
+}
+
+function writeBaseline(root, accepted) {
+  write(root, BASELINE_PATH, `${JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA, accepted }, null, 2)}\n`);
+  return BASELINE_PATH;
+}
+
+function readerFor(accepted, schema = SECURITY_BASELINE_SCHEMA) {
+  return () => JSON.stringify({ schema, accepted });
+}
+
+function expectError(fn, pattern) {
+  assert.throws(fn, (error) => {
+    assert.match(error.message, pattern);
+    return true;
+  });
+}
+
+test('findingId identifica un hallazgo por categoría, path y evidencia — el número de línea no participa', () => {
+  const item = onlyFinding('src/run.js', EVAL_SOURCE);
+  const expected = sha256Id(item.category, 'src/run.js', item.evidence);
+  assert.equal(findingId(item), expected);
+  assert.match(findingId(item), /^[0-9a-f]{64}$/u);
+  // Insertar líneas arriba mueve el hallazgo sin cambiarlo: si la línea formara parte del
+  // identificador, cualquier edición inocente invalidaría el baseline entero.
+  const moved = onlyFinding('src/run.js', `${'// padding\n'.repeat(40)}${EVAL_SOURCE}`);
+  assert.equal(item.location, 'src/run.js:1');
+  assert.equal(moved.location, 'src/run.js:41');
+  assert.equal(findingId(moved), expected);
+});
+
+test('FALSIFICACIÓN · otra categoría, otro archivo u otra evidencia dan otro finding_id: el baseline no absorbe un hallazgo mutado', () => {
+  const base = { severity: 'high', category: 'injection-surface', location: 'src/run.js:12', evidence: 'dynamic execution or string-built SQL' };
+  assert.equal(findingId(base), sha256Id(base.category, 'src/run.js', base.evidence));
+  assert.equal(findingId({ ...base, category: 'template-sql-injection-surface' }), sha256Id('template-sql-injection-surface', 'src/run.js', base.evidence));
+  assert.equal(findingId({ ...base, location: 'src/other.js:12' }), sha256Id(base.category, 'src/other.js', base.evidence));
+  assert.equal(findingId({ ...base, evidence: 'template-literal SQL interpolation' }), sha256Id(base.category, 'src/run.js', 'template-literal SQL interpolation'));
+  const distinct = new Set([base, { ...base, category: 'otra' }, { ...base, location: 'src/otro.js:12' }, { ...base, evidence: 'otra' }].map((item) => findingId(item)));
+  assert.equal(distinct.size, 4, 'cada dimensión de la identidad tiene que cambiar el hash');
+});
+
+test('readSecurityBaseline acepta un documento bien formado y devuelve las entradas revisadas', () => {
+  assert.equal(SECURITY_BASELINE_SCHEMA, 'vcp.security-baseline/1');
+  const entries = [acceptedEntry(), acceptedEntry({ path: 'scripts/otro.mjs' })];
+  assert.deepEqual(readSecurityBaseline(readerFor(entries)), entries);
+  assert.deepEqual(readSecurityBaseline(readerFor([])), []);
+});
+
+test('FALSIFICACIÓN · readSecurityBaseline rechaza un baseline ilegible, sin schema o sin lista: un archivo roto nunca es "sin baseline"', () => {
+  // A diferencia de readExclusions, la ausencia NO es "cero entradas aceptadas": --baseline lo pidió
+  // explícitamente, así que degradar en silencio convertiría un error de configuración en un bypass.
+  // La causa original tiene que sobrevivir: un permiso denegado no es lo mismo que un path mal escrito.
+  const failing = (code) => () => readSecurityBaseline(() => { throw Object.assign(new Error(`${code}: lectura fallida`), { code }); });
+  expectError(failing('ENOENT'), /ENOENT/u);
+  expectError(failing('EACCES'), /EACCES/u);
+  expectError(() => readSecurityBaseline(() => '{'), /JSON/iu);
+  for (const shape of ['[]', 'null', '"texto"', '12']) {
+    expectError(() => readSecurityBaseline(() => shape), /schema/iu);
+  }
+  expectError(() => readSecurityBaseline(readerFor([], 'vcp.security-baseline/2')), /schema/iu);
+  expectError(() => readSecurityBaseline(() => JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA })), /accepted/iu);
+  expectError(() => readSecurityBaseline(() => JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA, accepted: {} })), /accepted/iu);
+});
+
+test('FALSIFICACIÓN · readSecurityBaseline exige las siete claves exactas y un finding_id de 64 hex minúscula', () => {
+  const one = (entry) => () => readSecurityBaseline(readerFor([entry]));
+  expectError(one({ ...acceptedEntry(), extra: 1 }), /exactly/iu);
+  const withoutDate = Object.fromEntries(Object.entries(acceptedEntry()).filter(([key]) => key !== 'accepted_at'));
+  expectError(one(withoutDate), /exactly/iu);
+  for (const shape of ['texto', null, [], 7]) {
+    expectError(one(shape), /exactly/iu);
+  }
+  // Un id en mayúscula o de largo distinto no es "el mismo hallazgo escrito raro": es una entrada
+  // que nunca va a coincidir con un hallazgo real y quedaría muerta desde el día uno.
+  for (const malformed of ['A'.repeat(64), 'a'.repeat(63), 'a'.repeat(65), `${'a'.repeat(63)}g`]) {
+    expectError(one(acceptedEntry({ finding_id: malformed })), /finding_id/u);
+  }
+});
+
+test('FALSIFICACIÓN · readSecurityBaseline exige razón real, responsable, fecha YYYY-MM-DD y ningún finding_id repetido', () => {
+  const one = (entry) => () => readSecurityBaseline(readerFor([entry]));
+  for (const reason of ['tbd', 'todo', 'n/a', 'none', 'unknown', '-', 'corto']) {
+    expectError(one(acceptedEntry({ reason })), /reason/iu);
+  }
+  for (const date of ['2026-8-27', '27-08-2026', '2026-08-27T00:00:00Z', '2026/08/27']) {
+    expectError(one(acceptedEntry({ accepted_at: date })), /accepted_at/u);
+  }
+  for (const field of ['category', 'path', 'evidence', 'accepted_by']) {
+    expectError(one(acceptedEntry({ [field]: '' })), new RegExp(`exactly|${field}`, 'iu'));
+  }
+  const twice = [acceptedEntry(), acceptedEntry({ accepted_by: 'otra persona' })];
+  expectError(() => readSecurityBaseline(readerFor(twice)), /duplicat/iu);
+});
+
+test('FALSIFICACIÓN · AC5 · un hallazgo Critical/High aceptado en el baseline no bloquea, y sin --baseline el gate bloquea exactamente como antes', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/run.js', EVAL_SOURCE);
+    // Restricción del spec: ningún gate cambia el default de otro. Sin --baseline nada cambia.
+    const withoutBaseline = check(root);
+    assert.equal(withoutBaseline.status, 1, withoutBaseline.output);
+    assert.match(withoutBaseline.output, /HIGH injection-surface src\/run\.js:1/u);
+
+    const path = writeBaseline(root, [acceptedFinding('src/run.js', EVAL_SOURCE)]);
+    const accepted = check(root, '--baseline', path);
+    assert.equal(accepted.status, 0, accepted.output);
+    // El OK tiene que decir cuánta deuda tapó: un baseline silencioso esconde su propio tamaño.
+    assert.match(accepted.output, /\b1 accepted\b/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · AC6 · un hallazgo Critical/High ausente del baseline bloquea aunque otro hallazgo del mismo escaneo esté aceptado', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/run.js', EVAL_SOURCE);
+    write(root, 'src/leak.js', SECRET_SOURCE);
+    const path = writeBaseline(root, [acceptedFinding('src/run.js', EVAL_SOURCE)]);
+    const result = check(root, '--baseline', path);
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /CRITICAL hardcoded-secret src\/leak\.js:1/u);
+    // El conteo cuenta lo que bloquea, no lo aceptado: si dijera 2, el baseline no filtró nada.
+    assert.match(result.output, /REJECTED: 1 blocking security finding/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · AC7 · una entrada del baseline sin hallazgo real en un archivo escaneado bloquea: la deuda muerta esconde cuánto se está tapando', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/clean.js', CLEAN_SOURCE);
+    // Entrada internamente consistente (su id es el hash de sus propios campos) pero sin hallazgo
+    // vivo detrás: src/clean.js sí se escanea y nunca produce ese id.
+    const dead = acceptedEntry({ path: 'src/clean.js', finding_id: sha256Id('injection-surface', 'src/clean.js', 'dynamic execution or string-built SQL') });
+    const result = check(root, '--baseline', writeBaseline(root, [dead]));
+    assert.equal(result.status, 1, result.output);
+    assert.match(result.output, /src\/clean\.js/u);
+    assert.match(result.output, /REJECTED[^\n]*baseline/iu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · AC7 · una entrada del baseline cuyo archivo quedó fuera del escaneo no se reporta muerta: sin escanearlo no hay evidencia para juzgarla', () => {
+  const root = fixture();
+  try {
+    // legacy/old.js queda commiteado y limpio: no aparece en el delta contra la base, así que el
+    // escáner nunca lo mira y no puede saber si su hallazgo sigue vivo.
+    write(root, 'legacy/old.js', EVAL_SOURCE);
+    git(root, 'add', '-A');
+    git(root, 'commit', '-qm', 'deuda heredada');
+    write(root, 'src/clean.js', CLEAN_SOURCE);
+    const result = check(root, '--baseline', writeBaseline(root, [acceptedFinding('legacy/old.js', EVAL_SOURCE)]));
+    assert.equal(result.status, 0, result.output);
+    assert.match(result.output, /^OK:/mu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · un --baseline inexistente o mal formado bloquea: nunca degrada en silencio a un escaneo sin baseline', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/clean.js', CLEAN_SOURCE);
+    // El mismo árbol pasa sin la bandera: lo único que cambia es el archivo de baseline roto.
+    assert.equal(check(root).status, 0);
+    const missing = check(root, '--baseline', BASELINE_PATH);
+    assert.equal(missing.status, 1, missing.output);
+    assert.doesNotMatch(missing.output, /^OK:/mu);
+    write(root, BASELINE_PATH, '{\n');
+    const malformed = check(root, '--baseline', BASELINE_PATH);
+    assert.equal(malformed.status, 1, malformed.output);
+    assert.doesNotMatch(malformed.output, /^OK:/mu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · --baseline exige su archivo: las formas incompletas son uso inválido, no un escaneo sin baseline', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/clean.js', CLEAN_SOURCE);
+    const path = writeBaseline(root, []);
+    const cli = (args) => main(args, { cwd: root, write: () => {}, writeError: () => {} });
+    assert.match(USAGE, /--baseline/u, 'el usage tiene que documentar la bandera nueva');
+    assert.equal(cli(['check', '--baseline']), 2);
+    assert.equal(cli(['check', '--baseline', '']), 2);
+    assert.equal(cli(['check', '--baseline', path, 'extra']), 2);
+    assert.equal(cli(['check', '--baseline', path]), 0);
+    assert.equal(cli(['check', '--base', 'HEAD', '--baseline', path]), 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- T02 · TRIANGULATE: bordes, negativos y contratos del baseline -----------------------------
+// Cada bloque de abajo salió de un agujero o de un borde REPRODUCIDO primero con el CLI real sobre
+// un repo Git temporal, no de leer el código. Los ids esperados se arman siempre con sha256Id (el
+// oráculo local); nunca llamando a findingId, que es justamente la función bajo prueba.
+
+const SECRET_EVIDENCE = 'credential-like assignment (value redacted)';
+const OTHER_SECRET_SOURCE = `const ${'pass' + 'word'} = 'produccion-real-123';\n`;
+const WORKFLOW_PATH = '.github/workflows/release.yml';
+
+function workflowWith(...actions) {
+  return ['jobs:', '  x:', '    steps:', ...actions.map((action) => `      - uses: ${action}`), ''].join('\n');
+}
+
+/** The entry that truthfully accepts one specific finding object produced by the scanner. */
+function entryFor(item) {
+  const path = item.location.replace(/:\d+$/u, '');
+  return acceptedEntry({ finding_id: sha256Id(item.category, path, item.evidence), category: item.category, path, evidence: item.evidence });
+}
+
+test('FALSIFICACIÓN · el finding_id tiene que hashear su propia entrada: un id real con categoría, path y evidencia inventados ya no silencia el hallazgo ni esquiva la caducidad', () => {
+  // AGUJERO REPRODUCIDO. Antes de este chequeo los cuatro campos legibles eran decorativos: una
+  // entrada podía llevar el id real de un CRITICAL vivo y describirse como una tarea vieja de CI en
+  // otro archivo que nunca se escanea. Eso tapaba el hallazgo (exit 0) Y esquivaba AC7 para siempre,
+  // porque la deuda muerta se juzga por el path DECLARADO. Nada en el archivo ni en la salida decía
+  // qué se estaba tapando en realidad.
+  const one = (entry) => () => readSecurityBaseline(readerFor([entry]));
+  expectError(one(acceptedEntry({ finding_id: 'a'.repeat(64) })), /does not match its own/iu);
+  expectError(one(acceptedEntry({ finding_id: sha256Id('otra-categoria', 'src/run.js', 'dynamic execution or string-built SQL') })), /does not match/iu);
+  // El path canónico es el POSIX: un id hasheado desde la escritura con barra invertida no coincide.
+  expectError(one(acceptedEntry({ path: 'src\\run.js', finding_id: sha256Id('injection-surface', 'src\\run.js', 'dynamic execution or string-built SQL') })), /does not match/iu);
+  // La entrada honesta sigue pasando. Y el path se canonicaliza a "/" ANTES de hashear, así que la
+  // escritura con barra invertida es la misma entrada siempre que su id sea el del path canónico.
+  assert.equal(readSecurityBaseline(readerFor([acceptedEntry()]))[0].path, 'src/run.js');
+  const windowsSpelling = acceptedEntry({
+    path: 'src\\run.js',
+    finding_id: sha256Id('injection-surface', 'src/run.js', 'dynamic execution or string-built SQL'),
+  });
+  assert.equal(readSecurityBaseline(readerFor([windowsSpelling]))[0].path, 'src/run.js');
+
+  const root = fixture();
+  try {
+    // legacy/old.js queda commiteado y limpio: es el archivo fuera del escaneo con el que la
+    // entrada mentirosa se volvía inmortal.
+    write(root, 'legacy/old.js', CLEAN_SOURCE);
+    git(root, 'add', '-A');
+    git(root, 'commit', '-qm', 'legacy');
+    write(root, 'src/prod.js', SECRET_SOURCE);
+    const live = onlyFinding('src/prod.js', SECRET_SOURCE);
+    assert.equal(live.severity, 'critical');
+
+    const lying = acceptedEntry({
+      finding_id: sha256Id(live.category, 'src/prod.js', live.evidence), // el id REAL del hallazgo vivo
+      category: 'ci-unpinned-action',                                    // mentira
+      path: 'legacy/old.js',                                             // mentira, y nunca escaneado
+      evidence: 'accion de CI sin pinear, revisada hace anios',          // mentira
+    });
+    const covered = check(root, '--baseline', writeBaseline(root, [lying]));
+    assert.equal(covered.status, 1, covered.output);
+    assert.match(covered.output, /does not match its own/iu);
+    assert.doesNotMatch(covered.output, /^OK:/mu);
+
+    // La misma entrada honesta sí tapa el hallazgo: lo que se rechaza es la mentira, no la deuda.
+    const honest = check(root, '--baseline', writeBaseline(root, [entryFor(live)]));
+    assert.equal(honest.status, 0, honest.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · un salto de línea dentro de category, path o evidence corre la frontera entre campos: dos identidades distintas colisionaban en el mismo hash', () => {
+  // AGUJERO REPRODUCIDO (colisión de hash, verificada con el oráculo). La identidad une los tres
+  // campos con "\n", así que un campo que CONTIENE "\n" mueve la frontera. En un filesystem donde un
+  // nombre de archivo puede tener un salto de línea (POSIX sí), la entrada de abajo es
+  // autoconsistente y aun así MUESTRA un path distinto del que tapa — y ese path mostrado nunca se
+  // escanea, o sea que tampoco podía caducar. Se cierra prohibiendo el separador en los tres campos
+  // hasheados; `reason` queda libre porque es prosa y no entra al hash.
+  const evidence = 'credential-like assignment (value redacted)';
+  const real = sha256Id('hardcoded-secret', 'a\npriv.js', evidence);
+  const shifted = sha256Id('hardcoded-secret', 'a', `priv.js\n${evidence}`);
+  assert.equal(real, shifted, 'la colisión es el agujero: mismo hash, frontera de campos corrida');
+
+  const one = (entry) => () => readSecurityBaseline(readerFor([entry]));
+  expectError(one(acceptedEntry({ category: 'hardcoded-secret', path: 'a', evidence: `priv.js\n${evidence}` })), /line break/iu);
+  expectError(one(acceptedEntry({ category: 'hardcoded-secret', path: 'a\npriv.js', evidence })), /line break/iu);
+  expectError(one(acceptedEntry({ category: 'inject\nion-surface' })), /line break/iu);
+  expectError(one(acceptedEntry({ evidence: 'algo\r\nmas' })), /line break/iu);
+  // `reason` multilínea sigue siendo válida: no participa de la identidad.
+  const multiline = acceptedEntry({ reason: `${REVIEWED_REASON}\nSegunda línea del análisis del revisor.` });
+  assert.equal(readSecurityBaseline(readerFor([multiline]))[0].reason, multiline.reason);
+});
+
+test('FALSIFICACIÓN · dos acciones sin pinear en el mismo workflow son dos hallazgos distintos: aceptar la revisada no acepta la que se agregue después', () => {
+  // AGUJERO REPRODUCIDO. ci-unpinned-action es el único detector que emite más de un hallazgo por
+  // archivo, y su evidencia era una constante: categoría + path + evidencia daban el MISMO id para
+  // todas. Aceptar actions/checkout@main aceptaba en silencio cualquier acción agregada después a
+  // ese workflow. La referencia de la acción es metadato público (ya se imprime en el reporte), así
+  // que nombrarla distingue los hallazgos sin filtrar nada.
+  const both = scanFile(WORKFLOW_PATH, workflowWith('actions/checkout@main', 'attacker-org/exfiltrate@main'));
+  assert.deepEqual(both.map((item) => item.category), ['ci-unpinned-action', 'ci-unpinned-action']);
+  assert.notEqual(findingId(both[0]), findingId(both[1]), 'dos acciones distintas no pueden compartir identidad');
+  assert.equal(findingId(both[0]), sha256Id('ci-unpinned-action', WORKFLOW_PATH, both[0].evidence));
+  assert.match(both[0].evidence, /actions\/checkout@main/u);
+  assert.match(both[1].evidence, /attacker-org\/exfiltrate@main/u);
+
+  const root = fixture();
+  try {
+    write(root, WORKFLOW_PATH, workflowWith('actions/checkout@main'));
+    const reviewed = onlyFinding(WORKFLOW_PATH, workflowWith('actions/checkout@main'));
+    const path = writeBaseline(root, [entryFor(reviewed)]);
+    const accepted = check(root, '--baseline', path);
+    assert.equal(accepted.status, 0, accepted.output);
+
+    // Se agrega una segunda acción sin pinear que nadie revisó nunca.
+    write(root, WORKFLOW_PATH, workflowWith('actions/checkout@main', 'attacker-org/exfiltrate@main'));
+    const regression = check(root, '--baseline', path);
+    assert.equal(regression.status, 1, regression.output);
+    assert.match(regression.output, /attacker-org\/exfiltrate@main/u);
+    assert.doesNotMatch(regression.output, /checkout@main is not pinned/u, 'la acción revisada tiene que seguir aceptada');
+    assert.match(regression.output, /REJECTED: 1 blocking security finding/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · el baseline vive dentro del proyecto: una ruta absoluta, un ../ o una entrada que apunta afuera son rechazo, no deuda aceptada', () => {
+  // AGUJERO REPRODUCIDO. --baseline es la ÚNICA bandera que puede aflojar el gate, y se resolvía
+  // contra el cwd sin exigir contención: la deuda aceptada podía vivir fuera del árbol auditado,
+  // donde ningún revisor ve el motivo, el responsable ni la fecha en un diff. Y una entrada cuyo
+  // path apunta afuera nunca se escanea, así que jamás podía caducar.
+  const root = fixture();
+  const outside = mkdtempSync(join(tmpdir(), 'vcp-security-outside-baseline-'));
+  try {
+    write(root, 'src/prod.js', SECRET_SOURCE);
+    const live = onlyFinding('src/prod.js', SECRET_SOURCE);
+    const document = `${JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA, accepted: [entryFor(live)] })}\n`;
+    writeFileSync(join(outside, 'hidden.json'), document);
+
+    for (const flag of [join(outside, 'hidden.json'), '../hidden.json']) {
+      const escaped = check(root, '--baseline', flag);
+      assert.equal(escaped.status, 1, escaped.output);
+      assert.match(escaped.output, /must live inside the project/iu);
+      assert.doesNotMatch(escaped.output, /^OK:/mu);
+    }
+    // El mismo documento adentro del proyecto sí acepta la deuda: lo que se rechaza es la ubicación.
+    write(root, BASELINE_PATH, document);
+    assert.equal(check(root, '--baseline', BASELINE_PATH).status, 0);
+
+    // Una entrada autoconsistente cuyo path escapa del proyecto también se rechaza: es la forma que
+    // nunca se escanea, así que la caducidad no podría juzgarla jamás.
+    const evidence = 'release-surface path resolves outside the project';
+    const escaping = acceptedEntry({ category: 'unsafe-scan-path', path: '../outside.js', evidence });
+    expectError(() => readSecurityBaseline(readerFor([escaping])), /inside the project/iu);
+    expectError(() => readSecurityBaseline(readerFor([acceptedEntry({ path: join(outside, 'x.js') })])), /inside the project/iu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · una bandera repetida es uso inválido: --baseline dos veces no puede elegir en silencio cuál gana', () => {
+  // AGUJERO REPRODUCIDO. `--baseline empty.json --baseline good.json` descartaba el primero sin
+  // decir nada y devolvía exit 0. El parser ya rechaza un `--baseline` a medio tipear con este mismo
+  // argumento; dos valores contradictorios para la bandera que afloja el gate son el mismo bypass.
+  const root = fixture();
+  try {
+    write(root, 'src/run.js', EVAL_SOURCE);
+    const good = writeBaseline(root, [acceptedFinding('src/run.js', EVAL_SOURCE)]);
+    write(root, 'vacio.json', `${JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA, accepted: [] })}\n`);
+    const cli = (args) => main(args, { cwd: root, write: () => {}, writeError: () => {} });
+    assert.equal(cli(['check', '--baseline', 'vacio.json', '--baseline', good]), 2);
+    assert.equal(cli(['check', '--baseline', good, '--baseline', 'vacio.json']), 2);
+    assert.equal(cli(['check', '--base', 'HEAD', '--base', 'HEAD']), 2);
+    // Una sola vez cada una sigue siendo uso válido, en cualquier orden.
+    assert.equal(cli(['check', '--baseline', good]), 0);
+    assert.equal(cli(['check', '--baseline', good, '--base', 'HEAD']), 0);
+    const repeated = check(root, '--baseline', 'vacio.json', '--baseline', good);
+    assert.equal(repeated.status, 2, repeated.output);
+    assert.match(repeated.output, /usage:/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · un baseline con accepted vacío no tapa nada y una lista larga de deuda muerta se reporta entera', () => {
+  const root = fixture();
+  try {
+    write(root, 'src/run.js', EVAL_SOURCE);
+    // accepted: [] es un baseline válido que acepta cero deuda — no es "sin baseline" ni un pase.
+    const empty = check(root, '--baseline', writeBaseline(root, []));
+    assert.equal(empty.status, 1, empty.output);
+    assert.match(empty.output, /HIGH injection-surface src\/run\.js:1/u);
+
+    // Muchas entradas para un mismo archivo escaneado: la viva no bloquea, y TODAS las muertas se
+    // nombran. Un reporte que resumiera "hay deuda muerta" escondería cuánta.
+    const live = acceptedFinding('src/run.js', EVAL_SOURCE);
+    const dead = [];
+    for (let i = 0; i < 250; i += 1) {
+      dead.push(acceptedEntry({ path: 'src/run.js', evidence: `deuda inventada numero ${i}` }));
+    }
+    const result = check(root, '--baseline', writeBaseline(root, [live, ...dead]));
+    assert.equal(result.status, 1, result.output.slice(0, 400));
+    assert.match(result.output, /REJECTED: 250 security baseline entry\(ies\)/u);
+    assert.doesNotMatch(result.output, /blocking security finding/u, 'la entrada viva sigue tapando su hallazgo');
+    for (const entry of [dead[0], dead[124], dead[249]]) {
+      assert.match(result.output, new RegExp(entry.finding_id, 'u'), `falta la entrada muerta ${entry.finding_id}`);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('la aceptación de una categoría redactada cubre el archivo entero, no un valor concreto — límite declarado del identificador', () => {
+  // LÍMITE DECLARADO, no un agujero cerrado. La evidencia de las categorías de secreto está
+  // redactada a propósito, así que la identidad de un hallazgo es (categoría, archivo) y nada más.
+  // Consecuencia REPRODUCIDA con el CLI: aceptar un secreto de fixture en src/config.js hace que
+  // cualquier OTRO secreto que aparezca después en ese mismo archivo herede la aceptación.
+  // No se cierra porque el único discriminante disponible sería el propio valor del secreto, y
+  // publicarlo (aunque fuera truncado y hasheado) en un archivo commiteado es peor que el límite.
+  // Mitigación real: aceptar de a un archivo chico, nunca un archivo donde luego se agregan valores.
+  const first = onlyFinding('src/config.js', SECRET_SOURCE);
+  const second = onlyFinding('src/config.js', OTHER_SECRET_SOURCE);
+  assert.notEqual(SECRET_SOURCE, OTHER_SECRET_SOURCE);
+  assert.equal(first.evidence, SECRET_EVIDENCE);
+  assert.equal(second.evidence, SECRET_EVIDENCE, 'la evidencia redactada no depende del valor');
+  assert.equal(findingId(first), findingId(second), 'límite declarado: dos secretos distintos del mismo archivo comparten identidad');
+
+  const root = fixture();
+  try {
+    write(root, 'src/config.js', SECRET_SOURCE);
+    const path = writeBaseline(root, [entryFor(first)]);
+    assert.equal(check(root, '--baseline', path).status, 0);
+    write(root, 'src/config.js', OTHER_SECRET_SOURCE);
+    const inherited = check(root, '--baseline', path);
+    assert.equal(inherited.status, 0, inherited.output);
+    // Control: sin baseline el segundo secreto sí es un hallazgo CRITICAL vivo — lo que lo tapa es
+    // la aceptación heredada, no que el escáner haya dejado de verlo.
+    const control = check(root);
+    assert.equal(control.status, 1, control.output);
+    assert.match(control.output, /CRITICAL hardcoded-secret src\/config\.js:1/u);
+    // Y en OTRO archivo el mismo secreto no está aceptado: el límite es por archivo, no global.
+    write(root, 'src/otro.js', OTHER_SECRET_SOURCE);
+    const otherFile = check(root, '--baseline', path);
+    assert.equal(otherFile.status, 1, otherFile.output);
+    assert.match(otherFile.output, /src\/otro\.js/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('el --base por defecto sólo mira el árbol vivo: lo ya commiteado sale del escaneo — límite declarado del delta', () => {
+  // LÍMITE DECLARADO, no un agujero cerrado. `--base HEAD` compara HEAD...HEAD (vacío) más staged,
+  // unstaged y untracked: commitear un secreto lo saca del escaneo y el gate devuelve exit 0 SIN
+  // baseline de por medio. Es el diseño del delta y skills/security-baseline.md ya manda pasar
+  // `--base <merge-base-or-origin/main>`, que es donde el commit sí entra. Se fija acá para que el
+  // día que alguien corra el gate con el default en CI, este test diga exactamente qué se pierde.
+  const root = fixture();
+  try {
+    write(root, 'src/prod.js', SECRET_SOURCE);
+    const uncommitted = check(root);
+    assert.equal(uncommitted.status, 1, uncommitted.output);
+    assert.match(uncommitted.output, /CRITICAL hardcoded-secret src\/prod\.js:1/u);
+
+    git(root, 'add', '-A');
+    git(root, 'commit', '-qm', 'ship it');
+    const committed = check(root);
+    assert.equal(committed.status, 0, committed.output);
+    assert.match(committed.output, /scanned 0 live changed file\(s\)/u);
+
+    // Con el merge-base correcto el mismo commit vuelve a bloquear.
+    const againstBase = check(root, '--base', 'HEAD~1');
+    assert.equal(againstBase.status, 1, againstBase.output);
+    assert.match(againstBase.output, /CRITICAL hardcoded-secret src\/prod\.js:1/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('changedFiles convierte una barra invertida del nombre en "/" y ese archivo queda sin escanear — límite declarado, sólo alcanzable fuera de Windows', () => {
+  // LÍMITE DECLARADO, no reproducible de punta a punta en esta plataforma: Windows no puede crear un
+  // archivo cuyo nombre contenga "\" (ENOENT verificado), así que sólo se demuestra el mecanismo con
+  // la función exportada. En POSIX "evil\config.js" es un nombre legal; nulPaths lo reescribe a
+  // "evil/config.js", el gate resuelve OTRA ruta, no la encuentra y la saltea EN SILENCIO — sin
+  // hallazgo y sin baseline de por medio. Verificado aparte: git emite "/" en todas las plataformas
+  // (git 2.55 en Windows), así que esa normalización nunca hace falta para entrada real de git.
+  // Se deja declarada en vez de cerrada porque el exploit no se puede probar acá; cerrarla es sacar
+  // el replaceAll de nulPaths, y ese cambio pide correrse en POSIX antes de darlo por bueno.
+  assert.deepEqual(changedFiles({ gitRun: () => 'evil\\config.js\0' }), ['evil/config.js']);
+  const root = fixture();
+  try {
+    // Lo que cuesta el colapso: en la ruta colapsada no hay nada que leer, así que ni se escanea ni
+    // se reporta; en la ruta real el MISMO contenido sí es un CRITICAL.
+    const collapsed = scanChangedFiles({ cwd: root, files: ['evil/config.js'] });
+    assert.deepEqual(collapsed.scanned, []);
+    assert.deepEqual(collapsed.skipped, [{ path: 'evil/config.js', reason: 'missing' }]);
+    assert.deepEqual(collapsed.findings, []);
+
+    write(root, 'evil/config.js', SECRET_SOURCE);
+    const real = scanChangedFiles({ cwd: root, files: ['evil/config.js'] });
+    assert.deepEqual(real.scanned, ['evil/config.js']);
+    assert.deepEqual(real.findings.map((item) => item.severity), ['critical']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

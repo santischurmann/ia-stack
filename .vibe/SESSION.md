@@ -83,3 +83,23 @@
   8 paths exactos · cadena de auditoría íntegra.
 - Límites declarados y NO resueltos: borrar los sufijos enteros, recortar el final de la traza, o
   recalcular la cadena completa. Los tres exigen un ancla fuera del archivo.
+
+## Phase 3 — T02 (baseline de findings de seguridad) · DONE
+
+- **RED**: 12 pruebas nuevas. Bloqueado al inicio por el hallazgo 51: `verify-red-node` confunde
+  ciertas frases en el *título* de una prueba con un archivo roto. Se destrabó renombrando una
+  prueba existente (`collection errors` → `collection failures`), sin tocar ninguna comprobación.
+- **GREEN**: 33/33. El Builder corrigió el briefing en vez de esconderlo: el chequeo de
+  consistencia del `finding_id` que le ofrecí como opcional estaba prohibido por un fixture.
+- **TRIANGULATE**: 42 pruebas. Cinco agujeros encontrados, reproducidos con el CLI real y cerrados.
+  El peor (A1) es el gemelo del de T01: una entrada con el `finding_id` de un CRITICAL vivo pero
+  descrita como otra cosa en otro archivo lo tapaba **y no caducaba nunca**. Cerrado exigiendo que
+  el id sea el hash de sus propios campos.
+- **Verificado contra un repo Git real**, 5 conductas + el ataque A1 reproducido antes y después.
+- `contracts/security-baseline.json` NO se crea: VCP no tiene deuda aceptada. El baseline es por
+  proyecto y opcional. `files_to_create` de T02 vaciado en consecuencia.
+- El gate de alcance detectó un error mío en el plan: había declarado el mismo archivo en
+  `files_to_modify` y en `test_files`.
+- Gates finales: 346 tests · cobertura 100% · seguridad limpia · contrato 44 checks · scope 7 paths.
+- Límites declarados: aceptar un secreto cubre archivo+categoría, no un valor; una entrada fuera
+  del delta no caduca; `check` sin `--base` compara HEAD con HEAD y no ve lo ya commiteado.

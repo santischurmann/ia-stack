@@ -84,3 +84,16 @@ Cada cambio aplicado trae prueba de falsificación.
 
 Los puntos 21–49 quedan como backlog verificable, no como promesas. Antes de aplicar uno hay que
 hacer el mismo ciclo: SPEC → PLAN → falsificación → implementación → revisión independiente.
+
+## Hallazgos de la primera corrida real del protocolo (2026-08-27/28)
+
+Ninguno de estos se detecta leyendo el código: aparecieron al ejecutar VCP de punta a punta sobre
+sí mismo, con la feature `integridad-verificable`.
+
+| # | Hallazgo | Evidencia | Estado |
+|---|---|---|---|
+| 50 | `SKILL.md` 3.1 prometía que un error de carga de módulo pasa el gate RED; `verify-red-node.mjs:152/157` lo rechaza a propósito | contradicción doc↔implementación, verificada corriendo el gate | **HECHO** — documentación corregida en `1f847f3`; el gate era el correcto |
+| 51 | `verify-red-node.mjs` confunde el título de un test con un archivo roto: `SYNTAX_SIGNAL` (línea 7) corre sobre stdout+stderr crudo, donde también salen los títulos | Dos tests idénticos, mismo assert fallando: el titulado `...un collection error del runner` → `REJECTED: the test file failed to parse/load`; el mismo sin esa frase → `OK: RED gate passed`. Reproducido con fixtures fuera del repo | **SIGUIENTE** — bloqueó T02 hasta renombrar un test existente. El mensaje además miente: dice que el archivo no parsea cuando parsea perfecto. Cualquier test cuyo título contenga `SyntaxError`, `Unexpected token`, `collection error`, `ERROR collecting` o `IndentationError` queda incapacitado de producir un RED válido |
+| 52 | El escáner de seguridad dispara sobre el comentario que explica cómo evitarlo | `INJECTION` es `\bexec\s*\(` sobre el texto crudo del archivo, sin distinguir código de comentario. Un comentario que decía ``evita `.exec(` `` disparó el mismo hallazgo que documentaba | **DOCUMENTED_LIMIT** — convención del repo: fragmentar el literal (`'ex' + 'ec'`), como ya hace el propio escáner en su línea 52 |
+| 53 | `.vibe/vcp-runtime/` se desincroniza del repo fuente sin detección | El gate de Discovery falló con `DISCOVERY_SNAPSHOT_INVALID` usando el runtime instalado y pasó con `scripts/`. Un proyecto consumidor puede correr gates de una versión vieja sin enterarse | **SIGUIENTE** |
+| 54 | El schema de `locator` no tenía campo de línea: había que enterrarla en el path (`SKILL.md#L693`) | detectado al registrar los claims reales del Discovery | **HECHO** — REQ-G13, `line` entero positivo opcional |

@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 // Self-contained security floor for Phase 4.3. It scans the actual release surface: merge-base
 // delta plus staged, unstaged, and untracked files. It deliberately redacts secret values.
+//
+// With `--baseline` it also reads a list of reviewed, accepted findings and stops blocking on
+// those, while still blocking on any acceptance that no longer matches a real finding. Honest
+// limit of that second half: the scanner only reads files in the delta, so an acceptance whose
+// file was never scanned is left alone instead of reported stale — the gate cannot prove or
+// disprove a finding it never had the chance to see.
 
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
-export const USAGE = 'usage: verify-security-baseline.mjs check [--base <git-revision>]';
+export const USAGE = 'usage: verify-security-baseline.mjs check [--base <git-revision>] [--baseline <file>]';
 const CODE_OR_MANIFEST = /\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql|ya?ml|json)$/iu;
 const SENSITIVE_ARTIFACT = /(?:^|\/)(?:\.env(?:\.|$)|id_rsa|[^/]+\.(?:pem|key))$/iu;
 // Backtick included alongside `'`/`"`: a credential-shaped value assigned via a template
@@ -182,7 +189,14 @@ function workflowFindings(path, content) {
   for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)@([^\s#]+)/gmu)) {
     const [, action, ref] = match;
     if (!action.startsWith('./') && !action.startsWith('docker://') && !SHA_PIN.test(ref)) {
-      findings.push(finding('high', 'ci-unpinned-action', path, content, match.index, 'GitHub Action is not pinned to an immutable full commit SHA'));
+      // The action reference is part of the evidence on purpose: this is the ONLY detector that
+      // reports more than one finding per file, so a category+path-only identity gave every
+      // unpinned action in a workflow the same finding_id — accepting one reviewed action then
+      // silently accepted every action added to that file afterwards, including a brand-new
+      // attacker-controlled one (reproduced end to end during TRIANGULATE). Unlike the redacted
+      // secret categories, an action reference is public metadata already printed in the report,
+      // so naming it discriminates the findings without leaking anything.
+      findings.push(finding('high', 'ci-unpinned-action', path, content, match.index, `GitHub Action ${action}@${ref} is not pinned to an immutable full commit SHA`));
     }
   }
   const expressionRun = expressionRunIndex(content);
@@ -362,10 +376,136 @@ export function scanChangedFiles({ cwd = '.', base = 'HEAD', files = changedFile
   return { files, scanned, skipped, findings };
 }
 
+// --- Accepted-debt baseline --------------------------------------------------------------------
+export const SECURITY_BASELINE_SCHEMA = 'vcp.security-baseline/1';
+const ACCEPTED_KEYS = ['finding_id', 'category', 'path', 'evidence', 'reason', 'accepted_by', 'accepted_at'];
+const NON_EMPTY_KEYS = ['category', 'path', 'evidence', 'accepted_by'];
+// The three fields the identity hash joins with `\n`. `reason` is deliberately absent: it is prose,
+// it never reaches the hash, and a reviewer may legitimately write it across several lines.
+const HASHED_KEYS = ['category', 'path', 'evidence'];
+const SEPARATOR_IN_FIELD = /[\r\n]/u;
+const FINDING_ID_SHAPE = /^[0-9a-f]{64}$/u;
+// Shape only, on purpose: 2026-13-45 is accepted. A calendar check would reject a typo but not a
+// backdated acceptance, so it buys no review integrity the reviewer's name does not already carry.
+const ACCEPTED_AT_SHAPE = /^\d{4}-\d{2}-\d{2}$/u;
+const LOCATION_LINE_SUFFIX = /:\d+$/u;
+const MIN_REASON_LENGTH = 8;
+
+/** Git reports POSIX separators, so `/` is the canonical form a hand-written entry normalizes to. */
+function posix(value) {
+  return value.split('\\').join('/');
+}
+
+/**
+ * Identity of a finding: category, file and evidence — never the line number. A finding that only
+ * moved is still the same reviewed finding, so adding a line above it must not silently retire its
+ * acceptance. Different content, on the other hand, is a different finding that has to be reviewed
+ * again, which is why every other dimension does participate.
+ */
+function identityHash(category, path, evidence) {
+  return createHash('sha256').update(`${category}\n${posix(path)}\n${evidence}`).digest('hex');
+}
+
+export function findingId(item) {
+  return identityHash(item.category, item.location.replace(LOCATION_LINE_SUFFIX, ''), item.evidence);
+}
+
+export function readSecurityBaseline(read) {
+  let raw;
+  try {
+    raw = read();
+  } catch (error) {
+    // Absence is NOT "zero accepted findings": --baseline named this file on purpose, so degrading
+    // to a baseline-less scan would turn a configuration mistake into a way past the gate. The
+    // original cause survives verbatim — a denied permission is not the same as a mistyped path.
+    throw new Error(`the security baseline could not be read: ${error.message}`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`the security baseline is not valid JSON: ${error.message}`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.schema !== SECURITY_BASELINE_SCHEMA) {
+    throw new Error(`the security baseline must declare schema ${SECURITY_BASELINE_SCHEMA}`);
+  }
+  if (!Array.isArray(parsed.accepted)) throw new Error('the security baseline must contain an accepted array');
+  const seen = new Set();
+  return parsed.accepted.map((entry) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)
+      || Object.keys(entry).length !== ACCEPTED_KEYS.length
+      || ACCEPTED_KEYS.some((key) => typeof entry[key] !== 'string')) {
+      throw new Error(`every accepted entry needs exactly these ${ACCEPTED_KEYS.length} string keys: ${ACCEPTED_KEYS.join(', ')}`);
+    }
+    // An id in uppercase or of another length is not "the same finding written oddly": it can never
+    // match a real finding, so it would be dead weight hiding accepted debt from day one.
+    if (!FINDING_ID_SHAPE.test(entry.finding_id)) throw new Error(`finding_id must be 64 lowercase hex characters: ${entry.finding_id}`);
+    for (const key of NON_EMPTY_KEYS) {
+      if (entry[key].trim() === '') throw new Error(`${key} must not be empty in the security baseline`);
+    }
+    // A length floor is the whole placeholder defence: every stock filler (tbd, todo, n/a, none,
+    // unknown, -) is shorter than this, so an explicit list of them would add no rejection power.
+    if (entry.reason.trim().length < MIN_REASON_LENGTH) throw new Error(`the reason for ${entry.finding_id} needs at least ${MIN_REASON_LENGTH} characters of real review`);
+    if (!ACCEPTED_AT_SHAPE.test(entry.accepted_at)) throw new Error(`accepted_at must be a YYYY-MM-DD date: ${entry.accepted_at}`);
+    // A path outside the project can never be reviewed debt OF this project, and it is exactly the
+    // shape that is never scanned — so the staleness check could never judge it and the entry would
+    // live forever. Rejecting it here also makes the gate's own tamper findings (unsafe-scan-path,
+    // unsafe-scan-input) permanently unwaivable, which is the point: those are the detectors that
+    // fire when the release surface escapes the tree.
+    if (!isProjectRelativePath(entry.path)) throw new Error(`the accepted path must stay inside the project: ${entry.path}`);
+    // The identity hash joins these three with `\n`, so a field that CONTAINS `\n` moves the field
+    // boundary: on a filesystem where a filename may hold a newline (POSIX does), the entry
+    // {category, path: 'a', evidence: 'priv.js\n<evidence>'} hashes identically to the real finding
+    // in 'a\npriv.js' — self-consistent, yet it displays a different path than the one it covers,
+    // which also puts it outside the staleness check forever. Verified as a hash collision during
+    // TRIANGULATE. Refusing the separator makes the split unambiguous on every platform; a finding
+    // on such a path then simply has no expressible acceptance and always blocks.
+    for (const key of HASHED_KEYS) {
+      if (SEPARATOR_IN_FIELD.test(entry[key])) throw new Error(`${key} must not contain a line break in the security baseline: ${JSON.stringify(entry[key])}`);
+    }
+    // The id must be the hash of THIS entry's own category, path and evidence. Without this, the
+    // four human-readable fields were decorative: an entry could carry the real id of a live
+    // CRITICAL finding while describing itself as an old CI chore in a different, never-scanned
+    // file. That silenced the finding AND dodged the dead-entry check (which judges by the declared
+    // path), so the acceptance never expired and nothing in the file or the output revealed what
+    // was actually covered — reproduced end to end during TRIANGULATE. Binding the id to the
+    // declared triple costs no extra evidence: it is computable from the entry alone.
+    const declared = identityHash(entry.category, entry.path, entry.evidence);
+    if (declared !== entry.finding_id) {
+      throw new Error(`finding_id ${entry.finding_id} does not match its own category/path/evidence (expected ${declared})`);
+    }
+    if (seen.has(entry.finding_id)) throw new Error(`duplicated finding_id in the security baseline: ${entry.finding_id}`);
+    seen.add(entry.finding_id);
+    return { ...entry, path: posix(entry.path) };
+  });
+}
+
+/**
+ * Flags are order-independent and each one owns the argument after it; anything else is invalid
+ * usage. A bare `--baseline` must never fall back to a baseline-less scan: silently ignoring a
+ * half-typed flag is the same bypass a broken baseline file would be. By that same rule a REPEATED
+ * flag is invalid usage rather than last-one-wins: `--baseline strict.json --baseline loose.json`
+ * silently discarded the first file, and since `--baseline` is the only flag that can ever loosen
+ * the gate, quietly picking one of two contradictory values is the bypass this parser exists to
+ * refuse (reproduced end to end during TRIANGULATE).
+ */
 function parseArgs(args) {
-  if (args.length === 1 && args[0] === 'check') return { base: 'HEAD' };
-  if (args.length === 3 && args[0] === 'check' && args[1] === '--base' && args[2].trim() !== '') return { base: args[2] };
-  return null;
+  if (args[0] !== 'check') return null;
+  const parsed = { base: 'HEAD', baseline: null };
+  const given = new Set();
+  let index = 1;
+  while (index < args.length) {
+    const flag = args[index];
+    const value = args[index + 1];
+    if (flag !== '--base' && flag !== '--baseline') return null;
+    if (given.has(flag)) return null;
+    given.add(flag);
+    if (typeof value !== 'string' || value.trim() === '') return null;
+    if (flag === '--base') parsed.base = value;
+    else parsed.baseline = value;
+    index += 2;
+  }
+  return parsed;
 }
 
 export function main(args = process.argv.slice(2), options = {}) {
@@ -376,21 +516,42 @@ export function main(args = process.argv.slice(2), options = {}) {
     writeError(USAGE);
     return 2;
   }
+  const cwd = options.cwd ?? '.';
+  let accepted;
+  try {
+    // The accepted-debt record has to live inside the audited tree. `--baseline` is the only flag
+    // that can loosen this gate, and debt that sits outside the project is debt no reviewer ever
+    // sees in a diff: the reason, the reviewer's name and the date exist to be read in code review,
+    // which an absolute or `../` path silently removes them from. Both escapes were reachable
+    // during TRIANGULATE, so this is a containment rule, not a typo check.
+    if (parsed.baseline !== null && !isProjectRelativePath(parsed.baseline, cwd)) {
+      throw new Error(`the security baseline must live inside the project: ${parsed.baseline}`);
+    }
+    accepted = parsed.baseline === null ? [] : readSecurityBaseline(() => readFileSync(resolve(cwd, parsed.baseline), 'utf8'));
+  } catch (error) {
+    writeError(`REJECTED: ${error.message}`);
+    return 1;
+  }
   let report;
   try {
-    report = scanChangedFiles({ cwd: options.cwd ?? '.', base: parsed.base });
+    report = scanChangedFiles({ cwd, base: parsed.base });
   } catch (error) {
     writeError(`REJECTED: unable to collect the release surface: ${error.message}`);
     return 1;
   }
-  for (const item of report.findings) {
+  const acceptedIds = new Set(accepted.map((entry) => entry.finding_id));
+  const liveIds = new Set(report.findings.map((item) => findingId(item)));
+  const scanned = new Set(report.scanned);
+  const blocking = report.findings.filter((item) => (item.severity === 'critical' || item.severity === 'high') && !acceptedIds.has(findingId(item)));
+  // Only acceptances whose file was actually scanned can be judged: elsewhere there is no evidence.
+  const stale = accepted.filter((entry) => scanned.has(entry.path) && !liveIds.has(entry.finding_id));
+  for (const item of blocking) {
     writeError(`${item.severity.toUpperCase()} ${item.category} ${item.location} — ${item.evidence}`);
   }
-  if (report.findings.some((item) => item.severity === 'critical' || item.severity === 'high')) {
-    writeError(`REJECTED: ${report.findings.length} blocking security finding(s) across ${report.scanned.length} live changed file(s).`);
-    return 1;
-  }
-  write(`OK: security baseline scanned ${report.scanned.length} live changed file(s); no Critical/High findings.`);
+  if (blocking.length > 0) writeError(`REJECTED: ${blocking.length} blocking security finding(s) across ${report.scanned.length} live changed file(s).`);
+  if (stale.length > 0) writeError(`REJECTED: ${stale.length} security baseline entry(ies) match no live finding in a scanned file: ${stale.map((entry) => `${entry.path} (${entry.finding_id})`).join(', ')}`);
+  if (blocking.length + stale.length > 0) return 1;
+  write(`OK: security baseline scanned ${report.scanned.length} live changed file(s); no blocking Critical/High findings, ${accepted.length} accepted.`);
   return 0;
 }
 

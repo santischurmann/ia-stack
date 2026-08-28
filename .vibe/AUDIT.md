@@ -23,3 +23,9 @@
 [2026-08-27 23:31] Orchestrator | primera linea sellada del repo | el gate deja de verificar 0 lineas y pasa a proteger la traza real | T01 | chain:c885d65e7fa01141230c2ee770208efdbd7feab49e6f9b467a22e873789f3614
 [2026-08-27 23:45] Builder | falso positivo de seguridad cerrado | .exec( -> .match(; el comentario que lo explicaba tambien lo disparaba | T01 | chain:3731fecd51734111c00506b16d800deab37b017645538a6e9af7911feb5e25fd
 [2026-08-27 23:46] Orchestrator | T01 cableado | vibe-memory.md, SKILL.md, README.md, CHANGELOG.md, contrato 42 checks; scope-diff 8 paths exactos | T01 | chain:e0e8ec7948253da5e057c63510c377474d806b93757b477ffad65c9d22b08e1e
+[2026-08-27 23:55] Orchestrator | T02 arranca | baseline de findings; id estable = sha256(category+path+evidence), no la linea | T02 | chain:f1f57cc338f646684fce0ce6d8995f6526650fe32c685d8236ac4ce620e1150e
+[2026-08-28 00:15] Test-Engineer | T02 RED aceptado | 33 tests: 21 verdes + 12 rojos, gate exit 0 | T02 | chain:b1d8f4b7a7e1a272161742acd08970273578f08a6b4691dbd9d56aac66cf2d4b
+[2026-08-28 00:16] Orchestrator | TRAMPA reproducida | verify-red-node SYNTAX_SIGNAL matchea titulos de test: misma prueba pasa o falla segun su nombre | protocolo | chain:f75776feb5dfd482bb323114f501235dbe2f1d61f85ba3e3b7937d275931c676
+[2026-08-28 00:20] Orchestrator | hallazgos 50-54 registrados | research/adversarial-productivity-audit; 51 y 53 quedan SIGUIENTE | protocolo | chain:1679e17b6af7cd9d9052b4387f661e4f58ffddc46e8ac5bb323b943bf8070084
+[2026-08-28 00:45] Builder | T02 GREEN | 33/33 pass, cobertura 100%, 5 conductas verificadas en repo real | T02 | chain:7428f3c3d36da18f784d1e24b7398b385c70afe35eb507c26284c78ef2011023
+[2026-08-28 01:10] Orchestrator | T02 done | 42 tests, 5 agujeros cerrados, contrato 44 checks, scope 7 paths exactos | T02 | chain:93519d396089f9679344094d6f38b2b979671232942d7aa74085b7585fdaebaa

@@ -14,6 +14,22 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- `verify-security-baseline.mjs` acepta `--baseline <archivo>` (backlog #47), segunda feature
+  construida con el protocolo completo sobre el propio VCP. Antes el gate no distinguía deuda ya
+  revisada de un hallazgo nuevo, así que sólo quedaban dos salidas malas: convivir con un gate que
+  falla siempre por algo viejo, o mover la base y dejar de ver lo nuevo. Ahora lo aceptado no
+  bloquea, lo nuevo sí, y una entrada que ya no corresponde a ningún hallazgo real **también**
+  bloquea: un baseline con entradas muertas oculta cuánta deuda se está tapando.
+  La identidad de un hallazgo es `sha256(categoría + path + evidencia)` — sin el número de línea,
+  para que mover el código no invalide el registro.
+  TRIANGULATE encontró y cerró cinco agujeros, todos reproducidos con el CLI real antes de
+  escribirse como prueba. El peor: una entrada podía llevar el `finding_id` de un CRITICAL vivo y
+  describirse como una tarea vieja de CI en otro archivo, tapándolo y sin caducar nunca. Cerrado
+  exigiendo que el `finding_id` sea el hash de sus propios campos. También: dos acciones de CI sin
+  pinear compartían identidad, un salto de línea en un campo permitía correr la frontera del hash,
+  `--baseline` aceptaba rutas fuera del proyecto, y repetir la bandera elegía en silencio.
+  Límites declarados: aceptar un secreto cubre archivo y categoría, no un valor concreto; una
+  entrada cuyo archivo quedó fuera del delta no se puede juzgar y no caduca.
 - Nuevo gate `verify-audit-chain.mjs` (backlog #27), construido con el protocolo completo sobre el
   propio VCP. `.vibe/AUDIT.md` era append-only por convención y nada lo verificaba: una línea vieja
   podía reescribirse sin dejar rastro. Ahora cada línea lleva el hash de la anterior, `append` la

@@ -19,6 +19,8 @@ export const REQUIREMENTS = [
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
+  ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
+  ['SKILL.md', /Lo que no cubre/u, 'security baseline honest limit'],
   ['SKILL.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /Lo que el gate no detecta/u, 'audit-chain honest limit'],

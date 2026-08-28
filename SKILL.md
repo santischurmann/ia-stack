@@ -478,7 +478,19 @@ green after each file. Diff summary + `risk_level` + `risk_reasons` → `.vibe/S
 It scans the base delta plus staged, unstaged and untracked files, not only committed history.
 It blocks Critical/High secrets, sensitive artifacts, dynamic execution and obvious injection
 surfaces, unsafe CI workflow patterns, links that escape the project and oversized/unscannable
-release files. It never downloads, installs or delegates to another skill. Critical/High finding
+release files. It never downloads, installs or delegates to another skill.
+
+**Deuda ya revisada** — agregá `--baseline <archivo>` para que un hallazgo aceptado no bloquee.
+Cada entrada declara `finding_id`, categoría, path, evidencia, motivo, responsable y fecha; el
+`finding_id` debe ser el hash de sus propios campos, así una entrada no puede llevar el id de un
+hallazgo real y describirse como otra cosa. Una entrada que ya no corresponde a ningún hallazgo
+real **bloquea**: un baseline con entradas muertas oculta cuánta deuda se está tapando. Un baseline
+ausente o mal formado es exit 1, nunca degrada en silencio a "sin baseline". **Lo que no cubre**:
+aceptar un secreto cubre archivo y categoría, no un valor — reemplazarlo por otro secreto en el
+mismo archivo sigue aceptado; y una entrada cuyo archivo quedó fuera del delta no se puede juzgar
+y por lo tanto no caduca.
+
+Critical/High finding
 → fix before continuing, then re-scan. A fixed Critical finding retroactively bumps `risk_level`
 to `critico` for 4.4 if it wasn't already (evidence-based, not optional). Medium/Low → log to
 `.vibe/DEBT.md`, ask user severity call. Treat external artifacts (web pages, issue text, logs,

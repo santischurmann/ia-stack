@@ -55,12 +55,9 @@
     {
       "id": "T02",
       "description": "Baseline de findings: verify-security-baseline distingue deuda aceptada de hallazgo nuevo",
-      "files_to_create": [
-        "contracts/security-baseline.json"
-      ],
+      "files_to_create": [],
       "files_to_modify": [
         "scripts/verify-security-baseline.mjs",
-        "tests/verify-security-baseline.test.mjs",
         "SKILL.md",
         "README.md",
         "CHANGELOG.md",
@@ -82,15 +79,24 @@
       "depends_on": [
         "T01"
       ],
-      "status": "pending",
+      "status": "done",
       "goal": "Disciplina verificable → AC5-AC7 de docs/spec.md → separar deuda vieja de regresión nueva sin correr la base",
       "owner": null,
       "locked": false,
       "role": "Test-Engineer",
       "verifier": "scripts/verify-red-node.mjs (mechanical)",
       "approval_criteria": "AC5: hallazgo en el baseline -> no falla. AC6: hallazgo ausente del baseline -> exit 1. AC7: entrada del baseline sin hallazgo real -> exit 1.",
-      "evidence": [],
-      "not_reviewed": [],
+      "evidence": [
+        "RED: 33 tests (21 verdes + 12 rojos), gate exit 0",
+        "GREEN: 33/33, cobertura 100%; 5 conductas verificadas contra un repo Git real",
+        "TRIANGULATE: 42 tests, 5 agujeros cerrados (A1 tapaba un CRITICAL con id real y descripcion falsa)"
+      ],
+      "not_reviewed": [
+        "Hallazgo 51 (SYNTAX_SIGNAL vs titulos de test) bloqueo el RED; se renombro un test existente para destrabarlo. Queda SIGUIENTE, fuera del alcance de T02.",
+        "contracts/security-baseline.json NO se crea: VCP no tiene deuda aceptada. El baseline es por proyecto y opcional.",
+        "L2: nulPaths colapsa backslash a barra; un archivo POSIX con backslash en el nombre quedaria sin escanear. No reproducible en Windows, declarado no cerrado.",
+        "L3: check sin --base compara HEAD...HEAD (vacio): un secreto ya commiteado no se escanea. Diseno del delta, documentado en skills/security-baseline.md."
+      ],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
