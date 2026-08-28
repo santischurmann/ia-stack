@@ -679,14 +679,20 @@ menos una prueba. Es el hueco que este gate cierra: hoy se puede declarar el tra
 un AC que nadie probó, y la suite en verde no lo delata.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
 ```
 
 La convención de mención no es nueva: es la misma que ya fija `verify-test-bindings.mjs`, el id
 como segmento separado por `·` de una llamada real `test()`/`it()` — `AC8 · ...` o
 `FALSIFICACIÓN · AC9 · ...`. Un id en un comentario o en la prosa del título no cuenta. El gate
 verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe: es trazabilidad, no
-suficiencia, y sin spec, sin criterios o sin Discovery el gate sale 0 en vez de inventar una falla.
+suficiencia, y sin spec, sin criterios o sin Discovery el gate escribe VACÍO, no OK.
+
+**Verde vacío.** Un gate que no encontró nada que comparar no escribe `OK:`, escribe `VACÍO:`. Son
+dos cosas distintas y hasta ahora se leían igual: "verifiqué y pasó" contra "no había nada que
+verificar". Acá en Fase 4 la spec ya tiene que existir, así que el comando va con `--require-inputs`
+y ese vacío pasa a ser rechazo. Fuera de esta fase el flag se omite: en Bootstrap todavía no hay
+spec, y ahí la ausencia es normal, no una falta.
 
 Después, escribí el receipt (el propio orchestrator lo lee/
 escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
@@ -990,7 +996,7 @@ parezca haber estado ahí rompe el hash de esa decisión y la cadena hacia adela
 escribe: el sello se calcula con `hashDecision(previous_hash, decision)` del propio módulo.
 
 Gate: `node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
-(sin archivo sale `0`: un proyecto que no arrancó ninguna fase no incumple nada).
+(sin archivo escribe `VACÍO:` y sale `0`: un proyecto que no arrancó ninguna fase no incumple nada; agregá `--require-inputs` para que esa ausencia sea rechazo).
 
 ---
 

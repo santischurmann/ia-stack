@@ -523,6 +523,58 @@
       "status": "done",
       "goal": "Disciplina verificable -> Fase 5 del encargo -> una decision por fase, en orden, encadenada por hash, sin cierre silencioso",
       "approval_criteria": "Una fase sin eleccion registrada se detecta. Una eleccion fuera del menu se detecta. Fases fuera de orden, duplicadas o con la cadena rota se detectan. Cambiar las opciones despues de elegir rompe la cadena."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED: 12 tests nuevos en rojo por ERR_ASSERTION, gate RED exit 0 en los tres archivos",
+        "GREEN: 507 tests, cobertura 100% en 23 scripts, 71 checks de contrato + 27 limites",
+        "La bateria completa post-fix encontro el septimo camino vacuo, en el gate que T11 acababa de agregar"
+      ],
+      "not_reviewed": [
+        "LIMITE DE FONDO: hace visible el vacio, no lo prohibe. Sin --require-inputs el exit sigue siendo 0.",
+        "Solo cubre los 6 caminos vacuos de estos 2 gates. No hay detector que encuentre caminos vacuos nuevos en otros gates.",
+        "Nada obliga a usar --require-inputs fuera de la Fase 4: el contrato fija ese comando, no todos los usos.",
+        "La marca vacuous la pone el autor del gate a mano; un camino vacuo sin marcar sigue saliendo OK."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> GREEN -> Triangulator",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T12",
+      "description": "Verde vacio visible en los 3 gates que lo tenian: no comparar nada no se escribe como verificar",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-evidence-trace.mjs",
+        "scripts/verify-session-state.mjs",
+        "scripts/verify-phase-decisions.mjs",
+        "scripts/verify-vcp-contract.mjs",
+        "SKILL.md",
+        "README.md",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md"
+      ],
+      "test_files": [
+        "tests/verify-evidence-trace.test.mjs",
+        "tests/verify-session-state.test.mjs",
+        "tests/verify-phase-decisions.test.mjs",
+        "tests/verify-vcp-contract.test.mjs"
+      ],
+      "depends_on": [
+        "T11"
+      ],
+      "status": "done",
+      "goal": "Distinguir \"verifique y paso\" de \"no habia nada que verificar\" -> Fase 6 del encargo -> el silencio deja de leerse como evidencia",
+      "approval_criteria": "Los 6 caminos sin entradas se marcan vacuous y salen VACIO. --require-inputs los convierte en rechazo. El verde real no cambia. Sacar el flag de la Fase 4 lo detecta el contrato."
     }
   ]
 }

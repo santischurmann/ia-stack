@@ -323,7 +323,7 @@ test('FALSIFICACIÓN · el gate junta las tres violaciones en una sola corrida, 
 // --- CLI ----------------------------------------------------------------------------------------
 
 test('parseArgs acepta exactamente la forma documentada', () => {
-  assert.deepEqual(parseArgs(['check', '--session', SESSION]), { session: SESSION });
+  assert.deepEqual(parseArgs(['check', '--session', SESSION]), { session: SESSION, requireInputs: false });
 });
 
 test('FALSIFICACIÓN · argumentos inválidos salen 2 sin leer el disco', () => {
@@ -382,4 +382,48 @@ test('el CLI real refleja los exit codes de la librería sobre archivos en disco
 
   const uso = spawnSync(process.execPath, [script, 'check'], { cwd: root, encoding: 'utf8' });
   assert.deepEqual({ status: uso.status, usa: uso.stderr.includes(USAGE) }, { status: 2, usa: true });
+}));
+
+// --- Verde vacío: un proyecto sin SESSION.md no verificó nada -----------------------------------
+
+// El código de rechazo es contrato de salida: literal acá, para que el RED falle por aserción.
+const SIN_ENTRADAS = 'SESSION_STATE_NO_INPUTS';
+
+test('un proyecto sin SESSION.md sale vacuous, y uno con estado declarado no', () => fixture((root) => {
+  const sin = checkSessionState(root, SESSION);
+  writeSession(root, session(INTENTOS + DECISION, INTERRUMPIDO, NO_VERIFICADO));
+  const con = checkSessionState(root, SESSION);
+
+  assert.deepEqual([sin.ok, sin.vacuous], [true, true]);
+  assert.deepEqual([con.ok, con.vacuous ?? false], [true, false]);
+}));
+
+test('main escribe VACÍO cuando no había estado que revisar, y OK cuando sí lo había', () => {
+  const written = [];
+  const vacio = main(['check', '--session', SESSION], '.', (line) => written.push(line), () => {}, () => ({ ok: true, vacuous: true, violations: [], summary: `no hay ${SESSION}` }));
+  const lleno = main(['check', '--session', SESSION], '.', (line) => written.push(line), () => {}, () => ({ ok: true, violations: [], summary: 'es retomable' }));
+
+  assert.deepEqual({ vacio, lleno }, { vacio: 0, lleno: 0 });
+  assert.deepEqual(written, [`VACÍO: no hay ${SESSION}`, 'OK: es retomable']);
+});
+
+test('parseArgs acepta --require-inputs y lo informa siempre como booleano', () => {
+  assert.deepEqual(parseArgs(['check', '--session', SESSION, '--require-inputs']), { session: SESSION, requireInputs: true });
+  assert.deepEqual(parseArgs(['check', '--session', SESSION]), { session: SESSION, requireInputs: false });
+  assert.equal(parseArgs(['check', '--require-inputs']), null);
+});
+
+test('FALSIFICACIÓN · --require-inputs rechaza el proyecto sin SESSION.md y deja pasar al que sí lo tiene', () => fixture((root) => {
+  const run = (args) => spawnSync(process.execPath, [script, 'check', '--session', SESSION, ...args], { cwd: root, encoding: 'utf8' });
+
+  const permisivo = run([]);
+  assert.deepEqual({ status: permisivo.status, vacio: permisivo.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+  const estricto = run(['--require-inputs']);
+  assert.equal(estricto.status, 1);
+  assert.match(estricto.stderr, new RegExp(SIN_ENTRADAS, 'u'));
+
+  writeSession(root, session(INTENTOS + DECISION, INTERRUMPIDO, NO_VERIFICADO));
+  const verde = run(['--require-inputs']);
+  assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
 }));

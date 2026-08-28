@@ -23,7 +23,10 @@ import { join, resolve } from 'node:path';
 import { readDiscoveryHistory } from './verify-discovery-core.mjs';
 import { hasLiteralTestDeclaration } from './verify-test-bindings.mjs';
 
-export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> | verify-evidence-trace.mjs claims --feature <feature-slug>';
+export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> [--require-inputs] | verify-evidence-trace.mjs claims --feature <feature-slug> [--require-inputs]';
+export const NO_INPUTS_CODE = 'EVIDENCE_TRACE_NO_INPUTS';
+export const EMPTY_PREFIX = 'VACÍO: ';
+export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const SPEC_PATH = 'docs/spec.md';
 export const CRITERION_SHAPE = '- [ ] **AC<n>:**';
 export const MENTION_SEPARATOR = '·';
@@ -77,11 +80,11 @@ function readTestSources(testsDir, io) {
 export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) {
   const specFile = resolve(projectRoot, specPath);
   if (!io.exists(specFile)) {
-    return { ok: true, message: `sin ${specPath}: no hay criterios declarados que cubrir.` };
+    return { ok: true, vacuous: true, message: `sin ${specPath}: no hay criterios declarados que cubrir.` };
   }
   const criteria = readCriterionIds(io.read(specFile, 'utf8'));
   if (criteria.length === 0) {
-    return { ok: true, message: `${specPath} no declara ningún criterio con la forma "${CRITERION_SHAPE}".` };
+    return { ok: true, vacuous: true, message: `${specPath} no declara ningún criterio con la forma "${CRITERION_SHAPE}".` };
   }
   let sources;
   try {
@@ -110,11 +113,11 @@ export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) 
 
 export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHistory = readDiscoveryHistory) {
   if (!io.exists(resolve(projectRoot, 'docs', 'discovery', featureSlug))) {
-    return { ok: true, message: `${featureSlug} no tiene Discovery en docs/discovery/: no hay claims que verificar.` };
+    return { ok: true, vacuous: true, message: `${featureSlug} no tiene Discovery en docs/discovery/: no hay claims que verificar.` };
   }
   const specFile = resolve(projectRoot, SPEC_PATH);
   if (!io.exists(specFile)) {
-    return { ok: true, message: `sin ${SPEC_PATH}: no hay identificadores declarados contra los cuales resolver los vínculos de ${featureSlug}.` };
+    return { ok: true, vacuous: true, message: `sin ${SPEC_PATH}: no hay identificadores declarados contra los cuales resolver los vínculos de ${featureSlug}.` };
   }
   let history;
   try {
@@ -126,7 +129,7 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
   // that no longer holds, so a broken link inside it is history, not a live dangling reference.
   const current = history.runs.at(-1).history.at(-1);
   if (!current.packet) {
-    return { ok: true, message: `la decisión vigente ${current.decision.decision_id} de ${featureSlug} está ${current.decision.status} y no lleva packet: no hay claims que verificar.` };
+    return { ok: true, vacuous: true, message: `la decisión vigente ${current.decision.decision_id} de ${featureSlug} está ${current.decision.status} y no lleva packet: no hay claims que verificar.` };
   }
   const declared = declaredIdentifiers(io.read(specFile, 'utf8'));
   const broken = [];
@@ -149,11 +152,13 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
 }
 
 export function parseArgs(args) {
-  if (args.length === 5 && args[0] === 'criteria' && args[1] === '--spec' && args[3] === '--tests' && args[2] !== '' && args[4] !== '') {
-    return { command: 'criteria', spec: args[2], tests: args[4] };
+  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
+  const rest = requireInputs ? args.slice(0, -1) : args;
+  if (rest.length === 5 && rest[0] === 'criteria' && rest[1] === '--spec' && rest[3] === '--tests' && rest[2] !== '' && rest[4] !== '') {
+    return { command: 'criteria', spec: rest[2], tests: rest[4], requireInputs };
   }
-  if (args.length === 3 && args[0] === 'claims' && args[1] === '--feature' && FEATURE_SLUG.test(args[2])) {
-    return { command: 'claims', feature: args[2] };
+  if (rest.length === 3 && rest[0] === 'claims' && rest[1] === '--feature' && FEATURE_SLUG.test(rest[2])) {
+    return { command: 'claims', feature: rest[2], requireInputs };
   }
   return null;
 }
@@ -170,6 +175,17 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   if (!result.ok) {
     writeError(`REJECTED: ${result.code}: ${result.message}`);
     return 1;
+  }
+  // Un verde que no comparó nada no se escribe como un verde que sí comparó: quien lee la salida
+  // tiene que poder distinguir "verifiqué y pasó" de "no había nada que verificar". Con
+  // --require-inputs, ahí donde el protocolo ya exige que las entradas existan, deja de ser aviso.
+  if (result.vacuous) {
+    if (parsed.requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${result.message}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${result.message}`);
+    return 0;
   }
   write(`OK: ${result.message}`);
   return 0;

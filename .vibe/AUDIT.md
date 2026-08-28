@@ -50,3 +50,4 @@
 [2026-08-28 08:50] Orchestrator | T10 done | hallazgo 55 cerrado; backup de rojo permanente a verde; 5 combinaciones destructivas bloqueadas | T10 | chain:25d5e04a83e1f966fea289d6a84437c62b46ff99b4457eaef4291a1b6dc9494f
 [2026-08-28 09:30] Orchestrator | T11 done | gate de decisiones por fase: 495 tests, 27 limites; 24 ataques probados, 1 cerrado | T11 | chain:d40ee12a9ed01922a4aa4f5ce5b7e2404e0ba8ab0d5c59b90fb378e89108f8ef
 [2026-08-28 09:31] Orchestrator | research fallo por bug propio | los agentes devolvieron slug con owner/repo; mi find() no matcheo. 14 manifests intactos, 15581 archivos, recuperados del journal | research | chain:9418264c6633c59841c6b7de7a86b11c8a14025fdc166e5916b9a6392a5f809f
+[2026-08-28] Builder | T12 verde vacio visible | 507 tests, cobertura 100%, 71 checks; 7 caminos vacuos marcados en 3 gates | T12 | chain:1f56e513db2172121fce7a224d1d932b72e6255a19916939d172f9f7d251e4d3

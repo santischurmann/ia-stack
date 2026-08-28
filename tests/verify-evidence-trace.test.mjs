@@ -22,6 +22,9 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-evidence-trace.mjs');
 const feature = 'trazabilidad-demo';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+// El código de rechazo es contrato de salida: se fija literal acá para que el RED falle por
+// aserción y no por un import que no resuelve.
+const NO_INPUTS_CODE = 'EVIDENCE_TRACE_NO_INPUTS';
 const json = (value) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
 
 // Fixture ids are deliberately AC9x: this file lives in the very tests/ directory the repo-wide
@@ -302,8 +305,8 @@ test('FALSIFICACIÓN · claims propaga el rechazo del verificador de historia Di
 // --- CLI ----------------------------------------------------------------------------------------
 
 test('parseArgs acepta exactamente las dos formas documentadas', () => {
-  assert.deepEqual(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']), { command: 'criteria', spec: 'docs/spec.md', tests: 'tests' });
-  assert.deepEqual(parseArgs(['claims', '--feature', 'integridad-verificable']), { command: 'claims', feature: 'integridad-verificable' });
+  assert.deepEqual(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']), { command: 'criteria', spec: 'docs/spec.md', tests: 'tests', requireInputs: false });
+  assert.deepEqual(parseArgs(['claims', '--feature', 'integridad-verificable']), { command: 'claims', feature: 'integridad-verificable', requireInputs: false });
 });
 
 test('FALSIFICACIÓN · argumentos inválidos salen 2 en los dos subcomandos, sin tocar el disco', () => {
@@ -359,6 +362,84 @@ test('el CLI real refleja los exit codes de la librería sobre archivos en disco
   const uso = run(['criteria']);
   assert.deepEqual({ status: uso.status, usa: uso.stderr.includes(USAGE) }, { status: 2, usa: true });
 
+  // Sin Discovery no hay claims: sale 0, pero como VACÍO, no como OK — nada se comparó.
   const claims = run(['claims', '--feature', feature]);
-  assert.deepEqual({ status: claims.status, ok: claims.stdout.startsWith('OK: ') }, { status: 0, ok: true });
+  assert.deepEqual({ status: claims.status, vacio: claims.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+}));
+
+// --- Verde vacío: distinguir "verifiqué y pasó" de "no había nada que verificar" ----------------
+
+test('cada camino sin entradas se marca vacuous, y los que sí comparan algo no', () => fixture((root) => {
+  const vacios = [];
+  const llenos = [];
+
+  vacios.push(checkCriteria(root, 'docs/spec.md', 'tests'));
+  writeSpec(root, SPEC_WITHOUT_CRITERIA);
+  vacios.push(checkCriteria(root, 'docs/spec.md', 'tests'));
+  vacios.push(checkClaims(root, feature));
+  writeDiscovery(root, [claim()], { completed: false });
+  vacios.push(checkClaims(root, feature));
+  rmSync(join(root, 'docs', 'spec.md'));
+  vacios.push(checkClaims(root, feature));
+
+  writeSpec(root);
+  writeTests(root, { 'uno.test.mjs': "test('AC91 · uno', () => {});\ntest('AC92 · dos', () => {});\n" });
+  llenos.push(checkCriteria(root, 'docs/spec.md', 'tests'));
+  rmSync(join(root, 'docs', 'discovery'), { recursive: true });
+  writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
+  llenos.push(checkClaims(root, feature));
+
+  assert.deepEqual(vacios.map((r) => [r.ok, r.vacuous]), [[true, true], [true, true], [true, true], [true, true], [true, true]]);
+  assert.deepEqual(llenos.map((r) => [r.ok, r.vacuous ?? false]), [[true, false], [true, false]]);
+}));
+
+test('main escribe VACÍO en vez de OK cuando el resultado no comparó nada', () => {
+  const written = [];
+  const checks = {
+    criteria: () => ({ ok: true, vacuous: true, message: 'sin docs/spec.md' }),
+    claims: () => ({ ok: true, message: '3 vínculo(s) resuelven' }),
+  };
+  const vacio = main(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests'], '.', (line) => written.push(line), () => {}, checks);
+  const lleno = main(['claims', '--feature', 'demo'], '.', (line) => written.push(line), () => {}, checks);
+
+  assert.deepEqual({ vacio, lleno }, { vacio: 0, lleno: 0 });
+  assert.deepEqual(written, ['VACÍO: sin docs/spec.md', 'OK: 3 vínculo(s) resuelven']);
+});
+
+test('parseArgs acepta --require-inputs como último argumento de los dos subcomandos', () => {
+  assert.deepEqual(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']), { command: 'criteria', spec: 'docs/spec.md', tests: 'tests', requireInputs: true });
+  assert.deepEqual(parseArgs(['claims', '--feature', 'demo', '--require-inputs']), { command: 'claims', feature: 'demo', requireInputs: true });
+  assert.equal(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']).requireInputs, false);
+  assert.equal(parseArgs(['claims', '--feature', 'demo']).requireInputs, false);
+});
+
+test('FALSIFICACIÓN · --require-inputs convierte el verde vacío en rechazo, y no toca al verde real', () => {
+  const errors = [];
+  const written = [];
+  const checks = {
+    criteria: () => ({ ok: true, vacuous: true, message: 'sin docs/spec.md: no hay criterios declarados que cubrir.' }),
+    claims: () => ({ ok: true, message: '3 vínculo(s) resuelven' }),
+  };
+  const run = (args) => main(args, '.', (line) => written.push(line), (line) => errors.push(line), checks);
+
+  assert.equal(run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']), 1);
+  assert.equal(run(['claims', '--feature', 'demo', '--require-inputs']), 0);
+  assert.deepEqual(errors, [`REJECTED: ${NO_INPUTS_CODE}: sin docs/spec.md: no hay criterios declarados que cubrir.`]);
+  assert.deepEqual(written, ['OK: 3 vínculo(s) resuelven']);
+});
+
+test('FALSIFICACIÓN · el CLI real rechaza el verde vacío bajo --require-inputs sobre un proyecto sin spec', () => fixture((root) => {
+  const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+
+  const permisivo = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']);
+  assert.deepEqual({ status: permisivo.status, vacio: permisivo.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+  const estricto = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']);
+  assert.equal(estricto.status, 1);
+  assert.match(estricto.stderr, new RegExp(NO_INPUTS_CODE, 'u'));
+
+  writeSpec(root);
+  writeTests(root, { 'uno.test.mjs': "test('AC91 · uno', () => {});\ntest('AC92 · dos', () => {});\n" });
+  const verde = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']);
+  assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
 }));

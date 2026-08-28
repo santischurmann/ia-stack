@@ -7,6 +7,25 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Verde vacío visible** (T12): un gate que no encontró nada que comparar dejó de escribirse igual
+  que uno que comparó y pasó. Hasta ahora `verify-evidence-trace.mjs`, `verify-session-state.mjs` y
+  `verify-phase-decisions.mjs` imprimían `OK:` en siete caminos donde no habían verificado
+  absolutamente nada: sin `docs/spec.md`, con una spec sin criterios declarados, sin Discovery, con
+  la decisión vigente sin packet, sin identificadores contra los cuales resolver, sin
+  `.vibe/SESSION.md`, y sin `docs/phase-decisions.json` — este último un hueco recién abierto por
+  T11, encontrado corriendo la batería completa horas después. Un verde por ausencia de
+  entradas se leía como un verde por evidencia, así que **borrar la spec compraba silencio**. Ahora
+  esos caminos devuelven `vacuous: true` y el CLI escribe `VACÍO:` en vez de `OK:`, con exit `0`
+  igual que antes: la ausencia de una spec sigue sin ser una violación, porque en Bootstrap todavía
+  no hay spec y ahí el vacío es normal. Lo que cambia es que se ve. Y donde el protocolo **ya
+  exige** que la entrada exista, el nuevo flag `--require-inputs` convierte ese vacío en rechazo
+  (`EVIDENCE_TRACE_NO_INPUTS` / `SESSION_STATE_NO_INPUTS` / `PHASE_DECISION_NO_INPUTS`, exit `1`): la Fase 4 corre `criteria`
+  con el flag, porque a esa altura la spec tiene que estar. Dos checks de contrato nuevos (71 en
+  total) fijan que la Fase 4 lo lleve y que la distinción quede escrita, para que sacar el flag sea
+  un rechazo y no un silencio. El límite honesto `evidence-trace-degrades-to-green-without-inputs`
+  se reescribió en consecuencia: el costo ya no es que el vacío se disfrace de verde, sino que
+  sigue siendo exit `0` en todo comando que corra sin el flag.
+
 - Nuevo gate `verify-phase-decisions.mjs` (T11): **la regla más central de VCP ya tiene detector**.
   El protocolo exige desde su LAW 7 que cada fase cierre con un menú 🔵 —opciones explícitas,
   recomendación, y la persona elige— y **nada lo verificaba**: una fase podía cerrarse sin haber

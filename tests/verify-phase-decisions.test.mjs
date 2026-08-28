@@ -449,3 +449,45 @@ test('el CLI real refleja los exit codes de la librería sobre archivos en disco
   const uso = runCli(root, 'check');
   assert.deepEqual({ status: uso.status, usa: uso.stderr.includes(USAGE) }, { status: 2, usa: true });
 }));
+
+// --- Verde vacío: sin archivo de decisiones no se comparó nada ----------------------------------
+
+// Contrato de salida fijado literal, para que el RED falle por aserción y no por un import roto.
+const SIN_ENTRADAS = 'PHASE_DECISION_NO_INPUTS';
+
+test('sin archivo de decisiones el CLI escribe VACÍO, no OK', () => fixture((root) => {
+  const vacio = runCli(root, 'check', 'docs/phase-decisions.json');
+  assert.deepEqual({ status: vacio.status, vacio: vacio.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+  writeDecisions(root, documentOf([BOOTSTRAP, SPEC, PLAN]));
+  const lleno = runCli(root, 'check', 'docs/phase-decisions.json');
+  assert.deepEqual({ status: lleno.status, ok: lleno.stdout.startsWith('OK: ') }, { status: 0, ok: true });
+}));
+
+test('FALSIFICACIÓN · --require-inputs rechaza la ausencia del archivo y no toca al verde real', () => fixture((root) => {
+  const estricto = runCli(root, 'check', 'docs/phase-decisions.json', '--require-inputs');
+  assert.equal(estricto.status, 1);
+  assert.match(estricto.stderr, new RegExp(SIN_ENTRADAS, 'u'));
+
+  writeDecisions(root, documentOf([BOOTSTRAP, SPEC, PLAN]));
+  const verde = runCli(root, 'check', 'docs/phase-decisions.json', '--require-inputs');
+  assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
+
+  // Un archivo ilegible sigue siendo rechazo por su propio código: el flag no lo reetiqueta.
+  writeDecisions(root, '{ roto');
+  const roto = runCli(root, 'check', 'docs/phase-decisions.json', '--require-inputs');
+  assert.deepEqual({ status: roto.status, propio: roto.stderr.includes('PHASE_DECISION_SCHEMA_INVALID') }, { status: 1, propio: true });
+}));
+
+test('main informa el vacío por su marca, no por el texto del mensaje', () => {
+  const written = [];
+  const errors = [];
+  const readFile = () => { const error = new Error('no existe'); error.code = 'ENOENT'; throw error; };
+  const permisivo = main(['check', 'docs/phase-decisions.json'], { readFile }, (l) => written.push(l), (l) => errors.push(l));
+  const estricto = main(['check', 'docs/phase-decisions.json', '--require-inputs'], { readFile }, (l) => written.push(l), (l) => errors.push(l));
+
+  assert.deepEqual({ permisivo, estricto }, { permisivo: 0, estricto: 1 });
+  assert.equal(written.length, 1);
+  assert.match(written[0], /^VACÍO: /u);
+  assert.deepEqual(errors.map((e) => e.split(':')[1].trim()), [SIN_ENTRADAS]);
+});

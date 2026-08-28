@@ -130,8 +130,8 @@
     {
       "limit_id": "evidence-trace-degrades-to-green-without-inputs",
       "file": "SKILL.md",
-      "phrase": "sin spec, sin criterios o sin Discovery el gate sale 0",
-      "why": "Es la decision de no inventar una falla donde no hay nada que comparar, y tambien su costo: borrar docs/spec.md, dejarlo sin criterios o no tener Discovery compra silencio, no un rechazo. Sin el limite, un verde por ausencia de entradas se confunde con un verde por evidencia."
+      "phrase": "sin spec, sin criterios o sin Discovery el gate escribe VACÍO, no OK",
+      "why": "Es la decision de no inventar una falla donde no hay nada que comparar, y tambien su costo. Lo que cambio es que ese vacio dejo de disfrazarse de verde: se escribe VACIO en vez de OK, y con --require-inputs -donde el protocolo ya exige que la entrada exista- pasa a ser rechazo. Sin el limite, un verde por ausencia de entradas se sigue confundiendo con un verde por evidencia en todo comando que corra sin el flag."
     },
     {
       "limit_id": "session-state-checks-declaration-not-truth",

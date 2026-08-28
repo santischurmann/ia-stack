@@ -23,7 +23,10 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { safeProjectFile } from './ratchet.mjs';
 
-export const USAGE = 'usage: verify-session-state.mjs check --session <SESSION.md>';
+export const USAGE = 'usage: verify-session-state.mjs check --session <SESSION.md> [--require-inputs]';
+export const NO_INPUTS_CODE = 'SESSION_STATE_NO_INPUTS';
+export const EMPTY_PREFIX = 'VACÍO: ';
+export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const ATTEMPT_LIMIT = 3;
 export const SECTION_ATTEMPTS = 'Intentos fallidos';
 export const SECTION_INTERRUPTED = 'Interrumpido en';
@@ -200,7 +203,7 @@ export function checkSessionState(projectRoot, sessionPath) {
   try {
     const file = safeProjectFile(realpathSync(projectRoot), sessionPath);
     if (file === null) {
-      return { ok: true, violations: [], summary: `no hay ${sessionPath}: un proyecto que todavía no arrancó no tiene estado que retomar.` };
+      return { ok: true, vacuous: true, violations: [], summary: `no hay ${sessionPath}: un proyecto que todavía no arrancó no tiene estado que retomar.` };
     }
     source = readFileSync(file, 'utf8');
   } catch (error) {
@@ -219,8 +222,10 @@ export function checkSessionState(projectRoot, sessionPath) {
 }
 
 export function parseArgs(args) {
-  if (args.length === 3 && args[0] === 'check' && args[1] === '--session' && args[2] !== '' && !args[2].startsWith('--')) {
-    return { session: args[2] };
+  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
+  const rest = requireInputs ? args.slice(0, -1) : args;
+  if (rest.length === 3 && rest[0] === 'check' && rest[1] === '--session' && rest[2] !== '' && !rest[2].startsWith('--')) {
+    return { session: rest[2], requireInputs };
   }
   return null;
 }
@@ -235,6 +240,16 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   if (!result.ok) {
     for (const violation of result.violations) writeError(`REJECTED: ${violation.code}: ${violation.message}`);
     return 1;
+  }
+  // Mismo criterio que verify-evidence-trace: el silencio se escribe como silencio. Una sesión sin
+  // archivo de estado no es una sesión revisada, y con --require-inputs deja de pasar por tal.
+  if (result.vacuous) {
+    if (parsed.requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${result.summary}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${result.summary}`);
+    return 0;
   }
   write(`OK: ${result.summary}`);
   return 0;

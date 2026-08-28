@@ -34,7 +34,10 @@
 import { readFileSync } from 'node:fs';
 import { chainHashFor } from './verify-audit-chain.mjs';
 
-export const USAGE = 'usage: verify-phase-decisions.mjs check <decisions.json>';
+export const USAGE = 'usage: verify-phase-decisions.mjs check <decisions.json> [--require-inputs]';
+export const NO_INPUTS_CODE = 'PHASE_DECISION_NO_INPUTS';
+export const EMPTY_PREFIX = 'VACÍO: ';
+export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const SCHEMA = 'vcp.phase-decisions/1';
 // `superseded` existe para que una decisión reemplazada no se borre: se marca y se registra la
 // nueva, igual que hace el inventario de requisitos con `replaced`. Borrarla dejaría la cadena rota
@@ -265,18 +268,27 @@ export function readDecisions(path, readFile) {
 }
 
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {
-  if (args.length !== 2 || args[0] !== 'check') {
+  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
+  const rest = requireInputs ? args.slice(0, -1) : args;
+  if (rest.length !== 2 || rest[0] !== 'check') {
     writeError(USAGE);
     return 2;
   }
-  const path = args[1];
+  const path = rest[1];
   const { content, missing, error } = readDecisions(path, options.readFile ?? readFileSync);
   if (error !== null) {
     writeError(`REJECTED: PHASE_DECISION_UNREADABLE: ${error}`);
     return 1;
   }
   if (missing) {
-    write(`OK: no hay ${path}: un proyecto que todavía no cerró ninguna fase no incumple nada.`);
+    // Mismo criterio que verify-evidence-trace y verify-session-state: no haber comparado nada no
+    // se escribe como haber comparado y pasado. Sigue saliendo 0 salvo que se exija la entrada.
+    const message = `no hay ${path}: un proyecto que todavía no cerró ninguna fase no incumple nada.`;
+    if (requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${message}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${message}`);
     return 0;
   }
   let document;

@@ -63,6 +63,10 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
   ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
   ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
+  // Phase 4 runs `criteria` where the spec must already exist, so dropping the flag would turn a
+  // deleted spec back into a green. The flag is pinned separately from the command for that reason.
+  ['SKILL.md', /criteria --spec docs\/spec\.md --tests tests --require-inputs/u, 'Phase 4 criteria run rejects a missing spec instead of passing empty'],
+  ['SKILL.md', /escribe VACÍO, no OK/u, 'empty green is written as empty, never as verified'],
   // The gate and the rule are pinned separately: the retry limit is a protocol rule that must stay
   // written even if somebody moves, renames or deletes the gate that detects it.
   ['SKILL.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
