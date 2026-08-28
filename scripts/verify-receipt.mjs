@@ -147,6 +147,69 @@ export const formatEntry = (e) =>
 // source) means a later edit to the destination file can go undetected by existsSync()/
 // hash-object on a stale path, silently keeping a zero/absent placeholder — this is exactly the
 // gap that made a post-rename edit invisible to the fingerprint before this fix.
+
+// --- Custodia -----------------------------------------------------------------------------------
+//
+// El limite declarado de este gate era, textual, que nadie firma un recibo: una huella sin clave
+// no sirve porque quien edita el recibo recalcula la huella en la misma linea. Sigue siendo cierto
+// que VCP no puede crear ni custodiar claves. Lo que si puede es DEJAR DE CALLARSE: git ya trae
+// firma de commits, y su estado es un dato que este gate puede leer y poner en la salida.
+//
+// LIMITE HONESTO, impreso en cada corrida: si el agente puede correr `git commit -S`, firma como
+// vos. La custodia vale exactamente hasta donde tu clave exija presencia humana -una passphrase que
+// no este en el disco, una llave de hardware que haya que tocar-. Sin eso, la firma prueba que
+// alguien con acceso a la clave firmo, no que hayas sido vos.
+
+export const SIGNATURE_STATES = Object.freeze({
+  G: { texto: 'firma valida', confiable: true, rechaza: false },
+  U: { texto: 'firma valida pero de una clave no confiable', confiable: true, rechaza: false },
+  X: { texto: 'firma valida de una clave vencida', confiable: true, rechaza: false },
+  Y: { texto: 'firma hecha por una clave ya vencida', confiable: true, rechaza: false },
+  R: { texto: 'firma hecha por una clave revocada', confiable: false, rechaza: true },
+  B: { texto: 'la firma NO valida', confiable: false, rechaza: true },
+  E: { texto: 'firmado, pero falta la clave para verificarlo', confiable: false, rechaza: false },
+  N: { texto: 'sin firma', confiable: false, rechaza: false },
+});
+
+const CUSTODY_LIMIT = 'Limite: si el agente puede correr `git commit -S`, firma como vos. Esto prueba que alguien con acceso a la clave firmo, no quien.';
+
+/** Lee el commit que toco por ultima vez el recibo, y el estado de su firma. null si no hay. */
+export function readSignature(path, cwd, run) {
+  let salida;
+  try {
+    salida = run(['-C', cwd, 'log', '-1', '--format=%H%n%G?%n%GS%n%GK', '--', path]);
+  } catch (error) {
+    // Un repo sin ningun commit no es un fallo: es un proyecto que todavia no registro nada, y eso
+    // es el caso vacio. Pero correr esto FUERA de un repo si es no poder mirar, y tiene que verse.
+    let enRepo = true;
+    try { run(['-C', cwd, 'rev-parse', '--git-dir']); } catch { enRepo = false; }
+    if (!enRepo) throw error;
+    return null;
+  }
+  const partes = String(salida).split(String.fromCharCode(10));
+  // split siempre devuelve al menos un elemento, asi que partes[0] no puede faltar: un ?? aca
+  // seria una rama que ninguna prueba puede alcanzar, o sea codigo muerto con aspecto de cuidado.
+  const commit = partes[0].trim();
+  if (commit === '') return null;
+  return { commit, estado: (partes[1] ?? '').trim(), firmante: (partes[2] ?? '').trim(), clave: (partes[3] ?? '').trim() };
+}
+
+export function judgeSignature(firma, requiereFirma) {
+  const info = SIGNATURE_STATES[firma.estado];
+  const corto = firma.commit.slice(0, 7);
+  if (info === undefined) {
+    return { ok: false, mensaje: `git devolvio un estado de firma que este gate no conoce (${JSON.stringify(firma.estado)}) para el commit ${corto}: no se puede afirmar nada sobre la custodia.` };
+  }
+  if (info.rechaza) {
+    return { ok: false, mensaje: `el commit ${corto} lleva una firma que ${info.texto} (${firma.firmante || 'firmante desconocido'}): una firma rota es peor que ninguna.` };
+  }
+  if (requiereFirma && !info.confiable) {
+    return { ok: false, mensaje: `se pidio firma y el commit ${corto} esta ${info.texto}.` };
+  }
+  const quien = info.confiable ? ` por ${firma.firmante || 'firmante sin nombre'}${firma.clave ? ` (clave ${firma.clave})` : ''}` : '';
+  return { ok: true, mensaje: `el commit ${corto} que lleva este recibo esta ${info.texto}${quien}.` };
+}
+
 export function parseRawDiff(text) {
   const tokens = text.split('\0');
   const records = [];
@@ -487,6 +550,31 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     const receipt = validateReceiptOrFail(arg, requireCleanWorktree);
     const cleanliness = requireCleanWorktree ? ', clean worktree' : '';
     console.log(`${validatedSummary(receipt, 'OK')}${cleanliness}`);
+    process.exit(0);
+  }
+
+  if (cmd === 'custody') {
+    const CUSTODY_USAGE = 'usage: verify-receipt.mjs custody <receipt.json> [--require-signature]';
+    // Exit 2, no 1: un argumento mal puesto es error de quien llama, nunca un veredicto sobre la
+    // custodia del recibo. Confundirlos haria que un typo se lea como "la firma esta mal".
+    if (!arg) { console.error(CUSTODY_USAGE); process.exit(2); }
+    const flags = process.argv.slice(4);
+    const desconocida = flags.find((f) => f !== '--require-signature');
+    if (desconocida) { console.error(`unknown option ${desconocida}; ${CUSTODY_USAGE}`); process.exit(2); }
+    const firma = readSignature(arg, '.', git);
+    if (firma === null) {
+      console.log(`VACIO: ${arg} todavia no esta en ningun commit: sin commit no hay firma que mirar.`);
+      console.log(CUSTODY_LIMIT);
+      process.exit(0);
+    }
+    const veredicto = judgeSignature(firma, flags.includes('--require-signature'));
+    if (!veredicto.ok) {
+      console.error(`REJECTED: RECEIPT_CUSTODY: ${veredicto.mensaje}`);
+      console.error(CUSTODY_LIMIT);
+      process.exit(1);
+    }
+    console.log(`OK: ${veredicto.mensaje}`);
+    console.log(CUSTODY_LIMIT);
     process.exit(0);
   }
 

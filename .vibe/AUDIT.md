@@ -60,3 +60,4 @@
 [2026-08-28] Docs | mapa del protocolo al repo | el fuente vivia solo en un temporal; ahora versionado en docs/, 173 archivos en el manifiesto | mapa | chain:0ab5b684dca8d4cfc8a9c830af3a31d322d853fdeca928dc8972fae3ee8a0193
 [2026-08-28] Docs | charset explicito en el mapa | reproducido: servido sin charset el navegador elegia windows-1252 y rompia todos los acentos | mapa | chain:9e4d8e584574fbf50ae4117e3de11d2b61774ec791c9746d6c90c428dfda9be4
 [2026-08-28] Auditor | ancla externa: la historia de git | history detecta recorte, refabricacion y borrado; 22 versiones de AUDIT.md verificadas | ancla | chain:adecf0b643be31636b11839617b727eddb6ac1f27d72c3a5a386fe70e7cb4837
+[2026-08-28] Builder | custodia y deliberacion | custody informa quien firmo el commit del recibo; shown_at con piso de 2s detecta el menu fabricado en el mismo aliento | custodia | chain:3630fb8bf4c4ee19d3b4cb17fcd7b849677a06bd8d0ebc38fb3654eb6580e310

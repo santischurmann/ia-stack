@@ -71,6 +71,12 @@ Una decisión reemplazada no se borra: se marca `superseded` y se registra la nu
 demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus
 consecuencias — un agente puede registrar decisiones que nadie tomó y el gate las acepta.
 
+Cada decisión declara además **`shown_at`**: cuándo se le mostró el menú a la persona. Entre eso
+y el momento de la elección tienen que pasar al menos dos segundos. No prueba consentimiento — eso
+necesita un canal fuera de este proceso — pero sí agarra el caso concreto de un agente que fabrica
+el menú y la decisión en el mismo aliento. Un agente que espera igual pasa: detecta lo imposible,
+no lo mentiroso.
+
 **Redacción reutilizable** (item #46). Un límite honesto, un mensaje de rechazo o una advertencia
 que ya existe se reusa citándola, no se reescribe con otras palabras. Dos redacciones distintas de
 la misma garantía divergen con el tiempo y nadie sabe cuál es la vigente.
@@ -956,6 +962,19 @@ protocolo ya usa** — no hace falta ningún servicio.
 Límite: quien reescriba la historia publicada puede fabricar una secuencia coherente. Lo que cambió
 es que falsificar dejó de ser invisible: exige tocar el identificador de cada commit, y eso lo ve
 cualquiera que tenga un clon previo o el remoto.
+
+**8.1.2 Custodia del recibo** — quién firmó el commit que lo lleva:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-receipt.mjs custody .vibe/receipts/<feature-slug>-<fecha>.json
+```
+
+VCP no puede crear ni guardar claves, pero **sí puede dejar de callarse**: git ya trae firma de
+commits y este comando la lee. Una firma rota siempre rechaza — es peor que ninguna. No firmar
+sólo rechaza con `--require-signature`, porque no firmar es lo normal, no una violación.
+
+Límite, impreso en cada corrida: **si el agente puede correr `git commit -S`, firma como vos**. La
+custodia vale hasta donde tu clave exija presencia humana.
 
 **8.2 Backups**:
 - Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).

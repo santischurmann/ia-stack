@@ -31,7 +31,10 @@ function completeRead(path) {
 simplificar sin volver a
 verificar es exactamente cómo se rompe algo en silencio\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nReproducir antes de diagnosticar\nContexto acotado por agente\nCuándo una fase está terminada\nRedacción reutilizable\nverify-audit-chain.mjs history .vibe/AUDIT.md
 No agarra recortar el final ni
-verify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\ncriteria --spec docs/spec.md --tests tests --require-inputs\nescribe VACÍO, no OK\nverify-session-state.mjs check\ntercer intento fallido sobre el mismo problema\n## Diccionario: qué significa cada palabra rara
+verify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs custody
+si el agente puede correr \`git commit -S\`, firma como vos
+Un agente que espera igual pasa: detecta lo imposible
+verify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\ncriteria --spec docs/spec.md --tests tests --require-inputs\nescribe VACÍO, no OK\nverify-session-state.mjs check\ntercer intento fallido sobre el mismo problema\n## Diccionario: qué significa cada palabra rara
 prueban forma, cadena y estado, nunca
 verify-empty-probe.mjs check contracts/empty-probe.json
 un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar

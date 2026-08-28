@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Custodia: el protocolo deja de callarse sobre quién firmó** (`verify-receipt.mjs custody`).
+  El límite decía "nadie firma un recibo". VCP no puede crear ni guardar claves — eso no cambió —
+  pero git ya trae firma de commits, y su estado es un dato que el gate puede leer y poner en la
+  salida. Informa el commit que lleva el recibo, su estado de firma y con qué clave. Una firma rota
+  **siempre rechaza**: es peor que ninguna. No firmar rechaza sólo con `--require-signature`,
+  porque no firmar es lo normal, no una violación. Un código de estado que git devuelva y este gate
+  no conozca tampoco pasa por bueno. Un recibo sin commitear sale `VACIO:`, y correrlo fuera de un
+  repo se distingue de un repo sin commits.
+  **Límite, impreso en cada corrida**: si el agente puede correr `git commit -S`, firma como vos.
+  Prueba que alguien con acceso a la clave firmó, no quién. Vale hasta donde la clave exija
+  presencia humana — una passphrase que no esté en el disco, una llave de hardware que haya que tocar.
+
+- **Consentimiento: se detecta el menú fabricado en el mismo aliento** (`verify-phase-decisions`).
+  Probar que una persona quiso una opción necesita un canal fuera de este proceso, y eso sigue sin
+  resolverse. Lo que sí se puede detectar es el modo de falla concreto: un agente que genera el menú
+  y registra la elección en el mismo instante. Cada decisión declara ahora **`shown_at`** — cuándo
+  se mostró el menú — y entre eso y la elección tiene que pasar un piso de **dos segundos**.
+  Elegir antes de que el menú exista (delta negativo) cae en el mismo rechazo: es imposible, no
+  rápido. El campo entra a la preimagen del hash, así que cambiarlo después de sellar rompe la
+  cadena — el vector de hash fijado en las pruebas cambió a propósito, que es exactamente para lo
+  que ese vector existe.
+  **Límite**: un agente que espera dos segundos antes de inventar la decisión pasa igual. Detecta
+  lo imposible, no lo mentiroso.
+
 - **El ancla externa existía y no la estábamos usando: git** (`verify-audit-chain.mjs history`).
   El límite declarado de este gate decía que recortar la cadena o refabricarla entera exigían "un
   ancla fuera del archivo, y no hay ninguna portable". Era falso. Una traza de auditoría **sólo

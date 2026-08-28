@@ -21,11 +21,12 @@
       "recommendation": "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
       "selected_option": "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
       "reason": "la suite nativa ya cubre el caso y una dependencia menos es una superficie menos que revisar en 4.3",
+      "shown_at": "2026-08-28T09:08:00Z",
       "timestamp": "2026-08-28T09:10:00Z",
       "input_hash": "d1b6f4fcdf9a56a240c9b9de1658c0470c96f267bcb159ae6a530021c359aae5",
       "status": "decided",
       "previous_hash": "",
-      "current_hash": "a4653ac7acebd981751228324e717aac51d3159c747acdf7ab73d437837bc553"
+      "current_hash": "7aee1da5ad52c87630bd7802bcc3d84565ff0da5981bcf1630d94b1b53ce36a7"
     },
     {
       "phase_id": "2",
@@ -37,11 +38,12 @@
       "recommendation": "A) investigar sólo el gate que falta",
       "selected_option": "A) investigar sólo el gate que falta",
       "reason": "primera lectura: alcanzaba con el gate",
+      "shown_at": "2026-08-28T09:38:00Z",
       "timestamp": "2026-08-28T09:40:00Z",
       "input_hash": "659dc643480fd49a391915f6e3a6bb91da3a42cb51562ae3169a97d0a3f0a961",
       "status": "superseded",
-      "previous_hash": "a4653ac7acebd981751228324e717aac51d3159c747acdf7ab73d437837bc553",
-      "current_hash": "df317ddf43eafa0a6abb1c88152ac531ae271f88ced9890bda2b7d02210a6558"
+      "previous_hash": "7aee1da5ad52c87630bd7802bcc3d84565ff0da5981bcf1630d94b1b53ce36a7",
+      "current_hash": "bba8a8af46bc7472d37d78cf098bd619fbfc6f7dcad20ff6cd1e6af6b9703ed2"
     },
     {
       "phase_id": "2",
@@ -53,11 +55,12 @@
       "recommendation": "B) investigar el gate y además su plantilla consumidora",
       "selected_option": "B) investigar el gate y además su plantilla consumidora",
       "reason": "sin plantilla el proyecto consumidor no tiene forma de arrancar el archivo, y el gate quedaría sin nadie que lo alimente",
+      "shown_at": "2026-08-28T10:03:00Z",
       "timestamp": "2026-08-28T10:05:00Z",
       "input_hash": "543d3dd70bf05b8042e44b5b80244676768bf1a6b0263203d7f7b94bcb04e6e5",
       "status": "decided",
-      "previous_hash": "df317ddf43eafa0a6abb1c88152ac531ae271f88ced9890bda2b7d02210a6558",
-      "current_hash": "ffddb9ded9816fc06c3a36283fd24bfa42a27f6dea12d1b2d2e8dfd68d84a469"
+      "previous_hash": "bba8a8af46bc7472d37d78cf098bd619fbfc6f7dcad20ff6cd1e6af6b9703ed2",
+      "current_hash": "3334eaff9e644d3f3f7b458bfecaac154cf3aece99ebcb0ce2d5eb2c7d19d819"
     },
     {
       "phase_id": "3",
@@ -69,11 +72,12 @@
       "recommendation": "A) una spec con criterios agrupados por artefacto",
       "selected_option": "B) una spec con criterios agrupados por fase",
       "reason": "la recomendación no es la decisión: agrupar por fase ata cada criterio al gate que lo cierra, que es lo que este proyecto necesita revisar",
+      "shown_at": "2026-08-28T11:18:00Z",
       "timestamp": "2026-08-28T11:20:00Z",
       "input_hash": "209cff161fa802f4f5bcbcf32e585fab67dc790bc06ec0d3eb3d9be2a000615d",
       "status": "decided",
-      "previous_hash": "ffddb9ded9816fc06c3a36283fd24bfa42a27f6dea12d1b2d2e8dfd68d84a469",
-      "current_hash": "f6b4da8e69ac7f078edf13b0fb316f57d9e8f689bb13336745169abaf1a9a4f3"
+      "previous_hash": "3334eaff9e644d3f3f7b458bfecaac154cf3aece99ebcb0ce2d5eb2c7d19d819",
+      "current_hash": "2d4edc395594760a014bcf5d1d3eff465c9aae2388f4063ee90e2091a422d670"
     }
   ]
 }

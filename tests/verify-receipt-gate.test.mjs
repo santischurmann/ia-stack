@@ -13,6 +13,7 @@ const {
   parseRawDiff, byPath, formatEntry, isWithin, safeRegularFile,
   validateAcceptanceCriterion, validateAcceptanceCriteria, validateMeasurements,
   validateNotReviewedField, validateScope, validateReview4r, validateReceiptV2,
+  SIGNATURE_STATES, readSignature, judgeSignature,
 } = await import(pathToFileURL(receiptGate).href);
 
 const TEST_FILE_RELATIVE = 'test/fixture.test.mjs';
@@ -941,4 +942,112 @@ test('el subcomando se llama commit y su salida declara que la ventana se angost
     assert.match(ok.output, /(?:narrow|angost)/iu, 'debe decir que la angosta');
     assert.match(ok.output, /(?:not clos|does not clos|sin cerrar|no la cierra|no se cierra)/iu, 'debe decir que no la cierra');
   });
+});
+
+
+// --- Custodia: quien firmo el commit que lleva este recibo --------------------------------------
+
+// El limite declarado decia "nadie firma un recibo". Cierto, y el protocolo no puede crear claves.
+// Lo que si puede es DECIR si alguien firmo: git ya trae firma de commits, y su estado es un dato
+// que el gate puede leer y reportar. Convierte "nadie firma" en "el protocolo te dice si alguien
+// firmo, con que clave, y que prueba eso exactamente".
+const NL = String.fromCharCode(10);
+
+/** Falsea la salida de git para cada campo del formato de firma. */
+const gitFirma = (estado, firmante, clave, commit) => () => [commit, estado, firmante, clave].join(NL);
+
+test('SIGNATURE_STATES cubre todos los codigos que git puede devolver', () => {
+  assert.deepEqual(Object.keys(SIGNATURE_STATES).sort(), ['B', 'E', 'G', 'N', 'R', 'U', 'X', 'Y']);
+  for (const [codigo, info] of Object.entries(SIGNATURE_STATES)) {
+    assert.equal(typeof info.texto, 'string', `${codigo} necesita texto legible`);
+    assert.equal(typeof info.confiable, 'boolean');
+    assert.equal(typeof info.rechaza, 'boolean');
+  }
+  assert.equal(SIGNATURE_STATES.G.confiable, true);
+  assert.equal(SIGNATURE_STATES.N.confiable, false);
+  assert.equal(SIGNATURE_STATES.B.rechaza, true, 'una firma MALA es peor que ninguna: siempre rechaza');
+  assert.equal(SIGNATURE_STATES.N.rechaza, false, 'no firmar es lo normal, no una violacion');
+});
+
+test('readSignature lee el commit que lleva el recibo y su estado de firma', () => {
+  const s = readSignature('receipt.json', '.', gitFirma('G', 'Santi <s@t>', 'ABC123', 'deadbee'));
+  assert.deepEqual(s, { commit: 'deadbee', estado: 'G', firmante: 'Santi <s@t>', clave: 'ABC123' });
+});
+
+test('readSignature devuelve null cuando el recibo todavia no esta commiteado', () => {
+  assert.equal(readSignature('receipt.json', '.', () => ''), null);
+  assert.equal(readSignature('receipt.json', '.', () => NL + NL + NL), null);
+});
+
+test('readSignature distingue el repo sin commits de correr fuera de un repo', () => {
+  // Sin commits: git log falla, pero rev-parse --git-dir responde. Es el caso vacio.
+  const sinCommits = readSignature('r.json', '.', (args) => {
+    if (args.includes('log')) throw new Error('does not have any commits yet');
+    return '.git';
+  });
+  assert.equal(sinCommits, null);
+
+  // Fuera de un repo: fallan las dos. Eso NO es vacio, es no poder mirar, y tiene que verse.
+  assert.throws(() => readSignature('r.json', '.', () => { throw new Error('not a git repository'); }), /not a git repository/u);
+});
+
+test('readSignature tolera que git devuelva menos campos de los pedidos', () => {
+  const parcial = readSignature('r.json', '.', () => 'abc1234');
+  assert.deepEqual(parcial, { commit: 'abc1234', estado: '', firmante: '', clave: '' });
+});
+
+test('readSignature no confunde un estado desconocido con una firma buena', () => {
+  const s = readSignature('receipt.json', '.', gitFirma('?', '', '', 'abc'));
+  assert.equal(s.estado, '?');
+  assert.equal(judgeSignature(s, false).ok, false, 'un codigo que git no documenta no puede pasar por bueno');
+});
+
+test('judgeSignature reporta sin bloquear por defecto, y bloquea con --require-signature', () => {
+  const sinFirma = { commit: 'abc1234', estado: 'N', firmante: '', clave: '' };
+  assert.equal(judgeSignature(sinFirma, false).ok, true, 'sin el flag, no firmar se informa y pasa');
+  assert.match(judgeSignature(sinFirma, false).mensaje, /sin firma/iu);
+  assert.equal(judgeSignature(sinFirma, true).ok, false, 'con el flag, no firmar es rechazo');
+
+  const buena = { commit: 'abc1234', estado: 'G', firmante: 'Santi <s@t>', clave: 'K1' };
+  assert.equal(judgeSignature(buena, true).ok, true);
+  assert.match(judgeSignature(buena, true).mensaje, /Santi/u, 'el mensaje nombra a quien firmo');
+});
+
+test('FALSIFICACION · una firma MALA rechaza aunque no se pida firma', () => {
+  const mala = { commit: 'abc1234', estado: 'B', firmante: 'alguien', clave: 'K9' };
+  assert.equal(judgeSignature(mala, false).ok, false, 'una firma que no valida es peor que ninguna');
+  assert.equal(judgeSignature(mala, true).ok, false);
+  assert.match(judgeSignature(mala, false).mensaje, /no valida/iu);
+});
+
+test('FALSIFICACION · el CLI real informa la custodia del recibo de este repo', () => {
+  const run = spawnSync(process.execPath, [receiptGate, 'custody', 'contracts/honest-limits.json'], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /^(OK|VAC)/u);
+  // El limite tiene que estar impreso en la salida, no escondido en la documentacion.
+  assert.match(run.stdout + run.stderr, /firma como vos/iu);
+});
+
+test('FALSIFICACION · custody sin recibo sale 2, y un recibo sin commitear sale VACIO', () => {
+  const sinArg = spawnSync(process.execPath, [receiptGate, 'custody'], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(sinArg.status, 2);
+
+  // Una bandera desconocida es error de quien llama, no un veredicto sobre la firma: exit 2.
+  const flagMala = spawnSync(process.execPath, [receiptGate, 'custody', 'contracts/honest-limits.json', '--firmalo-igual'], { cwd: repoRoot, encoding: 'utf8' });
+  assert.deepEqual({ status: flagMala.status, nombra: flagMala.stderr.includes('--firmalo-igual') }, { status: 2, nombra: true });
+
+  // Y la forma estricta, sobre un commit real sin firma: rechaza y lo dice.
+  const estricto = spawnSync(process.execPath, [receiptGate, 'custody', 'contracts/honest-limits.json', '--require-signature'], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(estricto.status, 1);
+  assert.match(estricto.stderr, /RECEIPT_CUSTODY/u);
+
+  const dir = mkdtempSync(join(tmpdir(), 'vcp-custodia-'));
+  try {
+    spawnSync('git', ['init', '-q', '.'], { cwd: dir, encoding: 'utf8' });
+    writeFileSync(join(dir, 'r.json'), '{}', 'utf8');
+    const run = spawnSync(process.execPath, [receiptGate, 'custody', 'r.json'], { cwd: dir, encoding: 'utf8' });
+    assert.deepEqual({ status: run.status, vacio: run.stdout.startsWith('VAC') }, { status: 0, vacio: true }, run.stderr);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

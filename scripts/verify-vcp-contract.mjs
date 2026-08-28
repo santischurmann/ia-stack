@@ -27,6 +27,11 @@ export const REQUIREMENTS = [
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
   ['SKILL.md', /verify-receipt\.mjs commit/u, 'validate-and-write in one run'],
+  // Los dos cierres de esta noche: quien firmo, y cuanto tardo la persona en elegir. Fijados como
+  // comando + motivo, porque borrar el comando y borrar la explicacion son dos perdidas distintas.
+  ['SKILL.md', /verify-receipt\.mjs custody/u, 'the protocol reports who signed the commit carrying the receipt'],
+  ['SKILL.md', /si el agente puede correr `git commit -S`, firma como vos/u, 'custody holds only as far as the key demands a human'],
+  ['SKILL.md', /Un agente que espera igual pasa: detecta lo imposible/u, 'the deliberation floor catches the impossible, not the dishonest'],
   ['SKILL.md', /contracts\/honest-limits\.json/u, 'honest limits declared as reviewable data'],
   ['README.md', /contracts\/honest-limits\.json/u, 'honest limits declared as reviewable data'],
   ['SKILL.md', /nunca reescribe historial por su cuenta/u, 'sealed commit never rewrites history'],

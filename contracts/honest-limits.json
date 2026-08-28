@@ -180,6 +180,18 @@
       "file": "README.md",
       "phrase": "quien **reescriba la historia publicada** puede fabricar una secuencia coherente",
       "why": "El ancla externa del gate es la historia de git, que es real y portable: recortar o refabricar la traza rompe la relacion de crecimiento contra versiones que no viven dentro del archivo atacado. Pero git es local. Quien reescribe la historia y fuerza el push puede construir una secuencia que pase. Sin el limite, \"hay ancla externa\" se lee como \"es imposible falsificarlo\", cuando lo que cambio es que falsificarlo dejo de ser invisible: ahora exige tocar identificadores que otros ya tienen."
+    },
+    {
+      "limit_id": "receipt-custody-signs-with-whatever-key-is-reachable",
+      "file": "README.md",
+      "phrase": "si el agente puede correr `git commit -S`, firma como vos",
+      "why": "El gate informa el estado de firma del commit que lleva el recibo, que es real y portable: git ya lo trae. Pero VCP no custodia claves. Si la clave esta al alcance del proceso que escribe el recibo, la firma prueba que alguien con acceso firmo, no quien. Vale exactamente hasta donde la clave exija presencia humana: una passphrase que no este en el disco, una llave de hardware que haya que tocar."
+    },
+    {
+      "limit_id": "phase-decision-deliberation-detects-impossible-not-dishonest",
+      "file": "README.md",
+      "phrase": "Un agente que espera igual pasa: detecta lo imposible, no lo mentiroso",
+      "why": "El piso de deliberacion agarra el modo de falla concreto -menu y eleccion fabricados en el mismo instante- porque nadie lee un menu en milisegundos. No agarra a un agente que espera dos segundos antes de inventar la decision. Sin el limite, \"hay chequeo de consentimiento\" se lee como \"la decision la tomo una persona\", cuando lo unico probado es que paso tiempo suficiente para que alguien la pudiera haber leido."
     }
   ]
 }

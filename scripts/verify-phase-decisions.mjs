@@ -45,7 +45,11 @@ export const SCHEMA = 'vcp.phase-decisions/1';
 export const STATUSES = Object.freeze(['decided', 'superseded']);
 // Un menú de una sola opción no es un menú: no hay nada que elegir y la elección no informa nada.
 export const MIN_OPTIONS = 2;
-export const CONTENT_FIELDS = Object.freeze(['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'timestamp', 'input_hash', 'status']);
+// Piso de lectura. No prueba consentimiento -eso necesita un canal fuera de este proceso- pero si
+// detecta el modo de falla concreto: un agente que fabrica el menu y la decision en el mismo
+// aliento. Dos segundos es deliberadamente bajo: tiene que rechazar lo imposible, no lo apurado.
+export const MIN_DELIBERATION_MS = 2000;
+export const CONTENT_FIELDS = Object.freeze(['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'shown_at', 'timestamp', 'input_hash', 'status']);
 
 const DOCUMENT_KEYS = new Set(['schema', 'phase_order', 'decisions']);
 const DECISION_KEYS = new Set([...CONTENT_FIELDS, 'previous_hash', 'current_hash']);
@@ -149,6 +153,16 @@ function checkRow(decision, position, phaseOrder) {
   }
   if (!STATUSES.includes(decision.status)) {
     violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: status debe ser uno de ${STATUSES.join(', ')}`));
+  }
+  if (!isTimestamp(decision.shown_at)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: shown_at debe ser una marca ISO-8601 real — es cuándo se le mostró el menú a la persona`));
+  }
+  if (isTimestamp(decision.shown_at) && isTimestamp(decision.timestamp)) {
+    // Elegir antes de que el menú exista es imposible, no rápido: un delta negativo cae acá también.
+    const delta = Date.parse(decision.timestamp) - Date.parse(decision.shown_at);
+    if (delta < MIN_DELIBERATION_MS) {
+      violations.push(violation('PHASE_DECISION_TOO_FAST', `${at}: entre mostrar el menú y registrar la elección pasaron ${delta} ms, y el piso es ${MIN_DELIBERATION_MS}: nadie leyó ese menú`));
+    }
   }
   if (!isTimestamp(decision.timestamp)) {
     violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: timestamp debe ser una marca ISO-8601 real`));

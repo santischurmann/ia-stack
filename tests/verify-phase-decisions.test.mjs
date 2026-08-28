@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { chainHashFor } from '../scripts/verify-audit-chain.mjs';
 import {
+  CONTENT_FIELDS as GATE_CONTENT_FIELDS,
+  MIN_DELIBERATION_MS,
   MIN_OPTIONS,
   SCHEMA,
   STATUSES,
@@ -28,7 +30,7 @@ const PHASES = ['0', '1', '2', '3', '4'];
 // misma fórmula — si verify-phase-decisions.mjs inventara la suya, todos estos fixtures saldrían mal.
 const digest = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
 
-const CONTENT_FIELDS = ['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'timestamp', 'input_hash', 'status'];
+const CONTENT_FIELDS = ['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'shown_at', 'timestamp', 'input_hash', 'status'];
 
 function payloadOf(decision) {
   return JSON.stringify(CONTENT_FIELDS.map((field) => [field, decision[field]]));
@@ -55,6 +57,7 @@ const BOOTSTRAP = {
   recommendation: 'A) Node nativo, cero dependencias',
   selected_option: 'A) Node nativo, cero dependencias',
   reason: 'el repo prohíbe dependencias externas y la suite nativa ya cubre el caso',
+  shown_at: '2026-08-28T09:59:00Z',
   timestamp: '2026-08-28T10:00:00Z',
   input_hash: digest('stack detectado en la fase 0'),
   status: 'decided',
@@ -67,6 +70,7 @@ const SPEC = {
   recommendation: 'A) un solo criterio por fase',
   selected_option: 'B) criterios agrupados por artefacto',
   reason: 'agrupar por artefacto deja cada AC atado a un archivo verificable',
+  shown_at: '2026-08-28T11:59:00Z',
   timestamp: '2026-08-28T12:00:00Z',
   input_hash: digest('borrador de spec revisado'),
   status: 'decided',
@@ -79,6 +83,7 @@ const PLAN = {
   recommendation: 'A) una tarea por gate',
   selected_option: 'A) una tarea por gate',
   reason: 'una tarea por gate mantiene el writer set disjunto entre tareas',
+  shown_at: '2026-08-28T12:59:00Z',
   timestamp: '2026-08-28T13:00:00Z',
   input_hash: digest('conflictos de escritura del plan'),
   status: 'decided',
@@ -128,7 +133,7 @@ test('la carga canónica cubre todo el contenido de la decisión y deja fuera s�
 test('hashDecision es exactamente el encadenado de verify-audit-chain.mjs sobre la carga canónica', () => {
   const [decision] = seal([BOOTSTRAP]);
   assert.equal(hashDecision(decision.previous_hash, decision), chainHashFor(decision.previous_hash, decisionPayload(decision)));
-  assert.equal(hashDecision('', BOOTSTRAP), '91a476d1f48294fa73265d60bea669ef94b7c7de1feffb399c52613da3bf2f4f');
+  assert.equal(hashDecision('', BOOTSTRAP), '33590586452f9f15a96d530d3314e3c3f5b50660c65546ecf8807313c4e7e1c0');
   assert.notEqual(hashDecision(digest('otra cabeza de cadena'), BOOTSTRAP), hashDecision('', BOOTSTRAP));
 });
 
@@ -305,7 +310,9 @@ test('FALSIFICACIÓN · la misma fase con dos nombres distintos sale en rojo', (
 });
 
 test('FALSIFICACIÓN · un timestamp que retrocede sale en rojo', () => {
-  const result = checkDecisions(documentOf([BOOTSTRAP, { ...SPEC, timestamp: '2026-08-28T09:00:00Z' }]));
+  // shown_at se mueve con el timestamp: si no, la decision tambien saldria TOO_FAST y esta prueba
+  // dejaria de aislar el desorden temporal, que es lo unico que viene a comprobar.
+  const result = checkDecisions(documentOf([BOOTSTRAP, { ...SPEC, shown_at: '2026-08-28T08:59:00Z', timestamp: '2026-08-28T09:00:00Z' }]));
   assert.deepEqual(codes(result), ['PHASE_DECISION_OUT_OF_ORDER']);
   assert.match(joined(result), /timestamp/u);
 });
@@ -490,4 +497,61 @@ test('main informa el vacío por su marca, no por el texto del mensaje', () => {
   assert.equal(written.length, 1);
   assert.match(written[0], /^VACÍO: /u);
   assert.deepEqual(errors.map((e) => e.split(':')[1].trim()), [SIN_ENTRADAS]);
+});
+
+
+// --- Consentimiento: cuanto tardo la persona entre ver el menu y elegir --------------------------
+
+// El limite de fondo -"no demuestra que la persona haya querido esa opcion"- sigue en pie y no se
+// puede cerrar sin un canal fuera de este proceso. Lo que SI se puede detectar es el modo de falla
+// concreto: un agente que fabrica el menu y la decision en el mismo aliento. Si entre que se mostro
+// el menu y se registro la eleccion pasaron milisegundos, nadie lo leyo.
+const RAPIDO = 'PHASE_DECISION_TOO_FAST';
+
+test('MIN_DELIBERATION_MS es un piso explicito, no un numero escondido en el codigo', () => {
+  assert.equal(typeof MIN_DELIBERATION_MS, 'number');
+  assert.ok(MIN_DELIBERATION_MS > 0, 'un piso de cero no detecta nada');
+  assert.ok(GATE_CONTENT_FIELDS.includes('shown_at'), 'el momento en que se mostro el menu entra al hash');
+  assert.deepEqual([...GATE_CONTENT_FIELDS], CONTENT_FIELDS, 'el oraculo local y el gate declaran los mismos campos, en el mismo orden');
+});
+
+test('una decision con tiempo de lectura razonable pasa', () => {
+  const doc = documentOf([BOOTSTRAP, SPEC, PLAN]);
+  assert.deepEqual(checkDecisions(doc).violations, []);
+});
+
+test('FALSIFICACION · elegir en el mismo instante en que se mostro el menu se detecta', () => {
+  const doc = documentOf([BOOTSTRAP]);
+  doc.decisions[0].shown_at = doc.decisions[0].timestamp;
+  doc.decisions[0].current_hash = hashDecision('', doc.decisions[0]);
+  const codigos = checkDecisions(doc).violations.map((v) => v.code);
+  assert.ok(codigos.includes(RAPIDO), `esperaba ${RAPIDO}, salieron ${codigos.join(', ')}`);
+});
+
+test('FALSIFICACION · un menu mostrado DESPUES de la eleccion tambien se detecta', () => {
+  const doc = documentOf([BOOTSTRAP]);
+  const t = Date.parse(doc.decisions[0].timestamp);
+  doc.decisions[0].shown_at = new Date(t + 60000).toISOString();
+  doc.decisions[0].current_hash = hashDecision('', doc.decisions[0]);
+  const codigos = checkDecisions(doc).violations.map((v) => v.code);
+  assert.ok(codigos.includes(RAPIDO), 'elegir antes de que exista el menu es imposible, no rapido');
+});
+
+test('FALSIFICACION · shown_at tiene que ser una marca de tiempo real', () => {
+  for (const malo of ['ayer', '', null, 123, '2026-13-45T99:99:99Z']) {
+    const doc = documentOf([BOOTSTRAP]);
+    doc.decisions[0].shown_at = malo;
+    doc.decisions[0].current_hash = hashDecision('', doc.decisions[0]);
+    const codigos = checkDecisions(doc).violations.map((v) => v.code);
+    assert.ok(codigos.length > 0, `${JSON.stringify(malo)} tendria que rechazar`);
+  }
+});
+
+test('FALSIFICACION · cambiar shown_at despues de sellar rompe la cadena', () => {
+  const doc = documentOf([BOOTSTRAP, SPEC]);
+  const t = Date.parse(doc.decisions[0].timestamp);
+  doc.decisions[0].shown_at = new Date(t - 90000).toISOString();
+  // sin resellar: el hash ya no corresponde
+  const codigos = checkDecisions(doc).violations.map((v) => v.code);
+  assert.ok(codigos.includes('PHASE_DECISION_HASH_MISMATCH'), `salieron ${codigos.join(', ')}`);
 });
