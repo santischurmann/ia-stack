@@ -428,3 +428,37 @@ test('parseArguments informa --require-inputs sin perder --runtime', () => {
   assert.deepEqual(parseArguments(['check', '--runtime', '.vibe/vcp-runtime', '--require-inputs']), { runtime: '.vibe/vcp-runtime', requireInputs: true });
   assert.equal(parseArguments(['--require-inputs']), null);
 });
+
+// --- El instalador tiene que proteger el repo del usuario de su propio runtime ------------------
+
+test('los dos instaladores ignoran .vibe/vcp-runtime/ en el repo del proyecto', () => {
+  const sh = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');
+  const ps = readFileSync(join(repoRoot, 'scripts', 'install.ps1'), 'utf8');
+  for (const [nombre, source] of [['install.sh', sh], ['install.ps1', ps]]) {
+    assert.ok(source.includes('.gitignore'), `${nombre} tiene que escribir la regla en .gitignore`);
+    assert.ok(source.includes('.vibe/vcp-runtime/'), `${nombre} tiene que ignorar el runtime instalado`);
+  }
+});
+
+test('FALSIFICACIÓN · sin la regla, el runtime instalado queda como superficie del proyecto', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-instalacion-limpia-'));
+  try {
+    const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    git('init', '-q', '.');
+    writeFileSync(join(root, 'README.md'), '# limpio\n', 'utf8');
+    git('add', '-A');
+    git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'init');
+
+    const instalado = spawnSync('bash', [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
+    assert.equal(instalado.status, 0, instalado.stderr);
+
+    // Lo que git considera superficie viva del proyecto. El runtime no puede estar acá: un archivo
+    // que trajo el instalador bloquearía el gate de seguridad del usuario con un hallazgo que no
+    // escribió, y se commitearía sin querer junto con su trabajo.
+    const sinSeguimiento = git('ls-files', '--others', '--exclude-standard').stdout.split('\n').filter(Boolean);
+    const delRuntime = sinSeguimiento.filter((f) => f.includes('vcp-runtime'));
+    assert.deepEqual(delRuntime, [], `el instalador dejó ${delRuntime.length} archivo(s) del runtime como superficie del proyecto`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

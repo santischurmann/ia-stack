@@ -47,6 +47,18 @@ if ($ProjectDir) {
     (Get-Content "$VibeDir\PROJECT.md") -replace '\(fill in\)', $projectName -replace 'YYYY-MM-DD', $today | Set-Content "$VibeDir\PROJECT.md"
   }
   Copy-Runtime "$VibeDir\vcp-runtime"
+  # El runtime es una copia de esta herramienta, no codigo del proyecto. Sin esta regla queda como
+  # archivo sin seguimiento, y entonces: se commitea sin querer junto al trabajo del usuario, y el
+  # gate de seguridad lo trata como superficie viva -- un hallazgo dentro del runtime bloquearia el
+  # proyecto con un CRITICAL que el usuario no escribio y no puede arreglar editando su codigo.
+  $ignoreFile = Join-Path $ProjectDir '.gitignore'
+  $ignoreRule = '.vibe/vcp-runtime/'
+  $yaEsta = (Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $ignoreRule)
+  if (-not $yaEsta) {
+    Add-Content -Path $ignoreFile -Value '# VibeCodeProtocols: copia del runtime, no es codigo del proyecto'
+    Add-Content -Path $ignoreFile -Value $ignoreRule
+    Write-Host "OK: $ignoreRule agregado a .gitignore" -ForegroundColor Green
+  }
   Write-Host "OK: project runtime -> $VibeDir\vcp-runtime" -ForegroundColor Green
 } else {
   Write-Host 'NOTE: no project initialized. Re-run with -ProjectDir <project-root>.' -ForegroundColor Yellow

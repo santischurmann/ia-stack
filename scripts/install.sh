@@ -66,6 +66,19 @@ if [ -n "$PROJECT_DIR" ]; then
   fi
   copy_runtime "$VIBE_DIR/vcp-runtime"
   chmod +x "$VIBE_DIR/vcp-runtime/scripts/"*.sh
+  # El runtime es una copia de esta herramienta, no codigo del proyecto. Sin esta regla queda como
+  # archivo sin seguimiento, y entonces: se commitea sin querer junto al trabajo del usuario, y el
+  # gate de seguridad lo trata como superficie viva -- un hallazgo dentro del runtime bloquearia el
+  # proyecto con un CRITICAL que el usuario no escribio y no puede arreglar editando su codigo.
+  IGNORE_FILE="$PROJECT_DIR/.gitignore"
+  IGNORE_RULE=".vibe/vcp-runtime/"
+  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
+    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
+    printf '# VibeCodeProtocols: copia del runtime, no es codigo del proyecto
+%s
+' "$IGNORE_RULE" >> "$IGNORE_FILE"
+    echo "OK: $IGNORE_RULE agregado a .gitignore"
+  fi
   echo "OK: project runtime -> $VIBE_DIR/vcp-runtime"
 else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."

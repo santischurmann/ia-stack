@@ -138,6 +138,33 @@ seis. O sea: la lista de huecos ya estaba desactualizada cuando se escribió.
 quedar corta en silencio. **Lo que la sonda no prueba, declarado**: una sola invocación por gate,
 sólo el caso extremo de la carpeta vacía, y `self` es una declaración humana que nadie verifica.
 
+
+## Hallazgo 58 — el instalador dejaba su propio runtime como superficie del proyecto
+
+**Encontrado**: 2026-08-28, instalando VCP en una carpeta limpia por primera vez.
+
+El repo de VCP ignora `.vibe/vcp-runtime/` en su propio `.gitignore`, pero **el instalador nunca
+escribía esa regla en el proyecto del usuario**. Resultado, reproducido en un repo recién creado:
+los 114 archivos del runtime quedaban sin seguimiento, o sea dentro de lo que git considera
+superficie viva.
+
+Dos consecuencias, la segunda grave:
+
+1. El usuario commitea 114 archivos de esta herramienta junto con su trabajo, sin querer.
+2. `verify-security-baseline.mjs` usa `git ls-files --others --exclude-standard` para armar la
+   superficie a escanear. Con el runtime ahí adentro, **un hallazgo dentro del runtime bloquea el
+   proyecto del usuario con un CRITICAL que no escribió y no puede arreglar editando su código**.
+   Reproducido plantando un archivo con un secreto dentro del runtime instalado: el gate pasó de
+   `OK` a `REJECTED: 1 blocking security finding(s)` en un proyecto cuyo código no había cambiado.
+
+Este defecto era **invisible desde el repo de VCP**, porque ahí la regla sí existe. Sólo aparece
+instalando en una carpeta limpia, que es exactamente lo que nadie había hecho nunca.
+
+**HECHO** — los dos instaladores (`install.sh` e `install.ps1`) agregan la regla de forma
+idempotente, creando el `.gitignore` si no existe y respetando su contenido previo. Verificado en
+una instalación limpia real: la superficie del proyecto pasó de 124 archivos a 11, con 0 del
+runtime, y tres instalaciones seguidas dejan la regla una sola vez.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

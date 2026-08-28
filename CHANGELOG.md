@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El instalador ya no deja su propio runtime como superficie del proyecto** (hallazgo 58,
+  encontrado instalando VCP en una carpeta limpia por primera vez). El repo de VCP ignora
+  `.vibe/vcp-runtime/` en su `.gitignore`, pero el instalador nunca escribía esa regla en el
+  proyecto del usuario: los 114 archivos del runtime quedaban sin seguimiento y por lo tanto
+  dentro de lo que git considera superficie viva. El usuario los commiteaba sin querer, y —lo
+  grave— **un hallazgo dentro del runtime bloqueaba el gate de seguridad del proyecto con un
+  CRITICAL que el usuario no escribió y no podía arreglar editando su código**. Reproducido
+  plantando un secreto en el runtime instalado: el gate pasó de `OK` a `REJECTED` en un proyecto
+  cuyo código no había cambiado. Ahora los dos instaladores escriben la regla de forma idempotente,
+  creando el `.gitignore` si no existe y respetando lo que ya tenía. Verificado en una instalación
+  limpia real: la superficie pasó de 124 archivos a 11, con 0 del runtime.
+  El defecto era **invisible desde el repo de VCP**, donde la regla sí existe.
+
 - **Sonda de directorio vacío** (T13): nuevo gate `verify-empty-probe.mjs`, que existe por un
   fallo propio reproducido tres veces. La lista de gates que decían `OK:` sin haber comparado nada
   se armó leyendo el código, y quedó corta las tres veces: eran seis, la batería completa encontró
