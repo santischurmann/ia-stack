@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -103,7 +104,13 @@ test('readTrackedFiles normaliza la salida de Git y propaga un fallo real', () =
   expectError(() => readTrackedFiles('.', () => { throw new Error('not a repository'); }), /unable to list tracked files/u);
 });
 
-test('el repositorio real declara cobertura Graphify honesta', () => {
+// `graphify-out/` está en .gitignore, así que un clon recién hecho no tiene manifiesto y esta
+// prueba no se puede correr ahí. Se declara SALTEADA con el motivo a la vista, nunca en verde: un
+// pase por ausencia de entrada se leería como "la cobertura del grafo está bien", y no se miró.
+test('el repositorio real declara cobertura Graphify honesta', (t) => {
+  if (!existsSync(join(repoRoot, 'graphify-out', 'manifest.json'))) {
+    return t.skip('sin graphify-out/manifest.json: corré `graphify update .` antes. No es un verde, es una prueba que no corrió.');
+  }
   const tracked = readTrackedFiles(repoRoot, (cwd, args) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }));
   assert.ok(tracked.includes('SKILL.md'), 'the fixture must read the real tracked set');
   const result = spawnSync(process.execPath, [script, 'check'], { cwd: repoRoot, encoding: 'utf8' });

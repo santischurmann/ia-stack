@@ -67,7 +67,7 @@ function inventory(entries) {
 }
 
 test('la superficie comparada se deriva de lo que copia el instalador Bash', () => {
-  const installer = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');
+  const installer = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8').split(String.fromCharCode(13) + String.fromCharCode(10)).join(String.fromCharCode(10));
   const start = installer.indexOf('copy_runtime()');
   const body = installer.slice(start, installer.indexOf('\n}\n', start));
   const directories = [...body.matchAll(/cp -R "\$PACKAGE_DIR\/([^/"]+)\/\." /gu)].map((match) => match[1]);
@@ -81,9 +81,15 @@ test('la superficie comparada se deriva de lo que copia el instalador Bash', () 
 });
 
 test('el instalador PowerShell copia exactamente la misma superficie', () => {
-  const installer = readFileSync(join(repoRoot, 'scripts', 'install.ps1'), 'utf8');
+  // Git normaliza los finales de linea al hacer checkout: en Windows este archivo llega con CRLF.
+  // Buscar el cierre con LF crudo devolvia -1 en un clon recien hecho, el slice se comia el resto
+  // del archivo, y la prueba encontraba directorios que Copy-Runtime no copia. Pasaba solo en la
+  // maquina donde el archivo casualmente tenia LF. Reproducido clonando desde GitHub el 2026-08-28.
+  const installer = readFileSync(join(repoRoot, 'scripts', 'install.ps1'), 'utf8').split(String.fromCharCode(13) + String.fromCharCode(10)).join(String.fromCharCode(10));
   const start = installer.indexOf('function Copy-Runtime');
-  const body = installer.slice(start, installer.indexOf('\n}\n', start));
+  const cierre = installer.indexOf(String.fromCharCode(10) + '}' + String.fromCharCode(10), start);
+  assert.ok(start !== -1 && cierre > start, 'no se ubicó el cuerpo de Copy-Runtime en install.ps1');
+  const body = installer.slice(start, cierre);
   const directories = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"]+)\\\*"/gu)].map((match) => match[1]);
   const files = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"*]+)" /gu)].map((match) => match[1]);
   assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills']);

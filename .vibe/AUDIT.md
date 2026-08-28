@@ -56,3 +56,4 @@
 [2026-08-28] Auditor | fases 7, 12 y 14 cerradas | inventario historico 46 commits 0 regresiones; retro escrita; instalacion limpia probada | F7-F14 | chain:769b0bfa1aa7fcd34ea614fd50e33c35467aaf86d8b8cc04b1f5dacb8b3ecfef
 [2026-08-28] Auditor | fase 15: diccionario en README | 17 terminos tecnicos explicados en castellano comun, fijado con 2 checks de contrato (76) | F15 | chain:125cf8fabade588206bf699f84da32ffe1d8a6eca43030bd9e68e6b611d67de2
 [2026-08-28] Auditor | fases renumeradas 1-8, Discovery pasa a Research | 536 tests, 75 checks; install.ps1 verificado ejecutando; cobertura con huella antes/despues | F1-F8 | chain:6510bf4b3db4f6613f27ac1a6dca0d3268f96b097081437c2f6de29c71e6d289
+[2026-08-28] Auditor | verificacion del push: clon limpio desde GitHub | 2 pruebas fallaban en el clon y no en el arbol de trabajo; arregladas; 535 pasan 0 fallan 1 salteada con motivo | h60 | chain:1b3254e35634b2fbbc080b62233c347ecd9f4e9f09c575c61cbc60af2aebceaf

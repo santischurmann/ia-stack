@@ -191,6 +191,30 @@ durante la corrida sigue sin detectarse. Y la anomalía original, sobre `verify-
 nunca se reprodujo: la explicación es la misma clase de causa, pero eso es una hipótesis
 respaldada por el patrón de las ocho corridas, no la reproducción de ese caso puntual.
 
+
+## Hallazgo 60 — la suite no estaba verde en un clon recién hecho
+
+**Encontrado**: 2026-08-28, clonando el repo publicado desde GitHub y corriendo la suite ahí,
+en vez de en el árbol de trabajo. Es la LESSON-2 de esta misma sesión aplicándose sola, horas
+después de escribirla.
+
+Dos pruebas fallaban en el clon y ninguna era visible desde el repo de origen:
+
+1. **El parser del instalador PowerShell asumía finales de línea LF.** Git normaliza al hacer
+   checkout, así que en Windows `install.ps1` llega con CRLF; buscar el cierre de la función con
+   LF crudo devolvía `-1`, el `slice` se comía el resto del archivo y la prueba encontraba
+   directorios que `Copy-Runtime` no copia. Pasaba **sólo en la máquina donde el archivo
+   casualmente tenía LF** — la mía. Mismo error latente en el parser del instalador Bash.
+2. **La prueba del manifiesto Graphify exigía un archivo que está en `.gitignore`.** Un clon no
+   tiene `graphify-out/`, así que esa prueba no podía pasar nunca fuera del árbol del autor.
+
+**HECHO** — los dos parsers normalizan CRLF antes de leer, y la prueba del manifiesto se declara
+**SALTEADA con el motivo impreso** cuando no hay grafo: `sin graphify-out/manifest.json: corré
+`graphify update .` antes. No es un verde, es una prueba que no corrió.` Saltear en silencio
+habría sido exactamente el verde vacío que esta misma sesión pasó la noche eliminando.
+
+Verificado clonando de nuevo: **535 pasan, 0 fallan, 1 salteada con motivo a la vista**.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

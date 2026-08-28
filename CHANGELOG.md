@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La suite ahora sí está verde en un clon recién hecho** (hallazgo 60). Clonar el repo
+  publicado y correr las pruebas ahí daba **dos rojas** que no se veían desde el árbol de
+  trabajo: el parser del instalador PowerShell asumía finales de línea LF —y git entrega CRLF al
+  hacer checkout en Windows, así que el `slice` se comía el resto del archivo—, y la prueba del
+  manifiesto Graphify exigía un archivo que está en `.gitignore` y que un clon no tiene. La
+  primera pasaba **sólo en la máquina donde el archivo casualmente tenía LF**.
+  Los dos parsers normalizan CRLF antes de leer, y la prueba del manifiesto se declara
+  **salteada con el motivo impreso** en vez de pasar en verde — saltear callado habría sido el
+  mismo verde vacío que este release eliminó. Verificado clonando de nuevo desde GitHub:
+  535 pasan, 0 fallan, 1 salteada con su motivo a la vista.
+
 - **Las fases se renumeran de 1 a 8, y Discovery pasa a llamarse Research.** Antes la numeración
   arrancaba en 0 y tenía una fase 0.5, y el cierre entero vivía apretado dentro de una sola fase 4
   con ocho sub-pasos. Ahora: **1 Bootstrap · 2 Research · 3 Spec · 4 Plan · 5 Build · 6 Test ·
