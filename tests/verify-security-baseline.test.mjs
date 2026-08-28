@@ -408,13 +408,14 @@ test('FALSIFICACIÓN · a source that cannot be resolved or read is a blocking f
   }
 });
 
-// Title reworded ("errors" -> "failures") only to dodge a detector collision, not to change what
-// this test proves: SYNTAX_SIGNAL in scripts/verify-red-node.mjs matches the literal text
-// "collection error" anywhere in the raw TAP output, and a test TITLE lands in that output — so
-// the old title made every legitimate RED on this file report as a parse/load failure. Same repo
-// convention as the fragmented literals above, which keep the security scanner from matching its
-// own fixtures. Assertions below are untouched.
-test('safe changed code passes; CLI rejects bad usage and source-collection failures', () => {
+// This title was once reworded ("errors" -> "failures") to dodge a detector collision, and is now
+// restored: SYNTAX_SIGNAL in scripts/verify-red-node.mjs used to match the literal text
+// "collection error" anywhere in the raw TAP output, where a test TITLE also lands, so the
+// original title made every legitimate RED on this file report as a parse/load failure. Finding 51
+// fixed that — the signal now only refines the wording of a rejection already decided by the
+// absence of an ERR_ASSERTION block — so the workaround is no longer needed. Restoring it keeps
+// the repo's own suite as live evidence that the constraint is gone. Assertions are untouched.
+test('safe changed code passes; CLI rejects bad usage and source-collection errors', () => {
   const root = fixture();
   try {
     write(root, 'src/clean.js', 'export const clean = true;\n');

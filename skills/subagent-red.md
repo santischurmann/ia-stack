@@ -128,9 +128,19 @@ NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>"
 
 ## HARD GATE — If tests pass
 
-**Parse/collection errors are NOT a valid red.** If the failure output shows syntax or
-collection errors instead of assertion failures / missing-module errors → fix the test
-file and re-run. A garbage red makes GREEN meaningless.
+**Sólo una prueba que corrió y falló en su propia comprobación es un RED válido.** El gate exige
+un bloque de diagnóstico con `code: 'ERR_ASSERTION'`. Un error de carga — el archivo bajo prueba
+todavía no existe, o no parsea — **no** pasa: un archivo de test vacío que importa algo inexistente
+produciría el mismo error sin contener una sola prueba.
+
+Cuando el archivo bajo prueba todavía no existe, creá primero un **esqueleto que no implementa
+nada**: exporta los símbolos del contrato y cada función devuelve un centinela que ninguna prueba
+pueda aceptar. Así las pruebas corren de verdad y fallan por su propia comprobación. Los centinelas
+**devuelven**, nunca lanzan: las pruebas de este repo llaman las funciones directo y comparan, así
+que un throw aborta antes del assert y el runner emite un error genérico en vez del `ERR_ASSERTION`
+que el gate necesita como evidencia. Y no pueden ser valores plausibles (`0`, `[]`, `{ok:true}`):
+harían pasar por coincidencia a las pruebas de los casos vacíos, y un RED donde algunas pruebas
+pasan de casualidad no prueba nada.
 
 If tests pass before implementation exists, output:
 ```

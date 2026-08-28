@@ -20,7 +20,7 @@ const {
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\nDiscovery: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\nPHASE 0.5 — DISCOVERY\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\nDiscovery: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\nPHASE 0.5 — DISCOVERY\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nverify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {
@@ -91,6 +91,25 @@ test('FALSIFICACIÓN · contract rejects SKILL.md missing receipt evidence limit
     ? completeRead(path).replace('scope.declared_paths sigue siendo un writer set verify-scope-diff.mjs', 'scope declaration omitted')
     : completeRead(path));
   assert.equal(missingScopeLimit.some((item) => /SKILL\.md: missing receipt v2: scope declaration and separate diff gate/u.test(item)), true);
+});
+
+test('FALSIFICACIÓN · contract rejects docs that drop the runtime-sync gate or the promise that it runs from the source checkout', () => {
+  const missingSkill = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('verify-runtime-sync.mjs check', 'runtime sync omitido')
+    : completeRead(path));
+  assert.equal(missingSkill.some((item) => /SKILL\.md: missing mechanical runtime-sync gate/u.test(item)), true);
+
+  const missingReadme = contractViolations((path) => path === 'README.md'
+    ? completeRead(path).replace('verify-runtime-sync.mjs check', 'runtime sync omitido')
+    : completeRead(path));
+  assert.equal(missingReadme.some((item) => /README\.md: missing mechanical runtime-sync gate/u.test(item)), true);
+
+  // Sin esta frase el gate se puede terminar corriendo desde .vibe/vcp-runtime/, comparando la
+  // copia instalada consigo misma: verde siempre, evidencia cero.
+  const missingOrigin = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('nunca desde el runtime', 'o desde el runtime, da igual')
+    : completeRead(path));
+  assert.equal(missingOrigin.some((item) => /SKILL\.md: missing runtime-sync gate runs from the source checkout/u.test(item)), true);
 });
 
 test('FALSIFICACIÓN · contract rejects SKILL.md missing the mechanical spec word-cap gate command', () => {

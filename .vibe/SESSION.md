@@ -136,3 +136,31 @@
 - Gates finales: 365 tests · cobertura 100% · contrato 48 checks + 16 límites · scope 6 paths.
 - Límites del propio gate: verifica que la frase esté, no que el párrafo que la rodea siga siendo
   cierto; y un límite que nadie declaró tampoco se protege.
+
+## Hallazgos abiertos del backlog · CERRADOS
+
+### T05 — hallazgo 51: el título de una prueba la incapacitaba
+
+- La búsqueda de frases de parseo corría sobre la salida cruda, donde también salen los títulos.
+  Dos archivos idénticos salvo el nombre daban veredictos opuestos.
+- Arreglo sin agregar un solo regex: se apoya en una diferencia **medida**, no supuesta — un
+  archivo que no parsea nunca ejecuta un assert, así que no puede producir un bloque de assertion.
+  La búsqueda de frases pasó de ser un chequeo bloqueante a elegir la redacción del rechazo.
+- El agente encontró que **un fixture existente codificaba el bug**: contenía una combinación que
+  Node no puede emitir. Reemplazado por salida real capturada.
+- Se revirtió el rename que el defecto había forzado: la suite queda como evidencia viva.
+- **Residuo del hallazgo 50 corregido de paso**: `skills/subagent-red.md` seguía afirmando que un
+  error de módulo faltante es un RED válido. La corrección de `1f847f3` nunca se propagó ahí.
+
+### T06 — hallazgo 53: el runtime instalado se desincronizaba en silencio
+
+- Confirmado en vivo: 11 archivos viejos y **5 ausentes**. No faltaban parches, faltaban features
+  enteras — `verify-audit-chain.mjs` y `contracts/honest-limits.json` nunca llegaron al runtime.
+- El gate se cablea en Phase 0, antes de cualquier otro: si la copia está vieja, todo gate
+  posterior es evidencia sin valor.
+- **No puede correrse desde el runtime**: compararía la copia consigo misma, verde siempre. Esa
+  promesa quedó fijada en el contrato para que una edición futura no la borre.
+- La lista de qué comparar no está hardcodeada: la prueba parsea los dos instaladores y se pone
+  roja si empiezan a copiar algo que la lista no nombra.
+- Runtime reinstalado y verificado: 98 archivos al día.
+- Límite declarado: compara contenido, no permisos. El `chmod +x` del instalador no se verifica.

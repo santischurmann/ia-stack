@@ -7,6 +7,54 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- Nuevo gate `verify-runtime-sync.mjs` (hallazgo 53): el runtime que un proyecto **ejecuta** ya no
+  puede envejecer en silencio respecto del checkout que lo instaló. `install.sh` copia
+  `scripts/`, `contracts/`, `tests/`, `templates/` y `skills/` (más `SKILL.md` y `SECURITY.md`) a
+  `<proyecto>/.vibe/vcp-runtime/` una sola vez; desde ahí la copia se queda vieja y nada avisa.
+  Ya costó tiempo real: el gate de Discovery rechazó con `DISCOVERY_SNAPSHOT_INVALID` una evidencia
+  perfectamente válida corriendo desde el runtime instalado, y la aceptó corriendo desde `scripts/`.
+  El problema nunca fue la evidencia, era la copia vieja — y no había forma de saberlo.
+  `node scripts/verify-runtime-sync.mjs check [--runtime <ruta>]` compara por hash de contenido y
+  nombra las tres clases que importan: los archivos que **difieren**, los que **faltan** en el
+  runtime y los que **sobran** —un gate borrado arriba que el proyecto sigue ejecutando es tan
+  peligroso como uno viejo—. Sin runtime instalado sale `0` con un mensaje que lo dice: un checkout
+  fuente limpio es normal, no un error. Un `--runtime` que no existe sí falla: un typo ahí dejaría
+  el gate ciego y verde para siempre.
+  La superficie comparada no se inventa, se deriva: la suite parsea `install.sh` y `install.ps1` y
+  se pone roja si cualquiera de los dos empieza a copiar algo que la lista no nombra.
+  Verificado además que el instalador **no transforma** ningún archivo dentro del runtime —una
+  instalación fresca queda byte-idéntica en las cinco carpetas y los dos archivos—: el `sed` /
+  `-replace` de `(fill in)` y `YYYY-MM-DD` toca únicamente `<proyecto>/.vibe/PROJECT.md`, que vive
+  fuera de `vcp-runtime/`. No hay exclusiones.
+  Cableado en `SKILL.md` Phase 0 como paso `1b`, antes de cualquier otro gate: correr el protocolo
+  entero contra gates viejos invalida todo lo que venga después. Se corre **desde el checkout
+  fuente**, nunca desde el runtime — compararlo consigo mismo sería verde siempre y evidencia cero;
+  esa promesa quedó fijada en `verify-vcp-contract.mjs`, no librada a la próxima edición.
+  Límite honesto declarado en `contracts/honest-limits.json` (README + SKILL): detecta que la copia
+  difiere, no que la copia sea correcta ni que el fuente lo sea —dos copias idénticas de un gate
+  roto pasan igual—, compara contenido y no permisos (el `+x` sobre `scripts/*.sh` no se verifica),
+  y sólo puede hablar donde el checkout fuente y el runtime conviven en la misma máquina.
+  Corrido en este repositorio el día del arreglo, el gate salió en rojo de verdad: 11 archivos
+  divergentes —entre ellos la versión vieja de `verify-red-node.mjs`, con el defecto del hallazgo
+  51 que ya estaba arreglado en el fuente— y 3 ausentes, incluido `contracts/honest-limits.json`.
+- `verify-red-node.mjs` ya no confunde el **título** de un test con un archivo roto (hallazgo 51).
+  La señal de parseo (`SYNTAX_SIGNAL`: `SyntaxError`, `Unexpected token`, `collection error`,
+  `ERROR collecting`, `IndentationError`) corría sobre la salida cruda del runner, y por esa misma
+  salida salen los títulos de los tests. Dos archivos idénticos salvo el nombre daban veredictos
+  opuestos: el titulado `maneja un collection error del runner` era rechazado con «the test file
+  failed to parse/load» —una afirmación falsa sobre un archivo que compilaba perfecto— y el mismo
+  sin esa frase pasaba. Costó una tarea real: bloqueó T02 hasta renombrar un test existente
+  (`source-collection errors` → `source-collection failures`) sólo para poder trabajar.
+  El arreglo no agrega regex, se apoya en una diferencia estructural medida: un archivo que no
+  parsea nunca llega a ejecutar un assert, así que **no puede** producir un bloque `ERR_ASSERTION`
+  atado a su línea `not ok`; una prueba real sí. `SYNTAX_SIGNAL` queda como redacción solamente: se
+  consulta únicamente cuando ya se decidió el rechazo por ausencia de ese bloque, para elegir el
+  mensaje específico de fallo de carga en vez del genérico. Nunca provoca un rechazo por su cuenta.
+  No debilita el gate: el caso que la señal protegía —un archivo que no compila— sigue rechazado en
+  el mismo punto, por el chequeo de bloques de assertion que ya existía, y conserva su mensaje.
+  Falsificado en las dos direcciones con procesos reales: dos archivos byte-idénticos salvo el
+  título ahora pasan igual, y un archivo con `SyntaxError` real sigue dando exit 1. Se revirtió el
+  rename que el defecto había forzado, como evidencia viva en la suite de que la traba ya no está.
 - Reconciliación documental del hardening round 5: T01–T05 pasan de estado pendiente a
   implementado con referencias verificables a `98d2058`; el spec y la propuesta ya no describen
   un estado histórico falso. El backlog restante conserva estado explícito y no se promociona a

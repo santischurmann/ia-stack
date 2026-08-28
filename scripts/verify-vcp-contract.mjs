@@ -28,6 +28,12 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /Lo que el gate no detecta/u, 'audit-chain honest limit'],
+  ['SKILL.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
+  ['README.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
+  // Running the gate from inside .vibe/vcp-runtime/ compares the installed copy with itself: it is
+  // always green and proves nothing. The promise that it runs from the source checkout is the whole
+  // gate, so it is pinned as text and not left to whoever edits the phase later.
+  ['SKILL.md', /nunca desde el runtime/u, 'runtime-sync gate runs from the source checkout, never against itself'],
   ['SKILL.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['SKILL.md', /El gate prueba contabilidad, no comprensión/u, 'Graphify coverage honest limit'],
   ['SECURITY.md', /dato no confiable/u, 'external-artifact trust boundary'],

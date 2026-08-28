@@ -41,6 +41,27 @@ function tapTestCodeFailure() {
   ].join('\n');
 }
 
+// The real shape of `node --test --test-reporter=tap` over a file that does not parse, captured
+// empirically before this fixture was written. Two properties matter and both are load-bearing for
+// the gate: the SyntaxError text reaches stdout ONLY as `#`-prefixed harness comments, and the one
+// diagnostic block is ERR_TEST_FAILURE — a file that never loads cannot reach an assert, so it can
+// never produce an ERR_ASSERTION block. This fixture replaced an earlier synthetic one that glued a
+// bare `SyntaxError:` line onto a complete, valid assertion run; Node cannot emit that combination,
+// and asserting on it is what pinned the false positive described in classifyNodeRed's comment.
+function tapUnparseableFile() {
+  return [
+    'TAP version 13',
+    '# file:///project/test/broken.test.mjs:4',
+    '# SyntaxError: Unexpected end of input',
+    '#     at compileSourceTextModule (node:internal/modules/esm/utils:318:16)',
+    '# Subtest: test/broken.test.mjs', 'not ok 1 - test/broken.test.mjs',
+    '  ---', '  duration_ms: 45', "  type: 'test'", "  failureType: 'testCodeFailure'",
+    '  exitCode: 1', "  error: 'test failed'", "  code: 'ERR_TEST_FAILURE'",
+    '  ...', '1..1', '# tests 1', '# suites 0', '# pass 0', '# fail 1',
+    '# cancelled 0', '# skipped 0', '# todo 0', '# duration_ms 51', '',
+  ].join('\n');
+}
+
 function tapHeaderNoFooter() {
   return ['TAP version 13', '# Subtest: x', 'not ok 1 - x', '  ---', "  code: 'ERR_ASSERTION'", '  ...'].join('\n');
 }
@@ -128,7 +149,7 @@ test('FALSIFICACIÓN · classification rejects launch failure, pass, missing TAP
     { status: 1 },
     { status: 0, stdout: tapAssertionFailure(), stderr: '' },
     failed('no TAP header at all, just crash text'),
-    failed('TAP version 13\nSyntaxError: Unexpected token\n' + tapAssertionFailure()),
+    failed(tapUnparseableFile()),
     failed(tapHeaderNoFooter()),
     failed(tapTestCodeFailure()),
     // Forged text that prints TAP-shaped lines is always re-emitted as `#`-prefixed comments by
@@ -137,6 +158,8 @@ test('FALSIFICACIÓN · classification rejects launch failure, pass, missing TAP
     failed(`TAP version 13\n#   ---\n#   code: 'ERR_ASSERTION'\n#   ...\n${tapTestCodeFailure()}`),
   ];
   for (const candidate of cases) assert.equal(classifyNodeRed(candidate).ok, false);
+  assert.match(classifyNodeRed(failed(tapUnparseableFile())).reason, /failed to parse\/load/u, 'a real load failure keeps its own specific wording');
+  assert.match(classifyNodeRed(failed(tapTestCodeFailure())).reason, /AssertionError-shaped diagnostic block/u, 'a run with no parse signal gets the generic wording');
 });
 
 test('FALSIFICACIÓN · a diagnostic block not immediately preceded by its own not-ok line is not accepted, even with byte-identical content', () => {
@@ -216,6 +239,46 @@ test('main reports the strict adapter pass only after a real requested test file
     assert.equal(main(['check', '--test', 'test/main.test.mjs', '--command', 'node --test'], { cwd: root, write: (line) => output.push(line), writeError: (line) => errors.push(line) }), 0);
     assert.match(output.at(-1), /RED gate passed/);
     assert.deepEqual(errors, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Two byte-identical files except the test's own title, both failing the same assertion. If the
+// gate tells them apart it is deciding on text the author writes, not on the structure of the run.
+// The Spanish titles are verbatim from the reproduction in finding 51 of
+// research/adversarial-productivity-audit-2026-08-23.md.
+test("FALSIFICACIÓN · a test's own title cannot disable it: two files identical but for the name get the same verdict", () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-red-node-title-'));
+  try {
+    mkdirSync(join(root, 'test'));
+    const source = (title) => [
+      "import test from 'node:test';", "import assert from 'node:assert/strict';",
+      `test(${JSON.stringify(title)}, () => assert.equal(1, 2));`, '',
+    ].join('\n');
+    writeFileSync(join(root, 'test', 'plain.test.mjs'), source('maneja un fallo del runner'));
+    writeFileSync(join(root, 'test', 'titled.test.mjs'), source('maneja un collection error del runner'));
+    const plain = verifyNodeRed({ testPath: 'test/plain.test.mjs', command: 'node --test', cwd: root });
+    const titled = verifyNodeRed({ testPath: 'test/titled.test.mjs', command: 'node --test', cwd: root });
+    assert.equal(plain.ok, true, plain.reason);
+    assert.equal(titled.ok, true, titled.reason);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Counterpart of the test above: loosening the parse signal must not open a hole. A file that
+// genuinely does not compile never reaches an assert, so it can never produce an ERR_ASSERTION
+// block — which is exactly the structural difference the gate now relies on.
+test('FALSIFICACIÓN · a file that genuinely fails to parse is still rejected, and is still named as a load failure', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-red-node-broken-'));
+  try {
+    mkdirSync(join(root, 'test'));
+    writeFileSync(join(root, 'test', 'broken.test.mjs'), ["import test from 'node:test';", "test('x', () => {", ''].join('\n'));
+    const result = verifyNodeRed({ testPath: 'test/broken.test.mjs', command: 'node --test', cwd: root });
+    assert.equal(result.ok, false);
+    assert.match(result.output, /SyntaxError/u, 'the file must have actually failed to parse');
+    assert.match(result.reason, /failed to parse\/load/u);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

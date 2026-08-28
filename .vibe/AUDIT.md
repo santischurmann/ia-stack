@@ -36,3 +36,5 @@
 [2026-08-28 02:32] Orchestrator | T04 diseno | contracts/honest-limits.json: frases como dato revisable con motivo, no hardcodeadas en el gate | T04 | chain:e4ab8cdaf289576c329e744e7cf896aacf4bcc0c21c817e7fa8ae25745158375
 [2026-08-28 02:55] Test-Engineer | T04 RED aceptado | 18 tests: 8 verdes + 10 rojos; hallazgo: 2 limites actuales fijan titulos de seccion, no afirmaciones | T04 | chain:7208da60572828fa99c1d260f1ae50f74f4eb57b7dccc6d418ecb6c594726e04
 [2026-08-28 03:20] Orchestrator | T04 done | 16 limites declarados, contrato 48 checks; verificado debilitando una frase real del README | T04 | chain:5fd49c6a06fcb92d9d740701ea4422771f0e289fd95aadf1c7438f7d0e96fa6a
+[2026-08-28 04:30] Orchestrator | T05 done | hallazgo 51 cerrado: el titulo de un test ya no lo incapacita; archivo roto sigue rechazado | T05 | chain:aadd9bb801853f2340ae4fb223db2aa4f3921b0dbe4ee2028d7fbc7c82719f4a
+[2026-08-28 04:31] Orchestrator | T06 done | hallazgo 53 cerrado: 11 archivos viejos y 5 ausentes detectados; runtime reinstalado, 98 al dia | T06 | chain:5b30b0a47aacdcb27113a7140320b58f259aea1e8f906217fb07a822cf3f8fc0

@@ -4,6 +4,8 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
 export const USAGE = 'usage: verify-red-node.mjs check --test <project-relative-test-file> --command "node --test"';
+// Wording-only signal: it refines a rejection already decided elsewhere and can never cause one on
+// its own. See the guard in classifyNodeRed for why that restriction exists and must stay.
 const SYNTAX_SIGNAL = /SyntaxError|ParseError|Unexpected token|collection error|ERROR collecting|IndentationError/iu;
 const TEST_PATH = /(?:^|\/)(?:test|tests|__tests__|spec|specs)\/|(?:\.|\/)(?:test|spec)\.[a-z]+$/iu;
 const TAP_HEADER = /^TAP version 13$/mu;
@@ -149,13 +151,27 @@ export function classifyNodeRed(result) {
   if (result.error) return { ok: false, output, reason: `Node test runner could not launch: ${result.error.message}` };
   if (result.status === 0) return { ok: false, output, reason: 'tests passed (exit 0), so this is not RED' };
   if (!TAP_HEADER.test(stdout)) return { ok: false, output, reason: 'Node did not produce a genuine TAP-native test run on stdout (no framework header)' };
-  if (SYNTAX_SIGNAL.test(output)) return { ok: false, output, reason: 'the test file failed to parse/load, not a valid RED' };
   const footer = tapFooter(stdout);
   if (!footer || footer.tests < 1 || footer.fail < 1) {
     return { ok: false, output, reason: 'no genuine TAP harness footer on stdout reporting at least one collected, failing test' };
   }
+  // SYNTAX_SIGNAL may only speak when there is NO ERR_ASSERTION block, and that ordering is the
+  // whole point: a file that does not parse never reaches an assert, so it cannot produce one.
+  // Run unconditionally over raw output — as it was before — the signal also matched the TEST
+  // TITLES the harness echoes on that same stdout, so a perfectly valid test named "maneja un
+  // collection error del runner" was rejected with "the test file failed to parse/load", a claim
+  // that was simply false about a file that compiled fine. That cost a real task: it blocked T02
+  // until an existing, unrelated test was renamed ("source-collection errors" →
+  // "source-collection failures") just to get past the gate. Do not hoist this check back above
+  // the assertion-block check without re-reading finding 51 in
+  // research/adversarial-productivity-audit-2026-08-23.md. Nothing is loosened: the broken file
+  // this signal protects against still falls right here, rejected for having no assertion block,
+  // and still gets the specific parse-failure wording instead of the generic one.
   if (!realDiagnosticBlocks(stdout).some((block) => block.includes(BLOCK_ASSERTION_LINE))) {
-    return { ok: false, output, reason: 'no test() failure on stdout with an AssertionError-shaped diagnostic block associated to its own not-ok line' };
+    const reason = SYNTAX_SIGNAL.test(output)
+      ? 'the test file failed to parse/load, not a valid RED'
+      : 'no test() failure on stdout with an AssertionError-shaped diagnostic block associated to its own not-ok line';
+    return { ok: false, output, reason };
   }
   return { ok: true, output, reason: 'Node-native TAP runner registered a real test() that failed with AssertionError-shaped metadata (not proof the assertion itself is genuine — see doc comment)' };
 }

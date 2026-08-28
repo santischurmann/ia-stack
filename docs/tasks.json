@@ -195,6 +195,98 @@
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED reproducido: dos archivos identicos salvo el titulo daban veredictos opuestos",
+        "GREEN: 367 tests, cobertura 100%; titulo con la frase exit 0, archivo roto exit 1"
+      ],
+      "not_reviewed": [
+        "Un fixture existente codificaba el bug (SyntaxError + bloque ERR_ASSERTION juntos, combinacion que Node no emite). Reemplazado por salida real capturada.",
+        "Se revirtio el rename que el defecto habia forzado en tests/verify-security-baseline.test.mjs: la suite queda como evidencia viva.",
+        "Residuo del hallazgo 50 corregido de paso: skills/subagent-red.md afirmaba que un missing-module error es RED valido."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T05",
+      "description": "Hallazgo 51: verify-red-node confunde el titulo de un test con un archivo roto",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-red-node.mjs",
+        "research/adversarial-productivity-audit-2026-08-23.md",
+        "CHANGELOG.md",
+        "skills/subagent-red.md"
+      ],
+      "test_files": [
+        "tests/verify-red-node.test.mjs"
+      ],
+      "depends_on": [
+        "T04"
+      ],
+      "status": "done",
+      "goal": "Disciplina verificable -> hallazgo 51 del backlog -> una prueba valida no puede fallar por como se llama",
+      "approval_criteria": "La misma prueba con un titulo que contiene collection error debe pasar el gate igual que sin esa frase. Un archivo que realmente no parsea sigue siendo rechazado."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED: 25 tests en rojo, gate RED exit 0",
+        "GREEN: 393 tests, cobertura 100%, contrato 51 checks + 18 limites",
+        "El gate detecta el problema real: 11 archivos viejos y 5 ausentes en el runtime de este repo"
+      ],
+      "not_reviewed": [
+        "Peor de lo medido: al runtime le faltaban features enteras (verify-audit-chain, honest-limits), no solo parches.",
+        "El gate no puede correrse desde el runtime: compararia la copia consigo misma. La promesa esta fijada en el contrato.",
+        "Compara contenido, no permisos: el chmod +x que aplica el instalador no se verifica."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T06",
+      "description": "Hallazgo 53: el runtime instalado se desincroniza del repo fuente sin deteccion",
+      "files_to_create": [
+        "scripts/verify-runtime-sync.mjs"
+      ],
+      "files_to_modify": [
+        "SKILL.md",
+        "README.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "CHANGELOG.md",
+        "contracts/honest-limits.json",
+        "research/adversarial-productivity-audit-2026-08-23.md"
+      ],
+      "test_files": [
+        "tests/verify-runtime-sync.test.mjs"
+      ],
+      "depends_on": [
+        "T05"
+      ],
+      "status": "done",
+      "goal": "Disciplina verificable -> hallazgo 53 del backlog -> un proyecto no puede correr gates de una version vieja sin enterarse",
+      "approval_criteria": "Un runtime instalado que difiere del repo fuente se detecta y se nombra el archivo. Un runtime al dia pasa. Sin runtime instalado no es un error."
     }
   ]
 }

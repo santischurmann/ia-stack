@@ -92,6 +92,18 @@
       "why": "Es la oración sustantiva de la sección \"Lo que no cubre\", cuyo título ya está fijado aparte: reemplazar un secreto aceptado por otro en el mismo archivo sigue aceptado. Sin la oración, el título puede quedar sobre un párrafo vacío."
     },
     {
+      "limit_id": "runtime-sync-detects-drift-not-correctness",
+      "file": "README.md",
+      "phrase": "Detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea",
+      "why": "verify-runtime-sync.mjs compara hashes entre el checkout fuente y la copia instalada: prueba igualdad, no corrección. Sin el límite, un runtime en verde se lee como \"los gates de este proyecto están bien\", cuando dos copias idénticas de un gate roto dan exactamente el mismo verde."
+    },
+    {
+      "limit_id": "runtime-sync-gate-detects-drift-not-correctness",
+      "file": "SKILL.md",
+      "phrase": "detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea",
+      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 0. Sin esta frase, un runtime sincronizado se reporta como runtime verificado y nadie vuelve a mirar los gates que la copia y el fuente comparten rotos."
+    },
+    {
       "limit_id": "audit-chain-misses-wholesale-rewrites",
       "file": "skills/vibe-memory.md",
       "phrase": "borrar los sufijos enteros de toda la traza, recortar sus últimas líneas",

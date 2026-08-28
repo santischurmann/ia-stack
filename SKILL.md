@@ -60,6 +60,22 @@ Declarar trabajo terminado sin verificación no es eficiencia, es deshonestidad.
 1. **Orchestration contract active** (§ INTERNAL ORCHESTRATION CONTRACT above, always). Use the
    VCP-native roles, gates and evidence rules; do not invoke or require another skill to widen,
    replace or authorize a phase.
+1b. **Runtime sync check — antes de correr cualquier otro gate.** Todo lo que sigue se ejecuta desde
+   `.vibe/vcp-runtime/`, una copia que `install.sh` dejó una vez y que envejece sola. Correr el
+   protocolo entero contra gates viejos invalida todo lo demás, así que esto va primero. Se corre
+   **desde el checkout fuente de VibeCodeProtocols**, nunca desde el runtime (compararlo consigo
+   mismo siempre da verde y no prueba nada):
+   ```bash
+   # parado en el checkout fuente de VibeCodeProtocols
+   node scripts/verify-runtime-sync.mjs check --runtime <project-root>/.vibe/vcp-runtime
+   ```
+   Exit `0` con `no runtime installed` (checkout limpio) o con `matches this source checkout` → seguir.
+   Exit `1` → **reinstalar antes de continuar**: `bash scripts/install.sh --project <project-root>`
+   (PowerShell: `scripts/install.ps1 -ProjectDir <project-root>`), y volver a correr el gate.
+   Si el checkout fuente no está en esta máquina, decirlo en el reporte del paso 7: el gate no se
+   pudo correr y la frescura del runtime queda sin verificar — no lo reportes como verde.
+   El gate detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea: dos
+   copias idénticas de un gate roto pasan igual. Compara contenido, no permisos.
 2. Detect stack: `ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null`.
 3. Read `.vibe/PROJECT.md` + `SESSION.md` + `DECISIONS.md` + `RETRO.md` (últimas 2 entradas) + `LESSONS.md` (entradas `status: active`) if exist. Full lesson protocol (confirm-gate, dedup, retire, decay, recall-on-touch): `skills/vibe-memory.md` § LESSONS PROTOCOL.
 4. **Engram recall (opcional, best-effort, nunca bloqueante)** — buscá `mem_context`/`mem_search` en tu tool list (directas o diferidas). Si aparecen: `ToolSearch` para cargarlas, `mem_context` con el proyecto actual, ojeá 1-2 hits de `mem_search("vcp/<project>/<feature-slug>/gate-state")`. Si no aparecen: seguir sin más, sin reintento — pero SÍ mencionarlo en el paso 7. Esto es color adicional, **nunca** reemplaza el re-detect por evidencia del paso 5.
