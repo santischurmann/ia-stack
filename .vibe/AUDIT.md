@@ -64,3 +64,4 @@
 [2026-08-28] Test-Engineer | prueba E2E del protocolo | instala en proyecto nuevo y corre los gates en orden; 6 pruebas, 570 en total | e2e | chain:3719100a6bc8dc33b98e6b57fa54285681dd9e23c6ae80eb58f326417c31b272
 [2026-08-28] Builder | cobertura de shell medida | PS4 con LINENO + set -x: install.sh 72.2%, verify-red.sh 57.1%; 2 excluidos con motivo | shell-cov | chain:3282f6d294880fdf987d60f952cad4dc629db3820415acf7f176fa70923a2224
 [2026-08-28] Auditor | ataque adversarial: 3 bugs reproducidos y arreglados | CRLF en el ancla, decisions vacio en verde, parser de cobertura inyectable; 38 huecos quedan sin refutar | h61 | chain:d4dffe923c5fc8571ec5400a5cde1783ae999063952b1ce3ccddb57df214363d
+[2026-08-28] Docs | mapa al commit ae2556f | 589 tests, 83 checks, 34 limites, cobertura de shell medida; 2 de 3 huecos abiertos cerrados | mapa | chain:9b8f197e48eb2859d30675edf262f987f206a2a6e0f5843e7d845aad1bf7488d

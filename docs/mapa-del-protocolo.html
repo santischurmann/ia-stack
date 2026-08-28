@@ -335,7 +335,7 @@
 <div class="wrap">
 
   <header>
-    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>3e9554a</code></div>
+    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>ae2556f</code></div>
     <h1>Qué prueba VCP<br>y qué no</h1>
     <p class="thesis">
       VCP es un protocolo de trabajo con chequeos automáticos. Cada regla tiene un programa que la
@@ -523,7 +523,7 @@
 
   <section>
     <h2>La noche del 28</h2>
-    <p class="h2sub">Leer el código encontró seis. Ejecutarlo encontró seis más</p>
+    <p class="h2sub">Leer el código encontró seis. Ejecutarlo encontró nueve más</p>
     <p class="lede">
       Los primeros seis salieron de leer con cuidado. Los que siguen no: aparecieron corriendo la
       batería completa, sondeando una carpeta vacía, instalando en un destino limpio y clonando
@@ -556,6 +556,19 @@
         </div>
       </div>
       <div class="find grave">
+        <div class="label">Ataque adversarial</div>
+        <div>
+          <h3>Tres bugs, cada uno en un chequeo escrito ese mismo día</h3>
+          <p>El ancla nueva <b>rechazaba en falso a la mayoría de los usuarios de Windows</b> por
+            cómo git entrega los saltos de línea. Una lista de decisiones vacía pasaba como
+            verificada. Y el chequeo que vigila la cobertura de todos los demás <b>se creía
+            cualquier línea que una prueba imprimiera</b>. Los tres reproducidos antes de tocar
+            nada. <em>De 130 agentes del ataque, 100 murieron por límite de cuota: el informe dijo
+            «39 confirmados» y era falso — sin escépticos vivos, nadie podía refutar. Quedan 38
+            propuestos sin verificar.</em></p>
+        </div>
+      </div>
+      <div class="find grave">
         <div class="label">Clon desde GitHub</div>
         <div>
           <h3>La suite no estaba verde para quien clonara el repo</h3>
@@ -583,11 +596,11 @@
     <p class="h2sub">Los números, corridos, no recordados</p>
 
     <div class="metrics">
-      <div class="metric"><div class="metric-n">536</div><div class="metric-l">pruebas, ninguna roja</div></div>
-      <div class="metric"><div class="metric-n">535</div><div class="metric-l">pasan en un clon nuevo, más 1 salteada con motivo a la vista</div></div>
-      <div class="metric"><div class="metric-n">100%</div><div class="metric-l">cobertura en 24 programas</div></div>
-      <div class="metric"><div class="metric-n">75</div><div class="metric-l">promesas del contrato</div></div>
-      <div class="metric"><div class="metric-n">29</div><div class="metric-l">límites honestos declarados</div></div>
+      <div class="metric"><div class="metric-n">589</div><div class="metric-l">pruebas, ninguna roja</div></div>
+      <div class="metric"><div class="metric-n">83</div><div class="metric-l">promesas del contrato</div></div>
+      <div class="metric"><div class="metric-n">100%</div><div class="metric-l">cobertura en 25 programas</div></div>
+      <div class="metric"><div class="metric-n">72%</div><div class="metric-l">de <code>install.sh</code> ejecutado, medido</div></div>
+      <div class="metric"><div class="metric-n">34</div><div class="metric-l">límites honestos declarados</div></div>
       <div class="metric"><div class="metric-n">0</div><div class="metric-l">capacidades perdidas en 46 commits</div></div>
       <div class="metric"><div class="metric-n">2,05%</div><div class="metric-l">del research externo leído</div></div>
     </div>
@@ -595,26 +608,31 @@
 
   <section>
     <h2>Lo que sigue abierto</h2>
-    <p class="h2sub">Dónde hay que inventar, no copiar</p>
+    <p class="h2sub">Dos de tres cerrados; el tercero sigue abierto</p>
     <p class="lede">
       Se leyeron 320 archivos de 14 proyectos ajenos buscando soluciones. Estas tres no las resuelve
       ninguno, y todas las que funcionan exigen infraestructura que VCP no quiere tener.
     </p>
 
     <div class="open">
-      <h3>Sin respuesta portable</h3>
+      <h3>Dónde quedan hoy</h3>
       <ul>
-        <li><b>Ancla externa contra el borrado total.</b> Cualquier cadena de huellas guardada en el
-          mismo archivo que protege se puede refabricar entera. Las soluciones reales viven fuera de
-          la máquina.</li>
-        <li><b>Cadena de custodia.</b> Nadie firma un recibo. Una huella sin clave no sirve: quien
-          edita el recibo recalcula la huella en la misma línea. Custodia de verdad necesita una
-          clave privada fuera del alcance de quien escribe.</li>
-        <li><b>Consentimiento humano real.</b> Se puede probar que una decisión quedó registrada y
-          coherente. Probar que la tomó una persona que entendió lo que elegía necesita un canal
-          fuera de este proceso.</li>
-      </ul>
-    </div>
+        <li><b>Ancla externa — resuelta, y la premisa era falsa.</b> Decía que no existe ninguna
+          portable. Existía: git. Una traza de auditoría sólo crece, así que cada versión
+          commiteada tiene que empezar con la anterior. Verificado sobre 26 versiones de este
+          repo. <em>Lo que queda:</em> quien reescriba la historia publicada puede fabricar una
+          secuencia coherente — pero eso cambia el identificador de cada commit y lo ve cualquiera
+          con un clon previo.</li>
+        <li><b>Custodia — el protocolo dejó de callarse.</b> No puede crear ni guardar claves, pero
+          git ya firma commits y ahora el gate lee ese estado y lo informa. Una firma rota siempre
+          rechaza. <em>Lo que queda:</em> si el agente puede correr <code>git commit -S</code>,
+          firma como vos. Prueba que alguien con acceso a la clave firmó, no quién.</li>
+        <li><b>Consentimiento — sigue sin resolverse.</b> Probar que una persona quiso algo necesita
+          un canal fuera de este proceso. Lo que sí se detecta es el menú fabricado en el mismo
+          instante: hay un piso de dos segundos entre mostrarlo y elegir. <em>Lo que queda:</em> un
+          agente que espera dos segundos antes de inventar la decisión pasa igual. Detecta lo
+          imposible, no lo mentiroso.</li>
+      </ul>    </div>
   </section>
 
   <footer>
@@ -622,7 +640,7 @@
     está declarado <b>parcial</b> fuente por fuente: 320 archivos leídos de 15.581, y ese porcentaje
     está inflado porque varias lecturas parciales se cuentan como archivo entero.
         <br><br>
-    Publicado en <code>origin/main</code>, commit <code>3e9554a</code>. Las cifras de arriba salieron de
+    Publicado en <code>origin/main</code>, commit <code>ae2556f</code>. La cobertura de shell se mide con el instrumento que trae bash, y dice líneas ejecutadas, nunca ramas. Las cifras de arriba salieron de
     correr los chequeos dos veces: en el árbol de trabajo y sobre un clon recién bajado de GitHub, que
     es donde aparecieron los dos últimos defectos.
   </footer>
