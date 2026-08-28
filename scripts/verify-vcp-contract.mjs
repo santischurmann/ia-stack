@@ -20,6 +20,8 @@ export const REQUIREMENTS = [
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
+  ['SKILL.md', /verify-receipt\.mjs commit/u, 'validate-and-write in one run'],
+  ['SKILL.md', /nunca reescribe historial por su cuenta/u, 'sealed commit never rewrites history'],
   ['SKILL.md', /Lo que no cubre/u, 'security baseline honest limit'],
   ['SKILL.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],

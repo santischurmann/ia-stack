@@ -29,3 +29,6 @@
 [2026-08-28 00:20] Orchestrator | hallazgos 50-54 registrados | research/adversarial-productivity-audit; 51 y 53 quedan SIGUIENTE | protocolo | chain:1679e17b6af7cd9d9052b4387f661e4f58ffddc46e8ac5bb323b943bf8070084
 [2026-08-28 00:45] Builder | T02 GREEN | 33/33 pass, cobertura 100%, 5 conductas verificadas en repo real | T02 | chain:7428f3c3d36da18f784d1e24b7398b385c70afe35eb507c26284c78ef2011023
 [2026-08-28 01:10] Orchestrator | T02 done | 42 tests, 5 agujeros cerrados, contrato 44 checks, scope 7 paths exactos | T02 | chain:93519d396089f9679344094d6f38b2b979671232942d7aa74085b7585fdaebaa
+[2026-08-28 01:20] Orchestrator | T03 arranca | commit sellado: valida+commitea en un paso y confirma post-commit; nunca revierte solo (usuario) | T03 | chain:edc4b899e6d1b3d6d61676a2de803e95656d4a1b4a476179fdd8aa0b75ab68b6
+[2026-08-28 01:45] Test-Engineer | T03 RED aceptado | 42 tests: 33 verdes + 9 rojos; 6 verifican que NO commitea, no solo el exit code | T03 | chain:2eb7ae75019ec329bac51e496885fd3d0efdc77ab1e2624b2f9e3c9af648870a
+[2026-08-28 02:15] Orchestrator | T03 done | 42 tests, contrato 46 checks, scope 7 paths; ventana angostada no cerrada, declarado | T03 | chain:d61948a8b5e4dd4d28648dd3b169eb21d9b783139a64f2f0926635533418599f

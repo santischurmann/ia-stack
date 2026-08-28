@@ -1,13 +1,34 @@
 #!/usr/bin/env node
 // verify-receipt.mjs — mechanical receipt gate for VibeCodeProtocols Phase 4.6
 // Cross-platform (Node, no npm deps), works on Windows/macOS/Linux identically since it only
-// shells out to `git` and uses node:crypto/node:fs. Two commands:
+// shells out to `git` and uses node:crypto/node:fs. Three commands:
 //
 //   node verify-receipt.mjs fingerprint [receipt-path-to-exclude]
 //       print {git_head, tree_fingerprint} for the current evaluated state.
-//   node verify-receipt.mjs check <receipt.json>
+//   node verify-receipt.mjs check <receipt.json> [--require-clean-worktree]
 //       validate a receipt against that state (the receipt's own path is the only thing
 //       excluded from its own fingerprint — see EXCLUSION RULE below).
+//   node verify-receipt.mjs commit <receipt.json> --message "<message>"
+//       revalidate exactly what `check --require-clean-worktree` validates, write the commit in
+//       the same invocation, then confirm afterwards that what landed is what was validated.
+//       Bad arguments exit 2 here (`check` still answers its own usage errors with exit 1; that
+//       inconsistency is left alone rather than moving a contract 33 green tests already pin).
+//
+//       ITS HONEST LIMIT — carried in the command's own output, not just in this comment:
+//       running both halves together takes the gap between validating and writing from minutes
+//       down to milliseconds, but it does NOT close it. Another process can still write in that
+//       instant. The after-the-fact confirmation compares the tree that got committed against
+//       the index that was validated (`git write-tree` before the write vs `HEAD^{tree}` after),
+//       so what it proves is precisely "the commit contains the reviewed index" — never "no
+//       concurrent write happened". A write to the worktree during the gap is exactly the case
+//       it cannot see, and that residual hole is the reason the subcommand is called `commit`
+//       and nothing stronger.
+//
+//       Two deliberate non-behaviours. It never passes --no-verify: a gate that silently skips
+//       the operator's own hooks is worse than the problem it solves. And a failed confirmation
+//       never reverts anything — it reports what differs, LEAVES the commit in place, and prints
+//       the command a human can run to undo it. Rewriting history is the human's call, not this
+//       script's.
 //
 // Exit 0 = valid, ONLY when terminal_state is "approved" and the fingerprint matches exactly.
 // Exit 1 = rejected, reason printed to stderr. `escalated` is ALWAYS exit 1, unconditionally —
@@ -413,6 +434,44 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     }
   }
 
+  // The whole "may this receipt authorize anything" question, in one place. `check` and `commit`
+  // share it verbatim so the commit boundary can never drift from what `check` means — a second
+  // copy of these rules would be free to rot in one direction. Every rejection is a fail() (exit
+  // 1) naming the exact reason; the parsed receipt comes back only when nothing rejected it.
+  function validateReceiptOrFail(path, requireCleanWorktree) {
+    const receipt = readReceiptSafely(path);
+
+    // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
+    // regardless of its content. Point the caller at the read-only inspector instead of leaving
+    // it looking like a transient rejection.
+    if (receipt.schema === V1_SCHEMA) {
+      fail(`schema vcp.receipt/v1 is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${path}`);
+    }
+    if (receipt.schema !== V2_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
+
+    const shape = validateReceiptV2(receipt, realpathSync('.'));
+    if (!shape.ok) fail(shape.reason);
+
+    // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
+    // guard) — every other file, including siblings in the same receipts/ directory, still counts.
+    const now = safeFingerprint(path);
+    if (receipt.git_head !== now.git_head) {
+      fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
+    }
+    if (receipt.tree_fingerprint !== now.tree_fingerprint) {
+      fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
+    }
+
+    if (requireCleanWorktree && (now.unstaged_count > 0 || now.untracked_count > 0)) {
+      fail(`release requires a clean worktree: ${now.unstaged_count} unstaged and ${now.untracked_count} untracked path(s) remain — stage or remove them so the reviewed tree is the committed tree`);
+    }
+    return receipt;
+  }
+
+  function validatedSummary(receipt, label) {
+    return `${label}: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`;
+  }
+
   if (cmd === 'check') {
     if (!arg) fail('usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]');
     // Opt-in release strictness. A plain `check` attests whatever state was evaluated, including
@@ -424,35 +483,10 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     const requireCleanWorktree = extraFlags.includes('--require-clean-worktree');
     const unknownFlag = extraFlags.find((flag) => flag !== '--require-clean-worktree');
     if (unknownFlag) fail(`unknown option ${unknownFlag}; usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]`);
-    const receipt = readReceiptSafely(arg);
 
-    // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
-    // regardless of its content. Point the caller at the read-only inspector instead of leaving
-    // it looking like a transient rejection.
-    if (receipt.schema === V1_SCHEMA) {
-      fail(`schema vcp.receipt/v1 is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${arg}`);
-    }
-    if (receipt.schema !== V2_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
-
-    const shape = validateReceiptV2(receipt, realpathSync('.'));
-    if (!shape.ok) fail(shape.reason);
-
-    // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
-    // guard) — every other file, including siblings in the same receipts/ directory, still counts.
-    const now = safeFingerprint(arg);
-    if (receipt.git_head !== now.git_head) {
-      fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
-    }
-    if (receipt.tree_fingerprint !== now.tree_fingerprint) {
-      fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
-    }
-
-    if (requireCleanWorktree && (now.unstaged_count > 0 || now.untracked_count > 0)) {
-      fail(`release requires a clean worktree: ${now.unstaged_count} unstaged and ${now.untracked_count} untracked path(s) remain — stage or remove them so the reviewed tree is the committed tree`);
-    }
-
+    const receipt = validateReceiptOrFail(arg, requireCleanWorktree);
     const cleanliness = requireCleanWorktree ? ', clean worktree' : '';
-    console.log(`OK: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT${cleanliness}`);
+    console.log(`${validatedSummary(receipt, 'OK')}${cleanliness}`);
     process.exit(0);
   }
 
@@ -470,6 +504,54 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     process.exit(0);
   }
 
-  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> | inspect-legacy <receipt.json>');
+  // `commit <receipt.json> --message "<msg>"` — see the module header for the full contract and
+  // for the limit this command is required to state in its own output.
+  const COMMIT_USAGE = 'usage: verify-receipt.mjs commit <receipt.json> --message "<message>"';
+  if (cmd === 'commit') {
+    // Exit 2, not 1: bad arguments are a caller mistake, never a verdict about the receipt.
+    // Destructuring the tail makes each rejection its own condition — a missing receipt, a flag
+    // that is not --message, a missing/blank message, and any extra argument.
+    const [flag, message, ...extra] = process.argv.slice(4);
+    if (!arg || flag !== '--message' || !nonEmptyString(message) || extra.length > 0) {
+      console.error(COMMIT_USAGE);
+      process.exit(2);
+    }
+
+    const receipt = validateReceiptOrFail(arg, true);
+
+    // The index git is about to turn into a commit, addressed as a real tree object BEFORE the
+    // write. This is the only value the after-the-fact confirmation can honestly compare against:
+    // it pins the reviewed INDEX, which is what a commit is made of.
+    const validatedTree = git(['write-tree']).trim();
+    const headTree = git(['rev-parse', 'HEAD^{tree}']).trim();
+    if (validatedTree === headTree) {
+      // Say this ourselves instead of letting `git commit` answer it: git's "nothing to commit"
+      // is written for an interactive user, and here it is a gate verdict.
+      fail('nothing to commit: the index is identical to HEAD, so there is no reviewed change to write — stage the work this receipt attests, then run commit again');
+    }
+
+    console.log(`${validatedSummary(receipt, 'VALIDATED')}, clean worktree`);
+    try {
+      // No --no-verify: the operator's hooks run exactly as they would by hand. A hook that
+      // rewrites the index is precisely what the confirmation below exists to catch.
+      git(['commit', '--message', message]);
+    } catch (error) {
+      fail(`git commit failed, so this run confirmed nothing: ${error.message.trim()}`);
+    }
+
+    const committed = git(['rev-parse', 'HEAD']).trim();
+    const committedTree = git(['rev-parse', 'HEAD^{tree}']).trim();
+    if (committedTree !== validatedTree) {
+      fail(`the committed tree does not match the index that was validated (validated ${validatedTree}, committed ${committedTree} in ${committed}) — something rewrote the index after the validation, a re-staging pre-commit hook being the usual cause. `
+        + `The commit was made and is left exactly as it is: this gate never rewrites history on its own. Review it and, if you want it gone, run it yourself: git reset --soft HEAD~1 (or git revert ${committed} if it is already published).`);
+    }
+
+    console.log(`COMMITTED: ${committed} — ${message}`);
+    console.log('CONFIRMED: the committed tree is the index this run validated (write-tree before the write == HEAD^{tree} after it).');
+    console.log('LIMIT: validating and writing in one run narrows the window between them from minutes to milliseconds, it does not close it — another process can still write inside that window. The confirmation above proves the commit contains the reviewed index; it cannot prove that no concurrent write happened.');
+    process.exit(0);
+  }
+
+  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> [--require-clean-worktree] | commit <receipt.json> --message "<message>" | inspect-legacy <receipt.json>');
   process.exit(2);
 }

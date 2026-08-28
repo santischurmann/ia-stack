@@ -719,6 +719,22 @@ revisado y el árbol commiteado deben ser el mismo. Angosta, sin cerrarla, la ve
 y `git commit` — nada impide una escritura en el medio. Un `check` sin la flag sigue siendo válido
 para un receipt intermedio, donde atestiguar trabajo sin stagear es exactamente lo correcto.
 
+**Preferible: validar y escribir en una sola corrida.**
+```bash
+node .vibe/vcp-runtime/scripts/verify-receipt.mjs commit .vibe/receipts/<feature-slug>-<fecha>.json \
+  --message "<mensaje del commit>"
+```
+Valida igual que `check --require-clean-worktree`, commitea, y **después confirma** que el árbol
+commiteado es el índice que validó (compara el `write-tree` de antes contra `HEAD^{tree}` de
+después). Si esa confirmación falla, informa qué no coincide, **deja el commit hecho** e imprime
+el comando para deshacerlo: este gate nunca reescribe historial por su cuenta. Tampoco pasa
+`--no-verify`: un gate que se saltea los hooks del operador en silencio es peor que el problema
+que resuelve.
+
+**Lo que no prueba**: la ventana pasa de minutos a milisegundos, no desaparece — otro proceso
+puede escribir en ese instante. La confirmación posterior demuestra que el commit contiene el
+índice revisado; no demuestra que no hubo una escritura concurrente.
+
 Exit 0 **únicamente** si `schema: vcp.receipt/v2` Y `terminal_state: approved` Y **todos** los
 `acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
 estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed` pasan su validación de forma →

@@ -103,3 +103,22 @@
 - Gates finales: 346 tests · cobertura 100% · seguridad limpia · contrato 44 checks · scope 7 paths.
 - Límites declarados: aceptar un secreto cubre archivo+categoría, no un valor; una entrada fuera
   del delta no caduca; `check` sin `--base` compara HEAD con HEAD y no ve lo ya commiteado.
+
+## Phase 3 — T03 (validar y escribir en una corrida) · DONE
+
+- **RED**: 9 pruebas nuevas. Seis verifican que **no** se commiteó mirando el `git log`, no sólo el
+  código de salida: un exit 1 que igual commiteara sería el peor resultado y ninguna prueba que
+  mire sólo el exit lo detectaría.
+- **GREEN**: 42/42 a la primera pasada, cobertura 100%.
+- La confirmación posterior compara el `write-tree` del índice validado contra `HEAD^{tree}` del
+  commit resultante. Ese mismo valor detecta además el caso "nada staged".
+- Dos no-comportamientos deliberados, ambos con prueba: nunca reescribe historial por su cuenta
+  (si la confirmación falla, deja el commit e imprime el comando para deshacerlo), y nunca pasa
+  `--no-verify`.
+- El gate de alcance detectó el mismo error mío que en T02: archivo declarado dos veces. Corregido
+  en T03 y T04 de una vez.
+- Gates finales: 355 tests · cobertura 100% · seguridad limpia · contrato 46 checks · scope 7 paths.
+- **Deuda anotada**: `commit` usa exit 2 para uso inválido y `check` usa exit 1 para lo mismo. No
+  se alineó para no romper las 33 pruebas de `check`.
+- **Límite declarado**: la ventana pasa de minutos a milisegundos, no desaparece. La confirmación
+  prueba que el commit contiene el índice revisado, no que no hubo escritura concurrente.

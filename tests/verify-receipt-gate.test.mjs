@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -725,5 +725,220 @@ test('--require-clean-worktree exige que lo atestiguado sea exactamente lo que s
     assert.match(strayRejected.output, /1 untracked/);
 
     assert.equal(gate(root, 'check', withStray, '--unknown-flag').status, 1, 'unknown flags must not be ignored');
+  });
+});
+
+// -------------------------------------------------------------------------------------------
+// T03 — `commit <receipt.json> --message "<msg>"`: revalidate and commit in one invocation, then
+// confirm after the fact that what landed is what the receipt attested. AC8 (docs/spec.md) is the
+// happy path, AC9 the abort path.
+//
+// Every abort case below asserts the resulting HISTORY, not just the exit code. An exit 1 that
+// still wrote a commit is the worst possible outcome of this subcommand and it is invisible to
+// any assertion that only reads the exit code — so "did not commit" is checked against `git log`.
+// -------------------------------------------------------------------------------------------
+
+const COMMIT_MESSAGE = 'feat(receipts): commitear con receipt revalidado';
+
+/** HEAD plus every subject, newest first. Comparing one string before/after catches both a new
+ * commit and a rewritten history, which is what the two decisions on this subcommand hinge on. */
+function history(root) {
+  return `${gitOk(root, 'rev-parse', 'HEAD')}\n${gitOk(root, 'log', '--pretty=%s')}`;
+}
+
+test('commit revalida y commitea en una sola invocación (AC8)', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 0, 'un receipt aprobado sobre un árbol sin cambios debe validar y commitear');
+    assert.equal(gitOk(root, 'log', '-1', '--pretty=%s'), COMMIT_MESSAGE, 'el commit debe llevar exactamente el mensaje pedido');
+    assert.equal(Number(gitOk(root, 'rev-list', '--count', 'HEAD')), 2, 'debe agregar un solo commit sobre el baseline');
+    assert.match(
+      gitOk(root, 'show', '--name-only', '--pretty=format:', 'HEAD'),
+      /\.vibe\/receipts\/fixture\.json/u,
+      'lo que estaba staged y validado es lo que tiene que haber quedado commiteado',
+    );
+  });
+});
+
+test('FALSIFICACIÓN · commit con el árbol cambiado tras el receipt aborta y no deja commit (AC9)', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    writeFileSync(join(root, 'tracked.txt'), 'escritura posterior al receipt\n');
+    const before = history(root);
+    const beforeStatus = gitOk(root, 'status', '--porcelain');
+
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'un árbol que cambió tras el receipt no autoriza el commit');
+    assert.match(result.output, /stale receipt: tree_fingerprint does not match/u, 'debe explicar qué cambió, no fallar mudo');
+    assert.equal(history(root), before, 'abortar significa NO commitear: el historial tiene que quedar idéntico');
+    assert.equal(gitOk(root, 'status', '--porcelain'), beforeStatus, 'un abort tampoco toca el índice ni el árbol de trabajo');
+  });
+});
+
+test('FALSIFICACIÓN · commit rechaza un receipt escalated y uno con un AC no COMPLIANT, sin commitear', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root, { terminalState: 'escalated' });
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'terminal_state escalated nunca autoriza un commit');
+    assert.match(result.output, /terminal_state is escalated/u);
+    assert.equal(history(root), before, 'un receipt escalated no puede dejar commit');
+  });
+  withFixture((root) => {
+    const failing = { ...defaultAcceptanceCriteria()[0], verdict: 'FAILING' };
+    const receipt = writeReceipt(root, { acceptanceCriteria: [failing] });
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'un AC no COMPLIANT nunca autoriza un commit');
+    assert.match(result.output, /verdict is FAILING, not COMPLIANT/u);
+    assert.equal(history(root), before, 'un AC no COMPLIANT no puede dejar commit');
+  });
+});
+
+test('FALSIFICACIÓN · commit rechaza vcp.receipt/v1 sin commitear, igual que check', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root, { schema: 'vcp.receipt/v1' });
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'v1 es archival: no autoriza ningún commit, igual que en check');
+    assert.match(result.output, /archival-only/u);
+    assert.equal(history(root), before, 'un receipt v1 no puede dejar commit');
+  });
+});
+
+test('FALSIFICACIÓN · commit hereda la exigencia de árbol limpio: unstaged y untracked abortan sin commitear', () => {
+  withFixture((root) => {
+    // El receipt se escribe DESPUÉS del cambio, así el fingerprint coincide y lo único que puede
+    // rechazar es la exigencia de árbol limpio — no una deriva, que ya tiene su propia prueba.
+    writeFileSync(join(root, 'tracked.txt'), 'deriva sin stagear\n');
+    const receipt = writeReceipt(root);
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'lo revisado y lo commiteado tienen que ser el mismo árbol');
+    assert.match(result.output, /1 unstaged/u);
+    assert.equal(history(root), before, 'un unstaged pendiente no puede dejar commit');
+  });
+  withFixture((root) => {
+    writeFileSync(join(root, 'stray.txt'), 'sobra sin trackear\n');
+    const receipt = writeReceipt(root);
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'un untracked pendiente no es un árbol releasable');
+    assert.match(result.output, /1 untracked/u);
+    assert.equal(history(root), before, 'un untracked pendiente no puede dejar commit');
+  });
+});
+
+test('FALSIFICACIÓN · commit sin un mensaje utilizable sale 2 y no commitea', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    const before = history(root);
+    const invocations = [
+      ['commit'],
+      ['commit', receipt],
+      ['commit', receipt, '--message'],
+      ['commit', receipt, '--message', ''],
+      ['commit', receipt, '--message', '   '],
+      ['commit', receipt, '--message', COMMIT_MESSAGE, '--unknown-flag'],
+    ];
+    for (const args of invocations) {
+      const label = JSON.stringify(args);
+      const result = gate(root, ...args);
+      assert.equal(result.status, 2, `argumentos inválidos deben salir 2: ${label}`);
+      assert.match(result.output, /usage: verify-receipt\.mjs commit/u, `debe imprimir el uso: ${label}`);
+    }
+    assert.equal(history(root), before, 'ninguna invocación mal formada puede dejar commit');
+  });
+});
+
+test('FALSIFICACIÓN · commit no fabrica un commit vacío ni reporta éxito cuando el git commit falla', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    // El receipt está excluido de su propio fingerprint en las tres secciones (staged, unstaged y
+    // untracked), así que sacarlo del índice deja intacto el estado atestiguado y la exigencia de
+    // árbol limpio, y deja el índice sin nada que commitear.
+    gitOk(root, 'reset', '-q', '--', receipt);
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'sin nada staged no hay commit que autorizar');
+    assert.equal(history(root), before, 'no puede inventar un commit vacío');
+  });
+  withFixture((root) => {
+    const receipt = writeReceipt(root);
+    // Identidad vacía: la validación pasa y es el propio git quien rechaza el commit después.
+    gitOk(root, 'config', 'user.name', '');
+    const before = history(root);
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'un git commit que falla por su cuenta debe salir 1, no 0');
+    assert.equal(history(root), before, 'un git commit fallido no deja commit');
+  });
+});
+
+test('FALSIFICACIÓN · una confirmación posterior fallida informa, deja el commit hecho y no reescribe el historial', (t) => {
+  const root = fixture();
+  assert.notEqual(root, null, 'fixture Git repository could not be initialized');
+  try {
+    const hook = join(root, '.git', 'hooks', 'pre-commit');
+    const marker = join(root, '.git', 'HOOK_RAN');
+    // Sonda independiente del sistema bajo prueba: si este Git no ejecuta hooks, el escenario no
+    // es montable y no hay nada que afirmar. Se decide con un commit propio, nunca con el CLI.
+    writeFileSync(hook, '#!/bin/sh\nprintf ran > .git/HOOK_RAN\nexit 0\n');
+    chmodSync(hook, 0o755);
+    writeFileSync(join(root, 'probe.txt'), 'sonda de hooks\n');
+    gitOk(root, 'add', '--', 'probe.txt');
+    gitOk(root, 'commit', '-qm', 'sonda: verifica que este Git ejecuta hooks');
+    if (!existsSync(marker)) {
+      t.diagnostic('Este Git no ejecuta hooks pre-commit; el escenario de confirmación posterior no es montable.');
+      return;
+    }
+
+    // Un hook que reescribe y re-stagea corre DESPUÉS de que la validación pasó: el árbol que
+    // termina commiteado deja de ser el que el receipt atestiguaba. Es el único vector que produce
+    // ese desvío de forma determinista, e implica que `commit` no puede pasar `--no-verify`.
+    writeFileSync(hook, '#!/bin/sh\nprintf "reescrito por el hook\\n" > tracked.txt\ngit add -- tracked.txt\nexit 0\n');
+    chmodSync(hook, 0o755);
+    const receipt = writeReceipt(root);
+    const before = Number(gitOk(root, 'rev-list', '--count', 'HEAD'));
+
+    const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(result.status, 1, 'si lo commiteado no es lo revisado, la invocación falla');
+    assert.match(
+      result.output,
+      /(?:commit|tree|árbol)[\s\S]*(?:no coincide|does not match|mismatch)/iu,
+      'la confirmación posterior debe reportar qué no coincide',
+    );
+    // Decisión del usuario: el sistema informa y deja el commit hecho; nunca lo deshace por su
+    // cuenta ni corre nada que altere el historial. Que el commit siga existiendo ES la prueba.
+    assert.equal(
+      Number(gitOk(root, 'rev-list', '--count', 'HEAD')), before + 1,
+      'el commit tiene que seguir existiendo: el sistema no puede deshacerlo por su cuenta',
+    );
+    assert.equal(gitOk(root, 'log', '-1', '--pretty=%s'), COMMIT_MESSAGE, 'el commit que quedó es el que se pidió');
+    assert.match(result.output, /git\s+(?:reset|revert)/u, 'debe imprimir el comando para que el humano decida deshacerlo');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('el subcomando se llama commit y su salida declara que la ventana se angosta, no se cierra', () => {
+  withFixture((root) => {
+    const usage = gate(root, 'commit');
+    assert.equal(usage.status, 2, 'una invocación sin argumentos debe reportar el uso');
+    assert.match(usage.output, /usage: verify-receipt\.mjs commit <receipt\.json> --message/u, 'la firma nombra al subcomando `commit`');
+    // Decisión del usuario: el nombre no promete atomicidad. La línea de uso es una firma, no el
+    // lugar de una declaración de límites, así que ahí la palabra no puede aparecer ni negada.
+    assert.doesNotMatch(usage.output, /at[oó]mic/iu, 'la firma del subcomando no puede prometer atomicidad');
+
+    const receipt = writeReceipt(root);
+    const ok = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
+    assert.equal(ok.status, 0, 'hace falta el caso feliz para poder leer su declaración de límite');
+    // El límite honesto va en la salida, no sólo en un comentario del código: la ventana entre
+    // validar y escribir se angosta de minutos a milisegundos, pero otro proceso todavía puede
+    // escribir en ese instante. Satisfacen estas tres: "window"/"ventana", "narrow"/"angosta" y
+    // "not closed"/"sin cerrarla".
+    assert.match(ok.output, /\b(?:window|ventana)\b/iu, 'debe nombrar la ventana entre validar y escribir');
+    assert.match(ok.output, /(?:narrow|angost)/iu, 'debe decir que la angosta');
+    assert.match(ok.output, /(?:not clos|does not clos|sin cerrar|no la cierra|no se cierra)/iu, 'debe decir que no la cierra');
   });
 });

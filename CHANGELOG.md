@@ -14,6 +14,18 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - Nuevo gate `verify-scope-diff.mjs`: después de GREEN compara exactamente los writers declarados
   de una tarea con el delta real de Git, incluidos archivos untracked. Las excepciones operativas
   deben listarse con `--ignore` de forma explícita; no se agrega una exclusión global de `.vibe/`.
+- `verify-receipt.mjs commit` (backlog #22), tercera feature construida con el protocolo completo
+  sobre el propio VCP. `check` validaba el árbol y después el operador corría `git commit` a mano:
+  entre esas dos cosas pasaban minutos y nada impedía una escritura. Ahora una sola corrida valida,
+  commitea y **confirma después** que el árbol commiteado es el índice que validó, comparando el
+  `write-tree` de antes contra `HEAD^{tree}` de después.
+  Dos no-comportamientos deliberados: si la confirmación falla, deja el commit hecho e imprime el
+  comando para deshacerlo — este gate nunca reescribe historial por su cuenta; y nunca pasa
+  `--no-verify`, porque saltear los hooks del operador en silencio es peor que el problema que
+  resuelve.
+  El nombre no dice "atómico" a propósito: la ventana pasa de minutos a milisegundos, no
+  desaparece. La confirmación prueba que el commit contiene el índice revisado, no que no hubo una
+  escritura concurrente. Ambos límites están en el gate, en README y en SKILL.md.
 - `verify-security-baseline.mjs` acepta `--baseline <archivo>` (backlog #47), segunda feature
   construida con el protocolo completo sobre el propio VCP. Antes el gate no distinguía deuda ya
   revisada de un hallazgo nuevo, así que sólo quedaban dos salidas malas: convivir con un gate que

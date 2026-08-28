@@ -107,7 +107,6 @@
       "files_to_create": [],
       "files_to_modify": [
         "scripts/verify-receipt.mjs",
-        "tests/verify-receipt-gate.test.mjs",
         "SKILL.md",
         "README.md",
         "CHANGELOG.md",
@@ -129,15 +128,21 @@
       "depends_on": [
         "T02"
       ],
-      "status": "pending",
+      "status": "done",
       "goal": "Disciplina verificable → AC8-AC9 de docs/spec.md → angostar la ventana entre validar y escribir sin prometer cerrarla",
       "owner": null,
       "locked": false,
       "role": "Test-Engineer",
       "verifier": "scripts/verify-red-node.mjs (mechanical)",
       "approval_criteria": "AC8: receipt aprobado y árbol sin cambios -> revalida y commitea en una invocación. AC9: árbol cambió tras escribir el receipt -> aborta sin commitear y explica qué cambió.",
-      "evidence": [],
-      "not_reviewed": [],
+      "evidence": [
+        "RED: 42 tests (33 verdes + 9 rojos), 6 verifican que NO commitea",
+        "GREEN: 42/42 a la primera pasada, cobertura 100%"
+      ],
+      "not_reviewed": [
+        "Deuda: commit usa exit 2 para uso invalido, check usa exit 1 para lo mismo. No se alineo para no romper las 33 pruebas de check.",
+        "La confirmacion posterior compara el arbol commiteado contra el indice validado; NO detecta una escritura concurrente al worktree durante la ventana."
+      ],
       "rollback": "git revert <commit-sha, filled after this task's commit lands>",
       "handoff": "RED pass -> Builder (GREEN) -> Triangulator (TRIANGULATE) -> Refactor-Engineer (REFACTOR)",
       "blocked_reason": null
@@ -150,7 +155,6 @@
       ],
       "files_to_modify": [
         "scripts/verify-vcp-contract.mjs",
-        "tests/verify-vcp-contract.test.mjs",
         "SKILL.md",
         "README.md",
         "CHANGELOG.md"
