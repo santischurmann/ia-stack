@@ -9,8 +9,10 @@ const coverageGate = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
 const { evaluateCoverageRun, fingerprintScripts, listMjsScripts, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
 
 const perfectCoverage = `
+ℹ start of coverage report
 ℹ  verify-example.mjs | 100.00 | 100.00 | 100.00 |
 ℹ  another-script.mjs | 100.00 | 100.00 | 100.00 |
+ℹ end of coverage report
 `;
 
 function fakeResult({ status = 0, stdout = perfectCoverage, stderr = '', error } = {}) {
@@ -18,9 +20,10 @@ function fakeResult({ status = 0, stdout = perfectCoverage, stderr = '', error }
 }
 
 function currentPerfectCoverage(overrides = {}) {
-  return listMjsScripts(repoRoot)
-    .map((file) => `ℹ  ${file} | ${overrides[file] ?? '100.00'} | 100.00 | 100.00 |`)
-    .join('\n');
+  return ['ℹ start of coverage report']
+    .concat(listMjsScripts(repoRoot).map((file) => `ℹ  ${file} | ${overrides[file] ?? '100.00'} | 100.00 | 100.00 |`))
+    .concat(['ℹ end of coverage report'])
+    .join(String.fromCharCode(10));
 }
 
 test('parses every script row from Node native coverage output', () => {
@@ -32,9 +35,11 @@ test('parses every script row from Node native coverage output', () => {
 
 test('FALSIFICACIÓN · rejects any script metric below 100%', () => {
   const result = evaluateCoverageRun(fakeResult({ stdout: [
+    'ℹ start of coverage report',
     'ℹ  lines-low.mjs | 99.99 | 100.00 | 100.00 |',
     'ℹ  branches-low.mjs | 100.00 | 99.99 | 100.00 |',
     'ℹ  functions-low.mjs | 100.00 | 100.00 | 99.99 |',
+    'ℹ end of coverage report',
   ].join('\n') }));
   assert.equal(result.ok, false);
   assert.match(result.message, /lines-low\.mjs.*lines 99\.99/i);
@@ -62,7 +67,7 @@ test('FALSIFICACIÓN · rejects missing coverage rows and a failed coverage comm
 });
 
 test('FALSIFICACIÓN · rejects a new or omitted Node script even when every reported row is 100%', () => {
-  const result = evaluateCoverageRun(fakeResult({ stdout: 'ℹ  verified.mjs | 100.00 | 100.00 | 100.00 |' }), ['verified.mjs', 'new-uncovered.mjs']);
+  const result = evaluateCoverageRun(fakeResult({ stdout: ['ℹ start of coverage report', 'ℹ  verified.mjs | 100.00 | 100.00 | 100.00 |', 'ℹ end of coverage report'].join(String.fromCharCode(10)) }), ['verified.mjs', 'new-uncovered.mjs']);
   assert.equal(result.ok, false);
   assert.match(result.message, /new-uncovered\.mjs/);
 });
@@ -174,4 +179,33 @@ test('con el árbol quieto el gate informa el resultado normal', () => {
 
   assert.equal(status, 0);
   assert.match(written.join(String.fromCharCode(10)), /^OK: /u);
+});
+
+
+// --- El parser no puede creerle a cualquier linea de la salida ----------------------------------
+
+// Reproducido el 2026-08-28 atacando este gate: parseScriptCoverage leia TODA la salida, asi que
+// una prueba que imprimiera una linea con la forma de una fila fabricaba una entrada de cobertura.
+// El gate que vigila la cobertura de todos los demas se creia cualquier cosa que alguien imprimiera.
+const INICIO = 'ℹ start of coverage report';
+const FIN = 'ℹ end of coverage report';
+
+test('FALSIFICACION · una linea impresa por una prueba no puede fabricar una fila de cobertura', () => {
+  const impostora = 'ℹ  inventado.mjs | 100.00 | 100.00 | 100.00 |';
+  assert.deepEqual(parseScriptCoverage(impostora), [], 'fuera del bloque del reporte no hay filas que leer');
+
+  const conBloque = [
+    impostora,
+    INICIO,
+    'ℹ  real.mjs | 100.00 | 100.00 | 100.00 |',
+    FIN,
+    impostora,
+  ].join(String.fromCharCode(10));
+  assert.deepEqual(parseScriptCoverage(conBloque).map((f) => f.file), ['real.mjs'], 'solo cuentan las filas de adentro del bloque');
+});
+
+test('parseScriptCoverage devuelve vacio si el reporte no abrio o no cerro', () => {
+  const sinFin = [INICIO, 'ℹ  x.mjs | 100.00 | 100.00 | 100.00 |'].join(String.fromCharCode(10));
+  assert.deepEqual(parseScriptCoverage(sinFin), [], 'un reporte truncado no es un reporte');
+  assert.deepEqual(parseScriptCoverage(''), []);
 });

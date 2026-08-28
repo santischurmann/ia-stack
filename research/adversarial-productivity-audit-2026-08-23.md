@@ -215,6 +215,56 @@ habría sido exactamente el verde vacío que esta misma sesión pasó la noche e
 
 Verificado clonando de nuevo: **535 pasan, 0 fallan, 1 salteada con motivo a la vista**.
 
+
+## Hallazgo 61 — tres bugs reales, cada uno en un gate escrito ese mismo día
+
+**Encontrado**: 2026-08-28, atacando los gates de forma adversarial y **reproduciendo cada uno**
+antes de tocar nada. Los tres estaban en código escrito en esta misma sesión.
+
+### 1. El ancla de git rechazaba en falso a la mayoría de los usuarios de Windows
+
+`verify-audit-chain history` comparaba los bytes crudos del archivo de trabajo contra el blob
+guardado. git guarda LF y entrega CRLF en un checkout con `core.autocrlf=true`, que es su default
+en Windows: el mismo contenido escrito distinto. **Reproducido clonando** con esa configuración —
+`REJECTED: el archivo sin commitear no extiende la última versión registrada`— sobre una traza que
+nadie había tocado. El ancla recién construida estaba rota para el caso más común.
+
+**HECHO**: la comparación normaliza el fin de línea de los dos lados. Es el mismo error del
+hallazgo 60, en código escrito el mismo día.
+
+### 2. Una lista de decisiones vacía pasaba como verificada
+
+`verify-phase-decisions check` sobre `{"decisions": []}` devolvía
+`OK: registra 0 decisión(es) encadenadas ... cada una con su menú, su recomendación, la opción
+elegida y por qué`. Un verde afirmando haber verificado la nada, y `--require-inputs` tampoco lo
+agarraba. Es el verde vacío que este release eliminó en otros gates, escondido detrás de una lista
+vacía en vez de un archivo ausente.
+
+**HECHO**: escribe `VACÍO:` y con `--require-inputs` es rechazo.
+
+### 3. El gate de cobertura se creía cualquier línea impresa
+
+`parseScriptCoverage` leía **toda** la salida, no sólo la tabla. Una prueba que imprimiera
+`ℹ  inventado.mjs | 100.00 | 100.00 | 100.00 |` fabricaba una entrada de cobertura para un archivo
+que no existe. El gate que vigila la cobertura de todos los demás aceptaba lo que alguien decidiera
+imprimir.
+
+**HECHO**: sólo lee entre las marcas `start of coverage report` y `end of coverage report` que
+escribe node. Un reporte que no abrió o no cerró da cero filas. Obligó además a arreglar los
+fixtures de sus propias pruebas: alimentaban tablas sin esas marcas, o sea probaban el parser
+contra una salida que node nunca produce.
+
+### Lo que el ataque NO probó, y hay que decirlo
+
+De 130 agentes, **100 murieron por límite de sesión**. Los 6 atacantes sí corrieron y propusieron
+41 huecos, pero la fase de refutación se cayó casi entera. El workflow reportó **"39 confirmados"**
+y **eso es falso**: sin escépticos vivos, mi propio guion contaba como confirmado todo lo que nadie
+pudo refutar. Es el mismo error de verde vacío, en espejo — y en la herramienta escrita para
+buscar verdes vacíos.
+
+Los tres de arriba son los que **yo mismo reproduje corriendo**. Los otros 38 quedan como
+**propuestos, sin refutar y sin verificar**, y están en el journal del workflow para retomarlos.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

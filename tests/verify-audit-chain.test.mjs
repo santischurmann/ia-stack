@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
@@ -708,4 +708,45 @@ test('historyCommand usa spawnSync real cuando no le inyectan proceso', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+// --- El ancla no puede depender de como git entrego el archivo ----------------------------------
+
+// Reproducido el 2026-08-28 clonando con core.autocrlf=true, que es el DEFAULT de git en Windows:
+// el blob guardado tiene LF y el archivo de trabajo llega con CRLF, asi que comparar bytes crudos
+// hacia que el ancla rechazara en falso a la mayoria de los usuarios de Windows. Es el mismo error
+// que el hallazgo 60, en codigo escrito el mismo dia.
+test('FALSIFICACION · un clon de Windows con CRLF no puede hacer que el ancla rechace en falso', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-crlf-'));
+  try {
+    const origen = join(raiz, 'origen');
+    const clon = join(raiz, 'clon');
+    const git = (cwd, ...args) => spawnSync('git', args, { cwd, encoding: 'utf8' });
+    mkdirSync(origen, { recursive: true });
+    git(origen, 'init', '-q', '.');
+    git(origen, 'config', 'user.email', 't@t');
+    git(origen, 'config', 'user.name', 't');
+    writeFileSync(join(origen, 'AUDIT.md'), L1, 'utf8');
+    git(origen, 'add', '-A'); git(origen, 'commit', '-q', '-m', 'v1');
+    writeFileSync(join(origen, 'AUDIT.md'), L2, 'utf8');
+    git(origen, 'add', '-A'); git(origen, 'commit', '-q', '-m', 'v2');
+
+    spawnSync('git', ['-c', 'core.autocrlf=true', 'clone', '-q', origen, clon], { encoding: 'utf8' });
+    const enDisco = readFileSync(join(clon, 'AUDIT.md'), 'utf8');
+    assert.ok(enDisco.includes(String.fromCharCode(13)), 'el montaje tiene que producir CRLF de verdad');
+
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: clon, encoding: 'utf8' });
+    assert.deepEqual({ status: run.status, ok: run.stdout.startsWith('OK: ') }, { status: 0, ok: true }, run.stderr);
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('verifyGrowth compara el contenido normalizado, no los bytes que entrego git', () => {
+  const conCRLF = (t) => t.split(String.fromCharCode(10)).join(String.fromCharCode(13) + String.fromCharCode(10));
+  const versiones = [{ commit: 'aaa', content: 'uno' + String.fromCharCode(10) }];
+  assert.deepEqual(verifyGrowth(versiones, conCRLF('uno' + String.fromCharCode(10) + 'dos' + String.fromCharCode(10))).ok, true);
+  // Y lo que SI tiene que rechazar sigue rechazando: recortar no es un tema de fin de linea.
+  assert.equal(verifyGrowth([{ commit: 'aaa', content: 'uno' + String.fromCharCode(10) + 'dos' + String.fromCharCode(10) }], 'uno' + String.fromCharCode(10)).ok, false);
 });

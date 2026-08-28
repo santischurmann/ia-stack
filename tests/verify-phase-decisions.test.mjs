@@ -555,3 +555,30 @@ test('FALSIFICACION · cambiar shown_at despues de sellar rompe la cadena', () =
   const codigos = checkDecisions(doc).violations.map((v) => v.code);
   assert.ok(codigos.includes('PHASE_DECISION_HASH_MISMATCH'), `salieron ${codigos.join(', ')}`);
 });
+
+
+// --- Una lista vacia de decisiones no es un archivo verificado ----------------------------------
+
+// Encontrado atacando este gate: `decisions: []` devolvia
+// "OK: registra 0 decision(es) encadenadas ... cada una con su menu", que es un verde afirmando
+// haber verificado la nada, con --require-inputs incluido. Es el mismo verde vacio que este release
+// elimino en otros gates, escondido detras de una lista vacia en vez de un archivo ausente.
+test('FALSIFICACION · un archivo con la lista de decisiones vacia escribe VACIO, no OK', () => {
+  const doc = { schema: SCHEMA, phase_order: ['1', '2'], decisions: [] };
+  const salida = [];
+  const errores = [];
+  const status = main(['check', 'd.json'], { readFile: () => JSON.stringify(doc) }, (l) => salida.push(l), (l) => errores.push(l));
+
+  assert.equal(status, 0);
+  assert.deepEqual(errores, []);
+  assert.match(salida.at(-1), /^VACÍO: /u, `salio ${JSON.stringify(salida.at(-1))}`);
+});
+
+test('FALSIFICACION · con --require-inputs, la lista vacia pasa a ser rechazo', () => {
+  const doc = { schema: SCHEMA, phase_order: ['1', '2'], decisions: [] };
+  const errores = [];
+  const status = main(['check', 'd.json', '--require-inputs'], { readFile: () => JSON.stringify(doc) }, () => {}, (l) => errores.push(l));
+
+  assert.equal(status, 1);
+  assert.match(errores.at(-1), /PHASE_DECISION_NO_INPUTS/u);
+});

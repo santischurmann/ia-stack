@@ -312,6 +312,17 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     writeError(`REJECTED: PHASE_DECISION_SCHEMA_INVALID: ${path} no se puede leer como JSON: ${failure.message}`);
     return 1;
   }
+  // Una lista de decisiones vacia no es un archivo verificado: es el mismo caso que no tener
+  // archivo, escondido detras de un array vacio. Encontrado atacando este gate el 2026-08-28.
+  if (Array.isArray(document.decisions) && document.decisions.length === 0) {
+    const message = `${path} no registra ninguna decisión: no hay nada que verificar.`;
+    if (requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${message}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${message}`);
+    return 0;
+  }
   const result = checkDecisions(document);
   if (!result.ok) {
     for (const item of result.violations) writeError(`REJECTED: ${item.code}: ${item.message}`);

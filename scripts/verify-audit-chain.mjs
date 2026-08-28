@@ -195,15 +195,20 @@ export function gitVersions(path, cwd, run = spawnSync) {
   return { error: null, versions };
 }
 
+// git guarda LF y entrega CRLF en un checkout de Windows con core.autocrlf=true, que es su default
+// ahi. Comparar bytes crudos hacia que el ancla rechazara en falso a la mayoria de los usuarios de
+// Windows: el blob y el archivo de trabajo dicen lo mismo escrito distinto. Reproducido clonando.
+const soloLF = (texto) => String(texto).split(String.fromCharCode(13) + String.fromCharCode(10)).join(String.fromCharCode(10));
+
 /** Cada versión tiene que empezar con la anterior. Nombra la primera que no. */
 export function verifyGrowth(versions, working) {
   for (let i = 1; i < versions.length; i += 1) {
-    if (!versions[i].content.startsWith(versions[i - 1].content)) {
+    if (!soloLF(versions[i].content).startsWith(soloLF(versions[i - 1].content))) {
       return { ok: false, commit: versions[i].commit, reason: `el commit ${versions[i].commit.slice(0, 7)} no extiende la versión anterior: la traza se recortó, se reescribió o se borró` };
     }
   }
   const ultima = versions.at(-1);
-  if (ultima !== undefined && working !== null && !working.startsWith(ultima.content)) {
+  if (ultima !== undefined && working !== null && !soloLF(working).startsWith(soloLF(ultima.content))) {
     return { ok: false, commit: null, reason: `el archivo sin commitear no extiende la última versión registrada (${ultima.commit.slice(0, 7)})` };
   }
   return { ok: true, commit: null, reason: null };

@@ -7,6 +7,36 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tres bugs reales, cada uno en un gate escrito ese mismo día** (hallazgo 61), encontrados
+  atacando los gates de forma adversarial y **reproduciendo cada uno** antes de tocar nada:
+  1. `verify-audit-chain history` **rechazaba en falso a la mayoría de los usuarios de Windows**.
+     git guarda LF y entrega CRLF con `core.autocrlf=true`, que es su default ahí; comparar bytes
+     crudos hacía que el ancla acusara manipulación sobre un clon recién hecho. La comparación
+     ahora normaliza el fin de línea de los dos lados. Es el mismo error del hallazgo 60, en
+     código escrito el mismo día.
+  2. `verify-phase-decisions check` sobre `{"decisions": []}` devolvía `OK: registra 0 decisión(es)
+     ... cada una con su menú` — un verde afirmando haber verificado la nada, con
+     `--require-inputs` incluido. Ahora escribe `VACÍO:` y con el flag es rechazo.
+  3. `verify-vcp-coverage` leía **toda** la salida, así que una prueba que imprimiera una línea con
+     forma de fila fabricaba una entrada de cobertura para un archivo inexistente. Ahora sólo lee
+     entre las marcas que escribe node, y un reporte que no abrió o no cerró da cero filas. Obligó
+     a arreglar los fixtures de sus propias pruebas, que alimentaban tablas sin esas marcas: o sea
+     probaban el parser contra una salida que node nunca produce.
+
+- **Nueva prueba de punta a punta** (`tests/protocolo-e2e.test.mjs`): instala VCP en un proyecto
+  que no existía y corre los gates en el orden real. Comprueba que el runtime queda fuera de la
+  superficie del proyecto, que ningún gate escribe `OK:` donde no hay nada que verificar, que los
+  gates pasan de `VACÍO:` a verificar cuando aparecen spec y pruebas, y que **recortar la traza
+  pasa `check` y cae en `history`** — el ancla externa demostrada de punta a punta, no afirmada.
+  Habría cazado sola los hallazgos 58 y 60.
+
+- **Lo que el ataque adversarial NO probó, declarado**: de 130 agentes, 100 murieron por límite de
+  sesión. Los 6 atacantes propusieron 41 huecos y la fase de refutación se cayó casi entera. El
+  workflow reportó "39 confirmados" y **eso es falso**: sin escépticos vivos, el guion contaba como
+  confirmado todo lo que nadie pudo refutar — el mismo error de verde vacío, en espejo, dentro de
+  la herramienta escrita para buscar verdes vacíos. Los tres arreglados son los reproducidos a
+  mano; los otros 38 quedan **propuestos, sin refutar y sin verificar**.
+
 - **Custodia: el protocolo deja de callarse sobre quién firmó** (`verify-receipt.mjs custody`).
   El límite decía "nadie firma un recibo". VCP no puede crear ni guardar claves — eso no cambió —
   pero git ya trae firma de commits, y su estado es un dato que el gate puede leer y poner en la
