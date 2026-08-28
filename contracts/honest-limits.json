@@ -128,6 +128,18 @@
       "why": "Es la decision de no inventar una falla donde no hay nada que comparar, y tambien su costo: borrar docs/spec.md, dejarlo sin criterios o no tener Discovery compra silencio, no un rechazo. Sin el limite, un verde por ausencia de entradas se confunde con un verde por evidencia."
     },
     {
+      "limit_id": "session-state-checks-declaration-not-truth",
+      "file": "README.md",
+      "phrase": "Verifica que lo declarado sea coherente, no que sea verdad",
+      "why": "El gate lee lo que la sesión escribió sobre sí misma: no ejecuta red, no mide cuota y no puede saber si un intento existió. Sin el límite, un verde se lee como \"la sesión hizo lo que dice\", cuando lo único probado es que lo declarado no se contradice."
+    },
+    {
+      "limit_id": "session-state-cannot-see-what-is-not-declared",
+      "file": "SKILL.md",
+      "phrase": "el silencio compra verde, no un rechazo",
+      "why": "Las tres secciones son opcionales, así que no declarar nada pasa igual que declarar bien. Sin el límite, una sesión que se cortó sin escribir dónde quedó parece cumplir el gate, y el checkpoint que este item vino a garantizar se pierde exactamente cuando más falta hace."
+    },
+    {
       "limit_id": "phase-closes-on-real-output",
       "file": "SKILL.md",
       "phrase": "la fase no cerró: se reporta qué faltó verificar",

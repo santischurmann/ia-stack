@@ -57,6 +57,14 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
   ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
   ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
+  // The gate and the rule are pinned separately: the retry limit is a protocol rule that must stay
+  // written even if somebody moves, renames or deletes the gate that detects it.
+  ['SKILL.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
+  ['SKILL.md', /tercer intento fallido sobre el mismo problema/u, 'three-attempt stop-and-ask rule'],
+  ['README.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
+  ['templates/vibe/SESSION.md', /## Intentos fallidos/u, 'documented failed-attempt section'],
+  ['templates/vibe/SESSION.md', /## Interrumpido en/u, 'documented interruption resume point'],
+  ['templates/vibe/SESSION.md', /## No verificado/u, 'documented unverified-check section'],
   ['templates/spec.md', /## Discovery \/ Investigación previa/u, 'Discovery evidence section in canonical spec'],
   ['templates/plan.md', /## Write-conflict preflight/u, 'canonical plan preflight section'],
   ['templates/plan.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],

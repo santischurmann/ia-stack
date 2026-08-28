@@ -66,6 +66,14 @@ contexto es la forma más común de que un protocolo se degrade sin que nadie lo
 que ya existe se reusa citándola, no se reescribe con otras palabras. Dos redacciones distintas de
 la misma garantía divergen con el tiempo y nadie sabe cuál es la vigente.
 
+**Tope de reintentos** (item #43). Al **tercer intento fallido sobre el mismo problema** se frena y
+se consulta al usuario con un 🔵 que muestra qué se probó y por qué falló cada vez. No hay cuarto
+intento sin una decisión humana registrada. Tres alcanza para descartar un error tonto sin quemar
+la sesión en un callejón sin salida — y "probar otra cosa parecida" sigue siendo el mismo problema,
+no uno nuevo. Los intentos se anotan en `.vibe/SESSION.md` bajo `## Intentos fallidos`, uno por
+línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario como
+`- decisión humana: ...`. Detector: `verify-session-state.mjs check --session .vibe/SESSION.md`.
+
 **Al evolucionar este propio protocolo** (source: `research/sources/protocolo-muralla.md` points
 #22/#23) — dos reglas meta que aplican a cualquier LAW/regla nueva que se agregue a `SKILL.md`/
 `skills/*.md` en el futuro:
@@ -124,6 +132,26 @@ la misma garantía divergen con el tiempo y nadie sabe cuál es la vigente.
    C) Stop and inspect the state
    ```
    Do not archive, retag, or choose an option on the user's behalf. If there is no resumable state, write `**Feature slug:** <feature-slug>` in `SESSION.md` before the first gate. Full evidence protocol: `skills/caveman-tdd.md` § RESUME.
+5b. **Estado retomable** — la identidad dice de quién es el checkpoint; esto dice si sirve para
+   retomar. Se corre después del gate de identidad y antes de re-detectar la fase:
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-session-state.mjs check --session .vibe/SESSION.md
+   ```
+   Exit `0` → seguir. Exit `1` → resolver antes de retomar: **tres intentos fallidos sobre el mismo
+   problema** sin decisión humana registrada, una interrupción que no dice dónde retomar
+   (`Fase`/`Tarea`/`Falta`), o una comprobación afirmada dentro de `## No verificado` sin evidencia.
+   Las tres secciones son opcionales y aparecen sólo cuando aplican: un `SESSION.md` sin ninguna es
+   un estado normal, y sin `SESSION.md` sale `0` —un proyecto que todavía no arrancó no incumple
+   nada—. Formato y ejemplos: `templates/vibe/SESSION.md`.
+   Cuando la sesión se corta —cuota agotada, caída, lo que sea— lo que se escribe es
+   `## Interrumpido en` con esos tres campos, para retomar sin reconstruir el estado leyendo el
+   diff. **No hay presupuestos ni topes por fase**: el gate registra y verifica estado, no mide
+   consumo ni corta trabajo (un tope mal calibrado frena trabajo legítimo y no hay datos históricos
+   para calibrarlo). Y toda comprobación que no se pudo hacer —`git fetch` con timeout, un comando
+   ausente, el checkout fuente en otra máquina— va a `## No verificado` con la marca literal y su
+   motivo: un fallo silencioso no puede quedar leyéndose como un éxito.
+   El gate verifica que lo declarado sea coherente, no que sea verdad. Una sesión que miente en su
+   propio archivo pasa, y una que no declara nada también: el silencio compra verde, no un rechazo.
 6. No `.vibe/` → create from `templates/vibe/` (incl. `COMPANY.md` org-chart/budget copy — fixed shape, not a scratch file — and empty `AUDIT.md`). AI-company layer detail: `skills/orchestrator-opus.md` § AI COMPANY LAYER.
 7. Report 1 line: memory loaded / new project / Engram no detectado (nunca omitir esta rama en silencio).
 7b. **Nivel de rigor del proyecto** (source: `research/sources/protocolo-muralla.md` point #24) —

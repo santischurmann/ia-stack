@@ -182,3 +182,16 @@
   prueba nada): parcheó un claim para citar `AC99` inexistente y el gate lo bloqueó nombrándolo.
 - La convención de mención se **reusó** de `verify-test-bindings.mjs`, importando su función en vez
   de reimplementarla — es la regla #46 aplicada al propio trabajo.
+
+## T09 — estado ante interrupción · DONE
+
+- `verify-session-state.mjs`: verifica que `SESSION.md` sea retomable. Tres reglas — máximo 3
+  intentos fallidos sin decisión humana, una interrupción debe declarar dónde quedó, y una
+  verificación que no se pudo hacer se marca como tal en vez de leerse como éxito.
+- Falsificado sobre una **copia** del `SESSION.md` real: los 5 escenarios se detectan.
+- **Error mío que el agente encontró**: mis ediciones al backlog con expresiones regulares
+  reemplazaban la primera aparición de "SIGUIENTE" en el archivo en vez de la fila objetivo. Tres
+  commits míos corrieron la columna de estado: descripciones de un item aparecían en la fila de
+  otro. Corregido, ninguna descripción se perdió. **Ningún gate lo detectaba**: el contrato
+  verifica frases en documentos vivos, no la coherencia interna de una tabla de backlog.
+- Backlog: **0 items abiertos**. 8 implementados en T07-T09, 3 cerrados con motivo.

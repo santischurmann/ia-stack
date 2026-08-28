@@ -380,8 +380,16 @@
       "locked": false,
       "role": "Test-Engineer",
       "verifier": "scripts/verify-red-node.mjs (mechanical)",
-      "evidence": [],
-      "not_reviewed": [],
+      "evidence": [
+        "RED: 25 tests en rojo, gate RED exit 0",
+        "GREEN: 448 tests, cobertura 100%, 64 checks + 24 limites",
+        "Falsificado sobre copia del SESSION.md real: los 5 escenarios se detectan"
+      ],
+      "not_reviewed": [
+        "Verifica que lo declarado sea coherente, NO que sea verdad: una sesion que miente en su propio archivo pasa el gate.",
+        "El episodio real de los 3 rechazos del word cap esta en SESSION.md como prosa, no como declaracion: el gate no lo ve.",
+        "Se implemento el checkpoint (34/35/38) pero NO los presupuestos por fase, por decision de politica."
+      ],
       "rollback": "git revert <commit-sha>",
       "handoff": "RED pass -> Builder (GREEN)",
       "blocked_reason": null,
@@ -412,7 +420,7 @@
       "depends_on": [
         "T08"
       ],
-      "status": "pending",
+      "status": "done",
       "goal": "Disciplina verificable -> items 43/34/35/38/32 -> una sesion interrumpida deja estado retomable, no ambiguo",
       "approval_criteria": "Tres intentos fallidos sobre lo mismo se detectan. Un corte por cuota deja checkpoint. Una verificacion de red fallida queda registrada como no verificada, nunca como exito."
     }

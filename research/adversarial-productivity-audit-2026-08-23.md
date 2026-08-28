@@ -17,7 +17,7 @@ validadas de forma independiente.
 
 ## Las 50 mejoras encontradas
 
-Estado: **HECHO** = implementado y falsificado en esta rama; ****HECHO** — `verify-receipt.mjs commit` valida y escribe en una corrida y confirma despues; la ventana se angosta, no se cierra (declarado)** = evidencia suficiente
+Estado: **HECHO** = implementado y falsificado en esta rama; **SIGUIENTE** = evidencia suficiente
 pero requiere un cambio independiente; **NO AUTOMATIZAR** = sería prosa, infraestructura externa
 o ampliación de alcance sin una garantía mecánica nueva.
 
@@ -44,34 +44,34 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 19 | README corto y honesto | uso real mostró confusión sobre qué es VCP | **HECHO** |
 | 20 | Falsificación propia por cada gate nuevo | fallas RED/receipt previas se hallaron así | **HECHO** en cambios de esta ronda |
 | 21 | Receipt schema verifica AC/evidence/4R estructurados | `bf2e14b`, `verify-receipt.mjs` v2 + tests | **HECHO** |
-| 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | **HECHO** — `verify-audit-chain.mjs`: cada linea lleva el hash de la anterior; `append` sella y se niega sobre una traza rota |
+| 22 | Commit atómico con receipt revalidado | ventana TOCTOU entre `check` y `git commit` | **HECHO** — `verify-receipt.mjs commit` valida y escribe en una corrida y confirma después; la ventana se angosta, no se cierra (declarado) |
 | 23 | Receipt exige índice exacto, worktree limpio | hoy puede attestear estado unstaged | **HECHO** — `verify-receipt.mjs check --require-clean-worktree` rechaza unstaged/untracked en 4.6; angosta la ventana TOCTOU de #22, no la cierra |
 | 24 | Scope post-task compara diff real contra plan | plan declara writers; diff puede diferir | **HECHO** — `scripts/verify-scope-diff.mjs` compara writers con tracked+untracked, con `--ignore` explícito |
-| 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | **HECHO** — `contracts/honest-limits.json`: 18 limites como dato revisable, cada uno con el motivo de por que existe |
-| 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | **HECHO** — `verify-security-baseline.mjs --baseline`: lo aceptado no bloquea, lo nuevo si, y una entrada muerta tambien bloquea |
-| 27 | Audit log con hash chain | “append-only” es hoy una convención | **HECHO** — regla en SKILL.md: al subagente se le pasa el encargo, nunca el transcript; si hay resumen, va el resumen |
+| 25 | Claim de task atómico con token/TTL | lock JSON no es atómico | **NO APLICA** — operador único, una sesión por vez (política 2026-08-28); el problema exige dos sesiones simultáneas sobre el mismo proyecto |
+| 26 | Reconciliación de locks muertos al resume | sesión interrumpida deja ownership ambiguo | **NO APLICA** — misma razón que #25; del resume interrumpido lo que sí quedó cubierto es el checkpoint de estado (#34/#35) |
+| 27 | Audit log con hash chain | “append-only” es hoy una convención | **HECHO** — `verify-audit-chain.mjs`: cada línea lleva el hash de la anterior; `append` sella y se niega sobre una traza rota |
 | 28 | ZIP desde allowlist | `07557e7`, `build-zip.sh:31-41` | **HECHO** |
 | 29 | Manifest de backup Graphify post-commit | grafo local estaba en `4df2a302`, no `ad29447` | **HECHO** |
 | 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | **HECHO** — `verify-graphify-manifest.mjs` exige que cada archivo rastreado esté indexado o excluido con razón, y rechaza fantasmas; prueba contabilidad, no comprensión |
 | 31 | Destino Obsidian explícito y validado | export actual usa `--dir graphify-out/obsidian`; falta gate de destino | **PARCIAL** |
-| 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | **HECHO** — misma regla que #36, fijada en verify-vcp-contract |
-| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | **HECHO** — regla dura en SKILL.md + limite honesto con motivo; y `verify-evidence-trace.mjs claims`: cada `linked_requirement_id`/`linked_ac_id` del packet vigente resuelve contra un id que la spec declara, o es referencia rota |
-| 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | **HECHO** — regla en SKILL.md: si un gate no se pudo correr, la fase no cerro; fijado como limite honesto |
-| 35 | Estado `provider_paused` | COMPANY default es presupuesto ilimitado | **HECHO** — regla en SKILL.md: una redaccion que ya existe se reusa citandola, no se reescribe |
-| 36 | Context packet por agente | telemetría mostró contexto excesivo | SIGUIENTE |
-| 37 | Prohibir transcript completo cuando hay resumen | misma presión de cuota | SIGUIENTE |
-| 38 | Presupuesto determinista por fase/reintento | policy manual no puede detener dispatch | SIGUIENTE |
-| 39 | Pressure tests de reglas Markdown | `superpowers-14`, reglas pueden degradar en prompts | SIGUIENTE |
-| 40 | Microtests de wording crítico | `superpowers-9`, evita negaciones ambiguas | SIGUIENTE |
+| 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | **HECHO** — `verify-session-state.mjs`, sección `## No verificado`: una comprobación que no se pudo hacer se declara con la marca literal y su motivo, y una afirmada como realizada dentro de esa sección es exit 1. No agrega dependencia de red —el gate no ejecuta `git fetch`, verifica que el fallo haya quedado registrado |
+| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | **HECHO** — `verify-evidence-trace.mjs claims`: cada `linked_requirement_id`/`linked_ac_id` del packet vigente resuelve contra un id que la spec declara, o es referencia rota |
+| 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | **HECHO (checkpoint, no presupuestos)** — `verify-session-state.mjs`, sección `## Interrumpido en`: declarar la interrupción obliga a declarar `Fase`, `Tarea` y `Falta`, y una interrupción sin punto de retome es exit 1. Los presupuestos por fase **no** se implementaron, a propósito (ver #38) |
+| 35 | Estado `provider_paused` | COMPANY default es presupuesto ilimitado | **HECHO (checkpoint, no presupuestos)** — el estado que hacía falta era el punto de retome, no un flag de proveedor: `## Interrumpido en` sirve para cuota agotada, caída o cualquier otro corte, y el gate no distingue la causa porque no la puede verificar |
+| 36 | Context packet por agente | telemetría mostró contexto excesivo | **HECHO** — regla en SKILL.md: al subagente se le pasa el encargo, nunca el transcript; fijada en `verify-vcp-contract.mjs` |
+| 37 | Prohibir transcript completo cuando hay resumen | misma presión de cuota | **HECHO** — misma regla que #36: si existe un resumen, va el resumen |
+| 38 | Presupuesto determinista por fase/reintento | policy manual no puede detener dispatch | **CERRADO SIN PRESUPUESTOS** — decisión 2026-08-28: un tope mal calibrado frena trabajo legítimo y no hay datos históricos para calibrarlo. La mitad que sí paga es el checkpoint (#34/#35). El único tope que existe es por reintento, no por cuota: #43 |
+| 39 | Pressure tests de reglas Markdown | `superpowers-14`, reglas pueden degradar en prompts | **CERRADO SIN IMPLEMENTAR** (política 2026-08-28) — cubierto parcialmente por `verify-vcp-contract` (64 frases fijadas) y los 24 límites honestos con su motivo. Rendimiento decreciente frente al costo de mantener otro gate al 100% para siempre |
+| 40 | Microtests de wording crítico | `superpowers-9`, evita negaciones ambiguas | **HECHO** — `contracts/honest-limits.json`: cada límite es un dato revisable con su frase literal y el motivo de por qué existe; `verify-vcp-contract.mjs` la busca textual e imprime el motivo al rechazar |
 | 41 | IDs AC → test como artefacto verificable | `jcode-2`, cobertura de intención | **HECHO** — `verify-evidence-trace.mjs criteria`: cada `AC<n>` de la spec nombrado por una prueba real, con la convención de `verify-test-bindings.mjs`. Corrido sobre este repo encontró 3: AC12 sin ninguna prueba que lo nombrara, AC8 y AC9 fuera de convención |
-| 42 | Paridad estadística Bash/PowerShell | `i-have-adhd-3`, hoy hay fixtures de paridad básicos | SIGUIENTE |
-| 43 | Límite de ciclo de fix | `superpowers-2`, evita arreglos infinitos | SIGUIENTE |
-| 44 | Reproducir/instrumentar antes de diagnosticar | `mattpocock-4`, baja fixes narrativos | SIGUIENTE |
-| 45 | Árbol de decisión de límite de fase | `mattpocock-1`, reduce ambigüedad de orquestación | SIGUIENTE |
-| 46 | Redacción canónica reutilizable | `mattpocock-6`/`gstack`, evita patrones duplicados | SIGUIENTE |
-| 47 | Baseline diff de findings | `paperclip`/`gstack`, separa deuda vieja de nueva | SIGUIENTE |
+| 42 | Paridad estadística Bash/PowerShell | `i-have-adhd-3`, hoy hay fixtures de paridad básicos | **CERRADO SIN IMPLEMENTAR** (política 2026-08-28) — cubierto por las pruebas de instalación, que ejercitan ambos instaladores contra el mismo resultado. Una comparación estadística exige un corpus de corridas que no existe |
+| 43 | Límite de ciclo de fix | `superpowers-2`, evita arreglos infinitos | **HECHO** — regla en SKILL.md (frenar y consultar al tercer intento fallido sobre el mismo problema) + `verify-session-state.mjs`, sección `## Intentos fallidos`: tres intentos sin `- decisión humana:` registrada son exit 1, nombrando el problema y los tres intentos con qué se probó y por qué falló cada vez |
+| 44 | Reproducir/instrumentar antes de diagnosticar | `mattpocock-4`, baja fixes narrativos | **HECHO** — regla dura en SKILL.md + límite honesto con motivo: un diagnóstico sin reproducción es una hipótesis con tono de conclusión |
+| 45 | Árbol de decisión de límite de fase | `mattpocock-1`, reduce ambigüedad de orquestación | **HECHO** — regla en SKILL.md: si un gate no se pudo correr, la fase no cerró; fijado como límite honesto |
+| 46 | Redacción canónica reutilizable | `mattpocock-6`/`gstack`, evita patrones duplicados | **HECHO** — regla en SKILL.md: una redacción que ya existe se reusa citándola, no se reescribe |
+| 47 | Baseline diff de findings | `paperclip`/`gstack`, separa deuda vieja de nueva | **HECHO** — `verify-security-baseline.mjs --baseline`: lo aceptado no bloquea, lo nuevo sí, y una entrada muerta también bloquea |
 | 48 | Evidence locator seguro (URL sin credenciales) | `paperclip P07/P08` | **HECHO** — REQ-G12: el locator de un claim exige https sin credenciales o path project-relative, y rechaza caracteres de control |
-| 49 | Tier de modelo sólo para razonamiento difícil | `superpowers-7/8`, optimiza costo sin bajar gates | SIGUIENTE |
+| 49 | Tier de modelo sólo para razonamiento difícil | `superpowers-7/8`, optimiza costo sin bajar gates | **DECIDIDO, SIN CÓDIGO** (política 2026-08-28) — siempre el modelo más potente, coherente con el nivel del proyecto. Se descartó el automático por tipo de tarea: en la corrida real, agujeros graves aparecieron en tareas que desde afuera parecían mecánicas |
 | 50 | No implementar runtime Paperclip ficticio | research confirma que requiere server/telemetría real | **NO AUTOMATIZAR** |
 | 51 | Contención física de paths RED/hook | review independiente encontró escape por symlink tras cerrar `..` | **HECHO** |
 
@@ -116,12 +116,30 @@ sesión futura vuelva a preguntarlas.
 | 44, 45, 46 (disciplina) | **Los tres, como texto** | 44 (reproducir antes de diagnosticar) fue lo que más valor dio en la corrida real: cada agujero grave se reprodujo con un comando antes de escribir el arreglo. Cuestan poco: son reglas, no código. |
 | 32 (red) | **Registrar "no verificado"** | Si la comprobación contra el remoto falla, se anota explícitamente en vez de seguir como si nada. No agrega dependencia de red. |
 
-**Queda por implementar**: checkpoint de cuota (34/35/38), límite de 3 reintentos (43), regla de
-contexto (36/37), las tres reglas de disciplina (44/45/46) y el registro de red no verificada (32).
+**Queda por implementar**: nada de lo decidido el 2026-08-28. El último bloque abierto —el
+checkpoint de cuota (34/35), el tope de reintentos (43) y el registro de red no verificada (32)—
+cerró con `scripts/verify-session-state.mjs`, cableado en Phase 0 paso 5b. El **38** se cierra
+explícitamente **sin** presupuestos: se implementó la mitad que paga (dónde retomar) y no la que
+frena trabajo legítimo (un tope por fase sin datos históricos para calibrarlo).
 
 **Implementados desde entonces**: el gate criterio↔prueba (41) y el de research con fuentes
 citadas (33), los dos en `scripts/verify-evidence-trace.mjs` — `criteria` cablado en Phase 4 antes
-del receipt, `claims` al final de Phase 0.5.
+del receipt, `claims` al final de Phase 0.5. Las reglas de contexto (36/37) y las tres de
+disciplina (44/45/46) quedaron como texto en `SKILL.md`, fijadas por `verify-vcp-contract.mjs`.
 
-**Cerrado sin implementar, con motivo**: 25, 26 (no aplica al modo actual), 39, 42 (cubiertos),
-49 (decidido, no requiere código).
+**Cerrado sin implementar, con motivo**: 25, 26 (no aplica al modo actual), 38 (sin presupuestos,
+arriba), 39, 42 (cubiertos), 49 (decidido, no requiere código).
+
+### Deriva encontrada al cerrar 32/34/35/38/43 (2026-08-28)
+
+La columna de estado de la tabla de arriba estaba **corrida**: tres commits seguidos
+(`19abb0b`, `fed0623`, `0ace5dc`) reemplazaron la primera aparición literal de `SIGUIENTE` en vez
+de la fila que querían tocar, así que cada descripción aterrizó en el item equivocado y el reemplazo
+de `19abb0b` llegó incluso a pisar la leyenda del propio estado. El resultado se leía perfectamente
+plausible —cada celda decía `**HECHO**` con una referencia real a un gate que existe— pero el item
+que nombraba no era el que ese gate cerró: el 27 (hash-chain) figuraba como una regla de contexto,
+el 32 (red) como "misma regla que #36", y los items 36, 37, 40, 44, 45, 46 y 47, todos hechos,
+seguían en `SIGUIENTE`. Corregido moviendo cada descripción a su fila; ninguna se perdió. La causa
+no es de contenido sino de método —un reemplazo por texto literal sobre un archivo donde el mismo
+literal aparece 18 veces— y no la detecta ningún gate: el contrato verifica frases en documentos
+vivos, no la coherencia interna de un backlog.

@@ -20,7 +20,7 @@ const {
 
 function completeRead(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\nDiscovery: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\nPHASE 0.5 — DISCOVERY\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nReproducir antes de diagnosticar\nContexto acotado por agente\nCuándo una fase está terminada\nRedacción reutilizable\nverify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nModelo de seguridad y límites\nDiscovery: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\nPHASE 0.5 — DISCOVERY\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nReproducir antes de diagnosticar\nContexto acotado por agente\nCuándo una fase está terminada\nRedacción reutilizable\nverify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\nverify-session-state.mjs check\ntercer intento fallido sobre el mismo problema\n## Intentos fallidos\n## Interrumpido en\n## No verificado\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {
@@ -55,6 +55,25 @@ test('FALSIFICACIÓN · contract rejects the evidence-trace gate dropped from ei
     ? completeRead(path).replaceAll('verify-evidence-trace.mjs', 'trazabilidad omitida')
     : completeRead(path));
   assert.equal(missingReadme.some((item) => /README\.md: missing mechanical evidence-trace gate/u.test(item)), true);
+});
+
+test('FALSIFICACIÓN · contract rejects the session-state gate, the retry rule or the documented sections dropped from their file', () => {
+  const missingGate = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('verify-session-state.mjs check', 'estado de sesión omitido')
+    : completeRead(path));
+  assert.equal(missingGate.some((item) => /SKILL\.md: missing mechanical resumable-session-state gate/u.test(item)), true);
+  assert.equal(missingGate.some((item) => /README\.md: missing/u.test(item)), false);
+
+  const missingRule = contractViolations((path) => path === 'SKILL.md'
+    ? completeRead(path).replace('tercer intento fallido sobre el mismo problema', 'se reintenta hasta que salga')
+    : completeRead(path));
+  assert.equal(missingRule.some((item) => /SKILL\.md: missing three-attempt stop-and-ask rule/u.test(item)), true);
+
+  const missingTemplate = contractViolations((path) => path === 'templates/vibe/SESSION.md'
+    ? completeRead(path).replace('## Interrumpido en', '## Otra cosa')
+    : completeRead(path));
+  assert.equal(missingTemplate.some((item) => /SESSION\.md: missing documented interruption resume point/u.test(item)), true);
+  assert.equal(missingTemplate.some((item) => /missing documented failed-attempt section/u.test(item)), false);
 });
 
 test('FALSIFICACIÓN · contract rejects unreadable, missing and stale-policy documentation', () => {

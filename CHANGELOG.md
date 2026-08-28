@@ -7,6 +7,52 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- Nuevo gate `verify-session-state.mjs` (items 43, 34/35/38 y 32): lo que queda escrito cuando algo
+  se interrumpe o falla. `check --session .vibe/SESSION.md` verifica tres cosas sobre el archivo
+  que alguien lee para retomar, y ninguna de las tres tenía detector.
+  **Reintentos** — al **tercer** intento fallido sobre el mismo problema el protocolo frena y
+  consulta; tres intentos sin una `- decisión humana:` registrada son exit `1`, y el rechazo nombra
+  el problema y los tres intentos con qué se probó y por qué falló cada vez. Tres alcanza para
+  descartar un error tonto sin quemar la sesión en un callejón sin salida.
+  **Interrupción** — declarar que la sesión se cortó obliga a declarar dónde retomar: `Fase`,
+  `Tarea` y `Falta`. Una interrupción sin punto de retome es exit `1`. La cuota se agotó a mitad de
+  la primera corrida real de este protocolo y retomar costó reconstruir el estado leyendo el diff.
+  **Deliberadamente NO hay presupuestos ni topes por fase** (item 38, decisión del 2026-08-28): un
+  tope mal calibrado frena trabajo legítimo y no hay datos históricos para calibrarlo. El gate
+  registra y verifica estado; no mide consumo ni corta trabajo.
+  **Verificación no realizada** — toda comprobación que no se pudo hacer (`git fetch` con timeout,
+  un comando ausente, el checkout fuente en otra máquina) va a `## No verificado` con la marca
+  literal y su motivo. Una entrada de esa sección afirmada como realizada es exit `1`: un fallo
+  silencioso no puede quedar leyéndose como un éxito. El gate no ejecuta red ni mide cuota.
+  Las tres secciones son **opcionales** y aparecen sólo cuando aplican: un `SESSION.md` sin ninguna
+  es un estado normal, y sin `SESSION.md` sale `0` —un proyecto que todavía no arrancó no incumple
+  nada—. Formato Markdown legible con encabezado fijo, documentado con un ejemplo de cada sección
+  en `templates/vibe/SESSION.md`; los ejemplos van dentro de un bloque comentado y el gate ignora
+  los comentarios HTML, porque esa plantilla se copia tal cual y si no todo proyecto nuevo
+  arrancaría declarando una interrupción que nunca ocurrió.
+  La lectura del archivo **no se reimplementó**: usa `safeProjectFile` de `ratchet.mjs`, que ya fija
+  el criterio del repo —nada fuera del proyecto, ningún symlink, ningún archivo que no sea regular—
+  y devuelve `null` cuando el archivo no existe, que acá es exactamente el caso verde. Es la regla
+  #46 aplicada al propio trabajo.
+  Cableado en `SKILL.md` Phase 0 paso `5b`, justo después del gate de identidad: la identidad dice
+  de quién es el checkpoint, esto dice si sirve para retomar. La regla de los tres intentos quedó
+  escrita como regla del protocolo en § LAWS, no sólo implícita en el gate, y las dos —regla y
+  gate— están fijadas por separado en `verify-vcp-contract.mjs` para que borrar el gate no borre
+  la regla.
+  Falsificado sobre una **copia** del `SESSION.md` real de este repositorio (verde con cero
+  secciones declaradas no prueba nada): se declararon los dos rechazos del gate de word cap que el
+  archivo ya narraba en prosa, y el gate pasó en verde con dos intentos, rechazó al agregar el
+  tercero sin decisión, rechazó una interrupción sin `Falta`, y rechazó `git fetch origin/main`
+  afirmado como verificado dentro de `## No verificado`.
+  Dos límites honestos en `contracts/honest-limits.json` (README + SKILL): verifica que lo declarado
+  sea coherente, **no que sea verdad** —una sesión que miente en su propio archivo pasa—, y las tres
+  secciones son opcionales, así que el silencio compra verde, no un rechazo.
+- Corregida una deriva silenciosa en `research/adversarial-productivity-audit-2026-08-23.md`: la
+  columna de estado estaba corrida. Tres commits (`19abb0b`, `fed0623`, `0ace5dc`) reemplazaron la
+  primera aparición literal de `SIGUIENTE` en vez de la fila que querían tocar, y cada descripción
+  aterrizó en el item equivocado —el 27 (hash-chain) figuraba como una regla de contexto, el 32
+  (red) como "misma regla que #36"— mientras siete items ya implementados (36, 37, 40, 44, 45, 46,
+  47) seguían marcados `SIGUIENTE`. Cada descripción se movió a su fila; ninguna se perdió.
 - Nuevo gate `verify-evidence-trace.mjs` (hallazgos 41 y 33): las dos referencias que el protocolo
   pedía en prosa y nadie podía comprobar. `criteria --spec docs/spec.md --tests tests` verifica que
   cada `AC<n>` declarado en la spec esté nombrado por al menos una prueba real; `claims --feature
