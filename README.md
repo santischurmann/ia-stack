@@ -91,7 +91,7 @@ que sea la decisión correcta, ni que la persona la haya entendido.
 Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El
 agente recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
 
-## Discovery: investigar antes de especificar
+## Research: investigar antes de especificar
 
 Para un cambio que no sea claramente trivial, VCP no empieza escribiendo código ni una spec a
 ciegas. Primero hace una pasada de **Discovery**. Su salida es la evidencia que alimenta la spec;

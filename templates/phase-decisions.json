@@ -1,16 +1,18 @@
 {
   "schema": "vcp.phase-decisions/1",
   "phase_order": [
-    "0",
-    "0.5",
     "1",
     "2",
     "3",
-    "4"
+    "4",
+    "5",
+    "6",
+    "7",
+    "8"
   ],
   "decisions": [
     {
-      "phase_id": "0",
+      "phase_id": "1",
       "phase_name": "Bootstrap",
       "options": [
         "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
@@ -23,11 +25,11 @@
       "input_hash": "d1b6f4fcdf9a56a240c9b9de1658c0470c96f267bcb159ae6a530021c359aae5",
       "status": "decided",
       "previous_hash": "",
-      "current_hash": "69614e8e91caf349c62e99f9ca420e759e5966a205c4a8a3ffd764a38f5fa127"
+      "current_hash": "a4653ac7acebd981751228324e717aac51d3159c747acdf7ab73d437837bc553"
     },
     {
-      "phase_id": "0.5",
-      "phase_name": "Discovery",
+      "phase_id": "2",
+      "phase_name": "Research",
       "options": [
         "A) investigar sólo el gate que falta",
         "B) investigar el gate y además su plantilla consumidora"
@@ -38,12 +40,12 @@
       "timestamp": "2026-08-28T09:40:00Z",
       "input_hash": "659dc643480fd49a391915f6e3a6bb91da3a42cb51562ae3169a97d0a3f0a961",
       "status": "superseded",
-      "previous_hash": "69614e8e91caf349c62e99f9ca420e759e5966a205c4a8a3ffd764a38f5fa127",
-      "current_hash": "ab65443eb11157a68c508aab4ae37624b739ee02ea204a3ed78a95c7671b6abb"
+      "previous_hash": "a4653ac7acebd981751228324e717aac51d3159c747acdf7ab73d437837bc553",
+      "current_hash": "df317ddf43eafa0a6abb1c88152ac531ae271f88ced9890bda2b7d02210a6558"
     },
     {
-      "phase_id": "0.5",
-      "phase_name": "Discovery",
+      "phase_id": "2",
+      "phase_name": "Research",
       "options": [
         "A) investigar sólo el gate que falta",
         "B) investigar el gate y además su plantilla consumidora"
@@ -54,11 +56,11 @@
       "timestamp": "2026-08-28T10:05:00Z",
       "input_hash": "543d3dd70bf05b8042e44b5b80244676768bf1a6b0263203d7f7b94bcb04e6e5",
       "status": "decided",
-      "previous_hash": "ab65443eb11157a68c508aab4ae37624b739ee02ea204a3ed78a95c7671b6abb",
-      "current_hash": "09530ec88dd0b7ba36fad268825d0c5208a0696764dbfd5650bf2ea469f87160"
+      "previous_hash": "df317ddf43eafa0a6abb1c88152ac531ae271f88ced9890bda2b7d02210a6558",
+      "current_hash": "ffddb9ded9816fc06c3a36283fd24bfa42a27f6dea12d1b2d2e8dfd68d84a469"
     },
     {
-      "phase_id": "1",
+      "phase_id": "3",
       "phase_name": "Spec",
       "options": [
         "A) una spec con criterios agrupados por artefacto",
@@ -70,8 +72,8 @@
       "timestamp": "2026-08-28T11:20:00Z",
       "input_hash": "209cff161fa802f4f5bcbcf32e585fab67dc790bc06ec0d3eb3d9be2a000615d",
       "status": "decided",
-      "previous_hash": "09530ec88dd0b7ba36fad268825d0c5208a0696764dbfd5650bf2ea469f87160",
-      "current_hash": "6cc89f4259494682bf8a70fc68002eb1e523818a78840ca601d80b2a8620951c"
+      "previous_hash": "ffddb9ded9816fc06c3a36283fd24bfa42a27f6dea12d1b2d2e8dfd68d84a469",
+      "current_hash": "f6b4da8e69ac7f078edf13b0fb316f57d9e8f689bb13336745169abaf1a9a4f3"
     }
   ]
 }

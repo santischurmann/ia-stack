@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-receipt.mjs — mechanical receipt gate for VibeCodeProtocols Phase 4.6
+// verify-receipt.mjs — mechanical receipt gate for VibeCodeProtocols Phase 8.1
 // Cross-platform (Node, no npm deps), works on Windows/macOS/Linux identically since it only
 // shells out to `git` and uses node:crypto/node:fs. Three commands:
 //
@@ -476,7 +476,7 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     if (!arg) fail('usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]');
     // Opt-in release strictness. A plain `check` attests whatever state was evaluated, including
     // unstaged edits and untracked files — that is correct for a mid-task receipt. At the commit
-    // boundary the reviewed tree and the committed tree must be the same one, so 4.5 asks for this
+    // boundary the reviewed tree and the committed tree must be the same one, so 6.4 asks for this
     // flag. It narrows, but does not close, the window between `check` and `git commit`: nothing
     // stops a write landing in between. Unknown flags are rejected rather than silently ignored.
     const extraFlags = process.argv.slice(4);

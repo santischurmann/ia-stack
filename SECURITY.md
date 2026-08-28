@@ -5,7 +5,7 @@ en seguro por sí solo y no reemplaza una revisión especializada.
 
 ## Qué hace VCP de forma nativa
 
-En cada Phase 4.3 corre `verify-security-baseline.mjs` sobre los cambios que se van a liberar:
+En cada Phase 6.2 corre `verify-security-baseline.mjs` sobre los cambios que se van a liberar:
 
 ```bash
 node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base origin/main

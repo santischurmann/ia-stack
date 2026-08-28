@@ -7,6 +7,42 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Las fases se renumeran de 1 a 8, y Discovery pasa a llamarse Research.** Antes la numeración
+  arrancaba en 0 y tenía una fase 0.5, y el cierre entero vivía apretado dentro de una sola fase 4
+  con ocho sub-pasos. Ahora: **1 Bootstrap · 2 Research · 3 Spec · 4 Plan · 5 Build · 6 Test ·
+  7 Simplify · 8 Deploy**. Publicar deja de ser el último renglón de otra fase y pasa a ser la
+  fase 8 con sus propios chequeos — tenerlo escondido adentro del cierre es lo que hizo que el
+  hallazgo 55 tardara en aparecer.
+  Simplify se movió físicamente: antes se simplificaba **antes** de la revisión adversarial, o sea
+  se reordenaba código que todavía podía estar mal. Ahora va después de toda la fase de Test. Para
+  no perder la red que daba el orden viejo, la fase 7 suma un paso nuevo, **7.2 Re-verificar**: la
+  suite completa vuelve a correr sobre el estado ya simplificado, porque simplificar sin volver a
+  verificar es exactamente cómo se rompe algo en silencio.
+  Ocho checks de contrato nuevos, uno por fase, más uno para la re-verificación: renumerar o
+  reordenar sin actualizar el contrato es un rechazo, no un protocolo con dos numeraciones a la vez.
+  **El renombre es del nombre visible**: los archivos (`verify-discovery-*.mjs`), las carpetas
+  (`docs/discovery/`) y los identificadores de schema (`vcp.discovery-decision/3`) quedan intactos
+  a propósito, porque están grabados dentro de decisiones ya selladas por hash y cambiarlos
+  obligaría a re-sellar el historial — el movimiento que este protocolo trata como falsificación.
+  Y **no se tocaron los registros históricos** (`AUDIT.md`, `SESSION.md`, `RETRO.md`, `CHANGELOG`,
+  `research/`): describen lo que pasó bajo la numeración vieja, y reescribirlos sería falsificarlos.
+
+- **La cobertura ya no publica un número medido sobre código que se movió** (hallazgo 59). Una
+  lectura de 98,85 % que no se reproducía resultó no ser un hueco en el código sino en la medición:
+  de ocho corridas seguidas, las tres hechas mientras se editaba un script inventaron ramas sin
+  cubrir, y las cinco con el árbol quieto salieron limpias. La herramienta mapea líneas contra el
+  archivo tal como está al terminar; si cambió durante la corrida, el mapa no corresponde a lo que
+  se ejecutó. El gate ahora toma una huella sha256 del contenido de todos los scripts antes y
+  después de medir, y si difieren rechaza con `COVERAGE_SOURCE_CHANGED` **sin publicar ningún
+  porcentaje**. El riesgo que cierra no es el número: es perder horas buscando en el código un
+  hueco que sólo existía en la medición.
+  **Límite**: la huella cubre `scripts/`, que es lo que el gate mide; un cambio en `tests/` durante
+  la corrida sigue sin detectarse.
+
+- `install.ps1` **verificado ejecutando** en PowerShell real, no sólo por inspección del texto:
+  instalación en carpeta limpia, `.gitignore` escrito respetando el contenido previo, 0 archivos
+  del runtime en la superficie del proyecto, y tres instalaciones seguidas dejan la regla una vez.
+
 - **El instalador ya no deja su propio runtime como superficie del proyecto** (hallazgo 58,
   encontrado instalando VCP en una carpeta limpia por primera vez). El repo de VCP ignora
   `.vibe/vcp-runtime/` en su `.gitignore`, pero el instalador nunca escribía esa regla en el

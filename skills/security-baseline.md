@@ -9,7 +9,7 @@ allowed-tools: Read, Grep, Bash
 # VCP Security Gate (native, no external skill)
 
 Runs read-only and uses the VCP severity model (Critical/High/Medium/Low). It is mandatory in
-Phase 4.3 and requires no downloaded tool, other skill, account or network service. It is a
+Phase 6.2 and requires no downloaded tool, other skill, account or network service. It is a
 pattern-based safety floor, not a claim of complete application-security coverage.
 
 ## COMMAND (mechanical, required)
@@ -46,7 +46,7 @@ EVIDENCE: <exact matched string/pattern, redacted if it's the secret itself — 
 ```
 Critical/High → orchestrator fixes before continuing, re-run this checklist on the fix. Medium/Low → `.vibe/DEBT.md` per `skills/vibe-memory.md` § WHEN TO WRITE WHAT.
 
-## LIMITS (say this to the user once per Phase 4.3 run using this fallback)
+## LIMITS (say this to the user once per Phase 6.2 run using this fallback)
 
 This is pattern-based, not a real SAST engine — no taint analysis, no cross-file data flow, no
 dependency CVE database, no permission review and no proof that an application is safe. It also

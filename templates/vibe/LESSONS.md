@@ -2,8 +2,8 @@
 
 Reflexion-schema. Confirm-gated (nunca se escribe sin 🔵 confirmación del usuario), deduped
 contra entradas existentes, retire-not-delete (nunca se borra, solo `status: retired`). Full
-protocol: `skills/vibe-memory.md` § LESSONS PROTOCOL. Escrito en Phase 4.8 (después de RETRO),
-leído en Phase 0 Bootstrap junto al resto de `.vibe/`.
+protocol: `skills/vibe-memory.md` § LESSONS PROTOCOL. Escrito en Phase 8.3 (después de RETRO),
+leído en Phase 1 Bootstrap junto al resto de `.vibe/`.
 
 ---
 

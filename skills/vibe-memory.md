@@ -21,21 +21,21 @@ gate-state recall across compaction/restart — never a replacement for the file
 ├── PATTERNS.md     # How things are done in this project (living doc)
 ├── SESSION.md      # Current session log + declared feature identity (reset each session)
 ├── DEBT.md         # Technical debt backlog (managed)
-├── RETRO.md        # Reflection log per shipped feature, Phase 4.8 (append-only)
+├── RETRO.md        # Reflection log per shipped feature, Phase 8.3 (append-only)
 ├── LESSONS.md      # Cross-project error memory — Reflexion-schema, confirm-gated, retire not delete
 ├── COMPANY.md      # Org chart, budget policy, goal ancestry note — paperclip-style AI company layer
 ├── AUDIT.md        # Append-only accountability trail: role, action, evidence, phase/task ref
 ├── handoffs/
 │   └── <feature-slug>-<task-id>-<gate>.md   # Exact report + review boundary, no cross-feature overwrite
 ├── receipts/
-│   └── <feature-slug>-<fecha>.json   # Phase 4.5 risk/adversarial/coverage receipt
+│   └── <feature-slug>-<fecha>.json   # Phase 6.4 risk/adversarial/coverage receipt
 └── sessions/
     └── YYYY-MM-DD-<topic>.md   # Archived session snapshots
 ```
 
 ---
 
-## BOOTSTRAP (Phase 0)
+## BOOTSTRAP (Phase 1)
 
 ### If .vibe/ does not exist:
 
@@ -91,11 +91,11 @@ Show user a 3-5 line summary of what the memory contains.
 | Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
 | Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
-| native security gate Medium/Low finding (Phase 4.3) | `DEBT.md` | Finding + category + severity + why not fixed now |
+| native security gate Medium/Low finding (Phase 6.2) | `DEBT.md` | Finding + category + severity + why not fixed now |
 | Session end | `sessions/` | Archive SESSION.md with date prefix |
-| End of Phase 4 (4.8), always | `RETRO.md` | 5-line entry: shipped/plan vs actual/friction/keep/change |
+| End of Phase 8 (8.3), always | `RETRO.md` | 5-line entry: shipped/plan vs actual/friction/keep/change |
 | RED took 2+ attempts / adversarial finding fixed / user correction | `SESSION.md` (scratch) | `⚠ signal: <1-line>` — passive capture only, not a LESSONS.md write |
-| End of Phase 4 (4.8), always | `LESSONS.md` | draft candidates from this session's `⚠ signal` lines → 🔵 confirm gate → write only confirmed (see LESSONS PROTOCOL) |
+| End of Phase 8 (8.3), always | `LESSONS.md` | draft candidates from this session's `⚠ signal` lines → 🔵 confirm gate → write only confirmed (see LESSONS PROTOCOL) |
 | Every gate/decision (same moments as `SESSION.md`) | `AUDIT.md` | one line: `[timestamp] <role> \| <action> \| <evidence/decision> \| <phase/task ref>` — accountability trail, append-only, never edited/deleted |
 | Session budget set by user (`+Nk` or explicit ask) | `COMPANY.md` | update the one `**Session budget:**` line under § BUDGET POLICY — this is the only field in COMPANY.md that changes per session, org chart itself is fixed |
 
@@ -152,7 +152,7 @@ reference in conversation/commits ("fixed debt id:a3f9c1") without re-typing the
 the only uniqueness key — two findings CAN collide on `id` by hash coincidence, tell them apart
 by date+location same as before, `id` is a convenience, not a database key.
 
-### RETRO.md entry (Phase 4.8, always, not a gate):
+### RETRO.md entry (Phase 8.3, always, not a gate):
 ```markdown
 ## [YYYY-MM-DD] <feature-name>
 **Shipped:** <1 línea, qué salió>
@@ -204,7 +204,7 @@ resueltos.
 
 ## LESSONS PROTOCOL — confirm-gated, deduped, never silently deleted
 
-Source of the "learn from own errors across projects" goal. Runs at Phase 4.8 (Reflect) and on
+Source of the "learn from own errors across projects" goal. Runs at Phase 8.3 (Reflect) and on
 demand (`/vibe-lessons` or user asks "qué aprendimos"). Applies equally when VCP is reused on a
 different project — `LESSONS.md` in the *global* `.vibe/` equivalent (or a project-local copy
 promoted manually) is what makes an error learned once stop repeating on the next project.
@@ -214,7 +214,7 @@ attempts, a security/adversarial finding needed a real fix, or the user issued a
 correction — append one line to a scratch buffer in `SESSION.md` (`⚠ signal: <1-line>`). This is
 capture only. It does **not** touch `LESSONS.md`.
 
-**2. Draft candidates (Phase 4.8).** From this session's `⚠ signal` lines, draft 0-15 candidate
+**2. Draft candidates (Phase 8.3).** From this session's `⚠ signal` lines, draft 0-15 candidate
 lessons using the schema above. Cap at 15 — force prioritization over dumping everything.
 
 **3. Dedup before proposing.** Grep `LESSONS.md` for overlapping `Detection signal` or title
@@ -257,7 +257,7 @@ mark inline `[stale? — unseen 90d]` next time the file is rewritten (during a 
 never as a silent background edit). Surface stale-flagged lessons to the user during Reflect as
 "still relevant?" — user call, not automatic removal.
 
-**8. Recall.** Phase 0 Bootstrap reads `LESSONS.md` alongside the others (already wired above).
+**8. Recall.** Phase 1 Bootstrap reads `LESSONS.md` alongside the others (already wired above).
 When Spec/Plan/Build touches a file:line or pattern matching an active lesson's `Detection
 signal`, surface it inline before the relevant gate — this is the actual "don't repeat the
 mistake" payoff, not just accumulation.
@@ -287,7 +287,7 @@ node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SES
 ```
 
 Only exit `0` permits reading the ledger bottom-up. Exit `1` is a fail-closed identity conflict:
-never resume it silently. Present the Phase 0 🔵 menu in `SKILL.md` (archive cleanly, continue its
+never resume it silently. Present the Phase 1 🔵 menu in `SKILL.md` (archive cleanly, continue its
 declared feature, explicitly retag with a recorded user reason, or inspect). A legacy/malformed
 session has `UNKNOWN` identity and gets its own assign/archive/inspect menu. After the user
 chooses, re-run this command; do not proceed until it exits `0`.

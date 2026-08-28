@@ -1,7 +1,7 @@
 # Retros
 
-Log rolling. Una entrada por feature/fix shippeado. Escrito en Phase 4.8, leído en
-Phase 0 Bootstrap (últimas 2 entradas) como contexto de "qué aprendimos". No es un gate —
+Log rolling. Una entrada por feature/fix shippeado. Escrito en Phase 8.3, leído en
+Phase 1 Bootstrap (últimas 2 entradas) como contexto de "qué aprendimos". No es un gate —
 siempre corre, nunca bloquea.
 
 ---

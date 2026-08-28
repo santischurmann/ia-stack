@@ -50,7 +50,7 @@ relax this one into a generic output regex.
 
 ## RESUME AFTER COMPACTION / RESTART
 
-1. Establish the requested lowercase-kebab-case feature slug, then run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 0 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
+1. Establish the requested lowercase-kebab-case feature slug, then run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 1 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
 2. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
 3. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
 4. `git diff` test files. Changed since RED = violation → stop, report.
@@ -146,6 +146,6 @@ pytest --cov --cov-branch --cov-fail-under=100 2>&1 | tail -5
 go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | grep total
 ```
 
-If any measurable coverage metric < 100%: do NOT proceed to Phase 4 (Final: simplify/security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
+If any measurable coverage metric < 100%: do NOT proceed to Phase 6 (Test: security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
 
-Coverage gate ≠ done. Full DoD (SKILL.md Phase 4): suite green + lint 0 + typecheck 0 + native security gate clean (`security-baseline.md`) + adversarial pass.
+Coverage gate ≠ done. Full DoD (SKILL.md Phases 6-8): suite green + lint 0 + typecheck 0 + native security gate clean (`security-baseline.md`) + adversarial pass.

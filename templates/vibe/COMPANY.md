@@ -12,19 +12,19 @@ Full protocol: `skills/orchestrator-opus.md` § AI COMPANY LAYER.
 ```
 Board (human, you)              — sets goals, approves push/merge (LAW 8), final call on escalated
   └─ CEO (orchestrator)         — decomposes goal → spec → plan → tasks. Writes zero feature code.
-       ├─ Spec-Writer           — Phase 1, produces docs/spec.md
-       ├─ Planner               — Phase 2, produces docs/plan.md + tasks.json
-       ├─ Test-Engineer         — Phase 3.1 RED, writes failing tests only
-       ├─ Builder               — Phase 3.2 GREEN, writes impl only
-       ├─ Triangulator          — Phase 3.3 TRIANGULATE, derives edge/negative/contract/boundary
+       ├─ Spec-Writer           — Phase 3, produces docs/spec.md
+       ├─ Planner               — Phase 4, produces docs/plan.md + tasks.json
+       ├─ Test-Engineer         — Phase 5.1 RED, writes failing tests only
+       ├─ Builder               — Phase 5.2 GREEN, writes impl only
+       ├─ Triangulator          — Phase 5.3 TRIANGULATE, derives edge/negative/contract/boundary
        │                          cases from real ACs, test files only, never production code
-       ├─ Refactor-Engineer     — Phase 3.4 REFACTOR, structure only
-       ├─ Docs                  — Phase 3.5, .vibe/ + doc updates
-       ├─ Chore                 — Phase 4.1, lint/typecheck/coverage fixes
-       ├─ Security-Officer      — Phase 4.3, native security-baseline.md (read-only)
-       ├─ 4R Reviewer (1-5x)    — Phase 4.4, Risk/Readability/Reliability/Resilience adversarial
+       ├─ Refactor-Engineer     — Phase 5.4 REFACTOR, structure only
+       ├─ Docs                  — Phase 5.5, .vibe/ + doc updates
+       ├─ Chore                 — Phase 6.1, lint/typecheck/coverage fixes
+       ├─ Security-Officer      — Phase 6.2, native security-baseline.md (read-only)
+       ├─ 4R Reviewer (1-5x)    — Phase 6.3, Risk/Readability/Reliability/Resilience adversarial
        │                          review (read-only), count scales with risk_level, never 0
-       └─ Release-Engineer      — Phase 4.6-4.7, commit/push-ask/backups
+       └─ Release-Engineer      — Phase 8.1-8.2, commit/push-ask/backups
 ```
 
 Same permission boundaries as `orchestrator-opus.md` § ROLE / TOOL-PERMISSION TABLE — this doc
@@ -38,7 +38,7 @@ No hard infra — this is a manual-check convention the orchestrator applies at 
 
 | Scope | Warning (80%) | Hard stop (100%) |
 |---|---|---|
-| Per task (Phase 3, one RED→GREEN→TRIANGULATE→REFACTOR cycle) | note in `SESSION.md`, continue | pause, ask user: split task or extend budget |
+| Per task (Phase 5, one RED→GREEN→TRIANGULATE→REFACTOR cycle) | note in `SESSION.md`, continue | pause, ask user: split task or extend budget |
 | Per phase (Spec/Plan/Build/Final) | note in `SESSION.md` | pause at phase boundary, 🔵 confirm before continuing |
 | Retry loops (RED/GREEN respawned on failure) | — | 3 respawns on the same task without a passing gate = hard stop, escalate to user, never silent infinite retry |
 
@@ -84,9 +84,9 @@ bookkeeping layer such a runtime would consume, not the runtime itself. Full dis
 
 ## ATOMIC TASK CHECKOUT
 
-Parallel Build (Phase 3, config B=Y): before spawning a subagent on task `T0N`, set
+Parallel Build (Phase 5, config B=Y): before spawning a subagent on task `T0N`, set
 `tasks.json[T0N].owner = "<role>-<timestamp>"` and `locked: true`. No second subagent spawns
 against a task that's already `locked: true` — prevents two Builders double-working the same
 file. Unlock (`locked: false`) on gate pass or explicit abort, never left dangling — if a
-subagent dies mid-task, the RESUME protocol (Phase 0) clears stale locks by re-detecting via
+subagent dies mid-task, the RESUME protocol (Phase 1) clears stale locks by re-detecting via
 evidence, not by trusting the lock flag.

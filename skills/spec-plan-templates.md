@@ -1,14 +1,14 @@
 ---
 name: vcp-spec-plan-templates
 description: |
-  ES: Templates embebidos para spec.md, plan.md, tasks.json y ADRs. Config menus en SKILL.md Phase 1/2.
-  EN: Embedded templates for spec.md, plan.md, tasks.json, ADRs. Config menus live in SKILL.md Phase 1/2.
+  ES: Templates embebidos para spec.md, plan.md, tasks.json y ADRs. Config menus en SKILL.md Phase 3/2.
+  EN: Embedded templates for spec.md, plan.md, tasks.json, ADRs. Config menus live in SKILL.md Phase 3/2.
 allowed-tools: Read, Write, Edit
 ---
 
 # VCP Templates
 
-Use verbatim. Replace `<placeholders>`. Config menu (Phase 1 SPEC / Phase 2 PLAN, `SKILL.md`) picks detail level + granularity before you fill these — minimal spec skips Non-Goals+Risk Notes, exhaustive keeps everything.
+Use verbatim. Replace `<placeholders>`. Config menu (Phase 3 SPEC / Phase 4 PLAN, `SKILL.md`) picks detail level + granularity before you fill these — minimal spec skips Non-Goals+Risk Notes, exhaustive keeps everything.
 
 ---
 
@@ -50,7 +50,7 @@ Plan and Build never proceed with one present.
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
 - [ ] Coverage 100% for every metric the runner measures (lines/branches/functions), lint 0, typecheck 0
-- [ ] Native security gate clean (`security-baseline.md`, Phase 4.3) + adversarial pass (Phase 4.4)
+- [ ] Native security gate clean (`security-baseline.md`, Phase 6.2) + adversarial pass (Phase 6.3)
 - [ ] README/CHANGELOG/.vibe updated
 ```
 
@@ -141,7 +141,7 @@ directory-wide ignore to hide undeclared writers.
 }
 ```
 
-`model_effort` — from Phase 3 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs` and `verify-scope-diff.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by either gate. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
+`model_effort` — from Phase 5 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs` and `verify-scope-diff.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by either gate. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
 
 ---
 

@@ -6,7 +6,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const coverageGate = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
-const { evaluateCoverageRun, listMjsScripts, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
+const { evaluateCoverageRun, fingerprintScripts, listMjsScripts, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
 
 const perfectCoverage = `
 ℹ  verify-example.mjs | 100.00 | 100.00 | 100.00 |
@@ -127,4 +127,51 @@ test('CLI usage is fast and rejects arguments without launching the coverage sui
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.status, 2, `${result.stdout}\n${result.stderr}`);
   assert.match(`${result.stdout}${result.stderr}`, /usage:/i);
+});
+
+// --- Una medición sobre código que cambió mientras corría no es una medición -------------------
+
+// Reproducido el 2026-08-28: ocho corridas seguidas del gate: las tres que ocurrieron mientras se
+// editaba un script reportaron ramas sin cubrir que no existían; las cinco con el árbol quieto
+// salieron limpias. La medición no es robusta a que la fuente cambie debajo, así que el gate deja
+// de reportar un número cuando eso pasa y lo dice.
+const HUELLA_CAMBIO = 'COVERAGE_SOURCE_CHANGED';
+
+test('fingerprintScripts cambia cuando cambia el contenido de un script', () => {
+  const uno = fingerprintScripts(() => ['a.mjs', 'b.mjs'], (f) => `contenido de ${f}`);
+  const igual = fingerprintScripts(() => ['a.mjs', 'b.mjs'], (f) => `contenido de ${f}`);
+  const distinto = fingerprintScripts(() => ['a.mjs', 'b.mjs'], (f) => (f === 'a.mjs' ? 'otra cosa' : `contenido de ${f}`));
+  const menos = fingerprintScripts(() => ['a.mjs'], (f) => `contenido de ${f}`);
+
+  assert.equal(uno, igual, 'el mismo contenido da la misma huella');
+  assert.notEqual(uno, distinto, 'un byte distinto cambia la huella');
+  assert.notEqual(uno, menos, 'un archivo menos cambia la huella');
+  assert.match(uno, /^[0-9a-f]{64}$/u);
+});
+
+test('FALSIFICACIÓN · si los scripts cambian durante la corrida, el gate rechaza en vez de informar un porcentaje', () => {
+  const errors = [];
+  let vuelta = 0;
+  // Cada llamada devuelve un contenido distinto: simula el archivo editado mientras corría.
+  const cambiante = () => `version ${(vuelta += 1)}`;
+  const status = main([], () => fakeResult({ stdout: currentPerfectCoverage() }), () => {}, (l) => errors.push(l), repoRoot, {
+    list: () => ['x.mjs'],
+    read: cambiante,
+  });
+
+  assert.equal(status, 1);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], new RegExp(HUELLA_CAMBIO, 'u'));
+  assert.doesNotMatch(errors[0], /100%/u, 'no puede publicar un porcentaje que no vale');
+});
+
+test('con el árbol quieto el gate informa el resultado normal', () => {
+  const written = [];
+  const status = main([], () => fakeResult({ stdout: currentPerfectCoverage() }), (l) => written.push(l), () => {}, repoRoot, {
+    list: () => ['x.mjs'],
+    read: () => 'contenido estable',
+  });
+
+  assert.equal(status, 0);
+  assert.match(written.join(String.fromCharCode(10)), /^OK: /u);
 });

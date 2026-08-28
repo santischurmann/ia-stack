@@ -25,7 +25,7 @@
 3. **T03** — commit atómico (requiere T02)
 4. **T04** — microtests de wording (requiere T03)
 
-La cadena es estrictamente secuencial por decisión explícita (🔵 Phase 2: paralelo = N). Aunque
+La cadena es estrictamente secuencial por decisión explícita (🔵 Phase 4: paralelo = N). Aunque
 se permitiera, las cuatro comparten `SKILL.md`, `CHANGELOG.md` y `verify-vcp-contract.mjs`, así que
 el preflight las serializaría igual.
 

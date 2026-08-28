@@ -15,7 +15,7 @@ Cada regla del protocolo debe traer su propio detector mecánico.
 
 **C — Producto con plata.** VCP se distribuye e instala en otros proyectos: un gate que aprueba
 código roto hace que alguien publique con confianza injustificada. El costo de la rigurosidad se
-paga porque hay algo real que perder. `risk_level` por-cambio (Phase 4.2) sigue siendo ortogonal.
+paga porque hay algo real que perder. `risk_level` por-cambio (Phase 7.1) sigue siendo ortogonal.
 
 ---
 
@@ -41,7 +41,7 @@ paga porque hay algo real que perder. `risk_level` por-cambio (Phase 4.2) sigue 
 
 ---
 
-## Risk-sensitive paths (Phase 4.2 risk classifier)
+## Risk-sensitive paths (Phase 7.1 risk classifier)
 
 Este repo no contiene `.mq5` ni fuentes de licencia. Los paths sensibles son los gates cuya
 falla silenciosa deja pasar código no verificado:

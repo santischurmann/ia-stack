@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Self-contained security floor for Phase 4.3. It scans the actual release surface: merge-base
+// Self-contained security floor for Phase 6.2. It scans the actual release surface: merge-base
 // delta plus staged, unstaged, and untracked files. It deliberately redacts secret values.
 //
 // With `--baseline` it also reads a list of reviewed, accepted findings and stops blocking on

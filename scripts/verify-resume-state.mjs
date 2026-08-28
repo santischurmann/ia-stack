@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// verify-resume-state.mjs — mechanical feature-identity gate for VCP Phase 0 resume.
+// verify-resume-state.mjs — mechanical feature-identity gate for VCP Phase 1 resume.
 //
 // Usage:
 //   node scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <kebab-case-slug>
 //
 // A zero exit means the declared feature identity in SESSION.md exactly matches the requested
-// feature. Any unknown, malformed, or mismatched declaration exits 1: Phase 0 must then show
+// feature. Any unknown, malformed, or mismatched declaration exits 1: Phase 1 must then show
 // the user a decision menu instead of silently resuming a different feature's incomplete gate.
 // This gate reads only; it never retags, archives, or overwrites session state.
 

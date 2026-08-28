@@ -20,7 +20,7 @@
 
 ---
 
-## Risk-sensitive paths (Phase 4.2 risk classifier)
+## Risk-sensitive paths (Phase 7.1 risk classifier)
 
 (fill in — glob patterns que siempre clasifican un diff que los toca como `sensitive_path`.
 Si el repo tiene algún `.mq5`, esta sección NO puede quedar vacía — ver regla fail-safe en 4.2.

@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite, Skil
 
 # VCP Orchestrator Reference
 
-Orchestrator = single responsible agent, runs under the internal VCP orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 0 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 3 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
+Orchestrator = single responsible agent, runs under the internal VCP orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 1 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 5 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
 
 ---
 
@@ -39,7 +39,7 @@ name pasted on top of the old schema:
 | `owner` / `locked` | atomic checkout (§ AI COMPANY LAYER above) | orchestrator, before spawn / on gate resolve |
 | `status` | `pending→red→green→triangulate→refactor→done` (or `blocked`) | orchestrator, on gate result |
 | `verifier` | the mechanical check that certifies this task's current gate — **never** the role that wrote the artifact being checked | fixed per task type (script/test-runner), never a persona self-certifying |
-| `approval_criteria` | the spec.md AC-id this task closes, verbatim | Planner, at Phase 2 plan generation |
+| `approval_criteria` | the spec.md AC-id this task closes, verbatim | Planner, at Phase 4 plan generation |
 | `evidence` | array of `{gate, command, output_tail, timestamp}`, one entry per gate passed | orchestrator, appended on each `STATUS: pass` with real `EVIDENCE` (§ below) |
 | `not_reviewed` | array of `{gate, declaration, report_path}`, one explicit review boundary per accepted handoff | orchestrator, only after `verify-handoff-report.mjs check` exits 0 |
 | `handoff` | mechanical next step on gate pass — which role spawns next, doing what | fixed per task type, read not improvised |
@@ -130,7 +130,7 @@ files, read/written by the same orchestrator with the same tools.
   one task without a passing gate = hard stop, escalate to user — never a silent 4th retry.
 - **Atomic checkout**: before spawning against `T0N`, set `tasks.json[T0N].owner` +
   `locked: true`; unlock on gate pass or explicit abort. Never spawn a second subagent against
-  a task already `locked: true` — this is what makes Phase 3 parallel dispatch (below) safe.
+  a task already `locked: true` — this is what makes Phase 5 parallel dispatch (below) safe.
 - **Audit log**: every `SESSION.md` gate line gets a matching `AUDIT.md` line, same checkpoint,
   same event — `<role> | <action> | <evidence> | <phase/task ref>`.
 
@@ -148,7 +148,7 @@ red_instructions = read_file("skills/subagent-red.md")
 Agent(
   subagent_type="claude",
   model="sonnet",           # alias, always latest Sonnet
-  effort=config.effort,     # from Phase 3 CONFIG menu — default "low"
+  effort=config.effort,     # from Phase 5 CONFIG menu — default "low"
   prompt=f"""
 {red_instructions}
 ---
@@ -172,7 +172,7 @@ NOTES: <only if STATUS != pass>
 Before spawning: `tasks.json[task.id].owner = "<role>-<timestamp>"`, `locked = true`
 (atomic checkout, § AI COMPANY LAYER). On gate pass/abort: `locked = false`.
 
-If a task looks harder mid-build and config allowed override (Phase 3 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
+If a task looks harder mid-build and config allowed override (Phase 5 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
 
 ---
 
@@ -198,11 +198,11 @@ Task T01:
 
 **Sequential, always:** RED → GREEN → TRIANGULATE (incl. its Builder-fix loop) → REFACTOR within one task.
 
-**Parallel, if Phase 2 CONFIG allowed it:** run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
+**Parallel, if Phase 4 CONFIG allowed it:** run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
 
 After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>`. This compares the complete writer set with tracked and untracked paths in the real checkout; operational files are ignored only by an explicit repeated `--ignore <path>`. A rejection pauses the task and returns it to the 🔵 plan choice; never explain it away as a harmless extra file.
 
-**CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 4.1/4.3 for fixes.
+**CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 6.1/4.3 for fixes.
 
 ---
 
@@ -214,10 +214,10 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 | GREEN fails (still red) | Read error. Orchestrator can fix → respawn GREEN w/ diagnosis. Can't → ask user. |
 | TRIANGULATE finds a failing derived case | Not a failure of TRIANGULATE — expected. Handoff to Builder for minimal fix, re-run TRIANGULATE (full case set, regression check). |
 | TRIANGULATE case has no `derived from` justification | Reject the case, do not write it — decorative coverage is forbidden. |
-| Any measurable coverage metric < 100% (Phase 4.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
+| Any measurable coverage metric < 100% (Phase 6.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
 | Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
-| native security gate finds Critical/High (Phase 4.3) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
-| 4R adversarial finding survives its tier's review (Phase 4.4) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
+| native security gate finds Critical/High (Phase 6.2) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
+| 4R adversarial finding survives its tier's review (Phase 6.3) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
 | Session killed / compacted mid-task | RESUME protocol below. Never re-run a passed gate blind, never skip a pending one. Clear stale `locked: true` by re-detecting via evidence, never by trusting the flag. |
 | 3 respawns on same task, no passing gate | Hard stop (§ AI COMPANY LAYER budget policy) — escalate to user, never a silent 4th retry. |
 | Session/phase budget hits 100% (if user set one) | Pause at phase boundary, 🔵 confirm before continuing (§ COMPANY.md budget policy). |
@@ -227,18 +227,18 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 
 ## RESUME AFTER RESTART / COMPACTION
 
-1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 0 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
+1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 1 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
 2. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
 3. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
 4. `git diff` its test files — changed since RED = violation, stop, report.
 5. Continue sequencing from detected step. Gate rules: `skills/caveman-tdd.md`.
-6. If restart lands inside Phase 4 (Final) — re-check which of 4.1-4.8 last completed via `SESSION.md`, resume from next.
+6. If restart lands inside the close-out (Phases 6-8) — re-check which of 6.1-8.3 last completed via `SESSION.md`, resume from next.
 
 ---
 
 ## DEFINITION OF DONE (DoD) CHECKLIST
 
-### Phase 3 BUILD — per task:
+### Phase 5 BUILD — per task:
 - [ ] RED report: failure shown, mechanically classified as valid (script, not eyeball)
 - [ ] GREEN report: pass shown
 - [ ] TRIANGULATE report: derived cases listed with `derived from`, all green, evidence recorded
@@ -246,7 +246,7 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 - [ ] Every accepted handoff passed `verify-handoff-report.mjs`; its concrete review boundary is in `tasks.json.not_reviewed`
 - [ ] No regressions full suite
 
-### Phase 4 FINAL:
+### Phases 6-8 CLOSE-OUT:
 - [ ] 4.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
 - [ ] 4.2 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify
 - [ ] 4.3 native `security-baseline.md` clean (no open Critical/High)
@@ -282,10 +282,10 @@ Esperando tu respuesta antes de continuar.
 ## TODO TRACKING
 
 ```
-Phase 0 Bootstrap (native internal contract) → [x]
-Phase 1 SPEC                        → [ ]
-Phase 2 PLAN                        → [ ]
-Phase 3 BUILD T01..TNN (RED→GREEN→TRIANGULATE→REFACTOR per task) → [ ]
+Phase 1 Bootstrap (native internal contract) → [x]
+Phase 3 SPEC                        → [ ]
+Phase 4 PLAN                        → [ ]
+Phase 5 BUILD T01..TNN (RED→GREEN→TRIANGULATE→REFACTOR per task) → [ ]
 Phase 4 FINAL
   4.1 Verify   → [ ]
   4.2 Risk classification (bajo/estandar/alto/critico) + Simplify → [ ]

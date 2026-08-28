@@ -24,7 +24,7 @@ poisons every phase that follows — tables before narration, headers organize, 
 - **PRD operativo:** <resultado que debe producir dentro del proyecto/empresa>
 - **Implementación, adopción y recurrencia:** <dependencias/accesos, responsable interno, métrica y siguiente bucle>
 
-Si esta feature no necesitó Discovery por el triage de Phase 0, escribir `N/A — Direct Build
+Si esta feature no necesitó Discovery por el triage de Phase 1, escribir `N/A — Direct Build
 aprobado` con la evidencia del triage. Nunca completar esta sección con una fuente no leída ni una
 hipótesis presentada como hecho.
 

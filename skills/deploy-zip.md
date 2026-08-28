@@ -1,14 +1,14 @@
 ---
 name: vcp-deploy
 description: |
-  ES: Sub-paso opcional de Phase 4.7 — build versionado, dist.zip+checksums, CHANGELOG, tag. Solo si el proyecto distribuye artefacto.
-  EN: Optional Phase 4.7 sub-step — versioned build, dist.zip+checksums, CHANGELOG, tag. Only if the project ships a distributable artifact.
+  ES: Sub-paso opcional de Phase 8.2 — build versionado, dist.zip+checksums, CHANGELOG, tag. Solo si el proyecto distribuye artefacto.
+  EN: Optional Phase 8.2 sub-step — versioned build, dist.zip+checksums, CHANGELOG, tag. Only if the project ships a distributable artifact.
 allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
-# VCP Deploy — artifact sub-step (Phase 4.7)
+# VCP Deploy — artifact sub-step (Phase 8.2)
 
-**Precondition:** Phase 4.1-4.6 already done (verify+simplify+security+adversarial+tests+commit green). This file does NOT re-verify — it packages.
+**Precondition:** Phases 6.1 a 8.1 already done (verify+simplify+security+adversarial+tests+commit green). This file does NOT re-verify — it packages.
 
 Interrupted → safe to re-run: zip/checksums regenerate, version bump applies once (after user answers).
 
@@ -61,13 +61,13 @@ Move `## [Unreleased]` content to `## [X.Y.Z] — YYYY-MM-DD`, add empty `## [Un
 
 ---
 
-## STEP 5 — tag (not push — 4.6 owns push confirmation)
+## STEP 5 — tag (not push — 8.1 owns push confirmation)
 
 ```bash
 git tag -a "v${VERSION}" -m "Release v${VERSION}"
 ```
 
-Publishing (push + tags) is asked in Phase 4.6, not here — don't duplicate the confirm.
+Publishing (push + tags) is asked in Phase 8.1, not here — don't duplicate the confirm.
 
 ---
 

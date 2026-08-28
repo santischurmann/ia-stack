@@ -165,6 +165,32 @@ idempotente, creando el `.gitignore` si no existe y respetando su contenido prev
 una instalación limpia real: la superficie del proyecto pasó de 124 archivos a 11, con 0 del
 runtime, y tres instalaciones seguidas dejan la regla una sola vez.
 
+
+## Hallazgo 59 — la cobertura mentía cuando el código cambiaba durante la corrida
+
+**Encontrado**: 2026-08-28, persiguiendo una lectura de 98,85 % que no se reproducía.
+
+El chequeo de cobertura reportó ramas sin cubrir que no existían. Ocho corridas seguidas dieron
+el patrón exacto:
+
+| Corridas | Estado del árbol | Resultado |
+|---|---|---|
+| 1, 2, 6, 7, 8 | quieto | todo cubierto |
+| 3, 4, 5 | se estaba editando un script | ramas inventadas |
+
+La herramienta mapea líneas contra el archivo tal como está al terminar de medir. Si el archivo
+cambió durante la corrida, el mapa no corresponde a lo que se ejecutó. El riesgo real no es el
+número: es perder horas buscando en el código un hueco que sólo existía en la medición.
+
+**HECHO** — el gate toma una huella sha256 del contenido de todos los scripts antes y después de
+medir. Si difieren, rechaza con `COVERAGE_SOURCE_CHANGED` y **no publica ningún porcentaje**, en
+vez de informar un número que no vale.
+
+**Límite honesto**: la huella cubre `scripts/`, que es lo que el gate mide. Un cambio en `tests/`
+durante la corrida sigue sin detectarse. Y la anomalía original, sobre `verify-discovery-views`,
+nunca se reprodujo: la explicación es la misma clase de causa, pero eso es una hipótesis
+respaldada por el patrón de las ocho corridas, no la reproducción de ese caso puntual.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

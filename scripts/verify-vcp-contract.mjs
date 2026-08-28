@@ -21,7 +21,7 @@ export const REQUIREMENTS = [
   ['SKILL.md', /El sello lo registra el protocolo, no Graphify/u, 'the backup seal is recorded by the protocol, never read from the Graphify report'],
   ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
-  ['README.md', /Discovery: investigar antes de especificar/u, 'Discovery-first user workflow'],
+  ['README.md', /Research: investigar antes de especificar/u, 'research-first user workflow'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
@@ -55,7 +55,6 @@ export const REQUIREMENTS = [
   ['SKILL.md', /nunca re-ejecuta el comando ni prueba criptográficamente/u, 'receipt v2: command/result is reviewable evidence, not cryptographic proof'],
   ['SKILL.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
-  ['SKILL.md', /PHASE 0\.5 — DISCOVERY/u, 'Discovery-first protocol phase'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   // The two halves are pinned separately on purpose: `criteria` closes Phase 4 and `claims` closes
