@@ -143,3 +143,31 @@ seguían en `SIGUIENTE`. Corregido moviendo cada descripción a su fila; ninguna
 no es de contenido sino de método —un reemplazo por texto literal sobre un archivo donde el mismo
 literal aparece 18 veces— y no la detecta ningún gate: el contrato verifica frases en documentos
 vivos, no la coherencia interna de un backlog.
+
+## Hallazgo 55 — el sello del backup depende del orden en que se corre Graphify
+
+**Encontrado**: 2026-08-28, ejecutando el paso 4.7 del propio protocolo.
+
+`verify-backup-state.mjs` lee el commit que el `GRAPH_REPORT.md` declara (`- Built from commit:`)
+y lo compara contra HEAD. Pero Graphify sólo regenera ese reporte cuando detecta cambios de
+**topología** del código; si el grafo ya estaba al día, `update` no toca nada y el reporte conserva
+el commit de cuando se generó.
+
+El protocolo manda correr Graphify **después** del commit (4.7), pero también exige que
+`verify-graphify-manifest.mjs` pase **antes** de commitear — y ese gate obliga a correr `update`
+para indexar los archivos nuevos. Resultado: se corre dos veces, la primera surte efecto y la
+segunda no, y el sello queda con el commit anterior aunque el contenido del grafo sea correcto.
+
+**Verificado**: los 15 archivos cambiados entre el commit sellado (`0ace5dc`) y HEAD (`3b68a73`)
+están todos indexados en `graphify-out/manifest.json`. El grafo está al día; sólo el sello miente.
+
+**No resoluble con lo disponible**: `GRAPHIFY_FORCE=1` no regenera sin cambios de topología, y
+`graphify label` —que sí regeneraría el reporte— exige una clave de API que este entorno no tiene.
+
+**Estado**: SIGUIENTE. Tres caminos posibles, ninguno elegido todavía: corregir el orden en SKILL.md
+para que Graphify corra una sola vez; ablandar el gate para aceptar un sello cuyo commit sea
+ancestro cuando el contenido coincide (debilita un control que hoy detecta un backup genuinamente
+viejo); o registrar el sello por separado del reporte.
+
+**Lo que NO es**: no es un backup corrupto ni desactualizado. Es un sello que quedó atrás de su
+propio contenido.
