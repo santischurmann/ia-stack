@@ -260,3 +260,48 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 - **Meta-hueco que señaló**: el pipeline de investigación no tiene gate propio. Un sintetizador que
   recibe cero insumos puede devolver algo con forma de conclusión. Debería fallar duro en vez de
   depender de que el modelo elija ser honesto.
+
+
+## Research — relanzado y completo (PARCIAL por diseño)
+
+- Corregido el bug del slug. 14/14 fuentes leídas, 320 archivos de 15.581 (**2,05 %**).
+  Archivado en `research/external-sources-2026-08-28.md`, cada fuente declarada PARCIAL con su
+  número exacto de pendientes. 168 patrones → 24 mecanismos reales.
+- Se le agregó gate propio al pipeline: sin patrones de entrada, no sintetiza.
+- **Convergencia independiente**: el patrón #1 del corpus ("fallo por conjunto vacío", 8 fuentes)
+  es el mismo hueco que esta sesión cerró por su cuenta antes de leer el informe.
+
+## Verde vacío (T12) y sonda (T13)
+
+- Nueve caminos en cinco gates decían `OK:` sin haber comparado nada. Seis salieron de leer el
+  código, el séptimo de correr la batería completa (lo había abierto T11 horas antes), y los dos
+  últimos de una sonda que ejecuta. **El grave**: `verify-audit-chain.mjs check` sobre un
+  `.vibe/AUDIT.md` borrado entero decía "cadena íntegra".
+- `verify-empty-probe.mjs`: corre cada gate en una carpeta vacía contra `contracts/empty-probe.json`.
+  Un `verify-*.mjs` sin declarar es rechazo. `self` y `skip` exigen motivo escrito y se cuentan.
+
+## Fase 7 — inventario histórico
+
+- 46 commits, 259 símbolos vistos alguna vez, 254 vivos, 5 desaparecidos, **0 regresiones**.
+  Cuatro son renombres a versiones más estrictas; uno es un borrado documentado (hallazgo 55).
+- Decidido **no** convertirlo en gate: habría gritado en cuatro refactors correctos y callado en
+  cero problemas reales. Queda como auditoría en `research/historical-inventory-2026-08-28.md`.
+
+## Fase 14 — instalación limpia (hallazgo 58)
+
+- Primera instalación de VCP en carpeta limpia. El instalador **no escribía**
+  `.vibe/vcp-runtime/` en el `.gitignore` del proyecto, así que los 114 archivos del runtime
+  quedaban como superficie viva. Reproducido: un secreto plantado dentro del runtime bloqueaba el
+  gate de seguridad del usuario con un CRITICAL que no escribió.
+- Arreglado en los dos instaladores, idempotente. Superficie: 124 archivos → 11, 0 del runtime.
+
+## No verificado
+
+- Comportamiento de `verify-vcp-coverage.mjs` sin entradas: **no verificado**, excluido de la
+  sonda por costo (correrlo ejecuta la suite entera).
+- Subcomandos distintos al declarado en `contracts/empty-probe.json`: **no verificado**, la sonda
+  prueba una invocación por gate.
+- Las citas `archivo:línea` del research: **no verificado** por mí; las verificó cada agente
+  lector contra su clone pineado, y el sintetizador declara que no las revalidó.
+- Instalación limpia por PowerShell (`install.ps1`): **no verificado** ejecutando. El cambio es
+  simétrico al de Bash y una prueba comprueba que el texto está, pero no se corrió en Windows.
