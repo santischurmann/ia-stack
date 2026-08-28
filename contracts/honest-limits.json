@@ -192,6 +192,18 @@
       "file": "README.md",
       "phrase": "Un agente que espera igual pasa: detecta lo imposible, no lo mentiroso",
       "why": "El piso de deliberacion agarra el modo de falla concreto -menu y eleccion fabricados en el mismo instante- porque nadie lee un menu en milisegundos. No agarra a un agente que espera dos segundos antes de inventar la decision. Sin el limite, \"hay chequeo de consentimiento\" se lee como \"la decision la tomo una persona\", cuando lo unico probado es que paso tiempo suficiente para que alguien la pudiera haber leido."
+    },
+    {
+      "limit_id": "shell-coverage-measures-lines-not-branches",
+      "file": "README.md",
+      "phrase": "**Mide líneas ejecutadas, no ramas**",
+      "why": "bash escribe que linea ejecuto, no que rama tomo. Una linea `if` cuenta como cubierta apenas se evalua, sin importar si su `else` se probo alguna vez. Sin el limite, un 72% se lee como \"el 72% del comportamiento esta probado\", cuando lo unico medido es que el 72% de las lineas se toco al menos una vez."
+    },
+    {
+      "limit_id": "shell-coverage-does-not-measure-powershell",
+      "file": "README.md",
+      "phrase": "ese lenguaje queda **declarado sin medición**, no medido en cero",
+      "why": "install.ps1 existe y se corre, pero Set-PSDebug -Trace no da numero de linea de forma portable, asi que no hay como calcular el denominador. Decir \"0%\" seria mentir en la otra direccion: sugiere que se midio y dio cero. Queda declarado como no medido, que es lo unico cierto."
     }
   ]
 }

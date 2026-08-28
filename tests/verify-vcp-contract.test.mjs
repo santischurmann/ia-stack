@@ -36,6 +36,8 @@ si el agente puede correr \`git commit -S\`, firma como vos
 Un agente que espera igual pasa: detecta lo imposible
 verify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\ncriteria --spec docs/spec.md --tests tests --require-inputs\nescribe VACÍO, no OK\nverify-session-state.mjs check\ntercer intento fallido sobre el mismo problema\n## Diccionario: qué significa cada palabra rara
 prueban forma, cadena y estado, nunca
+verify-shell-coverage.mjs check contracts/shell-coverage.json
+Mide líneas ejecutadas, no ramas
 verify-empty-probe.mjs check contracts/empty-probe.json
 un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar
 verify-phase-decisions.mjs check docs/phase-decisions.json\nNinguna fase cierra sin una elección registrada\n## Intentos fallidos\n## Interrumpido en\n## No verificado\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;

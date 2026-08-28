@@ -697,8 +697,15 @@ test('FALSIFICACIÓN · historyCommand rechaza el uso inválido, el error de git
 });
 
 test('historyCommand usa spawnSync real cuando no le inyectan proceso', () => {
-  const salida = [];
-  const status = historyCommand(['history', '.vibe/AUDIT.md'], {}, (l) => salida.push(l), () => {});
-  assert.equal(status, 0);
-  assert.match(salida.at(-1), /^OK: /u);
+  // Sobre un repo propio, NUNCA sobre el repo donde vive esta prueba: leerlo la acopla a cualquier
+  // otra prueba que corra git en paralelo, y una suite flaky no se distingue de una que encontro algo.
+  const { root } = repoConHistoria([L1, L2]);
+  try {
+    const salida = [];
+    const status = historyCommand(['history', 'AUDIT.md'], { cwd: root }, (l) => salida.push(l), () => {});
+    assert.equal(status, 0);
+    assert.match(salida.at(-1), /^OK: /u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

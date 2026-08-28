@@ -62,3 +62,4 @@
 [2026-08-28] Auditor | ancla externa: la historia de git | history detecta recorte, refabricacion y borrado; 22 versiones de AUDIT.md verificadas | ancla | chain:adecf0b643be31636b11839617b727eddb6ac1f27d72c3a5a386fe70e7cb4837
 [2026-08-28] Builder | custodia y deliberacion | custody informa quien firmo el commit del recibo; shown_at con piso de 2s detecta el menu fabricado en el mismo aliento | custodia | chain:3630fb8bf4c4ee19d3b4cb17fcd7b849677a06bd8d0ebc38fb3654eb6580e310
 [2026-08-28] Test-Engineer | prueba E2E del protocolo | instala en proyecto nuevo y corre los gates en orden; 6 pruebas, 570 en total | e2e | chain:3719100a6bc8dc33b98e6b57fa54285681dd9e23c6ae80eb58f326417c31b272
+[2026-08-28] Builder | cobertura de shell medida | PS4 con LINENO + set -x: install.sh 72.2%, verify-red.sh 57.1%; 2 excluidos con motivo | shell-cov | chain:3282f6d294880fdf987d60f952cad4dc629db3820415acf7f176fa70923a2224

@@ -1,0 +1,41 @@
+{
+  "schema": "vcp.shell-coverage/v1",
+  "why": "Cuanto de cada script de shell llegan a ejecutar los escenarios declarados. Se mide con el instrumento que trae el propio bash: PS4 con $LINENO mas set -x, sin dependencias. Mide LINEAS EJECUTADAS, no ramas: una linea `if` cuenta como cubierta apenas se evalua, aunque su `else` no se haya probado nunca. El piso existe para que el numero no baje en silencio, no para declarar que el script es correcto.",
+  "scripts": [
+    {
+      "script": "scripts/install.sh",
+      "floor": 65,
+      "scenarios": [
+        {
+          "setup": [
+            "git init -q .",
+            "printf '# proyecto\\n' > README.md",
+            "printf 'node_modules/\\n' > .gitignore",
+            "git add -A",
+            "git -c user.email=t@t -c user.name=t commit -q -m inicial"
+          ],
+          "args": ["--project", "{DIR}"]
+        },
+        {
+          "setup": ["git init -q ."],
+          "args": []
+        }
+      ]
+    },
+    {
+      "script": "scripts/verify-red.sh",
+      "floor": 50,
+      "scenarios": [
+        { "setup": [], "args": [] }
+      ]
+    },
+    {
+      "script": "scripts/build-zip.sh",
+      "why": "Empaqueta una release y escribe un zip con checksums. Correrlo en cada verificacion produciria artefactos de release desde una corrida de pruebas, que es exactamente lo que este protocolo no quiere que pase sin decision humana. Su comportamiento SI esta probado por tests/build-zip-script.test.mjs, pero su cobertura de lineas NO esta medida por esta sonda."
+    },
+    {
+      "script": "scripts/vibe-memory.sh",
+      "why": "Archiva y rota la memoria del proyecto sobre .vibe/. Un escenario honesto exige un .vibe/ poblado con sesiones reales, y armarlo sintetico medira el escenario inventado, no el uso. Su comportamiento SI esta probado por tests/vibe-memory-archive.test.mjs; su cobertura de lineas NO esta medida por esta sonda."
+    }
+  ]
+}

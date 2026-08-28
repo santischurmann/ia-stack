@@ -20,6 +20,7 @@
 // it never lends a fresh valid seal to forged history, but it cannot repair one either.
 
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 
@@ -231,7 +232,10 @@ export function historyCommand(args, options, write, writeError) {
     write(`${EMPTY_PREFIX}${message}`);
     return 0;
   }
-  const { content: working } = readAudit(path, options.readFile ?? readFileSync);
+  // El archivo se lee contra el MISMO cwd que se le pasa a git. Sin esto, el gate comparaba la
+  // historia de un repo contra el archivo de trabajo de otro, y con --cwd distinto del proceso
+  // daba un rechazo que no tenia nada que ver con la traza mirada.
+  const { content: working } = readAudit(join(cwd, path), options.readFile ?? readFileSync);
   const result = verifyGrowth(versions, working);
   if (!result.ok) {
     writeError(`REJECTED: ${HISTORY_CODE}: ${result.reason}`);

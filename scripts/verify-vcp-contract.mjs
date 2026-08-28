@@ -91,6 +91,11 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],
   ['SKILL.md', /un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar/iu, 'a new gate must declare its no-input behaviour'],
   ['README.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],
+  // El gate y su limite: el numero sin la advertencia de que son lineas y no ramas se lee como
+  // "el 72% del comportamiento esta probado", que es exactamente lo que no dice.
+  ['SKILL.md', /verify-shell-coverage\.mjs check contracts\/shell-coverage\.json/u, 'mechanical shell line-coverage gate'],
+  ['SKILL.md', /Mide líneas ejecutadas, no ramas/u, 'shell coverage counts executed lines, never branches'],
+  ['README.md', /verify-shell-coverage\.mjs check/u, 'mechanical shell line-coverage gate'],
   // El diccionario es la promesa de que este README se puede leer sin saber la jerga. Fijado como
   // texto: si alguien lo borra al reorganizar, el contrato lo dice en vez de quedar en silencio.
   ['README.md', /## Diccionario: qué significa cada palabra rara/u, 'plain-language dictionary for every technical term'],

@@ -540,6 +540,20 @@ tests/` answers "is this actually adversarially tested" in one command). Applyin
 discipline to a target project's own gates is optional (costs time you may not have on every
 project) but if you skip it, say so explicitly instead of reporting the gate as verified.
 
+**6.1.1 Cobertura de shell** — cuánto ejercitan los escenarios declarados:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json
+```
+
+Los scripts de shell no tenían medición, y el hueco estaba declarado como sin respuesta portable.
+La tenía bash: `PS4` con `$LINENO` más `set -x` hace que el propio shell escriba qué línea
+ejecutó. Sin dependencias, sin servicios.
+
+**Mide líneas ejecutadas, no ramas**, y sólo los escenarios que el contrato declara. Un script sin
+escenario exige motivo escrito y se cuenta en la salida, para que no desaparezca. PowerShell queda
+declarado **sin medición**: no hay forma portable de sacarle el número de línea.
+
 **6.2 Security** (role: Security-Officer) — run the native, self-contained gate documented in
 `skills/security-baseline.md`:
 `node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-or-origin/main>`.
