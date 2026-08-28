@@ -575,6 +575,61 @@
       "status": "done",
       "goal": "Distinguir \"verifique y paso\" de \"no habia nada que verificar\" -> Fase 6 del encargo -> el silencio deja de leerse como evidencia",
       "approval_criteria": "Los 6 caminos sin entradas se marcan vacuous y salen VACIO. --require-inputs los convierte en rechazo. El verde real no cambia. Sacar el flag de la Fase 4 lo detecta el contrato."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED: gate RED exit 0 en verify-audit-chain, verify-runtime-sync y el archivo nuevo",
+        "GREEN: 531 tests, cobertura 100% en 24 scripts, 74 checks de contrato + 29 limites",
+        "La sonda corriendo encontro 2 huecos que 3 lecturas de codigo no vieron, uno grave (AUDIT.md borrado = cadena integra)"
+      ],
+      "not_reviewed": [
+        "LIMITE DE FONDO: prueba UNA invocacion por gate. Otro subcomando puede tener su propio verde vacio.",
+        "Solo prueba el caso extremo del directorio vacio, no un proyecto a medio llenar.",
+        "self es una declaracion humana: escrita sobre un gate que si mira el proyecto, el verde vacio vuelve a pasar.",
+        "verify-vcp-coverage.mjs excluido por costo: su comportamiento sin entradas NO esta probado.",
+        "La sonda no prueba que el mensaje VACIO sea correcto, solo que empiece con el prefijo."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> GREEN -> Triangulator",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T13",
+      "description": "Sonda de directorio vacio: ningun gate puede decir OK sin haber comparado nada, y un gate nuevo tiene que declararlo",
+      "files_to_create": [
+        "scripts/verify-empty-probe.mjs",
+        "tests/verify-empty-probe.test.mjs",
+        "contracts/empty-probe.json"
+      ],
+      "files_to_modify": [
+        "scripts/verify-audit-chain.mjs",
+        "scripts/verify-runtime-sync.mjs",
+        "scripts/verify-vcp-contract.mjs",
+        "SKILL.md",
+        "README.md",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md"
+      ],
+      "test_files": [
+        "tests/verify-audit-chain.test.mjs",
+        "tests/verify-runtime-sync.test.mjs",
+        "tests/verify-vcp-contract.test.mjs"
+      ],
+      "depends_on": [
+        "T12"
+      ],
+      "status": "done",
+      "goal": "Convertir en detector el limite que T12 dejo declarado -> un camino vacuo sin marcar deja de ser invisible",
+      "approval_criteria": "Un gate que dice OK sobre un directorio vacio se detecta. Un verify-*.mjs sin declarar es rechazo. self y skip sin motivo escrito son rechazo. El verde real no cambia."
     }
   ]
 }

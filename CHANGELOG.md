@@ -7,6 +7,29 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Sonda de directorio vacío** (T13): nuevo gate `verify-empty-probe.mjs`, que existe por un
+  fallo propio reproducido tres veces. La lista de gates que decían `OK:` sin haber comparado nada
+  se armó leyendo el código, y quedó corta las tres veces: eran seis, la batería completa encontró
+  un séptimo —en el gate que T11 había agregado horas antes— y una sonda de diez líneas encontró
+  dos más. Uno era grave: **`verify-audit-chain.mjs check` sobre un `.vibe/AUDIT.md` borrado entero
+  decía "cadena íntegra"**, o sea que borrar el rastro de auditoría completo pasaba en verde. El
+  otro era `verify-runtime-sync.mjs` sin runtime instalado. Los dos ahora escriben `VACÍO:` y
+  aceptan `--require-inputs` (`AUDIT_CHAIN_NO_INPUTS`, `RUNTIME_SYNC_NO_INPUTS`).
+  Leer el código no alcanzó; ejecutarlo sí. Por eso la sonda quedó como gate: corre cada gate en
+  una carpeta vacía y compara lo que dice contra lo que declara `contracts/empty-probe.json`.
+  Cinco comportamientos: `reject`, `usage`, `empty`, `self` (mira el propio checkout de VCP, no el
+  proyecto) y `skip`; los dos últimos exigen motivo escrito y se cuentan en la salida, para que un
+  gate que nadie prueba se vea en vez de desaparecer. **Lo que cierra el agujero de verdad**: un
+  `verify-*.mjs` que no figure en el contrato es rechazo, así que agregar un gate obliga a declarar
+  qué hace sin entradas — exactamente lo que faltó cuando T11 abrió el séptimo hueco.
+  Tres checks de contrato nuevos (74) fijan el gate y la regla por separado.
+  **Límites declarados**: prueba una sola invocación por gate, así que otro subcomando puede tener
+  su propio verde vacío sin que se note; sólo prueba el caso extremo de la carpeta vacía, no un
+  proyecto a medio llenar; y `self` es una declaración humana, no una comprobación — escrita sobre
+  un gate que sí mira el proyecto, el verde vacío vuelve a pasar. `verify-vcp-coverage.mjs` queda
+  excluido con motivo: correrlo ejecuta la suite entera, y su comportamiento sin entradas NO está
+  probado por esta sonda.
+
 - **Verde vacío visible** (T12): un gate que no encontró nada que comparar dejó de escribirse igual
   que uno que comparó y pasó. Hasta ahora `verify-evidence-trace.mjs`, `verify-session-state.mjs` y
   `verify-phase-decisions.mjs` imprimían `OK:` en siete caminos donde no habían verificado

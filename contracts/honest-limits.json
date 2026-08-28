@@ -162,6 +162,18 @@
       "file": "SKILL.md",
       "phrase": "la fase no cerró: se reporta qué faltó verificar",
       "why": "Terminar por cansancio o por presion de contexto es la forma mas comun de que un protocolo se degrade sin que nadie lo note. Sin esta frase, una fase con un gate sin correr se reporta como cerrada y el resto del trabajo se apoya en evidencia que no existe."
+    },
+    {
+      "limit_id": "empty-probe-tests-one-invocation-per-gate",
+      "file": "README.md",
+      "phrase": "Prueba **una sola** invocación por gate, la que declara el contrato",
+      "why": "La sonda corre el comando que el contrato declara y nada mas. Un gate con varios subcomandos puede tener un verde vacio en otro subcomando y la sonda lo deja pasar. Sin el limite, un OK de la sonda se lee como \"ningun gate tiene verdes vacios\", cuando lo unico probado es la invocacion declarada."
+    },
+    {
+      "limit_id": "empty-probe-self-is-a-human-claim",
+      "file": "README.md",
+      "phrase": "`self` es una declaración humana, no una comprobación",
+      "why": "La sonda acepta que un gate salga OK sobre un directorio vacio si el contrato dice que ese gate mira el propio checkout de VCP. No verifica que sea cierto. Escrita sobre un gate que si mira el proyecto, esa etiqueta devuelve el verde vacio al lugar donde estaba, y encima con apariencia de estar justificado."
     }
   ]
 }

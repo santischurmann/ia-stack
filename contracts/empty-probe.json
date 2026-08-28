@@ -1,0 +1,50 @@
+{
+  "schema": "vcp.empty-probe/v1",
+  "why": "Cada gate declara aca que hace cuando lo corren sobre un directorio vacio. Un gate que dice OK ahi esta afirmando haber verificado algo cuando no habia nada que verificar. Un verify-*.mjs que no figure en esta lista es un rechazo: agregar un gate obliga a declarar su comportamiento sin entradas.",
+  "expectations": {
+    "reject": "sale distinto de 0 porque no hay entradas y lo dice",
+    "usage": "sale 2 porque le faltan argumentos obligatorios",
+    "empty": "sale 0 y escribe VACIO: no habia nada que comparar y no se disfraza de verde",
+    "self": "sale 0 y escribe OK legitimamente porque verifica el propio checkout de VCP, no el directorio de trabajo",
+    "skip": "no se corre; exige motivo escrito y se cuenta en la salida"
+  },
+  "gates": [
+    { "script": "verify-audit-chain.mjs", "args": ["check", "AUDIT.md"], "expect": "empty" },
+    { "script": "verify-backup-state.mjs", "args": ["check", "backup.json"], "expect": "reject" },
+    { "script": "verify-discovery-core.mjs", "args": ["check", "--feature", "demo"], "expect": "reject" },
+    {
+      "script": "verify-discovery-requirements.mjs",
+      "args": ["check"],
+      "expect": "self",
+      "why": "Valida el inventario de 68 requisitos que vive en el propio checkout (RUNTIME_ROOT derivado de import.meta.url), no en el directorio de trabajo. Su OK dice que el inventario de VCP es coherente, y eso es cierto se corra desde donde se corra."
+    },
+    { "script": "verify-discovery-views.mjs", "args": ["check", "--feature", "demo"], "expect": "reject" },
+    { "script": "verify-empty-probe.mjs", "args": ["check", "contracts/empty-probe.json"], "expect": "reject" },
+    { "script": "verify-evidence-trace.mjs", "args": ["criteria", "--spec", "docs/spec.md", "--tests", "tests"], "expect": "empty" },
+    { "script": "verify-graphify-manifest.mjs", "args": ["check"], "expect": "reject" },
+    { "script": "verify-handoff-report.mjs", "args": ["check", "handoff.md"], "expect": "usage" },
+    { "script": "verify-phase-decisions.mjs", "args": ["check", "docs/phase-decisions.json"], "expect": "empty" },
+    { "script": "verify-plan-conflicts.mjs", "args": ["check", "docs/tasks.json"], "expect": "usage" },
+    { "script": "verify-receipt.mjs", "args": ["check", "receipt.json"], "expect": "reject" },
+    { "script": "verify-red-node.mjs", "args": ["check", "--test", "tests/x.test.mjs", "--command", "node --test"], "expect": "reject" },
+    { "script": "verify-resume-state.mjs", "args": ["check", "--session", ".vibe/SESSION.md", "--feature", "demo"], "expect": "usage" },
+    { "script": "verify-runtime-sync.mjs", "args": ["check"], "expect": "empty" },
+    { "script": "verify-scope-diff.mjs", "args": ["check", "--tasks", "docs/tasks.json", "--task", "T01", "--base", "HEAD"], "expect": "reject" },
+    { "script": "verify-security-baseline.mjs", "args": ["check"], "expect": "reject" },
+    { "script": "verify-session-state.mjs", "args": ["check", "--session", ".vibe/SESSION.md"], "expect": "empty" },
+    { "script": "verify-spec-wordcap.mjs", "args": ["check", "docs/spec.md"], "expect": "reject" },
+    {
+      "script": "verify-test-bindings.mjs",
+      "args": ["check"],
+      "expect": "self",
+      "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de VCP siguen apuntando a pruebas que existen."
+    },
+    { "script": "verify-vcp-contract.mjs", "args": ["check"], "expect": "reject" },
+    {
+      "script": "verify-vcp-coverage.mjs",
+      "args": [],
+      "expect": "skip",
+      "why": "Correrlo ejecuta la suite entera con instrumentacion de cobertura: cuesta minutos y su resultado depende de la suite, no del directorio de trabajo. Excluido por costo, no porque se lo considere seguro: su comportamiento sin entradas NO esta probado por esta sonda."
+    }
+  ]
+}

@@ -22,7 +22,10 @@
 import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 
-export const USAGE = 'usage: verify-audit-chain.mjs check <audit.md>';
+export const USAGE = 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"';
+export const NO_INPUTS_CODE = 'AUDIT_CHAIN_NO_INPUTS';
+export const EMPTY_PREFIX = 'VACÍO: ';
+export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const APPEND_USAGE = 'usage: verify-audit-chain.mjs append <audit.md> "<line text>"';
 // Traces that predate the chain keep verifying: the alternative is asking every existing project to
 // rewrite its history, which is the one thing an audit trail must never be asked to do.
@@ -155,6 +158,8 @@ function appendCommand(args, options, write, writeError) {
 
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {
   if (args[0] === 'append') return appendCommand(args, options, write, writeError);
+  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
+  if (requireInputs) args = args.slice(0, -1);
   if (args.length !== 2 || args[0] !== 'check') {
     writeError(USAGE);
     return 2;
@@ -169,6 +174,18 @@ export function main(args = process.argv.slice(2), options = {}, write = console
   if (!result.ok) {
     writeError(`REJECTED: ${path} breaks its audit chain at line ${result.brokenLine}: ${result.reason}.`);
     return 1;
+  }
+  // Zero verified lines is the strongest form of the limit this gate already declares: deleting the
+  // whole file used to read exactly like an intact chain. It stays exit 0 -- a project that has not
+  // written a trace yet is not in violation -- but it no longer gets to say it verified anything.
+  if (result.verified === 0) {
+    const message = `${path} has no sealed line: an audit trail that does not exist yet is not a verified chain.`;
+    if (requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${message}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${message}`);
+    return 0;
   }
   write(`OK: ${path} has an intact audit chain over ${result.verified} chained line(s).`);
   return 0;

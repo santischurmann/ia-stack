@@ -270,7 +270,7 @@ test('FALSIFICACIÓN · pegar un segundo sufijo o correr el separador no cuela u
 });
 
 test('FALSIFICACIÓN · main exige argumentos válidos y distingue el archivo ausente del ilegible', () => {
-  assert.equal(USAGE, 'usage: verify-audit-chain.mjs check <audit.md>');
+  assert.equal(USAGE, 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"');
 
   const output = [];
   const errors = [];
@@ -476,4 +476,46 @@ test('FALSIFICACIÓN · append exige tres argumentos y ante E/S rota falla sin e
     (line) => output.push(line), (line) => { throw new Error(`no debía reportar errores: ${line}`); }), 0);
   assert.deepEqual(written, [['AUDIT.md', `${LINE_B} | chain:${sha256Chain('', LINE_B)}\n`]]);
   assert.match(output.at(-1), /^OK:/u);
+});
+
+// --- Verde vacío: un AUDIT.md que no existe no es una cadena verificada -------------------------
+
+// Contrato de salida fijado literal: el RED tiene que fallar por aserción, no por un import roto.
+const AUDIT_NO_INPUTS = 'AUDIT_CHAIN_NO_INPUTS';
+
+test('un AUDIT.md ausente o vacío sale VACÍO, no OK: borrar el archivo entero no es una cadena íntegra', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-audit-vacio-'));
+  try {
+    const run = (...args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+
+    const ausente = run('check', 'AUDIT.md');
+    assert.deepEqual({ status: ausente.status, vacio: ausente.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+    writeFileSync(join(root, 'AUDIT.md'), '', 'utf8');
+    const vacio = run('check', 'AUDIT.md');
+    assert.deepEqual({ status: vacio.status, vacio: vacio.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+    const estricto = run('check', 'AUDIT.md', '--require-inputs');
+    assert.equal(estricto.status, 1);
+    assert.match(estricto.stderr, new RegExp(AUDIT_NO_INPUTS, 'u'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · una cadena con al menos una línea sellada sigue saliendo OK, con y sin el flag', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-audit-lleno-'));
+  try {
+    const file = join(root, 'AUDIT.md');
+    writeFileSync(file, '', 'utf8');
+    const sello = spawnSync(process.execPath, [script, 'append', 'AUDIT.md', '[2026-08-28] Rol | accion | evidencia | ref'], { cwd: root, encoding: 'utf8' });
+    assert.equal(sello.status, 0);
+
+    for (const args of [['check', 'AUDIT.md'], ['check', 'AUDIT.md', '--require-inputs']]) {
+      const run = spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+      assert.deepEqual({ args: args.join(' '), status: run.status, ok: run.stdout.startsWith('OK: ') }, { args: args.join(' '), status: 0, ok: true });
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

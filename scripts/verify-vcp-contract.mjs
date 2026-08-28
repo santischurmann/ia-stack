@@ -78,6 +78,11 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json/u, 'mechanical phase-decision gate'],
   ['SKILL.md', /Ninguna fase cierra sin una elección registrada/u, 'no phase closes without a recorded human choice'],
   ['README.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
+  // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
+  // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
+  ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],
+  ['SKILL.md', /un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar/iu, 'a new gate must declare its no-input behaviour'],
+  ['README.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],
   ['templates/vibe/SESSION.md', /## Intentos fallidos/u, 'documented failed-attempt section'],
   ['templates/vibe/SESSION.md', /## Interrumpido en/u, 'documented interruption resume point'],
   ['templates/vibe/SESSION.md', /## No verificado/u, 'documented unverified-check section'],

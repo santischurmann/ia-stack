@@ -98,6 +98,46 @@ sí mismo, con la feature `integridad-verificable`.
 | 53 | `.vibe/vcp-runtime/` se desincroniza del repo fuente sin detección | El gate de Discovery falló con `DISCOVERY_SNAPSHOT_INVALID` usando el runtime instalado y pasó con `scripts/`. Un proyecto consumidor puede correr gates de una versión vieja sin enterarse | **HECHO** — T06: nuevo gate `scripts/verify-runtime-sync.mjs check [--runtime <ruta>]`. Compara por hash de contenido la superficie exacta que copia `copy_runtime()` (`scripts/`, `contracts/`, `tests/`, `templates/`, `skills/` + `SKILL.md` + `SECURITY.md`) contra la copia instalada, y nombra las tres clases: los que difieren, los que faltan en el runtime y los que **sobran** —un gate borrado arriba que el proyecto sigue ejecutando. Sin runtime instalado sale `0`: un checkout fuente limpio es normal. La lista no se inventa: `tests/verify-runtime-sync.test.mjs` parsea `install.sh` y `install.ps1` y se pone rojo si cualquiera de los dos empieza a copiar otra cosa. Verificado que el instalador **no transforma** nada dentro del runtime (instalación fresca byte-idéntica en las 5 carpetas y los 2 archivos); el `sed`/`-replace` de `(fill in)`/`YYYY-MM-DD` toca sólo `<proyecto>/.vibe/PROJECT.md`, que está fuera de `vcp-runtime/`. Cableado en `SKILL.md` Phase 0 paso 1b, antes de cualquier otro gate, y **desde el checkout fuente**: correrlo desde `.vibe/vcp-runtime/` compararía la copia consigo misma, siempre verde. Corrido en este repo el día del arreglo listó 11 archivos divergentes (incluida la versión vieja de `verify-red-node.mjs` con el defecto del hallazgo 51) y 3 ausentes |
 | 54 | El schema de `locator` no tenía campo de línea: había que enterrarla en el path (`SKILL.md#L693`) | detectado al registrar los claims reales del Discovery | **HECHO** — REQ-G13, `line` entero positivo opcional |
 
+
+## Hallazgo 56 — borrar `.vibe/AUDIT.md` entero pasaba como "cadena íntegra"
+
+**Encontrado**: 2026-08-28, corriendo todos los gates en un directorio vacío.
+
+`verify-audit-chain.mjs check` sobre un archivo inexistente leía cadena vacía, verificaba cero
+líneas y escribía `OK: ... has an intact audit chain over 0 chained line(s)`, exit 0. Lo mismo con
+el archivo presente pero vacío. Es la forma más simple del límite que el propio gate ya declaraba
+—"la cadena no detecta reescrituras completas ni truncamiento"—, sólo que llevada al extremo:
+no hace falta reescribir nada, alcanza con borrar el archivo.
+
+Lo grave no es el exit 0: un proyecto que todavía no escribió su primera línea de auditoría no
+incumple nada. Lo grave es la palabra **íntegra** sobre cero líneas verificadas.
+
+**HECHO** — T13. Cero líneas selladas ahora escribe `VACÍO:` en vez de `OK:`, y
+`--require-inputs` lo convierte en `AUDIT_CHAIN_NO_INPUTS` exit 1 donde el protocolo ya exige que
+el rastro exista. **Sigue sin cubrirse**: recortar las últimas líneas de una cadena con contenido,
+y recalcular la cadena entera sobre contenido falso. Los dos necesitan un ancla fuera del archivo.
+
+## Hallazgo 57 — tres lecturas de código no encontraron lo que una ejecución sí
+
+**Encontrado**: 2026-08-28, comparando cómo se armó cada lista de "verdes vacíos".
+
+La lista de gates que decían `OK:` sin haber comparado nada se armó tres veces leyendo el código,
+y quedó corta las tres:
+
+| Método | Encontró | Se le escapó |
+|---|---:|---|
+| `grep` sobre `return { ok: true` con mensajes de ausencia | 6 | el 7º, en `verify-phase-decisions.mjs` |
+| batería completa de gates sobre el repo real | 7 | los caminos de `check` sobre archivo ausente |
+| sonda: cada gate en un directorio vacío | 9 | (lo que la sonda no prueba, declarado abajo) |
+
+El 7º hueco lo había abierto **T11, horas antes**, en el mismo día en que T12 catalogó los otros
+seis. O sea: la lista de huecos ya estaba desactualizada cuando se escribió.
+
+**HECHO** — T13, `verify-empty-probe.mjs`. La lección quedó como gate y no como nota: un
+`verify-*.mjs` que no declare qué hace sin entradas es rechazo, así que la lista no puede volver a
+quedar corta en silencio. **Lo que la sonda no prueba, declarado**: una sola invocación por gate,
+sólo el caso extremo de la carpeta vacía, y `self` es una declaración humana que nadie verifica.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

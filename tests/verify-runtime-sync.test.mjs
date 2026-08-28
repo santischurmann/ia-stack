@@ -143,8 +143,8 @@ test('compareInventories ordena cada clase de divergencia', () => {
 });
 
 test('parseArguments acepta check con y sin --runtime, y rechaza el resto', () => {
-  assert.deepEqual(parseArguments(['check']), { runtime: null });
-  assert.deepEqual(parseArguments(['check', '--runtime', '/tmp/rt']), { runtime: '/tmp/rt' });
+  assert.deepEqual(parseArguments(['check']), { runtime: null, requireInputs: false });
+  assert.deepEqual(parseArguments(['check', '--runtime', '/tmp/rt']), { runtime: '/tmp/rt', requireInputs: false });
   assert.equal(parseArguments([]), null);
   assert.equal(parseArguments(['status']), null);
   assert.equal(parseArguments(['check', 'extra']), null);
@@ -399,4 +399,32 @@ test('el repositorio real es un checkout fuente y se inventaría entero', () => 
   assert.equal(found.has('SKILL.md'), true);
   const expected = createHash('sha256').update(readFileSync(join(repoRoot, 'scripts', 'install.sh'))).digest('hex');
   assert.equal(found.get('scripts/install.sh'), expected);
+});
+
+// --- Verde vacío: sin runtime instalado no se comparó nada --------------------------------------
+
+// Contrato de salida fijado literal: el RED falla por aserción, no por un import que no resuelve.
+const SYNC_NO_INPUTS = 'RUNTIME_SYNC_NO_INPUTS';
+
+test('sin runtime instalado el gate escribe VACÍO, no OK', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-sync-vacio-'));
+  try {
+    const run = (...args) => spawnSync(process.execPath, [script, 'check', ...args], { cwd: root, encoding: 'utf8' });
+
+    const permisivo = run();
+    assert.deepEqual({ status: permisivo.status, vacio: permisivo.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true });
+
+    const estricto = run('--require-inputs');
+    assert.equal(estricto.status, 1);
+    assert.match(estricto.stderr, new RegExp(SYNC_NO_INPUTS, 'u'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('parseArguments informa --require-inputs sin perder --runtime', () => {
+  assert.deepEqual(parseArguments(['check']), { runtime: null, requireInputs: false });
+  assert.deepEqual(parseArguments(['check', '--require-inputs']), { runtime: null, requireInputs: true });
+  assert.deepEqual(parseArguments(['check', '--runtime', '.vibe/vcp-runtime', '--require-inputs']), { runtime: '.vibe/vcp-runtime', requireInputs: true });
+  assert.equal(parseArguments(['--require-inputs']), null);
 });

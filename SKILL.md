@@ -694,6 +694,25 @@ verificar". Acá en Fase 4 la spec ya tiene que existir, así que el comando va 
 y ese vacío pasa a ser rechazo. Fuera de esta fase el flag se omite: en Bootstrap todavía no hay
 spec, y ahí la ausencia es normal, no una falta.
 
+Y para que esa distinción no dependa de que alguien se acuerde de marcarla, hay una sonda que la
+comprueba corriendo: cada gate se ejecuta en una carpeta vacía y se compara lo que dice contra lo
+que declaró. **Un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar**; si no
+figura en el contrato, la sonda lo rechaza. Los cinco comportamientos posibles son `reject` (sale
+distinto de 0), `usage` (le faltan argumentos), `empty` (sale 0 y escribe `VACÍO:`), `self` (sale 0
+con `OK:` legítimo porque mira el propio checkout de VCP, no el proyecto) y `skip` (no se corre).
+Los dos últimos exigen motivo escrito, y la salida dice cuántos hay de cada uno.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-empty-probe.mjs check contracts/empty-probe.json
+```
+
+Esta sonda existe por un fallo propio, reproducido tres veces: la lista de gates que decían `OK:`
+sin haber comparado nada se armó leyendo el código y quedó corta las tres veces. La versión que
+ejecuta encontró lo que la lectura no vio, incluido un `AUDIT.md` borrado entero que pasaba como
+cadena íntegra. **Límite honesto:** prueba una sola invocación por gate y sólo el caso extremo de la
+carpeta vacía; un proyecto a medio llenar puede tener vacíos que esta sonda no ve, y un `self` mal
+declarado lo acepta sin chistar.
+
 Después, escribí el receipt (el propio orchestrator lo lee/
 escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
 
