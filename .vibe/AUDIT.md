@@ -54,3 +54,4 @@
 [2026-08-28] Builder | T13 sonda de directorio vacio | 531 tests, cobertura 100% en 24 scripts, 74 checks + 29 limites; la sonda encontro 2 huecos que 3 lecturas de codigo no vieron | T13 | chain:40685595b7fc274fcc9892d8bfec763fcdaefbac06db090843743fe1037babe6
 [2026-08-28] Builder | hallazgo 58: instalacion limpia | el runtime instalado quedaba como superficie del proyecto y un secreto adentro bloqueaba al usuario; 533 tests | h58 | chain:1793efa086c6c4a9fe3c2f65ed8d128a7e11dcabf77d86a1a9b1c608c35a70e7
 [2026-08-28] Auditor | fases 7, 12 y 14 cerradas | inventario historico 46 commits 0 regresiones; retro escrita; instalacion limpia probada | F7-F14 | chain:769b0bfa1aa7fcd34ea614fd50e33c35467aaf86d8b8cc04b1f5dacb8b3ecfef
+[2026-08-28] Auditor | fase 15: diccionario en README | 17 terminos tecnicos explicados en castellano comun, fijado con 2 checks de contrato (76) | F15 | chain:125cf8fabade588206bf699f84da32ffe1d8a6eca43030bd9e68e6b611d67de2

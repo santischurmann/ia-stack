@@ -50,6 +50,34 @@ La instalación deja el runtime completo dentro del proyecto:
 Reiniciá tu agente, abrí ese proyecto y usá `/VibeCodeProtocols`. Desde entonces ejecutá los
 comandos desde `.vibe/vcp-runtime/scripts/`, no desde el clone original de VCP.
 
+
+## Diccionario: qué significa cada palabra rara
+
+Este documento usa unos pocos términos técnicos. Acá está qué quiere decir cada uno, en
+castellano común. Si alguno aparece más abajo sin explicación, es un error de este README.
+
+| Palabra | Qué significa acá |
+|---|---|
+| **gate** | Un chequeo automático que deja pasar o frena. Es un programa que responde sí o no, no una opinión. Si frena, dice exactamente qué encontró. |
+| **verde / rojo** | Verde = el chequeo pasó. Rojo = frenó. Vienen de los colores de los tableros de pruebas. |
+| **verde vacío** | Un chequeo que pasó **sin haber comparado nada** — porque el archivo que tenía que mirar no existía. No es lo mismo que "revisé y está bien". Por eso VCP lo escribe distinto: `VACÍO:` en vez de `OK:`. |
+| **hash** | Una huella del contenido de un archivo: un número largo que cambia si cambia un solo carácter. Sirve para detectar que algo se tocó. |
+| **cadena de hashes** | Cada línea guarda la huella de la anterior. Editar una línea vieja rompe todas las que siguen, así que la edición se nota. |
+| **receipt** (recibo) | El archivo donde queda escrito qué se verificó, con qué comando y qué dio. Es evidencia para que otro la revise, no una prueba criptográfica. |
+| **runtime** | La copia de VCP que se instala **dentro** de tu proyecto, en `.vibe/vcp-runtime/`. Es la herramienta, no tu código. |
+| **baseline** (línea base) | La lista de hallazgos de seguridad que ya se revisaron y se aceptaron a propósito, para que el chequeo no vuelva a frenar por ellos. |
+| **manifest** (inventario) | Una lista que dice qué archivos entran y cuáles quedan afuera, **con el motivo escrito** de cada exclusión. |
+| **scope** (alcance) | Qué archivos declaró una tarea que iba a tocar. Después se compara contra lo que realmente tocó. |
+| **slug** | El nombre corto de una feature, en minúsculas y con guiones: `integridad-verificable`. Sirve como nombre de carpeta. |
+| **packet** | El paquete de evidencia que junta la investigación previa: de dónde salió cada dato y qué respalda. |
+| **RED / GREEN** | RED = escribir la prueba primero y verla fallar de verdad. GREEN = recién ahí escribir el código que la hace pasar. Si nunca se vio fallar, la prueba puede no estar probando nada. |
+| **cobertura** | Qué porcentaje del código ejecutaron las pruebas. 100 % no significa "sin errores": significa que ninguna línea quedó sin correr ni una sola vez. |
+| **límite honesto** | Una frase escrita a propósito que dice **qué NO detecta** un chequeo. VCP las guarda como datos revisables en `contracts/honest-limits.json`, para que nadie las borre sin que se note. |
+| **idempotente** | Que se puede correr muchas veces y el resultado es el mismo que correrlo una. El instalador lo es: no duplica nada. |
+
+Una aclaración que vale para todo VCP: **los chequeos prueban forma, cadena y estado, nunca
+verdad.** Pueden decirte que una decisión quedó registrada de forma coherente; no pueden decirte
+que sea la decisión correcta, ni que la persona la haya entendido.
 ## El flujo, simple
 
 | Fase | Pregunta que responde | Resultado necesario |

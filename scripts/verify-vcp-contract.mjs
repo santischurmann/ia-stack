@@ -83,6 +83,10 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],
   ['SKILL.md', /un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar/iu, 'a new gate must declare its no-input behaviour'],
   ['README.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],
+  // El diccionario es la promesa de que este README se puede leer sin saber la jerga. Fijado como
+  // texto: si alguien lo borra al reorganizar, el contrato lo dice en vez de quedar en silencio.
+  ['README.md', /## Diccionario: qué significa cada palabra rara/u, 'plain-language dictionary for every technical term'],
+  ['README.md', /prueban forma, cadena y estado, nunca/u, 'gates prove form, chain and state -- never truth'],
   ['templates/vibe/SESSION.md', /## Intentos fallidos/u, 'documented failed-attempt section'],
   ['templates/vibe/SESSION.md', /## Interrumpido en/u, 'documented interruption resume point'],
   ['templates/vibe/SESSION.md', /## No verificado/u, 'documented unverified-check section'],
