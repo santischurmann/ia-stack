@@ -265,6 +265,50 @@ buscar verdes vacíos.
 Los tres de arriba son los que **yo mismo reproduje corriendo**. Los otros 38 quedan como
 **propuestos, sin refutar y sin verificar**, y están en el journal del workflow para retomarlos.
 
+
+## Hallazgo 62 — revisión de los 38 huecos que el ataque dejó sin verificar
+
+**Hecho**: 2026-08-28. El ataque adversarial propuso 41 huecos pero su fase de refutación murió
+por límite de cuota, así que 38 quedaron sin verificar y el informe decía "39 confirmados", que
+era falso. Se revisaron **reproduciendo cada uno a mano**, sin agentes.
+
+### Reproducidos y arreglados (6)
+
+| Gate | Qué pasaba | Estado |
+|---|---|---|
+| `verify-security-baseline` | Un `.env.production` con `DATABASE_PASSWORD` sin comillas **pasaba en verde**: el detector exigía una comilla después del signo igual, que es la forma de escribirlo en código. Los `.env` no la usan, y son donde más viven las credenciales. | **HECHO** — detector de asignación sin comillas, con la palabra clave admitida como sufijo del identificador (`AWS_SECRET_ACCESS_KEY`). |
+| `pretooluse-red` | **Denegaba TODA escritura real.** Claude Code manda `file_path` absoluto y la normalización rechaza todo path absoluto, por diseño, para frenar traversal. | **HECHO** — se relativiza contra el proyecto antes de normalizar; lo de afuera sigue denegado. |
+| `verify-audit-chain history` | **El ancla se apagaba sola**: con el path escrito con barra invertida, `git log` listaba los commits y `git show` fallaba en todos, así que cada versión quedaba vacía, el crecimiento pasaba trivialmente y una traza fabricada de cero salía OK. | **HECHO** — el path se normaliza para git, y si NINGUNA versión se pudo mostrar es un rechazo, no un ancla en silencio. |
+| `verify-phase-decisions` | Mover una fase sin decisión al final de `phase_order` **borraba la detección de fase salteada sin tocar un solo hash**, porque el orden no entraba a la preimagen. | **HECHO** — entra el prefijo de `phase_order` hasta la fase de cada decisión: agregar una fase futura sigue siendo legítimo, reordenar rompe el sello. |
+| `verify-graphify-manifest` | Un solo archivo versionado con acento dejaba el gate en **rojo permanente**, con el nombre destrozado en el mensaje: `git ls-files` sin `-z` escapa los nombres no ASCII. | **HECHO** — `ls-files -z` y separación por NUL. |
+| `verify-empty-probe` | La clase `usage` **no exigía motivo**: declarar un gate con argumentos incompletos lo silencia —sale 2 siempre— y quedaba contado como probado. | **HECHO** — `usage` exige `why` como `self` y `skip`; los tres gates que la usaban ahora declaran el suyo. |
+
+### Reproducidos y NO arreglados, con motivo (2)
+
+- **`verify-discovery-core`: la historia de Discovery se puede recortar.** Borrar la última
+  decisión de un run pasa en verde. Reproducido. Es la **misma clase** que el truncado de la
+  cadena de auditoría, y tiene la misma respuesta: el ancla de git. Queda pendiente aplicarle a
+  Discovery el mismo tratamiento que recibió `verify-audit-chain history`.
+- **`verify-vcp-coverage`: el inventario compara por nombre de archivo, no por ruta.** Un ayudante
+  de pruebas homónimo cubriría a un script sin ninguna prueba. Reproducido con la función real.
+  Exige que alguien cree un archivo con el mismo nombre en otra carpeta: es real, pero pide una
+  decisión sobre qué formato de ruta emite node en cada versión, y eso merece su propia tarea.
+
+### Revisados y NO son huecos (2 de los mirados)
+
+- **`verify-scope-diff --ignore`**: es una **bandera documentada**, con su explicación en README.
+  Lo que sí es cierto del reporte: la línea de OK sale idéntica se haya usado o no, así que la
+  evasión no deja rastro en la salida. Mejora pendiente, no defecto.
+- **`verify-receipt` con archivo acentuado**: no se reprodujo. El gate responde por su camino
+  normal (`receipt not found`), no con el error de sistema que reportaba el ataque.
+
+### Lo que queda sin revisar, dicho con el número exacto
+
+De los 38, se reprodujeron y resolvieron **6**, se reprodujeron y quedaron pendientes **2**, y se
+descartaron **2**. Los **28 restantes** —casi todos de severidad media y baja— siguen
+**propuestos, sin verificar**, guardados en el journal del workflow. No están confirmados ni
+refutados: nadie los corrió.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

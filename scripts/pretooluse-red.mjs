@@ -12,8 +12,8 @@
 // not a security boundary against a deliberately adversarial agent with Bash access.
 
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { isContainedProjectPath, isTestPath, normalizeProjectPath, verifyNodeRed } from './verify-red-node.mjs';
 
 export const RECEIPT_DIR = '.vibe/red-receipts';
@@ -97,8 +97,27 @@ export function receiptValid(receipt, { cwd = '.', feature, now = Date.now() } =
   return { ok: true, allowedPaths };
 }
 
+/** Claude Code manda `file_path` ABSOLUTO. normalizeProjectPath rechaza todo path absoluto para
+ * frenar traversal, asi que sin esto el hook denegaba TODA escritura real: reproducido el
+ * 2026-08-28. Se relativiza contra el proyecto primero; lo que quede fuera sigue cayendo en null
+ * y despues en isContainedProjectPath, que es la comprobacion que de verdad protege. */
+export function toProjectRelative(path, cwd = '.') {
+  if (typeof path !== 'string') return path;
+  let raiz;
+  let absoluto;
+  try {
+    raiz = realpathSync(resolve(cwd));
+    absoluto = resolve(raiz, path);
+  } catch {
+    return path;
+  }
+  const dentro = relative(raiz, absoluto);
+  if (dentro === '' || dentro.startsWith('..') || isAbsolute(dentro)) return path;
+  return dentro;
+}
+
 export function decide({ path, receipts, feature, cwd = '.', now = Date.now() }) {
-  const normalized = normalizeProjectPath(path);
+  const normalized = normalizeProjectPath(toProjectRelative(path, cwd));
   if (!normalized) return { allow: false, reason: 'Write/Edit payload has no safe project-relative file_path' };
   if (!isContainedProjectPath(normalized, cwd)) return { allow: false, reason: 'Write/Edit payload resolves outside the project or through a dangling link' };
   // Blocking Write/Edit on the receipt tree is friction against an accidental or careless

@@ -662,12 +662,13 @@ test('gitVersions tolera que git no escriba nada en stdout, en el log y en el sh
   const { versions } = gitVersions('AUDIT.md', '.', gitFalso({ log: { status: 0, stdout: null, stderr: '' } }));
   assert.deepEqual(versions, []);
 
-  // Un `show` que sale bien pero no escribe nada es un archivo commiteado vacio, no un fallo.
+  // Un `show` que sale bien pero no escribe nada es un archivo commiteado vacio, no un fallo. Con
+  // otra version que si tiene contenido, la regla de "todas vacias" no se dispara.
   const vacio = gitVersions('AUDIT.md', '.', gitFalso({
-    log: { status: 0, stdout: 'aaa', stderr: '' },
-    show: { status: 0, stdout: null },
+    log: { status: 0, stdout: ['aaa', 'bbb'].join(String.fromCharCode(10)), stderr: '' },
+    show: (args) => (args[3].startsWith('aaa') ? { status: 0, stdout: null } : { status: 0, stdout: 'algo' }),
   }));
-  assert.deepEqual(vacio.versions, [{ commit: 'aaa', content: '' }]);
+  assert.deepEqual(vacio.versions, [{ commit: 'aaa', content: '' }, { commit: 'bbb', content: 'algo' }]);
 });
 
 test('verifyGrowth acepta el árbol de trabajo ausente y la lista vacía', () => {
@@ -749,4 +750,51 @@ test('verifyGrowth compara el contenido normalizado, no los bytes que entrego gi
   assert.deepEqual(verifyGrowth(versiones, conCRLF('uno' + String.fromCharCode(10) + 'dos' + String.fromCharCode(10))).ok, true);
   // Y lo que SI tiene que rechazar sigue rechazando: recortar no es un tema de fin de linea.
   assert.equal(verifyGrowth([{ commit: 'aaa', content: 'uno' + String.fromCharCode(10) + 'dos' + String.fromCharCode(10) }], 'uno' + String.fromCharCode(10)).ok, false);
+});
+
+
+// --- El ancla no se puede apagar sola escribiendo el path distinto -------------------------------
+
+// Reproducido: con `.vibe\AUDIT.md` (barra invertida, que es como se escribe en Windows), `git log`
+// encontraba los commits pero `git show <c>:.vibe\AUDIT.md` fallaba en todos, asi que cada version
+// quedaba vacia, el crecimiento pasaba trivialmente y una traza fabricada de cero salia OK.
+// Un ancla que se apaga sola cuando el path se escribe distinto no es un ancla.
+test('FALSIFICACION · una traza fabricada no puede pasar por escribir el path con barra invertida', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-ancla-path-'));
+  try {
+    const git = (...args) => spawnSync('git', args, { cwd: raiz, encoding: 'utf8' });
+    git('init', '-q', '.');
+    git('config', 'user.email', 't@t');
+    git('config', 'user.name', 't');
+    mkdirSync(join(raiz, '.vibe'), { recursive: true });
+    writeFileSync(join(raiz, '.vibe', 'AUDIT.md'), L1, 'utf8');
+    git('add', '-A'); git('commit', '-q', '-m', 'v1');
+    writeFileSync(join(raiz, '.vibe', 'AUDIT.md'), L2, 'utf8');
+    git('add', '-A'); git('commit', '-q', '-m', 'v2');
+
+    // Traza fabricada de cero: no extiende nada.
+    writeFileSync(join(raiz, '.vibe', 'AUDIT.md'), 'traza inventada' + String.fromCharCode(10), 'utf8');
+
+    const conBarra = spawnSync(process.execPath, [script, 'history', '.vibe' + String.fromCharCode(92) + 'AUDIT.md'], { cwd: raiz, encoding: 'utf8' });
+    const conSlash = spawnSync(process.execPath, [script, 'history', '.vibe/AUDIT.md'], { cwd: raiz, encoding: 'utf8' });
+    assert.deepEqual(
+      { barra: conBarra.status, slash: conSlash.status },
+      { barra: 1, slash: 1 },
+      'los dos tienen que rechazar: la forma de escribir el path no cambia lo que paso con la traza',
+    );
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACION · si NINGUNA version se pudo mostrar, el path no resuelve y no hay ancla', () => {
+  // Con todas las versiones vacias el crecimiento pasa trivialmente y una traza fabricada sale OK.
+  // Un borrado real deja al menos una version con contenido; que fallen TODAS es otra cosa.
+  const todasVacias = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 0, stdout: ['aaa', 'bbb'].join(String.fromCharCode(10)), stderr: '' },
+    show: { status: 128, stdout: null, stderr: 'fatal: path does not exist' },
+  }));
+  assert.notEqual(todasVacias.error, null);
+  assert.match(todasVacias.error, /no resuelve/u);
+  assert.deepEqual(todasVacias.versions, []);
 });

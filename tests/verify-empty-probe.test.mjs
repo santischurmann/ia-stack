@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   EXPECTATIONS,
+  JUSTIFIED,
   SCHEMA,
   USAGE,
   classify,
@@ -93,13 +94,16 @@ test('readContract usa readFileSync cuando no le pasan lector, y falla sobre un 
 test('validateShape acepta las cinco expectativas y exige motivo escrito sólo en self y skip', () => {
   const válidos = [
     { script: 'verify-a.mjs', args: [], expect: 'reject' },
-    { script: 'verify-b.mjs', args: ['check'], expect: 'usage' },
+    { script: 'verify-b.mjs', args: ['check'], expect: 'usage', why: 'sin argumentos obligatorios no llega a mirar nada' },
     { script: 'verify-c.mjs', args: ['check'], expect: 'empty' },
     { script: 'verify-d.mjs', args: ['check'], expect: 'self', why: 'mira el propio checkout' },
     { script: 'verify-e.mjs', args: [], expect: 'skip', why: 'cuesta minutos' },
   ];
   assert.deepEqual(validateShape(válidos), []);
   assert.deepEqual(EXPECTATIONS, ['reject', 'usage', 'empty', 'self', 'skip']);
+  // `usage` tambien exige motivo: un gate declarado con argumentos incompletos sale 2 siempre,
+  // asi que la sonda nunca lo prueba y queda contado como si lo hubiera hecho.
+  assert.deepEqual([...JUSTIFIED].sort(), ['self', 'skip', 'usage']);
 });
 
 test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self o un skip sin motivo no pasan', () => {
@@ -303,4 +307,10 @@ test('FALSIFICACIÓN · un spawn que falla del todo no puede clasificarse como v
   assert.deepEqual(probe([{ script: 'verify-cualquiera.mjs', args: [], expect: 'empty' }], (s, a) => runInEmptyDirectory(s, a, muerto)), [
     'verify-cualquiera.mjs sobre un directorio vacío se comporta como "reject" y el contrato declara "empty": ',
   ]);
+});
+
+
+test('FALSIFICACION · un gate declarado usage SIN motivo es un skip invisible y se rechaza', () => {
+  const violations = validateShape([{ script: 'verify-x.mjs', args: ['check'], expect: 'usage' }]);
+  assert.deepEqual(violations, ['verify-x.mjs: "usage" exige un "why" que lo justifique por escrito']);
 });

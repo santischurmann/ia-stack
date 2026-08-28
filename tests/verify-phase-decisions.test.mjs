@@ -32,22 +32,29 @@ const digest = (text) => createHash('sha256').update(text, 'utf8').digest('hex')
 
 const CONTENT_FIELDS = ['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'shown_at', 'timestamp', 'input_hash', 'status'];
 
-function payloadOf(decision) {
-  return JSON.stringify(CONTENT_FIELDS.map((field) => [field, decision[field]]));
+function payloadOf(decision, phaseOrder = null) {
+  const campos = CONTENT_FIELDS.map((field) => [field, decision[field]]);
+  // El prefijo de phase_order hasta la fase de esta decision, igual que el gate: sin esto,
+  // reordenar el orden de fases borraba la deteccion de fase salteada sin romper ningun hash.
+  if (Array.isArray(phaseOrder)) {
+    const hasta = phaseOrder.indexOf(decision.phase_id);
+    campos.push(['phase_order_prefix', hasta === -1 ? null : phaseOrder.slice(0, hasta + 1)]);
+  }
+  return JSON.stringify(campos);
 }
 
-function seal(rows) {
+function seal(rows, phaseOrder = null) {
   let previous = '';
   return rows.map((base) => {
     const decision = { ...base, previous_hash: previous, current_hash: '' };
-    decision.current_hash = chainHashFor(previous, payloadOf(decision));
+    decision.current_hash = chainHashFor(previous, payloadOf(decision, phaseOrder));
     previous = decision.current_hash;
     return decision;
   });
 }
 
-function reseal(decision) {
-  return { ...decision, current_hash: chainHashFor(decision.previous_hash, payloadOf(decision)) };
+function reseal(decision, phaseOrder = null) {
+  return { ...decision, current_hash: chainHashFor(decision.previous_hash, payloadOf(decision, phaseOrder)) };
 }
 
 const BOOTSTRAP = {
@@ -90,7 +97,7 @@ const PLAN = {
 };
 
 function documentOf(rows, phaseOrder = PHASES) {
-  return { schema: SCHEMA, phase_order: [...phaseOrder], decisions: seal(rows) };
+  return { schema: SCHEMA, phase_order: [...phaseOrder], decisions: seal(rows, [...phaseOrder]) };
 }
 
 const codes = (result) => result.violations.map((violation) => violation.code);
@@ -178,7 +185,7 @@ test('sin archivo de decisiones el gate sale 0: no arrancar una fase no incumple
 
 test('FALSIFICACIÓN · una elección que no está en el menú que se mostró sale en rojo', () => {
   const document = documentOf([BOOTSTRAP, SPEC]);
-  document.decisions[1] = reseal({ ...document.decisions[1], selected_option: 'C) una opción que nunca se ofreció' });
+  document.decisions[1] = reseal({ ...document.decisions[1], selected_option: 'C) una opción que nunca se ofreció' }, PHASES);
   const result = checkDecisions(document);
   assert.deepEqual(codes(result), ['PHASE_DECISION_OPTION_UNKNOWN']);
   assert.match(joined(result), /C\) una opción que nunca se ofreció/u);
@@ -235,7 +242,7 @@ test('FALSIFICACIÓN · agregar una opción al menú después de elegir rompe el
 
 test('FALSIFICACIÓN · cambiar la opción elegida y recalcular su propio hash rompe la cadena hacia adelante', () => {
   const document = documentOf([BOOTSTRAP, SPEC, PLAN]);
-  document.decisions[1] = reseal({ ...document.decisions[1], selected_option: 'A) un solo criterio por fase' });
+  document.decisions[1] = reseal({ ...document.decisions[1], selected_option: 'A) un solo criterio por fase' }, PHASES);
   const result = checkDecisions(document);
   assert.deepEqual(codes(result), ['PHASE_DECISION_CHAIN_BROKEN']);
   assert.match(joined(result), /#3/u);
@@ -260,7 +267,7 @@ test('FALSIFICACIÓN · borrar la primera decisión deja una cadena sin génesis
 
 test('FALSIFICACIÓN · un previous_hash que no es el current_hash de la anterior sale en rojo', () => {
   const document = documentOf([BOOTSTRAP, SPEC]);
-  document.decisions[1] = reseal({ ...document.decisions[1], previous_hash: digest('una cabeza de cadena inventada') });
+  document.decisions[1] = reseal({ ...document.decisions[1], previous_hash: digest('una cabeza de cadena inventada') }, PHASES);
   assert.deepEqual(codes(checkDecisions(document)), ['PHASE_DECISION_CHAIN_BROKEN']);
 });
 
@@ -394,7 +401,7 @@ test('los ataques que este gate NO detecta quedan reproducidos, no escondidos', 
   // Es la decisión de la fase vigente, o sea la que un agente tendría más motivo para retocar.
   const cabeza = documentOf([BOOTSTRAP, SPEC]);
   const editada = { ...cabeza.decisions[1], options: [...SPEC.options, 'C) agregada después de elegir'], selected_option: 'C) agregada después de elegir' };
-  cabeza.decisions[1] = reseal(editada);
+  cabeza.decisions[1] = reseal(editada, PHASES);
   assert.equal(checkDecisions(cabeza).ok, true, 'la cabeza de la cadena se puede reescribir y volver a sellar');
 
   // El límite de fondo: nadie tomó esta decisión. El gate sella la forma del registro, no el acto.
@@ -581,4 +588,36 @@ test('FALSIFICACION · con --require-inputs, la lista vacia pasa a ser rechazo',
 
   assert.equal(status, 1);
   assert.match(errores.at(-1), /PHASE_DECISION_NO_INPUTS/u);
+});
+
+
+// --- El orden de fases entra al sello ------------------------------------------------------------
+
+// Reproducido el 2026-08-28: mover una fase sin decision al FINAL de phase_order borraba la
+// deteccion de fase salteada sin tocar un solo hash, porque phase_order no entraba a la preimagen.
+// Entra el PREFIJO hasta la fase de cada decision: agregar una fase futura sigue siendo legitimo,
+// reordenar en o antes de una fase ya decidida rompe el sello.
+test('FALSIFICACION · reordenar phase_order para tapar una fase salteada rompe la cadena', () => {
+  const honesto = documentOf([BOOTSTRAP, PLAN], ['0', '1', '2']);
+  assert.ok(codes(checkDecisions(honesto)).includes('PHASE_DECISION_PHASE_SKIPPED'), 'la fase salteada se detecta cuando el orden es honesto');
+
+  // Mismas decisiones, mismos sellos, pero el orden movido para que la fase 1 quede al final.
+  const movido = { ...honesto, phase_order: ['0', '2', '1'] };
+  const salida = codes(checkDecisions(movido));
+  assert.ok(salida.includes('PHASE_DECISION_HASH_MISMATCH'), `mover el orden tiene que romper el sello, salio ${salida.join(', ')}`);
+});
+
+test('decisionPayload sin orden de fases no agrega el prefijo, y con orden lo agrega', () => {
+  const sinOrden = decisionPayload(BOOTSTRAP);
+  const conOrden = decisionPayload(BOOTSTRAP, ['0', '1']);
+  assert.ok(!sinOrden.includes('phase_order_prefix'), 'sin orden declarado no se inventa un campo');
+  assert.ok(conOrden.includes('phase_order_prefix'), 'con orden declarado el prefijo entra a la preimagen');
+  // Una fase que no figura en el orden declarado no puede fabricar un prefijo.
+  assert.ok(decisionPayload({ ...BOOTSTRAP, phase_id: 'ZZ' }, ['0', '1']).includes('null'));
+});
+
+test('agregar una fase FUTURA al final no invalida los sellos ya escritos', () => {
+  const original = documentOf([BOOTSTRAP], ['0', '1']);
+  const conFuturas = { ...original, phase_order: ['0', '1', '2', '3'] };
+  assert.deepEqual(codes(checkDecisions(conFuturas)), [], 'planear fases nuevas es legitimo y no puede romper la historia');
 });

@@ -93,7 +93,10 @@ test('FALSIFICACIÓN · provider credential shapes and private-key content block
   assert.deepEqual(findings.map((item) => item.category), ['hardcoded-secret', 'private-key-content', 'github-token']);
   assert.equal(findings.some((item) => item.evidence.includes(github)), false);
   const proseToken = ['gh', 'p_', '12345678901234567890'].join('');
-  assert.deepEqual(scanFile('docs/README.md', `Troubleshooting token: ${proseToken}\n`).map((item) => item.category), ['github-token'], 'a real token pasted into prose must not evade the release gate');
+  // Dos detectores, no uno: el de forma de proveedor y, desde 2026-08-28, el de asignacion sin
+  // comillas -- que es exactamente lo que es una etiqueta token seguida de un valor largo.
+  // Detectarlo dos veces no es ruido: esta prueba existe para afirmar que NO evade el gate.
+  assert.deepEqual(scanFile('docs/README.md', `Troubleshooting token: ${proseToken}\n`).map((item) => item.category), ['hardcoded-secret', 'github-token'], 'a real token pasted into prose must not evade the release gate');
 });
 
 test('FALSIFICACIÓN · Function, template SQL and dynamic HTML sinks are separate blocking injection classes', () => {
@@ -985,5 +988,43 @@ test('changedFiles convierte una barra invertida del nombre en "/" y ese archivo
     assert.deepEqual(real.findings.map((item) => item.severity), ['critical']);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+// --- Credenciales sin comillas: la forma de un archivo .env -------------------------------------
+
+// Reproducido el 2026-08-28: un .env.production con DATABASE_PASSWORD sin comillas pasaba en verde,
+// porque el detector exigia una comilla despues del signo igual -la forma de escribirlo en codigo-.
+// Los .env no usan comillas, y son justamente donde mas viven las credenciales de verdad.
+test('FALSIFICACION · una asignacion de credencial SIN comillas se detecta', () => {
+  const casos = [
+    'DATABASE_PASSWORD=supersecretpassword123',
+    'AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY',
+    'api_key = abcdefghijklmnop',
+    'TOKEN:  aVeryLongSecretValue123',
+  ];
+  for (const linea of casos) {
+    const hallazgos = scanFile('.env.production', linea + String.fromCharCode(10));
+    const criticos = hallazgos.filter((h) => h.severity === 'critical' && h.category === 'hardcoded-secret');
+    assert.ok(criticos.length > 0, `no detecto: ${linea}`);
+    // El valor nunca viaja en la evidencia: eso convertiria el receipt en un oraculo offline.
+    assert.ok(criticos.every((h) => !h.evidence.includes('supersecret') && !h.evidence.includes('wJalr')), 'el valor tiene que quedar redactado');
+  }
+});
+
+test('FALSIFICACION · lo que NO es una credencial no dispara el detector nuevo', () => {
+  const inocentes = [
+    'PASSWORD=',
+    'token: null',
+    'API_KEY=$OTRA_VARIABLE',
+    'password = short',
+    '# password= comentario explicando el formato',
+    'secret_count = 12',
+  ];
+  for (const linea of inocentes) {
+    const criticos = scanFile('config.env', linea + String.fromCharCode(10))
+      .filter((h) => h.severity === 'critical' && h.category === 'hardcoded-secret');
+    assert.deepEqual(criticos, [], `falso positivo sobre: ${linea}`);
   }
 });

@@ -7,6 +7,32 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Seis huecos más, reproducidos a mano y cerrados** (hallazgo 62). El ataque adversarial dejó
+  38 propuestas sin verificar; se revisaron reproduciendo cada una, sin agentes:
+  1. `verify-security-baseline`: un `.env.production` con `DATABASE_PASSWORD` **sin comillas**
+     pasaba en verde — el detector exigía una comilla después del signo igual, que es la forma de
+     escribirlo en código, no en un `.env`. Detector nuevo de asignación sin comillas, con la
+     palabra clave admitida como sufijo del identificador (`AWS_SECRET_ACCESS_KEY`).
+  2. `pretooluse-red` **denegaba TODA escritura real**: Claude Code manda `file_path` absoluto y
+     la normalización rechaza todo path absoluto, por diseño. Ahora se relativiza contra el
+     proyecto antes de normalizar; lo que apunta afuera sigue denegado.
+  3. `verify-audit-chain history` **se apagaba solo** con el path escrito con barra invertida:
+     `git log` listaba los commits, `git show` fallaba en todos, y una traza fabricada de cero
+     salía OK. Se normaliza el path para git, y que NINGUNA versión se pueda mostrar es un
+     rechazo, no un ancla en silencio.
+  4. `verify-phase-decisions`: mover una fase sin decisión al final de `phase_order` **borraba la
+     detección de fase salteada sin tocar un solo hash**. Ahora entra a la preimagen el prefijo
+     de `phase_order` hasta la fase de cada decisión: agregar una fase futura sigue siendo
+     legítimo, reordenar rompe el sello.
+  5. `verify-graphify-manifest`: un archivo versionado con acento dejaba el gate en rojo
+     permanente. `git ls-files -z`, separación por NUL.
+  6. `verify-empty-probe`: la clase `usage` no exigía motivo, así que declarar un gate con
+     argumentos incompletos lo silenciaba y quedaba contado como probado. Ahora exige `why`.
+  **Pendientes, reproducidos**: la historia de Discovery se puede recortar (misma clase que el
+  truncado de la cadena, misma respuesta: el ancla de git), y el inventario de cobertura compara
+  por nombre de archivo y no por ruta. **28 propuestas siguen sin verificar**: ni confirmadas ni
+  refutadas, nadie las corrió.
+
 - **Tres bugs reales, cada uno en un gate escrito ese mismo día** (hallazgo 61), encontrados
   atacando los gates de forma adversarial y **reproduciendo cada uno** antes de tocar nada:
   1. `verify-audit-chain history` **rechazaba en falso a la mayoría de los usuarios de Windows**.

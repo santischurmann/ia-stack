@@ -97,12 +97,21 @@ function isTimestamp(value) {
  * como pares para que el orden de las claves en el archivo no cambie el hash pero su contenido sí.
  * `previous_hash` queda afuera porque entra como semilla del encadenado, igual que en la traza de
  * auditoría; `current_hash` queda afuera porque es el resultado. */
-export function decisionPayload(decision) {
-  return JSON.stringify(CONTENT_FIELDS.map((field) => [field, decision[field]]));
+export function decisionPayload(decision, phaseOrder = null) {
+  const campos = CONTENT_FIELDS.map((field) => [field, decision[field]]);
+  // El prefijo de phase_order hasta la fase de esta decision, inclusive. Sin esto, mover una fase
+  // sin decision al final del orden borraba la deteccion de fase salteada y ningun hash cambiaba:
+  // reproducido el 2026-08-28. Se toma el prefijo y no la lista entera para que agregar una fase
+  // futura -que es legitimo- no invalide los sellos ya escritos.
+  if (Array.isArray(phaseOrder)) {
+    const hasta = phaseOrder.indexOf(decision.phase_id);
+    campos.push(['phase_order_prefix', hasta === -1 ? null : phaseOrder.slice(0, hasta + 1)]);
+  }
+  return JSON.stringify(campos);
 }
 
-export function hashDecision(previousHash, decision) {
-  return chainHashFor(previousHash, decisionPayload(decision));
+export function hashDecision(previousHash, decision, phaseOrder = null) {
+  return chainHashFor(previousHash, decisionPayload(decision, phaseOrder));
 }
 
 export function checkDocument(document) {
@@ -239,14 +248,14 @@ function checkSequence(decisions, phaseOrder) {
 
 /** Se frena en el primer eslabón roto a propósito: desde ahí toda cabeza de cadena posterior es
  * derivada de un valor que ya no se puede confiar, y seguir listando produce ruido, no hallazgos. */
-function checkChain(decisions) {
+function checkChain(decisions, phaseOrder) {
   let previous = '';
   for (const [position, decision] of decisions.entries()) {
     if (decision.previous_hash !== previous) {
       return [violation('PHASE_DECISION_CHAIN_BROKEN', `decisión #${position + 1}: previous_hash no es el current_hash de la decisión anterior — se borró, se insertó o se reordenó una decisión`)];
     }
-    if (decision.current_hash !== hashDecision(previous, decision)) {
-      return [violation('PHASE_DECISION_HASH_MISMATCH', `decisión #${position + 1}: current_hash no se corresponde con su contenido — el menú, la elección, la recomendación o la justificación se editaron después de registrarla`)];
+    if (decision.current_hash !== hashDecision(previous, decision, phaseOrder)) {
+      return [violation('PHASE_DECISION_HASH_MISMATCH', `decisión #${position + 1}: current_hash no se corresponde con su contenido — el menú, la elección, la recomendación, la justificación o el orden de fases hasta ésta se editaron después de registrarla`)];
     }
     previous = decision.current_hash;
   }
@@ -261,7 +270,7 @@ export function checkDecisions(document) {
   // hashes, y una fila a medio declarar produciría rechazos derivados que tapan la causa real.
   const rows = decisions.flatMap((decision, position) => checkRow(decision, position, document.phase_order));
   if (rows.length > 0) return { ok: false, violations: rows, summary: '' };
-  const violations = [...checkSequence(decisions, document.phase_order), ...checkChain(decisions)];
+  const violations = [...checkSequence(decisions, document.phase_order), ...checkChain(decisions, document.phase_order)];
   const phases = new Set(decisions.map((decision) => decision.phase_id));
   return {
     ok: violations.length === 0,

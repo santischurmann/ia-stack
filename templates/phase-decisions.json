@@ -26,7 +26,7 @@
       "input_hash": "d1b6f4fcdf9a56a240c9b9de1658c0470c96f267bcb159ae6a530021c359aae5",
       "status": "decided",
       "previous_hash": "",
-      "current_hash": "7aee1da5ad52c87630bd7802bcc3d84565ff0da5981bcf1630d94b1b53ce36a7"
+      "current_hash": "dc15ab71f517699ec9d6353d505ac905f4e7ccb5ad85502998b399671b81013d"
     },
     {
       "phase_id": "2",
@@ -42,8 +42,8 @@
       "timestamp": "2026-08-28T09:40:00Z",
       "input_hash": "659dc643480fd49a391915f6e3a6bb91da3a42cb51562ae3169a97d0a3f0a961",
       "status": "superseded",
-      "previous_hash": "7aee1da5ad52c87630bd7802bcc3d84565ff0da5981bcf1630d94b1b53ce36a7",
-      "current_hash": "bba8a8af46bc7472d37d78cf098bd619fbfc6f7dcad20ff6cd1e6af6b9703ed2"
+      "previous_hash": "dc15ab71f517699ec9d6353d505ac905f4e7ccb5ad85502998b399671b81013d",
+      "current_hash": "8145f8dee93be217897b11fa973819cb01970492da81132024fe90a9735379ab"
     },
     {
       "phase_id": "2",
@@ -59,8 +59,8 @@
       "timestamp": "2026-08-28T10:05:00Z",
       "input_hash": "543d3dd70bf05b8042e44b5b80244676768bf1a6b0263203d7f7b94bcb04e6e5",
       "status": "decided",
-      "previous_hash": "bba8a8af46bc7472d37d78cf098bd619fbfc6f7dcad20ff6cd1e6af6b9703ed2",
-      "current_hash": "3334eaff9e644d3f3f7b458bfecaac154cf3aece99ebcb0ce2d5eb2c7d19d819"
+      "previous_hash": "8145f8dee93be217897b11fa973819cb01970492da81132024fe90a9735379ab",
+      "current_hash": "774aa5d3ec7a17a5b4ccee6e2fdc2c3e8462a674b855cbe6a6434b16cc3bc547"
     },
     {
       "phase_id": "3",
@@ -76,8 +76,8 @@
       "timestamp": "2026-08-28T11:20:00Z",
       "input_hash": "209cff161fa802f4f5bcbcf32e585fab67dc790bc06ec0d3eb3d9be2a000615d",
       "status": "decided",
-      "previous_hash": "3334eaff9e644d3f3f7b458bfecaac154cf3aece99ebcb0ce2d5eb2c7d19d819",
-      "current_hash": "2d4edc395594760a014bcf5d1d3eff465c9aae2388f4063ee90e2091a422d670"
+      "previous_hash": "774aa5d3ec7a17a5b4ccee6e2fdc2c3e8462a674b855cbe6a6434b16cc3bc547",
+      "current_hash": "1c2f0bc90d3ee0580ec17f672caf448d652840224f685b9349097e2299731e37"
     }
   ]
 }

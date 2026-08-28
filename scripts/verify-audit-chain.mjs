@@ -173,7 +173,16 @@ function appendCommand(args, options, write, writeError) {
 // cualquiera con un clon previo o con el remoto lo ve. El ancla no es infalible; es que atacarla
 // deja huella donde otros la pueden mirar.
 
-export function gitVersions(path, cwd, run = spawnSync) {
+// git normaliza el separador en `log` pero no en `show`: con una barra invertida, `log` listaba
+// los commits y `show` fallaba en todos, dejando cada version vacia. Una version vacia hace que
+// cualquier cosa "crezca" desde ella, asi que una traza fabricada de cero salia OK. Un ancla que se
+// apaga sola cuando el path se escribe distinto no es un ancla. Reproducido el 2026-08-28.
+export function gitPath(path) {
+  return String(path).split(String.fromCharCode(92)).join('/');
+}
+
+export function gitVersions(rawPath, cwd, run = spawnSync) {
+  const path = gitPath(rawPath);
   const git = (...args) => run("git", ["-C", cwd, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const log = git("log", "--format=%H", "--reverse", "--", path);
   if (log.status !== 0) {
@@ -188,9 +197,15 @@ export function gitVersions(path, cwd, run = spawnSync) {
   const versions = [];
   for (const commit of commits) {
     const show = git("show", `${commit}:${path}`);
-    // Un commit que borró el archivo no tiene contenido que mostrar: se registra como vacío, que
-    // es exactamente lo que hay que detectar, no un motivo para saltearlo.
+    // Un commit que borró el archivo no tiene contenido que mostrar: se registra como vacío, y la
+    // comprobación de crecimiento lo agarra, porque una versión vacía no extiende a la anterior.
     versions.push({ commit, content: show.status === 0 ? (show.stdout ?? "") : "" });
+  }
+  // Pero si NINGÚN commit se pudo mostrar, no hubo borrado: el path no resuelve contra git. Ahí
+  // cada versión queda vacía, el crecimiento pasa trivialmente y una traza fabricada de cero sale
+  // OK. Un ancla que se apaga sola cuando el path se escribe distinto no es un ancla.
+  if (versions.length > 0 && versions.every((v) => v.content === "")) {
+    return { error: `git no pudo mostrar ${path} en ninguna de las ${versions.length} versión(es) que listó: el path no resuelve contra la historia, así que no hay ancla que comparar`, versions: [] };
   }
   return { error: null, versions };
 }

@@ -21,6 +21,14 @@ const SENSITIVE_ARTIFACT = /(?:^|\/)(?:\.env(?:\.|$)|id_rsa|[^/]+\.(?:pem|key))$
 // hardcoded secret as one in a plain string — found evading this exact detector during the
 // 2026-08-24 adversarial audit (research/adversarial-productivity-audit-2026-08-23.md).
 const SECRET_ASSIGNMENT = /(?:api[_-]?key|secret|password|token|private[_-]?key)\s*[:=]\s*(['"`])(?=.{8,})/iu;
+// Sin comillas: la forma de un archivo .env, que es donde mas viven las credenciales de verdad.
+// Un `.env.production` con `DATABASE_PASSWORD=supersecreto` pasaba en verde porque el detector de
+// arriba exige una comilla despues del `=`. Reproducido el 2026-08-28 atacando este mismo gate.
+// Se exige un valor sin comillas de al menos 12 caracteres del alfabeto que usan las credenciales,
+// para no disparar sobre una asignacion vacia, sobre un valor nulo, ni sobre una referencia a otra
+// variable. El ejemplo no se escribe literal aca a proposito: este gate se escanea a si mismo, y
+// una comilla pegada al signo igual dispara el detector de arriba (convencion del repo).
+const UNQUOTED_SECRET = /(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|access[_-]?key|secret[_-]?key|secret|password|passwd|token|private[_-]?key)\s*[:=]\s*[A-Za-z0-9_+\/.=-]{12,}\s*$/imu;
 const AWS_KEY = /AKIA[0-9A-Z]{16}/u;
 const PRIVATE_KEY = /-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----/u;
 // A bare BEGIN header quoted in prose (documentation describing what a redactor looks for,
@@ -293,6 +301,8 @@ export function scanFile(path, content) {
   // injection patterns scoped to code/manifests to avoid treating ordinary prose as code.
   const secret = content.search(SECRET_ASSIGNMENT);
   if (secret >= 0) findings.push(finding('critical', 'hardcoded-secret', path, content, secret, 'credential-like assignment (value redacted)'));
+  const unquoted = content.search(UNQUOTED_SECRET);
+  if (unquoted >= 0) findings.push(finding('critical', 'hardcoded-secret', path, content, unquoted, 'credential-like assignment (value redacted)'));
   const aws = content.search(AWS_KEY);
   if (aws >= 0) findings.push(finding('critical', 'aws-access-key', path, content, aws, 'AWS access-key shape (value redacted)'));
   const privateKey = privateKeyIndex(content);

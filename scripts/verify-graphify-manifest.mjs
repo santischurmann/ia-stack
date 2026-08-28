@@ -31,11 +31,16 @@ function normalize(value) {
 export function readTrackedFiles(cwd, runGit = (dir, args) => execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8' })) {
   let output;
   try {
-    output = runGit(cwd, ['ls-files']);
+    // -z: sin esto git escapa los nombres no ASCII entre comillas y con octales
+    // ("docs/decisi\303\263n.md"), asi que un solo archivo con acento dejaba el gate en rojo
+    // permanente y con el nombre destrozado en el mensaje. Reproducido el 2026-08-28.
+    output = runGit(cwd, ['ls-files', '-z']);
   } catch (error) {
     throw new Error(`unable to list tracked files: ${error.message}`);
   }
-  return String(output).split('\n').map((line) => normalize(line.trim())).filter(Boolean);
+  // Con -z el separador es NUL. Se acepta tambien el salto de linea para no romper a quien inyecte
+  // una salida de prueba con el formato viejo.
+  return String(output).split(/[\0\n]/u).map((line) => normalize(line.trim())).filter(Boolean);
 }
 
 export function readManifestPaths(cwd, read = readFileSync) {

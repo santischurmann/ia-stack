@@ -39,7 +39,10 @@ export const GATE_FILE = /^verify-.*\.mjs$/u;
  *         nadie prueba tiene que verse, no desaparecer.
  */
 export const EXPECTATIONS = ['reject', 'usage', 'empty', 'self', 'skip'];
-export const JUSTIFIED = ['self', 'skip'];
+// `usage` tambien exige motivo: un gate declarado con argumentos deliberadamente incompletos sale
+// 2 SIEMPRE, asi que la sonda nunca lo prueba de verdad y queda contado como si lo hubiera hecho.
+// Encontrado atacando esta sonda el 2026-08-28. Sin motivo escrito, es un skip invisible.
+export const JUSTIFIED = ['self', 'skip', 'usage'];
 
 export function parseArgs(args) {
   if (args.length === 2 && args[0] === 'check' && args[1] !== '') return { contract: args[1] };

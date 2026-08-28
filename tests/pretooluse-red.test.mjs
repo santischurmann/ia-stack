@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const scriptPath = fileURLToPath(new URL('../scripts/pretooluse-red.mjs', import.meta.url));
-const { RECEIPT_DIR, RECEIPT_TTL_MS, asHook, decide, emit, main, receiptValid } = await import(pathToFileURL(scriptPath).href);
+const { RECEIPT_DIR, RECEIPT_TTL_MS, asHook, decide, emit, main, receiptValid, toProjectRelative } = await import(pathToFileURL(scriptPath).href);
 const ZERO_SHA = '0'.repeat(64);
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const NOW = Date.parse('2026-08-23T12:00:00.000Z');
@@ -279,5 +279,50 @@ test('CLI emits a scoped receipt and malformed stdin is a deny decision, never a
     }
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+// --- El hook tiene que aceptar la forma real en que Claude Code manda el path --------------------
+
+// Reproducido el 2026-08-28: Claude Code manda `file_path` ABSOLUTO y normalizeProjectPath rechaza
+// todo path absoluto (por diseno, para frenar traversal), asi que el hook denegaba TODA escritura
+// real. Se relativiza contra el proyecto antes de normalizar; lo que quede afuera sigue denegado.
+test('toProjectRelative acepta lo de adentro y deja intacto lo de afuera', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-relativo-'));
+  try {
+    mkdirSync(join(raiz, 'docs'), { recursive: true });
+    assert.equal(toProjectRelative(join(raiz, 'docs', 'notas.md'), raiz), join('docs', 'notas.md'));
+    // Un relativo tambien se resuelve contra la raiz: da lo mismo, con el separador del sistema.
+    assert.equal(toProjectRelative('docs/notas.md', raiz), join('docs', 'notas.md'));
+    // Lo de afuera vuelve ABSOLUTO, que es lo que hace falta: normalizeProjectPath rechaza todo
+    // path absoluto, asi que sigue denegado.
+    assert.ok(isAbsolute(toProjectRelative(join(raiz, '..', 'fuera.txt'), raiz)));
+    // La raiz misma tampoco es un archivo del proyecto.
+    assert.equal(toProjectRelative(raiz, raiz), raiz);
+    // Un valor que no es texto pasa igual, para que la validacion de mas abajo lo rechace.
+    assert.equal(toProjectRelative(42, raiz), 42);
+    // Un cwd que no existe no puede tumbar el hook.
+    assert.equal(toProjectRelative('docs/x.md', join(raiz, 'no-existe')), 'docs/x.md');
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACION · el hook permite el absoluto de adentro y sigue denegando el de afuera', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-hook-abs-'));
+  try {
+    mkdirSync(join(raiz, 'docs'), { recursive: true });
+    const pedir = (filePath) => asHook({ tool_name: 'Write', tool_input: { file_path: filePath } }, raiz);
+
+    assert.deepEqual(pedir(join(raiz, 'docs', 'notas.md')), {}, 'el absoluto de adentro es la forma real y tiene que pasar');
+    assert.deepEqual(pedir('docs/notas.md'), {});
+
+    for (const afuera of ['C:/Windows/system32/evil.txt', join(raiz, '..', 'fuera.txt')]) {
+      const r = pedir(afuera);
+      assert.equal(r.hookSpecificOutput?.permissionDecision, 'deny', `${afuera} tiene que seguir denegado`);
+    }
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
   }
 });

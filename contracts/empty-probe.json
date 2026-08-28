@@ -3,7 +3,7 @@
   "why": "Cada gate declara aca que hace cuando lo corren sobre un directorio vacio. Un gate que dice OK ahi esta afirmando haber verificado algo cuando no habia nada que verificar. Un verify-*.mjs que no figure en esta lista es un rechazo: agregar un gate obliga a declarar su comportamiento sin entradas.",
   "expectations": {
     "reject": "sale distinto de 0 porque no hay entradas y lo dice",
-    "usage": "sale 2 porque le faltan argumentos obligatorios",
+    "usage": "sale 2 porque le faltan argumentos obligatorios; exige motivo escrito, porque un gate que siempre sale 2 no se prueba",
     "empty": "sale 0 y escribe VACIO: no habia nada que comparar y no se disfraza de verde",
     "self": "sale 0 y escribe OK legitimamente porque verifica el propio checkout de VCP, no el directorio de trabajo",
     "skip": "no se corre; exige motivo escrito y se cuenta en la salida"
@@ -83,7 +83,8 @@
         "check",
         "handoff.md"
       ],
-      "expect": "usage"
+      "expect": "usage",
+      "why": "Sale 2 porque el informe de handoff no existe: su parseo no arranca sin archivo. Es una respuesta honesta -no llega a mirar-, pero como siempre sale 2, esta sonda no comprueba nada mas de este gate."
     },
     {
       "script": "verify-phase-decisions.mjs",
@@ -99,7 +100,8 @@
         "check",
         "docs/tasks.json"
       ],
-      "expect": "usage"
+      "expect": "usage",
+      "why": "Sale 2 porque exige el plan y la tarea como argumentos, y sin plan no hay conflicto que buscar. La sonda no prueba nada mas de este gate."
     },
     {
       "script": "verify-receipt.mjs",
@@ -129,7 +131,8 @@
         "--feature",
         "demo"
       ],
-      "expect": "usage"
+      "expect": "usage",
+      "why": "Sale 2 porque exige --session y --feature juntos y sin SESSION.md no puede leer ninguno. La sonda no prueba nada mas de este gate."
     },
     {
       "script": "verify-runtime-sync.mjs",
