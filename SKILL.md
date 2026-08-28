@@ -61,6 +61,15 @@ la atención del agente y por la cuota.
 output real y su decisión 🔵 fue respondida — no cuando "parece lista". Si un gate no se pudo
 correr, la fase no cerró: se reporta qué faltó verificar. Terminar por cansancio o por presión de
 contexto es la forma más común de que un protocolo se degrade sin que nadie lo note.
+**Ninguna fase cierra sin una elección registrada**: el menú 🔵 que se mostró, la recomendación, la
+opción que la persona eligió y por qué se anotan en `docs/phase-decisions.json` —una decisión por
+fase, en el orden que declara su propio `phase_order`, encadenadas por hash como la traza de
+auditoría— antes de pasar a la fase siguiente. Detector:
+`node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`.
+Una decisión reemplazada no se borra: se marca `superseded` y se registra la nueva.
+**Límite honesto del gate**: demuestra que la decisión quedó registrada de forma coherente, no
+demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus
+consecuencias — un agente puede registrar decisiones que nadie tomó y el gate las acepta.
 
 **Redacción reutilizable** (item #46). Un límite honesto, un mensaje de rechazo o una advertencia
 que ya existe se reusa citándola, no se reescribe con otras palabras. Dos redacciones distintas de
@@ -969,6 +978,19 @@ A) [Option] — [trade-off]
 B) [Option] — [trade-off]
 Esperando tu respuesta antes de continuar.
 ```
+
+Respondido el 🔵 que cierra una fase, la decisión se registra en `docs/phase-decisions.json`
+(plantilla: `templates/phase-decisions.json`) antes de abrir la fase siguiente. Cada entrada lleva
+`phase_id`, `phase_name`, el `options[]` completo **tal como se mostró**, `recommendation`,
+`selected_option`, `reason`, `timestamp`, `input_hash`, `previous_hash`, `current_hash` y `status`
+(`decided` | `superseded`). El sello usa el mismo encadenado que `verify-audit-chain.mjs`
+—`sha256(cadena anterior + LF + contenido)`— sobre los nueve campos de contenido, `options` y
+`selected_option` incluidos: editar el menú de una decisión pasada para que la opción elegida
+parezca haber estado ahí rompe el hash de esa decisión y la cadena hacia adelante. El gate no
+escribe: el sello se calcula con `hashDecision(previous_hash, decision)` del propio módulo.
+
+Gate: `node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
+(sin archivo sale `0`: un proyecto que no arrancó ninguna fase no incumple nada).
 
 ---
 

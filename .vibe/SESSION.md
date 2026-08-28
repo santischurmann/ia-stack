@@ -231,3 +231,32 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 - **Garantía cambiada, declarada**: el sello ya no prueba que el grafo fue *construido* en ese
   commit, sólo que su contenido no cambió desde el registro. La otra mitad —que el grafo cubra los
   archivos del commit— la verifica `verify-graphify-manifest`.
+
+## T11 — gate de decisiones por fase · DONE
+
+- `verify-phase-decisions.mjs`: una decisión por fase, en orden, con la opción elegida dentro del
+  menú que se mostró, y encadenada por hash. Reusa `chainHashFor` de `verify-audit-chain.mjs`
+  importándola, no reimplementándola.
+- **Nueve campos entran al hash**, incluidos `options` y `selected_option`: sin ellos, agregar la
+  opción elegida al menú *después* de elegir pasaba en verde. El agente lo reprodujo.
+- 24 ataques probados contra el propio gate. **Uno funcionaba**: dos opciones que sólo diferían en
+  espacios (`'A) una spec'` y `'A) una spec '`) contaban como menú de dos siendo una sola para quien
+  lee. Cerrado midiendo la unicidad sobre el texto recortado.
+- El agente descubrió que dos de sus primeros ataques eran vacíos porque la plantilla no tenía
+  ninguna decisión donde la persona fuera contra la recomendación. Cambió la plantilla para que los
+  ataques midieran algo real.
+- **Límite de fondo, declarado textual**: demuestra que una decisión quedó registrada de forma
+  coherente; **no** demuestra que la persona haya querido esa opción ni que haya comprendido sus
+  consecuencias. Una decisión inventada de punta a punta pasa el gate.
+
+## Research — falló por un bug mío, los datos se salvaron
+
+- El workflow pedía a cada agente un `slug`; los agentes devolvieron `owner/repo` (por ejemplo
+  `Panniantong/agent-reach`) y mi `FUENTES.find()` no matcheó. Las 14 lecturas de núcleo fallaron.
+- **Los 14 manifests están completos**: 15.581 archivos con SHA exacto y clasificados en cinco
+  baldes. Recuperados del journal del workflow.
+- El sintetizador recibió una lista vacía y **se negó a escribir un informe**, diciendo que
+  cualquier patrón que escribiera sería inventado. Es el comportamiento correcto y vale registrarlo.
+- **Meta-hueco que señaló**: el pipeline de investigación no tiene gate propio. Un sintetizador que
+  recibe cero insumos puede devolver algo con forma de conclusión. Debería fallar duro en vez de
+  depender de que el modelo elija ser honesto.

@@ -1,0 +1,77 @@
+{
+  "schema": "vcp.phase-decisions/1",
+  "phase_order": [
+    "0",
+    "0.5",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "decisions": [
+    {
+      "phase_id": "0",
+      "phase_name": "Bootstrap",
+      "options": [
+        "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
+        "B) sumar un runner de tests externo — más azúcar, una dependencia más que auditar"
+      ],
+      "recommendation": "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
+      "selected_option": "A) Node nativo, cero dependencias — el stack que el repo ya sostiene",
+      "reason": "la suite nativa ya cubre el caso y una dependencia menos es una superficie menos que revisar en 4.3",
+      "timestamp": "2026-08-28T09:10:00Z",
+      "input_hash": "d1b6f4fcdf9a56a240c9b9de1658c0470c96f267bcb159ae6a530021c359aae5",
+      "status": "decided",
+      "previous_hash": "",
+      "current_hash": "69614e8e91caf349c62e99f9ca420e759e5966a205c4a8a3ffd764a38f5fa127"
+    },
+    {
+      "phase_id": "0.5",
+      "phase_name": "Discovery",
+      "options": [
+        "A) investigar sólo el gate que falta",
+        "B) investigar el gate y además su plantilla consumidora"
+      ],
+      "recommendation": "A) investigar sólo el gate que falta",
+      "selected_option": "A) investigar sólo el gate que falta",
+      "reason": "primera lectura: alcanzaba con el gate",
+      "timestamp": "2026-08-28T09:40:00Z",
+      "input_hash": "659dc643480fd49a391915f6e3a6bb91da3a42cb51562ae3169a97d0a3f0a961",
+      "status": "superseded",
+      "previous_hash": "69614e8e91caf349c62e99f9ca420e759e5966a205c4a8a3ffd764a38f5fa127",
+      "current_hash": "ab65443eb11157a68c508aab4ae37624b739ee02ea204a3ed78a95c7671b6abb"
+    },
+    {
+      "phase_id": "0.5",
+      "phase_name": "Discovery",
+      "options": [
+        "A) investigar sólo el gate que falta",
+        "B) investigar el gate y además su plantilla consumidora"
+      ],
+      "recommendation": "B) investigar el gate y además su plantilla consumidora",
+      "selected_option": "B) investigar el gate y además su plantilla consumidora",
+      "reason": "sin plantilla el proyecto consumidor no tiene forma de arrancar el archivo, y el gate quedaría sin nadie que lo alimente",
+      "timestamp": "2026-08-28T10:05:00Z",
+      "input_hash": "543d3dd70bf05b8042e44b5b80244676768bf1a6b0263203d7f7b94bcb04e6e5",
+      "status": "decided",
+      "previous_hash": "ab65443eb11157a68c508aab4ae37624b739ee02ea204a3ed78a95c7671b6abb",
+      "current_hash": "09530ec88dd0b7ba36fad268825d0c5208a0696764dbfd5650bf2ea469f87160"
+    },
+    {
+      "phase_id": "1",
+      "phase_name": "Spec",
+      "options": [
+        "A) una spec con criterios agrupados por artefacto",
+        "B) una spec con criterios agrupados por fase"
+      ],
+      "recommendation": "A) una spec con criterios agrupados por artefacto",
+      "selected_option": "B) una spec con criterios agrupados por fase",
+      "reason": "la recomendación no es la decisión: agrupar por fase ata cada criterio al gate que lo cierra, que es lo que este proyecto necesita revisar",
+      "timestamp": "2026-08-28T11:20:00Z",
+      "input_hash": "209cff161fa802f4f5bcbcf32e585fab67dc790bc06ec0d3eb3d9be2a000615d",
+      "status": "decided",
+      "previous_hash": "09530ec88dd0b7ba36fad268825d0c5208a0696764dbfd5650bf2ea469f87160",
+      "current_hash": "6cc89f4259494682bf8a70fc68002eb1e523818a78840ca601d80b2a8620951c"
+    }
+  ]
+}

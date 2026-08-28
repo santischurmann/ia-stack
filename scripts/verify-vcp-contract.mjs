@@ -68,6 +68,12 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
   ['SKILL.md', /tercer intento fallido sobre el mismo problema/u, 'three-attempt stop-and-ask rule'],
   ['README.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
+  // Las dos mitades se fijan aparte a propósito: el gate detecta la regla, pero la regla —ninguna
+  // fase cierra sin una elección registrada— es del protocolo y tiene que seguir escrita aunque
+  // alguien mueva, renombre o borre el gate que la detecta.
+  ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json/u, 'mechanical phase-decision gate'],
+  ['SKILL.md', /Ninguna fase cierra sin una elección registrada/u, 'no phase closes without a recorded human choice'],
+  ['README.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
   ['templates/vibe/SESSION.md', /## Intentos fallidos/u, 'documented failed-attempt section'],
   ['templates/vibe/SESSION.md', /## Interrumpido en/u, 'documented interruption resume point'],
   ['templates/vibe/SESSION.md', /## No verificado/u, 'documented unverified-check section'],

@@ -7,6 +7,47 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- Nuevo gate `verify-phase-decisions.mjs` (T11): **la regla más central de VCP ya tiene detector**.
+  El protocolo exige desde su LAW 7 que cada fase cierre con un menú 🔵 —opciones explícitas,
+  recomendación, y la persona elige— y **nada lo verificaba**: una fase podía cerrarse sin haber
+  mostrado el menú, con una opción que no estaba en la lista, o editando las opciones después de que
+  la persona eligió. Era exactamente la regla decorativa que el propio protocolo dice combatir.
+  `check <decisions.json>` verifica sobre `docs/phase-decisions.json`: una decisión vigente por fase
+  (sin duplicados), fases en el orden que declara el **propio archivo** en `phase_order` —sin saltos
+  hacia atrás, sin reabrir una fase ya cerrada y sin omitir una fase anterior a otra que ya cerró—,
+  la opción elegida presente en el menú que se mostró, recomendación y justificación no vacías,
+  timestamps que no retroceden, y una cadena de hashes íntegra. Una decisión reemplazada no se
+  borra: se marca `superseded` y se registra la nueva, igual que hace el inventario de requisitos.
+  Sin archivo de decisiones sale `0`: un proyecto que no arrancó ninguna fase no incumple nada.
+  **El encadenado no se reinventó**: importa `chainHashFor` de `verify-audit-chain.mjs`, así que
+  ambos gates sellan con la misma fórmula —`sha256(cadena anterior + LF + contenido)`— y una prueba
+  lo comprueba construyendo sus fixtures con la función del gate de auditoría, no con la del gate
+  nuevo (SKILL.md § "Redacción reutilizable"). A la preimagen entran los **nueve campos de
+  contenido**, `options` y `selected_option` incluidos: si el menú quedara afuera, agregar después la
+  opción que se eligió —el ataque principal— pasaría en verde. Un vector de hash literal fija la
+  serialización para que nadie la cambie sin que una prueba se ponga roja.
+  **Atacando el gate con el CLI real** se encontró y cerró un defecto propio: `['A) una spec',
+  'A) una spec ']` pasaba como menú de dos opciones siendo una sola para quien la lee — la unicidad
+  ahora se mide sobre el texto recortado. Los ataques que sí rechaza, cada uno reproducido: agregar
+  una opción al menú después de elegir, recalcular sólo el hash de esa decisión, reescribir o
+  recortar el menú, reordenar el archivo, borrar la primera decisión, insertar una fase intermedia en
+  `phase_order`, sacar de `phase_order` una fase que ya tiene decisión, cambiar `status` de `decided`
+  a `superseded` después de cerrar, intercambiar recomendación y elección, duplicar una decisión,
+  escribir el hash en mayúsculas, adelantar un timestamp y mover contenido entre campos.
+  **Lo que NO detecta, reproducido y declarado** en el comentario de cabecera, en README, en SKILL y
+  en `contracts/honest-limits.json`: el gate demuestra que la decisión quedó registrada de forma
+  coherente, **no demuestra que la persona realmente haya querido esa opción ni que haya comprendido
+  sus consecuencias** — un agente puede registrar decisiones que nadie tomó y el gate las acepta.
+  Hereda además los límites de la cadena de auditoría: recortar las últimas decisiones, reescribir la
+  última (que es la cabeza de la cadena, o sea la de la fase vigente) o recalcular la cadena entera
+  sobre contenido falso pasan en verde, y los tres exigen un ancla fuera del archivo. `phase_order`
+  no está encadenado: agregar una fase futura al final es legítimo e indetectable. Una prueba
+  reproduce los cuatro para que el límite no se pueda perder en silencio.
+  Plantilla nueva `templates/phase-decisions.json`, con una decisión donde la persona **no** siguió
+  la recomendación —la recomendación no es la decisión— y una `superseded` con su reemplazo.
+  Cableado: SKILL.md (regla + gate al cerrar fase + formato del registro), README (fila de gates con
+  su límite), `verify-vcp-contract.mjs` (tres promesas nuevas, la regla y el gate fijados aparte) y
+  dos límites honestos nuevos.
 - `verify-backup-state.mjs`: **`record` ya no puede destruir un archivo del proyecto**. Defecto
   preexistente, encontrado atacando el gate con el CLI real: el manifest se escribía sobre cualquier
   ruta que fuera un archivo regular dentro del proyecto, así que cinco combinaciones de banderas

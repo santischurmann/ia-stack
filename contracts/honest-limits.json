@@ -146,6 +146,18 @@
       "why": "Las tres secciones son opcionales, así que no declarar nada pasa igual que declarar bien. Sin el límite, una sesión que se cortó sin escribir dónde quedó parece cumplir el gate, y el checkpoint que este item vino a garantizar se pierde exactamente cuando más falta hace."
     },
     {
+      "limit_id": "phase-decisions-prove-the-record-not-the-choice",
+      "file": "README.md",
+      "phrase": "No demuestra que la persona realmente haya querido esa opción",
+      "why": "verify-phase-decisions.mjs sella la forma del registro —menú, recomendación, elección dentro del menú, justificación y cadena de hashes—, nunca el acto de decidir. Sin esta frase, un gate en verde se lee como \"la persona decidió esto\", que es exactamente lo único que el gate no puede comprobar, y la revisión humana que sí lo comprobaría no la pide nadie."
+    },
+    {
+      "limit_id": "phase-decisions-accept-invented-decisions",
+      "file": "SKILL.md",
+      "phrase": "un agente puede registrar decisiones que nadie tomó y el gate las acepta",
+      "why": "Es el mismo límite dicho en el lugar operativo donde el agente corre el gate al cerrar una fase, y es la mitad incómoda: el gate no distingue una decisión humana de una que el propio agente escribió solo. Reproducido con el CLI real. Sin esta frase, el agente reporta el verde del gate como prueba de que hubo un 🔵 respondido y el hueco vuelve a cerrarse solo."
+    },
+    {
       "limit_id": "phase-closes-on-real-output",
       "file": "SKILL.md",
       "phrase": "la fase no cerró: se reporta qué faltó verificar",

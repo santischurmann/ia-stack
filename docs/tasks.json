@@ -472,6 +472,57 @@
       "status": "done",
       "goal": "Disciplina verificable -> hallazgo 55 -> el sello lo controla el protocolo, no una herramienta externa que sella el momento de ejecucion",
       "approval_criteria": "Un backup registrado sobre el HEAD actual verifica en verde aunque el reporte declare un commit anterior. Un backup genuinamente viejo (contenido distinto) sigue siendo rechazado. Probado con fixtures en ambas direcciones."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED: 36 tests en rojo, gate RED exit 0",
+        "GREEN: 495 tests, cobertura 100%, 69 checks + 27 limites",
+        "24 ataques probados contra el propio gate; uno funcionaba (opciones que difieren solo en espacios) y se cerro"
+      ],
+      "not_reviewed": [
+        "LIMITE DE FONDO: demuestra que una decision quedo registrada de forma coherente. NO demuestra que la persona haya querido esa opcion ni que haya comprendido sus consecuencias. Una decision inventada de punta a punta pasa el gate.",
+        "La ultima decision es la cabeza de la cadena: editar su menu y resellarla pasa en verde.",
+        "Truncar la cadena (borrar las ultimas decisiones) no se detecta.",
+        "phase_order no esta encadenado.",
+        "Sin subcomando seal: el sello se calcula llamando a hashDecision. Queda como decision pendiente si conviene agregarlo, siguiendo el precedente de verify-audit-chain."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green",
+        "triangulate"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T11",
+      "description": "Gate de decisiones por fase: ninguna fase cierra sin una eleccion registrada y encadenada",
+      "files_to_create": [
+        "scripts/verify-phase-decisions.mjs",
+        "tests/verify-phase-decisions.test.mjs",
+        "templates/phase-decisions.json"
+      ],
+      "files_to_modify": [
+        "SKILL.md",
+        "README.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md"
+      ],
+      "test_files": [],
+      "depends_on": [
+        "T10"
+      ],
+      "status": "done",
+      "goal": "Disciplina verificable -> Fase 5 del encargo -> una decision por fase, en orden, encadenada por hash, sin cierre silencioso",
+      "approval_criteria": "Una fase sin eleccion registrada se detecta. Una eleccion fuera del menu se detecta. Fases fuera de orden, duplicadas o con la cadena rota se detectan. Cambiar las opciones despues de elegir rompe la cadena."
     }
   ]
 }
