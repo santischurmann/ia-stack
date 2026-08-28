@@ -19,11 +19,13 @@
 // writer does not close any of that: `append` refuses to seal on top of an already-broken trace, so
 // it never lends a fresh valid seal to forged history, but it cannot repair one either.
 
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync } from 'node:fs';
 
-export const USAGE = 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"';
+export const USAGE = 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs history <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"';
 export const NO_INPUTS_CODE = 'AUDIT_CHAIN_NO_INPUTS';
+export const HISTORY_CODE = 'AUDIT_CHAIN_HISTORY_BROKEN';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const APPEND_USAGE = 'usage: verify-audit-chain.mjs append <audit.md> "<line text>"';
@@ -156,8 +158,91 @@ function appendCommand(args, options, write, writeError) {
   return 0;
 }
 
+
+// --- El ancla externa ---------------------------------------------------------------------------
+//
+// El límite declarado de este gate decía que recortar la cadena o refabricarla entera exigían "un
+// ancla fuera del archivo, y no hay ninguna portable". Eso era falso, y la respuesta estaba a la
+// vista: **git ya es esa ancla**. Un archivo de auditoría sólo crece, así que cada versión
+// commiteada tiene que empezar con la anterior. Recortar, reescribir o borrar rompe esa relación
+// contra un registro que no vive dentro del archivo atacado.
+//
+// LÍMITE HONESTO, el que queda: quien reescriba la historia de git puede fabricar una secuencia
+// coherente. Pero eso ya no es editar un archivo: cambia los identificadores de cada commit, y
+// cualquiera con un clon previo o con el remoto lo ve. El ancla no es infalible; es que atacarla
+// deja huella donde otros la pueden mirar.
+
+export function gitVersions(path, cwd, run = spawnSync) {
+  const git = (...args) => run("git", ["-C", cwd, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const log = git("log", "--format=%H", "--reverse", "--", path);
+  if (log.status !== 0) {
+    // Un repo sin ningun commit no es historia rota: es un proyecto que todavia no registro nada.
+    // Se distingue preguntando si existe HEAD, en vez de leer el texto del error, que cambia
+    // entre versiones de git y entre idiomas.
+    const head = git("rev-parse", "--verify", "--quiet", "HEAD");
+    if (head.status !== 0) return { error: null, versions: [] };
+    return { error: `no se puede leer la historia de ${path}: ${(log.stderr || "").trim()}`, versions: [] };
+  }
+  const commits = (log.stdout || "").split(String.fromCharCode(10)).map((x) => x.trim()).filter(Boolean);
+  const versions = [];
+  for (const commit of commits) {
+    const show = git("show", `${commit}:${path}`);
+    // Un commit que borró el archivo no tiene contenido que mostrar: se registra como vacío, que
+    // es exactamente lo que hay que detectar, no un motivo para saltearlo.
+    versions.push({ commit, content: show.status === 0 ? (show.stdout ?? "") : "" });
+  }
+  return { error: null, versions };
+}
+
+/** Cada versión tiene que empezar con la anterior. Nombra la primera que no. */
+export function verifyGrowth(versions, working) {
+  for (let i = 1; i < versions.length; i += 1) {
+    if (!versions[i].content.startsWith(versions[i - 1].content)) {
+      return { ok: false, commit: versions[i].commit, reason: `el commit ${versions[i].commit.slice(0, 7)} no extiende la versión anterior: la traza se recortó, se reescribió o se borró` };
+    }
+  }
+  const ultima = versions.at(-1);
+  if (ultima !== undefined && working !== null && !working.startsWith(ultima.content)) {
+    return { ok: false, commit: null, reason: `el archivo sin commitear no extiende la última versión registrada (${ultima.commit.slice(0, 7)})` };
+  }
+  return { ok: true, commit: null, reason: null };
+}
+
+export function historyCommand(args, options, write, writeError) {
+  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
+  const rest = requireInputs ? args.slice(0, -1) : args;
+  if (rest.length !== 2) {
+    writeError(USAGE);
+    return 2;
+  }
+  const path = rest[1];
+  const cwd = options.cwd ?? ".";
+  const { error, versions } = gitVersions(path, cwd, options.run);
+  if (error !== null) {
+    writeError(`REJECTED: ${HISTORY_CODE}: ${error}`);
+    return 1;
+  }
+  if (versions.length === 0) {
+    const message = `${path} no tiene ninguna versión commiteada: sin historia no hay ancla que comparar.`;
+    if (requireInputs) {
+      writeError(`REJECTED: ${NO_INPUTS_CODE}: ${message}`);
+      return 1;
+    }
+    write(`${EMPTY_PREFIX}${message}`);
+    return 0;
+  }
+  const { content: working } = readAudit(path, options.readFile ?? readFileSync);
+  const result = verifyGrowth(versions, working);
+  if (!result.ok) {
+    writeError(`REJECTED: ${HISTORY_CODE}: ${result.reason}`);
+    return 1;
+  }
+  write(`OK: ${path} sólo creció a lo largo de ${versions.length} versión(es) commiteada(s); recortarla o reescribirla exigiría reescribir la historia de git.`);
+  return 0;
+}
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {
   if (args[0] === 'append') return appendCommand(args, options, write, writeError);
+  if (args[0] === 'history') return historyCommand(args, options, write, writeError);
   const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
   if (requireInputs) args = args.slice(0, -1);
   if (args.length !== 2 || args[0] !== 'check') {

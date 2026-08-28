@@ -59,3 +59,4 @@
 [2026-08-28] Auditor | verificacion del push: clon limpio desde GitHub | 2 pruebas fallaban en el clon y no en el arbol de trabajo; arregladas; 535 pasan 0 fallan 1 salteada con motivo | h60 | chain:1b3254e35634b2fbbc080b62233c347ecd9f4e9f09c575c61cbc60af2aebceaf
 [2026-08-28] Docs | mapa del protocolo al repo | el fuente vivia solo en un temporal; ahora versionado en docs/, 173 archivos en el manifiesto | mapa | chain:0ab5b684dca8d4cfc8a9c830af3a31d322d853fdeca928dc8972fae3ee8a0193
 [2026-08-28] Docs | charset explicito en el mapa | reproducido: servido sin charset el navegador elegia windows-1252 y rompia todos los acentos | mapa | chain:9e4d8e584574fbf50ae4117e3de11d2b61774ec791c9746d6c90c428dfda9be4
+[2026-08-28] Auditor | ancla externa: la historia de git | history detecta recorte, refabricacion y borrado; 22 versiones de AUDIT.md verificadas | ancla | chain:adecf0b643be31636b11839617b727eddb6ac1f27d72c3a5a386fe70e7cb4837

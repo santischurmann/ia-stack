@@ -32,6 +32,10 @@ export const REQUIREMENTS = [
   ['SKILL.md', /nunca reescribe historial por su cuenta/u, 'sealed commit never rewrites history'],
   ['SKILL.md', /Lo que no cubre/u, 'security baseline honest limit'],
   ['SKILL.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
+  // El ancla externa y el motivo, por separado: si alguien saca el comando, el contrato lo dice;
+  // si alguien saca la explicacion de por que `check` no alcanza, tambien.
+  ['SKILL.md', /verify-audit-chain\.mjs history \.vibe\/AUDIT\.md/u, 'external anchor: git history backs the audit trail'],
+  ['SKILL.md', /No agarra recortar el final ni/u, 'check alone does not catch truncation or wholesale rewrite'],
   ['skills/vibe-memory.md', /verify-audit-chain\.mjs append/u, 'audit lines are sealed, never hand-written'],
   ['skills/vibe-memory.md', /Lo que el gate no detecta/u, 'audit-chain honest limit'],
   ['SKILL.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],

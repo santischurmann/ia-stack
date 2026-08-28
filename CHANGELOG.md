@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El ancla externa existía y no la estábamos usando: git** (`verify-audit-chain.mjs history`).
+  El límite declarado de este gate decía que recortar la cadena o refabricarla entera exigían "un
+  ancla fuera del archivo, y no hay ninguna portable". Era falso. Una traza de auditoría **sólo
+  crece**, así que cada versión commiteada tiene que empezar con la anterior — y eso se verifica
+  contra un registro que no vive dentro del archivo atacado, con la herramienta que el protocolo ya
+  usa. Comprobado sobre este mismo repo: 22 versiones commiteadas de `.vibe/AUDIT.md`, cero
+  violaciones de crecimiento.
+  El subcomando nuevo detecta lo que `check` no podía: recortar las últimas líneas, refabricar la
+  cadena entera sobre contenido falso, borrar el archivo aunque después reaparezca vacío, y un
+  árbol de trabajo que no extiende lo último commiteado. Un repo sin commits sale `VACÍO:`, no `OK:`.
+  **Lo que queda, declarado**: quien reescriba la historia publicada puede fabricar una secuencia
+  coherente. Lo que cambió es que falsificar dejó de ser invisible — exige tocar el identificador
+  de cada commit, y eso lo ve cualquiera con un clon previo o con el remoto.
+
 - **La suite ahora sí está verde en un clon recién hecho** (hallazgo 60). Clonar el repo
   publicado y correr las pruebas ahí daba **dos rojas** que no se veían desde el árbol de
   trabajo: el parser del instalador PowerShell asumía finales de línea LF —y git entrega CRLF al

@@ -941,6 +941,22 @@ B) git push + open PR
 C) Hold — don't push yet
 ```
 
+**8.1.1 Ancla de la traza** — antes de publicar, la historia de git tiene que respaldar la traza:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs history .vibe/AUDIT.md
+```
+
+`check` mira adentro del archivo y agarra la edición de una línea. **No agarra recortar el final ni
+refabricar todo**, porque los hashes viven en el mismo archivo que protegen. `history` sí: una traza
+de auditoría sólo crece, así que cada versión commiteada tiene que empezar con la anterior. Eso se
+verifica contra un registro que no vive dentro del archivo atacado, y **el ancla es git, que este
+protocolo ya usa** — no hace falta ningún servicio.
+
+Límite: quien reescriba la historia publicada puede fabricar una secuencia coherente. Lo que cambió
+es que falsificar dejó de ser invisible: exige tocar el identificador de cada commit, y eso lo ve
+cualquiera que tenga un clon previo o el remoto.
+
 **8.2 Backups**:
 - Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).
 - Graphify/Obsidian: after the commit, run `graphify update .` and `graphify export obsidian --dir graphify-out/obsidian`.

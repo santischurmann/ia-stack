@@ -17,6 +17,9 @@ const {
   parseAuditLines,
   sealLineFor,
   verifyChain,
+  gitVersions,
+  verifyGrowth,
+  historyCommand,
   main,
 } = await import(pathToFileURL(script).href);
 
@@ -270,7 +273,7 @@ test('FALSIFICACIÓN · pegar un segundo sufijo o correr el separador no cuela u
 });
 
 test('FALSIFICACIÓN · main exige argumentos válidos y distingue el archivo ausente del ilegible', () => {
-  assert.equal(USAGE, 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"');
+  assert.equal(USAGE, 'usage: verify-audit-chain.mjs check <audit.md> [--require-inputs] | verify-audit-chain.mjs history <audit.md> [--require-inputs] | verify-audit-chain.mjs append <audit.md> "<line>"');
 
   const output = [];
   const errors = [];
@@ -518,4 +521,184 @@ test('FALSIFICACIÓN · una cadena con al menos una línea sellada sigue saliend
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- El ancla externa que faltaba: la propia historia de git -----------------------------------
+
+// El límite declarado decía que recortar la cadena o refabricarla entera exigía "un ancla fuera del
+// archivo, y no hay ninguna portable". Es falso: git ya es esa ancla. Un archivo de auditoría es
+// append-only por construcción, así que cada versión commiteada tiene que empezar con la anterior.
+// Recortar, reescribir o borrar rompe esa relación, y defenderse exige reescribir historia
+// publicada — visible para cualquiera que tenga un clon previo.
+const CODIGO_HISTORIA = 'AUDIT_CHAIN_HISTORY_BROKEN';
+
+function repoConHistoria(versiones) {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-audit-historia-'));
+  const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  git('init', '-q', '.');
+  git('config', 'user.email', 't@t');
+  git('config', 'user.name', 't');
+  for (const [i, contenido] of versiones.entries()) {
+    writeFileSync(join(root, 'AUDIT.md'), contenido, 'utf8');
+    git('add', 'AUDIT.md');
+    git('commit', '-q', '-m', `v${i}`);
+  }
+  return { root, git };
+}
+
+const L1 = '[2026-08-28] Rol | uno | ev | ref | chain:' + 'a'.repeat(64) + '\n';
+const L2 = L1 + '[2026-08-28] Rol | dos | ev | ref | chain:' + 'b'.repeat(64) + '\n';
+const L3 = L2 + '[2026-08-28] Rol | tres | ev | ref | chain:' + 'c'.repeat(64) + '\n';
+
+test('history acepta una traza que sólo creció, commit tras commit', () => {
+  const { root } = repoConHistoria([L1, L2, L3]);
+  try {
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.deepEqual({ status: run.status, ok: run.stdout.startsWith('OK: ') }, { status: 0, ok: true }, run.stderr);
+    assert.match(run.stdout, /3 versión\(es\)/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · history detecta que alguien recortó las últimas líneas', () => {
+  const { root } = repoConHistoria([L1, L2, L3, L1]);
+  try {
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, new RegExp(CODIGO_HISTORIA, 'u'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · history detecta la cadena refabricada entera sobre contenido falso', () => {
+  const falsa = '[2026-08-28] Rol | inventado | ev | ref | chain:' + 'd'.repeat(64) + '\n';
+  const { root } = repoConHistoria([L1, L2, falsa]);
+  try {
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, new RegExp(CODIGO_HISTORIA, 'u'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · history detecta el borrado total, aunque el archivo vuelva a existir vacío', () => {
+  const { root, git } = repoConHistoria([L1, L2]);
+  try {
+    writeFileSync(join(root, 'AUDIT.md'), '', 'utf8');
+    git('add', 'AUDIT.md');
+    git('commit', '-q', '-m', 'borrado');
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, new RegExp(CODIGO_HISTORIA, 'u'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · history mira también el árbol de trabajo, no sólo lo commiteado', () => {
+  const { root } = repoConHistoria([L1, L2, L3]);
+  try {
+    writeFileSync(join(root, 'AUDIT.md'), L1, 'utf8');
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /sin commitear/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('history sobre un archivo que nunca se commiteó escribe VACÍO, no OK', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-audit-sin-historia-'));
+  try {
+    spawnSync('git', ['init', '-q', '.'], { cwd: root, encoding: 'utf8' });
+    writeFileSync(join(root, 'AUDIT.md'), L1, 'utf8');
+    const run = spawnSync(process.execPath, [script, 'history', 'AUDIT.md'], { cwd: root, encoding: 'utf8' });
+    assert.deepEqual({ status: run.status, vacio: run.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true }, run.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- Las ramas del ancla, con el proceso de git inyectado --------------------------------------
+
+/** Falsea `spawnSync` de git: cada respuesta se declara por subcomando. */
+function gitFalso(respuestas) {
+  return (_cmd, args) => {
+    const sub = args[2];
+    const r = respuestas[sub];
+    if (typeof r === 'function') return r(args);
+    return r ?? { status: 0, stdout: '', stderr: '' };
+  };
+}
+
+test('gitVersions distingue el repo sin commits del error real de git', () => {
+  const sinCommits = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 128, stdout: '', stderr: 'does not have any commits yet' },
+    'rev-parse': { status: 128, stdout: '', stderr: '' },
+  }));
+  assert.deepEqual(sinCommits, { error: null, versions: [] });
+
+  const errorReal = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 128, stdout: '', stderr: 'fatal: not a git repository' },
+    'rev-parse': { status: 0, stdout: 'abc123', stderr: '' },
+  }));
+  assert.equal(errorReal.versions.length, 0);
+  assert.match(errorReal.error, /not a git repository/u);
+});
+
+test('gitVersions registra como vacío el commit que borró el archivo, en vez de saltearlo', () => {
+  const { error, versions } = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 0, stdout: ['aaa', 'bbb', ''].join(String.fromCharCode(10)), stderr: '' },
+    show: (args) => (args[3].startsWith('aaa') ? { status: 0, stdout: 'una linea' + String.fromCharCode(10) } : { status: 128, stdout: null }),
+  }));
+  assert.equal(error, null);
+  assert.deepEqual(versions, [{ commit: 'aaa', content: 'una linea' + String.fromCharCode(10) }, { commit: 'bbb', content: '' }]);
+});
+
+test('gitVersions tolera que git no escriba nada en stdout, en el log y en el show', () => {
+  const { versions } = gitVersions('AUDIT.md', '.', gitFalso({ log: { status: 0, stdout: null, stderr: '' } }));
+  assert.deepEqual(versions, []);
+
+  // Un `show` que sale bien pero no escribe nada es un archivo commiteado vacio, no un fallo.
+  const vacio = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 0, stdout: 'aaa', stderr: '' },
+    show: { status: 0, stdout: null },
+  }));
+  assert.deepEqual(vacio.versions, [{ commit: 'aaa', content: '' }]);
+});
+
+test('verifyGrowth acepta el árbol de trabajo ausente y la lista vacía', () => {
+  assert.deepEqual(verifyGrowth([], null), { ok: true, commit: null, reason: null });
+  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], null), { ok: true, commit: null, reason: null });
+  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], 'xy'), { ok: true, commit: null, reason: null });
+});
+
+test('FALSIFICACIÓN · historyCommand rechaza el uso inválido, el error de git y el vacío bajo --require-inputs', () => {
+  const salida = [];
+  const errores = [];
+  const w = (l) => salida.push(l);
+  const e = (l) => errores.push(l);
+
+  assert.equal(historyCommand(['history'], {}, w, e), 2);
+  assert.equal(errores.at(-1), USAGE);
+  assert.equal(historyCommand(['history', 'AUDIT.md', 'extra'], {}, w, e), 2);
+
+  const roto = { run: gitFalso({ log: { status: 128, stderr: 'fatal: roto' }, 'rev-parse': { status: 0, stdout: 'abc' } }) };
+  assert.equal(historyCommand(['history', 'AUDIT.md'], roto, w, e), 1);
+  assert.match(errores.at(-1), new RegExp(CODIGO_HISTORIA, 'u'));
+
+  const vacio = { run: gitFalso({ log: { status: 128 }, 'rev-parse': { status: 128 } }) };
+  assert.equal(historyCommand(['history', 'AUDIT.md', '--require-inputs'], vacio, w, e), 1);
+  assert.match(errores.at(-1), /AUDIT_CHAIN_NO_INPUTS/u);
+  assert.deepEqual(salida, []);
+});
+
+test('historyCommand usa spawnSync real cuando no le inyectan proceso', () => {
+  const salida = [];
+  const status = historyCommand(['history', '.vibe/AUDIT.md'], {}, (l) => salida.push(l), () => {});
+  assert.equal(status, 0);
+  assert.match(salida.at(-1), /^OK: /u);
 });
