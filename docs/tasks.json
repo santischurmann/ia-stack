@@ -423,6 +423,55 @@
       "status": "done",
       "goal": "Disciplina verificable -> items 43/34/35/38/32 -> una sesion interrumpida deja estado retomable, no ambiguo",
       "approval_criteria": "Tres intentos fallidos sobre lo mismo se detectan. Un corte por cuota deja checkpoint. Una verificacion de red fallida queda registrada como no verificada, nunca como exito."
+    },
+    {
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red-node.mjs (mechanical)",
+      "evidence": [
+        "RED: el caso central fallaba con \"report is stale\"; gate RED exit 0",
+        "GREEN: 456 tests, cobertura 100%, 66 checks + 25 limites",
+        "El gate paso de rojo permanente a verde: OK matches d51f6054",
+        "5 combinaciones destructivas bloqueadas, verificadas comparando sha256 del archivo antes y despues"
+      ],
+      "not_reviewed": [
+        "El sello ya no prueba que el grafo fue CONSTRUIDO en ese commit, solo que su contenido no cambio desde el registro. Que el grafo cubra los archivos del commit lo verifica verify-graphify-manifest.",
+        "record no valida que --report sea un reporte de Graphify: solo que exista, sea regular y no este vacio. Un archivo cualquiera con contenido se registra igual (error de operador revisable, no backup falso)."
+      ],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN) -> Triangulator",
+      "blocked_reason": null,
+      "subagents": [
+        "red",
+        "green",
+        "triangulate"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "id": "T10",
+      "description": "Hallazgo 55: el sello del backup depende de cuando se corre Graphify, no del contenido",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-backup-state.mjs",
+        "SKILL.md",
+        "README.md",
+        "scripts/verify-vcp-contract.mjs",
+        "tests/verify-vcp-contract.test.mjs",
+        "contracts/honest-limits.json",
+        "CHANGELOG.md",
+        "research/adversarial-productivity-audit-2026-08-23.md"
+      ],
+      "test_files": [
+        "tests/verify-backup-state.test.mjs"
+      ],
+      "depends_on": [
+        "T09"
+      ],
+      "status": "done",
+      "goal": "Disciplina verificable -> hallazgo 55 -> el sello lo controla el protocolo, no una herramienta externa que sella el momento de ejecucion",
+      "approval_criteria": "Un backup registrado sobre el HEAD actual verifica en verde aunque el reporte declare un commit anterior. Un backup genuinamente viejo (contenido distinto) sigue siendo rechazado. Probado con fixtures en ambas direcciones."
     }
   ]
 }

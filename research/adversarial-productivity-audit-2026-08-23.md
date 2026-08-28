@@ -164,10 +164,73 @@ están todos indexados en `graphify-out/manifest.json`. El grafo está al día; 
 **No resoluble con lo disponible**: `GRAPHIFY_FORCE=1` no regenera sin cambios de topología, y
 `graphify label` —que sí regeneraría el reporte— exige una clave de API que este entorno no tiene.
 
-**Estado**: SIGUIENTE. Tres caminos posibles, ninguno elegido todavía: corregir el orden en SKILL.md
-para que Graphify corra una sola vez; ablandar el gate para aceptar un sello cuyo commit sea
-ancestro cuando el contenido coincide (debilita un control que hoy detecta un backup genuinamente
-viejo); o registrar el sello por separado del reporte.
+**Estado**: **HECHO** — T10, 2026-08-28. Se eligió el tercer camino: **registrar el sello por
+separado del reporte**. `verify-backup-state.mjs` dejó de leer el `- Built from commit:` del
+`GRAPH_REPORT.md`; `record` lee el HEAD real con `git rev-parse` y `check` lo compara contra el HEAD
+real de nuevo, además de los hashes de contenido que ya calculaba.
 
-**Lo que NO es**: no es un backup corrupto ni desactualizado. Es un sello que quedó atrás de su
+**Causa raíz real**: no era el orden de los comandos ni un backup viejo. El sello dependía de
+**cuándo se ejecutó Graphify**, no de qué contiene el grafo — y Graphify sólo reescribe el reporte
+cuando cambia la topología del código, así que un commit de sólo documentación lo deja apuntando a
+un ancestro **para siempre**. Ningún reordenamiento en `SKILL.md` lo arregla: el reporte no se
+regenera aunque se lo corra en el momento perfecto (`GRAPHIFY_FORCE=1` no alcanza sin cambios de
+topología y `graphify label`, que sí lo regeneraría, exige una API key que este entorno no tiene).
+El defecto estaba en tomar como sello un dato que escribe una herramienta externa según su propia
+heurística de regeneración.
+
+**Qué garantía se cambió por cuál**:
+- **Se perdió**: que el grafo haya sido **construido** en el commit sellado. El gate ya no lo
+  prueba, y registrar un grafo de otro proyecto sale en verde (reproducido con el CLI).
+- **Se ganó**: el sello lo controla el protocolo. Se verifica el **contenido real** de los archivos
+  contra un HEAD que registra el propio protocolo, en vez de confiar en una línea de texto escrita
+  por una herramienta externa. La comparación de HEAD pasó de `head.startsWith(sello)` a igualdad
+  exacta: un prefijo corto escrito a mano, que antes pasaba, ahora se rechaza.
+- **La mitad que falta ya estaba cubierta**: que el grafo cubra los archivos del commit actual lo
+  prueba `verify-graphify-manifest.mjs` contra `git ls-files`. El límite quedó declarado en
+  `contracts/honest-limits.json` (`backup-state-is-freshness-not-graph-semantics` en README y
+  `backup-seal-is-protocol-owned-not-graphify-owned` en SKILL, para que nadie vuelva a cablear el
+  gate contra la línea del reporte).
+- **No se aflojó** la detección de un backup genuinamente viejo: contenido del grafo o del reporte
+  modificado después del registro, y HEAD movido después del registro, siguen siendo exit `1`, cada
+  uno con su fixture explícito en `tests/verify-backup-state.test.mjs`.
+
+**Costo lateral, parcialmente repuesto**: `record` ya no valida que `--report` apunte a un reporte
+Graphify. Antes, un archivo sin la línea `Built from commit:` se rechazaba de rebote. No se repuso
+esa validación —implicaría volver a leer justo la línea que causó este hallazgo—, pero sí un piso
+que no depende de ella: el reporte y el grafo tienen que existir, ser archivos regulares dentro del
+proyecto y **no estar vacíos**. Un `--report` de cero bytes ahora sale exit `1` en vez de sellarse
+en verde. Lo que **sigue sin probarse** es que el archivo sea un reporte de Graphify:
+`record --report NOTES.md` con contenido cualquiera se registra igual, y eso es error de operador
+revisable —el manifest guarda la ruta—, no un backup falso.
+
+### Defecto colateral encontrado atacando el arreglo: pérdida silenciosa de datos en `record`
+
+**Encontrado**: 2026-08-28, atacando el propio gate con el CLI real. **Preexistente**, no
+introducido por el cambio del sello. **Estado**: **HECHO** — mismo T10.
+
+`record` escribía el manifest con `writeFileSync` sobre cualquier ruta que pasara
+`writableProjectFile`, y esa función sólo comprobaba que fuera un archivo regular dentro del
+proyecto. Cinco combinaciones de banderas **destruían un archivo y devolvían `OK` con exit 0**,
+todas reproducidas:
+
+| Bandera | Antes | Ahora |
+|---|---|---|
+| `--manifest` = `--graph` | grafo sobrescrito por el receipt, `OK` exit 0 | `REJECTED`, grafo intacto byte a byte |
+| `--manifest` = `--report` | reporte sobrescrito, `OK` exit 0 | `REJECTED`, reporte intacto |
+| `--manifest ./g/graph.json` (mismo archivo, otra escritura) | idem: una comparación de strings crudos no lo veía | `REJECTED` — se comparan rutas resueltas por `realpath` |
+| `--manifest README.md` (archivo cualquiera del proyecto) | README sobrescrito, `OK` exit 0 | `REJECTED`, README intacto |
+| `--report` vacío (0 bytes) | sellado en verde | `REJECTED` |
+
+La regla que ahora se aplica es la que el propio test del archivo ya declaraba en un comentario
+—«an existing regular manifest is the only overwrite allowed»— pero que el código nunca verificó:
+si la ruta de salida ya existe, sólo se sobrescribe si es un receipt que escribió esta herramienta
+(`schema: vcp.graphify-backup/v1`). Todo lo demás se rechaza **antes de escribir un solo byte**.
+Re-registrar sobre un receipt anterior, que es el único overwrite legítimo, sigue funcionando.
+
+Las pruebas verifican el **archivo**, no sólo el exit code: comparan el sha256 antes y después de
+cada intento rechazado. Un gate cuyo trabajo es proteger evidencia no puede destruir evidencia por
+una bandera mal tipeada, y comprobar únicamente el código de salida habría dejado pasar exactamente
+ese defecto.
+
+**Lo que NO era**: no era un backup corrupto ni desactualizado. Era un sello que quedó atrás de su
 propio contenido.

@@ -14,6 +14,12 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-security-baseline\.mjs/u, 'mechanical security baseline'],
   ['SKILL.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
   ['README.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
+  // Two halves of one promise, pinned apart because each fails on its own. Who owns the seal is
+  // what stops somebody from wiring the gate back to the report's `Built from commit:` line — the
+  // line Graphify leaves behind on a docs-only commit. The order is what makes the seal true:
+  // recording before the commit binds the receipt to the previous HEAD.
+  ['SKILL.md', /El sello lo registra el protocolo, no Graphify/u, 'the backup seal is recorded by the protocol, never read from the Graphify report'],
+  ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
   ['README.md', /Discovery: investigar antes de especificar/u, 'Discovery-first user workflow'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],

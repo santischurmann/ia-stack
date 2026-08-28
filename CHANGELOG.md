@@ -7,6 +7,55 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- `verify-backup-state.mjs`: **`record` ya no puede destruir un archivo del proyecto**. Defecto
+  preexistente, encontrado atacando el gate con el CLI real: el manifest se escribía sobre cualquier
+  ruta que fuera un archivo regular dentro del proyecto, así que cinco combinaciones de banderas
+  **borraban un archivo y devolvían `OK` con exit 0** —`--manifest` apuntando al grafo, al reporte,
+  al mismo archivo con otra escritura (`./g/graph.json`), o a un archivo cualquiera como
+  `README.md`—. Un operador que se equivocaba de bandera perdía el archivo y recibía una
+  confirmación de éxito, en un gate cuyo trabajo es proteger evidencia.
+  Ahora, si la ruta de salida ya existe, sólo se sobrescribe cuando es un receipt que escribió esta
+  misma herramienta (`schema: vcp.graphify-backup/v1`); todo lo demás se rechaza **antes de escribir
+  un solo byte**. Es la regla que el propio test ya declaraba en un comentario —«an existing regular
+  manifest is the only overwrite allowed»— y que el código nunca verificó. Las rutas se comparan
+  resueltas por `realpath`, no como strings: `./graphify-out/graph.json` y `graphify-out/graph.json`
+  son el mismo archivo, y en Windows también lo son dos escrituras que sólo difieren en mayúsculas.
+  Re-registrar sobre un receipt anterior —el único overwrite legítimo— sigue funcionando.
+  Además, el reporte y el grafo ahora tienen que existir, ser archivos regulares dentro del proyecto
+  y **no estar vacíos**: un `--report` de cero bytes se sellaba en verde y ahora sale exit `1`. Es
+  un piso mínimo, no una validación de que el archivo sea un artefacto de Graphify — el gate
+  deliberadamente dejó de inspeccionar el contenido del reporte, y `--report NOTES.md` con
+  contenido cualquiera se sigue registrando.
+  Las pruebas comprueban el **archivo**, no sólo el exit code: comparan el sha256 antes y después de
+  cada intento rechazado. Verificar únicamente el código de salida habría dejado pasar el defecto
+  entero, porque el punto es que los bytes sobrevivan.
+- `verify-backup-state.mjs`: **el sello del backup lo registra el protocolo, no Graphify**
+  (hallazgo 55). El gate leía el `- Built from commit:` del `GRAPH_REPORT.md` y lo comparaba contra
+  HEAD. Pero Graphify sólo reescribe ese reporte cuando cambia la **topología** del código: un
+  commit de sólo documentación deja ese sello apuntando a un ancestro **para siempre**, aunque el
+  contenido del grafo esté perfectamente al día, y no hay forma de regenerarlo —`GRAPHIFY_FORCE=1`
+  no alcanza sin cambios de topología y `graphify label` exige una API key—. Resultado reproducido
+  en este repositorio: `check` rechazaba un backup sano y ninguna corrida de Graphify lo arreglaba.
+  Ahora `record` lee el HEAD real con `git rev-parse` y lo escribe en el receipt; `check` verifica
+  que ese `git_head` siga siendo el HEAD actual y que los hashes del reporte y del grafo sigan
+  coincidiendo. **Es más fuerte, no más débil**: antes se confiaba en una línea de texto escrita por
+  una herramienta externa según cuándo se la corrió; ahora se verifica el contenido real de los
+  archivos contra un HEAD que registra el propio protocolo. La comparación de HEAD además pasó de
+  `head.startsWith(sello)` a **igualdad exacta**, así que un prefijo corto escrito a mano —que antes
+  pasaba— ahora se rechaza. En un checkout sin ningún commit, `record` y `check` fallan con un
+  mensaje propio en vez del ruido de git.
+  **La garantía que se pierde, declarada**: ya no se prueba que el grafo haya sido *construido* en
+  ese commit, sólo que su contenido no cambió desde que se registró — un grafo de otro proyecto se
+  registra igual de verde. Esa otra mitad —que el grafo cubra los archivos del commit actual— la
+  cubre `verify-graphify-manifest.mjs` contra `git ls-files`. Dos límites honestos nuevos en
+  `contracts/honest-limits.json`: uno en README y otro en SKILL, este último para que nadie vuelva a
+  cablear el gate contra la línea del reporte al ver el sello atrasado.
+  **Lo que NO se aflojó**: contenido del grafo o del reporte modificado después del registro, y HEAD
+  movido después del registro, siguen siendo exit `1` — cada uno con su fixture explícito.
+  `graphCommit()` quedó sin ningún uso —era el único lector de esa línea— y se eliminó junto con su
+  prueba. El orden **commit → graphify → record → check** quedó escrito en `SKILL.md` 4.7 y fijado
+  en `verify-vcp-contract.mjs`: `record` sella el HEAD del momento, así que registrar antes de
+  commitear ata el receipt al commit anterior.
 - Nuevo gate `verify-session-state.mjs` (items 43, 34/35/38 y 32): lo que queda escrito cuando algo
   se interrumpe o falla. `check --session .vibe/SESSION.md` verifica tres cosas sobre el archivo
   que alguien lee para retomar, y ninguna de las tres tenía detector.

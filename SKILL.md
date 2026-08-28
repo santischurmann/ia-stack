@@ -887,13 +887,24 @@ C) Hold — don't push yet
 - Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).
 - Graphify/Obsidian: after the commit, run `graphify update .` and `graphify export obsidian --dir graphify-out/obsidian`.
   Bind that generated backup to the committed tree — it is stale if HEAD, the report, or the graph
-  changes:
+  changes. El orden es **commit → graphify → record → check**, y no es cosmético: `record` sella el
+  HEAD real leyéndolo con `git rev-parse`, así que registrar antes de commitear ata el receipt al
+  commit anterior y `check` lo rechaza.
   ```bash
   node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
     --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
     --manifest graphify-out/backup-state.json
   node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
   ```
+  **El sello lo registra el protocolo, no Graphify.** El gate no lee el `- Built from commit:` del
+  `GRAPH_REPORT.md`, y la razón es concreta: Graphify sólo reescribe ese reporte cuando cambia la
+  **topología** del código, así que un commit de sólo documentación deja ese sello apuntando a un
+  ancestro para siempre aunque el contenido del grafo esté al día, y no hay forma de regenerarlo
+  (`GRAPHIFY_FORCE=1` no alcanza sin cambios de topología y `graphify label` pide una API key). Lo
+  que el receipt prueba es que el reporte y el grafo registrados no cambiaron desde que se
+  registraron sobre ese HEAD; **no prueba que el grafo se haya construido en ese commit**. Esa otra
+  mitad —que el grafo cubra los archivos del commit actual— la prueba `verify-graphify-manifest.mjs`
+  contra `git ls-files`, acá abajo.
   Después del reindexado, probá que la cobertura declarada del grafo sea honesta:
   ```bash
   node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check

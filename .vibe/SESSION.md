@@ -195,3 +195,39 @@
   otro. Corregido, ninguna descripción se perdió. **Ningún gate lo detectaba**: el contrato
   verifica frases en documentos vivos, no la coherencia interna de una tabla de backlog.
 - Backlog: **0 items abiertos**. 8 implementados en T07-T09, 3 cerrados con motivo.
+
+## Sesión nocturna 2026-08-28 — configuración decidida
+
+| Decisión | Elegido |
+|---|---|
+| Fase -1 | **C** — investigar el orden correcto antes de reparar |
+| Hallazgo 55 | **B** — sello de contenido propio ligado al HEAD, probado con fixtures |
+| Alcance | arreglos concretos primero, research después |
+| Autonomía | avanzar con la recomendación, dejando constancia de que fue automática |
+| Publicación | commit por lote, **sin push** |
+| Research | manifest completo + lectura del núcleo; cobertura declarada PARCIAL con números |
+| Si algo falla | revertir ese lote, registrar la reproducción, seguir con el siguiente |
+| Artifact | sí, al final |
+
+**Corrección al diagnóstico previo del hallazgo 55**, con evidencia: el reporte **sí** se regeneró
+(02:16:32, contiene los gates nuevos); lo que no se actualiza es la línea `Built from commit`. Y los
+tres hashes del backup tampoco coinciden — el backup es de las 01:54, anterior al reporte. La causa
+raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido que produce.
+
+## T10 — hallazgo 55 · DONE
+
+- **Causa raíz**: Graphify sella el HEAD del momento de ejecución, y sólo regenera el reporte ante
+  cambios de topología. Un commit de sólo documentación deja el sello atrasado para siempre.
+- **Arreglo**: el sello lo registra el protocolo (`git rev-parse HEAD` al momento de `record`), no
+  una línea que escribe una herramienta externa. El gate pasó de rojo permanente a verde.
+- **Fortalecimiento no pedido**: el gate aceptaba un prefijo corto del HEAD (`head.startsWith`).
+  Un sello de 7 caracteres pasaba. Ahora exige igualdad exacta.
+- **Bug preexistente que destruía datos**: `record --manifest <archivo>` sobrescribía **cualquier**
+  archivo regular del proyecto y devolvía `OK` con exit 0. Cinco combinaciones, no dos. Ahora sólo
+  se sobrescribe un receipt que escribió esta misma herramienta; todo lo demás se rechaza antes de
+  escribir un byte, con rutas comparadas por `realpath` (un `./g/graph.json` no esquiva la regla).
+- **Verificado comparando el sha256 del archivo antes y después**, no el exit code: un rechazo que
+  igual destruye el archivo pasaría cualquier prueba que sólo mire el código de salida.
+- **Garantía cambiada, declarada**: el sello ya no prueba que el grafo fue *construido* en ese
+  commit, sólo que su contenido no cambió desde el registro. La otra mitad —que el grafo cubra los
+  archivos del commit— la verifica `verify-graphify-manifest`.

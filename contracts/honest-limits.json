@@ -46,8 +46,14 @@
     {
       "limit_id": "backup-state-is-freshness-not-graph-semantics",
       "file": "README.md",
-      "phrase": "no completitud semántica del grafo",
-      "why": "verify-backup-state.mjs compara reporte, grafo y commit local: prueba frescura e integridad, no que el grafo represente bien el código. Sin el límite, un backup en verde se lee como un grafo correcto y completo."
+      "phrase": "no que el grafo se haya construido en ese commit",
+      "why": "El receipt sella el HEAD que lee el protocolo y los hashes de los archivos registrados: prueba que nada cambió desde el registro. Desde el 2026-08-28 ya no prueba que Graphify haya construido el grafo en ese commit —el reporte no se regenera sin cambios de topología, así que exigirlo rechazaba backups sanos—; que el grafo cubra los archivos del commit actual lo prueba verify-graphify-manifest.mjs contra git ls-files. Sin el límite, un check en verde se lee como \"el grafo corresponde a este commit\" y esa mitad no la verifica nadie."
+    },
+    {
+      "limit_id": "backup-seal-is-protocol-owned-not-graphify-owned",
+      "file": "SKILL.md",
+      "phrase": "El sello lo registra el protocolo, no Graphify",
+      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 4.7, y la razón por la que el orden commit → graphify → record → check importa. Sin esta frase, la próxima sesión que vea el sello atrasado en GRAPH_REPORT.md vuelve a cablear el gate contra esa línea y reintroduce el rechazo de un backup cuyo contenido estaba al día."
     },
     {
       "limit_id": "graphify-manifest-proves-bookkeeping",
