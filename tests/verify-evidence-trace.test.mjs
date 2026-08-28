@@ -1,0 +1,364 @@
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import test from 'node:test';
+import {
+  USAGE,
+  checkClaims,
+  checkCriteria,
+  declaredIdentifiers,
+  literalTestTitles,
+  main,
+  parseArgs,
+  readCriterionIds,
+  titleMentions,
+} from '../scripts/verify-evidence-trace.mjs';
+
+const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const script = join(repoRoot, 'scripts', 'verify-evidence-trace.mjs');
+const feature = 'trazabilidad-demo';
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const json = (value) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
+
+// Fixture ids are deliberately AC9x: this file lives in the very tests/ directory the repo-wide
+// `criteria` run scans, so a fixture id must never collide with a real docs/spec.md criterion.
+const SPEC = [
+  '# Spec: demo',
+  '',
+  '## Acceptance Criteria',
+  '',
+  '**T91 — primer slice**',
+  '',
+  '- [ ] **AC91:** GIVEN algo WHEN corre THEN sale 0.',
+  '- [x] **AC92 (error):** GIVEN otra cosa WHEN corre THEN sale 1.',
+  '- [ ] **AC91:** repetido a propósito, el mismo criterio no cuenta dos veces.',
+  '',
+  '**Fuentes:** prosa en negrita que no declara ningún identificador.',
+  '**CAIO:** tampoco, no lleva dígito.',
+  '',
+].join('\n');
+
+const SPEC_WITHOUT_CRITERIA = '# Spec: demo\n\n**T91 — un slice sin criterios declarados**\n';
+
+function fixture(action) {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-evidence-trace-'));
+  try {
+    return action(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function writeSpec(root, source = SPEC) {
+  mkdirSync(join(root, 'docs'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'spec.md'), source, 'utf8');
+}
+
+function writeTests(root, files) {
+  const dir = join(root, 'tests');
+  mkdirSync(dir, { recursive: true });
+  for (const [name, source] of Object.entries(files)) writeFileSync(join(dir, name), source, 'utf8');
+  return dir;
+}
+
+/** Builds a minimal but real Discovery run (d001 pending -> d002 completed + packet). */
+function writeDiscovery(root, claims, { completed = true } = {}) {
+  const run = join(root, 'docs', 'discovery', feature, 'runs', 'run-001');
+  mkdirSync(join(run, 'decisions'), { recursive: true });
+  mkdirSync(join(run, 'packets'), { recursive: true });
+  const base = {
+    schema: 'vcp.discovery-decision/3',
+    run_id: 'run-001',
+    feature_slug: feature,
+    decision_id: 'd001',
+    evaluated_at: '2026-08-27',
+    status: 'pending',
+    transition_kind: 'initial',
+    supersedes: null,
+    predecessor_hash: null,
+    previous_status: null,
+    activation_result: 'discovery-result-v1',
+    triggers_observed: ['scope'],
+    correction_reason: null,
+    skip: null,
+    override: null,
+    packet_ref: null,
+    packet_sha256: null,
+  };
+  const d1 = json(base);
+  writeFileSync(join(run, 'decisions', 'd001.json'), d1);
+  if (!completed) return run;
+  const packet = json({
+    schema: 'vcp.discovery-packet/1',
+    decision_id: 'd002',
+    research_snapshot: { captured_at: '2026-08-27', claims },
+  });
+  writeFileSync(join(run, 'packets', 'd002.json'), packet);
+  writeFileSync(join(run, 'decisions', 'd002.json'), json({
+    ...base,
+    decision_id: 'd002',
+    evaluated_at: '2026-08-28',
+    status: 'completed',
+    transition_kind: 'activation',
+    supersedes: 'd001',
+    predecessor_hash: hash(d1),
+    previous_status: 'pending',
+    packet_ref: 'packets/d002.json',
+    packet_sha256: hash(packet),
+  }));
+  return run;
+}
+
+function claim(overrides = {}) {
+  return {
+    claim_id: 'claim-001',
+    source_id: 'source-001',
+    locator: { kind: 'web', url: 'https://example.test/fuente' },
+    retrieved_at: '2026-08-27',
+    content_identity: { kind: 'sha256', value: 'a'.repeat(64), unavailable_reason: null },
+    evidence_classification: 'SUPPORTED',
+    evidence_summary: 'La evidencia sostiene la decisión declarada en el slice.',
+    linked_requirement_id: null,
+    linked_ac_id: null,
+    trigger_ids: ['scope'],
+    ...overrides,
+  };
+}
+
+// --- Extracción de identificadores --------------------------------------------------------------
+
+test('readCriterionIds toma los criterios declarados con checkbox, en orden de declaración y sin repetir', () => {
+  assert.deepEqual(readCriterionIds(SPEC), ['AC91', 'AC92']);
+  assert.deepEqual(readCriterionIds(SPEC_WITHOUT_CRITERIA), []);
+  assert.deepEqual(readCriterionIds('- [ ] **AC7:** sin viñeta previa\n  * [ ] **AC8 (edge):** con asterisco\n'), ['AC7', 'AC8']);
+  assert.deepEqual(readCriterionIds('**AC5:** en negrita pero sin checkbox no es un criterio declarado'), []);
+});
+
+test('declaredIdentifiers junta los ids en negrita de la spec y descarta la prosa que no es un identificador', () => {
+  assert.deepEqual([...declaredIdentifiers(SPEC)].sort(), ['AC91', 'AC92', 'T91']);
+  assert.deepEqual([...declaredIdentifiers('**REQ-A01 — requisito**\n**(paréntesis)**\n**minuscula1**')], ['REQ-A01']);
+});
+
+// --- Convención de mención (reusada de scripts/verify-test-bindings.mjs) -------------------------
+
+test('literalTestTitles reusa hasLiteralTestDeclaration: sólo cuentan las llamadas reales test/it', () => {
+  const source = [
+    "// test('AC91 · en un comentario no cuenta', () => {});",
+    "const prosa = \"test('AC92 · dentro de un string tampoco', () => {});\";",
+    "test('AC91 · declaración real', () => {});",
+    'it.skip("AC93 · con comillas dobles y modificador", () => {});',
+    "test('AC91 · declaración real', () => {});",
+    "notest('AC94 · un identificador pegado no es test()', () => {});",
+  ].join('\n');
+  assert.deepEqual(literalTestTitles(source), ['AC91 · declaración real', 'AC93 · con comillas dobles y modificador']);
+  assert.deepEqual(literalTestTitles('const x = 1;\n'), []);
+});
+
+test('titleMentions acepta el id como segmento del título y rechaza la coincidencia parcial', () => {
+  assert.equal(titleMentions('AC91 · el criterio arranca el título', 'AC91'), true);
+  assert.equal(titleMentions('FALSIFICACIÓN · AC91 · con el prefijo obligatorio del protocolo', 'AC91'), true);
+  assert.equal(titleMentions('AC91', 'AC91'), true);
+  assert.equal(titleMentions('AC910 · un id más largo no es el mismo id', 'AC91'), false);
+  assert.equal(titleMentions('menciona AC91 en la prosa del título', 'AC91'), false);
+});
+
+// --- Comando criteria ---------------------------------------------------------------------------
+
+test('criteria sin docs/spec.md sale en verde: un proyecto sin spec no incumple nada', () => fixture((root) => {
+  writeTests(root, { 'nada.test.mjs': 'const x = 1;\n' });
+  const result = checkCriteria(root, 'docs/spec.md', 'tests');
+  assert.equal(result.ok, true);
+  assert.match(result.message, /docs\/spec\.md/u);
+}));
+
+test('criteria con todos los criterios nombrados por una prueba sale en verde e informa cuántos', () => fixture((root) => {
+  writeSpec(root);
+  writeTests(root, {
+    'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n",
+    'dos.test.mjs': "test('FALSIFICACIÓN · AC92 · cubre el segundo', () => {});\n",
+  });
+  const result = checkCriteria(root, 'docs/spec.md', 'tests');
+  assert.deepEqual({ ok: result.ok, dice2: /\b2\b/u.test(result.message) }, { ok: true, dice2: true });
+}));
+
+test('FALSIFICACIÓN · criteria nombra el criterio que ninguna prueba menciona y sale en rojo', () => fixture((root) => {
+  writeSpec(root);
+  writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre sólo el primero', () => {});\n" });
+  const result = checkCriteria(root, 'docs/spec.md', 'tests');
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_CRITERION_UNCOVERED');
+  assert.match(result.message, /AC92/u);
+  assert.equal(/AC91/u.test(result.message), false, 'el criterio cubierto no se reporta como faltante');
+}));
+
+test('FALSIFICACIÓN · criteria no acepta una mención en comentario, en prosa ni fuera de un archivo de pruebas', () => fixture((root) => {
+  writeSpec(root);
+  writeTests(root, {
+    'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n// AC92 mencionado en un comentario\nconst nota = \"AC92 en un string\";\n",
+    'dos.test.mjs': "test('la prueba habla de AC92 en su prosa sin separarlo', () => {});\n",
+    'ayuda.mjs': "test('AC92 · en un archivo que no es de pruebas', () => {});\n",
+  });
+  const result = checkCriteria(root, 'docs/spec.md', 'tests');
+  assert.deepEqual({ ok: result.ok, code: result.code }, { ok: false, code: 'EVIDENCE_TRACE_CRITERION_UNCOVERED' });
+  assert.match(result.message, /AC92/u);
+}));
+
+test('criteria sobre una spec sin criterios declarados sale en verde: no hay nada que cubrir', () => fixture((root) => {
+  writeSpec(root, SPEC_WITHOUT_CRITERIA);
+  writeTests(root, {});
+  const result = checkCriteria(root, 'docs/spec.md', 'tests');
+  assert.equal(result.ok, true);
+  assert.match(result.message, /AC/u, 'el verde vacío dice qué forma esperaba encontrar');
+}));
+
+test('FALSIFICACIÓN · criteria sale en rojo cuando el directorio de pruebas no se puede leer', () => fixture((root) => {
+  writeSpec(root);
+  const result = checkCriteria(root, 'docs/spec.md', 'tests-que-no-existen');
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_TESTS_UNREADABLE');
+  assert.match(result.message, /tests-que-no-existen/u);
+}));
+
+test('criteria recorre subdirectorios del árbol de pruebas', () => fixture((root) => {
+  writeSpec(root);
+  const dir = writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n" });
+  mkdirSync(join(dir, 'anidado'));
+  writeFileSync(join(dir, 'anidado', 'dos.test.mjs'), "test('AC92 · cubre el segundo desde un subdirectorio', () => {});\n", 'utf8');
+  assert.equal(checkCriteria(root, 'docs/spec.md', 'tests').ok, true);
+}));
+
+// --- Comando claims -----------------------------------------------------------------------------
+
+test('claims sobre un feature sin Discovery sale en verde', () => fixture((root) => {
+  writeSpec(root);
+  const result = checkClaims(root, feature);
+  assert.equal(result.ok, true);
+  assert.match(result.message, new RegExp(feature, 'u'));
+}));
+
+test('claims sin docs/spec.md sale en verde: no hay identificadores contra los cuales verificar', () => fixture((root) => {
+  writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
+  const result = checkClaims(root, feature);
+  assert.equal(result.ok, true);
+  assert.match(result.message, /docs\/spec\.md/u);
+}));
+
+test('claims con vínculos que existen en la spec sale en verde e informa cuántos verificó', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [
+    claim({ linked_ac_id: 'AC91', linked_requirement_id: 'T91' }),
+    claim({ claim_id: 'claim-002', source_id: 'source-002', linked_ac_id: 'AC92' }),
+  ]);
+  const result = checkClaims(root, feature);
+  assert.deepEqual({ ok: result.ok, dice3: /\b3\b/u.test(result.message) }, { ok: true, dice3: true });
+}));
+
+test('claims con claims sin vínculo declarado sale en verde: no declarar vínculo no es una referencia rota', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [claim()]);
+  const result = checkClaims(root, feature);
+  assert.deepEqual({ ok: result.ok, dice0: /\b0\b/u.test(result.message) }, { ok: true, dice0: true });
+}));
+
+test('FALSIFICACIÓN · claims nombra el claim que cita un identificador que la spec no declara', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [
+    claim({ linked_ac_id: 'AC91' }),
+    claim({ claim_id: 'claim-roto', source_id: 'source-002', linked_ac_id: 'AC99', linked_requirement_id: 'T99' }),
+  ]);
+  const result = checkClaims(root, feature);
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_CLAIM_REFERENCE_BROKEN');
+  assert.match(result.message, /claim-roto/u);
+  assert.match(result.message, /AC99/u);
+  assert.match(result.message, /T99/u);
+}));
+
+test('claims sobre una decisión vigente sin packet sale en verde y dice por qué', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [], { completed: false });
+  const result = checkClaims(root, feature);
+  assert.equal(result.ok, true);
+  assert.match(result.message, /d001/u);
+}));
+
+test('FALSIFICACIÓN · claims propaga el rechazo del verificador de historia Discovery, con y sin código', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [claim()]);
+  const conCodigo = checkClaims(root, feature, undefined, () => {
+    throw Object.assign(new Error('la cadena de decisiones se bifurca'), { code: 'DISCOVERY_CHAIN_NONLINEAR' });
+  });
+  const sinCodigo = checkClaims(root, feature, undefined, () => { throw new Error('disco ilegible'); });
+  assert.deepEqual(
+    [{ ok: conCodigo.ok, code: conCodigo.code }, { ok: sinCodigo.ok, code: sinCodigo.code }],
+    [{ ok: false, code: 'DISCOVERY_CHAIN_NONLINEAR' }, { ok: false, code: 'EVIDENCE_TRACE_DISCOVERY_INVALID' }],
+  );
+}));
+
+// --- CLI ----------------------------------------------------------------------------------------
+
+test('parseArgs acepta exactamente las dos formas documentadas', () => {
+  assert.deepEqual(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']), { command: 'criteria', spec: 'docs/spec.md', tests: 'tests' });
+  assert.deepEqual(parseArgs(['claims', '--feature', 'integridad-verificable']), { command: 'claims', feature: 'integridad-verificable' });
+});
+
+test('FALSIFICACIÓN · argumentos inválidos salen 2 en los dos subcomandos, sin tocar el disco', () => {
+  const invalid = [
+    [],
+    ['criteria'],
+    ['criteria', '--spec', 'docs/spec.md'],
+    ['criteria', '--specs', 'docs/spec.md', '--tests', 'tests'],
+    ['criteria', '--spec', 'docs/spec.md', '--test', 'tests'],
+    ['criteria', '--spec', '', '--tests', 'tests'],
+    ['criteria', '--spec', 'docs/spec.md', '--tests', ''],
+    ['claims'],
+    ['claims', '--feature'],
+    ['claims', '--feature', 'Mayúsculas'],
+    ['claims', '--feature', 'integridad-verificable', 'extra'],
+    ['check', '--feature', 'integridad-verificable'],
+  ];
+  assert.deepEqual(invalid.map(parseArgs), invalid.map(() => null));
+  const errors = [];
+  const codes = invalid.map((args) => main(args, '.', () => {}, (line) => errors.push(line)));
+  assert.deepEqual(codes, invalid.map(() => 2));
+  assert.deepEqual(new Set(errors), new Set([USAGE]));
+});
+
+test('main traduce el resultado de cada subcomando a 0 o 1 y escribe OK o REJECTED', () => {
+  const written = [];
+  const errors = [];
+  const checks = {
+    criteria: () => ({ ok: true, message: 'todo cerrado' }),
+    claims: () => ({ ok: false, code: 'EVIDENCE_TRACE_CLAIM_REFERENCE_BROKEN', message: 'claim-x cita AC99' }),
+  };
+  const green = main(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests'], '.', (line) => written.push(line), (line) => errors.push(line), checks);
+  const red = main(['claims', '--feature', 'demo'], '.', (line) => written.push(line), (line) => errors.push(line), checks);
+  assert.deepEqual({ green, red }, { green: 0, red: 1 });
+  assert.deepEqual(written, ['OK: todo cerrado']);
+  assert.deepEqual(errors, ['REJECTED: EVIDENCE_TRACE_CLAIM_REFERENCE_BROKEN: claim-x cita AC99']);
+});
+
+test('el CLI real refleja los exit codes de la librería sobre archivos en disco', () => fixture((root) => {
+  writeSpec(root);
+  writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre sólo el primero', () => {});\n" });
+  const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+
+  const rojo = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']);
+  assert.equal(rojo.status, 1);
+  assert.match(rojo.stderr, /AC92/u);
+
+  writeFileSync(join(root, 'tests', 'dos.test.mjs'), "test('AC92 · cubre el segundo', () => {});\n", 'utf8');
+  const verde = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']);
+  assert.equal(verde.status, 0);
+  assert.match(verde.stdout, /^OK: /u);
+
+  const uso = run(['criteria']);
+  assert.deepEqual({ status: uso.status, usa: uso.stderr.includes(USAGE) }, { status: 2, usa: true });
+
+  const claims = run(['claims', '--feature', feature]);
+  assert.deepEqual({ status: claims.status, ok: claims.stdout.startsWith('OK: ') }, { status: 0, ok: true });
+}));

@@ -163,7 +163,7 @@ test('FALSIFICACIÓN · una línea sin hash después de una encadenada rompe la 
   assert.match(errors.at(-1), /\b3\b/u);
 });
 
-test('FALSIFICACIÓN · borrar los sellos de toda la traza es un rechazo, no una traza heredada', () => {
+test('FALSIFICACIÓN · AC12 · borrar los sellos de toda la traza es un rechazo, no una traza heredada', () => {
   const signed = chained([LINE_A, LINE_B]);
   const intact = `${signed.join('\n')}\n`;
   assert.deepEqual(verifyChain(intact), { ok: true, verified: 2, brokenLine: null, reason: null });
@@ -191,7 +191,7 @@ test('FALSIFICACIÓN · borrar los sellos de toda la traza es un rechazo, no una
   assert.match(green.at(-1), /^OK:/u);
 });
 
-test('FALSIFICACIÓN · un sello en MAYÚSCULA, truncado, largo o vacío se rechaza en vez de pasar por heredado', () => {
+test('FALSIFICACIÓN · AC12 · un sello en MAYÚSCULA, truncado, largo o vacío se rechaza en vez de pasar por heredado', () => {
   const hash = sha256Chain('', LINE_A);
   // Un archivo de una sola línea sellada encadena desde la cadena vacía y verifica.
   assert.deepEqual(verifyChain(`${LINE_A} | chain:${hash}`), { ok: true, verified: 1, brokenLine: null, reason: null });

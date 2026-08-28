@@ -116,6 +116,18 @@
       "why": "En la primera corrida real del protocolo, cada agujero grave se encontro reproduciendolo con un comando, no razonando sobre el codigo: falsificar el historial de auditoria, tapar una vulnerabilidad critica con una descripcion falsa, un titulo de test que lo incapacitaba. Sin esta frase, la proxima sesion escribe el arreglo desde una hipotesis y cree que verifico algo."
     },
     {
+      "limit_id": "evidence-trace-proves-mention-not-sufficiency",
+      "file": "README.md",
+      "phrase": "verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe",
+      "why": "El gate resuelve el id del criterio contra el titulo de una llamada test() real: prueba que el vinculo existe, no que la prueba comprueba el criterio. Sin el limite, un AC nombrado por una prueba que verifica otra cosa se lee como AC cubierto, y la unica senal que quedaba de que faltaba probarlo se apaga."
+    },
+    {
+      "limit_id": "evidence-trace-degrades-to-green-without-inputs",
+      "file": "SKILL.md",
+      "phrase": "sin spec, sin criterios o sin Discovery el gate sale 0",
+      "why": "Es la decision de no inventar una falla donde no hay nada que comparar, y tambien su costo: borrar docs/spec.md, dejarlo sin criterios o no tener Discovery compra silencio, no un rechazo. Sin el limite, un verde por ausencia de entradas se confunde con un verde por evidencia."
+    },
+    {
       "limit_id": "phase-closes-on-real-output",
       "file": "SKILL.md",
       "phrase": "la fase no cerró: se reporta qué faltó verificar",

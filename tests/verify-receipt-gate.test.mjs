@@ -746,7 +746,7 @@ function history(root) {
   return `${gitOk(root, 'rev-parse', 'HEAD')}\n${gitOk(root, 'log', '--pretty=%s')}`;
 }
 
-test('commit revalida y commitea en una sola invocación (AC8)', () => {
+test('AC8 · commit revalida y commitea en una sola invocación', () => {
   withFixture((root) => {
     const receipt = writeReceipt(root);
     const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
@@ -761,7 +761,7 @@ test('commit revalida y commitea en una sola invocación (AC8)', () => {
   });
 });
 
-test('FALSIFICACIÓN · commit con el árbol cambiado tras el receipt aborta y no deja commit (AC9)', () => {
+test('FALSIFICACIÓN · AC9 · commit con el árbol cambiado tras el receipt aborta y no deja commit', () => {
   withFixture((root) => {
     const receipt = writeReceipt(root);
     writeFileSync(join(root, 'tracked.txt'), 'escritura posterior al receipt\n');

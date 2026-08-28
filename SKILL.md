@@ -193,6 +193,18 @@ fase que se pretende cerrar; no se declara una fase active sólo porque sus test
 node scripts/verify-discovery-requirements.mjs check --completed-phase I2
 ```
 
+Un claim que cita un criterio o requisito inexistente es una referencia rota, no evidencia. El
+último gate de la fase resuelve cada `linked_requirement_id` y `linked_ac_id` del packet de la
+**decisión vigente** contra los identificadores que `docs/spec.md` declara en negrita:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug>
+```
+
+En el primer Discovery todavía no hay spec y el gate sale 0 diciéndolo; empieza a morder en la
+corrección de Discovery que se hace **después** de Phase 1, que es cuando el vínculo ya se puede
+resolver. Un claim sin vínculo declarado no es un error: el gate cuenta los que sí lo declaran.
+
 `views/*.md` es sólo una vista derivada y reproducible: no admite timestamps, rutas absolutas ni
 datos del entorno, y jamás sustituye los JSON inmutables. Los gates prueban forma, cadena, hashes y
 reproducibilidad; no prueban por sí mismos suficiencia semántica de un claim. La decisión de pasar
@@ -623,7 +635,23 @@ que este gate frena es seguir corrigiendo en silencio cuando la corrección deja
 de este finding" y pasa a ser un cambio de scope no planeado.
 
 **4.5 Tests (final)** — re-run full suite post-fixes from 4.3/4.4. Must be green — this is
-the last check before commit. Después, escribí el receipt (el propio orchestrator lo lee/
+the last check before commit.
+
+**Antes del receipt**, cada criterio de aceptación de la spec tiene que estar nombrado por al
+menos una prueba. Es el hueco que este gate cierra: hoy se puede declarar el trabajo terminado con
+un AC que nadie probó, y la suite en verde no lo delata.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests
+```
+
+La convención de mención no es nueva: es la misma que ya fija `verify-test-bindings.mjs`, el id
+como segmento separado por `·` de una llamada real `test()`/`it()` — `AC8 · ...` o
+`FALSIFICACIÓN · AC9 · ...`. Un id en un comentario o en la prosa del título no cuenta. El gate
+verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe: es trazabilidad, no
+suficiencia, y sin spec, sin criterios o sin Discovery el gate sale 0 en vez de inventar una falla.
+
+Después, escribí el receipt (el propio orchestrator lo lee/
 escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
 
 **Schema `vcp.receipt/v2` — el único que `verify-receipt.mjs check` puede aprobar** (schema

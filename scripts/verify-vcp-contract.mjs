@@ -52,6 +52,11 @@ export const REQUIREMENTS = [
   ['SKILL.md', /PHASE 0\.5 — DISCOVERY/u, 'Discovery-first protocol phase'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
+  // The two halves are pinned separately on purpose: `criteria` closes Phase 4 and `claims` closes
+  // Phase 0.5, so deleting either command from its phase must fail on its own.
+  ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
+  ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
+  ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
   ['templates/spec.md', /## Discovery \/ Investigación previa/u, 'Discovery evidence section in canonical spec'],
   ['templates/plan.md', /## Write-conflict preflight/u, 'canonical plan preflight section'],
   ['templates/plan.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],

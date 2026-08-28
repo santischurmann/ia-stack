@@ -55,7 +55,7 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 30 | Manifest Graphify de inclusiones/exclusiones | “100% extracted” no cubre JSON sin nodos | **HECHO** — `verify-graphify-manifest.mjs` exige que cada archivo rastreado esté indexado o excluido con razón, y rechaza fantasmas; prueba contabilidad, no comprensión |
 | 31 | Destino Obsidian explícito y validado | export actual usa `--dir graphify-out/obsidian`; falta gate de destino | **PARCIAL** |
 | 32 | Receipt de remote ref/fetch | hubo timeout de `git fetch origin/main` | **HECHO** — misma regla que #36, fijada en verify-vcp-contract |
-| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | **HECHO** — regla dura en SKILL.md + limite honesto con motivo: un diagnostico sin reproduccion es una hipotesis con tono de conclusion |
+| 33 | Research ledger gate (URL/SHA/cita/cobertura) | sesiones tuvieron placeholders promovidos | **HECHO** — regla dura en SKILL.md + limite honesto con motivo; y `verify-evidence-trace.mjs claims`: cada `linked_requirement_id`/`linked_ac_id` del packet vigente resuelve contra un id que la spec declara, o es referencia rota |
 | 34 | Checkpoint completo al límite de proveedor | límites cortaron trabajo antes del cierre | **HECHO** — regla en SKILL.md: si un gate no se pudo correr, la fase no cerro; fijado como limite honesto |
 | 35 | Estado `provider_paused` | COMPANY default es presupuesto ilimitado | **HECHO** — regla en SKILL.md: una redaccion que ya existe se reusa citandola, no se reescribe |
 | 36 | Context packet por agente | telemetría mostró contexto excesivo | SIGUIENTE |
@@ -63,7 +63,7 @@ o ampliación de alcance sin una garantía mecánica nueva.
 | 38 | Presupuesto determinista por fase/reintento | policy manual no puede detener dispatch | SIGUIENTE |
 | 39 | Pressure tests de reglas Markdown | `superpowers-14`, reglas pueden degradar en prompts | SIGUIENTE |
 | 40 | Microtests de wording crítico | `superpowers-9`, evita negaciones ambiguas | SIGUIENTE |
-| 41 | IDs AC → test como artefacto verificable | `jcode-2`, cobertura de intención | SIGUIENTE |
+| 41 | IDs AC → test como artefacto verificable | `jcode-2`, cobertura de intención | **HECHO** — `verify-evidence-trace.mjs criteria`: cada `AC<n>` de la spec nombrado por una prueba real, con la convención de `verify-test-bindings.mjs`. Corrido sobre este repo encontró 3: AC12 sin ninguna prueba que lo nombrara, AC8 y AC9 fuera de convención |
 | 42 | Paridad estadística Bash/PowerShell | `i-have-adhd-3`, hoy hay fixtures de paridad básicos | SIGUIENTE |
 | 43 | Límite de ciclo de fix | `superpowers-2`, evita arreglos infinitos | SIGUIENTE |
 | 44 | Reproducir/instrumentar antes de diagnosticar | `mattpocock-4`, baja fixes narrativos | SIGUIENTE |
@@ -117,8 +117,11 @@ sesión futura vuelva a preguntarlas.
 | 32 (red) | **Registrar "no verificado"** | Si la comprobación contra el remoto falla, se anota explícitamente en vez de seguir como si nada. No agrega dependencia de red. |
 
 **Queda por implementar**: checkpoint de cuota (34/35/38), límite de 3 reintentos (43), regla de
-contexto (36/37), gate criterio↔prueba (41), gate de research ledger (33), las tres reglas de
-disciplina (44/45/46) y el registro de red no verificada (32).
+contexto (36/37), las tres reglas de disciplina (44/45/46) y el registro de red no verificada (32).
+
+**Implementados desde entonces**: el gate criterio↔prueba (41) y el de research con fuentes
+citadas (33), los dos en `scripts/verify-evidence-trace.mjs` — `criteria` cablado en Phase 4 antes
+del receipt, `claims` al final de Phase 0.5.
 
 **Cerrado sin implementar, con motivo**: 25, 26 (no aplica al modo actual), 39, 42 (cubiertos),
 49 (decidido, no requiere código).

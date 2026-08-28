@@ -333,8 +333,15 @@
       "locked": false,
       "role": "Test-Engineer",
       "verifier": "scripts/verify-red-node.mjs (mechanical)",
-      "evidence": [],
-      "not_reviewed": [],
+      "evidence": [
+        "RED: 22 tests en rojo, gate RED exit 0",
+        "GREEN: 418 tests, cobertura 100%, 58 checks + 22 limites",
+        "criteria encontro 3 AC sin prueba que los nombrara: AC8, AC9, AC12"
+      ],
+      "not_reviewed": [
+        "El gate verifica que exista una prueba nombrando el criterio, NO que esa prueba realmente lo compruebe. Es trazabilidad, no suficiencia.",
+        "claims sale verde con 0 vinculos cuando ningun claim declara linked_ac_id: verde vacio no prueba cobertura."
+      ],
       "rollback": "git revert <commit-sha>",
       "handoff": "RED pass -> Builder (GREEN)",
       "blocked_reason": null,
@@ -364,7 +371,7 @@
       "depends_on": [
         "T07"
       ],
-      "status": "pending",
+      "status": "done",
       "goal": "Disciplina verificable -> items 41 y 33 -> cada criterio tiene su prueba y cada claim su fuente",
       "approval_criteria": "Un criterio sin prueba se detecta. Un claim sin fuente citada se detecta. Ambos nombran el elemento exacto."
     },

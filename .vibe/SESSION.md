@@ -164,3 +164,21 @@
   roja si empiezan a copiar algo que la lista no nombra.
 - Runtime reinstalado y verificado: 98 archivos al día.
 - Límite declarado: compara contenido, no permisos. El `chmod +x` del instalador no se verifica.
+
+## T07/T08 — políticas del backlog
+
+- **T07** (items 36/37/44/45/46): cuatro reglas de trabajo escritas en SKILL.md y fijadas en el
+  contrato; dos con su motivo en los límites honestos. El gate de límites me frenó **dos veces**
+  porque las frases cruzaban salto de línea — la misma trampa que el Test-Engineer había advertido
+  en T04. Reformateado para que cada frase entre completa en un renglón.
+- **T08** (items 41/33): `verify-evidence-trace.mjs` con dos comandos. `criteria` verifica que cada
+  criterio de la spec sea nombrado por al menos una prueba; `claims` verifica que un claim del
+  Discovery que cita un criterio apunte a uno que existe.
+- **Hallazgo real**: `criteria` salió en rojo contra el repo, con AC8, AC9 y AC12 sin prueba que los
+  nombrara. AC12 estaba probado por dos pruebas de `verify-audit-chain` pero ninguna lo mencionaba:
+  nada ataba el criterio a su evidencia. Se anotaron los títulos existentes — **no** se escribieron
+  pruebas nuevas para tapar el hueco.
+- El agente falsificó `claims` contra una **copia** del Discovery real (verde con 0 vínculos no
+  prueba nada): parcheó un claim para citar `AC99` inexistente y el gate lo bloqueó nombrándolo.
+- La convención de mención se **reusó** de `verify-test-bindings.mjs`, importando su función en vez
+  de reimplementarla — es la regla #46 aplicada al propio trabajo.

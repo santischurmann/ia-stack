@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- Nuevo gate `verify-evidence-trace.mjs` (hallazgos 41 y 33): las dos referencias que el protocolo
+  pedía en prosa y nadie podía comprobar. `criteria --spec docs/spec.md --tests tests` verifica que
+  cada `AC<n>` declarado en la spec esté nombrado por al menos una prueba real; `claims --feature
+  <slug>` verifica que cada `linked_requirement_id` y `linked_ac_id` del packet de la decisión
+  Discovery **vigente** resuelva contra un identificador que la spec declara —un claim que cita un
+  criterio inexistente es una referencia rota, no evidencia—.
+  La convención de mención **no es nueva**: se reusa la que ya fija `verify-test-bindings.mjs` —el
+  id como segmento separado por `·` de una llamada literal `test()`/`it()`, y la decisión de si esa
+  llamada es real la toma la propia `hasLiteralTestDeclaration()`, importada, no reimplementada—.
+  Lo único que se ensancha es la posición: el id puede ser cualquier segmento, porque el protocolo
+  también exige el prefijo `FALSIFICACIÓN · `, que un `startsWith` literal prohibiría. Un id en un
+  comentario, en un string o en la prosa del título no cuenta como cobertura.
+  Corrido contra este repositorio el día del arreglo, `criteria` salió en rojo de verdad y nombró
+  **3 criterios**: `AC12` (sello mal formado) no lo nombraba ninguna prueba —las dos que sí cubren
+  ese comportamiento existían desde siempre, pero nada las ataba al criterio—, y `AC8`/`AC9`
+  llevaban el id en la prosa final del título (`... (AC8)`) en vez de como segmento. Los cuatro
+  títulos se adaptaron a la convención; no se escribió ninguna prueba nueva para taparlo.
+  Cableado en `SKILL.md`: `criteria` en 4.5, **antes de escribir el receipt** —declarar el trabajo
+  terminado con un AC que nadie probó es exactamente lo que evita—, y `claims` al final de
+  Phase 0.5. Las dos promesas quedaron fijadas por archivo en `verify-vcp-contract.mjs`, así que
+  borrar el comando de una fase falla por su cuenta.
+  Dos límites honestos declarados en `contracts/honest-limits.json` (README + SKILL): el gate
+  verifica que exista una prueba que **nombre** el criterio, no que esa prueba lo compruebe —es
+  trazabilidad, no suficiencia—; y sin spec, sin criterios declarados o sin Discovery sale `0`,
+  o sea que borrar `docs/spec.md` compra silencio, no un rechazo.
 - Nuevo gate `verify-runtime-sync.mjs` (hallazgo 53): el runtime que un proyecto **ejecuta** ya no
   puede envejecer en silencio respecto del checkout que lo instaló. `install.sh` copia
   `scripts/`, `contracts/`, `tests/`, `templates/` y `skills/` (más `SKILL.md` y `SECURITY.md`) a

@@ -40,3 +40,4 @@
 [2026-08-28 04:31] Orchestrator | T06 done | hallazgo 53 cerrado: 11 archivos viejos y 5 ausentes detectados; runtime reinstalado, 98 al dia | T06 | chain:5b30b0a47aacdcb27113a7140320b58f259aea1e8f906217fb07a822cf3f8fc0
 [2026-08-28 05:10] Orchestrator | politicas decididas | 18 items abiertos: 8 a implementar, 5 cerrados con motivo, 5 fusionados en decisiones de politica | backlog | chain:176bb8262c7d830432ecd8da3a7a7e900de3b216dbd606e65205ad821be9c096
 [2026-08-28 05:40] Orchestrator | T07 done | 4 reglas de trabajo fijadas: 55 checks + 20 limites honestos | T07 | chain:96c63ac13835b86d9caf6851988a197037767604adff29e3a65b8174c7f22889
+[2026-08-28 06:20] Orchestrator | T08 done | criteria encontro 3 AC sin prueba que los nombre (AC8, AC9, AC12); 418 tests, 58 checks + 22 limites | T08 | chain:0be8c6eece79e658ed75496c75abd50d8075f036a2797e7ed48ee50625b2a954
