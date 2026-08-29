@@ -1,0 +1,77 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "flake-cobertura",
+  "task": "T01 — cerrar el no determinismo del gate de cobertura",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "tests/verify-audit-chain.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "El gate de cobertura da el mismo resultado sobre el mismo arbol. Antes no: tres corridas consecutivas sin cambiar nada daban OK / FALLA / OK, siempre en verify-audit-chain.mjs con 99.10% de ramas. Un chequeo que no es reproducible no sirve como chequeo.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-audit-chain.test.mjs",
+      "test_hash_sha256": "55a81a6cefb6a5c3b03ad10b6f6e800f406bf1f0b046a1475a94ed1de9a7e622",
+      "command": "node scripts/verify-vcp-coverage.mjs (13 corridas consecutivas)",
+      "result": "13 de 13 en verde. Antes del cambio, tres corridas daban OK / FALLA / OK."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "La rama que V8 instrumentaba de forma intermitente -el || de log.stderr en gitVersions- queda cubierta por una prueba: git puede fallar sin escribir una palabra en stderr, y ese camino no lo ejercitaba nadie.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-audit-chain.test.mjs",
+      "test_hash_sha256": "55a81a6cefb6a5c3b03ad10b6f6e800f406bf1f0b046a1475a94ed1de9a7e622",
+      "command": "node --test --experimental-test-coverage --test-concurrency=1 tests/verify-audit-chain.test.mjs (25 corridas)",
+      "result": "25 de 25 sin una sola falla, donde antes fallaba 1 de cada 10. Y el total de ramas que reporta lcov pasa a ser 112 estable, donde antes oscilaba entre 110 y 111."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "La tentacion obvia era aflojar el gate -reintentar, promediar, bajar el piso-. Eso habria tapado un hueco real de cobertura y dejado el gate mintiendo de forma estable en vez de honesta de forma intermitente.",
+      "mitigation": "El gate no se toco. Se cubrio la rama que faltaba, que es lo que el gate venia senalando."
+    },
+    "readability": {
+      "finding": "El motivo del flake es contraintuitivo y se olvida: no es el paralelismo, es que V8 cambia el total de ramas que instrumenta entre corridas.",
+      "mitigation": "El comentario junto a la prueba nueva registra el mecanismo, los numeros de las dos corridas -110 contra 111- y la fecha de reproduccion."
+    },
+    "reliability": {
+      "finding": "Una sola corrida verde no distingue un arreglo de una casualidad, y la primera hipotesis ya habia sido descartada por muestra corta.",
+      "mitigation": "25 corridas del archivo aislado y 13 del gate completo, contadas y reportadas."
+    },
+    "resilience": {
+      "finding": "verify-discovery-views.mjs habia aparecido una vez con 98.85%, y podia ser el mismo defecto sin diagnosticar.",
+      "mitigation": "Se descarto: sus 2 ramas sin cubrir en aislamiento las cubre otro archivo de pruebas en la suite completa, de forma consistente en 15 corridas."
+    }
+  },
+  "measurements": [
+    { "metric": "fallas del archivo aislado cada 10 corridas", "measured": true, "before": 1, "after": 0 },
+    { "metric": "corridas consecutivas del gate completo en verde", "measured": true, "before": 2, "after": 13 },
+    { "metric": "ramas que lcov reporta para verify-audit-chain.mjs", "measured": true, "before": 110, "after": 112 },
+    {
+      "metric": "corridas necesarias para descartar del todo el no determinismo",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No hay un numero que lo cierre: ausencia de fallas en 38 corridas es evidencia fuerte, no una demostracion. La primera hipotesis de esta misma investigacion -que el flake dependia del paralelismo- se sostuvo en 7 corridas sin fallas y era falsa."
+    }
+  ],
+  "reproduction": "Antes del cambio: correr `node --test --experimental-test-coverage --test-concurrency=1 tests/verify-audit-chain.test.mjs` en bucle sobre un arbol limpio. Alrededor de 1 de cada 10 corridas reporta verify-audit-chain.mjs con branches 99.10%. Comparando el lcov de una corrida verde contra una roja se ve la causa: BRF:110 contra BRF:111, o sea que cambia el TOTAL de ramas instrumentadas, y la rama extra es siempre la de la linea 206 -el `|| ''` de log.stderr-. Verificacion: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs repetido.",
+  "not_reviewed": "No se investigo POR QUE V8 instrumenta esa rama de forma intermitente -optimizacion, deoptimizacion, orden de ejecucion-; se cerro el sintoma cubriendo la rama, no la causa dentro de V8. Es posible que otras ramas del proyecto tengan la misma fragilidad latente y todavia no se hayan manifestado: no se hizo un barrido buscandolas. La ausencia de fallas en 38 corridas es evidencia, no demostracion. Y el gate sigue sin declarar un limite honesto propio sobre esto.",
+  "evidence": [
+    "25 corridas de tests/verify-audit-chain.test.mjs con cobertura, concurrency=1 -> 0 fallas, BRF=112 en las 25",
+    "13 corridas de node scripts/verify-vcp-coverage.mjs -> OK: All 26 expected Node script(s) are at 100% en las 13",
+    "antes del cambio, 3 corridas del gate completo -> OK / FALLA / OK",
+    "antes del cambio, 10 corridas del archivo aislado -> 1 falla en la decima, BRDA:206 sin cubrir",
+    "lcov comparado: corrida verde BRF:110 BRH:110, corrida roja BRF:111 BRH:110",
+    "15 corridas de tests/verify-discovery-views.test.mjs -> mismas 2 ramas sin cubrir siempre, o sea consistente y no un flake",
+    "node --test --test-concurrency=32 -> tests 683, pass 683, fail 0",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 1 archivo, 0 bloqueantes",
+    "git push origin main -> 0ceff3a..5b1b909"
+  ],
+  "git_head": "5b1b909a38ed89206c68c379fedbc0e97eeeecd5",
+  "tree_fingerprint": "129d2ec9843b62e46e50cb3f49d8eff5b2aeaf5a8c1b34321c078927ed296ace",
+  "terminal_state": "approved"
+}
