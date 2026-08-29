@@ -1,0 +1,88 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "research-correccion",
+  "task": "T01 — corregir la conclusion del research externo que resulto falsa",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "research/external-sources-2026-08-28.md",
+      "tests/verify-audit-chain.test.mjs",
+      "tests/verify-shell-coverage.test.mjs",
+      "tests/verify-discovery-history.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "La correccion afirma que el ancla externa dejo de estar sin respuesta. Esa afirmacion no se apoya en prosa: se apoya en el subcomando history de la cadena de auditoria, que compara contra la historia de git, un registro que no vive dentro del archivo atacado.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-audit-chain.test.mjs",
+      "test_hash_sha256": "55a81a6cefb6a5c3b03ad10b6f6e800f406bf1f0b046a1475a94ed1de9a7e622",
+      "command": "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md",
+      "result": "OK: solo crecio a lo largo de 46 version(es) commiteada(s). El mismo ancla, aplicado a Discovery, esta cubierto por tests/verify-discovery-history.test.mjs (446fee4b...), con tres pruebas FALSIFICACION."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "La correccion afirma que la cobertura instrumentada de Bash dejo de estar sin respuesta util. Se apoya en que se mide con el instrumento que trae el propio bash, sin dependencias.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-shell-coverage.test.mjs",
+      "test_hash_sha256": "17abb59817fadef955242974a8c79feee669b2c11c89c2e8a3cf292f7d254967",
+      "command": "node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json",
+      "result": "OK: scripts/install.sh 72.2% (52/72), scripts/verify-red.sh 57.1% (4/7). PowerShell queda declarado sin medicion, no medido en cero, y la correccion lo dice."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "La correccion NO declara resuelto lo que no lo esta: la custodia queda como parcial y el consentimiento humano como abierto. Un informe corregido que se pasara de optimista seria el mismo error en la direccion contraria.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-history.test.mjs",
+      "test_hash_sha256": "446fee4be6a48c8ca3f7da5c152681d80641659dede99843808f73282b201594",
+      "command": "grep -c 'Sigue abierto' research/external-sources-2026-08-28.md && node scripts/verify-vcp-contract.mjs check",
+      "result": "La tabla de la correccion marca custodia como Parcial y consentimiento como Sigue abierto. El contrato pasa con 51 limites verificados textuales, entre ellos los que declaran que la custodia firma con la clave que este a mano y que las decisiones inventadas pasan el gate."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Corregir un informe puede convertirse en reescribirlo hasta que diga lo que uno queria, y ahi se pierde el dato mas valioso: que la conclusion original estuvo publicada y era falsa.",
+      "mitigation": "La correccion se AGREGA fechada al principio y no toca una sola linea de lo anterior. El texto lo dice explicito: borrar la conclusion vieja haria desaparecer justamente el dato interesante."
+    },
+    "readability": {
+      "finding": "El riesgo de leer la correccion como una victoria -tres de cuatro resueltos- en vez de como lo que es.",
+      "mitigation": "El titulo de la seccion es que la conclusion mas fuerte del informe era falsa, y la leccion va antes que las soluciones: un corpus grande convergiendo en imposibilidad es evidencia debil."
+    },
+    "reliability": {
+      "finding": "Afirmar que tres problemas se resolvieron sin evidencia corrida seria repetir el error que se esta corrigiendo.",
+      "mitigation": "Los tres se verificaron corriendo sus gates antes de escribir la correccion, y cada afirmacion tiene su prueba en los AC de arriba."
+    },
+    "resilience": {
+      "finding": "Al escribir la correccion, bash ejecuto como comandos los nombres de gate que iban entre backticks dentro de comillas dobles, y los vacio.",
+      "mitigation": "Se detecto revisando el archivo escrito -no el codigo de salida, que fue 0-, se revirtio con git checkout y se rehizo con heredoc. Queda como recordatorio de que un exit 0 no dice que lo escrito sea lo que se queria escribir."
+    }
+  },
+  "measurements": [
+    { "metric": "problemas declarados irresolubles por el informe", "measured": true, "before": 4, "after": 4 },
+    { "metric": "de esos, resueltos o parcialmente resueltos hoy", "measured": true, "before": 0, "after": 3 },
+    { "metric": "soluciones que salieron del corpus de 15581 archivos", "measured": true, "before": 0, "after": 0 },
+    {
+      "metric": "cobertura del research externo",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Sigue en 2,05 % y no se toco: leer mas archivos no era el arreglo. Ademas ese numero esta inflado porque varias lecturas parciales cuentan como archivo entero, asi que darlo como medicion exacta seria falso; queda declarado como cota superior, no como dato."
+    }
+  ],
+  "reproduction": "La seccion 5 del informe declara cuatro problemas SIN RESPUESTA y recomienda textualmente dejar de prometer sellado del historial. Contrastar cada uno contra el arbol de hoy: node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md (el ancla que el informe dice que no existe, corriendo), node scripts/verify-discovery-core.mjs history --feature integridad-verificable (el mismo ancla en Discovery), node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json (la medicion que el informe llama sin respuesta util), y node scripts/verify-receipt.mjs custody sobre cualquier recibo (la custodia parcial).",
+  "not_reviewed": "No se leyo un solo archivo mas de las catorce fuentes externas: la cobertura sigue en 2,05 % e inflada. Las 60 citas archivo:linea del informe apuntan a clones pineados de esos repos y NO se revalidaron; no se pueden verificar sin volver a clonar las catorce fuentes, y nadie lo hizo. No se revisaron las secciones 2, 3 y 4 del informe -los 24 mecanismos, los rechazos y las convergencias positivas- buscando otras conclusiones que hayan quedado falsas por el mismo motivo: la correccion cubre solo la seccion 5. Y no se investigo si alguna de las tres soluciones SI estaba en el corpus y los agentes lectores no la vieron: se afirma que ninguna salio de ahi porque las tres se derivaron trabajando, no leyendo, pero eso no descarta que existiera.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 688, pass 688, fail 0",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: 46 versiones commiteadas",
+    "node scripts/verify-discovery-core.mjs history --feature integridad-verificable -> OK: solo crecio",
+    "node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json -> OK: install.sh 72.2%, verify-red.sh 57.1%",
+    "node scripts/verify-receipt.mjs custody -> OK, informa el estado de firma del commit",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 51 honest limits verified",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 1 archivo, 0 bloqueantes",
+    "git push origin main -> 52fe114..511fc9f"
+  ],
+  "git_head": "511fc9f1179c2904f958de41bcbd308bc1ca4697",
+  "tree_fingerprint": "70127bcaae769739e7b03b71c7ecdc9d9987fddc7d721dddb85bbf8dc79e650e",
+  "terminal_state": "approved"
+}
