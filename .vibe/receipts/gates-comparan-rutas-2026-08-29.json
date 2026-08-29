@@ -1,0 +1,95 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "gates-comparan-rutas",
+  "task": "T01 — cerrar los tres gates que comparaban un nombre en vez del archivo real",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "contracts/empty-probe.json",
+      "scripts/verify-empty-probe.mjs",
+      "scripts/verify-graphify-manifest.mjs",
+      "scripts/verify-vcp-coverage.mjs",
+      "tests/verify-empty-probe.test.mjs",
+      "tests/verify-graphify-manifest.test.mjs",
+      "tests/verify-vcp-coverage.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "El inventario de cobertura compara rutas, no nombres sueltos: una fila de tests/ no puede cubrir a un script homonimo de scripts/. node agrupa el reporte por directorio y el parser tiraba la cabecera, asi que un ayudante de pruebas cubria a un script sin tener una sola prueba.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-vcp-coverage.test.mjs",
+      "test_hash_sha256": "45c1dd6f7819aa3f3cb655ba27a3667981f0b4996cff15b63d81ba2f64ae9ced",
+      "command": "node --test tests/verify-vcp-coverage.test.mjs",
+      "result": "16 tests, 16 pass, 0 fail. Incluye FALSIFICACION: una fila con cabecera 'tests' no satisface a scripts/huerfano.mjs, y la misma fila bajo cabecera 'scripts' si."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "La sonda de directorio vacio enumera todo .mjs de scripts/ menos los .test.mjs. Antes solo miraba los verify-*.mjs, asi que pretooluse-red.mjs y ratchet.mjs quedaban afuera: ni se probaban ni aparecian como no declarados.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-empty-probe.test.mjs",
+      "test_hash_sha256": "7fd7c358d2fb49e680a1cdad4f37aafd42c98702ca1a3501210693f1b9765ab9",
+      "command": "node --test tests/verify-empty-probe.test.mjs && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "result": "21 tests, 21 pass, 0 fail. El gate real: OK sobre 24 gates, 2 que verifican el propio checkout, 1 excluido con motivo escrito."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "El inventario del grafo solo cuenta las entradas con datos reales. Una llave vacia escrita a mano contaba como archivo indexado, y el manifiesto no esta versionado, asi que no quedaba rastro revisable de haberla puesto.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-graphify-manifest.test.mjs",
+      "test_hash_sha256": "d4adb03b19b552380a864e111dbf9277ded6a5684adcf3c3a0dc96afb715c158",
+      "command": "node --test tests/verify-graphify-manifest.test.mjs && node scripts/verify-graphify-manifest.mjs check",
+      "result": "11 tests, 11 pass, 0 fail. El gate real: OK sobre 177 archivos rastreados, cada exclusion declarada y justificada."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Los tres gates autorizaban trabajo posterior sobre una comparacion falsificable. El de cobertura es el peor: vigila a todos los demas, asi que un verde suyo se propaga.",
+      "mitigation": "Cada arreglo se reprodujo antes de tocar el codigo, y cada uno dejo una prueba con prefijo FALSIFICACION que reconstruye el ataque."
+    },
+    "readability": {
+      "finding": "Los tres arreglos necesitaban explicar por que la comparacion vieja era insuficiente, no solo que cambio.",
+      "mitigation": "Cada uno lleva el comentario con la fecha de reproduccion y el mecanismo del agujero, en castellano, junto al codigo que lo cierra."
+    },
+    "reliability": {
+      "finding": "hasRealContent quedaba sin prueba propia y la cobertura exige 100% de ramas y funciones.",
+      "mitigation": "Prueba dedicada que cubre el caso sutil: 0 y false son datos, null/undefined/'' son huecos, y un array no es una entrada."
+    },
+    "resilience": {
+      "finding": "El gate de cobertura se niega a leer el reporte de una suite roja, asi que durante el arreglo no pudo dar numero.",
+      "mitigation": "Se dejo asi a proposito: un 'no puedo decirtelo todavia' es preferible a un porcentaje calculado sobre una corrida incompleta. El numero volvio recien con la suite verde."
+    }
+  },
+  "measurements": [
+    { "metric": "pruebas de la suite", "measured": true, "before": 608, "after": 609 },
+    { "metric": "pruebas rojas", "measured": true, "before": 3, "after": 0 },
+    { "metric": "scripts de scripts/ enumerados por verify-empty-probe", "measured": true, "before": 23, "after": 25 },
+    {
+      "metric": "scripts que la cobertura daba por cubiertos gracias a un homonimo en tests/",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No se conto: haria falta reconstruir el inventario viejo y cruzarlo archivo por archivo contra tests/. Se reprodujo el mecanismo con un caso concreto, no se midio su alcance historico."
+    }
+  ],
+  "reproduction": "Con el codigo anterior a este cambio: (1) cobertura — pasarle a evaluateCoverageRun un reporte cuya unica fila viene bajo la cabecera de directorio 'tests' y pedirle scripts/huerfano.mjs: devolvia ok. (2) sonda — correr verify-empty-probe con el contrato sin pretooluse-red.mjs ni ratchet.mjs: salia OK, ninguno de los dos aparecia como no declarado. (3) manifiesto — poner {\"archivo.mjs\": {}} en graphify-out/manifest.json: contaba como indexado. Verificacion posterior: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json && node scripts/verify-graphify-manifest.mjs check",
+  "not_reviewed": "Esto se hizo como Direct Build, sin spec formal: los tres AC de arriba se derivaron de los arreglos despues de hacerlos, no de criterios escritos en docs/spec.md antes de empezar. No se midio cuantos scripts estaban falsamente cubiertos por un homonimo antes del arreglo. No se ejercito el instalador de PowerShell (solo install.sh). No se investigaron los 16 archivos que graphify reporta con cero nodos. La custodia de los commits anteriores a este no se audito: se leyo el estado de firma de este commit, nada mas.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 609, pass 609, fail 0, skipped 0",
+    "node scripts/verify-vcp-coverage.mjs -> OK: All 25 expected Node script(s) are at 100% lines, branches, and functions.",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 user-visible protocol contract checks pass; 34 honest limits verified.",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 24 gate(s), 2 que verifican el propio checkout, 1 excluido con motivo escrito.",
+    "node scripts/verify-graphify-manifest.mjs check -> OK: Graphify manifest covers 177 tracked file(s) with every exclusion declared and justified.",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: scanned 7 live changed file(s); no blocking Critical/High findings, 0 accepted.",
+    "node scripts/verify-audit-chain.mjs check .vibe/AUDIT.md -> OK: intact audit chain over 51 chained line(s).",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: solo crecio a lo largo de 33 version(es) commiteada(s).",
+    "node scripts/verify-backup-state.mjs check graphify-out/backup-state.json -> OK: Graphify backup matches b620ac9137f3a0738d4d714cf4af0ffebfe84c6a.",
+    "node scripts/verify-runtime-sync.mjs check -> OK: the installed runtime at .vibe/vcp-runtime matches this source checkout in all 118 file(s).",
+    "git clone https://github.com/santischurmann/VibeCodeProtocols.git && node --test --test-concurrency=32 -> tests 609, pass 608, fail 0, skipped 1 (la de cobertura del grafo, que se declara salteada porque graphify-out/ no se publica).",
+    "git push origin main -> ce18178..e7a31fa, luego e7a31fa..b620ac9"
+  ],
+  "git_head": "b620ac9137f3a0738d4d714cf4af0ffebfe84c6a",
+  "tree_fingerprint": "1f3f2b9f2e606ff1aec0436bbdcb0bcf86e69edaba4ecf2424aeda5754d6bba3",
+  "terminal_state": "approved"
+}
