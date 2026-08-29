@@ -1,0 +1,93 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "discovery-sources",
+  "task": "T01 — resolver contra el arbol real las fuentes que los claims de Discovery citan",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "scripts/verify-discovery-core.mjs",
+      "tests/verify-discovery-sources.test.mjs",
+      "contracts/honest-limits.json",
+      "README.md"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Un claim que cita un archivo inexistente, o una linea que cae despues del final del archivo, o un locator que no resuelve dentro del proyecto, frena el gate. Es el agujero que motivo el cambio: antes el gate validaba solo la FORMA del locator y nunca abria nada, asi que un expediente entero con fuentes inventadas salia en verde.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-sources.test.mjs",
+      "test_hash_sha256": "6c7594393f36f653f15fda67401b2f2167f03bf4d5eb8dcecbded023055487fc",
+      "command": "node --test tests/verify-discovery-sources.test.mjs",
+      "result": "16 tests, 16 pass, 0 fail. Tres pruebas FALSIFICACION cubren archivo inexistente, linea fuera de rango y locator que escapa del proyecto."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Una fuente que existe pero cambio desde su captura se informa como derivada y NO bloquea, porque envejecer no es mentir; con --require-current si bloquea. Sin esta distincion el gate daria rojo falso sobre cualquier expediente viejo, que es la razon por la que va aparte de check.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-sources.test.mjs",
+      "test_hash_sha256": "6c7594393f36f653f15fda67401b2f2167f03bf4d5eb8dcecbded023055487fc",
+      "command": "node scripts/verify-discovery-core.mjs sources --feature integridad-verificable",
+      "result": "OK: 0 fuente(s) con el contenido declarado; 4 cambiaron desde la captura; 0 web y 0 sin huella quedan sin verificar. Exit 0. Con --require-current las mismas 4 bloquean y sale 1."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Lo que el gate no puede resolver se cuenta y se imprime, nunca se pinta de verde: una fuente web queda sin verificar porque este protocolo no sale a la red, y una sin huella sha256 no tiene con que compararse.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-sources.test.mjs",
+      "test_hash_sha256": "6c7594393f36f653f15fda67401b2f2167f03bf4d5eb8dcecbded023055487fc",
+      "command": "node --test tests/verify-discovery-sources.test.mjs",
+      "result": "La prueba 'lo que este gate no puede resolver se cuenta, nunca se pinta de verde' cubre web, version_ref y unavailable. El conteo viaja en la linea de salida del gate."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Un subcomando que resuelve fuentes puede dar rojo falso sobre expedientes viejos, cuyos archivos cambiaron legitimamente. Si eso pasa, el equipo aprende a ignorarlo y el gate muere.",
+      "mitigation": "sources va aparte de check por eso mismo, y el drift no bloquea por defecto. Verificado sobre el expediente real de este repositorio: las 4 fuentes derivaron desde el 2026-08-27 y el gate sale 0 informandolo."
+    },
+    "readability": {
+      "finding": "Seis estados distintos son faciles de confundir entre si, y la diferencia entre MISSING y DRIFTED es justo la que importa.",
+      "mitigation": "Cada estado es una constante exportada con nombre, y la salida del gate distingue explicitamente lo verificado, lo derivado y lo que quedo sin verificar con su motivo."
+    },
+    "reliability": {
+      "finding": "Mis once pruebas iniciales pasaban contra un fixture que invento la forma del run, asi que validaban la maqueta y no el codigo.",
+      "mitigation": "Se detecto corriendo el gate sobre el repositorio real, que devolvia VACIO sobre un packet con cuatro claims. Los fixtures usan la forma real de readDiscoveryHistory, hay una prueba que fija el caso de la decision pending sin packet, y otra que corre el gate contra la historia real del repo sin inyectar nada."
+    },
+    "resilience": {
+      "finding": "Un locator que escapa del proyecto, o un archivo que existe pero no se puede leer, no pueden tratarse como fuente verificada.",
+      "mitigation": "Los dos caen en MISSING, que bloquea: falla cerrado. Cubierto por prueba, incluida la de un lector que lanza EACCES."
+    }
+  },
+  "measurements": [
+    { "metric": "subcomandos de verify-discovery-core", "measured": true, "before": 1, "after": 2 },
+    { "metric": "pruebas de la suite", "measured": true, "before": 649, "after": 665 },
+    { "metric": "limites honestos declarados", "measured": true, "before": 48, "after": 49 },
+    { "metric": "bugs propios encontrados corriendo el gate sobre datos reales y no en sus pruebas", "measured": true, "before": 0, "after": 2 },
+    {
+      "metric": "claims con fuente web verificada",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No se midio ni se puede: el gate no sale a la red por diseno, asi que una fuente web queda contada como no verificable. En el expediente real de este repositorio hoy no hay ninguna, pero eso es una propiedad del expediente, no del gate."
+    }
+  ],
+  "reproduction": "El agujero: se copio el expediente real a un directorio aparte, se cambio el locator del claim vigente por {kind: repo_file, path: 'no/existe/jamas.md', line: 99999} con un sha256 inventado, y se recalculo el hash del packet en la decision para que la cadena siguiera coherente. Antes del cambio, `check` salia 0 y no habia nada mas que correr. Despues del cambio, `check` sigue saliendo 0 -y esta bien, la cadena ES coherente- y `sources` sale 1 nombrando el claim y la fuente. Verificacion: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs && node scripts/verify-discovery-core.mjs sources --feature integridad-verificable && node scripts/verify-vcp-contract.mjs check",
+  "not_reviewed": "No se verifico ninguna fuente web, ni se puede: el gate no hace peticiones de red por diseno. No se comprobo que la huella registrada fuera correcta el dia de la captura -eso es indecidible desde el arbol de hoy-; solo si el archivo actual la cumple. El subcomando nuevo NO esta declarado en contracts/empty-probe.json: la sonda prueba una invocacion por script y verify-discovery-core ya declara la suya con `check`, asi que el comportamiento de `sources` sobre un directorio vacio queda sin probar por la sonda. El segundo limite de fondo de Discovery -que la cadena no tiene ancla externa y una reescritura completa del run pasa- sigue abierto: este cambio no lo toca, y de hecho la reproduccion de arriba se apoya en el. Y el flake de verify-vcp-coverage.mjs sigue sin arreglar.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 665, pass 665, fail 0, skipped 0",
+    "node scripts/verify-vcp-coverage.mjs -> OK: All 26 expected Node script(s) are at 100% lines, branches, and functions",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 49 honest limits verified",
+    "node scripts/verify-discovery-core.mjs sources --feature integridad-verificable -> OK: 4 cambiaron desde la captura, exit 0",
+    "node scripts/verify-discovery-core.mjs sources --feature integridad-verificable --require-current -> REJECTED, exit 1, las 4 nombradas",
+    "node scripts/verify-discovery-core.mjs check --feature integridad-verificable -> OK: 1 valid Discovery run(s)",
+    "ataque reproducido sobre copia del expediente real: check exit 0, sources exit 1 nombrando claim-toctou -> no/existe/jamas.md",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 25 gate(s), 2 self, 1 excluido",
+    "node scripts/verify-graphify-manifest.mjs check -> OK: 185 tracked file(s)",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 4 archivos, 0 bloqueantes",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: 38 versiones commiteadas",
+    "git push origin main -> 9ee22d9..ede04df"
+  ],
+  "git_head": "ede04dfbbbc742c19e1227a832ed14949fcdbd3c",
+  "tree_fingerprint": "93b9e435328d0903172e451b1b55ad066ae50519155f35e99cf35c6016636be6",
+  "terminal_state": "approved"
+}
