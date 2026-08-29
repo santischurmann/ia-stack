@@ -33,6 +33,12 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   la sonda de carpeta vacía sólo enumera `verify-*.mjs`; y once de veintitrés gates no tienen
   ningún límite honesto que los nombre. **Cuatro son correctos por diseño** y **tres no se
   reprodujeron**. **Ocho siguen sin verificar**, nombrados uno por uno en el backlog.
+  *(Corrección del 2026-08-29: este desglose suma 26, no los 28 que el título declara. Los 2
+  restantes no están nombrados en ningún documento; el total de 41 sólo cierra si caen en el balde
+  de "mismo defecto contado dos veces o ya cerradas por otro arreglo", pero eso es inferencia por
+  eliminación, no dato. Registrado también en `.vibe/AUDIT.md` como `h63-fix`. Y de los cinco
+  declarados sin arreglar, el de la sonda que sólo enumeraba `verify-*.mjs` quedó cerrado después,
+  en `e7a31fa`.)*
 
 - **Seis huecos más, reproducidos a mano y cerrados** (hallazgo 62). El ataque adversarial dejó
   38 propuestas sin verificar; se revisaron reproduciendo cada una, sin agentes:
