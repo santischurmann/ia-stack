@@ -9,7 +9,7 @@ import { basename, isAbsolute, relative, resolve } from 'node:path';
 
 export const DECISION_SCHEMA = 'vcp.discovery-decision/3';
 export const PACKET_SCHEMA = 'vcp.discovery-packet/1';
-export const USAGE = 'usage: verify-discovery-core.mjs check --feature <feature-slug>';
+export const USAGE = 'usage: verify-discovery-core.mjs check --feature <feature-slug> | verify-discovery-core.mjs sources --feature <feature-slug> [--require-current]';
 
 const FEATURE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const RUN_ID = /^run-(\d{3})$/u;
@@ -399,17 +399,112 @@ export function verifyDiscoveryFeature(projectRoot, featureSlug) {
   return { ok: true, runs: result.runs.length };
 }
 
-export function parseArgs(args) {
-  return args.length === 3 && args[0] === 'check' && args[1] === '--feature' && FEATURE_SLUG.test(args[2]) ? { featureSlug: args[2] } : null;
+// --- sources: resolver los locators contra el arbol real -----------------------------------------
+// `check` valida la cadena historica y no puede exigir que las fuentes sigan iguales: un run viejo
+// cita archivos que legitimamente cambiaron desde su captura. Por eso `sources` va aparte, por la
+// misma razon que `history` va aparte en verify-audit-chain.mjs: son preguntas distintas.
+export const SOURCE_OK = 'OK';
+export const SOURCE_DRIFTED = 'DRIFTED';
+export const SOURCE_MISSING = 'MISSING';
+export const SOURCE_OUT_OF_RANGE = 'LINE_OUT_OF_RANGE';
+export const SOURCE_WEB = 'UNVERIFIABLE_WEB';
+export const SOURCE_NO_HASH = 'UNVERIFIABLE_NO_HASH';
+
+/** Resuelve un locator contra el arbol real. Nunca sale a la red: una fuente web se cuenta como
+ * no verificable, jamas como verificada. Un path que escapa del proyecto no se lee: se reporta
+ * como irresoluble, que es fallar cerrado. */
+export function classifySource(projectRoot, claim, read = readFileSync) {
+  const salida = (status, detail) => ({ claim_id: claim.claim_id, status, detail });
+  const { locator, content_identity: identity } = claim;
+  if (locator.kind === 'web') return salida(SOURCE_WEB, locator.url);
+  if (identity.kind !== 'sha256') {
+    return salida(SOURCE_NO_HASH, `${locator.path}: content_identity es ${identity.kind}, no hay huella que comparar`);
+  }
+  let absolute;
+  try {
+    // La función espera segmentos, no una ruta entera: pasarla como un solo segmento hacía que
+    // cualquier claim con una barra se reportara como irresoluble. Reproducido el 2026-08-29
+    // corriendo el gate sobre este mismo repositorio, donde los tres archivos sí existían.
+    const segments = locator.path.trim().replaceAll('\\', '/').split('/').filter((s) => s !== '');
+    absolute = assertTrustedRegularFile(projectRoot, segments, 'DISCOVERY_SNAPSHOT_INVALID');
+  } catch {
+    return salida(SOURCE_MISSING, `${locator.path}: no se puede resolver dentro del proyecto`);
+  }
+  let bytes;
+  try {
+    bytes = read(absolute);
+  } catch {
+    return salida(SOURCE_MISSING, `${locator.path}: el archivo citado no existe`);
+  }
+  const texto = String(bytes);
+  if (Object.hasOwn(locator, 'line')) {
+    const lineas = texto.split('\n').length;
+    if (locator.line > lineas) return salida(SOURCE_OUT_OF_RANGE, `${locator.path}: cita la línea ${locator.line} y el archivo tiene ${lineas}`);
+  }
+  const actual = createHash('sha256').update(bytes).digest('hex');
+  if (actual !== identity.value) return salida(SOURCE_DRIFTED, `${locator.path}: el contenido cambió desde la captura`);
+  return salida(SOURCE_OK, locator.path);
 }
 
-export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, verify = verifyDiscoveryFeature) {
+/** Solo los claims del ultimo packet de cada run: los packets anteriores son historia congelada
+ * y sus fuentes envejecieron a proposito. */
+export function activeClaims(history) {
+  const claims = [];
+  for (const run of history.runs ?? []) {
+    // Cada entrada de `history` es {decision, packet}; una decisión pending no trae packet.
+    const conPacket = (run.history ?? []).filter((entry) => entry?.packet);
+    if (conPacket.length === 0) continue;
+    claims.push(...(conPacket[conPacket.length - 1].packet.research_snapshot?.claims ?? []));
+  }
+  return claims;
+}
+
+export function verifyDiscoverySources(projectRoot, featureSlug, options = {}) {
+  const leerHistoria = options.history ?? readDiscoveryHistory;
+  const history = leerHistoria(projectRoot, featureSlug);
+  const claims = activeClaims(history);
+  const counts = { [SOURCE_OK]: 0, [SOURCE_DRIFTED]: 0, [SOURCE_MISSING]: 0, [SOURCE_OUT_OF_RANGE]: 0, [SOURCE_WEB]: 0, [SOURCE_NO_HASH]: 0 };
+  const findings = claims.map((claim) => classifySource(projectRoot, claim, options.read));
+  for (const f of findings) counts[f.status] += 1;
+  const bloqueantes = new Set([SOURCE_MISSING, SOURCE_OUT_OF_RANGE]);
+  if (options.requireCurrent) bloqueantes.add(SOURCE_DRIFTED);
+  return { counts, findings, blocking: findings.filter((f) => bloqueantes.has(f.status)), empty: claims.length === 0 };
+}
+
+export function parseArgs(args) {
+  const [command, flag, slug, ...resto] = args;
+  if (!['check', 'sources'].includes(command) || flag !== '--feature' || !FEATURE_SLUG.test(slug ?? '')) return null;
+  if (resto.length === 0) return { command, featureSlug: slug, requireCurrent: false };
+  // `--require-current` sólo tiene sentido sobre `sources`: en `check` no hay nada que comparar
+  // contra el árbol, así que aceptarlo ahí sería prometer una comprobación que no ocurre.
+  if (command === 'sources' && resto.length === 1 && resto[0] === '--require-current') {
+    return { command, featureSlug: slug, requireCurrent: true };
+  }
+  return null;
+}
+
+export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, verify = verifyDiscoveryFeature, options = {}) {
   const parsed = parseArgs(args);
   if (!parsed) {
     writeError(USAGE);
     return 2;
   }
   try {
+    if (parsed.command === 'sources') {
+      const sources = (options.sources ?? verifyDiscoverySources)(cwd, parsed.featureSlug, { requireCurrent: parsed.requireCurrent });
+      if (sources.empty) {
+        write(`VACÍO: ${parsed.featureSlug} no declara ningún claim vigente que resolver.`);
+        return 0;
+      }
+      if (sources.blocking.length > 0) {
+        writeError(`REJECTED: DISCOVERY_SOURCE_UNRESOLVABLE: ${sources.blocking.length} claim(s) citan una fuente que no se puede resolver:`);
+        for (const f of sources.blocking) writeError(`  ${f.claim_id}: ${f.detail}`);
+        return 1;
+      }
+      const c = sources.counts;
+      write(`OK: ${c[SOURCE_OK]} fuente(s) con el contenido declarado; ${c[SOURCE_DRIFTED]} cambiaron desde la captura; ${c[SOURCE_WEB]} web y ${c[SOURCE_NO_HASH]} sin huella quedan sin verificar — este gate no sale a la red.`);
+      return 0;
+    }
     const result = verify(cwd, parsed.featureSlug);
     write(`OK: ${parsed.featureSlug} has ${result.runs} valid Discovery run(s).`);
     return 0;

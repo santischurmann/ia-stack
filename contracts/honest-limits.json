@@ -288,6 +288,12 @@
       "file": "SKILL.md",
       "phrase": "el test se nombra, no se comprueba: alcanza con que exista y salga ok",
       "why": "El gate delega en checkTestBinding de verify-test-bindings.mjs, que sólo exige que el título exacto del test aparezca una vez en la salida TAP y que esté marcado ok. Nunca abre el cuerpo de la prueba. Un test con el título correcto y el cuerpo vacío satisface el requisito, y también uno que verifica algo distinto de lo que la regla exige. Sin esta frase, el inventario de requisitos con todos sus tests en verde se lee como que las reglas están comprobadas, cuando lo único comprobado es que existe una prueba que se llama así y no falla."
+    },
+    {
+      "limit_id": "discovery-sources-never-leaves-the-disk",
+      "file": "README.md",
+      "phrase": "No sale a la red: una fuente web se cuenta como no verificable, nunca como verificada.",
+      "why": "El subcomando sources cierra el agujero de las fuentes inventadas para los locators de repo -si el archivo no existe, frena-, pero no puede hacer nada con una URL: este proyecto no hace peticiones de red por diseno. Sin esta frase, un OK de sources se lee como que todas las fuentes del expediente fueron comprobadas, cuando las web quedaron sin mirar y solo estan contadas. El numero de web sin verificar se imprime en cada corrida justamente para que no desaparezca detras del OK."
     }
   ]
 }
