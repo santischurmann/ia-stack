@@ -42,6 +42,14 @@
       "expect": "reject"
     },
     {
+      "script": "verify-design-tokens.mjs",
+      "args": [
+        "check",
+        "contracts/design-tokens.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-discovery-core.mjs",
       "args": [
         "check",

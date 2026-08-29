@@ -1,0 +1,45 @@
+{
+  "schema": "vcp.design-tokens/v1",
+  "why": "Las reglas de diseno de VCP eran convencion sin detector, que es exactamente lo que este proyecto llama decoracion. El prestamo real de shadcn/ui no es su stack -React, Tailwind y Radix son justo lo que VCP no puede tener- sino su modelo: el sistema de diseno es un contrato declarado que una maquina revisa. Cada superficie visual declara aca su paleta, y el gate comprueba que los tokens existan en los tres estados de tema, que los dos bloques oscuros no hayan derivado uno del otro, que cada superficie traiga su color de texto emparejado, y que ningun color se cuele fuera del sistema.",
+  "conventions": {
+    "pairing": "Cada token de superficie declarado en `surfaces` tiene que tener su companero de texto con el sufijo `-foreground`. Es la regla de shadcn: una superficie nunca viaja sin el color que se lee encima, asi que no se puede pintar un fondo y heredar un texto que quedo del tema anterior.",
+    "three_theme_states": "El lector tiene tres estados, no dos: eleccion explicita clara, eleccion explicita oscura, y el default del sistema, que no estampa nada y solo se distingue por prefers-color-scheme. Por eso un color definido unicamente adentro de un bloque oscuro es el bug clasico: en el estado sin estampar no aplica nunca, y la pagina termina pintando el texto de un tema sobre el fondo del otro.",
+    "twin_dark_blocks": "El modelo de tres estados obliga a declarar la paleta oscura dos veces -una bajo prefers-color-scheme y otra bajo el estampado explicito-. La duplicacion es estructural y no se puede evitar; lo que si se puede es verificar que las dos copias digan lo mismo. Sin este chequeo, editar una sola de las dos es un cambio invisible.",
+    "no_loose_literals": "Ningun color literal fuera de los bloques que definen tokens. Un `#fff` suelto en una regla es un color que no participa del tema: se ve bien en uno y mal en el otro, y no hay nada que lo delate.",
+    "radius_base": "Un unico token de radio del que deriva el resto. Seis valores de radio escritos a mano se desincronizan; uno derivado, no."
+  },
+  "surfaces": [
+    {
+      "file": "docs/mapa-del-protocolo.html",
+      "why": "El mapa visual del protocolo: la unica superficie HTML que este repositorio versiona.",
+      "tokens": [
+        "paper",
+        "paper-foreground",
+        "card",
+        "card-foreground",
+        "muted-foreground",
+        "faint-foreground",
+        "rule",
+        "rule-soft",
+        "accent",
+        "accent-foreground",
+        "ok",
+        "ok-foreground",
+        "empty",
+        "empty-foreground",
+        "stop",
+        "stop-foreground"
+      ],
+      "pairs": [
+        ["paper", "paper-foreground"],
+        ["card", "card-foreground"],
+        ["accent", "accent-foreground"],
+        ["ok", "ok-foreground"],
+        ["empty", "empty-foreground"],
+        ["stop", "stop-foreground"]
+      ],
+      "radius_base": "radius",
+      "body_background_token": "paper"
+    }
+  ]
+}

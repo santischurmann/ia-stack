@@ -7,68 +7,80 @@
 
 <style>
   :root {
-    --paper:      #EEF1F4;
-    --card:       #FAFBFC;
-    --ink:        #16202B;
-    --ink-soft:   #4A5A6A;
-    --ink-faint:  #7C8B99;
-    --rule:       #D2DAE1;
-    --rule-soft:  #E3E9ED;
-    --accent:     #2C5B7C;
-    --accent-dim: #7FA3BC;
+    /* Paleta en OKLCH: espacio perceptualmente uniforme, asi el mismo salto de luminosidad se ve
+       igual en cualquier tono. El hexadecimal de origen queda al lado como referencia legible. */
+    --paper:            oklch(0.9567 0.0052 247.9); /* #EEF1F4 */
+    --paper-foreground: oklch(0.2393 0.0256 251.3); /* #16202B */
+    --card:             oklch(0.9876 0.0017 247.8); /* #FAFBFC */
+    --card-foreground:  oklch(0.2393 0.0256 251.3); /* #16202B */
+    --muted-foreground: oklch(0.4603 0.0329 248.5); /* #4A5A6A */
+    --faint-foreground: oklch(0.6294 0.0274 246.4); /* #7C8B99 */
+    --rule:             oklch(0.8843 0.013 244.3);  /* #D2DAE1 */
+    --rule-soft:        oklch(0.9306 0.0084 236.6); /* #E3E9ED */
+    --accent:           oklch(0.4534 0.0746 241.6); /* #2C5B7C */
+    --accent-foreground:oklch(0.9876 0.0017 247.8); /* texto sobre --accent */
+    --accent-dim:       oklch(0.6977 0.054 238.8);  /* #7FA3BC */
 
-    --ok:         #35705F;
-    --ok-bg:      #DCE9E4;
-    --empty:      #9A6A1C;
-    --empty-bg:   #F2E7D2;
-    --stop:       #9E453F;
-    --stop-bg:    #F1DEDC;
+    /* Cada estado es un par: la superficie tenida y el color que se lee encima. */
+    --ok:               oklch(0.9228 0.0154 171.0); /* #DCE9E4 */
+    --ok-foreground:    oklch(0.5002 0.0681 172.3); /* #35705F */
+    --empty:            oklch(0.9311 0.0303 83.6);  /* #F2E7D2 */
+    --empty-foreground: oklch(0.5613 0.1081 74.2);  /* #9A6A1C */
+    --stop:             oklch(0.9154 0.0212 24.8);  /* #F1DEDC */
+    --stop-foreground:  oklch(0.5057 0.1201 26.1);  /* #9E453F */
 
+    /* Una sola fuente de verdad para las esquinas. Seis valores a mano se desincronizan. */
+    --radius: 3px;
     --shadow: 0 1px 2px rgba(22, 32, 43, .06), 0 8px 24px rgba(22, 32, 43, .05);
     --measure: 66ch;
   }
 
+  /* El lector tiene TRES estados, no dos: claro estampado, oscuro estampado, y el default del
+     sistema, que no estampa nada. Por eso la paleta oscura se declara dos veces. La duplicacion es
+     estructural; que las dos copias digan lo mismo lo verifica verify-design-tokens.mjs. */
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper:      #10171F;
-      --card:       #17212C;
-      --ink:        #E4EAEF;
-      --ink-soft:   #A3B2BE;
-      --ink-faint:  #6F808E;
-      --rule:       #2A3846;
-      --rule-soft:  #202C38;
-      --accent:     #7FB0D4;
-      --accent-dim: #3E5F79;
-
-      --ok:         #6FBBA2;
-      --ok-bg:      #1B2E2A;
-      --empty:      #D9A75A;
-      --empty-bg:   #2E2618;
-      --stop:       #DE8480;
-      --stop-bg:    #311F1F;
-
+      --paper:            oklch(0.2015 0.0193 252.1); /* #10171F */
+      --paper-foreground: oklch(0.9339 0.0094 242.8); /* #E4EAEF */
+      --card:             oklch(0.2435 0.0255 251.3); /* #17212C */
+      --card-foreground:  oklch(0.9339 0.0094 242.8); /* #E4EAEF */
+      --muted-foreground: oklch(0.7557 0.0241 242.0); /* #A3B2BE */
+      --faint-foreground: oklch(0.591 0.0293 243.0);  /* #6F808E */
+      --rule:             oklch(0.3344 0.031 248.8);  /* #2A3846 */
+      --rule-soft:        oklch(0.2876 0.0276 248.8); /* #202C38 */
+      --accent:           oklch(0.7357 0.0738 240.8); /* #7FB0D4 */
+      --accent-foreground:oklch(0.2015 0.0193 252.1); /* texto sobre --accent */
+      --accent-dim:       oklch(0.4712 0.0572 243.1); /* #3E5F79 */
+      --ok:               oklch(0.2833 0.026 179.6);  /* #1B2E2A */
+      --ok-foreground:    oklch(0.7354 0.0847 170.8); /* #6FBBA2 */
+      --empty:            oklch(0.2734 0.0268 81.2);  /* #2E2618 */
+      --empty-foreground: oklch(0.7592 0.1116 76.5);  /* #D9A75A */
+      --stop:             oklch(0.2621 0.0282 19.1);  /* #311F1F */
+      --stop-foreground:  oklch(0.7082 0.1115 23.0);  /* #DE8480 */
+      --radius: 3px;
       --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
     }
   }
 
   :root[data-theme="dark"] {
-    --paper:      #10171F;
-    --card:       #17212C;
-    --ink:        #E4EAEF;
-    --ink-soft:   #A3B2BE;
-    --ink-faint:  #6F808E;
-    --rule:       #2A3846;
-    --rule-soft:  #202C38;
-    --accent:     #7FB0D4;
-    --accent-dim: #3E5F79;
-
-    --ok:         #6FBBA2;
-    --ok-bg:      #1B2E2A;
-    --empty:      #D9A75A;
-    --empty-bg:   #2E2618;
-    --stop:       #DE8480;
-    --stop-bg:    #311F1F;
-
+    --paper:            oklch(0.2015 0.0193 252.1); /* #10171F */
+    --paper-foreground: oklch(0.9339 0.0094 242.8); /* #E4EAEF */
+    --card:             oklch(0.2435 0.0255 251.3); /* #17212C */
+    --card-foreground:  oklch(0.9339 0.0094 242.8); /* #E4EAEF */
+    --muted-foreground: oklch(0.7557 0.0241 242.0); /* #A3B2BE */
+    --faint-foreground: oklch(0.591 0.0293 243.0);  /* #6F808E */
+    --rule:             oklch(0.3344 0.031 248.8);  /* #2A3846 */
+    --rule-soft:        oklch(0.2876 0.0276 248.8); /* #202C38 */
+    --accent:           oklch(0.7357 0.0738 240.8); /* #7FB0D4 */
+    --accent-foreground:oklch(0.2015 0.0193 252.1); /* texto sobre --accent */
+    --accent-dim:       oklch(0.4712 0.0572 243.1); /* #3E5F79 */
+    --ok:               oklch(0.2833 0.026 179.6);  /* #1B2E2A */
+    --ok-foreground:    oklch(0.7354 0.0847 170.8); /* #6FBBA2 */
+    --empty:            oklch(0.2734 0.0268 81.2);  /* #2E2618 */
+    --empty-foreground: oklch(0.7592 0.1116 76.5);  /* #D9A75A */
+    --stop:             oklch(0.2621 0.0282 19.1);  /* #311F1F */
+    --stop-foreground:  oklch(0.7082 0.1115 23.0);  /* #DE8480 */
+    --radius: 3px;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
   }
 
@@ -76,7 +88,7 @@
 
   body {
     background: var(--paper);
-    color: var(--ink);
+    color: var(--paper-foreground);
     font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
     font-size: 17px;
     line-height: 1.6;
@@ -98,12 +110,12 @@
     letter-spacing: .12em;
     font-size: 12px;
     font-weight: 600;
-    color: var(--ink-faint);
+    color: var(--faint-foreground);
   }
 
   /* ---------- cabecera ---------- */
 
-  header { padding: 72px 0 40px; border-bottom: 2px solid var(--ink); }
+  header { padding: 72px 0 40px; border-bottom: 2px solid var(--paper-foreground); }
 
   h1 {
     font-size: clamp(40px, 7vw, 76px);
@@ -118,10 +130,10 @@
     max-width: var(--measure);
     margin: 22px 0 0;
     font-size: 20px;
-    color: var(--ink-soft);
+    color: var(--muted-foreground);
   }
 
-  .thesis strong { color: var(--ink); font-weight: 600; }
+  .thesis strong { color: var(--paper-foreground); font-weight: 600; }
 
   /* ---------- los tres estados ---------- */
 
@@ -136,14 +148,14 @@
     background: var(--card);
     border: 1px solid var(--rule);
     border-top: 4px solid var(--sc);
-    border-radius: 3px;
+    border-radius: var(--radius);
     padding: 18px 20px 20px;
     box-shadow: var(--shadow);
   }
 
-  .state.ok    { --sc: var(--ok); }
-  .state.empty { --sc: var(--empty); }
-  .state.stop  { --sc: var(--stop); }
+  .state.ok    { --sc: var(--ok-foreground); }
+  .state.empty { --sc: var(--empty-foreground); }
+  .state.stop  { --sc: var(--stop-foreground); }
 
   .state .mono {
     display: inline-block;
@@ -152,15 +164,15 @@
     color: var(--sc);
     background: var(--sb);
     padding: 3px 9px;
-    border-radius: 3px;
+    border-radius: var(--radius);
   }
 
-  .state.ok    { --sb: var(--ok-bg); }
-  .state.empty { --sb: var(--empty-bg); }
-  .state.stop  { --sb: var(--stop-bg); }
+  .state.ok    { --sb: var(--ok); }
+  .state.empty { --sb: var(--empty); }
+  .state.stop  { --sb: var(--stop); }
 
-  .state p { margin: 12px 0 0; font-size: 15.5px; line-height: 1.5; color: var(--ink-soft); }
-  .state p b { color: var(--ink); font-weight: 600; }
+  .state p { margin: 12px 0 0; font-size: 15.5px; line-height: 1.5; color: var(--muted-foreground); }
+  .state p b { color: var(--paper-foreground); font-weight: 600; }
 
   /* ---------- secciones ---------- */
 
@@ -185,7 +197,7 @@
     text-wrap: balance;
   }
 
-  .lede { max-width: var(--measure); color: var(--ink-soft); margin: 0 0 30px; }
+  .lede { max-width: var(--measure); color: var(--muted-foreground); margin: 0 0 30px; }
 
   /* ---------- fases ---------- */
 
@@ -215,12 +227,12 @@
     letter-spacing: -.005em;
   }
 
-  .phase p { margin: 0; color: var(--ink-soft); font-size: 16px; }
+  .phase p { margin: 0; color: var(--muted-foreground); font-size: 16px; }
   .phase p code { font-size: .85em; color: var(--accent); }
 
   /* ---------- tabla de gates ---------- */
 
-  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--card); }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--card); }
 
   table { border-collapse: collapse; width: 100%; min-width: 720px; }
 
@@ -230,13 +242,13 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .1em;
-    color: var(--ink-faint);
+    color: var(--faint-foreground);
     padding: 14px 18px;
     border-bottom: 2px solid var(--rule);
     white-space: nowrap;
   }
 
-  th.limit { color: var(--empty); }
+  th.limit { color: var(--empty-foreground); }
 
   td {
     padding: 15px 18px;
@@ -249,9 +261,9 @@
   tr:last-child td { border-bottom: 0; }
 
   td.gate { white-space: nowrap; }
-  td.gate code { font-size: 13.5px; color: var(--ink); font-weight: 500; }
-  td.limit { color: var(--ink-soft); }
-  td.limit b { color: var(--empty); font-weight: 600; }
+  td.gate code { font-size: 13.5px; color: var(--paper-foreground); font-weight: 500; }
+  td.limit { color: var(--muted-foreground); }
+  td.limit b { color: var(--empty-foreground); font-weight: 600; }
 
   /* ---------- hallazgos ---------- */
 
@@ -264,17 +276,17 @@
     background: var(--card);
     border: 1px solid var(--rule);
     border-left: 4px solid var(--accent-dim);
-    border-radius: 3px;
+    border-radius: var(--radius);
     padding: 16px 20px;
     align-items: start;
   }
 
-  .find.grave { border-left-color: var(--stop); }
+  .find.grave { border-left-color: var(--stop-foreground); }
 
   .find .label { padding-top: 3px; }
-  .find.grave .label { color: var(--stop); }
+  .find.grave .label { color: var(--stop-foreground); }
   .find h3 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
-  .find p { margin: 0; color: var(--ink-soft); font-size: 15.5px; }
+  .find p { margin: 0; color: var(--muted-foreground); font-size: 15.5px; }
   .find p code { font-size: .86em; color: var(--accent); }
 
   /* ---------- métricas ---------- */
@@ -285,7 +297,7 @@
     gap: 1px;
     background: var(--rule);
     border: 1px solid var(--rule);
-    border-radius: 3px;
+    border-radius: var(--radius);
     overflow: hidden;
   }
 
@@ -296,29 +308,29 @@
     line-height: 1;
     letter-spacing: -.02em;
     font-variant-numeric: tabular-nums;
-    color: var(--ink);
+    color: var(--paper-foreground);
   }
-  .metric-l { font-size: 14px; color: var(--ink-soft); margin-top: 7px; line-height: 1.35; }
+  .metric-l { font-size: 14px; color: var(--muted-foreground); margin-top: 7px; line-height: 1.35; }
 
   /* ---------- lo no resuelto ---------- */
 
   .open {
-    background: var(--empty-bg);
-    border: 1px solid var(--empty);
-    border-radius: 3px;
+    background: var(--empty);
+    border: 1px solid var(--empty-foreground);
+    border-radius: var(--radius);
     padding: 26px 28px;
   }
 
-  .open h3 { font-size: 18px; font-weight: 600; margin: 0 0 14px; color: var(--ink); }
+  .open h3 { font-size: 18px; font-weight: 600; margin: 0 0 14px; color: var(--paper-foreground); }
   .open ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
-  .open li { color: var(--ink); font-size: 15.5px; line-height: 1.5; }
+  .open li { color: var(--paper-foreground); font-size: 15.5px; line-height: 1.5; }
   .open li b { font-weight: 600; }
 
   footer {
     margin: 72px 0 0;
     padding-top: 22px;
     border-top: 1px solid var(--rule);
-    color: var(--ink-faint);
+    color: var(--faint-foreground);
     font-size: 14px;
     max-width: var(--measure);
   }

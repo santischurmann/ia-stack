@@ -204,6 +204,12 @@
       "file": "README.md",
       "phrase": "ese lenguaje queda **declarado sin medición**, no medido en cero",
       "why": "install.ps1 existe y se corre, pero Set-PSDebug -Trace no da numero de linea de forma portable, asi que no hay como calcular el denominador. Decir \"0%\" seria mentir en la otra direccion: sugiere que se midio y dio cero. Queda declarado como no medido, que es lo unico cierto."
+    },
+    {
+      "limit_id": "design-tokens-is-not-a-contrast-check",
+      "file": "README.md",
+      "phrase": "Verifica forma y coherencia, nunca contraste ni legibilidad",
+      "why": "El gate comprueba que los tokens existan en los tres estados de tema, que los dos bloques oscuros coincidan y que cada superficie traiga su color de texto. Nada de eso mide si un color se lee sobre otro. Sin esta frase, un verde del gate se toma por una revision de diseno aprobada, y dos tokens que cumplen todas las reglas pueden ser gris sobre gris."
     }
   ]
 }
