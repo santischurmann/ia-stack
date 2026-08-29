@@ -69,3 +69,4 @@
 [2026-08-28] Auditor | revision de los 28 restantes | 6 arreglados, 5 declarados sin arreglar, 4 por diseno, 3 refutados, 8 sin verificar | h63 | chain:ee0cfac089ba52ab62b7de9bc49587843b173ea4545b95e951c2e1bb529bb26a
 [2026-08-28] Auditor | los ultimos 8 verificados | 7 reales: 5 arreglados, 2 declarados; 1 ya estaba cerrado. Ataque adversarial cerrado | h64 | chain:4f47e45c1d0247dc1d5ac2d753425a1d19f41843e9e1c2f514f4fa1ab4d29c38
 [2026-08-29] Docs | mapa al commit 8560363 | 606 tests, 84 checks, 34 limites; ataque adversarial cerrado, 41 de 41 verificadas | mapa | chain:7727cfa6199a096f832b2d4364aa8a595478ffa0d77def839b83eef4c4abfb10
+[2026-08-29] Auditor | tres gates que comparaban un nombre en vez del archivo real | 609 tests verde, cobertura 100% en 25 scripts, 84 checks, 34 limites, sonda de 24 gates; push verificado clonando de GitHub | e7a31fa | chain:a5fc597bb9b29f587badd9b82e562a69061d145475cc2d6d3d2441ca5a276b83
