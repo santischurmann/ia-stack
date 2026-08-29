@@ -648,6 +648,18 @@ test('gitVersions distingue el repo sin commits del error real de git', () => {
   }));
   assert.equal(errorReal.versions.length, 0);
   assert.match(errorReal.error, /not a git repository/u);
+
+  // Git puede fallar sin escribir una palabra en stderr. Sin esta rama cubierta, el gate de
+  // cobertura era NO DETERMINISTA: V8 reportaba a veces 110 ramas y a veces 111 para este archivo,
+  // y la 111 era justo el `|| ""` de esta línea, que ninguna prueba ejercitaba con stderr vacío.
+  // El resultado era verde o rojo sobre el mismo árbol, sin cambiar nada. Reproducido el
+  // 2026-08-29: 1 de cada 10 corridas del archivo solo, con un único proceso.
+  const sinMensaje = gitVersions('AUDIT.md', '.', gitFalso({
+    log: { status: 128, stdout: '', stderr: '' },
+    'rev-parse': { status: 0, stdout: 'abc123', stderr: '' },
+  }));
+  assert.equal(sinMensaje.versions.length, 0);
+  assert.match(sinMensaje.error, /no se puede leer la historia de AUDIT\.md:\s*$/u, 'sin mensaje de git, el error igual se reporta');
 });
 
 test('gitVersions registra como vacío el commit que borró el archivo, en vez de saltearlo', () => {
