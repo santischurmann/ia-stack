@@ -4,6 +4,38 @@
 **Alcance:** lectura de núcleo de 14 repositorios ajenos, buscando patrones portables para los
 huecos conocidos de VCP.
 
+## CORRECCIÓN 2026-08-29 — la conclusión más fuerte de este informe era falsa
+
+> Esta sección se agrega **un día después** y no reescribe nada de lo que sigue: el informe queda
+> como se escribió, y acá se dice qué de él resultó equivocado. Borrar la conclusión vieja haría
+> desaparecer justamente el dato interesante.
+
+La sección 5 declara cuatro problemas como irresolubles y recomienda, textual, *«dejar de prometer
+sellado del historial y reescribir el claim»*, apoyándose en que **«15581 archivos en 14 repos y no
+hay una sola solución portable»**. Tres de esos cuatro se resolvieron entre el 2026-08-28 y el
+2026-08-29, y **ninguna solución salió del corpus**:
+
+| Declarado en este informe | Estado hoy | Con qué |
+|---|---|---|
+| 🔴 Ancla externa: **sin respuesta**, ninguna portable | **Resuelto** | `verify-audit-chain history` y `verify-discovery-core history`. El ancla portable era **git**: un registro sólo crece, así que cada versión commiteada tiene que empezar con la anterior. Cero infraestructura, cero CI, cero OIDC — corriendo hoy sobre 45 versiones commiteadas |
+| 🔴 Custodia: **nadie firma un receipt** | **Parcial** | `verify-receipt custody` lee el estado de firma que git ya trae e informa quién firmó; una firma rota siempre rechaza. El límite de fondo sigue: si el agente puede firmar, firma como vos |
+| 🟡 Cobertura de Bash: **sin respuesta útil** | **Resuelto para bash** | `verify-shell-coverage` mide con el instrumento que trae el propio bash — `PS4` con `$LINENO` más `set -x` —, sin dependencias. PowerShell queda **declarado sin medición**, no medido en cero |
+| 🔴 Consentimiento humano real | **Sigue abierto** | La única de las cuatro que se sostiene. Probar que una persona quiso algo necesita un canal fuera de este proceso |
+
+**Qué aprender de esto, que importa más que las tres soluciones.** Un corpus grande convergiendo en
+que algo no tiene solución es **evidencia débil de imposibilidad**: sólo dice que catorce proyectos
+no la encontraron o no la necesitaron. Este informe llamó a esa convergencia «la más importante» y
+era la más frágil. Que 15581 archivos no contengan una solución no prueba que no exista; en el caso
+del ancla, la respuesta estaba en una herramienta que este proyecto ya usaba todos los días.
+
+**Lo que NO cambia.** La cobertura sigue siendo 2,05 % y sigue inflada — varias lecturas parciales
+se cuentan como archivo entero. Y las 60 citas `archivo:línea` de este informe apuntan a los clones
+pineados de los repos externos, **no a este repositorio**: nadie las revalidó de forma independiente
+y no se pueden verificar sin volver a clonar las catorce fuentes. Eso sigue siendo un límite del
+informe, no algo que esta corrección arregle.
+
+---
+
 ## Estado de esta investigación: PARCIAL
 
 **Ninguna fuente está estudiada.** Se leyeron **320 archivos de 15581 (2.05 %)**.
