@@ -1,0 +1,92 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "discovery-ancla-externa",
+  "task": "T01 — anclar el expediente de Discovery contra la historia de git",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "scripts/verify-discovery-core.mjs",
+      "tests/verify-discovery-history.test.mjs",
+      "contracts/honest-limits.json",
+      "README.md"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Modificar o borrar una decision o un packet ya commiteado rompe el ancla y se nombra el archivo, su commit y el tipo de cambio. Es el agujero que quedaba: los hashes internos se calculan sobre archivos del mismo arbol que protegen, asi que reescribir el run entero y recalcularlos daba una secuencia coherente y check salia verde.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-history.test.mjs",
+      "test_hash_sha256": "446fee4be6a48c8ca3f7da5c152681d80641659dede99843808f73282b201594",
+      "command": "node --test tests/verify-discovery-history.test.mjs",
+      "result": "18 tests, 18 pass, 0 fail. Tres pruebas FALSIFICACION cubren decision reescrita, decision borrada y packet reescrito."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Crecer no es una violacion: agregar decisiones y packets nuevos es exactamente lo que un expediente hace. Y regenerar una vista tampoco, porque las vistas son derivadas y cambiar es su trabajo. Sin esta distincion el gate daria rojo en cada corrida normal del protocolo y el equipo aprenderia a ignorarlo.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-history.test.mjs",
+      "test_hash_sha256": "446fee4be6a48c8ca3f7da5c152681d80641659dede99843808f73282b201594",
+      "command": "node scripts/verify-discovery-core.mjs history --feature integridad-verificable",
+      "result": "OK: el expediente de integridad-verificable solo crecio a lo largo de 1 version(es) commiteada(s). Exit 0. Pruebas dedicadas para agregar decisiones, regenerar una vista y no confundirse con el expediente de otra feature."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Un expediente que existe en disco y nunca se commiteo se rechaza, no pasa en silencio. Un ancla que se apaga sola cuando no encuentra contra que comparar no es un ancla; es el mismo cuidado que ya tenia gitVersions en verify-audit-chain. Un proyecto sin ningun commit, en cambio, escribe VACIO: no registro nada todavia, y eso no es una violacion.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-discovery-history.test.mjs",
+      "test_hash_sha256": "446fee4be6a48c8ca3f7da5c152681d80641659dede99843808f73282b201594",
+      "command": "node --test tests/verify-discovery-history.test.mjs",
+      "result": "Cubierto por la prueba FALSIFICACION del expediente sin commitear y por la del proyecto sin commits, que comprueba que main escribe VACIO y sale 0."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Un ancla que de rojo en el uso normal del protocolo se desactiva sola: el equipo aprende a ignorarla.",
+      "mitigation": "Solo bloquea modificacion y borrado de archivos inmutables por diseno. Agregar decisiones y regenerar vistas pasan, con prueba cada uno. Verificado sobre el expediente real de este repositorio: exit 0."
+    },
+    "readability": {
+      "finding": "El limite viejo decia que la cadena no detecta una reescritura completa. Con history eso dejo de ser cierto a secas, y dejarlo asi habria hecho creer que el agujero sigue abierto.",
+      "mitigation": "El limite pasa a nombrar a check explicitamente, y se declaro uno nuevo para el residuo real: quien reescriba la historia publicada puede fabricar una secuencia coherente."
+    },
+    "reliability": {
+      "finding": "Mi primer doble de git devolvia 128 para todo, incluido rev-parse, asi que el gate lo leia como repo sin commits y el caso de ancla rota quedaba sin probar.",
+      "mitigation": "El doble distingue: log falla, HEAD existe. Es la segunda vez en esta sesion que un doble demasiado tosco tapa el caso que la prueba dice cubrir, y quedo anotado en el codigo."
+    },
+    "resilience": {
+      "finding": "git puede no devolver stdout ni stderr, o fallar por razones que no son un repo sin commits.",
+      "mitigation": "Ambos caminos tienen prueba. Se pregunta por HEAD en vez de leer el texto del error, que cambia entre versiones de git y entre idiomas."
+    }
+  },
+  "measurements": [
+    { "metric": "subcomandos de verify-discovery-core", "measured": true, "before": 2, "after": 3 },
+    { "metric": "agujeros de fondo de Discovery sin cerrar", "measured": true, "before": 1, "after": 0 },
+    { "metric": "pruebas de la suite", "measured": true, "before": 665, "after": 683 },
+    { "metric": "limites honestos declarados", "measured": true, "before": 49, "after": 50 },
+    {
+      "metric": "costo de falsificar un expediente despues del cambio",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No es medible en ninguna unidad honesta. Antes alcanzaba con reescribir archivos y recalcular hashes; ahora hace falta reescribir la historia publicada de git, que cambia el identificador de cada commit. Es mas caro y mucho mas ruidoso, pero poner un numero seria inventarlo."
+    }
+  ],
+  "reproduction": "Se clono este repositorio, se reescribio el evidence_summary del claim vigente en el packet d003, se recalculo packet_sha256 en la decision d003 para que la cadena interna siguiera coherente, y se commiteo. Corriendo el gate actualizado contra ese clon: `history` sale 1 y nombra los dos archivos con su commit. Antes del cambio no habia ningun comando que lo detectara. Verificacion: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs && node scripts/verify-discovery-core.mjs history --feature integridad-verificable && node scripts/verify-vcp-contract.mjs check",
+  "not_reviewed": "El ancla es git, no un notario: quien reescriba la historia YA PUBLICADA puede fabricar un expediente falso que crezca de forma coherente. Eso queda declarado como limite, no resuelto. Tampoco se verifico el caso de un repositorio con submodulos, worktrees multiples, ni uno donde docs/discovery este en .gitignore -ahi el expediente nunca entraria a la historia y el gate lo reportaria como sin ancla, que es el comportamiento correcto, pero no se probo-. El subcomando history NO esta declarado en contracts/empty-probe.json: la sonda prueba una invocacion por script y verify-discovery-core ya declara la suya con check. Y el flake de verify-vcp-coverage.mjs sigue sin arreglar: durante este trabajo aparecio una vez mas, en verify-audit-chain.mjs, archivo que este cambio no toca.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 683, pass 683, fail 0, skipped 0",
+    "node scripts/verify-vcp-coverage.mjs -> OK: All 26 expected Node script(s) are at 100% lines, branches, and functions (dos corridas consecutivas)",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 50 honest limits verified",
+    "node scripts/verify-discovery-core.mjs history --feature integridad-verificable -> OK: solo crecio a lo largo de 1 version commiteada, exit 0",
+    "ataque reproducido sobre un clon: history exit 1 nombrando decisions/d003.json y packets/d003.json en el commit 7a8de1b",
+    "node scripts/verify-discovery-core.mjs sources --feature integridad-verificable -> OK, exit 0",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 25 gate(s), 2 self, 1 excluido",
+    "node scripts/verify-graphify-manifest.mjs check -> OK: 187 tracked file(s)",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 4 archivos, 0 bloqueantes",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: 39 versiones commiteadas",
+    "git push origin main -> ed56111..281e812"
+  ],
+  "git_head": "281e8120d3c731024a3b731dd43d980ee20288ad",
+  "tree_fingerprint": "e87c4c1efe5fa573feaab9d50d3e64f2515514a2e3393d1543a2d82f0f879114",
+  "terminal_state": "approved"
+}
