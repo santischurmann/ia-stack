@@ -799,6 +799,33 @@ full spec in `research/vcp-implementation-spec.md`.
 
 ---
 
+## [1.4.0] — 2026-08-29
+
+Sesión larga de endurecimiento. Lo que cambió, con la evidencia al lado:
+
+- **Gate 24: el sistema de diseño pasa a ser un contrato verificable.** `contracts/design-tokens.json`
+  y `verify-design-tokens.mjs`, con nueve reglas mecánicas. El mapa del protocolo adoptó las
+  convenciones: 0 tamaños y 0 espaciados fuera de escala, donde antes había 17 y 35 valores sueltos.
+- **Discovery deja de creerle a sus propias fuentes.** `sources` las resuelve contra el árbol —un
+  expediente con fuentes inventadas salía en verde— y `history` ancla el expediente contra la
+  historia de git, que es el ancla externa que le faltaba a la cadena.
+- **Tres gates que comparaban un nombre en vez del archivo real**, cerrados.
+- **El gate de cobertura era no determinista.** No era el paralelismo: era una rama que el motor
+  instrumentaba de forma intermitente y que ninguna prueba ejercitaba.
+- **De 34 a 51 límites honestos declarados.** Los 24 gates quedaron cubiertos; once no declaraban
+  ninguno, y escribirlos destapó el agujero de las fuentes de Discovery.
+- **Los gates sin entradas reales dejaron de estarlo:** `docs/phase-decisions.json` existe con dos
+  decisiones atestiguables, y `.vibe/handoffs/` con el primer handoff real.
+- **El ejemplo vuelve a estar sincronizado y bajo vigilancia**, con un conflicto de escritura real
+  que tenía sin declarar.
+
+**Etiquetas retroactivas.** Hasta hoy el repositorio no tenía ninguna: `v1.0.0`, `v1.1.0`,
+`v1.2.0` y `v1.3.0` se crearon sobre los commits que declaran cada versión en su mensaje.
+**1.2.0 y 1.3.0 se publicaron sin entrada en este CHANGELOG** y siguen sin ella: la etiqueta las
+vuelve localizables, no suple lo que no se escribió en su momento.
+
+---
+
 ## [1.1.0] — 2026-07-07
 
 ### Changed

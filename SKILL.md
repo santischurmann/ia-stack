@@ -5,6 +5,10 @@ description: "TDD methodology for Claude Code: the orchestrator runs VCP's inter
 
 # VibeCodeProtocols — caveman edition
 
+**Versión:** 1.4.0 · etiquetada como `v1.4.0` en git.
+Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
+Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
+
 **Orchestrator runs under the INTERNAL ORCHESTRATION CONTRACT below for the whole session.
 Sonnet 5 build tasks. Hard gate: red test first, always.**
 
