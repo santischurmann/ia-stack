@@ -1,0 +1,99 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "sistema-diseno-verificable",
+  "task": "T01 — convertir las reglas de diseno en un contrato con detector, y adoptar las convenciones en el mapa",
+  "date": "2026-08-29",
+  "scope": {
+    "declared_paths": [
+      "contracts/design-tokens.json",
+      "contracts/empty-probe.json",
+      "contracts/graphify-exclusions.json",
+      "contracts/honest-limits.json",
+      "docs/mapa-del-protocolo.html",
+      "scripts/verify-design-tokens.mjs",
+      "tests/verify-design-tokens.test.mjs",
+      "tests/verify-design-tokens-bootstrap-cli.test.mjs",
+      "tests/verify-design-tokens-bootstrap-falsy.test.mjs",
+      "research/design-systems-2026-08-29.md",
+      "README.md"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Ningun token de color vive solo en un bloque oscuro, los dos bloques oscuros coinciden token por token, cada superficie trae su color de texto emparejado, ningun color literal queda fuera del sistema y el body fija su fondo desde un token. El lector tiene tres estados de tema, no dos: el default del sistema no estampa nada, asi que un color definido unicamente bajo un selector oscuro no aplica jamas ahi.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-design-tokens.test.mjs",
+      "test_hash_sha256": "dfbe71e3dad2ce1cf52c9452dbef094d1d17ebfdc30a1443333c7d3584ce5fad",
+      "command": "node --test tests/verify-design-tokens.test.mjs",
+      "result": "38 tests, 38 pass, 0 fail. Cada regla tiene su prueba FALSIFICACION que construye una superficie que deberia pasar por sana y comprueba que el gate no se la cree."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Todo font-size sale de una rampa declarada y todo espaciado de un ritmo declarado, verificado componente por componente dentro de cada atajo. Antes del cambio el mapa tenia 17 tamanos distintos para 24 usos y 35 espaciados distintos para 39.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-design-tokens.test.mjs",
+      "test_hash_sha256": "dfbe71e3dad2ce1cf52c9452dbef094d1d17ebfdc30a1443333c7d3584ce5fad",
+      "command": "node scripts/verify-design-tokens.mjs check contracts/design-tokens.json",
+      "result": "OK: 1 superficie cumple el contrato. Medido aparte sobre el mapa: 0 font-size y 0 espaciados fuera de escala."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "El gate detecta las firmas de diseno generico declaradas en el contrato -la cara a la que cae un generador por defecto, el crema con terracota, el degradado violeta-azul, el emoji abriendo titulos, el centrado total- y nombra cada una con el motivo escrito de por que delata una plantilla.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-design-tokens.test.mjs",
+      "test_hash_sha256": "dfbe71e3dad2ce1cf52c9452dbef094d1d17ebfdc30a1443333c7d3584ce5fad",
+      "command": "node --test tests/verify-design-tokens.test.mjs",
+      "result": "Las pruebas de firmas pasan, incluida la que comprueba que un patron que no compila se reporta en vez de saltearse en silencio."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Un gate de diseno puede leerse como una revision de diseno aprobada. No lo es: no mide contraste ni juzga si un diseno es bueno.",
+      "mitigation": "El limite esta declarado como dato en contracts/honest-limits.json, verificado textualmente en README por verify-vcp-contract.mjs, y se imprime en la salida de cada corrida del gate."
+    },
+    "readability": {
+      "finding": "Las firmas de diseno generico son opinion. Escondidas en el codigo serian criterio arbitrario e ineditable.",
+      "mitigation": "Viven como datos en el contrato, cada una con su campo `why`, y la lista es editable por quien use VCP."
+    },
+    "reliability": {
+      "finding": "La paleta se convirtio de hexadecimal a OKLCH, y estimarla a ojo habria corrido los colores.",
+      "mitigation": "Se convirtio con la formula de Ottosson y se dejo el hexadecimal de origen al lado como referencia. Estructura y texto del mapa verificados identicos al anterior: 256 elementos, 68 reglas, 10.884 caracteres."
+    },
+    "resilience": {
+      "finding": "El gate lee CSS con expresiones regulares, no con un parser, asi que hay construcciones que no ve.",
+      "mitigation": "Falla cerrado: lo que no puede ver se reporta faltante, nunca presente. Declarado como limite honesto."
+    }
+  },
+  "measurements": [
+    { "metric": "font-size distintos en el mapa", "measured": true, "before": 17, "after": 0 },
+    { "metric": "espaciados distintos fuera de escala en el mapa", "measured": true, "before": 35, "after": 0 },
+    { "metric": "gates mecanicos", "measured": true, "before": 23, "after": 24 },
+    { "metric": "limites honestos declarados", "measured": true, "before": 34, "after": 35 },
+    { "metric": "pruebas de la suite", "measured": true, "before": 609, "after": 649 },
+    {
+      "metric": "contraste real de la paleta del mapa",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No se midio, ni antes ni despues. El gate declara explicitamente que no mide contraste, y no se corrio ninguna herramienta que lo hiciera. La conversion a OKLCH preserva el color exacto, asi que el contraste es el mismo que antes -pero eso es un argumento, no una medicion."
+    }
+  ],
+  "reproduction": "Con el codigo anterior: (1) el mapa tenia 17 valores distintos de font-size para 24 usos y 35 de espaciado para 39, contados con un script sobre el bloque <style>; (2) nada verificaba que los dos bloques oscuros coincidieran, asi que editar uno solo era un cambio invisible; (3) no existia ninguna comprobacion de firmas de diseno generico. Verificacion posterior: node --test --test-concurrency=32 && node scripts/verify-design-tokens.mjs check contracts/design-tokens.json && node scripts/verify-vcp-contract.mjs check && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+  "not_reviewed": "El contraste de la paleta no se midio con ninguna herramienta. De shadcn/ui e instatic se leyo documentacion publica, NO su codigo fuente: las mecanicas descritas en research/design-systems-2026-08-29.md valen como lo que esos proyectos declaran, no como lo que su implementacion hace. La idea de generar la escala de tintes desde un color base no se adopto y no se evaluo mas alla de decidir no hacerla. El efecto visual del snapping de escalas se verifico a ojo en los dos temas y comparando estructura y texto, no pixel a pixel. Y el gate de cobertura resulto NO DETERMINISTA durante este trabajo: no se arreglo, queda como tarea propia.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 649, pass 649, fail 0, skipped 0",
+    "node scripts/verify-design-tokens.mjs check contracts/design-tokens.json -> OK: 1 superficie cumple el contrato",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 35 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 25 gate(s), 2 self, 1 excluido",
+    "node scripts/verify-graphify-manifest.mjs check -> OK: 183 tracked file(s), cada exclusion declarada",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 11 archivos, 0 bloqueantes",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: solo crecio a lo largo de 33 versiones commiteadas",
+    "git clone desde GitHub + node --test -> tests 649, pass 648, fail 0, skipped 1 (la de cobertura del grafo, declarada salteada)",
+    "git push origin main -> bff060c..2280b8e",
+    "verify-vcp-coverage.mjs: NO DETERMINISTA. Tres corridas sobre el mismo arbol limpio dieron OK / FALLA / OK, fallando en verify-audit-chain.mjs (branches 99.10%), archivo que este cambio no toca."
+  ],
+  "git_head": "d83a5658ccaff4f2284bd9095d66190f20daa69b",
+  "tree_fingerprint": "41800bd1cae51c7c359f4664e8c6de63f8b4c8550fa9f1e803bafb6afd3c02b6",
+  "terminal_state": "approved"
+}
