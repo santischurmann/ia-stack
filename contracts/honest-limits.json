@@ -210,6 +210,72 @@
       "file": "README.md",
       "phrase": "Verifica forma y coherencia, nunca contraste ni legibilidad",
       "why": "El gate comprueba que los tokens existan en los tres estados de tema, que los dos bloques oscuros coincidan y que cada superficie traiga su color de texto. Nada de eso mide si un color se lee sobre otro. Sin esta frase, un verde del gate se toma por una revision de diseno aprobada, y dos tokens que cumplen todas las reglas pueden ser gris sobre gris."
+    },
+    {
+      "limit_id": "locator-never-opened-nor-hashed-against-source",
+      "file": "README.md",
+      "phrase": "Nunca abre la fuente citada ni comprueba que el locator exista",
+      "why": "verify-discovery-core.mjs sólo valida la FORMA del string del locator (https sin credenciales, o path relativo que no escapa del proyecto). Nunca resuelve la URL, nunca abre el archivo citado, nunca comprueba que la línea exista, y el sha256 de content_identity no se compara jamás contra contenido real: el único hash que verifica es el del propio packet. Sin esta frase, la cadena inmutable de decisiones y los packets sellados se leen como prueba de que la evidencia existe y dice lo que el claim afirma. Lo que se pierde es saber que un run entero de fuentes inventadas pasa en verde, y que la existencia y el contenido de cada fuente sigue siendo trabajo de revisión humana, no del gate."
+    },
+    {
+      "limit_id": "rule-text-equivalence-is-never-judged",
+      "file": "SKILL.md",
+      "phrase": "nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo",
+      "why": "El gate resuelve cada uno de los 70 requisitos base siguiendo su cadena de reemplazos hasta una fila activa, y ahí se detiene: exige que el sucesor exista, esté en la misma fase, no forme ciclo ni merge, y que su test nombrado corra y pase. Nunca lee las dos reglas para ver si dicen lo mismo. En el otro camino, cuando una fila activa reescribe su propia regla, sí nota que el texto cambió y exige un decision_ref nuevo, pero tampoco juzga si el texto nuevo exige lo mismo que el viejo. Sin esta frase, un OK del gate se lee como los 70 requisitos siguen vigentes, cuando lo único probado es que cada uno termina en algún requisito activo con un test verde: uno puede ser reemplazado por otro que exige mucho menos, o reescrito con un decision_ref nuevo, y el gate sigue en verde. Esa es la garantía que se pierde: nadie queda avisado de que la equivalencia de significado la tiene que revisar una persona."
+    },
+    {
+      "limit_id": "view-omits-skip-override-reasons-and-claim-text",
+      "file": "SKILL.md",
+      "phrase": "La vista no muestra motivos de skip, override ni el texto de los claims.",
+      "why": "El gate compara la vista byte a byte contra su regeneración, así que un verde sólo prueba que el Markdown es reproducible desde el JSON — no que contenga lo que decide el caso. El renderizador emite únicamente decision_id, estado, tipo de transición y conteos de claims por clase de evidencia: el motivo de un skip, la justificación de un override, la cadena supersedes/predecessor_hash, las fuentes, las URLs y el resumen de cada claim nunca llegan a la vista. Sin esta frase, alguien revisa run-NNN.md, ve la vista en verde y cree que revisó el Discovery, cuando la evidencia y los motivos siguen sólo en los JSON inmutables bajo runs/. Se pierde la garantía de que el lector vaya al JSON antes de firmar una decisión saltada o revocada."
+    },
+    {
+      "limit_id": "handoff-placeholder-blocklist-is-english-literals",
+      "file": "README.md",
+      "phrase": "No bloquea placeholders en castellano: `ninguno` y `nada` pasan igual",
+      "why": "La única protección real del gate es una lista literal de cuatro cadenas en inglés (n/a, unknown, nothing y el none pelado). Cualquier otro texto pasa: ninguno, nada, n/c, un guion o una sola letra. Sin esta frase, el verde del gate se lee como que el handoff declaró de verdad qué quedó sin revisar, cuando el protocolo se escribe en castellano y el placeholder que un agente escribiría naturalmente es justo el que el gate no ve. La revisión humana que sí juzgaría la sustancia de la declaración deja de pedirse."
+    },
+    {
+      "limit_id": "plan-conflicts-compares-declarations-not-real-writes",
+      "file": "README.md",
+      "phrase": "Compara sólo lo declarado: una escritura no declarada es invisible",
+      "why": "El gate lee únicamente tasks.json y cruza strings de rutas entre tareas; nunca abre el repositorio ni compara contra los archivos que las tareas realmente tocan. Su verde es lo que autoriza despachar tareas en paralelo (SKILL.md, Fase 5: sólo se despachan simultáneamente las que el preflight dejó sin conflicto), así que sin esta frase el OK se lee como no van a chocar al escribir, cuando lo único probado es que las tres listas declaradas no se pisan. Una tarea que escribe un archivo que no listó, o que declara un directorio padre en vez del archivo, colisiona en paralelo con el gate en verde y nadie se entera hasta que el trabajo de una pisa el de la otra."
+    },
+    {
+      "limit_id": "resume-slug-provenance-is-agent-chosen",
+      "file": "SKILL.md",
+      "phrase": "No verifica de dónde salió el slug pedido: el agente lo elige",
+      "why": "El gate compara dos textos: el slug declarado en SESSION.md y el que le pasan por --feature. El segundo lo elige el mismo agente que quiere retomar, y nada lo ata al pedido real del usuario: si lo lee del propio SESSION.md, el gate siempre sale verde. Sin esta frase, un exit 0 se lee como que el checkpoint es de la feature que la persona pidió, cuando lo único probado es que dos strings coinciden, y la promesa de nunca retomar en silencio otra feature se apaga sola."
+    },
+    {
+      "limit_id": "scope-diff-blind-to-gitignored-paths",
+      "file": "README.md",
+      "phrase": "No ve los archivos que Git ignora: escribir ahí pasa en verde.",
+      "why": "El delta observado se arma con git diff (sólo archivos trackeados) más git ls-files --others --exclude-standard, y ese flag descarta todo lo que .gitignore excluye. Si la tarea tocó sus writers declarados, escribir además en dist/, _backups/, graphify-out/, .ua/ o research/.fetch/ es invisible y el gate escribe OK igual. Pesa porque verify-security-baseline.mjs arma su delta con el mismo --exclude-standard: un .env con un secreto no lo mira ningún gate del protocolo. El runtime instalado en .vibe/vcp-runtime/ también es ignorado, pero ése sí lo cubre verify-runtime-sync.mjs, así que no es el ejemplo del hueco. Sin esta frase, el verde se lee como \"nadie escribió fuera de los writers declarados de la tarea\", que es justo lo que este gate no puede afirmar."
+    },
+    {
+      "limit_id": "spec-wordcap-does-not-bound-document-length",
+      "file": "SKILL.md",
+      "phrase": "No acota el largo del documento: una spec entera en tablas o código pasa.",
+      "why": "El verde mide cuánta prosa suelta quedó, no cuán larga es la spec. Como el propio template pide \"tablas antes que narración\", la spec crece sin techo dentro de tablas y bloques de código y el gate informa 2/650. Sin esta frase, quien lee \"OK: 2/650\" cree que la spec es corta y legible —la garantía que el gate dice dar, porque una spec que nadie lee envenena todas las fases siguientes— cuando puede tener 3000 palabras y ya nadie vuelve a mirar el largo a mano."
+    },
+    {
+      "limit_id": "test-body-never-compared-to-rule",
+      "file": "README.md",
+      "phrase": "No compara la prueba con la regla: un cuerpo vacío pasa verde.",
+      "why": "El gate prueba que exista una llamada test() con ese título exacto, que el archivo corra aislado y que esa línea TAP salga ok una sola vez. El campo rule del inventario nunca se lee: nada compara lo que el test verifica contra lo que el requisito dice. Sin esta frase, el OK con N ataduras Discovery se lee como N requisitos verificados, cuando un test de cuerpo vacío con el título correcto da el mismo verde, y la revisión que sí miraría si el test comprueba la regla no la pide nadie."
+    },
+    {
+      "limit_id": "undeclared-honest-limits-are-not-protected",
+      "file": "README.md",
+      "phrase": "Un límite que nadie declaró en el contrato tampoco se protege.",
+      "why": "El gate sólo revisa las frases que alguien ya escribió a mano en contracts/honest-limits.json: recorre esa lista y nada más. Un gate cuyo límite nadie declaró queda sin protección y no produce ninguna señal, ni siquiera una advertencia. Sin esta frase, la salida OK con su conteo de límites verificados se lee como si los límites honestos del protocolo estuvieran completos, cuando lo único probado es que las frases de esa lista siguen textuales. Reproducido: el propio verify-vcp-contract.mjs pasó en verde durante meses sin tener ningún límite declarado sobre sí mismo."
+    },
+    {
+      "limit_id": "coverage-percent-measures-execution-not-assertions",
+      "file": "SKILL.md",
+      "phrase": "El porcentaje no reemplaza ACs ni revisión adversarial: mide ejecución, no intención.",
+      "why": "Si la frase desaparece, el \"100%\" del gate se lee como \"los scripts están probados\", cuando lo único probado es que cada línea, rama y función se ejecutó al menos una vez. Una prueba que importa el script, lo llama y no comprueba nada deja el gate en verde sobre código con un bug. La frase mantiene explícito que la única revisión que sí mira si las pruebas comprueban algo (ACs y pase adversarial) es humana/agéntica: ningún gate automático del repo la verifica, así que si nadie la escribe, nadie la extraña."
     }
   ]
 }

@@ -132,6 +132,11 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    ```bash
    node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
    ```
+   Compara el slug declarado en `SESSION.md` contra el que se le pasa, y nada más: **no verifica de dónde salió el slug pedido: el agente lo elige**. Un agente que pide el slug del checkpoint viejo retoma esa sesión con el gate en verde.
+   Compara el slug declarado en `SESSION.md` contra el que se le pasa, y nada más.
+   **No verifica de dónde salió el slug pedido: el agente lo elige.** Un agente que pide el slug
+   del checkpoint viejo retoma esa sesión con el gate en verde.
+
    Exit `0` is the only identity result that may resume: then re-detect phase with evidence (run that task's tests: FAIL=pre-GREEN, PASS=post-GREEN; `git diff` test files, changed-since-RED=violation stop). Never trust memory. Exit `1` means **never resume silently**; show exactly the matching 🔵 choice below, wait for the user, make only the approved change, then re-run the gate before any resume:
    ```
    🔵 SESSION.md belongs to another feature
@@ -229,12 +234,16 @@ node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feat
 node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
 ```
 
+Un verde acá prueba que el Markdown se regenera byte a byte desde el JSON, no que la vista alcance para decidir. **La vista no muestra motivos de skip, override ni el texto de los claims.** Para juzgar una decisión hay que abrir el JSON, no el resumen.
+
 Al evolucionar el propio VCP, el inventario de requisitos Discovery también se comprueba contra la
 fase que se pretende cerrar; no se declara una fase active sólo porque sus tests existan:
 
 ```bash
 node scripts/verify-discovery-requirements.mjs check --completed-phase I2
 ```
+
+El gate sigue la cadena de reemplazos de cada requisito hasta una fila activa con su prueba verde, y ahí se detiene: **nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo**. Un requisito puede quedar sustituido por otro que pide bastante menos, con el gate en verde: la equivalencia de significado la revisa una persona.
 
 Un claim que cita un criterio o requisito inexistente es una referencia rota, no evidencia. El
 último gate de la fase resuelve cada `linked_requirement_id` y `linked_ac_id` del packet de la
@@ -293,6 +302,8 @@ node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md
 Exit 0 only if the spec is at or under 650 words, excluding fenced code blocks and table rows
 (same exclusion the template already states). Exit 1 → trim narration before CONTENT review, not
 after — a draft that fails this never reaches the 🔵 below.
+
+**No acota el largo del documento: una spec entera en tablas o código pasa.** El tope cuenta narración, que es lo que nadie lee cuando sobra; una spec de diez mil palabras escrita toda en tablas cumple el gate.
 
 🔵 **CONTENT** review:
 ```
