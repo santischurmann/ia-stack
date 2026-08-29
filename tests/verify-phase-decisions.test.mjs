@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -620,4 +621,37 @@ test('agregar una fase FUTURA al final no invalida los sellos ya escritos', () =
   const original = documentOf([BOOTSTRAP], ['0', '1']);
   const conFuturas = { ...original, phase_order: ['0', '1', '2', '3'] };
   assert.deepEqual(codes(checkDecisions(conFuturas)), [], 'planear fases nuevas es legitimo y no puede romper la historia');
+});
+
+// --- La salida del gate no puede afirmar mas de lo que el gate prueba -----------------------------
+
+// El defecto que motiva estas pruebas: la prosa del repositorio ya declaraba que este gate no
+// demuestra que la persona haya querido la opcion, pero la unica cadena que el gate PRODUCE decia
+// "la opcion elegida y por que" y viajaba sola a SESSION.md, a los recibos y a los informes, sin el
+// limite al lado. verify-receipt.mjs imprime su CUSTODY_LIMIT junto al OK; este no imprimia ninguno.
+// Reproducido el 2026-08-29 por tres revisiones independientes.
+
+test('FALSIFICACIÓN · la línea de éxito no afirma que alguien eligió', () => {
+  const salidas = [];
+  const documento = documentOf([BOOTSTRAP]);
+  const code = main(['check', 'x.json'], { readFile: () => JSON.stringify(documento) }, (m) => salidas.push(m), () => {});
+  const texto = salidas.join(String.fromCharCode(10));
+  assert.equal(code, 0, texto);
+  assert.match(texto, /^OK:/u, texto);
+  assert.doesNotMatch(texto, /la opción elegida y por qué/u, 'esa frase se lee como que el gate vio elegir a alguien');
+});
+
+test('el gate imprime su límite junto al verde, como hace la custodia del recibo', () => {
+  const salidas = [];
+  const documento = documentOf([BOOTSTRAP]);
+  main(['check', 'x.json'], { readFile: () => JSON.stringify(documento) }, (m) => salidas.push(m), () => {});
+  const texto = salidas.join(String.fromCharCode(10));
+  assert.match(texto, /Límite:/u, 'un verde que viaja sin su límite se cita como si probara más');
+  assert.match(texto, /no demuestra que una persona/iu, texto);
+});
+
+test('los mensajes de rechazo describen el registro, no la lectura de nadie', () => {
+  const fuente = readFileSync(new URL('../scripts/verify-phase-decisions.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(fuente, /nadie leyó ese menú/u, 'el gate no puede saber si alguien leyó');
+  assert.doesNotMatch(fuente, /se le mostró el menú a la persona/u, 'no consta que se le haya mostrado a una persona');
 });

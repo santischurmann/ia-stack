@@ -45,6 +45,9 @@ export const SCHEMA = 'vcp.phase-decisions/1';
 export const STATUSES = Object.freeze(['decided', 'superseded']);
 // Un menú de una sola opción no es un menú: no hay nada que elegir y la elección no informa nada.
 export const MIN_OPTIONS = 2;
+/** Viaja pegado al verde, como CUSTODY_LIMIT en verify-receipt.mjs: la linea de exito de un gate se
+ * cita sola en informes y recibos, asi que su limite tiene que viajar con ella o no viaja. */
+export const DECISION_LIMIT = 'Límite: esto verifica el registro, no la voluntad. No demuestra que una persona haya leído ese menú ni querido esa opción — un registro coherente e inventado pasa igual.';
 // Piso de lectura. No prueba consentimiento -eso necesita un canal fuera de este proceso- pero si
 // detecta el modo de falla concreto: un agente que fabrica el menu y la decision en el mismo
 // aliento. Dos segundos es deliberadamente bajo: tiene que rechazar lo imposible, no lo apurado.
@@ -174,13 +177,13 @@ function checkRow(decision, position, phaseOrder) {
     violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: status debe ser uno de ${STATUSES.join(', ')}`));
   }
   if (!isTimestamp(decision.shown_at)) {
-    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: shown_at debe ser una marca ISO-8601 real — es cuándo se le mostró el menú a la persona`));
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: shown_at debe ser una marca ISO-8601 real — es cuándo el registro dice que se mostró el menú`));
   }
   if (isTimestamp(decision.shown_at) && isTimestamp(decision.timestamp)) {
     // Elegir antes de que el menú exista es imposible, no rápido: un delta negativo cae acá también.
     const delta = Date.parse(decision.timestamp) - Date.parse(decision.shown_at);
     if (delta < MIN_DELIBERATION_MS) {
-      violations.push(violation('PHASE_DECISION_TOO_FAST', `${at}: entre mostrar el menú y registrar la elección pasaron ${delta} ms, y el piso es ${MIN_DELIBERATION_MS}: nadie leyó ese menú`));
+      violations.push(violation('PHASE_DECISION_TOO_FAST', `${at}: entre las dos marcas del registro pasaron ${delta} ms, y el piso es ${MIN_DELIBERATION_MS}: un menú mostrado y respondido en ese lapso es imposible, así que el registro no puede ser cierto`));
     }
   }
   if (!isTimestamp(decision.timestamp)) {
@@ -285,7 +288,7 @@ export function checkDecisions(document) {
   return {
     ok: violations.length === 0,
     violations,
-    summary: `registra ${decisions.length} decisión(es) encadenadas sobre ${phases.size} fase(s), cada una con su menú, su recomendación, la opción elegida y por qué.`,
+    summary: `registra ${decisions.length} decisión(es) encadenadas sobre ${phases.size} fase(s), cada una con su menú, su recomendación, la opción que el registro declara elegida y su motivo.`,
   };
 }
 
@@ -348,6 +351,7 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     return 1;
   }
   write(`OK: ${path} ${result.summary}`);
+  write(DECISION_LIMIT);
   return 0;
 }
 

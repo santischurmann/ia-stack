@@ -306,6 +306,12 @@
       "file": "README.md",
       "phrase": "La deriva dice que la fuente se movió, no si el claim sigue siendo cierto.",
       "why": "Un packet es una foto congelada del momento en que se investigo. Que su fuente haya cambiado puede significar dos cosas opuestas: que el claim quedo obsoleto, o que el problema que el claim describia se resolvio y por eso el archivo cambio. El gate no puede distinguirlas y no lo intenta. En este mismo repositorio los 4 claims del unico expediente figuran como derivados, y tres derivaron porque la feature que motivaron los arreglo: ahi la deriva es evidencia de exito, no de obsolescencia. Sin esta frase, un lector toma la deriva por una alarma y recapturar las huellas parece el arreglo, cuando recapturar atestiguaria que esos claims describen el arbol de hoy y no lo hacen."
+    },
+    {
+      "limit_id": "phase-decision-green-carries-its-own-limit",
+      "file": "SKILL.md",
+      "phrase": "La linea de exito de un gate se cita sola, asi que su limite tiene que viajar con ella",
+      "why": "La prosa de este repositorio ya declaraba que el gate de decisiones no demuestra que la persona haya querido la opcion, pero la unica cadena que el gate PRODUCIA decia \"la opcion elegida y por que\" y viajaba sola a SESSION.md, a los recibos y a los informes, sin el limite al lado. Un lector que cita el verde no cita el README. Por eso el gate ahora imprime su limite pegado al OK, como ya hacia verify-receipt.mjs con la custodia. Sin esta frase, la proxima salida verde vuelve a escribirse sin su limite y el hueco se reabre en silencio."
     }
   ]
 }

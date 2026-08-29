@@ -1074,6 +1074,13 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 
 ## CONFIG MENU PROTOCOL
 
+**La linea de exito de un gate se cita sola, asi que su limite tiene que viajar con ella.**
+Un verde se pega en `.vibe/SESSION.md`, en un recibo o en un informe; el README no viaja con el. Si
+el gate afirma algo que no prueba, esa afirmacion sobrevive sin su descargo. Por eso
+`verify-phase-decisions.mjs` y `verify-receipt.mjs custody` imprimen su limite junto al OK, y
+cualquier gate nuevo que afirme algo sobre personas tiene que hacer lo mismo.
+
+
 Once per phase, before content decisions:
 ```
 🔵 [PHASE] CONFIG
