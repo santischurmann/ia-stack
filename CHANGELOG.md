@@ -38,7 +38,13 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   de "mismo defecto contado dos veces o ya cerradas por otro arreglo", pero eso es inferencia por
   eliminación, no dato. Registrado también en `.vibe/AUDIT.md` como `h63-fix`. Y de los cinco
   declarados sin arreglar, el de la sonda que sólo enumeraba `verify-*.mjs` quedó cerrado después,
-  en `e7a31fa`.)*
+  en `e7a31fa`. El de los límites honestos sigue abierto y hoy se lee peor de lo que parece: son
+  **once de veinticuatro**, no de veintitrés — el numerador no bajó, subió el denominador. Los once
+  son `discovery-core`, `discovery-requirements`, `discovery-views`, `handoff-report`,
+  `plan-conflicts`, `resume-state`, `scope-diff`, `spec-wordcap`, `test-bindings`, `vcp-contract` y
+  `vcp-coverage`; varios tienen su límite escrito en la tabla del README, pero **ninguno lo tiene
+  declarado en `contracts/honest-limits.json`**, que es lo único que impide borrarlo sin que se
+  note.)*
 
 - **Seis huecos más, reproducidos a mano y cerrados** (hallazgo 62). El ataque adversarial dejó
   38 propuestas sin verificar; se revisaron reproduciendo cada una, sin agentes:
