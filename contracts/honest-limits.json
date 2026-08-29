@@ -280,8 +280,8 @@
     {
       "limit_id": "discovery-chain-misses-a-wholesale-run-rewrite",
       "file": "README.md",
-      "phrase": "la cadena detecta una edición parcial, no una reescritura completa del run",
-      "why": "predecessor_hash y packet_sha256 se calculan sobre archivos del mismo árbol que protegen, y el gate no consulta ninguna fuente externa: no hay una sola llamada a git en todo el script. Editar una decisión suelta rompe la cadena y se ve; reescribir el run entero y recalcular todos los hashes da una secuencia perfectamente coherente. Sin esta frase, la palabra inmutable que este proyecto usa para la cadena de Discovery se lee como una garantía contra falsificación, cuando sólo detecta manipulación descuidada. Es el mismo hueco que verify-audit-chain resolvió con su subcomando history contra la historia de git; Discovery no tiene ese ancla."
+      "phrase": "`check` detecta una edición parcial, no una reescritura completa del run",
+      "why": "Los hashes internos -predecessor_hash y packet_sha256- se calculan sobre archivos del mismo arbol que protegen, asi que quien reescriba el run entero los recalcula y check sale verde. Sin esta frase, la palabra inmutable que este proyecto usa para la cadena de Discovery se lee como garantia contra falsificacion, cuando check solo detecta manipulacion descuidada. Lo que si lo detecta es el subcomando history, que compara contra la historia de git: un ancla que no vive dentro del archivo atacado. La frase nombra a check a proposito, para que nadie lea el verde de check como si cubriera lo que cubre history."
     },
     {
       "limit_id": "requirement-test-is-named-not-inspected",
@@ -294,6 +294,12 @@
       "file": "README.md",
       "phrase": "No sale a la red: una fuente web se cuenta como no verificable, nunca como verificada.",
       "why": "El subcomando sources cierra el agujero de las fuentes inventadas para los locators de repo -si el archivo no existe, frena-, pero no puede hacer nada con una URL: este proyecto no hace peticiones de red por diseno. Sin esta frase, un OK de sources se lee como que todas las fuentes del expediente fueron comprobadas, cuando las web quedaron sin mirar y solo estan contadas. El numero de web sin verificar se imprime en cada corrida justamente para que no desaparezca detras del OK."
+    },
+    {
+      "limit_id": "discovery-history-cannot-outlive-a-rewritten-remote",
+      "file": "README.md",
+      "phrase": "Quien reescriba la historia publicada puede fabricar una secuencia coherente",
+      "why": "El ancla es git, no un notario: si alguien reescribe la historia ya publicada, puede construir un expediente falso que crezca de forma perfectamente coherente. Lo que cambia es que falsificar dejo de ser invisible: exige tocar el identificador de cada commit, y eso lo ve cualquiera que tenga un clon previo o el remoto. Sin esta frase, history se lee como prueba de autenticidad en vez de como lo que es: encarecer la falsificacion hasta volverla ruidosa."
     }
   ]
 }

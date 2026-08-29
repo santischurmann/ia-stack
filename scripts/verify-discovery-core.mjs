@@ -3,13 +3,14 @@
 // lineage, packet bytes and snapshot shape. It deliberately does not read mutable research-ledger
 // data while validating historical packets, and cannot judge semantic sufficiency of a claim.
 
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 
 export const DECISION_SCHEMA = 'vcp.discovery-decision/3';
 export const PACKET_SCHEMA = 'vcp.discovery-packet/1';
-export const USAGE = 'usage: verify-discovery-core.mjs check --feature <feature-slug> | verify-discovery-core.mjs sources --feature <feature-slug> [--require-current]';
+export const USAGE = 'usage: verify-discovery-core.mjs check --feature <feature-slug> | verify-discovery-core.mjs sources --feature <feature-slug> [--require-current] | verify-discovery-core.mjs history --feature <feature-slug>';
 
 const FEATURE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const RUN_ID = /^run-(\d{3})$/u;
@@ -471,9 +472,76 @@ export function verifyDiscoverySources(projectRoot, featureSlug, options = {}) {
   return { counts, findings, blocking: findings.filter((f) => bloqueantes.has(f.status)), empty: claims.length === 0 };
 }
 
+// --- history: el ancla externa -------------------------------------------------------------------
+// predecessor_hash y packet_sha256 se calculan sobre archivos del mismo arbol que protegen, asi que
+// quien reescriba el run entero recalcula todo y `check` sale verde. El ancla es la misma que uso
+// verify-audit-chain: git. Un expediente solo crece -las decisiones y los packets son inmutables
+// por diseno-, asi que ninguna version commiteada puede modificarlos ni borrarlos.
+// Las vistas quedan afuera a proposito: son derivadas y se regeneran, cambiar es su trabajo.
+export const IMMUTABLE_IN_RUN = /\/runs\/run-\d{3}\/(decisions|packets)\/[^/]+\.json$/u;
+
+const gitRunner = (cwd, run) => (...args) => run('git', ['-C', cwd, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+
+export function gitDiscoveryVersions(cwd, featureSlug, run = spawnSync) {
+  const git = gitRunner(cwd, run);
+  const path = `docs/discovery/${featureSlug}`;
+  const log = git('log', '--format=%H', '--reverse', '--', path);
+  if (log.status !== 0) {
+    // Un repo sin ningun commit no es historia rota: es un proyecto que todavia no registro nada.
+    // Se pregunta por HEAD en vez de leer el texto del error, que cambia entre versiones e idiomas.
+    const head = git('rev-parse', '--verify', '--quiet', 'HEAD');
+    if (head.status !== 0) return { error: null, commits: [] };
+    return { error: `no se puede leer la historia de ${path}: ${(log.stderr ?? '').trim()}`, commits: [] };
+  }
+  return { error: null, commits: (log.stdout ?? '').split('\n').map((x) => x.trim()).filter(Boolean) };
+}
+
+/** Toda modificacion o borrado de una decision o un packet ya commiteado. Un expediente solo
+ * crece: agregar es su trabajo, tocar lo viejo es reescribir la historia. */
+export function findMutations(cwd, featureSlug, run = spawnSync) {
+  const git = gitRunner(cwd, run);
+  const path = `docs/discovery/${featureSlug}`;
+  const log = git('log', '--diff-filter=MD', '--name-status', '--format=%x00%H', '--', path);
+  if (log.status !== 0) return [];
+  const mutations = [];
+  let commit = null;
+  for (const raw of (log.stdout ?? '').split('\n')) {
+    const line = raw.trim();
+    if (line === '') continue;
+    if (line.startsWith(' ')) {
+      commit = line.slice(1);
+      continue;
+    }
+    const [change, ...rest] = line.split('\t');
+    const changed = rest.join('\t').replaceAll('\\', '/');
+    if (!changed.startsWith(`${path}/`)) continue;
+    if (IMMUTABLE_IN_RUN.test(changed)) mutations.push({ commit, path: changed, change: change[0] });
+  }
+  return mutations;
+}
+
+export function verifyDiscoveryGrowth(cwd, featureSlug, options = {}) {
+  const run = options.run ?? spawnSync;
+  const { error, commits } = (options.versions ?? gitDiscoveryVersions)(cwd, featureSlug, run);
+  if (error !== null) return { anchored: false, error, commits: 0, violations: [] };
+  if (commits.length === 0) {
+    // Sin version commiteada no hay ancla. Distinguimos el proyecto que todavia no registro nada
+    // -no hay expediente en disco tampoco- del expediente que existe y nunca entro a la historia:
+    // el segundo es exactamente el caso que un ancla que se apaga sola dejaria pasar.
+    const enDisco = existsSync(resolve(cwd, 'docs', 'discovery', featureSlug));
+    return {
+      anchored: false,
+      error: enDisco ? `el expediente de ${featureSlug} existe en disco y nunca se commiteó: no hay ninguna versión contra la cual anclarlo` : null,
+      commits: 0,
+      violations: [],
+    };
+  }
+  return { anchored: true, error: null, commits: commits.length, violations: (options.mutations ?? findMutations)(cwd, featureSlug, run) };
+}
+
 export function parseArgs(args) {
   const [command, flag, slug, ...resto] = args;
-  if (!['check', 'sources'].includes(command) || flag !== '--feature' || !FEATURE_SLUG.test(slug ?? '')) return null;
+  if (!['check', 'sources', 'history'].includes(command) || flag !== '--feature' || !FEATURE_SLUG.test(slug ?? '')) return null;
   if (resto.length === 0) return { command, featureSlug: slug, requireCurrent: false };
   // `--require-current` sólo tiene sentido sobre `sources`: en `check` no hay nada que comparar
   // contra el árbol, así que aceptarlo ahí sería prometer una comprobación que no ocurre.
@@ -490,6 +558,24 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     return 2;
   }
   try {
+    if (parsed.command === 'history') {
+      const growth = (options.growth ?? verifyDiscoveryGrowth)(cwd, parsed.featureSlug);
+      if (!growth.anchored) {
+        if (growth.error === null) {
+          write(`VACÍO: ${parsed.featureSlug} no tiene ninguna versión commiteada contra la cual anclarse.`);
+          return 0;
+        }
+        writeError(`REJECTED: DISCOVERY_HISTORY_UNANCHORED: ${growth.error}`);
+        return 1;
+      }
+      if (growth.violations.length > 0) {
+        writeError(`REJECTED: DISCOVERY_HISTORY_REWRITTEN: ${growth.violations.length} decisión(es) o packet(s) ya commiteados fueron modificados o borrados:`);
+        for (const v of growth.violations) writeError(`  ${v.change === 'D' ? 'borrado' : 'modificado'} en ${String(v.commit).slice(0, 7)}: ${v.path}`);
+        return 1;
+      }
+      write(`OK: el expediente de ${parsed.featureSlug} sólo creció a lo largo de ${growth.commits} versión(es) commiteada(s); reescribirlo exigiría reescribir la historia de git.`);
+      return 0;
+    }
     if (parsed.command === 'sources') {
       const sources = (options.sources ?? verifyDiscoverySources)(cwd, parsed.featureSlug, { requireCurrent: parsed.requireCurrent });
       if (sources.empty) {
