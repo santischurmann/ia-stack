@@ -1,6 +1,6 @@
 {
   "schema": "vcp.empty-probe/v1",
-  "why": "Cada gate declara aca que hace cuando lo corren sobre un directorio vacio. Un gate que dice OK ahi esta afirmando haber verificado algo cuando no habia nada que verificar. Un verify-*.mjs que no figure en esta lista es un rechazo: agregar un gate obliga a declarar su comportamiento sin entradas.",
+  "why": "Cada gate declara aca que hace cuando lo corren sobre un directorio vacio. Un gate que dice OK ahi esta afirmando haber verificado algo cuando no habia nada que verificar. Un script .mjs de scripts/ que no figure en esta lista es un rechazo: agregar un gate obliga a declarar su comportamiento sin entradas.",
   "expectations": {
     "reject": "sale distinto de 0 porque no hay entradas y lo dice",
     "usage": "sale 2 porque le faltan argumentos obligatorios; exige motivo escrito, porque un gate que siempre sale 2 no se prueba",
@@ -9,6 +9,22 @@
     "skip": "no se corre; exige motivo escrito y se cuenta en la salida"
   },
   "gates": [
+    {
+      "script": "pretooluse-red.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "usage",
+      "why": "No es un gate de linea de comandos: es un hook que lee la peticion por entrada estandar. Sin subcomando valido sale 2. Su comportamiento REAL se prueba en tests/pretooluse-red.test.mjs pasandole cargas de PreToolUse; esta sonda solo comprueba que no invente un verde."
+    },
+    {
+      "script": "ratchet.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "usage",
+      "why": "Es una biblioteca de rutas seguras con un CLI minimo; sin subcomando valido sale 2. Lo que hace de verdad -confinar rutas al proyecto- lo prueban los gates que la importan, no esta sonda."
+    },
     {
       "script": "verify-audit-chain.mjs",
       "args": [

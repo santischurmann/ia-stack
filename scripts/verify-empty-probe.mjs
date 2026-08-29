@@ -27,7 +27,11 @@ import { fileURLToPath } from 'node:url';
 export const USAGE = 'usage: verify-empty-probe.mjs check <empty-probe.json>';
 export const SCHEMA = 'vcp.empty-probe/v1';
 export const SCRIPTS_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)));
-export const GATE_FILE = /^verify-.*\.mjs$/u;
+// Todo script ejecutable de scripts/, no solo los que empiezan con verify-. Antes pretooluse-red.mjs y
+// ratchet.mjs quedaban afuera de la enumeracion: ni se probaban ni aparecian como no declarados,
+// asi que la regla "un gate nuevo tiene que declarar que hace sin entradas" tenia un agujero del
+// tamano del prefijo de su nombre. Reproducido el 2026-08-28.
+export const GATE_FILE = /^(?!.*\.test\.mjs$).*\.mjs$/u;
 /**
  * reject: sale distinto de 0 — no hay entradas y el gate lo dice.
  * usage:  sale 2 — le faltan argumentos obligatorios, ni siquiera llega a mirar.
@@ -78,7 +82,7 @@ export function validateShape(gates) {
       continue;
     }
     if (typeof gate.script !== 'string' || !GATE_FILE.test(gate.script)) {
-      violations.push(`${at}.script no nombra un verify-*.mjs: ${JSON.stringify(gate.script)}`);
+      violations.push(`${at}.script no nombra un script .mjs de scripts/: ${JSON.stringify(gate.script)}`);
       continue;
     }
     if (seen.has(gate.script)) violations.push(`${at}.script está declarado dos veces: ${gate.script}`);

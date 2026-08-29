@@ -110,7 +110,10 @@ test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self
   const violations = validateShape([
     null,
     ['no', 'es', 'objeto'],
-    { script: 'noesungate.mjs', args: [], expect: 'reject' },
+    { script: 'noesungate.sh', args: [], expect: 'reject' },
+    // Un archivo de pruebas no es un gate: la enumeración lo excluye, así que declararlo tampoco
+    // vale. Sin esta rama, `verify-a.test.mjs` entraría al contrato y nunca se correría.
+    { script: 'verify-a.test.mjs', args: [], expect: 'reject' },
     { script: 42, args: [], expect: 'reject' },
     { script: 'verify-a.mjs', args: 'check', expect: 'reject' },
     { script: 'verify-b.mjs', args: [7], expect: 'reject' },
@@ -124,8 +127,9 @@ test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self
   assert.deepEqual(violations, [
     'gates[0] no es un objeto',
     'gates[1] no es un objeto',
-    'gates[2].script no nombra un verify-*.mjs: "noesungate.mjs"',
-    'gates[3].script no nombra un verify-*.mjs: 42',
+    'gates[2].script no nombra un script .mjs de scripts/: "noesungate.sh"',
+    'gates[3].script no nombra un script .mjs de scripts/: "verify-a.test.mjs"',
+    'gates[4].script no nombra un script .mjs de scripts/: 42',
     'verify-a.mjs: "args" tiene que ser una lista de strings',
     'verify-b.mjs: "args" tiene que ser una lista de strings',
     'verify-c.mjs: "expect" tiene que ser uno de reject, usage, empty, self, skip, no "aprobado"',
@@ -133,7 +137,7 @@ test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self
     'verify-e.mjs: "self" exige un "why" que lo justifique por escrito',
     'verify-f.mjs: "self" exige un "why" que lo justifique por escrito',
     'verify-g.mjs: "skip" exige un "why" que lo justifique por escrito',
-    'gates[11].script está declarado dos veces: verify-a.mjs',
+    'gates[12].script está declarado dos veces: verify-a.mjs',
   ]);
 });
 
@@ -146,10 +150,18 @@ test('undeclaredGates y missingGates comparan los dos inventarios en las dos dir
   assert.deepEqual(missingGates(['verify-a.mjs'], ['verify-a.mjs', 'verify-b.mjs']), []);
 });
 
-test('listGateScripts toma sólo los verify-*.mjs y los devuelve ordenados', () => {
+// Reproducido el 2026-08-28: la enumeración sólo miraba los `verify-*.mjs`, así que
+// `pretooluse-red.mjs` y `ratchet.mjs` quedaban afuera —ni se probaban ni aparecían como no
+// declarados—. El agujero tenía exactamente el tamaño del prefijo de su nombre.
+test('FALSIFICACIÓN · listGateScripts toma todo .mjs de scripts/ menos los .test.mjs, ordenados', () => {
   const listed = listGateScripts(() => ['ratchet.mjs', 'verify-b.mjs', 'install.sh', 'verify-a.mjs', 'verify-a.test.mjs']);
-  assert.deepEqual(listed, ['verify-a.mjs', 'verify-a.test.mjs', 'verify-b.mjs']);
-  assert.ok(listGateScripts().includes('verify-empty-probe.mjs'), 'sin lector, lista el directorio scripts/ real');
+  assert.deepEqual(listed, ['ratchet.mjs', 'verify-a.mjs', 'verify-b.mjs']);
+  const reales = listGateScripts();
+  assert.ok(reales.includes('verify-empty-probe.mjs'), 'sin lector, lista el directorio scripts/ real');
+  for (const invisible of ['pretooluse-red.mjs', 'ratchet.mjs']) {
+    assert.ok(reales.includes(invisible), `${invisible} quedaba afuera de la sonda por no llamarse verify-*`);
+  }
+  assert.ok(!reales.some((name) => name.endsWith('.test.mjs')), 'un archivo de pruebas no es un gate');
 });
 
 // --- La sonda ------------------------------------------------------------------------------------

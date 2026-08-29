@@ -11,6 +11,7 @@ const {
   EXCLUSIONS_SCHEMA,
   USAGE,
   compareCoverage,
+  hasRealContent,
   readExclusions,
   readManifestPaths,
   readTrackedFiles,
@@ -89,8 +90,26 @@ test('FALSIFICACIÓN · readExclusions rechaza schema, forma, duplicados y razon
   expectError(() => readExclusions(() => JSON.stringify(duplicated)), /duplicate exclusion/u);
 });
 
+// Reproducido el 2026-08-28 atacando este gate: una llave vacía escrita a mano contaba como
+// archivo indexado, y el manifiesto no está versionado, así que no quedaba rastro revisable de
+// haberla puesto. Sube el precio de falsificar de "una llave vacía" a "inventar datos creíbles".
+test('FALSIFICACIÓN · hasRealContent distingue una entrada con datos de una llave vacía', () => {
+  assert.equal(hasRealContent({ nodes: 3 }), true);
+  assert.equal(hasRealContent({ nodes: 0 }), true, 'un cero es un dato, no un hueco');
+  assert.equal(hasRealContent({ indexed: false }), true, 'un false también es un dato');
+  assert.equal(hasRealContent({}), false);
+  assert.equal(hasRealContent({ nodes: null, kind: undefined, label: '' }), false, 'sólo huecos no es contenido');
+  for (const noEsEntrada of [null, undefined, 'texto', 42, [{ nodes: 1 }]]) {
+    assert.equal(hasRealContent(noEsEntrada), false, `${JSON.stringify(noEsEntrada)} no es una entrada del manifiesto`);
+  }
+});
+
 test('FALSIFICACIÓN · readManifestPaths exige un objeto indexado por path y normaliza separadores', () => {
-  assert.deepEqual(readManifestPaths('.', () => JSON.stringify({ 'a.mjs': {}, 'dir\\b.md': {} })), ['a.mjs', 'dir/b.md']);
+  const conDatos = { 'a.mjs': { nodes: 3 }, 'dir\\b.md': { nodes: 1 } };
+  assert.deepEqual(readManifestPaths('.', () => JSON.stringify(conDatos)), ['a.mjs', 'dir/b.md']);
+  // Sólo cuentan las entradas con datos: la vacía no compra cobertura.
+  const mezcla = { 'vacia.mjs': {}, 'real.md': { nodes: 1 } };
+  assert.deepEqual(readManifestPaths('.', () => JSON.stringify(mezcla)), ['real.md']);
   expectError(() => readManifestPaths('.', () => '{'), /unable to read the Graphify manifest/u);
   expectError(() => readManifestPaths('.', () => { throw new Error('ENOENT'); }), /unable to read the Graphify manifest/u);
   for (const shape of ['[]', 'null', '"text"']) {

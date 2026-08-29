@@ -43,6 +43,17 @@ export function readTrackedFiles(cwd, runGit = (dir, args) => execFileSync('git'
   return String(output).split(/[\0\n]/u).map((line) => normalize(line.trim())).filter(Boolean);
 }
 
+/** Una entrada que Graphify escribio trae datos: al menos una propiedad con valor. Una entrada
+ * vacia es la firma de que alguien la puso a mano para comprar cobertura -el manifiesto no esta
+ * versionado, asi que no queda rastro revisable de eso-. No prueba que Graphify la haya escrito;
+ * sube el precio de falsificarla de "una llave vacia" a "inventar datos que parezcan reales".
+ * Reproducido el 2026-08-28 atacando este gate.
+ */
+export function hasRealContent(entry) {
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return false;
+  return Object.values(entry).some((value) => value !== null && value !== undefined && value !== '');
+}
+
 export function readManifestPaths(cwd, read = readFileSync) {
   const path = join(cwd, MANIFEST_PATH);
   let parsed;
@@ -54,7 +65,9 @@ export function readManifestPaths(cwd, read = readFileSync) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(`the Graphify manifest at ${MANIFEST_PATH} must be a path-keyed object`);
   }
-  return Object.keys(parsed).map(normalize);
+  // Solo cuentan las entradas con datos reales: una llave vacia escrita a mano compraba cobertura,
+  // y el manifiesto no esta versionado, asi que no quedaba rastro revisable de eso.
+  return Object.entries(parsed).filter(([, entry]) => hasRealContent(entry)).map(([path]) => normalize(path));
 }
 
 export function readExclusions(read) {

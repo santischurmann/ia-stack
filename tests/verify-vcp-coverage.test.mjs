@@ -20,8 +20,11 @@ function fakeResult({ status = 0, stdout = perfectCoverage, stderr = '', error }
 }
 
 function currentPerfectCoverage(overrides = {}) {
-  return ['ℹ start of coverage report']
-    .concat(listMjsScripts(repoRoot).map((file) => `ℹ  ${file} | ${overrides[file] ?? '100.00'} | 100.00 | 100.00 |`))
+  // node agrupa por directorio: una cabecera con el nombre de la carpeta y las columnas vacias, y
+  // debajo cada archivo con el nombre a secas. El fixture tiene que tener esa forma o no es la
+  // salida que el gate lee.
+  return ['ℹ start of coverage report', 'ℹ scripts              |        |          |         | ']
+    .concat(listMjsScripts(repoRoot).map((file) => `ℹ  ${file.replace('scripts/', '')} | ${overrides[file] ?? '100.00'} | 100.00 | 100.00 |`))
     .concat(['ℹ end of coverage report'])
     .join(String.fromCharCode(10));
 }
@@ -96,7 +99,9 @@ test('listMjsScripts includes only executable Node files from its explicit inven
   const entries = [
     { name: 'good.mjs', isFile: () => true }, { name: 'skip.js', isFile: () => true }, { name: 'folder.mjs', isFile: () => false },
   ];
-  assert.deepEqual(listMjsScripts('C:/fixture', () => entries), ['good.mjs']);
+  // Rutas, no nombres sueltos: un ayudante de pruebas homonimo cubria a un script sin tener una
+  // sola prueba, porque el inventario y el reporte se comparaban por nombre. Reproducido el 2026-08-28.
+  assert.deepEqual(listMjsScripts('C:/fixture', () => entries), ['scripts/good.mjs']);
 });
 
 test('main reports both the pass result and a failure without trusting narration', () => {
@@ -208,4 +213,47 @@ test('parseScriptCoverage devuelve vacio si el reporte no abrio o no cerro', () 
   const sinFin = [INICIO, 'ℹ  x.mjs | 100.00 | 100.00 | 100.00 |'].join(String.fromCharCode(10));
   assert.deepEqual(parseScriptCoverage(sinFin), [], 'un reporte truncado no es un reporte');
   assert.deepEqual(parseScriptCoverage(''), []);
+});
+
+
+// --- El inventario compara rutas, no nombres sueltos ---------------------------------------------
+
+// Reproducido el 2026-08-28: node agrupa el reporte por directorio y el parser tiraba la cabecera,
+// asi que un ayudante de pruebas homonimo cubria a un script sin tener una sola prueba.
+test('FALSIFICACION · una fila de tests/ no puede cubrir a un script de scripts/', () => {
+  const NL = String.fromCharCode(10);
+  const conCabecera = (dir, archivo) => [
+    'ℹ start of coverage report',
+    `ℹ ${dir} |  |  |  | `,
+    `ℹ  ${archivo} | 100.00 | 100.00 | 100.00 |`,
+    'ℹ end of coverage report',
+  ].join(NL);
+
+  const impostora = evaluateCoverageRun({ status: 0, stdout: conCabecera('tests', 'huerfano.mjs'), stderr: '' }, ['scripts/huerfano.mjs']);
+  assert.equal(impostora.ok, false, 'el mismo nombre en otra carpeta no es el mismo archivo');
+  assert.match(impostora.message, /scripts\/huerfano\.mjs/u);
+
+  const legitima = evaluateCoverageRun({ status: 0, stdout: conCabecera('scripts', 'huerfano.mjs'), stderr: '' }, ['scripts/huerfano.mjs']);
+  assert.equal(legitima.ok, true, legitima.message);
+});
+
+test('parseScriptCoverage califica cada fila con su carpeta, y respeta la que ya viene con ruta', () => {
+  const NL = String.fromCharCode(10);
+  const salida = [
+    'ℹ start of coverage report',
+    // node intercala separadores y una fila de encabezados de columna: ninguna es fila ni carpeta.
+    'ℹ ------------------------------------------------',
+    'ℹ file                 | line % | branch % | funcs % | uncovered lines',
+    'ℹ scripts |  |  |  | ',
+    'ℹ  uno.mjs | 100.00 | 100.00 | 100.00 |',
+    'ℹ tests |  |  |  | ',
+    'ℹ  dos.mjs | 100.00 | 100.00 | 100.00 |',
+    'ℹ  ya/con/ruta.mjs | 100.00 | 100.00 | 100.00 |',
+    'ℹ end of coverage report',
+  ].join(NL);
+  assert.deepEqual(parseScriptCoverage(salida).map((f) => f.file), ['scripts/uno.mjs', 'tests/dos.mjs', 'ya/con/ruta.mjs']);
+
+  // Sin cabecera de carpeta, el nombre queda tal cual: no se inventa un directorio.
+  const suelta = ['ℹ start of coverage report', 'ℹ  suelto.mjs | 100.00 | 100.00 | 100.00 |', 'ℹ end of coverage report'].join(NL);
+  assert.deepEqual(parseScriptCoverage(suelta).map((f) => f.file), ['suelto.mjs']);
 });
