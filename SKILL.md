@@ -1078,6 +1078,22 @@ B) [option]
 Waiting for answer before continuing.
 ```
 
+**Registrar la decisión EN EL MOMENTO, no después.** Apenas la persona responde, se agrega la
+entrada a `docs/phase-decisions.json` con el menú textual que se le mostró, la recomendación, la
+opción que eligió, su motivo, y las dos marcas de hora reales: `shown_at` cuando se mostró el menú
+y `timestamp` cuando respondió.
+
+No es burocracia, es la única ventana en que el dato existe. Reproducido el 2026-08-29: ocho
+decisiones de una sesión anterior quedaron registradas en `SESSION.md` como una tabla
+«Decisión | Elegido», sin menú y sin hora. **Reconstruirlas después habría exigido inventar ocho
+menús y dieciséis timestamps dentro del archivo que respalda la afirmación de consentimiento del
+protocolo** — y este gate declara explícitamente que no puede detectar eso. Se decidió no
+reconstruirlas (`.vibe/DECISIONS.md`), así que el registro de esa sesión se perdió para siempre.
+
+El hueco no fue de las personas: el protocolo pedía **mostrar** el menú y no obligaba a
+**escribirlo** en ninguna parte. Una decisión que no se registra mientras ocurre no se puede
+registrar honestamente nunca más.
+
 ## CONTENT DECISION PROTOCOL (unchanged)
 
 ```
