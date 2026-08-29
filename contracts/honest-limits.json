@@ -276,6 +276,18 @@
       "file": "SKILL.md",
       "phrase": "El porcentaje no reemplaza ACs ni revisión adversarial: mide ejecución, no intención.",
       "why": "Si la frase desaparece, el \"100%\" del gate se lee como \"los scripts están probados\", cuando lo único probado es que cada línea, rama y función se ejecutó al menos una vez. Una prueba que importa el script, lo llama y no comprueba nada deja el gate en verde sobre código con un bug. La frase mantiene explícito que la única revisión que sí mira si las pruebas comprueban algo (ACs y pase adversarial) es humana/agéntica: ningún gate automático del repo la verifica, así que si nadie la escribe, nadie la extraña."
+    },
+    {
+      "limit_id": "discovery-chain-misses-a-wholesale-run-rewrite",
+      "file": "README.md",
+      "phrase": "la cadena detecta una edición parcial, no una reescritura completa del run",
+      "why": "predecessor_hash y packet_sha256 se calculan sobre archivos del mismo árbol que protegen, y el gate no consulta ninguna fuente externa: no hay una sola llamada a git en todo el script. Editar una decisión suelta rompe la cadena y se ve; reescribir el run entero y recalcular todos los hashes da una secuencia perfectamente coherente. Sin esta frase, la palabra inmutable que este proyecto usa para la cadena de Discovery se lee como una garantía contra falsificación, cuando sólo detecta manipulación descuidada. Es el mismo hueco que verify-audit-chain resolvió con su subcomando history contra la historia de git; Discovery no tiene ese ancla."
+    },
+    {
+      "limit_id": "requirement-test-is-named-not-inspected",
+      "file": "SKILL.md",
+      "phrase": "el test se nombra, no se comprueba: alcanza con que exista y salga ok",
+      "why": "El gate delega en checkTestBinding de verify-test-bindings.mjs, que sólo exige que el título exacto del test aparezca una vez en la salida TAP y que esté marcado ok. Nunca abre el cuerpo de la prueba. Un test con el título correcto y el cuerpo vacío satisface el requisito, y también uno que verifica algo distinto de lo que la regla exige. Sin esta frase, el inventario de requisitos con todos sus tests en verde se lee como que las reglas están comprobadas, cuando lo único comprobado es que existe una prueba que se llama así y no falla."
     }
   ]
 }

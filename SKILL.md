@@ -243,7 +243,7 @@ fase que se pretende cerrar; no se declara una fase active sólo porque sus test
 node scripts/verify-discovery-requirements.mjs check --completed-phase I2
 ```
 
-El gate sigue la cadena de reemplazos de cada requisito hasta una fila activa con su prueba verde, y ahí se detiene: **nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo**. Un requisito puede quedar sustituido por otro que pide bastante menos, con el gate en verde: la equivalencia de significado la revisa una persona.
+El gate sigue la cadena de reemplazos de cada requisito hasta una fila activa con su prueba verde, y ahí se detiene: **nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo**. Un requisito puede quedar sustituido por otro que pide bastante menos, con el gate en verde: la equivalencia de significado la revisa una persona. Y la prueba que respalda cada requisito se valida como en `verify-test-bindings.mjs`: **el test se nombra, no se comprueba: alcanza con que exista y salga ok.**
 
 Un claim que cita un criterio o requisito inexistente es una referencia rota, no evidencia. El
 último gate de la fase resuelve cada `linked_requirement_id` y `linked_ac_id` del packet de la
