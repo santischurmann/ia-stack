@@ -370,6 +370,63 @@ de TAP de `red-node`, las extensiones que el hard gate RED no cubre, una traza d
 una promesa de contrato fijada sólo por su título, una clave escrita a mano en el manifiesto, y que
 el sello del backup no cubra `manifest.json`. **Ni confirmados ni refutados.**
 
+
+## Hallazgo 64 — los últimos 8, verificados uno por uno
+
+**Hecho**: 2026-08-28. Se reprodujo cada uno. **Siete eran reales**; el octavo ya estaba cerrado.
+
+### Arreglados (5)
+
+- **`verify-red-node` rechazaba un RED genuino.** El pie de TAP se leía del PRIMER match, y node
+  prefija la salida de cada prueba con `# `: una prueba que imprime `fail 0` produce una línea
+  idéntica al pie. **HECHO** — se lee el último, que es el que el corredor escribe al cerrar.
+- **El sello del backup no cubría `manifest.json`**, que es justo el archivo que dice qué archivos
+  cubre el grafo. Alterar la cobertura después de sellar dejaba este gate y el del manifiesto en
+  verde a la vez. **HECHO** — el inventario entra al recibo; un recibo viejo sin ese campo sigue
+  verificando, y un proyecto sin inventario puede sellar igual.
+- **El hard gate RED no cubría `.sh`, `.ps1`, `.c`, `.cpp`, `.h`, `.vue`, `.svelte`, `.tf` ni
+  `.html`** — pasaban sin receipt y sin decir nada. Reproducido: doce rutas permitidas, tres
+  denegadas. **HECHO** — la lista se sacó a una constante exportada, se amplió a 38 extensiones, y
+  su límite queda escrito: sigue siendo una lista, no una regla.
+- **Una promesa de contrato fijada por el título dejaba borrar todo el cuerpo.** Se borró la tabla
+  entera del diccionario —de 17 términos quedaron 2— y el contrato pasó en verde, con el README
+  prometiendo un diccionario que no estaba. **HECHO** — se fija también una fila de la tabla.
+- Una rama muerta en `verify-backup-state` que ninguna prueba podía alcanzar: eliminada.
+
+### Reproducidos y NO arreglados, con motivo (2)
+
+- **`.git/info/exclude` da vuelta el veredicto de `scope-diff` sin dejar rastro en el repo.** Una
+  línea en un archivo que vive dentro de `.git/` —nunca commiteado, nunca revisable— convierte
+  `REJECTED: changed paths outside T1` en `OK`, con el archivo fuera de alcance todavía en disco.
+  Reproducido. **No se arregla acá porque la respuesta correcta no es obvia**: el gate usa git
+  para saber qué cambió, y git respeta ese archivo por diseño. Lo honesto sería que el gate
+  informe qué fuentes de exclusión estaban activas, y eso merece decidirse, no parchearse.
+- **Una clave escrita a mano en el manifiesto compra cobertura.** El manifiesto no está
+  versionado, así que agregarle `"docs/nuevo.md": {}` convierte un rechazo en OK sin dejar rastro
+  revisable. Reproducido. Mismo motivo: el gate confía en un archivo que nadie revisa, y cerrarlo
+  de verdad exige atar el manifiesto a quien lo produjo.
+
+### Ya estaba cerrado (1)
+
+- **Una traza de más de 64 MiB desbordaba el búfer y el ancla se volvía siempre-verde.** El
+  arreglo del path —que ninguna versión se pueda mostrar es un rechazo, no un ancla en silencio—
+  ya lo había cerrado. Verificado inyectando un `show` que desborda: ahora rechaza.
+
+### Reproducido y sin arreglar, de la tanda anterior
+
+- **`verify-receipt` corrido desde un subdirectorio calcula otra huella.** Comprobado: la huella
+  desde la raíz y desde `sub/` difieren, así que un archivo sin rastrear en la raíz queda invisible
+  y `--require-clean-worktree` cuenta cero. El arreglo es correr git desde la raíz del repo, no
+  desde el directorio actual; queda anotado porque toca el cálculo de la huella, que es lo que
+  sella cada receipt existente.
+
+### Estado del ataque adversarial, cerrado
+
+De las 41 propuestas: **20 reproducidas y arregladas**, **9 reproducidas y declaradas sin
+arreglar con su motivo**, **4 correctas por diseño**, **3 refutadas** —no se reprodujeron— y
+**5 que resultaron ser el mismo defecto contado dos veces o ya cerradas por otro arreglo**.
+Ninguna quedó sin mirar.
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

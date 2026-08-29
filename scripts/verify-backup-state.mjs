@@ -18,7 +18,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 export const USAGE = 'usage: verify-backup-state.mjs record --report <GRAPH_REPORT.md> --graph <graph.json> --manifest <backup.json> | check <backup.json>';
 export const MANIFEST_SCHEMA = 'vcp.graphify-backup/v1';
@@ -133,14 +133,33 @@ function storedPath(cwd, path) {
   return relative(root, file).replaceAll('\\', '/');
 }
 
+/** El manifest.json que Graphify escribe junto al grafo: no es un argumento del gate, se deduce de
+ * la ruta del grafo. Devuelve null si no existe, para que un proyecto sin inventario siga pudiendo
+ * sellar su backup en vez de quedar bloqueado por un archivo que no le corresponde crear. */
+export function graphInventoryFile(cwd, graphPath) {
+  const candidato = join(dirname(graphPath), 'manifest.json');
+  try {
+    // readableProjectFile ya rechaza lo que no existe, lo que no es archivo regular y lo que se
+    // escapa del proyecto: un ternario extra aca seria una rama que ninguna prueba puede alcanzar.
+    return readableProjectFile(cwd, candidato);
+  } catch {
+    return null;
+  }
+}
+
 export function record({ reportPath, graphPath, manifestPath, cwd = '.', now = new Date().toISOString() }) {
   const reportFile = graphifyInputFile(cwd, reportPath, 'report');
   const graphFile = graphifyInputFile(cwd, graphPath, 'graph');
   const manifestFile = manifestOutputFile(cwd, manifestPath, reportFile, graphFile);
   const head = gitHead(cwd);
+  // El inventario de Graphify vive junto al grafo y es el que declara QUE archivos cubre. Sin
+  // sellarlo, alterar la cobertura despues del backup dejaba este gate y el del manifiesto en verde
+  // a la vez, sobre un grafo que ya no correspondia. Reproducido el 2026-08-28.
+  const inventory = graphInventoryFile(cwd, graphPath);
   const manifest = {
     schema: MANIFEST_SCHEMA, git_head: head, recorded_at: now,
     graph_report: storedPath(cwd, reportPath), graph_report_sha256: sha256(reportFile), graph: storedPath(cwd, graphPath), graph_sha256: sha256(graphFile),
+    graph_inventory_sha256: inventory === null ? '' : sha256(inventory),
   };
   mkdirSync(dirname(manifestFile), { recursive: true });
   writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
@@ -173,6 +192,12 @@ export function verify(manifestPath, cwd = '.') {
     // shortened or hand-edited value is a rewritten receipt, not a legitimate abbreviation.
     if (manifest.git_head !== head) return { ok: false, reason: `backup manifest HEAD ${manifest.git_head} is stale against ${head}` };
     if (sha256(reportFile) !== manifest.graph_report_sha256) return { ok: false, reason: 'Graphify report hash changed after backup' };
+    // El inventario tambien: es el que dice que archivos cubre el grafo, y sin el un cambio de
+    // cobertura pasaba invisible entre este gate y el del manifiesto.
+    const inventoryFile = graphInventoryFile(cwd, manifest.graph);
+    const inventoryNow = inventoryFile === null ? '' : sha256(inventoryFile);
+    const inventoryThen = manifest.graph_inventory_sha256 ?? '';
+    if (inventoryNow !== inventoryThen) return { ok: false, reason: 'Graphify inventory (manifest.json) changed after backup: the graph no longer covers what the receipt sealed' };
     if (sha256(graphFile) !== manifest.graph_sha256) return { ok: false, reason: 'Graphify graph hash changed after backup' };
   } catch (error) {
     return { ok: false, reason: error.message };

@@ -99,6 +99,9 @@ export const REQUIREMENTS = [
   // El diccionario es la promesa de que este README se puede leer sin saber la jerga. Fijado como
   // texto: si alguien lo borra al reorganizar, el contrato lo dice en vez de quedar en silencio.
   ['README.md', /## Diccionario: qué significa cada palabra rara/u, 'plain-language dictionary for every technical term'],
+  // El titulo solo no alcanza: borrar la tabla entera dejaba el README prometiendo un diccionario
+  // que no estaba, y el contrato en verde. Se fija tambien una fila, que es el cuerpo real.
+  ['README.md', /\| \*\*verde vac\u00edo\*\* \|/u, 'the dictionary body, not only its heading'],
   ['README.md', /prueban forma, cadena y estado, nunca/u, 'gates prove form, chain and state -- never truth'],
   ['templates/vibe/SESSION.md', /## Intentos fallidos/u, 'documented failed-attempt section'],
   ['templates/vibe/SESSION.md', /## Interrumpido en/u, 'documented interruption resume point'],

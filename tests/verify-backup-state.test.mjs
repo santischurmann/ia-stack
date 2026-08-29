@@ -8,7 +8,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-backup-state.mjs');
-const { isWithin, main, projectPath, readableProjectFile, record, sha256, verify, writableProjectFile } = await import(pathToFileURL(script).href);
+const { graphInventoryFile, isWithin, main, projectPath, readableProjectFile, record, sha256, verify, writableProjectFile } = await import(pathToFileURL(script).href);
 
 function run(command, args, cwd) {
   const env = { ...process.env };
@@ -367,6 +367,97 @@ test('FALSIFICACIÓN · the receipt binds content to a commit, it never proves t
     const manifest = record({ ...RECORD_ARGS, cwd: root, now: '2026-08-28T00:00:00.000Z' });
     assert.equal(manifest.graph_sha256, sha256(join(root, 'graphify-out', 'graph.json')));
     assert.equal(verify('.vibe/backup.json', root).ok, true, 'documented limit: construction is not verified, only immutability since record');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+// --- El sello cubre tambien el inventario del grafo ---------------------------------------------
+
+// Reproducido el 2026-08-28: el recibo sellaba el reporte y el grafo pero NO el manifest.json, que
+// es justo el archivo que dice QUE archivos cubre el grafo. Alterar la cobertura despues de sellar
+// dejaba este gate y el del manifiesto en verde a la vez, sobre un grafo que ya no correspondia.
+test('FALSIFICACION · alterar el inventario despues de sellar rechaza', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-inventario-'));
+  try {
+    const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    git('init', '-q', '.');
+    git('config', 'user.email', 't@t');
+    git('config', 'user.name', 't');
+    mkdirSync(join(root, 'graphify-out'), { recursive: true });
+    writeFileSync(join(root, '.gitignore'), 'graphify-out/' + String.fromCharCode(10), 'utf8');
+    writeFileSync(join(root, 'graphify-out', 'GRAPH_REPORT.md'), '# reporte' + String.fromCharCode(10), 'utf8');
+    writeFileSync(join(root, 'graphify-out', 'graph.json'), '{"nodes":[]}' + String.fromCharCode(10), 'utf8');
+    writeFileSync(join(root, 'graphify-out', 'manifest.json'), JSON.stringify({ '.gitignore': {} }), 'utf8');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'base');
+
+    const grabar = spawnSync(process.execPath, [script, 'record', '--report', 'graphify-out/GRAPH_REPORT.md', '--graph', 'graphify-out/graph.json', '--manifest', 'graphify-out/backup-state.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(grabar.status, 0, grabar.stderr);
+    const recibo = JSON.parse(readFileSync(join(root, 'graphify-out', 'backup-state.json'), 'utf8'));
+    assert.match(recibo.graph_inventory_sha256, /^[0-9a-f]{64}$/u, 'el inventario tiene que quedar sellado');
+
+    const antes = spawnSync(process.execPath, [script, 'check', 'graphify-out/backup-state.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(antes.status, 0, antes.stderr);
+
+    writeFileSync(join(root, 'graphify-out', 'manifest.json'), JSON.stringify({ '.gitignore': {}, 'inventado.md': {} }), 'utf8');
+    const despues = spawnSync(process.execPath, [script, 'check', 'graphify-out/backup-state.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(despues.status, 1, despues.stdout);
+    assert.match(despues.stderr, /inventory/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('graphInventoryFile devuelve null cuando no hay inventario, y sella igual', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-sin-inventario-'));
+  try {
+    const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    git('init', '-q', '.');
+    git('config', 'user.email', 't@t');
+    git('config', 'user.name', 't');
+    mkdirSync(join(root, 'g'), { recursive: true });
+    writeFileSync(join(root, 'g', 'r.md'), '# r' + String.fromCharCode(10), 'utf8');
+    writeFileSync(join(root, 'g', 'graph.json'), '{}' + String.fromCharCode(10), 'utf8');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'base');
+
+    // Un proyecto sin manifest.json no puede quedar bloqueado por un archivo que no le toca crear.
+    assert.equal(graphInventoryFile(root, 'g/graph.json'), null);
+    // Y una ruta que se escapa del proyecto tampoco tumba el gate.
+    assert.equal(graphInventoryFile(root, '../fuera/graph.json'), null);
+
+    const grabar = spawnSync(process.execPath, [script, 'record', '--report', 'g/r.md', '--graph', 'g/graph.json', '--manifest', 'g/backup.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(grabar.status, 0, grabar.stderr);
+    const verificar = spawnSync(process.execPath, [script, 'check', 'g/backup.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(verificar.status, 0, verificar.stderr);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un recibo viejo sin el sello del inventario sigue verificando si no hay inventario', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-recibo-viejo-'));
+  try {
+    const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    git('init', '-q', '.');
+    git('config', 'user.email', 't@t');
+    git('config', 'user.name', 't');
+    mkdirSync(join(root, 'g'), { recursive: true });
+    writeFileSync(join(root, 'g', 'r.md'), '# r' + String.fromCharCode(10), 'utf8');
+    writeFileSync(join(root, 'g', 'graph.json'), '{}' + String.fromCharCode(10), 'utf8');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'base');
+
+    spawnSync(process.execPath, [script, 'record', '--report', 'g/r.md', '--graph', 'g/graph.json', '--manifest', 'g/backup.json'], { cwd: root, encoding: 'utf8' });
+    // Un recibo escrito antes de que existiera este campo: se lee como "no habia inventario".
+    const recibo = JSON.parse(readFileSync(join(root, 'g', 'backup.json'), 'utf8'));
+    delete recibo.graph_inventory_sha256;
+    writeFileSync(join(root, 'g', 'backup.json'), JSON.stringify(recibo, null, 2) + String.fromCharCode(10), 'utf8');
+
+    const r = spawnSync(process.execPath, [script, 'check', 'g/backup.json'], { cwd: root, encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

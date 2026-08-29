@@ -10,7 +10,7 @@ const SYNTAX_SIGNAL = /SyntaxError|ParseError|Unexpected token|collection error|
 const TEST_PATH = /(?:^|\/)(?:test|tests|__tests__|spec|specs)\/|(?:\.|\/)(?:test|spec)\.[a-z]+$/iu;
 const TAP_HEADER = /^TAP version 13$/mu;
 const FOOTER_TESTS = /^# tests? (\d+)$/mu;
-const FOOTER_FAIL = /^# fail (\d+)$/mu;
+const FOOTER_FAIL = /^# fail (\d+)$/gmu;
 const NOT_OK_LINE = /^not ok \d+ - /u;
 const BLOCK_ASSERTION_LINE = "  code: 'ERR_ASSERTION'";
 const HOST_ENVIRONMENT_KEYS = ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'SystemDrive', 'ComSpec', 'PATHEXT', 'WINDIR', 'TEMP', 'TMP', 'TMPDIR'];
@@ -114,9 +114,12 @@ export function realDiagnosticBlocks(output) {
 
 function tapFooter(output) {
   const tests = output.match(FOOTER_TESTS);
-  const fail = output.match(FOOTER_FAIL);
-  if (!tests || !fail) return null;
-  return { tests: Number(tests[1]), fail: Number(fail[1]) };
+  // El ULTIMO, no el primero: node prefija la salida de cada test con '# ', asi que un test que
+  // imprime "fail 0" produce una linea identica al pie. El pie de verdad lo escribe el corredor al
+  // cerrar, siempre al final. Reproducido el 2026-08-28: un RED genuino se rechazaba por eso.
+  const fails = [...output.matchAll(FOOTER_FAIL)];
+  if (!tests || fails.length === 0) return null;
+  return { tests: Number(tests[1]), fail: Number(fails.at(-1)[1]) };
 }
 
 /**

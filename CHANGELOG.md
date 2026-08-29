@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los últimos 8, verificados uno por uno** (hallazgo 64). Siete eran reales; el octavo ya
+  estaba cerrado por el arreglo del path del ancla. **Cinco arreglados**: `verify-red-node`
+  rechazaba un RED genuino porque leía el pie de TAP del primer match y node prefija la salida de
+  cada prueba con `# `; el sello del backup no cubría `manifest.json`, que es el archivo que dice
+  qué cubre el grafo; el hard gate RED no cubría `.sh`, `.ps1`, `.c`, `.cpp`, `.h`, `.vue`,
+  `.svelte`, `.tf` ni `.html` —ahora son 38 extensiones en una constante exportada, con su límite
+  escrito—; una promesa de contrato fijada por el título dejaba borrar la tabla entera que la
+  promesa nombra; y se eliminó una rama muerta. **Dos reproducidos y declarados sin arreglar**:
+  `.git/info/exclude` da vuelta el veredicto de `scope-diff` sin dejar rastro en el repo, y una
+  clave escrita a mano en el manifiesto compra cobertura — los dos son "el gate confía en un
+  archivo que nadie revisa", y cerrarlos de verdad merece una decisión, no un parche.
+  Con esto el ataque adversarial queda cerrado: de 41 propuestas, ninguna quedó sin mirar.
+
 - **Los 28 que quedaban, revisados uno por uno** (hallazgo 63), reproduciendo cada propuesta a
   mano. **Seis arreglados**: `test.todo` y `test.skip` dejaron de contar como criterio cubierto;
   escanear cero archivos escribe `VACÍO:` en vez de `OK:`; dos opciones de menú que sólo difieren

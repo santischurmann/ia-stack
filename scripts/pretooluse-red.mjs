@@ -62,6 +62,18 @@ function receiptFiles(feature, cwd = '.') {
     .map((entry) => join(directory, entry.name));
 }
 
+// Extensiones que el hard gate RED cubre. Estaba repetida tres veces y le faltaban lenguajes
+// enteros: .sh, .ps1, .c, .cpp, .h, .vue, .svelte, .tf y .html pasaban SIN receipt RED y sin decir
+// nada. Reproducido el 2026-08-28: doce rutas permitidas, tres denegadas.
+// LIMITE HONESTO: sigue siendo una lista, no una regla. Un lenguaje que no este aca no queda
+// cubierto, y la unica senal de eso es esta constante -por eso se exporta, para poder leerla-.
+export const RED_GATED_EXTENSIONS = Object.freeze([
+  'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'py', 'go', 'rs', 'java', 'rb', 'php', 'cs', 'kt',
+  'swift', 'sql', 'sh', 'bash', 'zsh', 'ps1', 'psm1', 'c', 'cpp', 'cc', 'h', 'hpp', 'vue',
+  'svelte', 'tf', 'html', 'scala', 'ex', 'exs', 'lua', 'pl', 'r', 'm', 'mm',
+]);
+const RED_GATED = new RegExp(`\.(?:${RED_GATED_EXTENSIONS.join('|')})$`, 'iu');
+
 export function receiptValid(receipt, { cwd = '.', feature, now = Date.now() } = {}) {
   if (!receipt || receipt.schema !== 'vcp.red-receipt/v2') return { ok: false, reason: 'unknown or missing receipt schema' };
   if (!FEATURE.test(receipt.feature ?? '') || receipt.feature !== feature) return { ok: false, reason: 'receipt feature does not match active feature' };
@@ -69,7 +81,7 @@ export function receiptValid(receipt, { cwd = '.', feature, now = Date.now() } =
   const tests = receipt.tests && typeof receipt.tests === 'object' && !Array.isArray(receipt.tests) ? Object.entries(receipt.tests) : [];
   const allowedPaths = asList(receipt.allowed_paths);
   if (tests.length === 0 || !allowedPaths || allowedPaths.some(isTestPath) || allowedPaths.some((path) => !isContainedProjectPath(path, cwd))) return { ok: false, reason: 'receipt has no valid test or production path declarations' };
-  if (allowedPaths.some((path) => !/\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql)$/iu.test(path))) {
+  if (allowedPaths.some((path) => !RED_GATED.test(path))) {
     return { ok: false, reason: 'receipt declares a non-production allowed path' };
   }
   const emittedAt = Date.parse(receipt.emitted_at);
@@ -128,7 +140,7 @@ export function decide({ path, receipts, feature, cwd = '.', now = Date.now() })
   // This check still runs before the extension allowlist below, so a receipt's .json extension
   // doesn't quietly fall through as an unguarded file type for the one channel this hook does see.
   if (normalized.startsWith(RECEIPT_TREE)) return { allow: false, reason: 'writing directly to the receipt tree via Write/Edit is blocked; use pretooluse-red.mjs emit' };
-  if (isTestPath(normalized) || !/\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql)$/iu.test(normalized)) return { allow: true };
+  if (isTestPath(normalized) || !RED_GATED.test(normalized)) return { allow: true };
   if (!feature) return { allow: false, reason: 'no active feature in .vibe/SESSION.md; cannot select a scoped RED receipt' };
   for (const receipt of receipts) {
     const validation = receiptValid(receipt, { cwd, feature, now });
@@ -164,7 +176,7 @@ export function emit({ feature, task, tests, files, command, cwd = '.', now = Da
   const testPaths = asList(tests);
   const allowedPaths = asList(files);
   if (!testPaths || testPaths.some((path) => !isTestPath(path) || !isContainedProjectPath(path, cwd))) return { ok: false, reason: 'tests must be non-empty project-contained test files' };
-  if (!allowedPaths || allowedPaths.some((path) => isTestPath(path) || !isContainedProjectPath(path, cwd) || !/\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql)$/iu.test(path))) {
+  if (!allowedPaths || allowedPaths.some((path) => isTestPath(path) || !isContainedProjectPath(path, cwd) || !RED_GATED.test(path))) {
     return { ok: false, reason: 'files must be non-empty project-relative production-code paths' };
   }
   const sessionFeature = activeFeature(cwd);

@@ -35,6 +35,7 @@ verify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\n
 si el agente puede correr \`git commit -S\`, firma como vos
 Un agente que espera igual pasa: detecta lo imposible
 verify-receipt.mjs commit\nnunca reescribe historial por su cuenta\ncontracts/honest-limits.json\nverify-evidence-trace.mjs criteria\nverify-evidence-trace.mjs claims\ncriteria --spec docs/spec.md --tests tests --require-inputs\nescribe VACÍO, no OK\nverify-session-state.mjs check\ntercer intento fallido sobre el mismo problema\n## Diccionario: qué significa cada palabra rara
+| **verde vacío** |
 prueban forma, cadena y estado, nunca
 verify-shell-coverage.mjs check contracts/shell-coverage.json
 Mide líneas ejecutadas, no ramas

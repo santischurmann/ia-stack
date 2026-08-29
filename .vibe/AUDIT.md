@@ -67,3 +67,4 @@
 [2026-08-28] Docs | mapa al commit ae2556f | 589 tests, 83 checks, 34 limites, cobertura de shell medida; 2 de 3 huecos abiertos cerrados | mapa | chain:9b8f197e48eb2859d30675edf262f987f206a2a6e0f5843e7d845aad1bf7488d
 [2026-08-28] Auditor | revision de los 38 huecos sin verificar | 6 reproducidos y arreglados, 2 pendientes, 2 descartados, 28 sin verificar | h62 | chain:4d167111fb7010a5d0647e00efc16eb45cfd7c31d6bfaa5c031f4118b03150eb
 [2026-08-28] Auditor | revision de los 28 restantes | 6 arreglados, 5 declarados sin arreglar, 4 por diseno, 3 refutados, 8 sin verificar | h63 | chain:ee0cfac089ba52ab62b7de9bc49587843b173ea4545b95e951c2e1bb529bb26a
+[2026-08-28] Auditor | los ultimos 8 verificados | 7 reales: 5 arreglados, 2 declarados; 1 ya estaba cerrado. Ataque adversarial cerrado | h64 | chain:4f47e45c1d0247dc1d5ac2d753425a1d19f41843e9e1c2f514f4fa1ab4d29c38
