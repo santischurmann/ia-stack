@@ -14,9 +14,9 @@
 | T02 | hashPassword / verifyPassword — bcrypt wrappers | src/auth/password.ts | — |
 | T03 | login endpoint POST /auth/login | src/auth/routes.ts | T01, T02 |
 | T04 | authenticateToken middleware | src/auth/middleware.ts | T01 |
-| T05 | GET /auth/me protected route | src/auth/routes.ts | T04 |
-| T06 | POST /auth/refresh endpoint | src/auth/routes.ts | T01 |
-| T07 | E2E: full login + refresh + protected route flow | e2e/auth.e2e.test.ts | T03-T06 |
+| T05 | GET /auth/me protected route | src/auth/routes.ts | T03, T04 |
+| T06 | POST /auth/refresh endpoint | src/auth/routes.ts | T05 |
+| T07 | E2E: full login + refresh + protected route flow | e2e/auth.e2e.test.ts | T06 |
 
 ---
 
@@ -33,6 +33,19 @@
 Note: T01 and T02 can be run in parallel (no overlap).
 
 ---
+
+## Write-conflict preflight
+
+```bash
+node scripts/verify-plan-conflicts.mjs check examples/example-feature/tasks.json
+```
+
+T03 crea `src/auth/routes.ts` y T05 y T06 lo modifican: tres tareas sobre el mismo archivo. Sin
+un orden declarado eso es un conflicto de escritura y el preflight lo rechaza. Por eso T05 depende
+de T03 y T06 depende de T05 — la cadena existe **antes** de construir, no después.
+
+Salida esperada: `3 serialized overlap(s); no unsequenced write conflicts`. Un `SERIALIZED` no es
+un aviso a ignorar: dice que esas tareas **no se pueden despachar en paralelo**.
 
 ## Risk Notes
 

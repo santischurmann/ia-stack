@@ -14,6 +14,17 @@ system with access tokens (15 min) and refresh tokens (7 days).
 
 ---
 
+## Discovery / Investigación previa
+
+**Estado:** completed. Tres claims, cada uno con su fuente y su huella de contenido.
+
+- El login actual compara contraseñas en claro (`src/legacy/login.ts:41`) — SUPPORTED.
+- No hay expiración de sesión: el ticket #218 registra dos incidentes por sesiones eternas — SUPPORTED.
+- Que un refresh separado reduzca el robo de tokens es INFERRED, no observado acá.
+
+**Diagnóstico:** el proceso roto es la autenticación sin caducidad; la información que se pierde
+es quién entró y cuándo. **No-goal declarado:** esto no arregla la gestión de permisos.
+
 ## Target Users / Usuarios
 
 Registered users who need to authenticate to access protected routes.

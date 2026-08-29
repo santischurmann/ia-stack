@@ -1,0 +1,245 @@
+{
+  "tasks": [
+    {
+      "id": "T01",
+      "description": "createTokens(userId) — generate access + refresh JWT",
+      "files_to_create": [
+        "src/auth/tokens.ts"
+      ],
+      "files_to_modify": [],
+      "test_files": [
+        "src/auth/__tests__/tokens.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [],
+      "status": "pending",
+      "goal": "login seguro -> AC1 -> emitir el par de tokens",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC1: devuelve access y refresh firmados con expiraciones distintas",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T02",
+      "description": "hashPassword / verifyPassword — bcrypt wrappers",
+      "files_to_create": [
+        "src/auth/password.ts"
+      ],
+      "files_to_modify": [],
+      "test_files": [
+        "src/auth/__tests__/password.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [],
+      "status": "pending",
+      "goal": "login seguro -> AC2 -> nunca comparar contrasenas en claro",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC2: verifyPassword rechaza una contrasena incorrecta",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T03",
+      "description": "login endpoint POST /auth/login",
+      "files_to_create": [
+        "src/auth/routes.ts"
+      ],
+      "files_to_modify": [],
+      "test_files": [
+        "src/auth/__tests__/login.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T01",
+        "T02"
+      ],
+      "status": "pending",
+      "goal": "login seguro -> AC3 -> intercambiar credenciales por tokens",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC3: credenciales validas devuelven 200 con el par de tokens",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T04",
+      "description": "authenticateToken middleware",
+      "files_to_create": [
+        "src/auth/middleware.ts"
+      ],
+      "files_to_modify": [],
+      "test_files": [
+        "src/auth/__tests__/middleware.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T01"
+      ],
+      "status": "pending",
+      "goal": "login seguro -> AC4 -> rechazar lo no autenticado",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC4: un token invalido o vencido devuelve 401",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T05",
+      "description": "GET /auth/me protected route",
+      "files_to_create": [],
+      "files_to_modify": [
+        "src/auth/routes.ts"
+      ],
+      "test_files": [
+        "src/auth/__tests__/me.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T03",
+        "T04"
+      ],
+      "status": "pending",
+      "goal": "login seguro -> AC5 -> leer la identidad del token",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC5: con token valido devuelve el usuario; sin token, 401",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T06",
+      "description": "POST /auth/refresh endpoint",
+      "files_to_create": [],
+      "files_to_modify": [
+        "src/auth/routes.ts"
+      ],
+      "test_files": [
+        "src/auth/__tests__/refresh.unit.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T05"
+      ],
+      "status": "pending",
+      "goal": "login seguro -> AC6 -> renovar sin volver a pedir la contrasena",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC6: un refresh valido devuelve un access nuevo",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    },
+    {
+      "id": "T07",
+      "description": "E2E: login + refresh + ruta protegida",
+      "files_to_create": [],
+      "files_to_modify": [],
+      "test_files": [
+        "e2e/auth.e2e.test.ts"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate",
+        "refactor"
+      ],
+      "depends_on": [
+        "T06"
+      ],
+      "status": "pending",
+      "goal": "login seguro -> AC1-AC6 -> el recorrido completo funciona junto",
+      "owner": null,
+      "locked": false,
+      "role": "Test-Engineer",
+      "verifier": "scripts/verify-red.sh|.ps1 (mechanical, not a persona — no role certifies its own gate)",
+      "approval_criteria": "AC7: el flujo entero pasa de punta a punta",
+      "evidence": [],
+      "not_reviewed": [],
+      "rollback": "git revert <commit-sha>",
+      "handoff": "RED pass -> Builder (GREEN)",
+      "blocked_reason": null
+    }
+  ]
+}
