@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los 28 que quedaban, revisados uno por uno** (hallazgo 63), reproduciendo cada propuesta a
+  mano. **Seis arreglados**: `test.todo` y `test.skip` dejaron de contar como criterio cubierto;
+  escanear cero archivos escribe `VACÍO:` en vez de `OK:`; dos opciones de menú que sólo difieren
+  en caracteres invisibles ya no cuentan como dos; un `SESSION.md` de 0 bytes deja de satisfacer
+  `--require-inputs`; `check` de la cadena informa cuántas líneas heredadas hay antes del primer
+  sello, para que una línea forjada arriba se vea —detectarla sigue siendo trabajo de `history`,
+  contra git—; y se eliminó un bloque duplicado y muerto que había dejado un parche anterior.
+  **Cinco reproducidos y declarados sin arreglar**, cada uno con su motivo: aceptar un archivo
+  demasiado grande es un punto ciego permanente; un rename que sólo cambia mayúsculas deja el
+  gate de sincronización en rojo y reinstalar no lo arregla; un secreto en UTF-16LE es invisible;
+  la sonda de carpeta vacía sólo enumera `verify-*.mjs`; y once de veintitrés gates no tienen
+  ningún límite honesto que los nombre. **Cuatro son correctos por diseño** y **tres no se
+  reprodujeron**. **Ocho siguen sin verificar**, nombrados uno por uno en el backlog.
+
 - **Seis huecos más, reproducidos a mano y cerrados** (hallazgo 62). El ataque adversarial dejó
   38 propuestas sin verificar; se revisaron reproduciendo cada una, sin agentes:
   1. `verify-security-baseline`: un `.env.production` con `DATABASE_PASSWORD` **sin comillas**

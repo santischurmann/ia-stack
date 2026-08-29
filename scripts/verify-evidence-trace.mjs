@@ -39,7 +39,10 @@ const IDENTIFIER = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/u;
 const HAS_DIGIT = /\d/u;
 // Proposes candidates only; hasLiteralTestDeclaration is the authority on whether each one is a
 // real declaration, so this pattern may over-match comments and strings without loosening anything.
-const CANDIDATE_TITLE = /(?:^|[^\w$])(?:test|it)(?:\.(?:skip|todo))?\s*\(\s*(?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")/gu;
+// `test.todo` y `test.skip` YA NO cuentan: un criterio nombrado por una prueba que nadie escribio
+// -o que esta apagada- no esta cubierto, y contarlo era el verde vacio disfrazado de trazabilidad.
+// Reproducido el 2026-08-28.
+const CANDIDATE_TITLE = /(?:^|[^\w$])(?:test|it)\s*\(\s*(?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")/gu;
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/u;
 const FEATURE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const DEFAULT_IO = { exists: existsSync, read: readFileSync, list: readdirSync };

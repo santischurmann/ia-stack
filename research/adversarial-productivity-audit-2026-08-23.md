@@ -309,6 +309,67 @@ descartaron **2**. Los **28 restantes** —casi todos de severidad media y baja�
 **propuestos, sin verificar**, guardados en el journal del workflow. No están confirmados ni
 refutados: nadie los corrió.
 
+
+## Hallazgo 63 — revisión de los 28 que quedaban, uno por uno
+
+**Hecho**: 2026-08-28. Se reprodujo cada propuesta a mano. Ninguna se dio por buena sin correrla.
+
+### Reproducidos y arreglados (6)
+
+| Gate | Qué pasaba |
+|---|---|
+| `verify-evidence-trace` | **`test.todo` y `test.skip` contaban como criterio cubierto.** Un AC "cubierto" por una prueba que nadie escribió, o que está apagada, pasaba en verde: trazabilidad falsa. Dejaron de contar. |
+| `verify-security-baseline` | Con la base por omisión el delta es vacío por construcción, y escanear **cero archivos** decía `OK`. El límite del delta no cambia —sigue siendo el diseño— pero ahora se escribe `VACÍO:` y la salida dice cómo conseguir un delta real. |
+| `verify-phase-decisions` | Dos opciones que sólo difieren en **caracteres invisibles** (ancho cero, marcas de dirección) satisfacían el mínimo del menú. Para quien lee son la misma. La unicidad se mide sobre el texto visible. |
+| `verify-session-state` | Un `SESSION.md` de **0 bytes** satisfacía `--require-inputs`: un `touch` convertía el VACÍO en "OK: es retomable". Un archivo sin una sola sección no declara estado. |
+| `verify-audit-chain check` | Inyectar líneas **sin sello arriba** de una traza sellada pasaba en verde. No se puede detectar desde adentro del archivo —los hashes viven ahí mismo— pero `history` **sí lo agarra**, verificado. Ahora `check` informa cuántas líneas heredadas hay antes del primer sello y nombra a `history`: crecer de 0 a 1 se ve. |
+| `verify-security-baseline` | Un bloque duplicado y muerto quedó de un parche anterior mío. Eliminado. |
+
+### Reproducidos, NO arreglados, con motivo (5)
+
+- **Aceptar `unscanned-large-source` es un punto ciego permanente.** El identificador del hallazgo
+  es `sha256(categoría + ruta + evidencia)`, y para un archivo demasiado grande la evidencia es una
+  frase constante. Se le inyecta un secreto después y el gate sigue en verde. Reproducido. Arreglarlo
+  bien exige que la aceptación cubra el **contenido**, y esa es la misma decisión de diseño que el
+  research externo declaró sin respuesta buena. Merece su propia tarea, no un parche.
+- **Un rename que sólo cambia mayúsculas deja `runtime-sync` en rojo permanente, y reinstalar no lo
+  arregla**: en Windows el sistema de archivos no distingue mayúsculas, así que la copia escribe
+  sobre el nombre viejo y el archivo esperado nunca aparece. Reproducido, incluido el paso de
+  reinstalar. El arreglo es que el instalador borre el runtime antes de copiar, y borrar un
+  directorio del proyecto del usuario necesita más cuidado del que entra en este lote.
+- **Un secreto en UTF-16LE es invisible a todos los detectores** y el archivo igual se cuenta como
+  escaneado. Reproducido. Arreglarlo pide decidir cómo detectar la codificación sin romper el
+  escaneo de binarios, que hoy está deliberadamente acotado.
+- **La sonda de carpeta vacía enumera sólo `verify-*.mjs`**, así que `pretooluse-red.mjs` y `ratchet.mjs` quedan afuera y ni siquiera aparecen como no declarados. Reproducido contando los archivos.
+- **Once de veintitrés gates no tienen ningún límite honesto que los nombre**, y nada lo detecta.
+  Verificado cruzando los dos inventarios. Es una regla que falta, no un defecto de código.
+
+### Reproducidos y son correctos por diseño (4)
+
+- **`--runtime` en `runtime-sync`**: sin la bandera verifica su propio runtime, con ella el del
+  proyecto. Las dos respuestas son ciertas; lo que falta es que el mensaje diga cuál miró.
+- **`record` acepta el mismo archivo como `--report` y `--graph`**: emite un recibo que aparenta
+  sellar dos artefactos. Real, pero es un error de quien llama y el recibo dice qué rutas usó.
+- **El contador de límites honestos suma duplicados**: decir 35 donde hay 34 distintos. Cosmético.
+- **Correr `verify-vcp-contract` desde un proyecto siempre falla**: verifica los documentos del
+  propio VCP, no los del consumidor. Lo que hay que arreglar es la documentación, no el gate.
+
+### Refutados: no se reprodujeron (3)
+
+- **Repetir el encabezado `###` no evade el tope de intentos**: el gate lo agarra igual, con otro
+  código (`ATTEMPT_MALFORMED` en vez de `ATTEMPT_LIMIT`), porque la numeración corrida se rompe.
+- **`graphify-manifest` con 0 archivos indexados**: rechaza, no da OK.
+- **Una línea heredada que termina en un sufijo de sello válido**: rechaza, y es lo correcto — un
+  sufijo con esa forma es indistinguible de un sello, y tratarlo como texto es el agujero que el
+  propio gate documenta haber cerrado.
+
+### Sin verificar (8)
+
+Quedan sin correr: `receipt` desde un subdirectorio, `.git/info/exclude` contra `scope-diff`, el pie
+de TAP de `red-node`, las extensiones que el hard gate RED no cubre, una traza de más de 64 MiB,
+una promesa de contrato fijada sólo por su título, una clave escrita a mano en el manifiesto, y que
+el sello del backup no cubra `manifest.json`. **Ni confirmados ni refutados.**
+
 ## Políticas decididas (2026-08-28)
 
 Los 18 items que quedaban abiertos no eran todos código faltante: la mayoría esperaba una decisión

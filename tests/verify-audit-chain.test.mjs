@@ -17,6 +17,7 @@ const {
   parseAuditLines,
   sealLineFor,
   verifyChain,
+  legacyPrefixLength,
   gitVersions,
   verifyGrowth,
   historyCommand,
@@ -797,4 +798,32 @@ test('FALSIFICACION · si NINGUNA version se pudo mostrar, el path no resuelve y
   assert.notEqual(todasVacias.error, null);
   assert.match(todasVacias.error, /no resuelve/u);
   assert.deepEqual(todasVacias.versions, []);
+});
+
+
+// --- El prefijo heredado se informa, no se calla -------------------------------------------------
+
+// Inyectar lineas SIN sello ARRIBA de una traza sellada pasa `check`: los hashes viven en el mismo
+// archivo y no hay contra que comparar el principio. Quien lo detecta es `history`, contra git.
+// `check` no puede detectarlo, pero SI puede dejar de callarlo: informa cuantas lineas heredadas
+// hay antes del primer sello, para que crecer de 0 a 1 se vea. Reproducido el 2026-08-28.
+test('legacyPrefixLength cuenta las lineas sin sello que abren la traza', () => {
+  const sellada = chained([LINE_A, LINE_B]).join(String.fromCharCode(10));
+  assert.equal(legacyPrefixLength(sellada), 0);
+  assert.equal(legacyPrefixLength([LINE_C, sellada].join(String.fromCharCode(10))), 1);
+  assert.equal(legacyPrefixLength([LINE_A, LINE_B, LINE_C].join(String.fromCharCode(10))), 3);
+  assert.equal(legacyPrefixLength(''), 0);
+});
+
+test('FALSIFICACION · check informa el prefijo heredado en vez de callarlo', () => {
+  const sellada = chained([LINE_A, LINE_B]).join(String.fromCharCode(10));
+  const limpia = [];
+  assert.equal(main(['check', 'AUDIT.md'], { readFile: () => sellada }, (l) => limpia.push(l), () => {}), 0);
+  assert.doesNotMatch(limpia.at(-1), /heredada/u, 'sin prefijo no se dice nada');
+
+  const forjada = [];
+  const conForjada = [LINE_C, sellada].join(String.fromCharCode(10));
+  assert.equal(main(['check', 'AUDIT.md'], { readFile: () => conForjada }, (l) => forjada.push(l), () => {}), 0);
+  assert.match(forjada.at(-1), /1 línea\(s\) heredada\(s\)/u, 'una linea forjada arriba tiene que verse en la salida');
+  assert.match(forjada.at(-1), /history/u, 'y tiene que nombrar al que si la detecta');
 });

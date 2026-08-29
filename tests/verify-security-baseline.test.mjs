@@ -951,8 +951,12 @@ test('el --base por defecto sólo mira el árbol vivo: lo ya commiteado sale del
     git(root, 'add', '-A');
     git(root, 'commit', '-qm', 'ship it');
     const committed = check(root);
+    // Sigue saliendo 0 -- el delta es el diseno y no cambia-, pero desde el 2026-08-28 se escribe
+    // VACIO en vez de OK: escanear cero archivos no es un escaneo, y decirlo OK era el verde vacio
+    // dentro del gate de seguridad. El limite del delta queda igual; lo que cambia es que se ve.
     assert.equal(committed.status, 0, committed.output);
-    assert.match(committed.output, /scanned 0 live changed file\(s\)/u);
+    assert.match(committed.output, /^VACÍO: /u);
+    assert.match(committed.output, /--base/u, 'la salida tiene que decir como conseguir un delta real');
 
     // Con el merge-base correcto el mismo commit vuelve a bloquear.
     const againstBase = check(root, '--base', 'HEAD~1');
@@ -1026,5 +1030,21 @@ test('FALSIFICACION · lo que NO es una credencial no dispara el detector nuevo'
     const criticos = scanFile('config.env', linea + String.fromCharCode(10))
       .filter((h) => h.severity === 'critical' && h.category === 'hardcoded-secret');
     assert.deepEqual(criticos, [], `falso positivo sobre: ${linea}`);
+  }
+});
+
+
+// --- Escanear cero archivos no es un escaneo -----------------------------------------------------
+
+test('FALSIFICACION · con la superficie vacia el gate escribe VACIO y dice como conseguir un delta', () => {
+  const root = fixture();
+  try {
+    // Nada cambiado desde HEAD: el delta por omision es vacio por construccion.
+    const r = check(root);
+    assert.equal(r.status, 0, r.output);
+    assert.match(r.output, /^VACÍO: /u);
+    assert.match(r.output, /--base/u, 'la salida tiene que decir como conseguir un delta real');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

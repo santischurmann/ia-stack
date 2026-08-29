@@ -78,11 +78,21 @@ function hasExactKeys(value, allowed) {
  * siendo una sola para cualquiera que lo lea. Un menú que sólo se distingue en espacios satisface
  * el mínimo sin ofrecer nada que elegir, que es exactamente la regla decorativa que este gate viene
  * a detectar. */
+// Lo que una persona ve del texto de una opcion. El recorte de T11 cubria espacios normales, pero
+// dos opciones que solo difieren en un espacio de ancho cero seguian contando como dos: para quien
+// lee son la misma. Reproducido el 2026-08-28. INVISIBLE junta ancho cero, joiners y marcas de
+// direccion, que es lo que se puede pegar en un menu sin que se note.
+const INVISIBLE = /[\u200B-\u200F\u2028-\u202E\u2060-\u206F\uFEFF]/gu;
+
+function visibleText(option) {
+  return option.replace(INVISIBLE, '').trim();
+}
+
 function isMenu(value) {
   return Array.isArray(value)
     && value.length >= MIN_OPTIONS
     && value.every(nonEmpty)
-    && new Set(value.map((option) => option.trim())).size === value.length;
+    && new Set(value.map(visibleText)).size === value.length;
 }
 
 function isDigest(value) {

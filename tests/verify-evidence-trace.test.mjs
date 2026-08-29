@@ -153,11 +153,15 @@ test('literalTestTitles reusa hasLiteralTestDeclaration: sólo cuentan las llama
     "// test('AC91 · en un comentario no cuenta', () => {});",
     "const prosa = \"test('AC92 · dentro de un string tampoco', () => {});\";",
     "test('AC91 · declaración real', () => {});",
-    'it.skip("AC93 · con comillas dobles y modificador", () => {});',
+    'it.skip("AC93 · una prueba apagada NO cubre nada", () => {});',
+    'it("AC96 · con comillas dobles, sin modificador, SI cuenta", () => {});',
+    'test.todo("AC95 · una prueba que nadie escribio tampoco");',
     "test('AC91 · declaración real', () => {});",
     "notest('AC94 · un identificador pegado no es test()', () => {});",
   ].join('\n');
-  assert.deepEqual(literalTestTitles(source), ['AC91 · declaración real', 'AC93 · con comillas dobles y modificador']);
+  // `test.todo` y `test.skip` dejaron de contar el 2026-08-28: un criterio nombrado por una prueba
+  // que nadie escribio -o que esta apagada- no esta cubierto, y contarlo era trazabilidad falsa.
+  assert.deepEqual(literalTestTitles(source), ['AC91 · declaración real', 'AC96 · con comillas dobles, sin modificador, SI cuenta']);
   assert.deepEqual(literalTestTitles('const x = 1;\n'), []);
 });
 

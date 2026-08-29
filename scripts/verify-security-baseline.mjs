@@ -561,6 +561,13 @@ export function main(args = process.argv.slice(2), options = {}) {
   if (blocking.length > 0) writeError(`REJECTED: ${blocking.length} blocking security finding(s) across ${report.scanned.length} live changed file(s).`);
   if (stale.length > 0) writeError(`REJECTED: ${stale.length} security baseline entry(ies) match no live finding in a scanned file: ${stale.map((entry) => `${entry.path} (${entry.finding_id})`).join(', ')}`);
   if (blocking.length + stale.length > 0) return 1;
+  // Escanear cero archivos no es un escaneo. Pasaba con `check` a secas: el --base por omision
+  // compara HEAD contra HEAD y el delta queda vacio por construccion, asi que un secreto ya
+  // commiteado era invisible y la salida decia OK. Reproducido el 2026-08-28.
+  if (report.scanned.length === 0) {
+    write('VACÍO: no había ningún archivo en la superficie a escanear. Con la base por omisión el delta es vacío por construcción: elegí una con --base para que haya algo que comparar.');
+    return 0;
+  }
   write(`OK: security baseline scanned ${report.scanned.length} live changed file(s); no blocking Critical/High findings, ${accepted.length} accepted.`);
   return 0;
 }

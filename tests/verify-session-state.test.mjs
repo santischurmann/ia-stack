@@ -427,3 +427,22 @@ test('FALSIFICACIÓN · --require-inputs rechaza el proyecto sin SESSION.md y de
   const verde = run(['--require-inputs']);
   assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
 }));
+
+
+// --- Un archivo de 0 bytes no es estado declarado -----------------------------------------------
+
+// Reproducido el 2026-08-28: `touch .vibe/SESSION.md` convertia el VACIO en "OK: es retomable",
+// y --require-inputs lo daba por satisfecho. Un archivo sin una sola seccion no declara nada.
+test('FALSIFICACION · un SESSION.md vacio escribe VACIO, y --require-inputs lo rechaza', () => fixture((root) => {
+  writeSession(root, '');
+  const permisivo = spawnSync(process.execPath, [script, 'check', '--session', SESSION], { cwd: root, encoding: 'utf8' });
+  assert.deepEqual({ status: permisivo.status, vacio: permisivo.stdout.startsWith('VACÍO: ') }, { status: 0, vacio: true }, permisivo.stderr);
+
+  const estricto = spawnSync(process.execPath, [script, 'check', '--session', SESSION, '--require-inputs'], { cwd: root, encoding: 'utf8' });
+  assert.equal(estricto.status, 1);
+
+  // Y un archivo con solo espacios tampoco es estado.
+  writeSession(root, '   ' + String.fromCharCode(10) + '  ');
+  const soloEspacios = spawnSync(process.execPath, [script, 'check', '--session', SESSION], { cwd: root, encoding: 'utf8' });
+  assert.ok(soloEspacios.stdout.startsWith('VACÍO: '));
+}));

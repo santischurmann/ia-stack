@@ -209,6 +209,11 @@ export function checkSessionState(projectRoot, sessionPath) {
   } catch (error) {
     return { ok: false, summary: '', violations: [{ code: 'SESSION_STATE_UNREADABLE', message: `no se puede leer ${sessionPath} como archivo del proyecto: ${error.message}` }] };
   }
+  // Un archivo sin contenido no es estado declarado: `touch` convertia el VACIO en un OK que decia
+  // "es retomable". Reproducido el 2026-08-28 atacando este gate.
+  if (source.trim() === '') {
+    return { ok: true, vacuous: true, violations: [], summary: `${sessionPath} está vacío: un archivo sin una sola sección no declara ningún estado que retomar.` };
+  }
   const attempts = checkAttempts(sectionLines(source, SECTION_ATTEMPTS));
   const interrupted = hasSection(source, SECTION_INTERRUPTED);
   const resume = interrupted ? checkInterruption(sectionLines(source, SECTION_INTERRUPTED)) : [];

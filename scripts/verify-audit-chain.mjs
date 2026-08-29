@@ -101,6 +101,18 @@ export function verifyChain(content) {
 /** Pure half of `append`: decides the bytes to add, or the reason the line cannot be sealed at all.
  * Everything it rejects is a line that would make the very next `check` fail, plus a blank entry,
  * which would verify but is unremovable noise once sealed. */
+/** Cuantas lineas heredadas -sin sello- abren la traza. Es el prefijo que LEGACY_PREFIX_ALLOWED
+ * tolera, y su tamano es parte de lo que hay que sellar: si crece, alguien fabricó historia nueva
+ * ANTES de la primera linea sellada. Reproducido el 2026-08-28 atacando este gate. */
+export function legacyPrefixLength(content) {
+  let n = 0;
+  for (const entry of parseAuditLines(content)) {
+    if (entry.chain !== null) break;
+    n += 1;
+  }
+  return n;
+}
+
 export function sealLineFor(content, text) {
   const refuse = (reason) => ({ ok: false, chain: null, append: null, reason });
   if (text.trim() === '') return refuse(EMPTY_TEXT);
@@ -296,7 +308,15 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     write(`${EMPTY_PREFIX}${message}`);
     return 0;
   }
-  write(`OK: ${path} has an intact audit chain over ${result.verified} chained line(s).`);
+  // El prefijo heredado se informa siempre que haya sellos: una traza sellada que gana lineas
+  // heredadas nuevas es alguien fabricando el principio de la historia. `check` no puede
+  // distinguirlas de las legitimas -no hay nada contra que compararlas dentro del archivo-, pero
+  // ponerlas en la salida hace que crecer de 0 a 1 se vea. Quien lo detecta es `history`.
+  const heredadas = legacyPrefixLength(content);
+  const nota = heredadas > 0
+    ? ` Antes del primer sello hay ${heredadas} línea(s) heredada(s), que esta comprobación no puede verificar: usá \`history\` para compararlas contra git.`
+    : '';
+  write(`OK: ${path} has an intact audit chain over ${result.verified} chained line(s).${nota}`);
   return 0;
 }
 
