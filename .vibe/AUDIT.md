@@ -68,3 +68,4 @@
 [2026-08-28] Auditor | revision de los 38 huecos sin verificar | 6 reproducidos y arreglados, 2 pendientes, 2 descartados, 28 sin verificar | h62 | chain:4d167111fb7010a5d0647e00efc16eb45cfd7c31d6bfaa5c031f4118b03150eb
 [2026-08-28] Auditor | revision de los 28 restantes | 6 arreglados, 5 declarados sin arreglar, 4 por diseno, 3 refutados, 8 sin verificar | h63 | chain:ee0cfac089ba52ab62b7de9bc49587843b173ea4545b95e951c2e1bb529bb26a
 [2026-08-28] Auditor | los ultimos 8 verificados | 7 reales: 5 arreglados, 2 declarados; 1 ya estaba cerrado. Ataque adversarial cerrado | h64 | chain:4f47e45c1d0247dc1d5ac2d753425a1d19f41843e9e1c2f514f4fa1ab4d29c38
+[2026-08-29] Docs | mapa al commit 8560363 | 606 tests, 84 checks, 34 limites; ataque adversarial cerrado, 41 de 41 verificadas | mapa | chain:7727cfa6199a096f832b2d4364aa8a595478ffa0d77def839b83eef4c4abfb10

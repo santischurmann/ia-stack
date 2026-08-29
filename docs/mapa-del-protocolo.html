@@ -335,12 +335,12 @@
 <div class="wrap">
 
   <header>
-    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>ae2556f</code></div>
+    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>8560363</code></div>
     <h1>Qué prueba VCP<br>y qué no</h1>
     <p class="thesis">
       VCP es un protocolo de trabajo con chequeos automáticos. Cada regla tiene un programa que la
       detecta: <strong>una regla sin detector es decoración</strong>. Este mapa muestra las ocho
-      fases, los veintidós chequeos, y —con el mismo espacio— lo que cada uno
+      fases, los veintitrés chequeos, y —con el mismo espacio— lo que cada uno
       <strong>deliberadamente no puede probar</strong>.
     </p>
 
@@ -503,6 +503,22 @@
               de la carpeta vacía. Un proyecto a medio llenar puede tener vacíos que no ve.</td>
           </tr>
           <tr>
+            <td class="gate"><code>shell-coverage</code></td>
+            <td>Cuánto de cada script de shell llegan a ejecutar los escenarios declarados. Lo mide
+              el propio bash, que sabe decir qué línea ejecutó. Sin instalar nada.</td>
+            <td class="limit"><b>Mide líneas, no ramas.</b> Una línea con una condición cuenta como
+              cubierta apenas se evalúa, aunque su otro camino no se haya probado nunca. Y no mide
+              PowerShell: ahí no hay forma portable de saber la línea, así que queda <b>declarado sin
+              medición</b>, no medido en cero.</td>
+          </tr>
+          <tr>
+            <td class="gate"><code>receipt custody</code></td>
+            <td>Dice si el commit que lleva el recibo está firmado, con qué clave, y por quién.</td>
+            <td class="limit"><b>Si quien escribe puede firmar, firma como vos.</b> Prueba que alguien
+              con acceso a la clave firmó, no quién. Vale hasta donde la clave exija una persona
+              presente.</td>
+          </tr>
+          <tr>
             <td class="gate"><code>graphify-manifest</code></td>
             <td>El grafo del código cubre todos los archivos versionados, y cada exclusión tiene
               motivo escrito.</td>
@@ -523,11 +539,12 @@
 
   <section>
     <h2>La noche del 28</h2>
-    <p class="h2sub">Leer el código encontró seis. Ejecutarlo encontró nueve más</p>
+    <p class="h2sub">Leer el código encontró seis. Atacarlo encontró veinte más</p>
     <p class="lede">
       Los primeros seis salieron de leer con cuidado. Los que siguen no: aparecieron corriendo la
-      batería completa, sondeando una carpeta vacía, instalando en un destino limpio y clonando
-      desde GitHub. Cada método nuevo encontró lo que el anterior no podía ver.
+      batería completa, sondeando una carpeta vacía, instalando en un destino limpio, clonando desde
+      GitHub, y finalmente atacando cada chequeo a propósito. Cada método nuevo encontró lo que el
+      anterior no podía ver.
     </p>
 
     <div class="finds">
@@ -553,6 +570,17 @@
           <h3>Borrar el registro entero pasaba como “cadena íntegra”</h3>
           <p><code>audit-chain</code> sobre un archivo de auditoría borrado verificaba cero líneas y
             decía que la cadena estaba intacta. No hacía falta falsificar nada: alcanzaba con borrar.</p>
+        </div>
+      </div>
+      <div class="find grave">
+        <div class="label">Atacando a propósito</div>
+        <div>
+          <h3>Cuarenta y una propuestas, verificadas una por una</h3>
+          <p>Seis atacantes buscaron romper los chequeos. La mitad del informe se cayó por cuota, y
+            el resultado decía «39 confirmados» — <b>era falso</b>: sin escépticos vivos, nadie podía
+            refutar. Se verificaron a mano, reproduciendo cada una. <b>Veinte resultaron reales y
+            están cerradas</b>; nueve quedan declaradas sin arreglar con su motivo; cuatro eran
+            correctas por diseño; tres no se reprodujeron. <em>Ninguna quedó sin mirar.</em></p>
         </div>
       </div>
       <div class="find grave">
@@ -596,12 +624,12 @@
     <p class="h2sub">Los números, corridos, no recordados</p>
 
     <div class="metrics">
-      <div class="metric"><div class="metric-n">589</div><div class="metric-l">pruebas, ninguna roja</div></div>
-      <div class="metric"><div class="metric-n">83</div><div class="metric-l">promesas del contrato</div></div>
+      <div class="metric"><div class="metric-n">606</div><div class="metric-l">pruebas, ninguna roja</div></div>
+      <div class="metric"><div class="metric-n">84</div><div class="metric-l">promesas del contrato</div></div>
       <div class="metric"><div class="metric-n">100%</div><div class="metric-l">cobertura en 25 programas</div></div>
       <div class="metric"><div class="metric-n">72%</div><div class="metric-l">de <code>install.sh</code> ejecutado, medido</div></div>
       <div class="metric"><div class="metric-n">34</div><div class="metric-l">límites honestos declarados</div></div>
-      <div class="metric"><div class="metric-n">0</div><div class="metric-l">capacidades perdidas en 46 commits</div></div>
+      <div class="metric"><div class="metric-n">0</div><div class="metric-l">de 41 ataques quedó sin mirar</div></div>
       <div class="metric"><div class="metric-n">2,05%</div><div class="metric-l">del research externo leído</div></div>
     </div>
   </section>
@@ -640,7 +668,10 @@
     está declarado <b>parcial</b> fuente por fuente: 320 archivos leídos de 15.581, y ese porcentaje
     está inflado porque varias lecturas parciales se cuentan como archivo entero.
         <br><br>
-    Publicado en <code>origin/main</code>, commit <code>ae2556f</code>. La cobertura de shell se mide con el instrumento que trae bash, y dice líneas ejecutadas, nunca ramas. Las cifras de arriba salieron de
+    Publicado en <code>origin/main</code>, commit <code>8560363</code>. La cobertura de shell se mide con el instrumento que trae bash, y dice líneas ejecutadas, nunca
+    ramas. Las cuarenta y una propuestas del ataque se verificaron reproduciendo cada una: lo que no
+    se pudo reproducir figura como refutado, y lo que se reprodujo y no se arregló figura con el
+    motivo escrito. Las cifras de arriba salieron de
     correr los chequeos dos veces: en el árbol de trabajo y sobre un clon recién bajado de GitHub, que
     es donde aparecieron los dos últimos defectos.
   </footer>
