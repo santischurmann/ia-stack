@@ -3,7 +3,7 @@
 **Date:** 2026-08-27
 **Version:** 1.0
 **Author:** Opus (VibeCodeProtocols)
-**Status:** Draft
+**Status:** Cumplida — 12/12 criterios con prueba, cerrada el 2026-08-29
 
 ---
 
@@ -36,36 +36,36 @@ El orquestador de la próxima sesión y quien audite el repo después.
 
 **T01 — hash-chain de `AUDIT.md`** (slice mínimo: se valida primero)
 
-- [ ] **AC1:** GIVEN un `AUDIT.md` cuyas líneas encadenan cada hash con el de su predecesora, WHEN
+- [x] **AC1:** GIVEN un `AUDIT.md` cuyas líneas encadenan cada hash con el de su predecesora, WHEN
       se corre el gate, THEN exit 0 informando cuántas verificó.
-- [ ] **AC2 (error):** GIVEN una línea ya escrita fue editada, WHEN se corre el gate, THEN exit 1
+- [x] **AC2 (error):** GIVEN una línea ya escrita fue editada, WHEN se corre el gate, THEN exit 1
       nombrando la línea donde se rompe la cadena.
-- [ ] **AC3 (edge):** GIVEN un `AUDIT.md` vacío o inexistente, WHEN se corre el gate, THEN exit 0.
-- [ ] **AC4 (compat):** GIVEN líneas heredadas sin hash, WHEN se corre el gate, THEN las acepta y
+- [x] **AC3 (edge):** GIVEN un `AUDIT.md` vacío o inexistente, WHEN se corre el gate, THEN exit 0.
+- [x] **AC4 (compat):** GIVEN líneas heredadas sin hash, WHEN se corre el gate, THEN las acepta y
       encadena desde la primera línea que declara hash.
-- [ ] **AC11 (escritor):** GIVEN una línea nueva, WHEN se la agrega con el subcomando `append`,
+- [x] **AC11 (escritor):** GIVEN una línea nueva, WHEN se la agrega con el subcomando `append`,
       THEN queda sellada y el gate la verifica. Escritor y verificador comparten la función de
       sellado: no pueden divergir.
-- [ ] **AC12:** GIVEN una línea con sello mal formado, WHEN se corre el gate, THEN exit 1: un
+- [x] **AC12:** GIVEN una línea con sello mal formado, WHEN se corre el gate, THEN exit 1: un
       sello borrado es manipulación, no una línea heredada.
 
 **T02 — baseline de findings de seguridad**
 
-- [ ] **AC5:** GIVEN un hallazgo ya registrado en el baseline, WHEN se escanea, THEN no falla.
-- [ ] **AC6 (error):** GIVEN un hallazgo ausente del baseline, WHEN se escanea, THEN exit 1.
-- [ ] **AC7 (edge):** GIVEN una entrada del baseline sin hallazgo real, WHEN se escanea, THEN
+- [x] **AC5:** GIVEN un hallazgo ya registrado en el baseline, WHEN se escanea, THEN no falla.
+- [x] **AC6 (error):** GIVEN un hallazgo ausente del baseline, WHEN se escanea, THEN exit 1.
+- [x] **AC7 (edge):** GIVEN una entrada del baseline sin hallazgo real, WHEN se escanea, THEN
       exit 1: las entradas muertas ocultan cobertura.
 
 **T03 — commit atómico con receipt revalidado**
 
-- [ ] **AC8:** GIVEN un receipt aprobado y el árbol sin cambios, WHEN se pide el commit atómico,
+- [x] **AC8:** GIVEN un receipt aprobado y el árbol sin cambios, WHEN se pide el commit atómico,
       THEN revalida y commitea en una sola invocación.
-- [ ] **AC9 (error):** GIVEN el árbol cambió tras escribir el receipt, WHEN se pide el commit,
+- [x] **AC9 (error):** GIVEN el árbol cambió tras escribir el receipt, WHEN se pide el commit,
       THEN aborta sin commitear y explica qué cambió.
 
 **T04 — microtests de wording crítico**
 
-- [ ] **AC10:** THE SYSTEM SHALL fallar si una frase de límite honesto desaparece o se debilita en
+- [x] **AC10:** THE SYSTEM SHALL fallar si una frase de límite honesto desaparece o se debilita en
       `README.md`, `SKILL.md` o `SECURITY.md`.
 
 ---
@@ -97,10 +97,12 @@ This spec does NOT cover:
 
 ---
 
+> Marcado 2026-08-29. Procedencia y límites: `.vibe/DECISIONS.md`.
+
 ## Definition of Done (DoD)
 
-- [ ] Forcing Questions: 6/6
-- [ ] Cada AC con test
-- [ ] Cobertura 100% (líneas/ramas/funciones)
-- [ ] CHANGELOG
-- [ ] `.vibe/` al día
+- [x] Forcing Questions: 6/6
+- [x] Cada AC con test
+- [x] Cobertura 100% (líneas/ramas/funciones)
+- [x] CHANGELOG
+- [x] `.vibe/` al día

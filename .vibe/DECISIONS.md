@@ -63,3 +63,31 @@ no lo hacen.
 derivadas" como si fuera un gate sin entrada real. Es incorrecto: `sources` tiene una entrada real,
 la resuelve y responde bien. Lo que faltaba no era el dato sino la frase que explica qué significa
 una deriva, declarada ahora como límite honesto.
+
+## [2026-08-29] Decisión: cerrar spec.md y plan.md con la evidencia que había, no con una firma
+
+**Qué se decidió:** `docs/spec.md` pasa a `Cumplida` con sus 17 casillas tildadas, y `docs/plan.md`
+a `Ejecutado` incorporando las nueve tareas que nunca habían entrado.
+
+**Procedencia de cada tilde, para que no sea una firma en blanco:**
+
+- **Los 12 criterios** se tildaron con la salida de
+  `verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests`, que devolvió «12
+  criterio(s) nombrados por al menos una prueba». **Ese gate declara su propio límite: prueba
+  trazabilidad, no suficiencia** — que exista una prueba que nombre el criterio, no que esa prueba
+  lo compruebe. Tildar sobre esa base es lo más fuerte que el repositorio puede sostener hoy, y no
+  es lo mismo que haber revisado los doce a mano.
+- **La Definition of Done** se tildó contra evidencia corrida el mismo día: cobertura 100 % sobre 26
+  scripts, 683 pruebas en verde, CHANGELOG y `.vibe/` al día. Las Forcing Questions (6/6) salen de
+  `SESSION.md`.
+
+**Las nueve tareas tardías:** T05–T13 se construyeron durante la sesión sin pasar por el plan. Sus
+escritores se recuperaron de `docs/tasks.json`, que sí los registró en el momento — o sea que el
+dato existía y lo que faltaba era el documento. Se corrió el preflight de conflictos **después** de
+ejecutarlas: 13 tareas, 32 rutas declaradas, 392 solapamientos serializados, cero conflictos sin
+orden. Que pase retroactivamente es tranquilizador, **no equivale a haberlo corrido antes**: si
+hubiera encontrado un conflicto, ya estaría cometido.
+
+**Lo que este cierre NO arregla:** el protocolo no tiene ningún gate que mire el campo `Status` de
+la spec ni del plan, así que ambos pudieron quedar en borrador con el trabajo terminado sin que
+nada lo notara. Eso sigue abierto.
