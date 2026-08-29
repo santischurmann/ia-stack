@@ -115,7 +115,43 @@ export function findLooseColors(css, blocks) {
   return loose;
 }
 
-export function findViolations(surface, html) {
+/** Un font-size que no sale de la rampa declarada. Los relativos (`em`, `%`, `rem`) quedan fuera de
+ * la regla: son proporcionales por definicion, asi que no rompen el ritmo, lo heredan. */
+export function findScaleBreaks(css, scale, property, label) {
+  if (!Array.isArray(scale) || scale.length === 0) return [];
+  const allowed = new Set(scale.map((entry) => entry.trim()));
+  const breaks = [];
+  const pattern = new RegExp(`(?:^|[;{\\s])${property}\\s*:\\s*([^;{}]+)[;}]`, 'gu');
+  for (const declaration of css.matchAll(pattern)) {
+    for (const part of declaration[1].trim().split(/\s+(?![^(]*\))/u)) {
+      const value = part.trim();
+      if (value === '' || allowed.has(value)) continue;
+      if (/^-?[\d.]+(?:em|rem|ch|%|vw|vh)$/u.test(value)) continue;
+      if (/^(?:inherit|initial|unset|revert|auto|none|normal)$/u.test(value)) continue;
+      breaks.push(`${value} (en ${property})`);
+    }
+  }
+  return breaks.map((entry) => `${label}: ${entry}`);
+}
+
+/** Firmas de diseno generico, declaradas como datos revisables en el contrato. El gate detecta la
+ * firma; no puede juzgar si un diseno es bueno. */
+export function findSlopSignatures(html, signatures) {
+  const hits = [];
+  for (const signature of signatures ?? []) {
+    let pattern;
+    try {
+      pattern = new RegExp(signature.pattern, 'iu');
+    } catch {
+      hits.push(`firma ${signature.id}: su patrón no compila como expresión regular`);
+      continue;
+    }
+    if (pattern.test(html)) hits.push(`firma de diseño genérico ${signature.id} — ${signature.why}`);
+  }
+  return hits;
+}
+
+export function findViolations(surface, html, slopSignatures = []) {
   const violations = [];
   const at = surface.file;
   const blocks = extractTokenBlocks(html);
@@ -170,6 +206,18 @@ export function findViolations(surface, html) {
     violations.push(`${at}: color fuera del sistema de tokens — ${loose}`);
   }
 
+  for (const outOfRamp of findScaleBreaks(html, surface.type_scale, 'font-size', 'tamaño fuera de la rampa tipográfica declarada')) {
+    violations.push(`${at}: ${outOfRamp}`);
+  }
+  for (const property of ['padding', 'margin', 'gap', 'row-gap', 'column-gap']) {
+    for (const outOfRhythm of findScaleBreaks(html, surface.space_scale, property, 'espaciado fuera del ritmo declarado')) {
+      violations.push(`${at}: ${outOfRhythm}`);
+    }
+  }
+  for (const slop of findSlopSignatures(html, slopSignatures)) {
+    violations.push(`${at}: ${slop}`);
+  }
+
   if (surface.body_background_token) {
     const body = html.match(/(?:^|[\s},])body\s*\{([^}]*)\}/u);
     const token = surface.body_background_token;
@@ -204,7 +252,7 @@ export function main(args = process.argv.slice(2), options = {}, write = console
       violations.push(`${surface.file}: no se puede leer la superficie declarada: ${readError.message}`);
       continue;
     }
-    violations.push(...findViolations(surface, html));
+    violations.push(...findViolations(surface, html, document.slop_signatures));
     checked += 1;
   }
   if (violations.length > 0) {

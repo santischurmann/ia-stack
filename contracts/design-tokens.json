@@ -6,8 +6,38 @@
     "three_theme_states": "El lector tiene tres estados, no dos: eleccion explicita clara, eleccion explicita oscura, y el default del sistema, que no estampa nada y solo se distingue por prefers-color-scheme. Por eso un color definido unicamente adentro de un bloque oscuro es el bug clasico: en el estado sin estampar no aplica nunca, y la pagina termina pintando el texto de un tema sobre el fondo del otro.",
     "twin_dark_blocks": "El modelo de tres estados obliga a declarar la paleta oscura dos veces -una bajo prefers-color-scheme y otra bajo el estampado explicito-. La duplicacion es estructural y no se puede evitar; lo que si se puede es verificar que las dos copias digan lo mismo. Sin este chequeo, editar una sola de las dos es un cambio invisible.",
     "no_loose_literals": "Ningun color literal fuera de los bloques que definen tokens. Un `#fff` suelto en una regla es un color que no participa del tema: se ve bien en uno y mal en el otro, y no hay nada que lo delate.",
-    "radius_base": "Un unico token de radio del que deriva el resto. Seis valores de radio escritos a mano se desincronizan; uno derivado, no."
+    "radius_base": "Un unico token de radio del que deriva el resto. Seis valores de radio escritos a mano se desincronizan; uno derivado, no.",
+    "type_scale": "Todo font-size sale de una rampa declarada. La leccion es de Core Framework, el motor de tokens de Instatic: una rampa matematica en vez de cuarenta tamanos elegidos a mano que hay que mantener sincronizados. Diecisiete valores distintos en una sola pagina no son una decision tipografica, son la ausencia de una.",
+    "space_scale": "Todo espaciado sale de un ritmo declarado. Treinta y cinco valores distintos para treinta y nueve usos significa que casi cada margen invento el suyo: la pagina no tiene ritmo, tiene coincidencias.",
+    "anti_slop": "Firmas de diseno generico declaradas como datos, no como opinion escondida en el codigo. Cada una trae escrito por que delata una plantilla en vez de una decision. El gate detecta la firma; no puede juzgar si un diseno es bueno."
   },
+  "slop_signatures": [
+    {
+      "id": "safe-ai-display-face",
+      "pattern": "font-family:[^;]*\\b(Inter|Space Grotesk|Poppins|Montserrat)\\b",
+      "why": "Son las caras a las que un generador cae por defecto cuando nadie eligio ninguna. No son malas tipografias; son la ausencia de una decision tipografica, y se reconocen a un metro de distancia."
+    },
+    {
+      "id": "cream-and-terracotta",
+      "pattern": "#F4F1EA|#FAF7F0|#E8DED1",
+      "why": "El crema calido con serif y acento terracota es la paleta con la que sale el noventa por ciento del diseno generado. Un fondo elegido a proposito casi nunca aterriza exactamente ahi."
+    },
+    {
+      "id": "purple-blue-gradient",
+      "pattern": "linear-gradient\\([^)]*(#6366F1|#8B5CF6|#7C3AED)[^)]*(#3B82F6|#2563EB)",
+      "why": "El degradado violeta a azul del hero es la firma visual de una plantilla de landing, no de un proyecto con identidad propia."
+    },
+    {
+      "id": "emoji-as-section-marker",
+      "pattern": "<h[1-6][^>]*>\\s*[\\u{1F300}-\\u{1FAFF}\\u{2600}-\\u{27BF}]",
+      "why": "Un emoji abriendo un titulo reemplaza jerarquia tipografica por decoracion. Si el titulo necesita un icono para leerse como titulo, el problema esta en el tipo, no en el icono."
+    },
+    {
+      "id": "everything-centered",
+      "pattern": "^(?:.*text-align:\\s*center.*\\n){6,}",
+      "why": "Centrar todo es lo que se hace cuando no se decidio una grilla. Un texto largo centrado ademas se lee peor: el ojo pierde el punto de retorno de cada linea."
+    }
+  ],
   "surfaces": [
     {
       "file": "docs/mapa-del-protocolo.html",
@@ -39,7 +69,34 @@
         ["stop", "stop-foreground"]
       ],
       "radius_base": "radius",
-      "body_background_token": "paper"
+      "body_background_token": "paper",
+      "type_scale": [
+        "var(--text-3xs)",
+        "var(--text-2xs)",
+        "var(--text-xs)",
+        "var(--text-sm)",
+        "var(--text-md)",
+        "var(--text-lg)",
+        "var(--text-stat)",
+        "var(--text-xl)",
+        "var(--text-2xl)"
+      ],
+      "space_scale": [
+        "0",
+        "auto",
+        "var(--hairline)",
+        "var(--space-1)",
+        "var(--space-2)",
+        "var(--space-3)",
+        "var(--space-4)",
+        "var(--space-5)",
+        "var(--space-6)",
+        "var(--space-8)",
+        "var(--space-10)",
+        "var(--space-12)",
+        "var(--space-18)",
+        "var(--space-24)"
+      ]
     }
   ]
 }

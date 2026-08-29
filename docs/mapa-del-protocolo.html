@@ -30,6 +30,35 @@
     --stop-foreground:  oklch(0.5057 0.1201 26.1);  /* #9E453F */
 
     /* Una sola fuente de verdad para las esquinas. Seis valores a mano se desincronizan. */
+
+    /* Rampa tipografica. La leccion es de Core Framework, el motor de tokens de Instatic: una
+       rampa declarada en vez de diecisiete tamanos elegidos a mano que hay que mantener
+       sincronizados. Los relativos en em quedan afuera a proposito: son proporcionales. */
+    --text-3xs: 12px;
+    --text-2xs: 13px;
+    --text-xs:  14px;
+    --text-sm:  15.5px;
+    --text-md:  17px;
+    --text-lg:  20px;
+    --text-stat:34px;
+    --text-xl:  clamp(26px, 3.4vw, 36px);
+    --text-2xl: clamp(40px, 7vw, 76px);
+
+    /* Ritmo de espaciado sobre una base de 4px. --hairline no es ritmo: es el ancho de una linea
+       que se dibuja con un gap, y por eso lleva nombre propio en vez de entrar a la escala. */
+    --hairline: 1px;
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-18: 72px;
+    --space-24: 96px;
+
     --radius: 3px;
     --shadow: 0 1px 2px rgba(22, 32, 43, .06), 0 8px 24px rgba(22, 32, 43, .05);
     --measure: 66ch;
@@ -90,10 +119,10 @@
     background: var(--paper);
     color: var(--paper-foreground);
     font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
-    font-size: 17px;
+    font-size: var(--text-md);
     line-height: 1.6;
     margin: 0;
-    padding: 0 24px 96px;
+    padding: 0 var(--space-6) var(--space-24);
     -webkit-font-smoothing: antialiased;
   }
 
@@ -108,28 +137,28 @@
   .label {
     text-transform: uppercase;
     letter-spacing: .12em;
-    font-size: 12px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     color: var(--faint-foreground);
   }
 
   /* ---------- cabecera ---------- */
 
-  header { padding: 72px 0 40px; border-bottom: 2px solid var(--paper-foreground); }
+  header { padding: var(--space-18) 0 var(--space-10); border-bottom: 2px solid var(--paper-foreground); }
 
   h1 {
-    font-size: clamp(40px, 7vw, 76px);
+    font-size: var(--text-2xl);
     font-weight: 700;
     line-height: .98;
     letter-spacing: -.02em;
-    margin: 14px 0 0;
+    margin: var(--space-3) 0 0;
     text-wrap: balance;
   }
 
   .thesis {
     max-width: var(--measure);
-    margin: 22px 0 0;
-    font-size: 20px;
+    margin: var(--space-5) 0 0;
+    font-size: var(--text-lg);
     color: var(--muted-foreground);
   }
 
@@ -140,8 +169,8 @@
   .states {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
-    margin: 40px 0 0;
+    gap: var(--space-3);
+    margin: var(--space-10) 0 0;
   }
 
   .state {
@@ -149,7 +178,7 @@
     border: 1px solid var(--rule);
     border-top: 4px solid var(--sc);
     border-radius: var(--radius);
-    padding: 18px 20px 20px;
+    padding: var(--space-4) var(--space-5) var(--space-5);
     box-shadow: var(--shadow);
   }
 
@@ -159,11 +188,11 @@
 
   .state .mono {
     display: inline-block;
-    font-size: 13px;
+    font-size: var(--text-2xs);
     font-weight: 500;
     color: var(--sc);
     background: var(--sb);
-    padding: 3px 9px;
+    padding: var(--space-1) var(--space-2);
     border-radius: var(--radius);
   }
 
@@ -171,33 +200,33 @@
   .state.empty { --sb: var(--empty); }
   .state.stop  { --sb: var(--stop); }
 
-  .state p { margin: 12px 0 0; font-size: 15.5px; line-height: 1.5; color: var(--muted-foreground); }
+  .state p { margin: var(--space-3) 0 0; font-size: var(--text-sm); line-height: 1.5; color: var(--muted-foreground); }
   .state p b { color: var(--paper-foreground); font-weight: 600; }
 
   /* ---------- secciones ---------- */
 
-  section { margin: 72px 0 0; }
+  section { margin: var(--space-18) 0 0; }
 
   h2 {
-    font-size: 13px;
+    font-size: var(--text-2xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .14em;
     color: var(--accent);
-    margin: 0 0 6px;
+    margin: 0 0 var(--space-1);
   }
 
   .h2sub {
     font-family: "IBM Plex Sans Condensed", sans-serif;
-    font-size: clamp(26px, 3.4vw, 36px);
+    font-size: var(--text-xl);
     font-weight: 600;
     letter-spacing: -.01em;
-    margin: 0 0 8px;
+    margin: 0 0 var(--space-2);
     line-height: 1.12;
     text-wrap: balance;
   }
 
-  .lede { max-width: var(--measure); color: var(--muted-foreground); margin: 0 0 30px; }
+  .lede { max-width: var(--measure); color: var(--muted-foreground); margin: 0 0 var(--space-8); }
 
   /* ---------- fases ---------- */
 
@@ -206,14 +235,14 @@
   .phase {
     display: grid;
     grid-template-columns: 68px 1fr;
-    gap: 0 20px;
-    padding: 18px 0;
+    gap: 0 var(--space-5);
+    padding: var(--space-4) 0;
     border-bottom: 1px solid var(--rule-soft);
     align-items: baseline;
   }
 
   .num {
-    font-size: 15px;
+    font-size: var(--text-sm);
     font-weight: 700;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
@@ -221,13 +250,13 @@
   }
 
   .phase h3 {
-    font-size: 19px;
+    font-size: var(--text-lg);
     font-weight: 600;
-    margin: 0 0 3px;
+    margin: 0 0 var(--space-1);
     letter-spacing: -.005em;
   }
 
-  .phase p { margin: 0; color: var(--muted-foreground); font-size: 16px; }
+  .phase p { margin: 0; color: var(--muted-foreground); font-size: var(--text-sm); }
   .phase p code { font-size: .85em; color: var(--accent); }
 
   /* ---------- tabla de gates ---------- */
@@ -238,12 +267,12 @@
 
   th {
     text-align: left;
-    font-size: 12px;
+    font-size: var(--text-3xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .1em;
     color: var(--faint-foreground);
-    padding: 14px 18px;
+    padding: var(--space-3) var(--space-4);
     border-bottom: 2px solid var(--rule);
     white-space: nowrap;
   }
@@ -251,33 +280,33 @@
   th.limit { color: var(--empty-foreground); }
 
   td {
-    padding: 15px 18px;
+    padding: var(--space-4) var(--space-4);
     border-bottom: 1px solid var(--rule-soft);
     vertical-align: top;
-    font-size: 15.5px;
+    font-size: var(--text-sm);
     line-height: 1.5;
   }
 
   tr:last-child td { border-bottom: 0; }
 
   td.gate { white-space: nowrap; }
-  td.gate code { font-size: 13.5px; color: var(--paper-foreground); font-weight: 500; }
+  td.gate code { font-size: var(--text-2xs); color: var(--paper-foreground); font-weight: 500; }
   td.limit { color: var(--muted-foreground); }
   td.limit b { color: var(--empty-foreground); font-weight: 600; }
 
   /* ---------- hallazgos ---------- */
 
-  .finds { display: grid; gap: 12px; }
+  .finds { display: grid; gap: var(--space-3); }
 
   .find {
     display: grid;
     grid-template-columns: 130px 1fr;
-    gap: 0 22px;
+    gap: 0 var(--space-5);
     background: var(--card);
     border: 1px solid var(--rule);
     border-left: 4px solid var(--accent-dim);
     border-radius: var(--radius);
-    padding: 16px 20px;
+    padding: var(--space-4) var(--space-5);
     align-items: start;
   }
 
@@ -285,8 +314,8 @@
 
   .find .label { padding-top: 3px; }
   .find.grave .label { color: var(--stop-foreground); }
-  .find h3 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
-  .find p { margin: 0; color: var(--muted-foreground); font-size: 15.5px; }
+  .find h3 { font-size: var(--text-md); font-weight: 600; margin: 0 0 var(--space-1); }
+  .find p { margin: 0; color: var(--muted-foreground); font-size: var(--text-sm); }
   .find p code { font-size: .86em; color: var(--accent); }
 
   /* ---------- métricas ---------- */
@@ -294,23 +323,23 @@
   .metrics {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1px;
+    gap: var(--hairline);
     background: var(--rule);
     border: 1px solid var(--rule);
     border-radius: var(--radius);
     overflow: hidden;
   }
 
-  .metric { background: var(--card); padding: 20px; }
+  .metric { background: var(--card); padding: var(--space-5); }
   .metric-n {
-    font-size: 34px;
+    font-size: var(--text-stat);
     font-weight: 700;
     line-height: 1;
     letter-spacing: -.02em;
     font-variant-numeric: tabular-nums;
     color: var(--paper-foreground);
   }
-  .metric-l { font-size: 14px; color: var(--muted-foreground); margin-top: 7px; line-height: 1.35; }
+  .metric-l { font-size: var(--text-xs); color: var(--muted-foreground); margin-top: 7px; line-height: 1.35; }
 
   /* ---------- lo no resuelto ---------- */
 
@@ -318,28 +347,28 @@
     background: var(--empty);
     border: 1px solid var(--empty-foreground);
     border-radius: var(--radius);
-    padding: 26px 28px;
+    padding: var(--space-6) var(--space-6);
   }
 
-  .open h3 { font-size: 18px; font-weight: 600; margin: 0 0 14px; color: var(--paper-foreground); }
-  .open ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
-  .open li { color: var(--paper-foreground); font-size: 15.5px; line-height: 1.5; }
+  .open h3 { font-size: var(--text-md); font-weight: 600; margin: 0 0 var(--space-3); color: var(--paper-foreground); }
+  .open ul { margin: 0; padding-left: 20px; display: grid; gap: var(--space-2); }
+  .open li { color: var(--paper-foreground); font-size: var(--text-sm); line-height: 1.5; }
   .open li b { font-weight: 600; }
 
   footer {
-    margin: 72px 0 0;
+    margin: var(--space-18) 0 0;
     padding-top: 22px;
     border-top: 1px solid var(--rule);
     color: var(--faint-foreground);
-    font-size: 14px;
+    font-size: var(--text-xs);
     max-width: var(--measure);
   }
 
   footer code { font-size: .88em; }
 
   @media (max-width: 620px) {
-    .phase { grid-template-columns: 52px 1fr; gap: 0 14px; }
-    .find { grid-template-columns: 1fr; gap: 8px; }
+    .phase { grid-template-columns: 52px 1fr; gap: 0 var(--space-3); }
+    .find { grid-template-columns: 1fr; gap: var(--space-2); }
     header { padding-top: 48px; }
   }
 </style>

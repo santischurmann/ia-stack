@@ -13,6 +13,7 @@ import {
   USAGE,
   classifyBlock,
   extractTokenBlocks,
+  findSlopSignatures,
   findViolations,
   main,
   parseArgs,
@@ -161,6 +162,76 @@ test('FALSIFICACIÓN · sin el token de radio base declarado es rechazo', () => 
 test('FALSIFICACIÓN · un archivo sin ningún bloque de tokens no pasa por sano', () => {
   const v = findViolations(surface, '<style>body { color: red; }</style>');
   assert.ok(v.length > 0, 'cero bloques no es cero violaciones');
+});
+
+// --- Escalas: la leccion de Core Framework (el motor de tokens de Instatic) ----------------------
+
+const conEscalas = {
+  ...surface,
+  type_scale: ['var(--text-sm)', 'var(--text-md)'],
+  space_scale: ['0', 'auto', 'var(--space-2)', 'var(--space-4)'],
+};
+
+test('los valores que salen de la escala declarada no producen violación', () => {
+  const html = healthyHtml({ extra: '  .a { font-size: var(--text-md); padding: var(--space-2) var(--space-4); margin: 0 auto; }' });
+  assert.deepEqual(findViolations(conEscalas, html), []);
+});
+
+// Diecisiete tamanos distintos en una pagina no son una decision tipografica, son la ausencia de
+// una. Core Framework lo dice al reves: una rampa matematica en vez de cuarenta valores a mano.
+test('FALSIFICACIÓN · un font-size fuera de la rampa declarada es rechazo', () => {
+  const v = findViolations(conEscalas, healthyHtml({ extra: '  .a { font-size: 15.5px; }' }));
+  assert.ok(v.some((m) => /15\.5px/u.test(m) && /rampa/iu.test(m)), `un tamaño a mano tiene que doler: ${JSON.stringify(v)}`);
+});
+
+test('FALSIFICACIÓN · un espaciado fuera del ritmo declarado es rechazo, componente por componente', () => {
+  const v = findViolations(conEscalas, healthyHtml({ extra: '  .a { padding: var(--space-2) 22px; }' }));
+  assert.ok(v.some((m) => /22px/u.test(m)), `en un atajo, cada componente cuenta: ${JSON.stringify(v)}`);
+  assert.ok(!v.some((m) => /space-2/u.test(m)), 'el componente que sí está en el ritmo no se reporta');
+});
+
+test('un tamaño relativo en em queda fuera de la regla: es proporcional por definición', () => {
+  assert.deepEqual(findViolations(conEscalas, healthyHtml({ extra: '  .a { font-size: .86em; }' })), []);
+});
+
+// --- Anti-slop: firmas de diseño genérico declaradas como datos ----------------------------------
+
+const firmas = [
+  { id: 'safe-ai-display-face', pattern: 'font-family:[^;]*\\b(Inter|Space Grotesk)\\b', why: 'la cara a la que se cae por defecto' },
+  { id: 'emoji-as-section-marker', pattern: '<h[1-6][^>]*>\\s*[\\u{1F300}-\\u{1FAFF}]', why: 'decoración en lugar de jerarquía' },
+];
+
+test('FALSIFICACIÓN · el gate detecta la tipografía a la que cae un generador por defecto', () => {
+  const html = `${healthyHtml()}<style>.t { font-family: Inter, sans-serif; }</style>`;
+  const v = findViolations(surface, html, firmas);
+  assert.ok(v.some((m) => /safe-ai-display-face/u.test(m)), `la firma tiene que aparecer nombrada: ${JSON.stringify(v)}`);
+  assert.ok(v.some((m) => /por defecto/u.test(m)), 'y con el motivo escrito al lado');
+});
+
+test('FALSIFICACIÓN · el gate detecta un emoji abriendo un título', () => {
+  const v = findViolations(surface, `${healthyHtml()}<h2>🚀 Lanzamiento</h2>`, firmas);
+  assert.ok(v.some((m) => /emoji-as-section-marker/u.test(m)), `el emoji como marcador tiene que doler: ${JSON.stringify(v)}`);
+});
+
+test('sin firmas declaradas el gate no inventa ninguna, y una página limpia pasa', () => {
+  assert.deepEqual(findViolations(surface, `${healthyHtml()}<h2>Lanzamiento</h2>`, firmas), []);
+  assert.deepEqual(findViolations(surface, `${healthyHtml()}<style>.t{font-family:Inter}</style>`, []), []);
+  assert.deepEqual(findSlopSignatures('<p>lo que sea</p>', undefined), [], 'sin lista declarada no hay firmas que buscar');
+});
+
+// Una firma con un patrón roto no puede pasar por "no encontré nada": eso convertiría un error del
+// contrato en un verde silencioso, que es justo el verde vacío contra el que existe este proyecto.
+test('FALSIFICACIÓN · una firma cuyo patrón no compila se reporta, no se saltea', () => {
+  const rotas = [{ id: 'patron-roto', pattern: '( sin cerrar', why: 'da igual' }];
+  const hits = findSlopSignatures('<p>x</p>', rotas);
+  assert.equal(hits.length, 1);
+  assert.match(hits[0], /patron-roto.*no compila/u);
+});
+
+test('las palabras clave de CSS no cuentan como valores fuera de escala', () => {
+  const conPalabras = { ...surface, space_scale: ['0', 'var(--space-2)'], type_scale: ['var(--text-md)'] };
+  const html = healthyHtml({ extra: '  .a { margin: inherit; padding: unset; font-size: inherit; }' });
+  assert.deepEqual(findViolations(conPalabras, html), []);
 });
 
 // --- El CLI real ---------------------------------------------------------------------------------

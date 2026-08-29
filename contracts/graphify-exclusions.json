@@ -10,6 +10,10 @@
       "reason": "Git ignore rules. Indexing them would add path patterns, not protocol concepts or cross-file relationships."
     },
     {
+      "path": "contracts/design-tokens.json",
+      "reason": "Declarative design-token contract: token names, scales and slop signatures consumed by verify-design-tokens.mjs. The AST extractor yields zero nodes for it, and the concepts it declares are already reachable through the gate that reads it."
+    },
+    {
       "path": "LICENSE",
       "reason": "Verbatim upstream license text, identical across projects. It carries no VCP-specific concept to relate."
     }
