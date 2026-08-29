@@ -45,3 +45,21 @@ sólo-informe. Registrado con su menú completo en `docs/phase-decisions.json`.
 exactamente lo que este proyecto persigue. Y no se adoptó el stack —React, Tailwind, Radix— porque
 VCP declara cero dependencias: lo que transfiere es el modelo de contrato declarado, no la
 tecnología.
+
+## [2026-08-29] Decisión: NO recapturar las huellas del expediente de Discovery
+
+**Qué se decidió:** los 4 claims del run-001 figuran como derivados —sus fuentes cambiaron desde el
+2026-08-27— y se dejan así. No se crea una decisión de corrección que recapture los sha256.
+
+**Por qué:** tres de los cuatro claims describen problemas que la propia feature
+`integridad-verificable` resolvió: que no existía un verificador de `AUDIT.md`, que no había
+registro de hallazgos de seguridad conocidos, y que los límites honestos no estaban cubiertos de
+forma sistemática. Los tres son hoy falsos como descripción del árbol, y son verdaderos como
+descripción del estado que motivó el trabajo. **La deriva ahí es evidencia de éxito, no de
+obsolescencia.** Recapturar las huellas atestiguaría que esos claims describen el árbol de hoy, y
+no lo hacen.
+
+**Corrección a un diagnóstico previo:** en el inventario de lo abierto se listó "4 de 4 fuentes
+derivadas" como si fuera un gate sin entrada real. Es incorrecto: `sources` tiene una entrada real,
+la resuelve y responde bien. Lo que faltaba no era el dato sino la frase que explica qué significa
+una deriva, declarada ahora como límite honesto.

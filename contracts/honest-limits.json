@@ -300,6 +300,12 @@
       "file": "README.md",
       "phrase": "Quien reescriba la historia publicada puede fabricar una secuencia coherente",
       "why": "El ancla es git, no un notario: si alguien reescribe la historia ya publicada, puede construir un expediente falso que crezca de forma perfectamente coherente. Lo que cambia es que falsificar dejo de ser invisible: exige tocar el identificador de cada commit, y eso lo ve cualquiera que tenga un clon previo o el remoto. Sin esta frase, history se lee como prueba de autenticidad en vez de como lo que es: encarecer la falsificacion hasta volverla ruidosa."
+    },
+    {
+      "limit_id": "source-drift-does-not-judge-the-claim",
+      "file": "README.md",
+      "phrase": "La deriva dice que la fuente se movió, no si el claim sigue siendo cierto.",
+      "why": "Un packet es una foto congelada del momento en que se investigo. Que su fuente haya cambiado puede significar dos cosas opuestas: que el claim quedo obsoleto, o que el problema que el claim describia se resolvio y por eso el archivo cambio. El gate no puede distinguirlas y no lo intenta. En este mismo repositorio los 4 claims del unico expediente figuran como derivados, y tres derivaron porque la feature que motivaron los arreglo: ahi la deriva es evidencia de exito, no de obsolescencia. Sin esta frase, un lector toma la deriva por una alarma y recapturar las huellas parece el arreglo, cuando recapturar atestiguaria que esos claims describen el arbol de hoy y no lo hacen."
     }
   ]
 }
