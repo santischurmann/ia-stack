@@ -1,0 +1,112 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "research-revalidacion",
+  "task": "T01 — reclonar las 14 fuentes externas, revalidar las citas y barrer el 100% del corpus",
+  "date": "2026-08-30",
+  "scope": {
+    "declared_paths": [
+      "scripts/verify-research-citations.mjs",
+      "tests/verify-research-citations.test.mjs",
+      "contracts/research-citations.json",
+      "contracts/empty-probe.json",
+      "contracts/honest-limits.json",
+      "research/external-sources-2026-08-28.md",
+      "README.md",
+      "CHANGELOG.md",
+      ".vibe/LESSONS.md"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "El informe declaraba que sus citas archivo:linea no las habia revalidado nadie. Las catorce fuentes se reclonaron a su commit pineado y cada cita se resolvio contra ese arbol con cuatro reglas mecanicas y en orden; lo que quedo ambiguo se declara ambiguo en vez de adivinarse.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-citations.test.mjs",
+      "test_hash_sha256": "0a99bc2ae627092808a4b5dba209e21c706c5791c167169c071c690d398c457c",
+      "command": "node scripts/verify-research-citations.mjs check contracts/research-citations.json",
+      "result": "OK: 145 citas registradas contra 14 fuentes pineadas; 142 resuelven a un archivo y una linea que existen en su commit. Cero rotas. Las 3 restantes son defectos de formato del propio informe: una elide la ruta con puntos suspensivos, otra dice SKILL.md:37 en un repo con muchos SKILL.md."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Los 14 manifests se habian recuperado del journal despues de que la primera corrida se cayera, y nadie los habia contrastado contra los repositorios. Se materializaron los 15581 archivos en disco y se comparo el conteo de cada fuente contra la tabla del informe.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-citations.test.mjs",
+      "test_hash_sha256": "0a99bc2ae627092808a4b5dba209e21c706c5791c167169c071c690d398c457c",
+      "command": "git -C <clone> rev-parse HEAD y git ls-files | wc -l por cada una de las 14 fuentes",
+      "result": "14/14 PIN_OK. Conteos: 201, 1142, 593, 159, 2446, 120, 456, 1444, 252, 3606, 348, 3311, 1057, 446. Suman 15581, identico a lo declarado. Los manifests eran honestos."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "La correccion del 2026-08-29 dejo abierto si las tres soluciones estaban en el corpus sin que nadie las viera, porque se habia leido el 2,05%. Seis sondas mecanicas sobre el 100% de los archivos legibles contestan eso con un denominador entero.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-citations.test.mjs",
+      "test_hash_sha256": "0a99bc2ae627092808a4b5dba209e21c706c5791c167169c071c690d398c457c",
+      "command": "barrido sobre 14421 archivos legibles; sondas y conteos quedan en el bloque sweep de contracts/research-citations.json, que el gate valida",
+      "result": "NO estaban. Cobertura de shell con PS4: 0 archivos. Firma de commit: 20 hits, los 20 HMAC de webhooks o JWT. Ancla contra la historia de git: 23 hits, los 23 rev-list --count. Consentimiento con hardware: 3 hits, un diagrama y dos descripciones de rol."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "El gate tiene que frenar cuando alguien agrega una cita al informe sin revalidarla. Se probo contra si mismo: al escribir la correccion se agregaron 7 citas nuevas.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-citations.test.mjs",
+      "test_hash_sha256": "0a99bc2ae627092808a4b5dba209e21c706c5791c167169c071c690d398c457c",
+      "command": "node scripts/verify-research-citations.mjs check contracts/research-citations.json (con el informe ya editado y el contrato viejo)",
+      "result": "REJECTED: RESEARCH_CITATIONS_DRIFT nombrando las 7 citas nuevas una por una. Verde recien despues de revalidarlas. Insertar la seccion tambien corrio los numeros de linea de todas las citas anteriores, y el gate exigio reconstruir el contrato entero."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Escribir 100% de cobertura cuando lo que hubo fue un barrido de seis expresiones regulares seria exactamente el error de contabilidad que este informe ya cometio una vez, en la direccion contraria.",
+      "mitigation": "Leido y barrido quedan en filas separadas de la tabla, con sus denominadores distintos, y el 2,05% se mantiene sin tocar porque no subio. La frase barrer no es leer quedo declarada como limite honesto verificado textual."
+    },
+    "readability": {
+      "finding": "El riesgo de que la seccion se lea como una victoria -las citas estaban bien, los manifests eran honestos- en vez de como lo que es.",
+      "mitigation": "La seccion abre con el error propio del informe: decia tener 60 citas y son 138. Un numero escrito sin haberlo medido, del mismo tipo que todos los que este proyecto persigue."
+    },
+    "reliability": {
+      "finding": "Tres de los catorce checkouts fallaron con un mensaje que se lee como el commit ya no existe. Aceptarlo habria dejado tres fuentes declaradas inverificables para siempre, y habria sido falso.",
+      "mitigation": "git cat-file -t mostraba el commit presente. Era el limite de 260 caracteres de las rutas de Windows abortando el checkout a mitad y dejando el indice en cero. Con core.longpaths las catorce completaron. Queda escrito en la seccion porque un fallo que parece la fuente desaparecio y es tu filesystem no la pudo escribir convierte una deuda en permanente."
+    },
+    "resilience": {
+      "finding": "El primer resolvedor reporto 3 citas fuera de rango y 2 ambiguas, y las 5 eran suyas: elegia el candidato equivocado cuando la cita venia abreviada. Publicar eso habria acusado al informe de errores que no cometio.",
+      "mitigation": "Se revisaron las 5 a mano contra los archivos reales antes de escribir nada, y las 5 resolvian bien. El resolvedor se reescribio con ranking explicito -repo nombrado, ruta aprendida, subsecuencia de segmentos, rango que cabe- en vez de parchear los 5 casos. De 3 fuera de rango se paso a 0."
+    }
+  },
+  "measurements": [
+    { "metric": "fuentes reclonadas al commit pineado", "measured": true, "before": 0, "after": 14 },
+    { "metric": "archivos del corpus materializados y verificados", "measured": true, "before": 0, "after": 15581 },
+    { "metric": "citas del informe registradas con su resultado", "measured": true, "before": 0, "after": 145 },
+    { "metric": "citas que resuelven a un archivo y una linea que existen", "measured": true, "before": 0, "after": 142 },
+    { "metric": "citas rotas o inventadas", "measured": true, "before": -1, "after": 0 },
+    { "metric": "archivos barridos por un instrumento mecanico", "measured": true, "before": 0, "after": 14421 },
+    { "metric": "archivos leidos por un agente", "measured": true, "before": 320, "after": 320 },
+    { "metric": "sitios de codigo que declaran append-only sin verificarlo", "measured": true, "before": -1, "after": 42 },
+    { "metric": "limites honestos declarados", "measured": true, "before": 52, "after": 55 },
+    { "metric": "scripts Node al 100%", "measured": true, "before": 26, "after": 27 },
+    {
+      "metric": "cobertura semantica del research externo",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Sigue en 2,05% y no se toco. El barrido cubre el 100% de los archivos legibles pero es de patrones declarados, no de comprension: leer los 14421 archivos es otra tarea y no se hizo. Dar el 100% del barrido como cobertura del research seria mezclar dos cosas distintas."
+    }
+  ],
+  "reproduction": "Clonar las catorce fuentes a los commits que declara contracts/research-citations.json en su bloque sources, con core.longpaths activado si el sistema es Windows. Contar los archivos de cada una con git ls-files y comparar contra el campo files del contrato. Despues correr node scripts/verify-research-citations.mjs check contracts/research-citations.json, que compara el informe contra el registro. Para reproducir el rechazo: agregar una cita archivo:linea entre backticks a research/external-sources-2026-08-28.md y volver a correr el gate; tiene que nombrar esa cita.",
+  "not_reviewed": "De las 145 citas resueltas se leyeron a mano cuatro, para comprobar que la linea sostiene lo que el informe afirma. Las otras 138 estan comprobadas en su existencia, NO en su interpretacion: el gate compara archivo y linea, no significado. No se leyo un solo archivo mas del corpus: la cobertura de lectura sigue en 2,05% y el barrido no la reemplaza. No se revisaron las secciones 2, 3 y 4 del informe -los 24 mecanismos, los rechazos y las convergencias positivas- buscando otras conclusiones falsas; las dos correcciones cubren la seccion 5 y las citas. Las seis sondas del barrido las elegi yo mirando las conclusiones que queria poner a prueba: una septima sonda que a nadie se le ocurrio puede estar tapando algo, y el barrido no puede decir que no. Y la revalidacion completa no se puede repetir desde este repositorio: los clones pesan mas de un giga y no estan aca; lo que queda commiteado es el registro de lo que se midio.",
+  "evidence": [
+    "node --test --test-concurrency=32 -> tests 732, pass 732, fail 0",
+    "node scripts/verify-vcp-coverage.mjs -> OK: 27 scripts al 100% de lineas, ramas y funciones",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 55 honest limits verified",
+    "node scripts/verify-research-citations.mjs check contracts/research-citations.json -> OK: 145 citas, 142 resueltas",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 26 gates, 2 self, 1 excluido",
+    "node scripts/verify-audit-chain.mjs check .vibe/AUDIT.md -> OK: 66 lineas encadenadas",
+    "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: solo crecio a lo largo de 48 versiones commiteadas",
+    "node scripts/verify-graphify-manifest.mjs check -> OK: 197 archivos trackeados cubiertos",
+    "node scripts/verify-runtime-sync.mjs check -> OK: 129 archivos identicos entre fuente y runtime instalado",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 8 archivos, 0 bloqueantes",
+    "git push origin main -> ad9d916..f9629f1"
+  ],
+  "git_head": "f9629f134041c86856642961d65704442c40503e",
+  "tree_fingerprint": "56f9eed2f2e8310ca23b323600daba4d81ff38ae96a5a7ed17b5f1dc3a252c48",
+  "terminal_state": "approved"
+}
