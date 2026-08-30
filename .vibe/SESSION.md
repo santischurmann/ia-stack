@@ -299,6 +299,11 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 
 - `install.ps1` corrido en PowerShell real sobre una carpeta limpia: `.gitignore` respetando lo
   previo, 0 archivos del runtime en la superficie, idempotente en tres corridas.
+- Las citas `archivo:línea` del research, **revalidadas el 2026-08-30** reclonando las catorce
+  fuentes a su commit pineado y materializando los 15581 archivos: 142 de 145 resuelven a un
+  archivo y una línea que existen, 3 son defectos de formato del propio informe, 0 rotas. El
+  registro queda en `contracts/research-citations.json` y `verify-research-citations.mjs` lo
+  compara contra el informe, así que agregar una cita sin revalidarla rechaza.
 - `tests/protocolo-e2e.test.mjs`: instala VCP en un proyecto nuevo y corre los gates en orden.
   Comprueba que ninguno escribe `OK:` sobre un proyecto donde no hay nada, y que recortar la traza
   pasa `check` y cae en `history`. Lo que **no** cubre está escrito en la cabecera del archivo.
@@ -309,5 +314,15 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   sonda por costo (correrlo ejecuta la suite entera).
 - Subcomandos distintos al declarado en `contracts/empty-probe.json`: **no verificado**, la sonda
   prueba una invocación por gate.
-- Las citas `archivo:línea` del research: **no verificado** por mí; las verificó cada agente
-  lector contra su clone pineado, y el sintetizador declara que no las revalidó.
+- El contenido de las 138 citas que no se leyeron a mano: **no verificado**. Están comprobadas
+  en su existencia —el archivo y la línea están en el commit pineado—, no en que la línea
+  sostenga lo que el informe afirma sobre ella. Cuatro sí se leyeron y confirmaron.
+- La cobertura de lectura del research: **no verificado** más allá del 2,05 % original. El
+  barrido mecánico tocó el 100 % de los 14421 archivos legibles, pero barrer con seis
+  expresiones regulares no es leer: un cero dice que el patrón no encontró nada, no que no esté.
+- Que las seis sondas del barrido alcancen: **no verificado**. Las elegí mirando las
+  conclusiones que quería poner a prueba, así que una séptima que a nadie se le ocurrió puede
+  estar tapando algo, y el barrido no puede decir que no.
+- Las secciones 2, 3 y 4 del informe: **no verificado**. Los 24 mecanismos, los rechazos y las
+  convergencias positivas siguen sin releerse buscando conclusiones falsas por el mismo motivo
+  que la de la sección 5; las dos correcciones cubren esa sección y las citas, nada más.
