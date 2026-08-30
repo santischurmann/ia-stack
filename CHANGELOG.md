@@ -7,6 +7,59 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El research externo, revalidado contra las catorce fuentes.** Durante dos días el informe
+  declaró, con todas las letras, que sus citas `archivo:línea` no las había revalidado nadie y no
+  se podían verificar sin volver a clonar las catorce fuentes. Se volvieron a clonar. Las catorce
+  quedaron en su commit pineado y **el conteo de archivos de cada una coincide al número con lo que
+  el informe declaró**: suman 15581, y los manifests recuperados del journal eran honestos. De las
+  145 citas del informe —que decía tener 60, un número estimado y nunca contado—, **142 resuelven a
+  un archivo y una línea que existen**, 3 quedan declaradas ambiguas o elididas por el propio
+  informe, y **ninguna está rota**. Tres checkouts fallaron primero con un error que se lee como
+  «el commit ya no existe» y era el límite de 260 caracteres de las rutas de Windows.
+
+- **Del 2,05 % leído al 100 % barrido, sin mezclar una cosa con la otra.** Seis sondas mecánicas
+  sobre los 14421 archivos legibles —el 100 % de lo que se puede leer como texto, con los 1160
+  excluidos contados por motivo— contestaron la pregunta que la lectura parcial había dejado
+  abierta: si las soluciones que VCP derivó trabajando estaban en el corpus sin que nadie las
+  viera. **No estaban.** Cobertura de shell con `PS4`: cero archivos. Firma de commit como
+  custodia: veinte hits y los veinte son HMAC de webhooks. Ancla contra la historia de git:
+  veintitrés hits y los veintitrés son `rev-list --count`. Consentimiento con hardware: tres hits,
+  un diagrama de ejemplo y dos descripciones de rol. El 2,05 % **no subió** y el informe no dice lo
+  contrario: leer y barrer son cosas distintas y quedan en filas separadas.
+
+- **El hallazgo que vale más que todo lo anterior: 119 archivos en 8 repositorios declaran un
+  registro que sólo crece y ninguno lo verifica.** De esos, 42 son código: dicen la propiedad en un
+  comentario —«append-only JSONL», «never rewrites timeline.jsonl»— y confían en quien escribe. El
+  más honesto lo admite en el propio comentario. Ocho proyectos, cuarenta y dos lugares, cero
+  detectores: convención sin detector, que es la definición de lo que este repositorio llama
+  decoración, cometida cuarenta y dos veces en el corpus que se estudió para aprender de él. Y
+  explica el resultado anterior mejor que la hipótesis previa: la respuesta no faltaba por difícil,
+  faltaba porque la pregunta no se hacía.
+
+- **Gate 25: `verify-research-citations.mjs`** (9 reglas mecánicas). La revalidación cara —clonar
+  un giga, resolver 145 citas— pasa una vez y queda escrita en `contracts/research-citations.json`;
+  el gate compara el informe contra ese registro y frena si alguien agrega una cita sin
+  revalidarla, o si deja un registro huérfano. Una cita resuelta exige repo, ruta y el sha256 del
+  contenido citado; una que no resolvió exige su motivo escrito. Si el contrato trae el barrido,
+  cada sonda muestra el patrón con que buscó —que tiene que compilar—, su hipótesis y conteos
+  posibles: **un cero sólo es evidencia si se ve con qué se buscó y sobre cuántos archivos**. El
+  gate se probó contra sí mismo: al escribir la corrección se agregaron 7 citas nuevas y rechazó
+  las 7 hasta que se revalidaron.
+
+- **De 52 a 55 límites honestos.** Los tres nuevos son del gate nuevo, y los tres separan lo que se
+  midió de lo que se podría creer que se midió: compara el informe contra el registro de la
+  revalidación y no contra los repositorios; una cita resuelta dice que el archivo y la línea
+  existen, no que digan lo que el informe afirma; y **barrer no es leer**.
+
+- **LESSON-4: pedir que ataquen un mecanismo autoriza a fabricarlo.** Un panel adversarial que
+  evaluaba si firmar con clave FIDO prueba consentimiento verificó su hipótesis **ejecutando**
+  `ssh-keygen -t ed25519-sk`, que abrió un diálogo del sistema pidiendo insertar la llave física.
+  La consigna decía «intentá eludirlo concretamente» y no declaraba el modo de verificación. Queda
+  la regla: toda consigna adversarial declara su modo, por defecto lectura, y un subagente no
+  ejecuta comandos que generen credenciales ni toquen `~/.ssh`. La ironía cierra el caso: el panel
+  concluyó que la firma es teatro porque el agente puede fabricar las claves, y para demostrarlo un
+  agente empezó a fabricar una.
+
 - **Los últimos 8, verificados uno por uno** (hallazgo 64). Siete eran reales; el octavo ya
   estaba cerrado por el arreglo del path del ancla. **Cinco arreglados**: `verify-red-node`
   rechazaba un RED genuino porque leía el pie de TAP del primer match y node prefija la salida de

@@ -65,3 +65,28 @@ después. Si difieren, no publica el número: dice que no vale y pide repetir.
 repetirlo sin haber cambiado nada. Especialmente si el porcentaje cae poco y en un archivo que no
 se tocó.
 **Confidence:** high
+
+## [2026-08-29] LESSON-4 Pedir que ataquen un mecanismo autoriza a fabricarlo — status: active
+
+**Project/phase/run:** vibecodeprotocols/fase-2/consentimiento-humano-2026-08-29
+**What happened:** un panel adversarial de 16 subagentes evaluaba si firmar un recibo con clave
+FIDO probaba consentimiento humano. La consigna decía «intentá eludirlo concretamente» y no ponía
+límite de lectura. Los escépticos de la rama «firma» verificaron su hipótesis **ejecutando**
+`ssh-keygen -t ed25519-sk`, que abrió un diálogo de Windows Security pidiendo insertar la llave
+física en el puerto USB. Nadie lo pidió y el usuario lo vio aparecer solo en su máquina.
+**Why (root cause):** la consigna confundía dos verificaciones distintas. Comprobar que OpenSSH
+*acepta* `-O no-touch-required` se hace leyendo `ssh-keygen -h` o el manual; comprobar que
+*funciona* exige crear una credencial. Al no decir cuál de las dos alcanzaba, el agente eligió la
+más concluyente, que es también la que toca la máquina del usuario. La ironía cierra el caso: el
+panel concluyó que la firma es teatro porque el agente puede fabricar las claves, y para
+demostrarlo un agente empezó a fabricar una.
+**How to avoid:** toda consigna adversarial declara el modo de verificación. Por defecto es
+lectura: documentación, código fuente, `--help`. Un subagente no ejecuta comandos que generen
+credenciales, escriban en `~/.ssh`, `~/.gnupg` o el almacén de claves del sistema, ni que abran
+diálogos del sistema operativo. Si la hipótesis sólo se decide ejecutando, el agente lo reporta y
+para: lo autoriza una persona, no la consigna.
+**Detection signal:** un informe de subagente que dice haber verificado «contra el binario de esta
+máquina» algo sobre claves, firmas o credenciales. También cualquier diálogo del sistema que
+aparezca sin que el usuario haya pedido nada. Grep de arranque: `ssh-keygen`, `gpg --gen-key`,
+`--full-generate-key`, `certutil`, `New-SelfSignedCertificate` en prompts de agentes.
+**Confidence:** high

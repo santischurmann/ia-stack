@@ -4,6 +4,156 @@
 **Alcance:** lectura de núcleo de 14 repositorios ajenos, buscando patrones portables para los
 huecos conocidos de VCP.
 
+## CORRECCIÓN 2026-08-30 — las catorce fuentes se volvieron a clonar y las citas se revalidaron
+
+> Segunda corrección, dos días después de la primera, y por el mismo criterio: **no se borra ni se
+> reescribe una línea de lo anterior.** Lo que sigue dice qué se midió de nuevo, qué resultó cierto
+> y qué resultó falso. Un informe que se corrige tapando lo que dijo antes no es un informe
+> corregido, es un informe distinto.
+
+La corrección del 2026-08-29 cerró declarando dos deudas: la cobertura seguía en 2,05 %, y las
+citas `archivo:línea` **nadie las había revalidado y no se podían verificar sin volver a clonar las
+catorce fuentes**. Se volvieron a clonar. Esto es lo que salió.
+
+### Lo primero: el informe subcontaba sus propias citas
+
+Decía «las 60 citas `archivo:línea` de este informe». Extraídas mecánicamente del texto son
+**138 citas, 135 únicas**. El número 60 nunca se contó: se estimó. Es un error chico y sin
+consecuencias para las conclusiones, pero es del mismo tipo que todos los demás que este proyecto
+persigue — un número escrito sin haberlo medido.
+
+### El corpus se reconstruyó entero y los manifests eran honestos
+
+Las catorce fuentes se clonaron a su commit pineado y se materializaron en disco. Las catorce
+quedaron en el commit exacto que el informe declara, y **el conteo de archivos de cada una coincide
+al número con la tabla de arriba**: 201, 1142, 593, 159, 2446, 120, 456, 1444, 252, 3606, 348,
+3311, 1057, 446. Suman **15581**, el mismo total que el informe declaró desde el primer día.
+
+Eso era lo que faltaba comprobar. Los manifests se habían recuperado del journal después de que la
+primera corrida se cayera por un defecto propio, y hasta hoy nadie los había contrastado contra los
+repositorios. Ahora sí: **estaban bien**.
+
+Dos detalles del proceso que valen porque explican por qué esto no se había hecho antes. Tres de
+los catorce checkouts fallaron al principio y el registro los anotó como `SHA_FAIL`, que se lee
+como «el commit ya no existe». No era eso: `git cat-file -t` mostraba el commit ahí. Era el límite
+de 260 caracteres de las rutas de Windows, que abortaba el checkout a mitad y dejaba el índice en
+cero con archivos huérfanos en disco. Con `core.longpaths` los catorce completaron. Un fallo que
+*parece* «la fuente desapareció» y en realidad es «tu sistema de archivos no la pudo escribir» es
+exactamente la clase de cosa que convierte una deuda en permanente si nadie la mira dos veces.
+
+### Las 138 citas, revalidadas contra el árbol pineado
+
+| Resultado | Cuántas |
+|---|---:|
+| **Resuelven**: el archivo existe en el commit pineado y la línea citada existe | **136** |
+| Ruta elidida por el propio informe con puntos suspensivos | 1 |
+| El repo queda identificado pero tiene varios archivos que satisfacen la cita | 1 |
+| Archivo inexistente, línea fuera de rango, o cita inventada | **0** |
+
+**Cero citas rotas.** Las dos que no resuelven son defectos de formato del informe — una escribe
+`30-eval-driven.../main.py` con los puntos suspensivos adentro, la otra dice `SKILL.md:37` en un
+repositorio con muchos `SKILL.md` — no fuentes que no existan.
+
+Esas 138 son las del informe **tal como estaba antes de esta sección**. Esta corrección agrega 7
+citas propias, revalidadas con el mismo método, así que el contrato registra **145 en total, 142
+resueltas**. El número se mueve porque el informe crece; el criterio no.
+
+La resolución se hizo con cuatro reglas en orden, todas mecánicas: repo nombrado en la misma línea
+del informe, ruta aprendida de otra cita que sí venía completa, subsecuencia ordenada de segmentos
+de ruta, y rango de líneas que quepa en el archivo. **Lo que quedó ambiguo se declara ambiguo.**
+No se adivinó ninguna.
+
+Cuatro citas se leyeron además a mano, para comprobar que la línea no sólo existe sino que dice lo
+que el informe afirma. Las cuatro confirmaron: `lib/marin/src/marin/execution/artifact.py:396` es
+`if record is None or record.fingerprint == fingerprint:`, o sea «sin registro» tratado como «sin
+deriva», tal cual lo describe; `claude_obsidian/checkpoint.py:855-861` levanta
+`UNRELATED_TREE_CHANGES`; `claude_obsidian/cli.py:86-101` compara el hash del plan regenerado y
+nunca pregunta por una persona; y `phases/14-agent-engineering/38-verification-gates/code/main.py:169-197`
+usa `hmac.new` y `hmac.compare_digest`, que es un MAC y no una firma, como el informe decía.
+
+### La cobertura: del 2,05 % leído al 100 % barrido
+
+Acá hay que ser preciso, porque «100 %» es fácil de escribir y difícil de merecer.
+
+| Medida | Antes | Ahora |
+|---|---:|---:|
+| Archivos del corpus | 15581 | 15581 |
+| Materializados en disco y verificados contra su commit | 0 | **15581** |
+| Legibles como texto (sin binarios, lockfiles, vendorizados, vacíos ni gigantes) | — | **14421** (92,6 %) |
+| **Leídos por un agente** | 320 (2,05 %) | 320 (2,05 %) |
+| **Barridos por un instrumento mecánico** | 0 | **14421 (100 % de los legibles)** |
+
+Los 1160 excluidos están contados uno por uno y por motivo: 756 binarios, 331 vacíos, 47 de más de
+512 KB, 21 lockfiles, 5 vendorizados. Ninguno se descartó por conveniencia.
+
+**El 2,05 % no subió, y decir lo contrario sería el mismo error de siempre.** Lo que cambió es que
+ya no es el único número: al lado hay un barrido que sí tocó todos los archivos. Leer y barrer no
+son lo mismo y el informe no los va a mezclar.
+
+### Qué contestó el barrido: las tres soluciones NO estaban en el corpus
+
+La primera corrección afirmó que ninguna de las tres soluciones salió del corpus, y dejó anotado
+que eso **no descartaba que estuvieran ahí sin que nadie las viera** — se había leído el 2,05 %.
+Esa era la pregunta abierta. Seis sondas, cada una con su patrón a la vista, sobre los 14421
+archivos:
+
+| Sonda | Archivos | Repos | Qué resultó |
+|---|---:|---:|---|
+| Cobertura de shell con `PS4`/`LINENO` | **0** | 0 | Confirmado sobre el 100 %: no está en ninguna parte |
+| Verificar un registro contra la historia de git | 23 | 4 | **Ninguno es el ancla.** Los 23 son `rev-list --count` para saber cuántos commits hay adelante o atrás |
+| Firma de commit como custodia | 20 | 7 | **Ninguno.** Los 20 son HMAC de webhooks y firmas de JWT |
+| Consentimiento atado a hardware | 3 | 2 | **Ninguna implementación.** Un diagrama de ejemplo y dos descripciones de rol de agente |
+| Registro que sólo crece | 119 | 8 | Ver abajo — este es el hallazgo |
+| Fallar con conjunto vacío | 359 | 12 | Bien servido, como el informe ya decía |
+
+Las tres soluciones **no estaban**. Ahora eso está verificado sobre todos los archivos legibles, no
+sobre una muestra del 2 %. La conclusión de la primera corrección — que un corpus grande
+convergiendo en imposibilidad es evidencia débil — se sostiene, y ahora con el denominador entero.
+
+### El hallazgo que vale más que todo lo anterior
+
+**119 archivos en 8 repositorios declaran tener un registro que sólo crece. Ninguno lo verifica.**
+
+De esos 119, **42 son código** y 77 son prosa. Los 42 dicen la propiedad en un comentario o un
+docstring — «append-only JSONL», «never rewrites timeline.jsonl», «APPEND-ONLY for telemetry
+stability» — y después confían en que quien escribe no reescriba. El más honesto de todos lo
+admite en el propio comentario: `lib/egress-receipt.ts:239` dice que el recorte llega con la
+rotación del ledger, que es un TODO, y que hasta entonces el archivo sólo crece porque nadie lo
+achica. Lo más cerca que llega el corpus de una verificación es un test de que un contador de
+versión sube (`test/domain-skills-storage.test.ts:181`), que es una propiedad en memoria, no una
+comprobación contra un registro externo.
+
+Ocho proyectos, cuarenta y dos lugares, la misma propiedad declarada y **cero detectores**. Eso es
+convención sin detector — la definición exacta de lo que este repositorio llama decoración —
+cometida cuarenta y dos veces en el corpus que se estudió para aprender de él.
+
+Y explica el resultado anterior mejor que la hipótesis de la primera corrección. No es que a nadie
+se le ocurriera anclar un registro: a ocho proyectos se les ocurrió la propiedad y a ninguno se le
+ocurrió que hiciera falta comprobarla. **La respuesta no faltaba por difícil, faltaba porque la
+pregunta no se hacía.**
+
+### Lo que esto NO prueba
+
+El barrido es de patrones declarados, no de comprensión. Cada sonda es una expresión regular que
+queda escrita a la vista en el bloque `sweep` de
+`contracts/research-citations.json`, que se commitea y un gate revisa:
+**una idea expresada con palabras que el patrón no contiene es invisible para el barrido**, y un
+resultado en cero significa «el patrón no encontró nada», no «no está». Barrer el 100 % de los
+archivos con seis patrones no es lo mismo que leer el 100 % de los archivos, y este informe no va a
+usar una palabra para decir la otra.
+
+Las 136 citas resueltas dicen que el archivo y la línea existen en el commit pineado. **No dicen que
+esa línea sostenga lo que el informe afirma sobre ella**; eso se verificó a mano en cuatro. Las
+otras 138 quedan como estaban: comprobadas en su existencia, no en su interpretación.
+
+Y la revalidación completa no se puede repetir desde este repositorio: los clones pesan más de un
+giga y no están acá. Lo que queda commiteado es el registro de lo que se midió, en
+`contracts/research-citations.json`, más un gate que compara ese registro contra el informe y frena
+si alguien agrega una cita sin revalidarla. Eso detecta deriva; no vuelve a probar las fuentes.
+Quien quiera repetirlo tiene los catorce commits pineados en el contrato y el método escrito.
+
+---
+
 ## CORRECCIÓN 2026-08-29 — la conclusión más fuerte de este informe era falsa
 
 > Esta sección se agrega **un día después** y no reescribe nada de lo que sigue: el informe queda

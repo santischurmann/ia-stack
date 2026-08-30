@@ -147,6 +147,14 @@
       "expect": "reject"
     },
     {
+      "script": "verify-research-citations.mjs",
+      "args": [
+        "check",
+        "contracts/research-citations.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-resume-state.mjs",
       "args": [
         "check",

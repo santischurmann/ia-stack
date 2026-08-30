@@ -312,6 +312,24 @@
       "file": "SKILL.md",
       "phrase": "La linea de exito de un gate se cita sola, asi que su limite tiene que viajar con ella",
       "why": "La prosa de este repositorio ya declaraba que el gate de decisiones no demuestra que la persona haya querido la opcion, pero la unica cadena que el gate PRODUCIA decia \"la opcion elegida y por que\" y viajaba sola a SESSION.md, a los recibos y a los informes, sin el limite al lado. Un lector que cita el verde no cita el README. Por eso el gate ahora imprime su limite pegado al OK, como ya hacia verify-receipt.mjs con la custodia. Sin esta frase, la proxima salida verde vuelve a escribirse sin su limite y el hueco se reabre en silencio."
+    },
+    {
+      "limit_id": "research-citations-checks-the-record-not-the-repos",
+      "file": "README.md",
+      "phrase": "Compara el informe contra el registro de la revalidación, no contra los repositorios",
+      "why": "La revalidacion real clono 15581 archivos y resolvio 145 citas; los clones no pueden vivir en el repositorio, asi que el gate compara el informe contra el registro escrito de esa corrida. Sin esta frase, un verde se lee como \"las catorce fuentes fueron verificadas ahora\", cuando lo que se verifico es que nadie agrego ni borro una cita desde que se revalidaron. Un contrato escrito a mano con huellas inventadas pasa igual."
+    },
+    {
+      "limit_id": "research-citation-resolved-is-not-interpreted",
+      "file": "README.md",
+      "phrase": "una cita resuelta dice que el archivo y la línea existen, no que digan lo que el informe afirma sobre ellos",
+      "why": "De las 145 citas, 142 resuelven a un archivo y una linea que existen en el commit pineado, y solo cuatro se leyeron a mano para comprobar que la linea sostiene la afirmacion del informe. Sin el limite, \"142 resueltas\" se lee como \"142 verificadas en su contenido\" y la lectura que falta nunca se hace."
+    },
+    {
+      "limit_id": "research-sweep-is-not-reading",
+      "file": "README.md",
+      "phrase": "barrer no es leer",
+      "why": "El barrido toco el 100% de los 14421 archivos legibles con seis expresiones regulares, contra el 2,05% que leyo un agente. Es una mejora enorme de denominador y una clase de evidencia distinta: un cero significa que el patron no encontro nada, no que la idea no este en el corpus. Sin esta frase, \"100% barrido\" se confunde con \"100% leido\", que es exactamente el error de contabilidad que este informe ya cometio una vez."
     }
   ]
 }
