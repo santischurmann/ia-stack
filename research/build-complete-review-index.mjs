@@ -100,6 +100,7 @@ for (const source of manifest.sources || []) {
     else counts.semantic_pending += 1;
     if (!entry.materialized) { counts.non_text_or_invalid_utf8 += 1; files.push(record); continue; }
     counts.materialized += 1;
+    if (!excluded && !deepRead) counts.static_review += 1;
     const absolute = path.join(root, entry.path);
     try {
       const buffer = fs.readFileSync(absolute);
