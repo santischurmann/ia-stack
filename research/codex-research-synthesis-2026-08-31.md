@@ -61,8 +61,8 @@ commit, shard y citas cuando existen. Sus estados `READ_CANDIDATE`, `STATIC_ONLY
 `REVIEW_REQUIRED` son evidencia de cola, no estados canónicos: todas las filas conservan
 `strict_status: PENDING` hasta una revisión funcional adversarial.
 
-En esta ejecución se añadieron 100 lecturas manuales profundas en dos lotes independientes
-(`marin` y `awesome-claude-skills`). Sus registros verificables se conservan en
+En esta ejecución se añadieron 247 lecturas manuales profundas en cinco lotes independientes
+(`marin`, `awesome-claude-skills`, `gstack`, `scientific-agent-skills` y `claude-mem`). Sus registros verificables se conservan en
 `research/semantic-deep-evidence-2026-08-31.ndjson`; contienen hash, commit, propósito,
 interfaces, conducta, salidas, invariantes, tests, riesgos, decisión de relevancia y citas
 `file:line`. Es evidencia de esos 100 archivos, no una promoción automática del resto.

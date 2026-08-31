@@ -37,7 +37,23 @@ function key(record) { return `${record.source}|${record.path}`; }
 function readShard(file) {
   const full = path.join(scratch, file);
   if (!fs.existsSync(full)) return [];
-  return fs.readFileSync(full, 'utf8').split(String.fromCharCode(10)).filter(Boolean).map((line) => ({ ...JSON.parse(line), shard: file }));
+  return fs.readFileSync(full, 'utf8').split(String.fromCharCode(10)).filter(Boolean).flatMap((line) => {
+    const record = { ...JSON.parse(line), shard: file };
+    // Deep batches are allowed to claim manual semantic reading only when their
+    // required fields are actually present and typed. A malformed shard falls
+    // through to the structural evidence instead of being silently promoted.
+    if (file.startsWith('deep_')) {
+      const interfaceText = typeof record.interfaces === 'string' || typeof record.inputs === 'string';
+      const valid = typeof record.purpose === 'string' && interfaceText
+        && typeof record.behavior === 'string' && typeof record.outputs === 'string'
+        && typeof record.invariants_limits === 'string' && typeof record.tests === 'string'
+        && typeof record.risks === 'string' && ['ADOPT', 'DEFER', 'REJECT'].includes(record.vcp_relevance)
+        && typeof record.vcp_relevance_reason === 'string' && typeof record.confidence === 'number'
+        && Array.isArray(record.citations) && record.citations.length >= 2;
+      if (!valid) return [];
+    }
+    return [record];
+  });
 }
 function toMachineStatus(record) {
   if (record.status === 'READ') return 'READ_CANDIDATE';

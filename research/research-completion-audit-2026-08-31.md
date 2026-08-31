@@ -38,7 +38,7 @@ Symlinks no dereferenciados:
 | Symlinks registrados | 6/6 | Que no se ocultaron entradas no materializadas |
 | Escaneo estructural | 15.575 | Líneas, extensiones y patrones aproximados |
 | Inventario funcional mecánico | 15.575/15.575 | Símbolos, señales de test, comandos, imports, claims y riesgos observables |
-| Lectura semántica manual profunda en lotes | 100/15.581 | Dos lotes independientes con citas; no promovidos al ledger estricto |
+| Lectura semántica manual profunda en lotes | 247/15.581 | Cinco lotes independientes con citas; no promovidos al ledger estricto |
 | Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
 | Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
 | Research semántico completo | **NO DEMOSTRADO** | El ledger conserva 14.897 pendientes |
@@ -59,7 +59,7 @@ citas cuando un shard las aporta, pero todas mantienen `strict_status: PENDING`:
 profunda.
 
 La evidencia manual más fuerte de esta ejecución está consolidada en
-`research/semantic-deep-evidence-2026-08-31.ndjson` (100 filas). Los shards de trabajo originales
+`research/semantic-deep-evidence-2026-08-31.ndjson` (247 filas). Los shards de trabajo originales
 permanecen en `.scratch-semantic/` y están excluidos del control de versiones. Cada fila contiene
 propósito, entradas, conducta, salidas, invariantes, tests, riesgos, decisión VCP y citas
 `file:line`. El gate
