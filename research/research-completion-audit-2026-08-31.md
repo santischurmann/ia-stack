@@ -38,7 +38,7 @@ Symlinks no dereferenciados:
 | Symlinks registrados | 6/6 | Que no se ocultaron entradas no materializadas |
 | Escaneo estructural | 15.575 | Líneas, extensiones y patrones aproximados |
 | Inventario funcional mecánico | 15.575/15.575 | Símbolos, señales de test, comandos, imports, claims y riesgos observables |
-| Lectura semántica de agentes | 320/15.581 | Comprensión profunda documentada hasta ahora |
+| Lectura semántica manual profunda en lotes | 100/15.581 | Dos lotes independientes con citas; no promovidos al ledger estricto |
 | Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
 | Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
 | Research semántico completo | **NO DEMOSTRADO** | El ledger conserva 14.897 pendientes |
@@ -50,6 +50,21 @@ coincidencia de texto en comprensión semántica. En la ejecución actual index�
 214.127 señales de test, 45.246 comandos, 63.520 claims y 26.631 marcadores de riesgo. Esas
 señales son útiles para priorizar lectura y detectar zonas sensibles, pero no son métricas de
 calidad ni un inventario API perfecto.
+
+La cola `PENDING` también tiene un índice de revisión asistida por agentes en
+`research/semantic-review-index-2026-08-31.json`, generado por
+`research/consolidate-semantic-review.mjs`. Sus 14.897 filas conservan hash, commit, path y
+citas cuando un shard las aporta, pero todas mantienen `strict_status: PENDING`: `READ_CANDIDATE`,
+`STATIC_ONLY` y `REVIEW_REQUIRED` son estados de triage y no sustituyen una lectura funcional
+profunda.
+
+La evidencia manual más fuerte de esta ejecución está consolidada en
+`research/semantic-deep-evidence-2026-08-31.ndjson` (100 filas). Los shards de trabajo originales
+permanecen en `.scratch-semantic/` y están excluidos del control de versiones. Cada fila contiene
+propósito, entradas, conducta, salidas, invariantes, tests, riesgos, decisión VCP y citas
+`file:line`. El gate
+`research/verify-semantic-review-index.mjs` comprueba la identidad 1:1 de las 14.897 filas y
+mantiene explícitamente `strict_status: PENDING`.
 
 Las clasificaciones del manifest nuevo no reemplazan las categorías históricas de
 `contracts/research-citations.json`: usan reglas de extensión/UTF-8 propias y por eso sus conteos

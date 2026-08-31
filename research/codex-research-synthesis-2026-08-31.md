@@ -54,6 +54,19 @@ El pase estático completo se reproduce con `research/build-complete-review-inde
 definiciones, tests, comandos, claims y riesgos. Cierra la cobertura de lectura de bytes, no la
 comprensión semántica; no promociona automáticamente un archivo a `READ`.
 
+Para no perder trabajo de los agentes se consolidó además
+`research/semantic-review-index-2026-08-31.json` mediante
+`research/consolidate-semantic-review.mjs`. Contiene una fila 1:1 por cada pendiente, con hash,
+commit, shard y citas cuando existen. Sus estados `READ_CANDIDATE`, `STATIC_ONLY` y
+`REVIEW_REQUIRED` son evidencia de cola, no estados canónicos: todas las filas conservan
+`strict_status: PENDING` hasta una revisión funcional adversarial.
+
+En esta ejecución se añadieron 100 lecturas manuales profundas en dos lotes independientes
+(`marin` y `awesome-claude-skills`). Sus registros verificables se conservan en
+`research/semantic-deep-evidence-2026-08-31.ndjson`; contienen hash, commit, propósito,
+interfaces, conducta, salidas, invariantes, tests, riesgos, decisión de relevancia y citas
+`file:line`. Es evidencia de esos 100 archivos, no una promoción automática del resto.
+
 El ledger estricto generado en esta fase queda en
 [semantic-ledger-2026-08-31.json](<home>/Desktop/Claude/VibeCodeProtocols/research/semantic-ledger-2026-08-31.json)
 y se reproduce con [build-semantic-ledger.mjs](<home>/Desktop/Claude/VibeCodeProtocols/research/build-semantic-ledger.mjs).
