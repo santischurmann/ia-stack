@@ -139,5 +139,6 @@ const md = [
   '- `PENDING_REVIEW`/`UNREVIEWED`: no se afirma lectura semántica.', '',
   'El índice JSON conserva hash, commit, path, shard y citas para reproducibilidad. Las citas no prueban por sí solas que la interpretación sea suficiente; el gate canónico sigue siendo `semantic-ledger-2026-08-31.json`.', '',
 ].join('\n');
-fs.writeFileSync(path.join(research, 'semantic-review-consolidation-2026-08-31.md'), `${md}\n`, 'utf8');
+// `md` already ends with the single newline supplied by its final empty element.
+fs.writeFileSync(path.join(research, 'semantic-review-consolidation-2026-08-31.md'), md, 'utf8');
 console.log(JSON.stringify({ jsonPath, rows: rows.length, counts, duplicateShardRecords: duplicateKeys.length }, null, 2));

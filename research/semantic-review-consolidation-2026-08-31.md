@@ -34,4 +34,3 @@ Este archivo consolida shards generados por agentes para administrar la cola. No
 - `PENDING_REVIEW`/`UNREVIEWED`: no se afirma lectura semántica.
 
 El índice JSON conserva hash, commit, path, shard y citas para reproducibilidad. Las citas no prueban por sí solas que la interpretación sea suficiente; el gate canónico sigue siendo `semantic-ledger-2026-08-31.json`.
-
