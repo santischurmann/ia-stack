@@ -23,3 +23,10 @@ _backups/
 .ua/
 graphify-out/
 research/.fetch/
+
+# Derived full-corpus indexes are local evidence, not release source. They can be regenerated from
+# the pinned external corpus and are intentionally kept out of the security release surface.
+research/corpus-manifest-2026-08-31.json
+research/semantic-ledger-2026-08-31.json
+research/functional-inventory-2026-08-31.json
+research/complete-review-index-2026-08-31.json

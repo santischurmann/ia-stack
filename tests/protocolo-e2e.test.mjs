@@ -21,6 +21,9 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const RUNTIME = join('.vibe', 'vcp-runtime', 'scripts');
+const bash = process.platform === 'win32' && existsSync('C:\\Program Files\\Git\\bin\\bash.exe')
+  ? 'C:\\Program Files\\Git\\bin\\bash.exe'
+  : 'bash';
 
 /** Un proyecto nuevo de verdad: repo git propio, un commit, y nada de VCP todavía. */
 function proyectoLimpio() {
@@ -37,7 +40,7 @@ function proyectoLimpio() {
 }
 
 function instalar(root) {
-  return spawnSync('bash', [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
+  return spawnSync(bash, [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
 }
 
 function gate(root, script, ...args) {
@@ -75,6 +78,37 @@ test('E2E · instalar en un proyecto limpio deja el runtime usable y fuera de la
   // Y el .gitignore que ya tenía el proyecto sigue estando.
   const ignore = git('check-ignore', '-v', '.vibe/vcp-runtime/scripts/verify-receipt.mjs').stdout;
   assert.match(ignore, /vcp-runtime/u, 'la regla tiene que ser la que ignora el runtime');
+}));
+
+test('E2E · las nuevas garantías del runtime instalado funcionan sobre un proyecto real', () => conProyecto((root) => {
+  assert.equal(instalar(root).status, 0);
+
+  const matrix = gate(root, 'verify-capability-matrix.mjs', 'check', '.vibe/vcp-runtime/contracts/capability-matrix.json');
+  assert.equal(matrix.clase, 'ok', matrix.salida);
+
+  // The strict spec gate is opt-in but usable from the installed runtime.
+  mkdirSync(join(root, 'docs'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'spec.md'), [
+    '## Problem / Problema', 'Necesitamos un resultado repetible.',
+    '## Discovery / Investigación previa', 'La evidencia local fue revisada.',
+    '## Target Users / Usuarios', 'Equipo de producto.',
+    '## Acceptance Criteria / Criterios de aceptación', '- [ ] **AC1:** GIVEN un proyecto WHEN corre el gate THEN sale 0.',
+    '## Constraints / Restricciones', 'Sin dependencias nuevas.',
+    '## Non-Goals / No-Goals', 'No reemplaza revisión humana.',
+    '## Stack & Dependencies', 'Node nativo.',
+    '## Definition of Done (DoD)', 'Tests y gates verdes.',
+  ].join('\n') + '\n', 'utf8');
+  const quality = gate(root, 'verify-spec-wordcap.mjs', 'check', 'docs/spec.md', '--quality');
+  assert.equal(quality.clase, 'ok', quality.salida);
+
+  mkdirSync(join(root, '.vibe', 'evidence'), { recursive: true });
+  writeFileSync(join(root, '.vibe', 'evidence', 'request.json'), JSON.stringify({
+    schema: 'vcp.evidence-request/v1', command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: 1000, skip_reason: null,
+  }) + '\n', 'utf8');
+  const recorded = gate(root, 'verify-evidence-runner.mjs', 'run', '.vibe/evidence/request.json', '.vibe/evidence/record.json');
+  assert.equal(recorded.clase, 'ok', recorded.salida);
+  const evidence = gate(root, 'verify-evidence-runner.mjs', 'check', '.vibe/evidence/record.json', '--require-complete');
+  assert.equal(evidence.clase, 'ok', evidence.salida);
 }));
 
 test('E2E · en un proyecto que todavía no arrancó, cada gate dice VACÍO o rechaza, ninguno miente', () => conProyecto((root) => {

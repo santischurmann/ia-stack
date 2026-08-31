@@ -191,7 +191,14 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    terminar arrastrando el aparato completo de un `C` salvo que un cambio puntual lo dispare por
    `risk_level` propio (Phase 7.1, ortogonal a esto).
 8. 🔵 confirm detected stack (A approve / B correct).
-9. **Auto-routing triage** — mecánico, nunca a criterio del modelo: primero enumerá los archivos
+9. **Capability matrix gate** — antes de despachar roles, verificá la matriz nativa de permisos:
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json
+   ```
+   Rechaza una matriz con roles duplicados, herramientas desconocidas, un escritor que también
+   aprueba la misma superficie o un rol de sólo lectura con `Write`/`Edit`. Es un contrato de
+   separación revisable, no un sandbox: una herramienta externa puede ignorarlo.
+10. **Auto-routing triage** — mecánico, nunca a criterio del modelo: primero enumerá los archivos
    que hay que **entender o verificar** para decidir con seguridad (archivo a cambiar + sus tests,
    callers/callees/config o contrato directo; no sólo el tamaño del diff) y registralos en
    `SESSION.md`. Sólo 1-3 archivos de contexto requerido Y sin ambigüedad de requirements → 🔵
@@ -260,6 +267,18 @@ node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <featu
 En el primer Discovery todavía no hay spec y el gate sale 0 diciéndolo; empieza a morder en la
 corrección de Discovery que se hace **después** de Phase 3, que es cuando el vínculo ya se puede
 resolver. Un claim sin vínculo declarado no es un error: el gate cuenta los que sí lo declaran.
+En el cierre, cuando la spec y el packet ya existen, el modo estricto convierte esa omisión en
+rechazo: cada claim vigente tiene que enlazar al menos un requisito o criterio declarado.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
+```
+
+`--require-links` implica `--require-inputs` y sólo es válido para `claims`; no cambia el modo
+permisivo del primer Discovery. El modo estricto rechaza tanto un packet sin claims como un claim
+sin vínculo. El gate sigue comprobando que el identificador enlazado exista, pero no demuestra que
+el texto del claim sea semánticamente suficiente: esa parte continúa siendo revisión adversarial
+humana.
 
 `views/*.md` es sólo una vista derivada y reproducible: no admite timestamps, rutas absolutas ni
 datos del entorno, y jamás sustituye los JSON inmutables. Los gates prueban forma, cadena, hashes y
@@ -306,6 +325,14 @@ node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md
 Exit 0 only if the spec is at or under 650 words, excluding fenced code blocks and table rows
 (same exclusion the template already states). Exit 1 → trim narration before CONTENT review, not
 after — a draft that fails this never reaches the 🔵 below.
+
+Antes de aprobar la spec, corré también el chequeo estricto de calidad de forma:
+```bash
+node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
+```
+Ese modo exige las secciones canónicas, al menos un AC único con gramática
+`GIVEN … WHEN … THEN` o `THE SYSTEM SHALL`, y rechaza placeholders o preguntas
+`[NEEDS CLARIFICATION:]`. Verifica forma, no suficiencia semántica del producto.
 
 **No acota el largo del documento: una spec entera en tablas o código pasa.** El tope cuenta narración, que es lo que nadie lee cuando sobra; una spec de diez mil palabras escrita toda en tablas cumple el gate.
 
@@ -568,6 +595,10 @@ ejecutó. Sin dependencias, sin servicios.
 **Mide líneas ejecutadas, no ramas**, y sólo los escenarios que el contrato declara. Un script sin
 escenario exige motivo escrito y se cuenta en la salida, para que no desaparezca. PowerShell queda
 declarado **sin medición**: no hay forma portable de sacarle el número de línea.
+En Windows, la sonda prefiere `C:\Program Files\Git\bin\bash.exe` para no confundir el shim de
+WSL (`C:\Windows\System32\bash.exe`) con un Bash funcional; `VCP_BASH_PATH` permite indicar otro
+binario real. Si no hay Git Bash, el comando queda sujeto al `bash` disponible y el resultado debe
+dejar ese límite explícito.
 
 **6.2 Security** (role: Security-Officer) — run the native, self-contained gate documented in
 `skills/security-baseline.md`:
@@ -689,6 +720,28 @@ un AC que nadie probó, y la suite en verde no lo delata.
 ```bash
 node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
 ```
+
+También cerrá la trazabilidad del research vigente antes de escribir el receipt. En este punto ya
+existen la spec y el packet; por eso cada claim tiene que llevar al menos un vínculo resoluble:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
+```
+
+Si un claim no enlaza ningún `linked_requirement_id` ni `linked_ac_id`, el cierre se rechaza en vez
+de convertir la ausencia de vínculo en un verde vacío.
+
+Registrá la evidencia de comandos con el runner nativo, siempre como argv sin shell:
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json
+node .vibe/vcp-runtime/scripts/verify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete
+```
+Cuando ejecuta el vector, el registro conserva comando, exit code, duración, el `HEAD` del `cwd`
+real, salida limitada a 4096 bytes y hashes. El ejecutable debe ser un nombre nativo de la
+allowlist, sin ruta ni shell, y el `cwd` debe ser relativo y seguro. Tiene tres estados explícitos: `passed`, `failed` y `skipped`; un `skipped` no ejecuta
+ninguna sonda y deja `git_head: null`. `--require-complete` sólo acepta `passed`, por lo que una
+comprobación omitida nunca puede cerrar una fase en silencio. El runner no demuestra
+que el comando sea suficiente ni que su propio proceso no mienta: deja evidencia revisable.
 
 La convención de mención no es nueva: es la misma que ya fija `verify-test-bindings.mjs`, el id
 como segmento separado por `·` de una llamada real `test()`/`it()` — `AC8 · ...` o
@@ -899,6 +952,13 @@ adentro del cierre es lo que hizo que el hallazgo 55 —el sello del backup atad
 equivocado— tardara en aparecer.
 
 **8.1 Commit/push/merge** — gate previo, mecánico, no de lectura:
+Antes de preparar el commit, cerrá el registro de elecciones de todas las fases declaradas:
+```bash
+node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json --require-complete
+```
+Si falta una fase, su menú o su elección, el deploy se detiene. Este flag no prueba voluntad humana;
+prueba que ninguna fase declarada quedó sin registro.
+
 ```bash
 node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json \
   --require-clean-worktree
@@ -1125,8 +1185,12 @@ Respondido el 🔵 que cierra una fase, la decisión se registra en `docs/phase-
 parezca haber estado ahí rompe el hash de esa decisión y la cadena hacia adelante. El gate no
 escribe: el sello se calcula con `hashDecision(previous_hash, decision)` del propio módulo.
 
-Gate: `node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
+Gate durante el trabajo: `node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
 (sin archivo escribe `VACÍO:` y sale `0`: un proyecto que no arrancó ninguna fase no incumple nada; agregá `--require-inputs` para que esa ausencia sea rechazo).
+Gate de cierre: agregá `--require-complete`. En ese modo, cada identificador de `phase_order` tiene
+que tener una decisión vigente (`decided`) con su menú, recomendación, elección y motivo; una fase
+omitida no puede esconderse detrás de un verde parcial. `--require-complete` implica
+`--require-inputs`, por lo que un archivo ausente o vacío rechaza.
 
 ---
 

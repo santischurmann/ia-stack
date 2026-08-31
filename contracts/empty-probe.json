@@ -50,6 +50,14 @@
       "expect": "reject"
     },
     {
+      "script": "verify-capability-matrix.mjs",
+      "args": [
+        "check",
+        "contracts/capability-matrix.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-discovery-core.mjs",
       "args": [
         "check",
@@ -93,6 +101,14 @@
         "tests"
       ],
       "expect": "empty"
+    },
+    {
+      "script": "verify-evidence-runner.mjs",
+      "args": [
+        "check",
+        "evidence.json"
+      ],
+      "expect": "reject"
     },
     {
       "script": "verify-graphify-manifest.mjs",

@@ -8,7 +8,9 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-spec-wordcap.mjs');
-const { USAGE, WORD_CAP, countSpecWords, main } = await import(pathToFileURL(script).href);
+const { QUALITY_FLAG, USAGE, WORD_CAP, checkSpecQuality, countSpecWords, main } = await import(pathToFileURL(script).href);
+
+const VALID_SPEC = `# Spec: billing\n\n## Problem / Problema\nEl cobro falla.\n\n## Discovery / Investigación previa\nSe revisó la evidencia.\n\n## Target Users / Usuarios\nOperadores.\n\n## Acceptance Criteria / Criterios de aceptación\n- [ ] **AC1:** GIVEN un pago pendiente, WHEN se reintenta, THEN se registra un resultado.\n- [ ] **AC2:** THE SYSTEM SHALL conservar el recibo.\n\n## Constraints / Restricciones\n- No dependencias nuevas.\n\n## Non-Goals / No-Goals\n- No se cambia la facturación.\n\n## Stack & Dependencies\n- Node nativo.\n\n## Definition of Done (DoD)\n- [ ] tests verdes\n`;
 
 test('countSpecWords excludes fenced code blocks and table rows, counts everything else', () => {
   assert.equal(countSpecWords('one two three'), 3);
@@ -60,4 +62,43 @@ test('CLI exit codes match the library behavior for a real over-cap file', () =>
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('checkSpecQuality accepts a complete spec with event and invariant AC grammar', () => {
+  assert.deepEqual(checkSpecQuality(VALID_SPEC), []);
+  const output = [];
+  assert.equal(main(['check', 'spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, write: (line) => output.push(line) }), 0);
+  assert.match(output.at(-1), /quality shape valid/);
+});
+
+test('FALSIFICACIÓN · quality rejects empty, missing sections, placeholders and unresolved questions', () => {
+  assert.ok(checkSpecQuality('').some((item) => item.includes('empty')));
+  const incomplete = VALID_SPEC.replace('## Constraints / Restricciones', '## Limits');
+  assert.ok(checkSpecQuality(incomplete).some((item) => item.includes('missing required section')));
+  const placeholder = VALID_SPEC.replace('Operadores.', '<role>');
+  assert.ok(checkSpecQuality(placeholder).some((item) => item.includes('placeholder')));
+  const unresolved = VALID_SPEC.replace('Se revisó la evidencia.', '[NEEDS CLARIFICATION: qué evidencia]');
+  assert.ok(checkSpecQuality(unresolved).some((item) => item.includes('unresolved')));
+});
+
+test('FALSIFICACIÓN · quality rejects duplicate, malformed and absent acceptance criteria', () => {
+  const duplicate = VALID_SPEC.replace('**AC2:**', '**AC1:**');
+  assert.ok(checkSpecQuality(duplicate).some((item) => item.includes('duplicate')));
+  const malformed = VALID_SPEC.replace('GIVEN un pago pendiente, WHEN se reintenta, THEN se registra un resultado.', 'the payment is handled');
+  assert.ok(checkSpecQuality(malformed).some((item) => item.includes('AC1') && item.includes('GIVEN')));
+  const noAc = VALID_SPEC.replace(/- \[ \] \*\*AC1:[^\n]+\n/gu, '').replace(/- \[ \] \*\*AC2:[^\n]+\n/gu, '');
+  assert.ok(checkSpecQuality(noAc).some((item) => item.includes('no acceptance criterion')));
+});
+
+test('quality ignores placeholders and AC-like text inside fenced code', () => {
+  const withCode = `${VALID_SPEC}\n\`\`\`text\n<placeholder>\n- [ ] **AC99:** not a real criterion\n\`\`\``;
+  assert.deepEqual(checkSpecQuality(withCode), []);
+});
+
+test('quality CLI handles invalid usage, unreadable input and over-cap before quality', () => {
+  const errors = [];
+  assert.equal(main(['check', 'spec.md', '--unknown'], { writeError: (line) => errors.push(line) }), 2);
+  assert.equal(main(['check', 'missing.md', QUALITY_FLAG], { writeError: (line) => errors.push(line) }), 1);
+  assert.equal(main(['check', 'spec.md', QUALITY_FLAG], { readFile: () => Array.from({ length: WORD_CAP + 1 }, () => 'x').join(' '), writeError: (line) => errors.push(line) }), 1);
+  assert.ok(errors.length >= 3);
 });

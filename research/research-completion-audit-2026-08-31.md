@@ -1,0 +1,95 @@
+# Auditoría de research externo — 2026-08-31
+
+## Resultado honesto
+
+El corpus de las 14 fuentes fue reconstruido desde commits pineados y sus entradas fueron
+enumeradas de forma reproducible. Se procesaron byte-a-byte los archivos regulares materializados
+para obtener SHA-256, tamaño, clasificación y cantidad de líneas.
+
+Esto **no equivale a una lectura semántica completa**. El research histórico registra 320 archivos
+leídos por agentes sobre 15.581 (2,05 %). El barrido de 14.421 archivos y el escaneo estructural
+completo no permiten afirmar que cada función, workflow o decisión haya sido comprendida.
+
+## Corpus verificado
+
+- Entradas de archivo en los 14 árboles: **15.581**.
+- Archivos regulares materializados en Windows: **15.575**.
+- Symlinks: **6**, registrados pero no dereferenciados por seguridad/compatibilidad de Windows.
+- Árboles Git: 14/14 sin truncamiento; conteos coinciden con los manifests históricos.
+- Commits: cada fuente usa el commit SHA declarado por el research.
+- Manifest detallado: `research/corpus-manifest-2026-08-31.json`.
+- Escaneo estructural: `research/corpus-structural-scan-2026-08-31.json`.
+
+Symlinks no dereferenciados:
+
+- `garrytan/gstack:connect-chrome` → `open-gstack-browser`.
+- `marin-community/marin:.claude/agents` → `../.agents/agents`.
+- `marin-community/marin:.claude/skills` → `../.agents/skills`.
+- `marin-community/marin:lib/levanter/infra/babysit-tpu-vm` → `babysit-tpu-vm.sh`.
+- `thedotmack/claude-mem:openclaw/skills/do/SKILL.md` → `../../../plugin/skills/do/SKILL.md`.
+- `thedotmack/claude-mem:openclaw/skills/make-plan/SKILL.md` → `../../../plugin/skills/make-plan/SKILL.md`.
+
+## Lectura frente a escaneo
+
+| Medida | Resultado | Qué demuestra |
+|---|---:|---|
+| Árboles enumerados | 15.581/15.581 | Que cada entrada del commit fue contabilizada |
+| Archivos regulares con SHA-256 | 15.575 | Que se leyó cada byte materializado |
+| Symlinks registrados | 6/6 | Que no se ocultaron entradas no materializadas |
+| Escaneo estructural | 15.575 | Líneas, extensiones y patrones aproximados |
+| Inventario funcional mecánico | 15.575/15.575 | Símbolos, señales de test, comandos, imports, claims y riesgos observables |
+| Lectura semántica de agentes | 320/15.581 | Comprensión profunda documentada hasta ahora |
+| Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
+| Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
+| Research semántico completo | **NO DEMOSTRADO** | El ledger conserva 14.897 pendientes |
+
+El inventario funcional se genera con
+`research/build-functional-inventory.mjs` y queda en
+`research/functional-inventory-2026-08-31.json`. Su cobertura es mecánica: no convierte una
+coincidencia de texto en comprensión semántica. En la ejecución actual indexó 74.976 símbolos,
+214.127 señales de test, 45.246 comandos, 63.520 claims y 26.631 marcadores de riesgo. Esas
+señales son útiles para priorizar lectura y detectar zonas sensibles, pero no son métricas de
+calidad ni un inventario API perfecto.
+
+Las clasificaciones del manifest nuevo no reemplazan las categorías históricas de
+`contracts/research-citations.json`: usan reglas de extensión/UTF-8 propias y por eso sus conteos
+de binarios, grandes y legibles no son directamente comparables. No se modifica el contrato viejo
+sin una reconciliación explícita.
+
+## Estado de VCP al cerrar esta auditoría
+
+- HEAD y `origin/main`: `f2fb9017df6656490c0a61283bec825bcaad2489`.
+- Branch: `main`.
+- Working tree: limpio antes de agregar estos dos artefactos de auditoría.
+- Graphify report: construido desde `f2fb9017`.
+- Backup state: `git_head=f2fb9017...` y `verify-backup-state` en verde.
+- T07, T08, T09, T10, T11, T12 y T13 constan como completados en la sesión actual.
+- El informe externo sigue diciendo `PARCIAL` y 320 lecturas; esa conclusión es correcta.
+
+## Hallazgos
+
+1. **P1 — research semántico profundo incompleto.** Se ejecutó un pase estático reproducible sobre
+   las 15.581 entradas (`research/build-complete-review-index.mjs`), pero 14.897 siguen sin lectura
+   funcional profunda. Condición para cerrar: cada entrada debe tener propósito, interfaces, tests,
+   límites, citas y veredicto semántico; el índice estático no se promociona a `READ`.
+2. **P2 — symlinks no dereferenciados.** Se conocen los seis destinos, pero no se verificó el
+   contenido del destino en el snapshot Windows. Condición: resolverlos en un entorno seguro o
+   mantenerlos como exclusión explícita.
+3. **P2 — citas mayormente verificadas por existencia.** El contrato confirma paths y rangos; sólo
+   unas pocas citas fueron leídas manualmente. Condición: separar `PATH_RESOLVED` de
+   `CONTENT_CONFIRMED`.
+4. **P2 — scan sesgado.** Las seis sondas responden preguntas preseleccionadas; un resultado cero
+   no prueba ausencia semántica de una idea no incluida en los patrones.
+5. **P2 — inventario estructural aproximado.** Las regex pueden contar falsos positivos en código
+   generado, minificado o ejemplos. No usar sus cifras como inventario API definitivo.
+
+## Decisión recomendada
+
+El próximo research debe usar el manifest completo y continuar por lotes deterministas. Cada lote
+debe producir lectura real, citas y contraargumentos. Hasta que el campo `PENDING` sea cero o esté
+justificado como `EXCLUDED`, el estado correcto de las 14 fuentes es `PARCIAL`.
+
+Los tres índices JSON completos (manifiesto, ledger e inventario funcional) se conservaron en el
+checkout local para reproducibilidad y quedaron ignorados por Git por su tamaño y por contener
+señales de código de las fuentes; el informe Markdown y los scripts generadores sí forman parte de
+la evidencia compartible.

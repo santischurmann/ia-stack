@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   DiscoveryViewsError, canonicalViewBytes, listViewFiles, main, parseArgs, readTrustedView,
@@ -10,6 +12,7 @@ import {
 } from '../scripts/verify-discovery-views.mjs';
 
 const feature = 'research-flow';
+const script = fileURLToPath(new URL('../scripts/verify-discovery-views.mjs', import.meta.url));
 const decisionSchema = 'vcp.discovery-decision/3';
 const packetSchema = 'vcp.discovery-packet/1';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -143,4 +146,7 @@ test('CLI parsea sólo check/render canónicos y comunica resultados controlados
   assert.equal(main(['bad'], '.', () => {}, (line) => errors.push(line)), 2);
   assert.equal(main(['check', '--feature', feature], '.', () => {}, () => {}, () => ({ ok: true, views: 1 })), 0);
   assert.equal(main(['render', '--feature', feature], '.', () => {}, () => {}, () => ({ ok: true, views: 1 }), () => { throw new DiscoveryViewsError('DISCOVERY_VIEW_WRITE_FAILED', 'no'); }), 1);
+  const cli = spawnSync(process.execPath, [script, 'bad'], { encoding: 'utf8' });
+  assert.equal(cli.status, 2);
+  assert.match(cli.stderr, /usage:/u);
 });

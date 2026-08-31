@@ -23,10 +23,11 @@ import { join, resolve } from 'node:path';
 import { readDiscoveryHistory } from './verify-discovery-core.mjs';
 import { hasLiteralTestDeclaration } from './verify-test-bindings.mjs';
 
-export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> [--require-inputs] | verify-evidence-trace.mjs claims --feature <feature-slug> [--require-inputs]';
+export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> [--require-inputs] | verify-evidence-trace.mjs claims --feature <feature-slug> [--require-inputs] [--require-links]';
 export const NO_INPUTS_CODE = 'EVIDENCE_TRACE_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
+export const REQUIRE_LINKS_FLAG = '--require-links';
 export const SPEC_PATH = 'docs/spec.md';
 export const CRITERION_SHAPE = '- [ ] **AC<n>:**';
 export const MENTION_SEPARATOR = '·';
@@ -114,7 +115,7 @@ export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) 
   return { ok: true, message: `${criteria.length} criterio(s) de ${specPath} nombrados por al menos una prueba de ${testsDir}.` };
 }
 
-export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHistory = readDiscoveryHistory) {
+export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHistory = readDiscoveryHistory, { requireLinks = false } = {}) {
   if (!io.exists(resolve(projectRoot, 'docs', 'discovery', featureSlug))) {
     return { ok: true, vacuous: true, message: `${featureSlug} no tiene Discovery en docs/discovery/: no hay claims que verificar.` };
   }
@@ -135,9 +136,20 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
     return { ok: true, vacuous: true, message: `la decisión vigente ${current.decision.decision_id} de ${featureSlug} está ${current.decision.status} y no lleva packet: no hay claims que verificar.` };
   }
   const declared = declaredIdentifiers(io.read(specFile, 'utf8'));
+  const claims = current.packet.research_snapshot.claims;
+  if (requireLinks && claims.length === 0) {
+    return {
+      ok: false,
+      code: 'EVIDENCE_TRACE_NO_CLAIMS',
+      message: `la decisión vigente ${current.decision.decision_id} de ${featureSlug} no contiene claims de research para enlazar`,
+    };
+  }
   const broken = [];
   let linked = 0;
-  for (const claim of current.packet.research_snapshot.claims) {
+  const unlinked = [];
+  for (const claim of claims) {
+    const hasLink = LINK_FIELDS.some((field) => ![null, undefined].includes(claim[field]));
+    if (!hasLink) unlinked.push(claim.claim_id ?? '<claim sin id>');
     for (const field of LINK_FIELDS) {
       if ([null, undefined].includes(claim[field])) continue;
       linked += 1;
@@ -151,17 +163,26 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
       message: `${broken.length} vínculo(s) de la decisión vigente ${current.decision.decision_id} apuntan a un identificador que ${SPEC_PATH} no declara: ${broken.join('; ')}`,
     };
   }
+  if (requireLinks && unlinked.length > 0) {
+    return {
+      ok: false,
+      code: 'EVIDENCE_TRACE_CLAIM_UNLINKED',
+      message: `${unlinked.length} claim(s) de la decisión vigente ${current.decision.decision_id} no enlazan ningún linked_requirement_id ni linked_ac_id: ${unlinked.join(', ')}`,
+    };
+  }
   return { ok: true, message: `${linked} vínculo(s) de claims de la decisión vigente ${current.decision.decision_id} de ${featureSlug} resuelven contra ${SPEC_PATH}.` };
 }
 
 export function parseArgs(args) {
-  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
-  const rest = requireInputs ? args.slice(0, -1) : args;
+  const requireInputs = args.includes(REQUIRE_INPUTS_FLAG);
+  const requireLinks = args.includes(REQUIRE_LINKS_FLAG);
+  const rest = args.filter((arg) => arg !== REQUIRE_INPUTS_FLAG && arg !== REQUIRE_LINKS_FLAG);
   if (rest.length === 5 && rest[0] === 'criteria' && rest[1] === '--spec' && rest[3] === '--tests' && rest[2] !== '' && rest[4] !== '') {
+    if (requireLinks) return null;
     return { command: 'criteria', spec: rest[2], tests: rest[4], requireInputs };
   }
   if (rest.length === 3 && rest[0] === 'claims' && rest[1] === '--feature' && FEATURE_SLUG.test(rest[2])) {
-    return { command: 'claims', feature: rest[2], requireInputs };
+    return { command: 'claims', feature: rest[2], requireInputs: requireInputs || requireLinks, ...(requireLinks ? { requireLinks: true } : {}) };
   }
   return null;
 }
@@ -174,7 +195,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   }
   const result = parsed.command === 'criteria'
     ? checks.criteria(cwd, parsed.spec, parsed.tests)
-    : checks.claims(cwd, parsed.feature);
+    : checks.claims(cwd, parsed.feature, DEFAULT_IO, readDiscoveryHistory, { requireLinks: parsed.requireLinks === true });
   if (!result.ok) {
     writeError(`REJECTED: ${result.code}: ${result.message}`);
     return 1;

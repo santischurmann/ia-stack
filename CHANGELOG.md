@@ -7,6 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- `verify-capability-matrix.mjs` agrega una matriz nativa de roles, herramientas y superficies:
+  rechaza auto-aprobación y contradicciones entre roles de sólo lectura y `Write`/`Edit`. Es un
+  contrato declarativo revisable, no un sandbox contra herramientas externas.
+- `verify-spec-wordcap.mjs --quality` exige la forma mínima de una spec (secciones canónicas,
+  criterios AC únicos con gramática GIVEN/WHEN/THEN o `THE SYSTEM SHALL`, y sin placeholders)
+  además del tope de palabras.
+- `verify-evidence-runner.mjs` ejecuta vectores argv sin shell y, cuando corre, conserva salida
+  limitada, hashes, duración, exit code y HEAD. `passed`, `failed` y `skipped` son estados
+  explícitos; el modo `--require-complete` sólo cierra con `passed`, y un skip no ejecuta ninguna
+  sonda (`git_head: null`).
+- `verify-phase-decisions.mjs` agrega `--require-complete`: el cierre final rechaza cualquier fase
+  declarada en `phase_order` que no tenga una decisión vigente con menú, recomendación, elección y
+  motivo. El modo normal conserva el comportamiento incremental para proyectos que todavía están
+  avanzando.
+- `verify-evidence-trace.mjs claims --require-links` agrega un cierre estricto: el packet no puede
+  estar vacío y cada claim vigente debe enlazar al menos un `linked_requirement_id` o
+  `linked_ac_id` resoluble. Implica `--require-inputs`; el Discovery inicial conserva su modo
+  permisivo.
+- `verify-vcp-coverage.mjs` mide con un worker por defecto para evitar resultados intermitentes por
+  carreras de instalaciones y timeouts; `VCP_TEST_CONCURRENCY` permite subirlo explícitamente.
+
 - **El research externo, revalidado contra las catorce fuentes.** Durante dos días el informe
   declaró, con todas las letras, que sus citas `archivo:línea` no las había revalidado nadie y no
   se podían verificar sin volver a clonar las catorce fuentes. Se volvieron a clonar. Las catorce

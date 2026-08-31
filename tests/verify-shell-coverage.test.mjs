@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -8,11 +9,13 @@ import {
   SCHEMA,
   TRACE_PREFIX,
   USAGE,
+  WINDOWS_GIT_BASH,
   coverageOf,
   executableLines,
   main,
   measure,
   readContract,
+  resolveBash,
   runScenario,
   tracedLines,
 } from '../scripts/verify-shell-coverage.mjs';
@@ -101,6 +104,14 @@ test('runScenario corre bash de verdad y devuelve la traza con números de líne
   const salida = runScenario(join(repoRoot, 'scripts', 'verify-red.sh'), { setup: [], args: [] });
   assert.match(salida, new RegExp(TRACE_PREFIX, 'u'), 'sin PS4 con LINENO no hay cobertura que calcular');
   assert.ok(tracedLines(salida).size > 0);
+});
+
+test('resolveBash evita el shim WSL roto cuando hay Git Bash disponible', () => {
+  if (process.platform !== 'win32') assert.equal(resolveBash({}), 'bash');
+  else assert.equal(resolveBash({}), existsSync(WINDOWS_GIT_BASH) ? WINDOWS_GIT_BASH : 'bash');
+  assert.equal(resolveBash({}, () => true, 'linux'), 'bash');
+  assert.equal(resolveBash({ VCP_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
+  assert.equal(resolveBash({ VCP_BASH_PATH: 'C:/missing/bash.exe' }, () => false), 'bash');
 });
 
 test('runScenario sustituye el directorio temporal en setup y args', () => {

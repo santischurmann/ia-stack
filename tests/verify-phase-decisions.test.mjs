@@ -182,6 +182,42 @@ test('sin archivo de decisiones el gate sale 0: no arrancar una fase no incumple
   assert.match(run.stdout, /docs\/phase-decisions\.json/u);
 }));
 
+test('FALSIFICACIÓN · --require-complete rechaza fases declaradas sin decisión', () => {
+  const parcial = documentOf([BOOTSTRAP, SPEC, PLAN]);
+  const result = checkDecisions(parcial, { requireComplete: true });
+  assert.deepEqual(codes(result), [
+    'PHASE_DECISION_PHASE_MISSING',
+    'PHASE_DECISION_PHASE_MISSING',
+  ]);
+  assert.match(joined(result), /fase 3/u);
+  assert.match(joined(result), /fase 4/u);
+});
+
+test('--require-complete acepta cuando cada fase declarada tiene una decisión vigente', () => {
+  const phase3 = { ...PLAN, phase_id: '3', phase_name: 'Build', timestamp: '2026-08-28T14:00:00Z' };
+  const phase4 = { ...PLAN, phase_id: '4', phase_name: 'Verify', timestamp: '2026-08-28T15:00:00Z' };
+  const result = checkDecisions(documentOf([BOOTSTRAP, SPEC, PLAN, phase3, phase4]), { requireComplete: true });
+  assert.equal(result.ok, true, joined(result));
+});
+
+test('CLI --require-complete convierte una decisión parcial en rechazo y conserva el verde completo', () => fixture((root) => {
+  const parcialPath = writeDecisions(root, documentOf([BOOTSTRAP, SPEC, PLAN]));
+  const parcial = runCli(root, 'check', parcialPath, '--require-complete');
+  assert.equal(parcial.status, 1, `${parcial.stdout}${parcial.stderr}`);
+  assert.match(parcial.stderr, /PHASE_DECISION_PHASE_MISSING/u);
+
+  const completas = [
+    BOOTSTRAP,
+    SPEC,
+    PLAN,
+    { ...PLAN, phase_id: '3', phase_name: 'Build', timestamp: '2026-08-28T14:00:00Z' },
+    { ...PLAN, phase_id: '4', phase_name: 'Verify', timestamp: '2026-08-28T15:00:00Z' },
+  ];
+  writeDecisions(root, documentOf(completas));
+  const completa = runCli(root, 'check', parcialPath, '--require-complete');
+  assert.equal(completa.status, 0, `${completa.stdout}${completa.stderr}`);
+}));
+
 // --- Falsificación: el menú y la elección --------------------------------------------------------
 
 test('FALSIFICACIÓN · una elección que no está en el menú que se mostró sale en rojo', () => {

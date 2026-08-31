@@ -18,7 +18,7 @@ const {
   readHonestLimits,
 } = await import(pathToFileURL(script).href);
 
-function completeRead(path) {
+function completeReadBase(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
   return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nEl sello lo registra el protocolo, no Graphify\ncommit → graphify → record → check\nModelo de seguridad y límites\nResearch: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\n## PHASE 1 — BOOTSTRAP
 ## PHASE 2 — RESEARCH
@@ -42,6 +42,12 @@ Mide líneas ejecutadas, no ramas
 verify-empty-probe.mjs check contracts/empty-probe.json
 un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar
 verify-phase-decisions.mjs check docs/phase-decisions.json\nNinguna fase cierra sin una elección registrada\n## Intentos fallidos\n## Interrumpido en\n## No verificado\n## Discovery / Investigación previa\n## Write-conflict preflight\n${requirement?.[1].source ?? ''}`;
+}
+
+// Keep the synthetic reader aligned with the live documentation contract.
+function completeRead(path) {
+  const content = `${completeReadBase(path)}\nclaims --feature <feature-slug> --require-inputs --require-links\n\`--require-links\` exige además un packet no vacío y que cada claim tenga al menos uno\nUsa 1 worker por defecto\nVCP_BASH_PATH\nverify-spec-wordcap.mjs check docs/spec.md --quality\nverify-spec-wordcap.mjs --quality\nverify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json\nverify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json\nverify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete\nbuild-complete-review-index.mjs\nsin confundirlas con comprensión semántica`;
+  return path === 'SKILL.md' ? `${content}\n--require-complete` : content;
 }
 
 test('contract accepts all required user-visible promises when every source is present', () => {

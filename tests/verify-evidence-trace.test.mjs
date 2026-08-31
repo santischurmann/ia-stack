@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { readDiscoveryHistory } from '../scripts/verify-discovery-core.mjs';
 import {
   USAGE,
   checkClaims,
@@ -15,6 +16,7 @@ import {
   main,
   parseArgs,
   readCriterionIds,
+  REQUIRE_LINKS_FLAG,
   titleMentions,
 } from '../scripts/verify-evidence-trace.mjs';
 
@@ -271,6 +273,42 @@ test('claims con claims sin vínculo declarado sale en verde: no declarar víncu
   assert.deepEqual({ ok: result.ok, dice0: /\b0\b/u.test(result.message) }, { ok: true, dice0: true });
 }));
 
+test('FALSIFICACIÓN · claims --require-links rechaza un claim sin vínculo declarado', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [claim()]);
+  const result = checkClaims(root, feature, undefined, readDiscoveryHistory, { requireLinks: true });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_CLAIM_UNLINKED');
+  assert.match(result.message, /claim-001/u);
+}));
+
+test('FALSIFICACIÓN · claims --require-links identifica un claim sin claim_id', () => fixture((root) => {
+  writeSpec(root);
+  mkdirSync(join(root, 'docs', 'discovery', feature), { recursive: true });
+  const history = () => ({ runs: [{ history: [{ decision: { decision_id: 'd-no-id' }, packet: { research_snapshot: { claims: [{ linked_requirement_id: null, linked_ac_id: null }] } } }] }] });
+  const result = checkClaims(root, feature, undefined, history, { requireLinks: true });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_CLAIM_UNLINKED');
+  assert.match(result.message, /<claim sin id>/u);
+}));
+
+test('claims --require-links acepta un claim con al menos un vínculo resoluble', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
+  const result = checkClaims(root, feature, undefined, readDiscoveryHistory, { requireLinks: true });
+  assert.equal(result.ok, true);
+  assert.match(result.message, /1 vínculo/u);
+}));
+
+test('FALSIFICACIÓN · claims --require-links rechaza un packet sin claims', () => fixture((root) => {
+  writeSpec(root);
+  mkdirSync(join(root, 'docs', 'discovery', feature), { recursive: true });
+  const emptyHistory = () => ({ runs: [{ history: [{ decision: { decision_id: 'd-empty' }, packet: { research_snapshot: { claims: [] } } }] }] });
+  const result = checkClaims(root, feature, undefined, emptyHistory, { requireLinks: true });
+  assert.equal(result.ok, false);
+  assert.equal(result.code, 'EVIDENCE_TRACE_NO_CLAIMS');
+}));
+
 test('FALSIFICACIÓN · claims nombra el claim que cita un identificador que la spec no declara', () => fixture((root) => {
   writeSpec(root);
   writeDiscovery(root, [
@@ -417,6 +455,16 @@ test('parseArgs acepta --require-inputs como último argumento de los dos subcom
   assert.equal(parseArgs(['claims', '--feature', 'demo']).requireInputs, false);
 });
 
+test('parseArgs acepta --require-links sólo en claims y lo convierte en cierre estricto', () => {
+  assert.deepEqual(parseArgs(['claims', '--feature', 'demo', REQUIRE_LINKS_FLAG]), {
+    command: 'claims', feature: 'demo', requireInputs: true, requireLinks: true,
+  });
+  assert.deepEqual(parseArgs([REQUIRE_LINKS_FLAG, 'claims', '--feature', 'demo']), {
+    command: 'claims', feature: 'demo', requireInputs: true, requireLinks: true,
+  });
+  assert.equal(parseArgs(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', REQUIRE_LINKS_FLAG]), null);
+});
+
 test('FALSIFICACIÓN · --require-inputs convierte el verde vacío en rechazo, y no toca al verde real', () => {
   const errors = [];
   const written = [];
@@ -431,6 +479,38 @@ test('FALSIFICACIÓN · --require-inputs convierte el verde vacío en rechazo, y
   assert.deepEqual(errors, [`REJECTED: ${NO_INPUTS_CODE}: sin docs/spec.md: no hay criterios declarados que cubrir.`]);
   assert.deepEqual(written, ['OK: 3 vínculo(s) resuelven']);
 });
+
+test('FALSIFICACIÓN · --require-links rechaza el claim sin vínculo en el CLI real', () => fixture((root) => {
+  writeSpec(root);
+  writeDiscovery(root, [claim()]);
+  const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
+  const rojo = run(['claims', '--feature', feature, '--require-links']);
+  assert.equal(rojo.status, 1);
+  assert.match(rojo.stderr, /EVIDENCE_TRACE_CLAIM_UNLINKED/u);
+
+  writeFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'packets', 'd002.json'), json({
+    schema: 'vcp.discovery-packet/1',
+    decision_id: 'd002',
+    research_snapshot: { captured_at: '2026-08-27', claims: [claim({ linked_ac_id: 'AC91' })] },
+  }));
+  // The packet hash is deliberately refreshed so the fixture remains a real, valid Discovery run.
+  const packet = readFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'packets', 'd002.json'));
+  writeFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'decisions', 'd002.json'), json({
+    schema: 'vcp.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd002',
+    evaluated_at: '2026-08-28', status: 'completed', transition_kind: 'activation', supersedes: 'd001',
+    predecessor_hash: hash(json({
+      schema: 'vcp.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd001',
+      evaluated_at: '2026-08-27', status: 'pending', transition_kind: 'initial', supersedes: null,
+      predecessor_hash: null, previous_status: null, activation_result: 'discovery-result-v1',
+      triggers_observed: ['scope'], correction_reason: null, skip: null, override: null,
+      packet_ref: null, packet_sha256: null,
+    })), previous_status: 'pending', activation_result: 'discovery-result-v1', triggers_observed: ['scope'],
+    correction_reason: null, skip: null, override: null, packet_ref: 'packets/d002.json', packet_sha256: hash(packet),
+  }));
+  const verde = run(['claims', '--feature', feature, '--require-links']);
+  assert.equal(verde.status, 0);
+  assert.match(verde.stdout, /^OK: /u);
+}));
 
 test('FALSIFICACIÓN · el CLI real rechaza el verde vacío bajo --require-inputs sobre un proyecto sin spec', () => fixture((root) => {
   const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });

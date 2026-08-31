@@ -1,0 +1,95 @@
+{
+  "schema": "vcp.capability-matrix/v1",
+  "roles": [
+    {
+      "id": "orchestrator",
+      "phase": "all",
+      "tools": ["Read", "Write", "Edit", "Bash", "Task", "Agent", "Glob", "Grep", "TodoWrite", "Skill"],
+      "reads": ["tests", "production", "docs", "state", "security", "release"],
+      "writes": ["docs", "state"],
+      "approves": ["phase", "release"]
+    },
+    {
+      "id": "test-engineer",
+      "phase": "5.1-red",
+      "tools": ["Read", "Write", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs"],
+      "writes": ["tests"],
+      "approves": []
+    },
+    {
+      "id": "builder",
+      "phase": "5.2-green",
+      "tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs"],
+      "writes": ["production"],
+      "approves": []
+    },
+    {
+      "id": "triangulator",
+      "phase": "5.3-triangulate",
+      "tools": ["Read", "Write", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs"],
+      "writes": ["tests"],
+      "approves": []
+    },
+    {
+      "id": "refactor-engineer",
+      "phase": "5.4-refactor",
+      "tools": ["Read", "Edit", "Bash", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs"],
+      "writes": ["production"],
+      "approves": []
+    },
+    {
+      "id": "docs",
+      "phase": "5.5-docs",
+      "tools": ["Read", "Write", "Edit", "Glob", "Grep"],
+      "reads": ["docs", "state"],
+      "writes": ["docs", "state"],
+      "approves": []
+    },
+    {
+      "id": "chore",
+      "phase": "6.1-verify",
+      "tools": ["Read", "Edit", "Bash", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs"],
+      "writes": ["production"],
+      "approves": []
+    },
+    {
+      "id": "security-officer",
+      "phase": "6.2-security",
+      "tools": ["Read", "Glob", "Grep"],
+      "reads": ["production", "docs", "security"],
+      "writes": [],
+      "approves": []
+    },
+    {
+      "id": "reviewer",
+      "phase": "6.3-adversarial",
+      "tools": ["Read", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs", "security"],
+      "writes": [],
+      "approves": []
+    },
+    {
+      "id": "release-engineer",
+      "phase": "8.1-release",
+      "tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+      "reads": ["tests", "production", "docs", "state", "security", "release"],
+      "writes": ["state", "release"],
+      "approves": []
+    }
+  ],
+  "rules": [
+    {
+      "id": "no-self-approval",
+      "description": "A role cannot write and approve the same surface; the verifier is a separate mechanism."
+    },
+    {
+      "id": "read-only-no-write",
+      "description": "A role with no declared write surface cannot hold Write or Edit."
+    }
+  ]
+}

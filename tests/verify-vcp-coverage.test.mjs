@@ -6,7 +6,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const coverageGate = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
-const { evaluateCoverageRun, fingerprintScripts, listMjsScripts, main, parseScriptCoverage, runCoverage } = await import(pathToFileURL(coverageGate).href);
+const { DEFAULT_TEST_CONCURRENCY, evaluateCoverageRun, fingerprintScripts, listMjsScripts, main, parseScriptCoverage, resolveTestConcurrency, runCoverage } = await import(pathToFileURL(coverageGate).href);
 
 const perfectCoverage = `
 ℹ start of coverage report
@@ -90,9 +90,17 @@ test('runCoverage invokes Node native coverage from the supplied project root', 
 
   assert.equal(result.status, 0);
   assert.equal(received.node, process.execPath);
-  assert.deepEqual(received.args, ['--experimental-test-coverage', '--test', '--test-concurrency=32']);
+  assert.deepEqual(received.args, ['--experimental-test-coverage', '--test', `--test-concurrency=${DEFAULT_TEST_CONCURRENCY}`]);
   assert.equal(received.options.cwd, 'C:/fixture/vcp');
   assert.equal(received.options.encoding, 'utf8');
+});
+
+test('resolveTestConcurrency usa un worker por defecto y sólo acepta un override entero positivo', () => {
+  assert.equal(resolveTestConcurrency({}), '1');
+  assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '4' }), '4');
+  assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '0' }), '1');
+  assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '32x' }), '1');
+  assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '' }), '1');
 });
 
 test('listMjsScripts includes only executable Node files from its explicit inventory', () => {

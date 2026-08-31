@@ -34,10 +34,11 @@
 import { readFileSync } from 'node:fs';
 import { chainHashFor } from './verify-audit-chain.mjs';
 
-export const USAGE = 'usage: verify-phase-decisions.mjs check <decisions.json> [--require-inputs]';
+export const USAGE = 'usage: verify-phase-decisions.mjs check <decisions.json> [--require-inputs] [--require-complete]';
 export const NO_INPUTS_CODE = 'PHASE_DECISION_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
+export const REQUIRE_COMPLETE_FLAG = '--require-complete';
 export const SCHEMA = 'vcp.phase-decisions/1';
 // `superseded` existe para que una decisión reemplazada no se borre: se marca y se registra la
 // nueva, igual que hace el inventario de requisitos con `replaced`. Borrarla dejaría la cadena rota
@@ -259,6 +260,23 @@ function checkSequence(decisions, phaseOrder) {
   return violations;
 }
 
+/**
+ * Strict release mode: every phase declared by the plan must have one current
+ * decision. The ordinary check intentionally permits a project that is still
+ * progressing through its phases; this predicate is used at the final gate so
+ * a missing menu/choice cannot disappear merely because the phase was omitted.
+ */
+function checkComplete(decisions, phaseOrder) {
+  const lastByPhase = new Map();
+  for (const decision of decisions) lastByPhase.set(decision.phase_id, decision);
+  return phaseOrder
+    .filter((phaseId) => lastByPhase.get(phaseId)?.status !== 'decided')
+    .map((phaseId) => violation(
+      'PHASE_DECISION_PHASE_MISSING',
+      `la fase ${phaseId} está declarada en phase_order pero no tiene una decisión vigente con menú y elección registrada`,
+    ));
+}
+
 /** Se frena en el primer eslabón roto a propósito: desde ahí toda cabeza de cadena posterior es
  * derivada de un valor que ya no se puede confiar, y seguir listando produce ruido, no hallazgos. */
 function checkChain(decisions, phaseOrder) {
@@ -275,7 +293,7 @@ function checkChain(decisions, phaseOrder) {
   return [];
 }
 
-export function checkDecisions(document) {
+export function checkDecisions(document, { requireComplete = false } = {}) {
   const structural = checkDocument(document);
   if (structural.length > 0) return { ok: false, violations: structural, summary: '' };
   const decisions = document.decisions;
@@ -283,7 +301,11 @@ export function checkDecisions(document) {
   // hashes, y una fila a medio declarar produciría rechazos derivados que tapan la causa real.
   const rows = decisions.flatMap((decision, position) => checkRow(decision, position, document.phase_order));
   if (rows.length > 0) return { ok: false, violations: rows, summary: '' };
-  const violations = [...checkSequence(decisions, document.phase_order), ...checkChain(decisions, document.phase_order)];
+  const violations = [
+    ...checkSequence(decisions, document.phase_order),
+    ...checkChain(decisions, document.phase_order),
+    ...(requireComplete ? checkComplete(decisions, document.phase_order) : []),
+  ];
   const phases = new Set(decisions.map((decision) => decision.phase_id));
   return {
     ok: violations.length === 0,
@@ -304,12 +326,15 @@ export function readDecisions(path, readFile) {
 }
 
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {
-  const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
-  const rest = requireInputs ? args.slice(0, -1) : args;
-  if (rest.length !== 2 || rest[0] !== 'check') {
+  const rest = args.slice(0, 2);
+  const flags = args.slice(2);
+  if (rest.length !== 2 || rest[0] !== 'check'
+    || flags.some((flag) => ![REQUIRE_INPUTS_FLAG, REQUIRE_COMPLETE_FLAG].includes(flag))) {
     writeError(USAGE);
     return 2;
   }
+  const requireInputs = flags.includes(REQUIRE_INPUTS_FLAG) || flags.includes(REQUIRE_COMPLETE_FLAG);
+  const requireComplete = flags.includes(REQUIRE_COMPLETE_FLAG);
   const path = rest[1];
   const { content, missing, error } = readDecisions(path, options.readFile ?? readFileSync);
   if (error !== null) {
@@ -345,7 +370,7 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     write(`${EMPTY_PREFIX}${message}`);
     return 0;
   }
-  const result = checkDecisions(document);
+  const result = checkDecisions(document, { requireComplete });
   if (!result.ok) {
     for (const item of result.violations) writeError(`REJECTED: ${item.code}: ${item.message}`);
     return 1;

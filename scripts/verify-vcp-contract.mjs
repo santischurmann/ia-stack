@@ -22,6 +22,8 @@ export const REQUIREMENTS = [
   ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
   ['README.md', /Research: investigar antes de especificar/u, 'research-first user workflow'],
+  ['README.md', /build-complete-review-index\.mjs/u, 'complete static research review index'],
+  ['README.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
@@ -64,13 +66,24 @@ export const REQUIREMENTS = [
   ['SKILL.md', /nunca re-ejecuta el comando ni prueba criptográficamente/u, 'receipt v2: command/result is reviewable evidence, not cryptographic proof'],
   ['SKILL.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
+  ['SKILL.md', /verify-spec-wordcap\.mjs check docs\/spec\.md --quality/u, 'strict spec quality-shape gate'],
+  ['README.md', /verify-spec-wordcap\.mjs --quality/u, 'strict spec quality-shape gate'],
+  ['SKILL.md', /verify-capability-matrix\.mjs check \.vibe\/vcp-runtime\/contracts\/capability-matrix\.json/u, 'mechanical capability-separation gate'],
+  ['README.md', /verify-capability-matrix\.mjs/u, 'capability matrix gate'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   // The two halves are pinned separately on purpose: `criteria` closes Phase 4 and `claims` closes
   // Phase 0.5, so deleting either command from its phase must fail on its own.
   ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
   ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
+  ['SKILL.md', /claims --feature <feature-slug> --require-inputs --require-links/u, 'strict claim-link completeness at final close'],
+  ['README.md', /`--require-links` exige además[\s\S]*packet no vacío[\s\S]*cada claim/u, 'strict claim-link completeness documented'],
   ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
+  ['README.md', /Usa 1 worker por defecto/u, 'deterministic coverage runner default'],
+  ['README.md', /VCP_BASH_PATH/u, 'explicit Windows Bash selection'],
+  ['SKILL.md', /verify-evidence-runner\.mjs run/u, 'native argv evidence runner'],
+  ['SKILL.md', /verify-evidence-runner\.mjs check .*--require-complete/u, 'strict evidence completion gate'],
+  ['README.md', /verify-evidence-runner\.mjs/u, 'native evidence runner'],
   // Phase 4 runs `criteria` where the spec must already exist, so dropping the flag would turn a
   // deleted spec back into a green. The flag is pinned separately from the command for that reason.
   ['SKILL.md', /criteria --spec docs\/spec\.md --tests tests --require-inputs/u, 'Phase 4 criteria run rejects a missing spec instead of passing empty'],
@@ -84,6 +97,7 @@ export const REQUIREMENTS = [
   // fase cierra sin una elección registrada— es del protocolo y tiene que seguir escrita aunque
   // alguien mueva, renombre o borre el gate que la detecta.
   ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json/u, 'mechanical phase-decision gate'],
+  ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json[\s\S]*--require-complete/u, 'complete phase-decision gate at final close'],
   ['SKILL.md', /Ninguna fase cierra sin una elección registrada/u, 'no phase closes without a recorded human choice'],
   ['README.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por

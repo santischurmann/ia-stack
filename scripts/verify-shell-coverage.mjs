@@ -15,7 +15,7 @@
 // así que ese lenguaje queda declarado sin medición, no medido en cero.
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,9 +25,19 @@ export const SCHEMA = 'vcp.shell-coverage/v1';
 export const REPO_ROOT = resolve(dirname(fileURLToPath(new URL('.', import.meta.url))));
 export const TRACE_PREFIX = 'VCPLINE:';
 export const DIR_TOKEN = '{DIR}';
+export const WINDOWS_GIT_BASH = 'C:\\Program Files\\Git\\bin\\bash.exe';
 
 const TRACED = new RegExp(`^\\+*${TRACE_PREFIX}(\\d+)\\b`, 'u');
 const COMMENT_OR_BLANK = /^\s*(?:#.*)?$/u;
+
+/** Prefer a real Bash on Windows: System32\bash.exe can be a WSL shim whose distro is absent. */
+export function resolveBash(env = process.env, exists = existsSync, platform = process.platform) {
+  if (platform !== 'win32') return 'bash';
+  const configured = typeof env.VCP_BASH_PATH === 'string' && env.VCP_BASH_PATH.trim() !== ''
+    ? env.VCP_BASH_PATH
+    : WINDOWS_GIT_BASH;
+  return exists(configured) ? configured : 'bash';
+}
 
 /** Las líneas que bash puede llegar a ejecutar: ni vacías ni comentarios. Es el denominador. */
 export function executableLines(source) {
@@ -62,14 +72,15 @@ export function coverageOf(executable, traced) {
 /** Corre un escenario en un directorio temporal propio y devuelve la traza que bash escribió. */
 export function runScenario(scriptPath, scenario, run = spawnSync) {
   const dir = mkdtempSync(join(tmpdir(), 'vcp-shell-cov-'));
+  const bash = resolveBash();
   try {
     for (const paso of scenario.setup ?? []) {
-      run('bash', ['-c', paso.split(DIR_TOKEN).join(dir)], { cwd: dir, encoding: 'utf8' });
+      run(bash, ['-c', paso.split(DIR_TOKEN).join(dir)], { cwd: dir, encoding: 'utf8' });
     }
     const args = (scenario.args ?? []).map((a) => a.split(DIR_TOKEN).join(dir));
     // PS4 lleva el número de línea: es todo el truco. `set -x` sin esto escribe el comando pero no
     // dónde estaba, y sin la posición no hay cobertura que calcular.
-    const salida = run('bash', ['-x', scriptPath, ...args], {
+    const salida = run(bash, ['-x', scriptPath, ...args], {
       cwd: dir,
       encoding: 'utf8',
       env: { ...process.env, PS4: `${TRACE_PREFIX}\${LINENO} ` },

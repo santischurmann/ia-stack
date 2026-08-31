@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+const bash = process.platform === 'win32' && existsSync(gitBash) ? gitBash : 'bash';
 const script = join(repoRoot, 'scripts', 'verify-runtime-sync.mjs');
 const {
   COPIED_DIRECTORIES,
@@ -455,7 +457,7 @@ test('FALSIFICACIÓN · sin la regla, el runtime instalado queda como superficie
     git('add', '-A');
     git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'init');
 
-    const instalado = spawnSync('bash', [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
+    const instalado = spawnSync(bash, [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
     assert.equal(instalado.status, 0, instalado.stderr);
 
     // Lo que git considera superficie viva del proyecto. El runtime no puede estar acá: un archivo
