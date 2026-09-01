@@ -423,3 +423,36 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   medido**. El índice está en LF y ninguno entra en un hash entre máquinas; no se probó uno por uno.
 - Que el arreglo se comporte igual en Linux y macOS: **no verificado en esas plataformas**. La
   prueba fuerza `core.autocrlf=true`, que es el mecanismo, pero se corrió sólo en Windows.
+
+## Sesión 2026-09-01 — cierre
+
+**Publicado:** `f376bed` (Bloque A) y `a492b3d` (B1 Intake), los dos en `origin/main`.
+
+- **Bloque A · DONE.** A1 flakiness, F13 CRLF en clon, A2 port del gate de cobertura, F14 NUL
+  crudos, F15 verificadores de research que reventaban, A3 denominador declarado, A4 base de
+  seguridad real. 10/10 corridas, 19 gates, clon limpio verde, instalación limpia verificada.
+- **B1 Intake · DONE.** `PHASE 1.5` en `SKILL.md`, `verify-intake.mjs` con 12 pruebas,
+  `templates/intake.json`, fila en `empty-probe` y límite honesto registrado. 10/10 corridas,
+  823 pruebas, cobertura 31/31.
+- **La guardia de alcance de cobertura frenó mi propio trabajo de B1** y la corrección la hizo más
+  estricta: ahora mira trackeados **más** los sin trackear que `.gitignore` no excluye.
+
+## Retomar acá
+
+- **Fase:** Bloque B, ciclo 2 de 6. **Falta:** CAIO, Mapa de Bucle, PRD, TRIANGULATE como fase
+  propia, Adopción y recurrencia, y el enforce de menú por fase (extender
+  `verify-phase-decisions.mjs` a ≥2 opciones y una elección registrada por fase).
+- **Patrón que funcionó y conviene repetir:** esqueleto permisivo → RED conductual → BUILD →
+  correr `verify-vcp-coverage.mjs` para que nombre las ramas que faltan → cerrarlas → 10 corridas.
+- **Bloque C sin empezar:** re-pinear los 14 commits de research, decidir con 🔵 qué hacer con las
+  8 fuentes del encargo que no están en el corpus, y convertir las señales lexicales en candidatos
+  con contraejemplo.
+
+## No verificado (cierre)
+
+- **F16, preexistente y abierto:** `verify-evidence-trace claims --require-links` sale en rojo por
+  4 claims sin vínculo de la decisión `d003`. Confirmado idéntico contra un clon de `af55a45`, así
+  que es anterior a este trabajo. No está en el conjunto de comandos que el README publica.
+- **LESSONS.md no se tocó**: el protocolo exige confirmación humana explícita para escribir una
+  lección, y no se pidió.
+- Nada se probó en Linux ni macOS.
