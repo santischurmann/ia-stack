@@ -83,10 +83,11 @@ que sea la decisión correcta, ni que la persona la haya entendido.
 | Fase | Pregunta que responde | Resultado necesario |
 |---|---|---|
 | 0. Bootstrap | ¿Qué proyecto y feature son ésta? | Contexto, estado y feature activa claros |
-| 1. Spec | ¿Qué problema resolvemos y qué no? | Criterios de aceptación y límites |
-| 2. Plan | ¿Qué se toca y en qué orden? | Tareas sin escritores en conflicto |
-| 3. Build | ¿La conducta está probada antes de cambiarla? | RED -> GREEN -> TRIANGULATE -> REFACTOR |
-| 4. Final | ¿La evidencia coincide con lo que se libera? | Suite, seguridad, revisión, receipt y backup |
+| 1. Research + diagnóstico | ¿Qué proceso está roto y qué conviene construir? | Fuentes, CAIO, mapa de bucle y artefactos de producto |
+| 2. Spec | ¿Qué problema resolvemos y qué no? | Criterios de aceptación y límites |
+| 3. Plan | ¿Qué se toca y en qué orden? | Tareas sin escritores en conflicto |
+| 4. Build | ¿La conducta está probada antes de cambiarla? | RED -> GREEN -> TRIANGULATE -> REFACTOR |
+| 5. Final | ¿La evidencia coincide con lo que se libera? | Suite, seguridad, revisión, receipt y backup |
 
 Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El
 agente recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
@@ -126,6 +127,22 @@ Para comprobar que no quedó ninguna entrada sin abrir, ejecutá `node research/
 y luego `node research/verify-full-evidence-pass.mjs`. El resultado cubre cada pendiente por hash y
 bytes, pero conserva un estado asistido: una lectura física completa no reemplaza una interpretación
 semántica funcional.
+
+### Diagnóstico antes de construir
+
+Después de entender qué quiere construir la persona, pero antes de escribir la Spec, VCP guarda
+seis piezas de Discovery en `docs/discovery/<feature>/diagnostics/`: CAIO (proceso roto), mapa de
+bucle (hoy y objetivo), PRD, plan de implementación, plan de adopción y plan de recurrencia. Son
+la entrada de la Spec: obligan a declarar quién decide, qué se mide, qué se construye, cómo se
+adopta y cuál es el siguiente bucle de mejora. El gate nativo comprueba campos, IDs, dependencias,
+evidencia y referencias:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
+```
+
+**Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.** Una fila puede tener
+fuente y locator válidos y aun así interpretar mal el negocio; eso sigue siendo revisión humana.
 
 El cierre funcional reproducible de esas entradas usa el ledger nativo:
 
@@ -242,6 +259,7 @@ otro binario).
 | `verify-runtime-sync.mjs check` | El runtime instalado en `.vibe/vcp-runtime/` es, byte a byte, la superficie que copia el instalador desde este checkout: nombra los archivos que difieren, los que faltan y los que sobran (un gate borrado arriba que el proyecto sigue ejecutando). Sin runtime instalado sale `0`: un checkout fuente limpio es normal. | Detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea: dos copias idénticas de un gate roto pasan igual. Compara contenido, no permisos —el `+x` que el instalador pone sobre `scripts/*.sh` no se verifica— y sólo puede hablar donde el checkout fuente y el runtime conviven en la misma máquina. |
 | `verify-session-state.mjs check` | `.vibe/SESSION.md` sigue siendo retomable: ningún problema acumula tres intentos fallidos sin una decisión humana registrada, una interrupción declarada dice dónde retomar (`Fase`, `Tarea`, `Falta`), y toda comprobación que no se pudo hacer figura en `## No verificado` con la marca literal y su motivo. Las tres secciones son opcionales; sin ellas sale `0`. Sin `SESSION.md` escribe `VACÍO:` en vez de `OK:`, y con `--require-inputs` ese vacío pasa a rechazo. | Verifica que lo declarado sea coherente, no que sea verdad: una sesión que miente en su propio archivo pasa el gate. Tampoco mide cuota ni ejecuta red —no hay presupuestos ni topes por fase, a propósito— y sólo ve las tres secciones: un éxito afirmado en la prosa del resto del archivo le es invisible. |
 | `verify-phase-decisions.mjs check` | Ninguna fase cierra sin una elección registrada: una decisión por fase en `docs/phase-decisions.json`, en el orden que declara el propio `phase_order` del archivo (sin saltos hacia atrás y sin fases omitidas antes de una que ya cerró), con el menú completo que se mostró, una recomendación, una opción elegida **que estaba en ese menú**, su justificación, y una cadena de hashes con el mismo criterio que `verify-audit-chain.mjs`. Agregar una opción al menú después de elegir rompe el hash de esa decisión y la cadena hacia adelante. Una decisión reemplazada se marca `superseded` y no se borra. Sin archivo escribe `VACÍO:` en vez de `OK:` y sale `0`; con `--require-inputs` ese vacío pasa a rechazo. En el cierre final, `--require-complete` exige además una decisión vigente para **cada** fase declarada en `phase_order` (implica `--require-inputs`). | Demuestra que la decisión quedó registrada de forma coherente. No demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus consecuencias — sí detecta el caso concreto de un agente que fabrica el menú y la elección en el mismo aliento, exigiendo un piso de dos segundos entre `shown_at` y `timestamp`. **Un agente que espera igual pasa: detecta lo imposible, no lo mentiroso**: un agente puede registrar decisiones que nadie tomó y el gate las acepta. Hereda los límites de la cadena de auditoría —recortar las últimas decisiones, reescribir la última (que es la cabeza de la cadena) o recalcular la cadena entera sobre contenido falso pasan en verde—, y `phase_order` no está encadenado: agregar una fase futura al final es indetectable. |
+| `verify-phase-menu.mjs check` | Compara `docs/phase-decisions.json` con el plan canónico `docs/phase-plan.json`; exige el mismo orden exacto y una decisión vigente, con menú y elección, para cada fase. Usalo en el cierre, después del gate de decisiones. | Verifica el contrato y el orden registrados, no que el plan sea correcto ni que la elección haya ocurrido. |
 | `verify-empty-probe.mjs check` | Corre cada gate en una carpeta vacía y compara lo que dice contra lo que declara `contracts/empty-probe.json`. Un gate que escribe `OK:` ahí está afirmando haber verificado algo cuando no había nada que verificar. Cinco comportamientos posibles: `reject`, `usage`, `empty` (sale 0 y escribe `VACÍO:`), `self` (mira el propio checkout de VCP, no el proyecto) y `skip`; los dos últimos exigen motivo escrito. Un script `.mjs` de `scripts/` que no figure en el contrato es rechazo: agregar un gate obliga a declarar su comportamiento sin entradas. | Prueba **una sola** invocación por gate, la que declara el contrato: un subcomando distinto puede tener su propio verde vacío y la sonda no lo ve. Sólo prueba el caso extremo de la carpeta vacía, no un proyecto a medio llenar. Y `self` es una declaración humana, no una comprobación: escrita sobre un gate que sí mira el proyecto, el verde vacío vuelve a pasar. |
 | `verify-shell-coverage.mjs check` | Cuánto de cada script de shell llegan a ejecutar los escenarios declarados en `contracts/shell-coverage.json`. Se mide con el instrumento que trae el propio bash: `PS4` con `$LINENO` más `set -x`, sin dependencias. Rechaza si un script cae por debajo del piso declarado, y nombra las líneas que no se ejecutaron. Un script sin escenarios exige motivo escrito y se cuenta en la salida. | **Mide líneas ejecutadas, no ramas**: una línea `if` cuenta como cubierta apenas se evalúa, aunque su `else` no se haya probado nunca. Mide los escenarios declarados, así que un camino que nadie escribió no aparece: el número dice cuánto ejercitan esos escenarios, nunca cuánto del script es correcto. No mide PowerShell: `Set-PSDebug -Trace` no da número de línea de forma portable, así que ese lenguaje queda **declarado sin medición**, no medido en cero. |
 | `verify-evidence-trace.mjs` | `criteria`: cada `AC<n>` de `docs/spec.md` está nombrado por al menos una prueba real —el id como segmento separado por `·` de una llamada `test()`/`it()`, la misma convención que ya fija `verify-test-bindings.mjs`—. `claims`: cada `linked_requirement_id` y `linked_ac_id` del packet de la decisión Discovery vigente resuelve contra un identificador que la spec declara. En el cierre, `--require-links` exige además un packet no vacío y que cada claim tenga al menos uno de esos vínculos. | Para un criterio verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe: es trazabilidad, no suficiencia. Un id en un comentario no cuenta, pero un título que lo nombra y no lo prueba sí. Sin spec, sin criterios declarados o sin Discovery escribe `VACÍO:` en vez de `OK:` y sale `0`; con `--require-inputs` ese vacío pasa a rechazo. `--require-links` implica ese modo estricto y evita el verde de claims sin vínculo, pero no juzga su suficiencia semántica. |

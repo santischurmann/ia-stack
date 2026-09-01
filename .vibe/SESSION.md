@@ -437,7 +437,7 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 - **La guardia de alcance de cobertura frenó mi propio trabajo de B1** y la corrección la hizo más
   estricta: ahora mira trackeados **más** los sin trackear que `.gitignore` no excluye.
 
-## Retomar acá
+## Retomar acá (histórico de la sesión anterior)
 
 - **Fase:** Bloque B, ciclo 2 de 6. **Falta:** CAIO, Mapa de Bucle, PRD, TRIANGULATE como fase
   propia, Adopción y recurrencia, y el enforce de menú por fase (extender
@@ -456,3 +456,24 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 - **LESSONS.md no se tocó**: el protocolo exige confirmación humana explícita para escribir una
   lección, y no se pidió.
 - Nada se probó en Linux ni macOS.
+
+## Sesión 2026-09-01 — B2/B3 implementados
+
+- **B2 DONE:** seis artefactos de diagnóstico previo (CAIO, mapa de bucle, PRD, implementación,
+  adopción y recurrencia) tienen schemas, plantillas, gate nativo y pruebas unitarias/integración.
+  El gate exige `--require-inputs` antes de Spec y conserva el límite: verifica forma e invariantes,
+  nunca verdad semántica.
+- **B3 DONE:** `verify-phase-menu.mjs` compara el `phase_order` del registro contra
+  `docs/phase-plan.json` y exige cierre completo de cada fase del plan. La decisión sigue siendo
+  evidencia de registro, no prueba de voluntad humana.
+- **Documentación reconciliada:** B1 pasa a `done` en `docs/tasks.json`; `docs/spec.md`,
+  `docs/plan.md`, README, SKILL y CHANGELOG ya describen la secuencia actual.
+- **Runtime sincronizado:** 157 archivos fuente/runtime coinciden byte a byte; los nuevos gates
+  quedan incluidos en la copia instalable.
+
+## Retomar acá (estado actualizado)
+
+- **Fase:** Bloque B, ciclos B2/B3 implementados; el siguiente trabajo de producto requiere crear
+  diagnósticos reales para una feature concreta y registrar decisiones contra su plan canónico.
+- **No verificado:** la semántica de los diagnósticos, el consentimiento humano y cualquier fuente
+  externa siguen requiriendo revisión; no se presentan como cobertura automática.

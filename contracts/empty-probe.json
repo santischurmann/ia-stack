@@ -260,6 +260,25 @@
       "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de VCP siguen apuntando a pruebas que existen."
     },
     {
+      "script": "verify-product-diagnostics.mjs",
+      "args": [
+        "check",
+        "demo",
+        "--require-inputs"
+      ],
+      "expect": "reject"
+    },
+    {
+      "script": "verify-phase-menu.mjs",
+      "args": [
+        "check",
+        "docs/phase-decisions.json",
+        "--plan",
+        "docs/phase-plan.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-vcp-contract.mjs",
       "args": [
         "check"

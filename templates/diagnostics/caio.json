@@ -1,0 +1,12 @@
+{
+  "schema": "vcp.caio/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "process": { "name": "Proceso que se quiere mejorar", "owner": "Responsable actual", "scope": "Límite del proceso observado" },
+  "findings": {
+    "broken_process": [{ "id": "BP1", "status": "observed", "description": "Qué parte del proceso se rompe y qué efecto produce.", "evidence": [{ "source": "repo", "locator": "ruta:línea", "observation": "Qué se observó exactamente." }], "reason": "" }],
+    "information_loss": [{ "id": "IL1", "status": "hypothesis", "description": "Dónde podría perderse información.", "evidence": [], "reason": "Todavía falta medir el punto de pérdida." }],
+    "repeated_work": [{ "id": "RW1", "status": "hypothesis", "description": "Qué trabajo parece repetirse.", "evidence": [], "reason": "Todavía falta comparar dos recorridos reales." }],
+    "open_loops": [{ "id": "OL1", "status": "observed", "description": "Qué decisión o control queda sin cerrar.", "evidence": [{ "source": "session", "locator": "registro:línea", "observation": "El proceso termina sin dueño o señal." }], "reason": "" }]
+  }
+}

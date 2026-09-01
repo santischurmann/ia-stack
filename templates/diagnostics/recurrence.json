@@ -1,0 +1,13 @@
+{
+  "schema": "vcp.recurrence/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "first_loop_id": "loop-01",
+  "maintenance": "Qué mantiene vivo el primer bucle.",
+  "metric": "Métrica que se observa.",
+  "cadence": "Cadencia de medición y revisión.",
+  "review_owner": "Quién revisa la métrica.",
+  "escalation": "Qué ocurre si el umbral no se cumple.",
+  "next_process": "Siguiente proceso candidato a mejorar.",
+  "trigger": "Qué señal habilita abrir ese siguiente proceso."
+}

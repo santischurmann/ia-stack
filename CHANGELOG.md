@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Discovery ahora produce artefactos operativos verificables.** CAIO, mapa de bucle, PRD, plan de
+  implementación, adopción y recurrencia tienen plantillas y un gate nativo en
+  `verify-product-diagnostics.mjs`; se validan antes de Spec y sus límites semánticos quedan
+  explícitos.
+- **El menú por fase tiene un plan canónico.** `verify-phase-menu.mjs` compara el orden registrado
+  en `docs/phase-decisions.json` contra `docs/phase-plan.json` y exige una decisión vigente para
+  cada fase al cerrar. El registro sigue siendo evidencia de forma, no prueba de voluntad humana.
+
 - **El protocolo pregunta qué se quiere construir.** `PHASE 1.5 — INTAKE` es nueva: ocho preguntas
   —qué, para quién, qué problema, qué resultado operativo, qué restricciones, qué fuentes aporta el
   usuario, si hace falta un artefacto visual, y si se pide diagnóstico o implementación— escritas en

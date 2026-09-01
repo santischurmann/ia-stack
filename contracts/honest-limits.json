@@ -366,6 +366,12 @@
       "file": "README.md",
       "phrase": "no puede ver un supuesto escondido adentro del texto de una respuesta",
       "why": "El gate exige que los supuestos vivan en su lista propia, con id, separados de las respuestas. Eso hace visible al que se declara, no al que no. Quien escriba \"asumimos que hay Node\" adentro de la respuesta de restricciones pasa el gate igual, y esa es la manera mas facil de esquivarlo. Sin la frase, el verde se lee como \"los supuestos estan declarados\", cuando lo unico probado es que la lista existe y tiene forma."
+    },
+    {
+      "limit_id": "product-diagnostics-verify-shape-not-truth",
+      "file": "README.md",
+      "phrase": "Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.",
+      "why": "El gate puede verificar que CAIO, mapa de bucle, PRD y planes tengan campos, relaciones y evidencia con forma válida. No puede saber si el proceso descrito es realmente el negocio, si el resultado se conseguirá o si una fuente sostiene toda la conclusión."
     }
   ]
 }

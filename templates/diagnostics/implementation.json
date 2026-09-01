@@ -1,0 +1,8 @@
+{
+  "schema": "vcp.implementation-plan/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "order": [{ "id": "STEP1", "action": "Primera construcción", "depends_on": [], "validation": "Comando o evidencia que la valida", "access_needed": ["Acceso requerido o ninguno"] }],
+  "rollback": "Cómo deshacer sin perder datos ni dejar estado a medias.",
+  "release_gate": "Qué gates deben estar verdes antes de entregar."
+}

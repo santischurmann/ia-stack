@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-01
 **Spec:** [docs/spec.md](./spec.md)
-**Status:** en ejecución
+**Status:** completado y verificado
 
 ---
 
@@ -10,7 +10,9 @@
 
 | ID | Description | Writers | Depends on | ACs |
 |----|-------------|---------|------------|-----|
-| B1 | Fase de Intake: artefacto JSON y gate nativo | `scripts/verify-intake.mjs` (nuevo), `tests/verify-intake.test.mjs` (nuevo), `templates/intake.json` (nuevo), contratos, docs | — | AC1–AC6 |
+| B1 | Fase de Intake: artefacto JSON y gate nativo | `scripts/verify-intake.mjs`, `tests/verify-intake.test.mjs`, `templates/intake.json`, contratos, docs | — | AC1–AC6 |
+| B2 | Diagnóstico previo: CAIO, mapa de bucle, PRD y planes operativos | `scripts/verify-product-diagnostics.mjs`, `tests/verify-product-diagnostics.test.mjs`, `templates/diagnostics/*`, contratos, docs | B1 | seis artefactos de Discovery estructuralmente válidos |
+| B3 | Orden canónico y menú completo por fase | `scripts/verify-phase-menu.mjs`, `tests/verify-phase-menu.test.mjs`, `templates/phase-plan.json`, contratos, docs | B1 | plan y decisiones tienen el mismo orden y todas las fases cierran |
 
 Una sola tarea a propósito. El Intake es la primera de seis fases que el encargo pide; construirlas
 juntas produciría un diff que nadie puede revisar y seis gates que nacen sin haberse usado nunca.

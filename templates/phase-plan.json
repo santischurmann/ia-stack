@@ -1,0 +1,5 @@
+{
+  "schema": "vcp.phase-plan/1",
+  "feature": "replace-me",
+  "phase_order": ["intake", "research", "diagnostics", "spec", "plan", "build", "verify", "security", "deploy", "reflect"]
+}

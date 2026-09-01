@@ -1,0 +1,8 @@
+{
+  "schema": "vcp.loop-map/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "current": { "input": "Qué entra hoy", "measure": "Qué se mide hoy", "decision_owner": "Quién decide hoy", "action": "Qué acción se ejecuta hoy", "control": "Cómo se controla hoy", "learning": "Cómo aprende hoy" },
+  "target": { "input": "Qué debería entrar", "measure": "Qué se medirá", "decision_owner": "Quién decidirá", "action": "Qué acción se ejecutará", "control": "Qué control se aplicará", "learning": "Cómo se incorporará el aprendizaje" },
+  "first_loop": { "id": "loop-01", "owner": "Dueño del primer bucle", "metric": "Métrica observable", "cadence": "Cadencia de revisión", "success_threshold": "Umbral que cierra el bucle", "next_candidate": "Siguiente proceso candidato" }
+}

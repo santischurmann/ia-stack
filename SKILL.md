@@ -277,6 +277,19 @@ antes de comprometer tareas de implementación.
    mantenimiento y siguiente proceso candidato. Entregar software sin estas condiciones es un
    riesgo declarado, no éxito.
 
+Los seis resultados durables de esta fase viven en
+`docs/discovery/<feature-slug>/diagnostics/`: `caio.json`, `loop-map.json`, `prd.json`,
+`implementation.json`, `adoption.json` y `recurrence.json`. Se validan juntos antes de abrir Spec:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
+```
+
+El gate exige forma, IDs únicos, dependencias, relaciones y evidencia declarada; **Los diagnósticos
+comprueban forma e invariantes, nunca verdad semántica.** La lectura del negocio, la suficiencia de
+las fuentes y la decisión de construir siguen siendo responsabilidad humana y se registran en el
+packet de Discovery.
+
 Guardar cada decisión en `docs/discovery/<feature-slug>/runs/run-NNN/decisions/dNNN.json` y, si
 termina `completed`, su snapshot de claims en
 `docs/discovery/<feature-slug>/runs/run-NNN/packets/dNNN.json`. No editar una decisión cerrada:
@@ -1262,6 +1275,17 @@ Gate de cierre: agregá `--require-complete`. En ese modo, cada identificador de
 que tener una decisión vigente (`decided`) con su menú, recomendación, elección y motivo; una fase
 omitida no puede esconderse detrás de un verde parcial. `--require-complete` implica
 `--require-inputs`, por lo que un archivo ausente o vacío rechaza.
+
+Para que el propio registro no pueda inventar su orden, copiá `templates/phase-plan.json` a
+`docs/phase-plan.json` y mantené allí el plan canónico de la feature. En el cierre corré además:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json
+```
+
+Este segundo gate exige que el orden del registro coincida exactamente con el plan y que todas las
+fases del plan tengan menú, recomendación, elección y motivo. El plan también es una decisión de
+producto: el gate verifica consistencia, no que el orden elegido sea el correcto.
 
 ---
 

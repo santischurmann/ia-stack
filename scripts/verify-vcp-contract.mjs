@@ -22,6 +22,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
   ['README.md', /Research: investigar antes de especificar/u, 'research-first user workflow'],
+  ['README.md', /verify-product-diagnostics\.mjs/u, 'six product-discovery diagnostics gate'],
+  ['SKILL.md', /verify-product-diagnostics\.mjs check/u, 'six product-discovery diagnostics gate'],
+  ['README.md', /Los diagnósticos comprueban forma e invariantes, nunca verdad semántica\./u, 'diagnostics honest semantic limit'],
   ['README.md', /build-complete-review-index\.mjs/u, 'complete static research review index'],
   ['README.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
@@ -102,6 +105,10 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json[\s\S]*--require-complete/u, 'complete phase-decision gate at final close'],
   ['SKILL.md', /Ninguna fase cierra sin una elección registrada/u, 'no phase closes without a recorded human choice'],
   ['README.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
+  ['SKILL.md', /verify-phase-menu\.mjs check docs\/phase-decisions\.json --plan docs\/phase-plan\.json/u, 'canonical phase-plan integration gate'],
+  ['README.md', /verify-phase-menu\.mjs check/u, 'canonical phase-plan integration gate'],
+  ['templates/diagnostics/caio.json', /vcp\.caio\/1/u, 'CAIO diagnostic template schema'],
+  ['templates/phase-plan.json', /vcp\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
   // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
   ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],

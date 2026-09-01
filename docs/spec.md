@@ -1,6 +1,6 @@
 # Spec: intake-de-producto
 
-**Fecha:** 2026-09-01 · **Estado:** en construcción
+**Fecha:** 2026-09-01 · **Estado:** implementada y verificada
 La spec anterior (`integridad-verificable`, cerrada) se recupera con `git show af55a45:docs/spec.md`.
 
 ## Problem / Problema
@@ -27,12 +27,12 @@ después para juzgar si lo construido responde a lo que se pidió.
 
 ## Acceptance Criteria / Criterios de aceptación
 
-- [ ] **AC1:** GIVEN un intake con las ocho respuestas completas, WHEN corre el gate, THEN sale 0 y dice cuántas respuestas, supuestos, riesgos y preguntas registró.
-- [ ] **AC2:** GIVEN un intake al que le falta una respuesta, o la trae vacía o demasiado corta para ser una respuesta, WHEN corre el gate, THEN rechaza nombrando cuál.
-- [ ] **AC3:** GIVEN un intake con una pregunta abierta marcada bloqueante, WHEN corre el gate, THEN rechaza nombrándola: una decisión obligatoria pendiente detiene el ciclo.
-- [ ] **AC4:** GIVEN un intake que esconde un supuesto adentro de una respuesta en vez de declararlo aparte, WHEN corre el gate, THEN el gate NO lo detecta, y esa incapacidad queda escrita como límite honesto verificado por contrato.
-- [ ] **AC5:** GIVEN un proyecto sin ningún intake, WHEN corre el gate, THEN informa VACÍO y sale 0: un proyecto que todavía no arrancó no incumple nada.
-- [ ] **AC6:** THE SYSTEM SHALL rechazar un archivo cuyo esquema declarado no sea el esperado, antes de mirar cualquier otro campo.
+- [x] **AC1:** GIVEN un intake con las ocho respuestas completas, WHEN corre el gate, THEN sale 0 y dice cuántas respuestas, supuestos, riesgos y preguntas registró.
+- [x] **AC2:** GIVEN un intake al que le falta una respuesta, o la trae vacía o demasiado corta para ser una respuesta, WHEN corre el gate, THEN rechaza nombrando cuál.
+- [x] **AC3:** GIVEN un intake con una pregunta abierta marcada bloqueante, WHEN corre el gate, THEN rechaza nombrándola: una decisión obligatoria pendiente detiene el ciclo.
+- [x] **AC4:** GIVEN un intake que esconde un supuesto adentro de una respuesta en vez de declararlo aparte, WHEN corre el gate, THEN el gate NO lo detecta, y esa incapacidad queda escrita como límite honesto verificado por contrato.
+- [x] **AC5:** GIVEN un proyecto sin ningún intake, WHEN corre el gate, THEN informa VACÍO y sale 0: un proyecto que todavía no arrancó no incumple nada.
+- [x] **AC6:** THE SYSTEM SHALL rechazar un archivo cuyo esquema declarado no sea el esperado, antes de mirar cualquier otro campo.
 
 ## Constraints / Restricciones
 
@@ -55,4 +55,5 @@ Node nativo, `node:test`. Reusa el patrón de contrato y límite honesto de
 
 Gate escrito con prueba roja previa, cobertura completa de sus funciones y ramas, fila en
 `empty-probe.json`, límite honesto registrado, `SKILL.md` y `README.md` actualizados, y suite en
-verde diez veces seguidas.
+verde. El ciclo B1 quedó cerrado; los diagnósticos de producto y el plan canónico de fases se
+incorporan como los ciclos B2 y B3, cada uno con su gate, plantilla y pruebas propias.
