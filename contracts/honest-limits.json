@@ -342,6 +342,24 @@
       "file": "README.md",
       "phrase": "barrer no es leer",
       "why": "El barrido toco el 100% de los 14421 archivos legibles con seis expresiones regulares, contra el 2,05% que leyo un agente. Es una mejora enorme de denominador y una clase de evidencia distinta: un cero significa que el patron no encontro nada, no que la idea no este en el corpus. Sin esta frase, \"100% barrido\" se confunde con \"100% leido\", que es exactamente el error de contabilidad que este informe ya cometio una vez."
+    },
+    {
+      "limit_id": "coverage-measures-execution-not-assertion",
+      "file": "README.md",
+      "phrase": "Mide ejecución, no aserción",
+      "why": "El gate comprueba que algún proceso haya ejecutado cada función y cada rama, no que alguna prueba afirme algo sobre ellas. Sin la frase, un verde de cobertura se lee como \"esto está verificado\", cuando lo único probado es que el código corrió: una rama recorrida por una prueba que no la examina cuenta igual que una verificada."
+    },
+    {
+      "limit_id": "research-verifiers-are-declared-debt",
+      "file": "README.md",
+      "phrase": "es deuda escrita, no cobertura",
+      "why": "Cuatro verificadores de research/ que el protocolo manda correr en su fase de verificación no tienen prueba propia. El contrato de alcance los excluye de la medición con su motivo, y eso podría leerse como que están cubiertos de otro modo. No lo están: la exclusión declara una deuda, no una garantía."
+    },
+    {
+      "limit_id": "ten-green-runs-are-not-determinism",
+      "file": "README.md",
+      "phrase": "no demuestran que la suite sea determinista",
+      "why": "El defecto que hacía fallar la suite 2 de cada 5 corridas se cerró y se comprobó con diez corridas seguidas en verde. Diez corridas son la ausencia de un contraejemplo en diez intentos, no una demostración. Sin la frase, el número se lee como prueba y nadie vuelve a mirar si reaparece la intermitencia."
     }
   ]
 }

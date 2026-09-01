@@ -1,0 +1,211 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "bloque-a-suite-clon-y-cobertura",
+  "task": "A1-A4 + F13/F14/F15 - cerrar la intermitencia de la suite, dejar verde un clon limpio, y portar el gate de cobertura que si ve los huecos",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".gitattributes",
+      ".vibe/AUDIT.md",
+      ".vibe/DECISIONS.md",
+      ".vibe/RETRO.md",
+      ".vibe/SESSION.md",
+      ".vibe/receipts/bloque-a-suite-clon-y-cobertura-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "contracts/coverage-scope.json",
+      "contracts/honest-limits.json",
+      "research/require-artifact.mjs",
+      "research/verify-full-evidence-pass.mjs",
+      "research/verify-semantic-deep-evidence.mjs",
+      "research/verify-semantic-functional-ledger.mjs",
+      "research/verify-semantic-review-index.mjs",
+      "scripts/verify-discovery-core.mjs",
+      "scripts/verify-research-citations.mjs",
+      "scripts/verify-vcp-coverage.mjs",
+      "tests/coverage-scope.test.mjs",
+      "tests/protocolo-e2e.test.mjs",
+      "tests/require-artifact.test.mjs",
+      "tests/spawn-budget.mjs",
+      "tests/spawn-budget.test.mjs",
+      "tests/tracked-bytes.test.mjs",
+      "tests/verify-discovery-views.test.mjs",
+      "tests/verify-evidence-runner.test.mjs",
+      "tests/verify-graphify-manifest.test.mjs",
+      "tests/verify-receipt-gate.test.mjs",
+      "tests/verify-spec-wordcap.test.mjs",
+      "tests/verify-vcp-coverage-e2e.test.mjs",
+      "tests/verify-vcp-coverage.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "La suite deja de responder distinto sobre el mismo arbol. Antes: 2 de 5 corridas de node --test --test-concurrency=32 salian rojas, siempre en tests/verify-evidence-runner.test.mjs, porque una peticion de evidencia tenia 1000 ms de presupuesto para lanzar un proceso real. Medicion propia con 30 muestras: con 32 procesos compitiendo el spawn llega a 4895 ms y el 13 por ciento pasa de 1000 ms; sin carga el peor caso es 104 ms. Ahora el presupuesto es 30000 ms, seis veces el peor caso medido, y vive en tests/spawn-budget.mjs con la medicion escrita al lado.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/spawn-budget.test.mjs",
+      "test_hash_sha256": "1a5721757bd4808979ce284ad69aab6a1be40f3d590b8971b5e4fcf2191d21f8",
+      "command": "node --test --test-concurrency=32",
+      "result": "10 de 10 corridas consecutivas en verde, 811 pruebas cada una. La guardia barre los archivos de prueba descubiertos al momento, no una lista fija: en una regresion provocada acuso las dos violaciones, incluida una en un archivo que una lista fija no habria mirado."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Un clon limpio del repositorio sale verde en Windows. Antes no: .gitattributes solo pineaba *.sh, asi que 215 de 229 archivos trackeados llegaban CRLF y la cadena de hashes de Discovery se rompia. El mismo commit daba distintos bytes: d002.json era abre-llave-LF con sha256 a3260e9f en el arbol del autor y abre-llave-CRLF con ef3d2077 en el clon. verify-discovery-core y verify-discovery-views salian en rojo y dos pruebas de verify-discovery-sources fallaban.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/tracked-bytes.test.mjs",
+      "test_hash_sha256": "2caf354d191ad105ec4a756583efdd0800568b20aa5e91ebdddfd743e87e6695",
+      "command": "node --test tests/tracked-bytes.test.mjs",
+      "result": "5 de 5 en verde. La prueba fuerza core.autocrlf=true en un repositorio de juguete, asi que reproduce el defecto en cualquier plataforma y no solo donde se descubrio. Verificado ademas de punta a punta: repositorio real de 232 archivos, clonado con autocrlf, suite completa en 782 tests con 781 pass, 0 fail y 1 skipped declarado."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "El gate de cobertura nombra archivo y linea de cada funcion o rama que ningun proceso ejecuto, en vez de informar un porcentaje que sale de fusionar cientos de procesos y cuyo merge depende del orden de lectura. Y mide el proyecto que se le pasa: antes llamaba a run() sin argumentos, asi que ignoraba su propio parametro cwd al lanzar la suite, inventariaba un arbol y media otro, y por eso sus pruebas nunca pudieron ejercitarlo de punta a punta.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-vcp-coverage-e2e.test.mjs",
+      "test_hash_sha256": "9289077f6cfbfcb0143edaeee3725151b698ef303d668b5d090a6b8bcbc0aa5a",
+      "command": "node --test tests/verify-vcp-coverage-e2e.test.mjs",
+      "result": "2 de 2 en verde, en 138 ms contra los 140 s que tardaba midiendo el proyecto equivocado. Contra el gate anterior las dos fallaban con assertion real, no con un error de carga ni un is not a function."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "Los 10 huecos que el metodo nuevo destapo quedan cerrados con prueba propia. Ninguno era un if sin probar: todos eran respaldos de || y de ternarios. El texto que verify-receipt muestra cuando git no devuelve firmante, el codigo generico de verify-discovery-views ante un error sin code, el camino con que verify-spec-wordcap rechaza por calidad desde la CLI, la rama de contradicciones de verify-graphify-manifest, y cuatro que introdujo el propio port.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-vcp-coverage.test.mjs",
+      "test_hash_sha256": "5b78610c571edd31181f31f4ba1e60023aaca5e7add7a4fe9b7dc0f2824047da",
+      "command": "node scripts/verify-vcp-coverage.mjs",
+      "result": "OK: los 30 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. El mismo gate, antes de cerrarlos, los nombraba uno por uno con archivo y linea."
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "El denominador de la cobertura esta declarado y no puede crecer en silencio. contracts/coverage-scope.json dice que se mide scripts/ y por que no se miden tests/ ni research/, y nombra como deuda escrita que cuatro verificadores de research/ que el protocolo manda correr no tienen prueba propia.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/coverage-scope.test.mjs",
+      "test_hash_sha256": "e4ffa27ddcaa0e780189bad0987972e926c4435365d9a728fb085451756be469",
+      "command": "node --test tests/coverage-scope.test.mjs",
+      "result": "4 de 4 en verde. La guardia rechaza un directorio con codigo Node que el contrato no mencione, una exclusion que declare deuda sin decir cual, y que el inventario del gate se separe de lo que el contrato declara medido."
+    },
+    {
+      "ac_id": "AC6",
+      "scenario": "Los verificadores de research rechazan en vez de reventar cuando falta un expediente que .gitignore deja afuera a proposito. Sobre un clon limpio, tres de los cuatro salian con un stack trace de node:fs, asi que quien lo leyera no podia distinguir falta el insumo de el gate esta roto.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/require-artifact.test.mjs",
+      "test_hash_sha256": "89927b3e12c8aa85fe2dee99eef38d3b76c1e276ed00a6577aea5ca6d20e990a",
+      "command": "node --test tests/require-artifact.test.mjs",
+      "result": "5 de 5 en verde. Verificado sobre el clon: los cuatro salen exit 1 con REJECTED RESEARCH_ARTIFACT_MISSING nombrando el archivo que falta y el comando exacto que lo regenera."
+    },
+    {
+      "ac_id": "AC7",
+      "scenario": "Ningun archivo trackeado esconde codigo detras de un byte NUL crudo. grep -n CONTROL_CHARACTERS scripts/verify-discovery-core.mjs respondia Binary file matches y escondia la linea, asi que buscar en el codigo saltaba en silencio dos gates enteros. Los tres NUL eran legitimos en su funcion, asi que se escriben, no se eliminan.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/tracked-bytes.test.mjs",
+      "test_hash_sha256": "2caf354d191ad105ec4a756583efdd0800568b20aa5e91ebdddfd743e87e6695",
+      "command": "grep -n CONTROL_CHARACTERS scripts/verify-discovery-core.mjs",
+      "result": "Devuelve la linea 204. Equivalencia comprobada sobre la clase de control con NUL, 0x1f, DEL y texto normal: true,true,true,false. Y 144 de 144 pruebas de esos dos gates en verde, con ambos gates en exit 0."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Se toco el gate de cobertura, que vigila a todos los demas: un verde suyo se propaga. Y se cambio .gitattributes, que reescribe finales de linea en los arboles de trabajo de otras maquinas Windows en su proximo checkout.",
+      "mitigation": "El gate nuevo llego con 29 pruebas propias y un E2E que comprueba sus dos mitades sobre un proyecto real: verde con la rama cubierta, y el nombre exacto archivo:linea cuando falta. Para .gitattributes se comprobo antes con git ls-files --eol que los 7 archivos hasheados ya estaban i/lf w/lf, asi que los hashes guardados se calcularon sobre LF y el cambio no rompe la cadena; git status siguio sin renormalizacion masiva."
+    },
+    "readability": {
+      "finding": "El mecanismo por el que un porcentaje fusionado puede dar 100 por ciento sobre una rama que nadie corrio, que V8 solo emite un sub-rango cuando su cuenta difiere de la del bloque que lo envuelve, no es evidente. Sin escribirlo, el proximo lector no entiende por que no alcanza con leer los rangos explicitos.",
+      "mitigation": "Esta en la cabecera del gate, en el comentario de innermostCount y en la prueba de FALSIFICACION que lo reconstruye. La cabecera ademas fecha por que este metodo estuvo 37 commits sin integrar y que medicion lo devolvio."
+    },
+    "reliability": {
+      "finding": "Tres de los defectos serios no eran visibles desde el checkout: la Fase 0 corrio 20 gates en verde sobre el arbol de trabajo y no vio ninguno. Y una guardia escrita en esta misma sesion salio verde vacio en su primer intento, por un escape degradado dentro de un template literal.",
+      "mitigation": "Cada defecto se verifico sobre un clon real, no sobre el checkout. Y cada guardia nueva llego con su prueba de FALSIFICACION: fueron ellas, y no la revision a ojo, las que delataron el verde vacio. La prueba de finales de linea fuerza core.autocrlf=true, asi que no depende de la plataforma donde corra."
+    },
+    "resilience": {
+      "finding": "La huella de los scripts podia lanzar ENOENT sin manejo, que es justo el caso que existe para detectar -- un script que desaparece a mitad de la medicion -- y se tomaba despues de crear el directorio temporal, asi que al lanzar lo dejaba huerfano en el disco del usuario.",
+      "mitigation": "Ahora se toma antes de crear nada y un fallo sale como rechazo con su codigo propio. Dos pruebas nuevas lo fijan: una comprueba que no se creo directorio ni se lanzo la suite, la otra que un script que desaparece a mitad se reporta como arbol movido."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "corridas de la suite completa en verde sobre 10 intentos",
+      "measured": true,
+      "before": 6,
+      "after": 10
+    },
+    {
+      "metric": "funciones o ramas de scripts/ que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 10,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 772,
+      "after": 811
+    },
+    {
+      "metric": "gates que fallan en un clon limpio en Windows",
+      "measured": true,
+      "before": 2,
+      "after": 0
+    },
+    {
+      "metric": "verificadores de research que revientan con stack trace en un clon",
+      "measured": true,
+      "before": 3,
+      "after": 0
+    },
+    {
+      "metric": "archivos trackeados que git clasifica binarios por un NUL crudo",
+      "measured": true,
+      "before": 2,
+      "after": 0
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 57,
+      "after": 60
+    },
+    {
+      "metric": "cuantos commits historicos publicaron un 100 por ciento de cobertura que tapaba huecos",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Haria falta correr el metodo nuevo sobre cada commit del historial. Se midio sobre af55a45, el commit publicado; no se fecho desde cuando venia pasando."
+    },
+    {
+      "metric": "cuantos huecos de cobertura quedan escondidos por la misma causa en research/",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "research/ esta fuera del alcance medido y asi se declara en contracts/coverage-scope.json. No se midio: se escribio como deuda."
+    }
+  ],
+  "reproduction": "F1: correr cinco veces node --test --test-concurrency=32 sobre af55a45 dio 2 rojas, en tests/verify-evidence-runner.test.mjs:89 (failed distinto de passed) y :179 (EVIDENCE_RECORD_INVALID). Latencia: sonda propia de 30 muestras cronometrando spawnSync de node -e process.exit(0) con 32 procesos de carga dio p50 43.9ms, p90 2631.5ms, max 4895.4ms y 4 de 30 por encima de 1000ms; sin carga el max fue 103.7ms y 0 de 30. F13: clonar af55a45 y correr verify-discovery-core check --feature integridad-verificable dio DISCOVERY_PREDECESSOR_HASH_MISMATCH en d002; el sha256 de d002.json era a3260e9f en el arbol de trabajo y ef3d2077 en el clon, mismo commit. A2: el metodo de suma por proceso corrido contra el clon de af55a45 sin modificarlo encontro 7 huecos, mientras el gate de main sobre el mismo arbol decia 30 de 30 a 100 por ciento. F14: grep -n CONTROL_CHARACTERS sobre scripts/verify-discovery-core.mjs respondia Binary file matches. F15: los cuatro verificadores de research corridos en el clon dieron tres con stack trace de node:fs. Verificacion posterior: 19 gates en verde, 10 corridas de la suite en verde con 811 pruebas cada una, y un clon del arbol final con la suite completa en 782 pruebas y 0 fallas.",
+  "not_reviewed": "La cobertura mide EJECUCION, no asercion: una rama corrida por una prueba que no afirma nada cuenta igual que una verificada, y eso no cambio. Diez corridas en verde no demuestran determinismo, son la ausencia de un contraejemplo en diez intentos; lo estructural es que la suma sobre procesos no depende del orden y que el presupuesto supera seis veces la latencia peor medida. Los 10 huecos se cerraron con pruebas que ejercitan esos caminos, pero no se demuestra que no queden otros defectos ahi. La comparacion entre los huecos heredados y los que declaraba el receipt de 2026-08-29 es por archivo y linea, no por camino de ejecucion. El arreglo de finales de linea se probo forzando core.autocrlf=true, que es el mecanismo, pero se corrio solo en Windows: no se verifico en Linux ni macOS. El resto de research/ sigue sin prueba y esta declarado como deuda, no resuelto. Las seis fases nuevas del protocolo que pedia el encargo -- Intake, CAIO, Mapa de Bucle, PRD, TRIANGULATE y Adopcion -- no se construyeron en este bloque y siguen existiendo solo como prosa en SKILL.md. Y el trabajo del worktree residual se porto, pero no se audito linea por linea todo el resto de ese worktree: se preservo entero en _backups.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10 sobre el arbol final) -> 10 de 10 exit 0, tests 811, pass 811, fail 0, skipped 0 en cada una",
+    "node --test --test-concurrency=32 (x5 sobre af55a45, antes del arreglo) -> 2 de 5 exit 1: verify-evidence-runner.test.mjs:89 (failed distinto de passed) y :179 (EVIDENCE_RECORD_INVALID)",
+    "sonda de latencia, 30 muestras, carga 32 procesos -> p50 43.9ms, p90 2631.5ms, max 4895.4ms, 4 de 30 por encima de 1000ms; carga 0 -> max 103.7ms, 0 de 30",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 30 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de cerrar los huecos) -> REJECTED: hay 10 funcion(es)/rama(s) que ningun proceso ejecuto: verify-discovery-views.mjs:176; verify-graphify-manifest.mjs:141; verify-receipt.mjs:204; verify-receipt.mjs:209 x2; verify-spec-wordcap.mjs:99; verify-vcp-coverage.mjs:185, :186, :214 x2",
+    "el metodo de suma por proceso contra un clon limpio de af55a45, sin modificarlo -> ok=false, 7 huecos, mientras el gate de main sobre el mismo arbol decia 30/30 a 100 por ciento",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 100 user-visible protocol contract checks pass; 60 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 29 gate(s), 2 que verifican el propio checkout, 1 excluido con motivo escrito",
+    "node scripts/verify-runtime-sync.mjs check -> OK: the installed runtime matches this source checkout in all 143 file(s)",
+    "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: scanned 29 live changed file(s); no blocking Critical/High findings, 0 accepted",
+    "node scripts/verify-audit-chain.mjs check .vibe/AUDIT.md -> OK: intact audit chain over 67 chained line(s)",
+    "node scripts/verify-discovery-core.mjs check --feature integridad-verificable -> OK (antes del arreglo, en un clon: REJECTED DISCOVERY_PREDECESSOR_HASH_MISMATCH d002)",
+    "sha256 de docs/discovery/.../d002.json -> a3260e9fb1def6d4 en el arbol de trabajo contra ef3d20779d3d52ab en un clon del mismo commit",
+    "git ls-files --eol -- docs/discovery -> los 7 archivos hasheados en i/lf w/lf antes del cambio, asi que los hashes guardados se calcularon sobre LF",
+    "clon limpio del arbol final, suite completa -> exit 0, tests 811, pass 810, fail 0, skipped 1 (la de dogfooding de Graphify, declarada)",
+    "clon limpio del arbol final, 7 gates -> todos exit 0; verify-graphify-manifest y verify-semantic-review-index rechazan con mensaje accionable por falta de insumos locales",
+    "instalacion limpia en un proyecto vacio -> 143 archivos de runtime, .gitignore actualizado, y un gate corriendo desde el runtime instalado con exit 0",
+    "grep -n CONTROL_CHARACTERS scripts/verify-discovery-core.mjs -> devuelve la linea 204 (antes: Binary file matches)",
+    "los cuatro verificadores de research en un clon -> los cuatro exit 1 con REJECTED RESEARCH_ARTIFACT_MISSING nombrando archivo y comando (antes: tres con stack trace de node:fs)",
+    "node --test tests/spawn-budget.test.mjs, tracked-bytes, coverage-scope, require-artifact, verify-vcp-coverage-e2e -> 5+5+4+5+2 en verde",
+    "git diff --check -> sin problemas de whitespace",
+    "barrido independiente de secretos sobre los 29 archivos tocados -> 0 valores reales, sin .env/.pem/.key"
+  ],
+  "git_head": "af55a45f7306127178e476e6dfc01cb729000d15",
+  "tree_fingerprint": "681452a7ed4c8a40088482bd18aeeb54c57d4b6dc356f5b57055f33af14bd381",
+  "terminal_state": "approved"
+}

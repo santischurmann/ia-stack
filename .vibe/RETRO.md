@@ -60,3 +60,31 @@ del cierre, no después.
   fuera del archivo, y el research de 14 fuentes confirmó que **no existe una portable**.
 - `scripts/verify-security-baseline.mjs` — aceptar un hallazgo sigue cubriendo archivo+categoría.
   El research propone identidad por símbolo; sin implementar, y hoy hay 0 aceptaciones.
+
+---
+
+## [2026-09-01] bloque-a-suite-clon-y-cobertura
+
+**Shipped:** la suite dejó de ser intermitente, un clon limpio quedó verde en Windows, y el gate de
+cobertura pasó de informar un porcentaje fusionado a nombrar archivo y línea de cada rama que nadie
+ejecutó — lo que destapó 10 huecos que el 100 % anterior tapaba.
+
+**Plan vs actual:** el plan aprobado tenía cuatro ítems en el Bloque A (A1–A4). Salieron seis: F13
+(CRLF), F14 (NUL crudos) y F15 (verificadores de research que reventaban) aparecieron *haciendo* el
+trabajo, no leyéndolo. Ninguno estaba en el diagnóstico de Fase 0, que fue read-only.
+
+**Friction:**
+- Tres defectos serios sólo eran visibles desde afuera del checkout. Fase 0 corrió 20 gates en verde
+  sobre el árbol de trabajo y no vio ninguno; el primer clon los mostró en minutos.
+- El escáner de mi propia guardia salió verde vacío en el primer intento —un `\s` degradado en un
+  template literal— y lo delataron sus pruebas de FALSIFICACIÓN, no yo.
+
+**Keep:** escribir la prueba de falsificación *junto* con la guardia, no después. Fue lo único que
+distinguió "no hay violaciones" de "el escáner no mira nada", y pasó dos veces en la misma sesión.
+
+**Change:** clonar el repositorio al empezar, no al verificar. Un preflight que sólo mira el árbol de
+trabajo mide la máquina del autor, no el proyecto. Los tres defectos que más costaron eran del clon.
+
+**Open:** el resto de `research/` sigue sin prueba (declarado en `contracts/coverage-scope.json`).
+Y las 6 fases nuevas del protocolo —Intake, CAIO, Mapa de Bucle, PRD, TRIANGULATE, Adopción— siguen
+existiendo sólo como prosa en `SKILL.md:226-235`, que era el objetivo central del encargo.

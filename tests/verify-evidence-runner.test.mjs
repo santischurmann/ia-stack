@@ -7,6 +7,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { REAL_SPAWN_TIMEOUT_MS } from './spawn-budget.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-evidence-runner.mjs');
 const { MAX_TAIL, REQUEST_SCHEMA, REQUIRE_COMPLETE_FLAG, SCHEMA, USAGE, main, runEvidence, validateRecord, validateRequest } = await import(pathToFileURL(script).href);
@@ -14,7 +16,7 @@ const { MAX_TAIL, REQUEST_SCHEMA, REQUIRE_COMPLETE_FLAG, SCHEMA, USAGE, main, ru
 const sha = (value) => createHash('sha256').update(value, 'utf8').digest('hex');
 const commandHash = (command) => sha(JSON.stringify(command));
 function request(overrides = {}) {
-  return { schema: REQUEST_SCHEMA, command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: 1000, skip_reason: null, ...overrides };
+  return { schema: REQUEST_SCHEMA, command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null, ...overrides };
 }
 function record(overrides = {}) {
   const command = ['node', '-e', 'process.exit(0)'];

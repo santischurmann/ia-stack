@@ -102,3 +102,23 @@ test('quality CLI handles invalid usage, unreadable input and over-cap before qu
   assert.equal(main(['check', 'spec.md', QUALITY_FLAG], { readFile: () => Array.from({ length: WORD_CAP + 1 }, () => 'x').join(' '), writeError: (line) => errors.push(line) }), 1);
   assert.ok(errors.length >= 3);
 });
+
+test('FALSIFICACIÓN · con --quality, una spec bajo el tope pero mal formada se rechaza por la CLI', () => {
+  // El camino de rechazo por calidad dentro de `main` no lo ejercitaba ninguna prueba: sólo se
+  // probaba `checkSpecQuality` por separado. Un gate cuyo camino de rechazo nunca se ejecutó es un
+  // gate del que no se sabe si rechaza. Medido el 2026-09-01: verify-spec-wordcap.mjs:99 no la
+  // ejecutaba ningún proceso de la suite.
+  const errors = [];
+  const rota = VALID_SPEC.replace('## Constraints / Restricciones', '## Restricciones que no son la sección pedida');
+  const code = main(['check', 'docs/spec.md', QUALITY_FLAG], {
+    readFile: () => rota,
+    write: () => {},
+    writeError: (line) => errors.push(line),
+  });
+  assert.equal(code, 1, 'aceptó una spec sin una sección obligatoria');
+  assert.ok(errors.some((line) => line.includes('quality: missing required section: Constraints / Restricciones')), errors.join(' || '));
+  // Y la contraprueba: la misma spec sin tocar, con la misma bandera, sale en verde.
+  const salida = [];
+  assert.equal(main(['check', 'docs/spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, write: (l) => salida.push(l), writeError: (l) => errors.push(l) }), 0, errors.join(' || '));
+  assert.ok(salida.at(-1).includes('quality shape valid'));
+});

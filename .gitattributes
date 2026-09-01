@@ -1,7 +1,14 @@
-# Keep shell scripts with LF (required for bash on Linux/Mac)
+# Todo el arbol se materializa en LF. Los gates hashean bytes de archivo -- la cadena de decisiones
+# de Discovery guarda el hash del predecesor, asi que los mismos bytes tienen que llegar a toda
+# maquina -- y verify-discovery-views exige LF de forma explicita.
+#
+# Sin esta regla, `text=auto` a secas deja que core.autocrlf decida: medido el 2026-09-01, 215 de
+# 229 archivos trackeados llegaban CRLF a un clon en Windows, y ahi verify-discovery-core salia
+# DISCOVERY_PREDECESSOR_HASH_MISMATCH y verify-discovery-views DISCOVERY_VIEW_FORMAT_INVALID, con
+# dos pruebas de verify-discovery-sources.test.mjs en rojo. Mismo commit, distintos bytes.
+# Lo fija tests/line-endings.test.mjs, que reproduce el checkout con core.autocrlf=true forzado.
+* text=auto eol=lf
+
+# Shell necesita LF para bash en Linux/Mac; PowerShell necesita CRLF.
 *.sh text eol=lf
 *.ps1 text eol=crlf
-
-# Markdown and JSON — auto
-*.md text=auto
-*.json text=auto

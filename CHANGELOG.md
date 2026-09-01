@@ -7,6 +7,54 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La suite dejó de ser intermitente.** `node --test --test-concurrency=32` salía rojo 2 de cada 5
+  corridas, siempre en `tests/verify-evidence-runner.test.mjs`. La causa no era el runner: era un
+  presupuesto de 1000 ms para una petición de evidencia que lanza un proceso real. Medición propia,
+  30 muestras por tanda: sin carga el spawn tarda 34 ms de mediana y 104 ms el peor caso; con 32
+  procesos compitiendo, 2631 ms en el percentil 90 y 4895 ms el peor, con el 13 % por encima de
+  1000 ms. El presupuesto vive ahora en `tests/spawn-budget.mjs` con la medición al lado, y una
+  guardia barre los archivos de prueba descubiertos al momento —no una lista fija— para que nadie
+  vuelva a escribir un presupuesto a ojo. Diez corridas seguidas en verde.
+
+- **Un clon limpio ya sale verde en Windows.** `.gitattributes` sólo pineaba `*.sh`, así que 215 de
+  229 archivos trackeados llegaban CRLF a un clon. La cadena de decisiones de Discovery guarda el
+  hash del predecesor y `verify-discovery-views` exige LF, así que el mismo commit daba distintos
+  bytes: `d002.json` era `{
+…` con sha256 `a3260e9f…` en el árbol del autor y `{
+…` con
+  `ef3d2077…` en el clon. Dos gates y dos pruebas salían en rojo para cualquiera que clonara.
+  Ahora `* text=auto eol=lf` (con `*.ps1 text eol=crlf`, que PowerShell necesita), y
+  `tests/tracked-bytes.test.mjs` lo fija reproduciendo un checkout con `core.autocrlf=true`
+  forzado, así el defecto se detecta igual en Linux y macOS.
+
+- **El gate de cobertura mide, ya no estima.** Leía la tabla de texto de
+  `node --experimental-test-coverage`, que fusiona la medición de cientos de procesos y depende del
+  orden en que se leen sus archivos. Ahora suma la cobertura cruda de V8 por proceso —sumar es
+  conmutativo— y nombra archivo y línea de cada función o rama que nadie ejecutó. Con eso
+  aparecieron 10 huecos que el porcentaje daba en 100 %, todos respaldos de `||` y ternarios: el
+  texto que `verify-receipt.mjs` muestra cuando git no devuelve firmante, el código genérico de
+  `verify-discovery-views.mjs` ante un error sin `code`, el camino que `verify-spec-wordcap.mjs`
+  usa para rechazar por calidad, y la rama de contradicciones de `verify-graphify-manifest.mjs`.
+  Cerrados uno por uno. Además `main` ahora mide el proyecto que se le pasa: antes ignoraba su
+  propio parámetro `cwd` al lanzar la suite, así que inventariaba un árbol y medía otro, y por eso
+  sus pruebas nunca pudieron ejercitarlo de punta a punta.
+
+- **El denominador de la cobertura se declara.** `contracts/coverage-scope.json` dice qué
+  directorios se miden y cuáles no, con su motivo, y `tests/coverage-scope.test.mjs` rechaza que
+  aparezca un directorio con código Node que el contrato no mencione. Ahí queda escrito que cuatro
+  verificadores de `research/` que el protocolo manda correr no tienen prueba propia: deuda
+  declarada, no cobertura.
+
+- **Los verificadores de research rechazan en vez de reventar.** Leen expedientes que `.gitignore`
+  deja afuera a propósito. Sobre un clon limpio, tres de los cuatro salían con un stack trace de
+  `node:fs` en vez de un rechazo, así que no se distinguía "falta el insumo" de "el gate está
+  roto". Ahora los cuatro nombran el archivo que falta y el comando que lo regenera.
+
+- **Dos gates dejaron de ser invisibles para `grep`.** `verify-discovery-core.mjs` y
+  `verify-research-citations.mjs` tenían bytes NUL crudos en el fuente, así que git los clasificaba
+  `-text` y `grep` respondía `Binary file ... matches` escondiendo la línea. Se escriben con
+  `String.fromCharCode(0)` y su escape: mismo byte en ejecución, código otra vez buscable.
+
 - **Cierre funcional reproducible del research externo.** Se agregó un ledger nativo que abre y
   hashea las 14.897 entradas que estaban `PENDING`, recorre todas las líneas textuales y registra
   interfaces, dependencias, tests, salidas, límites, riesgos y citas verificables. El verificador
@@ -34,8 +82,9 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   estar vacío y cada claim vigente debe enlazar al menos un `linked_requirement_id` o
   `linked_ac_id` resoluble. Implica `--require-inputs`; el Discovery inicial conserva su modo
   permisivo.
-- `verify-vcp-coverage.mjs` mide con un worker por defecto para evitar resultados intermitentes por
-  carreras de instalaciones y timeouts; `VCP_TEST_CONCURRENCY` permite subirlo explícitamente.
+- ~~`verify-vcp-coverage.mjs` mide con un worker por defecto para evitar resultados intermitentes.~~
+  **Corregido el 2026-09-01:** serializar no evitaba la intermitencia, la tapaba —y de paso escondía
+  huecos de cobertura reales—. Cerrado el defecto de la suite, el default volvió a 32.
 
 - **El research externo, revalidado contra las catorce fuentes.** Durante dos días el informe
   declaró, con todas las letras, que sus citas `archivo:línea` no las había revalidado nadie y no

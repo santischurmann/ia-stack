@@ -326,3 +326,100 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
 - Las secciones 2, 3 y 4 del informe: **no verificado**. Los 24 mecanismos, los rechazos y las
   convergencias positivas siguen sin releerse buscando conclusiones falsas por el mismo motivo
   que la de la sección 5; las dos correcciones cubren esa sección y las citas, nada más.
+
+## Sesión 2026-09-01 — mejora integral (Fase 0 + A1 + A2)
+
+**Feature slug:** mejora-integral-vcp
+
+- **Fase 0 (preflight, read-only) · DONE.** HEAD == origin/main == `af55a45`, árbol limpio, 20
+  gates verdes. 10 hallazgos escritos en el plan aprobado. Decisión 🔵 del usuario: **opción B**,
+  corregir F1 (flakiness) antes que nada; worktree residual: **inspeccionar y reportar**.
+- **F1 medido, no supuesto.** 5 corridas de `node --test --test-concurrency=32`: 2 rojas, ambas en
+  `tests/verify-evidence-runner.test.mjs`. Causa: presupuesto de 1000ms para un spawn real. Sonda
+  propia, 30 muestras: sin carga max 103.7ms; con 32 procesos p90 2631.5ms, max 4895.4ms, 13 % por
+  encima de 1000ms. El presupuesto caía dentro de la banda de ruido.
+- **A1 RED · DONE.** `tests/spawn-budget.test.mjs` acusó los dos archivos por nombre y línea
+  (`verify-evidence-runner.test.mjs:17`, `protocolo-e2e.test.mjs:106`). Antes de eso el escáner
+  daba verde vacío por un `\s` degradado en un template literal; lo delataron sus propias pruebas
+  de FALSIFICACIÓN, y se arregló con `String.raw`.
+- **A1 BUILD · DONE.** Los dos archivos importan `REAL_SPAWN_TIMEOUT_MS = 30_000` de
+  `tests/spawn-budget.mjs` (mismo valor que ya usaba `verify-discovery-requirements.mjs:350`).
+- **A2 preservación · DONE.** El worktree `.claude/worktrees/admiring-noether-c5b71e` sigue
+  intacto. Copia en `_backups/2026-09-01_worktree-cobertura-determinista_2280b8e/` con manifiesto
+  sha256; los hashes de tres archivos coinciden con los `test_hash_sha256` que certifica el receipt
+  aprobado `cobertura-determinista-2026-08-29.json`, que **no existe en main**.
+- **F11 encontrado al pisarlo.** `node --test` descubre `**/*.test.mjs` bajo el cwd y no respeta
+  `.gitignore`. Cinco archivos de prueba dentro de `_backups/` entraron a la suite publicada: 802
+  tests y 4 fallas donde correspondían 777 y 0. Los directorios ocultos (`.vibe/`, `.claude/`) sí
+  se saltean; `_backups/` no es oculto, y la regla del proyecto manda guardar backups de código
+  justamente ahí. Mitigado en este backup empaquetándolo; **el defecto del protocolo sigue abierto**.
+
+## No verificado (sesión 2026-09-01)
+
+- Que los 7 huecos de cobertura que encontró el worktree sigan abiertos en main: **no verificado**.
+  Los cuatro archivos de prueba del worktree difieren de los de main y son más grandes, y
+  `innermostCount` nunca existió en la historia de main — eso es indicio, no medición.
+- Que 10 corridas verdes demuestren determinismo: **no**. Son la ausencia de contraejemplo en diez
+  intentos. Lo estructural es que el presupuesto supera 6x la latencia peor medida.
+- Instalación limpia: **no verificado** en esta sesión.
+
+## Sesión 2026-09-01 — A1 cerrado, A2 medido
+
+- **A1 · DONE.** 10/10 corridas de `node --test --test-concurrency=32` en verde, 777/777 cada una.
+  Guardia `tests/spawn-budget.test.mjs` barre los 63 archivos de `tests/` descubiertos al momento
+  (no una lista fija) y acusa las regresiones reintroducidas, incluida una en un archivo que una
+  lista fija no habría mirado.
+- **A2 · medido, sin decidir.** El método huérfano (suma por proceso) corrido contra un clon limpio
+  de `af55a45`, sin modificar el clon: **7 huecos**. Seis eran de la lista de 2026-08-29 menos
+  `verify-audit-chain.mjs:206` (que main sí cerró), más uno nuevo:
+  `verify-spec-wordcap.mjs:99`. El gate de main sobre el mismo árbol dice 30/30 a 100 %.
+- **F13.** Un clon limpio de main publicado **no está verde en Windows**: `git ls-files` da 229
+  archivos, 215 llegan CRLF (sólo `*.sh` está pineado a LF). `docs/discovery/**/*.json` entra en
+  una cadena de hashes y `views/*.md` se exige en LF, así que `verify-discovery-core` y
+  `verify-discovery-views` salen `DISCOVERY_PREDECESSOR_HASH_MISMATCH: d002` y
+  `DISCOVERY_VIEW_FORMAT_INVALID`, y 2 pruebas de `verify-discovery-sources.test.mjs` fallan.
+  Verificado byte a byte: `d002.json` es `{\n…` sha256 `a3260e9f…` en el árbol de trabajo y
+  `{\r\n…` sha256 `ef3d2077…` en el clon, mismo commit. Normalizando a LF en el clon: los dos
+  gates salen 0 y las 16 pruebas del archivo pasan. **No se tocó el repo por esto.**
+
+## No verificado (A2)
+
+- Que los 5 huecos heredados sigan siendo los mismos defectos y no otros con la misma línea:
+  **no verificado**; se comparó archivo y línea, no el camino de ejecución.
+- Que `verify-graphify-manifest.mjs:124` y `:141` sean huecos reales y no artefacto del clon:
+  **son artefacto explicable**. Su única cobertura viene de una prueba que se saltea sin
+  `graphify-out/manifest.json`, que está en `.gitignore`. En un clon nunca corren; en la máquina
+  del autor sí. Eso es exactamente el AC4 del receipt huérfano, que main no incorporó.
+- Que el arreglo de `.gitattributes` no rompa otra cosa: **no verificado**. Se probó normalizando
+  a mano dentro del clon, no cambiando el archivo de atributos ni rehaciendo el checkout.
+
+## Sesión 2026-09-01 — F13 cerrado
+
+- **F13 · DONE.** Decisión 🔵 del usuario: arreglarlo antes de seguir.
+  - RED: `tests/line-endings.test.mjs` — 2 pruebas rojas. La primera acusó `7/7 archivo(s)
+    volvieron con CRLF`; la segunda listó los trackeados con `eol=unspecified`. La FALSIFICACIÓN
+    quedó verde desde el principio: sin ella un cero no distinguiría entre «el atributo funciona»
+    y «la sonda no mira nada».
+  - La reproducción no depende de la plataforma: el repositorio de juguete fuerza
+    `core.autocrlf=true`, así que el defecto sale igual en Linux y macOS.
+  - BUILD: `.gitattributes` pasa de `*.md/*.json text=auto` a `* text=auto eol=lf`, con
+    `*.ps1 text eol=crlf` después (PowerShell necesita CRLF).
+  - Seguro por evidencia: `git ls-files --eol` sobre `docs/discovery` da `i/lf w/lf` en los 7
+    archivos hasheados, así que los hashes guardados se calcularon sobre LF y el arreglo no rompe
+    la cadena. `git status` siguió en 7 archivos: el índice ya estaba en LF, no hubo renormalización.
+  - Verificado de punta a punta: repositorio real armado con los 232 archivos del árbol arreglado,
+    clonado con `core.autocrlf=true`. En el clon `verify-discovery-core` y `verify-discovery-views`
+    salen 0, y `verify-discovery-sources.test.mjs` pasa 16/16.
+- **F14 encontrado de paso.** `scripts/verify-discovery-core.mjs` (2) y
+  `scripts/verify-research-citations.mjs` (1) tienen bytes NUL crudos en el fuente, así que git los
+  clasifica `-text` y `grep` los trata como binarios: `grep -n "CONTROL_CHARACTERS"
+  scripts/verify-discovery-core.mjs` responde `Binary file ... matches` y esconde la línea. Es el
+  mismo defecto que el receipt huérfano ya arregló en `verify-vcp-coverage.mjs` con
+  `String.fromCharCode(0)`; sobrevive en estos dos. **No tocado: sin decisión.**
+
+## No verificado (F13)
+
+- Que 30 archivos con `w/crlf` o `w/mixed` en mi árbol de trabajo no importen: **razonado, no
+  medido**. El índice está en LF y ninguno entra en un hash entre máquinas; no se probó uno por uno.
+- Que el arreglo se comporte igual en Linux y macOS: **no verificado en esas plataformas**. La
+  prueba fuerza `core.autocrlf=true`, que es el mecanismo, pero se corrió sólo en Windows.

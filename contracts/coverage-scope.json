@@ -1,0 +1,23 @@
+{
+  "schema": "vcp.coverage-scope/1",
+  "why": "El gate de cobertura mide scripts/ y nada mas. Sin este contrato ese recorte es invisible: el README decia '100% de lineas, ramas y funciones para los scripts Node de VCP' y research/ tambien son scripts Node de VCP. Un denominador que no se declara se lee como si fuera todo.",
+  "measured": [
+    {
+      "directory": "scripts",
+      "why": "Son los gates que el protocolo ejecuta y de los que depende cada veredicto. verify-vcp-coverage.mjs exige que toda funcion y toda rama de estos archivos las haya ejecutado algun proceso de la suite."
+    }
+  ],
+  "excluded": [
+    {
+      "directory": "tests",
+      "why": "Son las pruebas mismas. Medir su cobertura seria medir el instrumento con el instrumento: una prueba que nunca corre ya sale como prueba ausente en el conteo de la suite, no como cobertura faltante.",
+      "debt": false
+    },
+    {
+      "directory": "research",
+      "why": "Herramientas de un solo uso que produjeron el expediente ya sellado y verificado. Leen archivos que .gitignore deja afuera por tamano, asi que medirlas exigiria versionar cientos de megas de corpus o construir fixtures que no representan la entrada real.",
+      "debt": true,
+      "debt_detail": "DEUDA DECLARADA, no cobertura. Cuatro de estos archivos NO son de un solo uso: verify-semantic-functional-ledger.mjs, verify-semantic-deep-evidence.mjs, verify-full-evidence-pass.mjs y verify-semantic-review-index.mjs son verificadores que el protocolo manda correr en su fase de verificacion, y ninguno tiene prueba propia. Lo unico probado de research/ es require-artifact.mjs, en tests/require-artifact.test.mjs. Medido el 2026-09-01: sobre un clon limpio, tres de esos cuatro reventaban con un stack trace de node:fs en vez de rechazar; eso se arreglo, pero el resto de su logica sigue sin prueba."
+    }
+  ]
+}

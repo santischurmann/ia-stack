@@ -9,6 +9,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
+import { ResearchArtifactError, loadJsonArtifact, loadTextArtifact } from './require-artifact.mjs';
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const researchDir = path.join(repoRoot, 'research');
 const manifestPath = path.join(researchDir, 'corpus-manifest-2026-08-31.json');
@@ -24,18 +26,31 @@ const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('he
 const lineCount = (buffer) => buffer.toString('utf8').split(String.fromCharCode(10)).length;
 const fail = (message) => errors.push(message);
 
-function loadJson(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
-  catch (error) { fail(`${file}: invalid JSON (${error.message})`); return null; }
+// Un archivo ausente no es un JSON inválido: son dos problemas distintos y se arreglan distinto.
+// Antes los dos salían como "invalid JSON" y con la ruta absoluta de la máquina.
+function loadJson(file, comoRegenerar) {
+  try {
+    return loadJsonArtifact(file, comoRegenerar, { root: repoRoot });
+  } catch (error) {
+    if (error instanceof ResearchArtifactError) {
+      fail(`${error.code}: ${error.message}`);
+      return null;
+    }
+    throw error;
+  }
 }
 
-const manifest = loadJson(manifestPath);
-const ledger = loadJson(ledgerPath);
+const manifest = loadJson(manifestPath, 'node research/build-functional-inventory.mjs');
+const ledger = loadJson(ledgerPath, 'node research/build-semantic-ledger.mjs');
 const ledgerByKey = new Map((ledger?.entries || []).map((entry) => [`${entry.source}|${entry.path}`, entry]));
 const rootBySource = new Map((manifest?.sources || []).map((source) => [source.slug, source.root_dir]));
 let lines = [];
-try { lines = fs.readFileSync(evidencePath, 'utf8').split(String.fromCharCode(10)).filter(Boolean); }
-catch (error) { fail(`${evidencePath}: unreadable (${error.message})`); }
+try {
+  lines = loadTextArtifact(evidencePath, 'node research/build-full-evidence-pass.mjs', { root: repoRoot }).split(String.fromCharCode(10)).filter(Boolean);
+} catch (error) {
+  if (!(error instanceof ResearchArtifactError)) throw error;
+  fail(`${error.code}: ${error.message}`);
+}
 
 const seen = new Set();
 for (let index = 0; index < lines.length; index += 1) {

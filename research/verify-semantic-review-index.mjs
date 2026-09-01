@@ -8,10 +8,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { loadJsonArtifact, reportArtifactProblem } from './require-artifact.mjs';
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const research = path.join(root, 'research');
-const index = JSON.parse(fs.readFileSync(path.join(research, 'semantic-review-index-2026-08-31.json'), 'utf8'));
-const ledger = JSON.parse(fs.readFileSync(path.join(research, 'semantic-ledger-2026-08-31.json'), 'utf8'));
+let index;
+let ledger;
+try {
+  index = loadJsonArtifact(path.join(research, 'semantic-review-index-2026-08-31.json'), 'node research/consolidate-semantic-review.mjs', { root });
+  ledger = loadJsonArtifact(path.join(research, 'semantic-ledger-2026-08-31.json'), 'node research/build-semantic-ledger.mjs', { root });
+} catch (error) {
+  if (!reportArtifactProblem(error, console.error)) throw error;
+  process.exit(1);
+}
 
 const pending = ledger.entries.filter((entry) => entry.status === 'PENDING');
 const expected = new Map(pending.map((entry) => [`${entry.source}|${entry.path}`, entry]));

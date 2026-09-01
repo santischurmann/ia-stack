@@ -91,3 +91,35 @@ hubiera encontrado un conflicto, ya estaría cometido.
 **Lo que este cierre NO arregla:** el protocolo no tiene ningún gate que mire el campo `Status` de
 la spec ni del plan, así que ambos pudieron quedar en borrador con el trabajo terminado sin que
 nada lo notara. Eso sigue abierto.
+
+---
+
+## 2026-09-01 — Bloque A: la suite, el clon y el gate que se vigila a sí mismo
+
+Cuatro decisiones 🔵 del usuario, con la evidencia que se le mostró antes de cada una.
+
+**Fase 0 → opción B: corregir F1 antes que nada.** Se le mostró que 2 de 5 corridas de
+`node --test --test-concurrency=32` salían rojas y que los 20 gates estaban verdes. Eligió arreglar
+la intermitencia primero. El motivo se sostiene solo: un gate que responde distinto sobre el mismo
+árbol no autoriza nada de lo que venga después.
+
+**Worktree residual → inspeccionar y reportar.** No borrar, no integrar a ciegas. La inspección
+encontró un receipt `approved` que nunca entró a `main` y cuyos `test_hash_sha256` coinciden con los
+archivos preservados. Eso convirtió una decisión de limpieza en una de contenido.
+
+**F13 → arreglarlo antes de seguir.** Se le mostró que un clon limpio de `af55a45` no estaba verde
+en Windows: 215 de 229 archivos llegaban CRLF y la cadena de hashes de Discovery se rompía. Eligió
+cerrarlo antes que avanzar. **Costo aceptado:** `* text=auto eol=lf` reescribe finales de línea en
+los árboles de trabajo de otras máquinas Windows en su próximo checkout. Acá no cambia nada porque
+el índice ya estaba en LF.
+
+**A2 → portar el gate huérfano con ciclo completo**, no cerrar los huecos por separado. La
+alternativa barata —escribir pruebas para los 6 huecos dejando el gate como estaba— se descartó con
+un argumento explícito: el gate seguiría sin poder verlos, así que el próximo hueco tampoco
+aparecería. **Costo aceptado:** se tocó el verificador del que dependen todos los demás veredictos.
+
+**F14 → arreglarlo ahora.** Tres bytes NUL crudos en dos gates. Cambio chico con impacto medible:
+`grep` los trataba como binarios y escondía sus líneas.
+
+**Qué NO se decidió acá:** si el resto de `research/` alguna vez se prueba. Quedó como deuda escrita
+en `contracts/coverage-scope.json`, no como problema resuelto.

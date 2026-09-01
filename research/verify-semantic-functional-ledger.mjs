@@ -6,6 +6,8 @@ import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
+import { MISSING_ARTIFACT, ResearchArtifactError, reportArtifactProblem } from './require-artifact.mjs';
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const researchDir = path.join(repoRoot, 'research');
 const manifestPath = path.join(researchDir, 'corpus-manifest-2026-08-31.json');
@@ -27,7 +29,15 @@ const ledger = fs.existsSync(ledgerPath) ? JSON.parse(fs.readFileSync(ledgerPath
 let index = null;
 if (!ledger && fs.existsSync(indexPath)) index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
 if (!ledger && !index && fs.existsSync(compressedIndexPath)) index = JSON.parse(zlib.gunzipSync(fs.readFileSync(compressedIndexPath)).toString('utf8'));
-if (!ledger && !index) throw new Error('Missing semantic ledger and functional index');
+// Ni el ledger ni el índice están en git: son salidas regenerables del corpus. Un `throw` acá
+// salía como stack trace de node y no dejaba distinguir "falta el insumo" de "el gate está roto".
+if (!ledger && !index) {
+  reportArtifactProblem(new ResearchArtifactError(
+    MISSING_ARTIFACT,
+    'faltan research/semantic-ledger-2026-08-31.json y research/semantic-functional-index-2026-09-01.json(.gz). No están en git a propósito: son salidas regenerables del corpus. Regeneralo con: node research/build-semantic-ledger.mjs y node research/build-semantic-functional-ledger.mjs',
+  ), console.error);
+  process.exit(1);
+}
 const pending = ledger ? (ledger.entries || []).filter((e) => e.status === 'PENDING') : (index.entries || []).map((e) => ({ ...e, status: 'PENDING' }));
 const ledgerByKey = new Map(pending.map((e) => [key(e.source, e.path), e]));
 const rootBySource = new Map(manifest

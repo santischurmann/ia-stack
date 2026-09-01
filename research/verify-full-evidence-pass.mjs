@@ -5,16 +5,31 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
+import { loadJsonArtifact, loadTextArtifact, reportArtifactProblem } from './require-artifact.mjs';
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const researchDir = path.join(repoRoot, 'research');
-const ledger = JSON.parse(fs.readFileSync(path.join(researchDir, 'semantic-ledger-2026-08-31.json'), 'utf8'));
-const manifest = JSON.parse(fs.readFileSync(path.join(researchDir, 'corpus-manifest-2026-08-31.json'), 'utf8'));
+let ledger;
+let manifest;
+try {
+  ledger = loadJsonArtifact(path.join(researchDir, 'semantic-ledger-2026-08-31.json'), 'node research/build-semantic-ledger.mjs', { root: repoRoot });
+  manifest = loadJsonArtifact(path.join(researchDir, 'corpus-manifest-2026-08-31.json'), 'node research/build-functional-inventory.mjs', { root: repoRoot });
+} catch (error) {
+  if (!reportArtifactProblem(error, console.error)) throw error;
+  process.exit(1);
+}
 const evidencePath = path.join(researchDir, 'semantic-full-evidence-2026-08-31.ndjson');
 const corpusRoot = process.env.VCP_EXTERNAL_RESEARCH_ROOT || path.resolve(repoRoot, '..', '_vcp_external_research_2026-08-31');
 const rootBySource = new Map((manifest.sources || []).map((source) => [source.slug, source.root_dir]));
 const pending = ledger.entries.filter((entry) => entry.status === 'PENDING');
 const expected = new Map(pending.map((entry) => [`${entry.source}|${entry.path}`, entry]));
-const rows = fs.readFileSync(evidencePath, 'utf8').split(String.fromCharCode(10)).filter(Boolean).map((line) => JSON.parse(line));
+let rows;
+try {
+  rows = loadTextArtifact(evidencePath, 'node research/build-full-evidence-pass.mjs', { root: repoRoot }).split(String.fromCharCode(10)).filter(Boolean).map((line) => JSON.parse(line));
+} catch (error) {
+  if (!reportArtifactProblem(error, console.error)) throw error;
+  process.exit(1);
+}
 const errors = [];
 const seen = new Set();
 const sha256 = (buffer) => crypto.createHash('sha256').update(buffer).digest('hex');

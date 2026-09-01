@@ -197,7 +197,11 @@ function assertContentIdentity(identity) {
 // Evidence locators are recorded, not fetched: this gate never resolves a URL and never opens a
 // repo path. It only proves the recorded string is a safe, unambiguous reference — an https URL
 // carrying no embedded credentials, or a project-relative path that cannot escape the checkout.
-const CONTROL_CHARACTERS = /[ -]/u;
+// Los caracteres de control se escriben con su escape, no con el byte crudo: un NUL adentro del
+// fuente hace que git clasifique el archivo como binario y que grep lo saltee, y un gate que el
+// buscador no encuentra es un gate que nadie revisa. Mismo conjunto, mismo comportamiento.
+const COMMIT_MARKER = String.fromCharCode(0);
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
 
 function assertWebLocator(url) {
   let parsed;
@@ -501,6 +505,8 @@ export function gitDiscoveryVersions(cwd, featureSlug, run = spawnSync) {
 export function findMutations(cwd, featureSlug, run = spawnSync) {
   const git = gitRunner(cwd, run);
   const path = `docs/discovery/${featureSlug}`;
+  // `%x00` hace que git anteponga un NUL a cada hash: es el separador que distingue la linea de
+  // commit de las de archivo. Se nombra en vez de escribirse crudo, por el mismo motivo de arriba.
   const log = git('log', '--diff-filter=MD', '--name-status', '--format=%x00%H', '--', path);
   if (log.status !== 0) return [];
   const mutations = [];
@@ -508,7 +514,7 @@ export function findMutations(cwd, featureSlug, run = spawnSync) {
   for (const raw of (log.stdout ?? '').split('\n')) {
     const line = raw.trim();
     if (line === '') continue;
-    if (line.startsWith(' ')) {
+    if (line.startsWith(COMMIT_MARKER)) {
       commit = line.slice(1);
       continue;
     }

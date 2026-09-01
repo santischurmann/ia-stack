@@ -150,3 +150,19 @@ test('CLI parsea sólo check/render canónicos y comunica resultados controlados
   assert.equal(cli.status, 2);
   assert.match(cli.stderr, /usage:/u);
 });
+
+test('FALSIFICACIÓN · un error sin código propio se reporta con el código genérico, no como undefined', () => {
+  // La única prueba de este camino lanzaba un DiscoveryViewsError, que trae `code`, así que el
+  // respaldo `?? DISCOVERY_VIEW_RENDER_INVALID` no lo ejecutaba ningún proceso de la suite. Medido
+  // el 2026-09-01 sobre verify-discovery-views.mjs:176.
+  // No es cosmético: un fallo inesperado —un permiso, un disco lleno, un bug del propio gate— llega
+  // acá como Error pelado. Sin el respaldo el rechazo diría `REJECTED: undefined:` y quien lo lea
+  // no tendría con qué buscarlo.
+  const errores = [];
+  const code = main(['render', '--feature', 'x'], '.', () => {}, (line) => errores.push(line),
+    () => ({ ok: true, views: 1 }),
+    () => { throw new Error('EACCES: permission denied'); });
+  assert.equal(code, 1);
+  assert.match(errores.at(-1), /^REJECTED: DISCOVERY_VIEW_RENDER_INVALID: EACCES: permission denied$/u);
+  assert.doesNotMatch(errores.at(-1), /undefined/u);
+});

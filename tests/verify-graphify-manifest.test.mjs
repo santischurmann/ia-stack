@@ -167,3 +167,28 @@ test('CLI rechaza uso inválido y reporta cada clase de divergencia', () => {
   assert.equal(main(['check'], repoRoot, { readManifestPaths: () => { throw new Error('manifest is unreadable'); } }, () => {}, (line) => broken.push(line)), 1);
   assert.match(broken.at(-1), /manifest is unreadable/u);
 });
+
+test('FALSIFICACIÓN · main nombra el archivo declarado excluido que igual está en el manifiesto', () => {
+  // La rama de contradicciones dentro de `main` no la ejercitaba ningún proceso de la suite: se
+  // probaba `compareCoverage` por separado, pero el camino que escribe el rechazo no. Medido el
+  // 2026-09-01 sobre verify-graphify-manifest.mjs:141.
+  // Una contradicción no es cosmética: dice que alguien declaró que un archivo NO se indexa y el
+  // grafo lo indexó igual, así que una de las dos afirmaciones es mentira y el gate no puede elegir.
+  const errores = [];
+  const code = main(['check'], repoRoot, {
+    readTracked: () => ['docs/secreto.md', 'scripts/a.mjs'],
+    readManifestPaths: () => ['docs/secreto.md', 'scripts/a.mjs'],
+    readExclusionList: () => [{ path: 'docs/secreto.md', reason: 'no se publica: lleva datos del cliente' }],
+  }, () => {}, (line) => errores.push(line));
+  assert.equal(code, 1, 'aceptó un archivo declarado excluido que el manifiesto igual indexa');
+  assert.ok(errores.some((line) => line.includes('files declared excluded yet present in the manifest: docs/secreto.md')), errores.join(' || '));
+
+  // Contraprueba: sacando el archivo del manifiesto, la misma entrada sale en verde.
+  const salida = [];
+  assert.equal(main(['check'], repoRoot, {
+    readTracked: () => ['docs/secreto.md', 'scripts/a.mjs'],
+    readManifestPaths: () => ['scripts/a.mjs'],
+    readExclusionList: () => [{ path: 'docs/secreto.md', reason: 'no se publica: lleva datos del cliente' }],
+  }, (line) => salida.push(line), (line) => errores.push(line)), 0, errores.join(' || '));
+  assert.match(salida.at(-1), /^OK: /u);
+});

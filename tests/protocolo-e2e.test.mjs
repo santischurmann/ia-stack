@@ -19,6 +19,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { REAL_SPAWN_TIMEOUT_MS } from './spawn-budget.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const RUNTIME = join('.vibe', 'vcp-runtime', 'scripts');
 const bash = process.platform === 'win32' && existsSync('C:\\Program Files\\Git\\bin\\bash.exe')
@@ -103,7 +105,7 @@ test('E2E · las nuevas garantías del runtime instalado funcionan sobre un proy
 
   mkdirSync(join(root, '.vibe', 'evidence'), { recursive: true });
   writeFileSync(join(root, '.vibe', 'evidence', 'request.json'), JSON.stringify({
-    schema: 'vcp.evidence-request/v1', command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: 1000, skip_reason: null,
+    schema: 'vcp.evidence-request/v1', command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null,
   }) + '\n', 'utf8');
   const recorded = gate(root, 'verify-evidence-runner.mjs', 'run', '.vibe/evidence/request.json', '.vibe/evidence/record.json');
   assert.equal(recorded.clase, 'ok', recorded.salida);

@@ -1051,3 +1051,32 @@ test('FALSIFICACION · custody sin recibo sale 2, y un recibo sin commitear sale
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('FALSIFICACION · judgeSignature nombra la custodia cuando git no devuelve firmante ni clave', () => {
+  // Los caminos que faltaban no eran los `if`, sino los respaldos: `firma.firmante || ...` y los
+  // ternarios de `clave` y `confiable`. Toda prueba anterior pasaba un firmante con nombre, asi que
+  // el texto que se muestra cuando git NO lo devuelve no lo habia leido nadie. Medido el
+  // 2026-09-01 sobre verify-receipt.mjs:204 y :209.
+  // Importa porque es justo el caso de un repositorio ajeno: si el mensaje saliera `undefined` o
+  // vacio, el gate informaria custodia sobre un commit del que no sabe nada.
+  const sinNombre = { commit: 'abc1234def', estado: 'B', firmante: '', clave: '' };
+  const roto = judgeSignature(sinNombre, false);
+  assert.equal(roto.ok, false);
+  assert.match(roto.mensaje, /firmante desconocido/u, 'una firma rota sin firmante tiene que decirlo, no dejar un hueco');
+
+  const buenaSinNombre = { commit: 'abc1234def', estado: 'G', firmante: '', clave: '' };
+  const anonima = judgeSignature(buenaSinNombre, true);
+  assert.equal(anonima.ok, true);
+  assert.match(anonima.mensaje, /firmante sin nombre/u);
+  assert.doesNotMatch(anonima.mensaje, /clave/u, 'sin clave no se inventa un parentesis vacio');
+
+  const conClave = judgeSignature({ commit: 'abc1234def', estado: 'G', firmante: 'Santi', clave: 'K1' }, true);
+  assert.match(conClave.mensaje, /\(clave K1\)/u);
+
+  // `E` es el unico estado que no rechaza y tampoco es confiable: sin pedir firma pasa, y el
+  // mensaje no puede atribuirle la firma a nadie.
+  const sinClaveParaVerificar = judgeSignature({ commit: 'abc1234def', estado: 'E', firmante: 'X', clave: '' }, false);
+  assert.equal(sinClaveParaVerificar.ok, true);
+  assert.doesNotMatch(sinClaveParaVerificar.mensaje, / por /u, 'no se puede decir "por X" sobre una firma que no se pudo verificar');
+  assert.equal(judgeSignature({ commit: 'abc1234def', estado: 'E', firmante: 'X', clave: '' }, true).ok, false, 'con --require-signature, no poder verificar es rechazo');
+});
