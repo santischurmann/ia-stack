@@ -1,0 +1,17 @@
+{
+  "schema": "vcp.external-research-full-evidence-pass.v1",
+  "generated": "2026-09-01T00:36:49.340Z",
+  "method": "Every PENDING entry is read and hashed when materialized; only observable structural evidence is recorded. This never promotes strict_status to READ.",
+  "corpus_root": "<home>\\Desktop\\Claude\\_vcp_external_research_2026-08-31",
+  "source_ledger": "semantic-ledger-2026-08-31.json",
+  "output": "semantic-full-evidence-2026-08-31.ndjson",
+  "counts": {
+    "total": 14897,
+    "materialized": 14897,
+    "unreadable": 0,
+    "textual": 14365,
+    "binary_or_large": 532,
+    "evidence_rows": 14897
+  },
+  "output_sha256": "b0aedfa67143bd0e798a52f3fb2e03a601ea99e2d6efa40d24439a3664f999f4"
+}

@@ -117,6 +117,16 @@ cada entrada materializada, y registra señales estructurales sin confundirlas c
 semántica. El ledger profundo mantiene separado lo que fue leído funcionalmente de lo que sólo fue
 revisado estáticamente; VCP nunca presenta un barrido automático como lectura humana.
 
+Los lotes de lectura profunda se validan con `research/verify-semantic-deep-evidence.mjs`: cada fila
+debe conservar el commit, SHA-256 y cantidad de líneas del manifest, y sus citas deben apuntar a
+líneas reales del archivo pineado. Este gate valida la evidencia; no promociona por sí solo una fila
+del ledger estricto a `READ`.
+
+Para comprobar que no quedó ninguna entrada sin abrir, ejecutá `node research/build-full-evidence-pass.mjs`
+y luego `node research/verify-full-evidence-pass.mjs`. El resultado cubre cada pendiente por hash y
+bytes, pero conserva un estado asistido: una lectura física completa no reemplaza una interpretación
+semántica funcional.
+
 ```bash
 # Verifica la cadena inmutable de decisiones y snapshots.
 node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>

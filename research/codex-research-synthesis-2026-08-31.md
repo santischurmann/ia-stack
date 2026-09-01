@@ -1,5 +1,21 @@
 # Research directo de VibeCodeProtocols — síntesis y mejoras aplicables
 
+## Actualización de evidencia — 2026-08-31 (última ejecución)
+
+La evidencia profunda consolidada pasó de 247 a **397 filas únicas**: Awesome Claude Skills (100),
+gstack (25) y Marin (25) se verificaron contra el manifest y los bytes del corpus con
+`node research/verify-semantic-deep-evidence.mjs` (exit 0). El ledger estricto no se alteró:
+mantiene **14.897 PENDING** porque estos lotes asistidos aún requieren revisión adversarial antes de
+promoverse a `READ`. La contabilidad completa del corpus no debe confundirse con comprensión
+semántica completa.
+
+Como cobertura adicional, `node research/build-full-evidence-pass.mjs` abrió y hasheó las **14.897
+entradas PENDING** (14.365 textuales y 532 binarias/grandes). `node
+research/verify-full-evidence-pass.mjs` confirmó la correspondencia 1:1 (exit 0; SHA-256 de la
+salida `b0aedfa67143bd0e798a52f3fb2e03a601ea99e2d6efa40d24439a3664f999f4`). Este pase registra
+hechos observables y mantiene `strict_status: PENDING`; no se presenta como comprensión semántica
+humana.
+
 **Fecha:** 2026-08-31
 **Investigador:** Codex (lectura y verificación local; no delegada a Claude)
 **Repositorio VCP:** `f2fb9017df6656490c0a61283bec825bcaad2489` en `main`
@@ -61,8 +77,9 @@ commit, shard y citas cuando existen. Sus estados `READ_CANDIDATE`, `STATIC_ONLY
 `REVIEW_REQUIRED` son evidencia de cola, no estados canónicos: todas las filas conservan
 `strict_status: PENDING` hasta una revisión funcional adversarial.
 
-En esta ejecución se añadieron 247 lecturas manuales profundas en cinco lotes independientes
-(`marin`, `awesome-claude-skills`, `gstack`, `scientific-agent-skills` y `claude-mem`). Sus registros verificables se conservan en
+En esta ejecución se añadieron 397 lecturas manuales profundas en ocho lotes independientes
+(`marin`, `awesome-claude-skills`, `gstack`, `scientific-agent-skills` y `claude-mem`, con lotes
+adicionales de marin/awesome/gstack). Sus registros verificables se conservan en
 `research/semantic-deep-evidence-2026-08-31.ndjson`; contienen hash, commit, propósito,
 interfaces, conducta, salidas, invariantes, tests, riesgos, decisión de relevancia y citas
 `file:line`. Es evidencia de esos 100 archivos, no una promoción automática del resto.

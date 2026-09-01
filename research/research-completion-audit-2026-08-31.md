@@ -1,5 +1,21 @@
 # Auditoría de research externo — 2026-08-31
 
+## Actualización de evidencia — 2026-08-31 (última ejecución)
+
+Se añadieron tres shards de lectura profunda, con citas y hashes verificados, y se consolidó la
+evidencia en `research/semantic-deep-evidence-2026-08-31.ndjson`.
+
+- Lecturas profundas verificadas: **397** filas únicas (antes 247).
+- Nuevos lotes: `awesome-claude-skills` (100), `gstack` (25) y `marin` (25).
+- Verificador nativo: `node research/verify-semantic-deep-evidence.mjs` → **exit 0**.
+- Pase exhaustivo de las **14.897** entradas PENDING: `node research/build-full-evidence-pass.mjs`
+  leyó y hasheó **14.897/14.897** archivos materializados (14.365 textuales, 532 binarios/grandes);
+  `node research/verify-full-evidence-pass.mjs` → **exit 0**, salida SHA-256
+  `b0aedfa67143bd0e798a52f3fb2e03a601ea99e2d6efa40d24439a3664f999f4`.
+- El ledger canónico sigue deliberadamente en **90 READ, 594 EXCLUDED y 14.897 PENDING**:
+  una fila asistida no se promociona a READ sin revisión funcional adversarial.
+- Por lo tanto, la cobertura semántica estricta **sigue sin estar demostrada al 100 %**.
+
 ## Resultado honesto
 
 El corpus de las 14 fuentes fue reconstruido desde commits pineados y sus entradas fueron
@@ -38,9 +54,10 @@ Symlinks no dereferenciados:
 | Symlinks registrados | 6/6 | Que no se ocultaron entradas no materializadas |
 | Escaneo estructural | 15.575 | Líneas, extensiones y patrones aproximados |
 | Inventario funcional mecánico | 15.575/15.575 | Símbolos, señales de test, comandos, imports, claims y riesgos observables |
-| Lectura semántica manual profunda en lotes | 247/15.581 | Cinco lotes independientes con citas; no promovidos al ledger estricto |
+| Lectura semántica manual profunda en lotes | 397/15.581 | Ocho lotes independientes con citas; no promovidos al ledger estricto |
 | Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
 | Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
+| Evidencia exhaustiva de PENDING | 14.897/14.897 | Cada pendiente tiene fila 1:1, hash observado y estado conservador; no equivale a lectura semántica humana |
 | Research semántico completo | **NO DEMOSTRADO** | El ledger conserva 14.897 pendientes |
 
 El inventario funcional se genera con
@@ -59,12 +76,14 @@ citas cuando un shard las aporta, pero todas mantienen `strict_status: PENDING`:
 profunda.
 
 La evidencia manual más fuerte de esta ejecución está consolidada en
-`research/semantic-deep-evidence-2026-08-31.ndjson` (247 filas). Los shards de trabajo originales
+`research/semantic-deep-evidence-2026-08-31.ndjson` (397 filas). Los shards de trabajo originales
 permanecen en `.scratch-semantic/` y están excluidos del control de versiones. Cada fila contiene
 propósito, entradas, conducta, salidas, invariantes, tests, riesgos, decisión VCP y citas
 `file:line`. El gate
 `research/verify-semantic-review-index.mjs` comprueba la identidad 1:1 de las 14.897 filas y
 mantiene explícitamente `strict_status: PENDING`.
+`research/verify-semantic-deep-evidence.mjs` comprueba además cada fila profunda contra bytes,
+commit, SHA-256, line count y rango de cita del corpus pineado.
 
 Las clasificaciones del manifest nuevo no reemplazan las categorías históricas de
 `contracts/research-citations.json`: usan reglas de extensión/UTF-8 propias y por eso sus conteos

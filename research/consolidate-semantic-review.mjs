@@ -19,8 +19,11 @@ const preferred = [
   // Small manually inspected batches take precedence over structural shards. They still
   // remain strict_status=PENDING; the separate machine status records their provenance.
   'deep_marin_50.ndjson',
+  'deep_marin_100_2.ndjson',
   'deep_awesome_50.ndjson',
+  'deep_awesome_100_2.ndjson',
   'deep_gstack_50.ndjson',
+  'deep_gstack_100_2.ndjson',
   'deep_scientific_50.ndjson',
   'deep_claude_mem_50.ndjson',
   'semantic_core_v2.ndjson',

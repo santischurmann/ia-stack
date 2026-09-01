@@ -717,6 +717,11 @@ the last check before commit.
 menos una prueba. Es el hueco que este gate cierra: hoy se puede declarar el trabajo terminado con
 un AC que nadie probó, y la suite en verde no lo delata.
 
+Cuando el trabajo depende de fuentes externas, corré también el pase exhaustivo nativo:
+`node research/build-full-evidence-pass.mjs` y luego `node research/verify-full-evidence-pass.mjs`.
+Eso comprueba que cada entrada fue abierta y hasheada; no convierte señales estructurales en
+comprensión semántica ni autoriza a marcar `READ` sin revisión funcional.
+
 ```bash
 node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
 ```
