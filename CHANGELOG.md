@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El protocolo pregunta qué se quiere construir.** `PHASE 1.5 — INTAKE` es nueva: ocho preguntas
+  —qué, para quién, qué problema, qué resultado operativo, qué restricciones, qué fuentes aporta el
+  usuario, si hace falta un artefacto visual, y si se pide diagnóstico o implementación— escritas en
+  `docs/intake/<feature>.json` y verificadas por `verify-intake.mjs`. Los supuestos, los riesgos y
+  las preguntas abiertas van en listas propias con id: lo que quede mezclado adentro de una
+  respuesta no se puede señalar después. Una pregunta marcada `bloqueante` frena el ciclo. Antes de
+  esto no había nada entre Bootstrap y Research que capturara el objetivo, así que el ciclo
+  arrancaba sobre lo que el agente supuso; medido sobre `af55a45`, `grep -ci "Intake"` sobre
+  `SKILL.md` devolvía `0`. Límite declarado: el gate verifica forma, nunca verdad, y un supuesto
+  escondido adentro del texto de una respuesta le es invisible.
+
 - **La suite dejó de ser intermitente.** `node --test --test-concurrency=32` salía rojo 2 de cada 5
   corridas, siempre en `tests/verify-evidence-runner.test.mjs`. La causa no era el runner: era un
   presupuesto de 1000 ms para una petición de evidencia que lanza un proceso real. Medición propia,

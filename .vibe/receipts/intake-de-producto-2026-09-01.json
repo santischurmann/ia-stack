@@ -1,0 +1,171 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "intake-de-producto",
+  "task": "B1 - la primera de las seis fases que el encargo pide: el protocolo pregunta que se quiere construir, y lo escribe en un archivo que un gate puede rechazar",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/intake-de-producto-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/empty-probe.json",
+      "contracts/honest-limits.json",
+      "docs/plan.md",
+      "docs/spec.md",
+      "docs/tasks.json",
+      "scripts/verify-intake.mjs",
+      "templates/intake.json",
+      "tests/coverage-scope.test.mjs",
+      "tests/verify-intake.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Un intake con las ocho respuestas completas sale en verde y dice cuantas respuestas, supuestos, riesgos y preguntas registro. Decir solo OK no alcanza: el numero deja comprobar de un vistazo que el archivo tiene lo que dice tener.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node --test tests/verify-intake.test.mjs",
+      "result": "12 de 12 en verde. El verde del gate incluye la frase que declara su propio limite: verifica forma, nunca verdad."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Una respuesta ausente, vacia o de relleno se rechaza nombrando cual. Sin el nombre, quien lea el rechazo tiene que adivinar cual de las ocho falta.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node --test tests/verify-intake.test.mjs",
+      "result": "Los tres casos probados sobre la misma respuesta: ausente, vacia y de dos caracteres. El esqueleto permisivo los aceptaba a los tres."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Una pregunta abierta marcada bloqueante detiene el ciclo, nombrandola. Es la regla que el encargo pide con todas las letras: no avanzar si falta una decision obligatoria.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node --test tests/verify-intake.test.mjs",
+      "result": "Rechaza con exit 1 nombrando Q1. El RED decia: avanzo con una decision obligatoria sin contestar."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "Supuestos, riesgos y preguntas abiertas viven en listas propias con id unico, separados de las respuestas. Lo que quede mezclado adentro de una respuesta no se puede señalar despues.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node --test tests/verify-intake.test.mjs",
+      "result": "Las tres listas probadas por ausencia, por no ser lista, por entrada vacia y por id repetido. El limite que esto NO cierra quedo escrito en README.md y registrado en honest-limits.json."
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "Un proyecto sin ningun intake informa VACIO y sale 0. No comparar nada no se escribe igual que verificar algo, que es la disciplina que ya fija verify-empty-probe.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "result": "OK: 30 gate(s) se comportan sobre un directorio vacio como declara el contrato. Y un fallo de lectura que no sea ENOENT se rechaza: un permiso mal puesto no se lee como un proyecto que no arranco."
+    },
+    {
+      "ac_id": "AC6",
+      "scenario": "Un esquema ajeno se rechaza antes de mirar cualquier otro campo. Enumerar los campos faltantes de un archivo que nunca pretendio ser un intake produce reproches sobre algo equivocado.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-intake.test.mjs",
+      "test_hash_sha256": "c3426e03385003c9b64cf1d497ff3c1b91c08edcde91350a56b7ca78dda60fd3",
+      "command": "node --test tests/verify-intake.test.mjs",
+      "result": "El rechazo nombra el esquema esperado y la prueba comprueba ademas que NO mencione ningun campo del intake."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Un gate obligatorio de ocho preguntas puede volverse burocracia sobre un cambio chico, y la reaccion natural a la burocracia es inventar respuestas para destrabarla, que convierte el expediente en decoracion.",
+      "mitigation": "El Intake se exige solo donde el protocolo ya exige pipeline completo: el auto-routing a Direct Build no lo pide, y eso quedo escrito en la fase. SKILL.md dice explicitamente que no se invente una respuesta para destrabar el gate."
+    },
+    "readability": {
+      "finding": "Por que el RED se hizo con un esqueleto permisivo en vez de escribir las pruebas contra un modulo inexistente no es evidente, y sin escribirlo el proximo lector lo toma por desprolijidad.",
+      "mitigation": "Esta en docs/plan.md con seccion propia y en la cabecera del esqueleto: importar un modulo inexistente da Cannot find package, que el protocolo prohibe como rojo. Un rojo que dice acepte un intake sin la mitad de las respuestas prueba algo."
+    },
+    "reliability": {
+      "finding": "Las pruebas escritas a mano cubrian los caminos que se me ocurrieron. La medicion mostro nueve ramas que ninguna tocaba: fecha invalida, answers que no es objeto, una pregunta de mas, una entrada de lista que no es objeto, y un fallo de lectura que no es ENOENT.",
+      "mitigation": "Las nueve cerradas con pruebas propias y la cobertura volvio a 31 de 31 scripts. La linea 61 ademas se simplifico: tenia una condicion redundante que la medicion dejo a la vista."
+    },
+    "resilience": {
+      "finding": "validateIntake podia salvarse por una excepcion en vez de por una comprobacion. Un gate que revienta mirando basura no distingue esto esta mal de el gate se rompio.",
+      "mitigation": "Una prueba lo corre sobre null, undefined, un numero, un string, un array y un objeto sin schema, y exige que devuelva violaciones sin lanzar en los seis casos."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "menciones de Intake en SKILL.md",
+      "measured": true,
+      "before": 0,
+      "after": 4
+    },
+    {
+      "metric": "fases del protocolo con artefacto y gate propio",
+      "measured": true,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "metric": "ramas de verify-intake.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 9,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 811,
+      "after": 823
+    },
+    {
+      "metric": "gates sondados sobre un directorio vacio",
+      "measured": true,
+      "before": 29,
+      "after": 30
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 60,
+      "after": 61
+    },
+    {
+      "metric": "cuantos ciclos reales arrancaron sin saber que se queria construir",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No hay registro historico de intakes porque la fase no existia. Se midio la ausencia de la fase, no su costo."
+    },
+    {
+      "metric": "si las ocho preguntas son las ocho correctas",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Salen del encargo del usuario, no de una medicion sobre ciclos reales. Se sabra usandolas; hoy es una hipotesis escrita, no un resultado."
+    }
+  ],
+  "reproduction": "Antes: grep -ci Intake sobre SKILL.md y README.md en af55a45 devuelve 0, y las otras cinco capacidades del encargo aparecen una sola vez cada una como prosa en SKILL.md lineas 226 a 235, sin artefacto ni gate. RED: con el esqueleto permisivo, node --test tests/verify-intake.test.mjs da 8 de 8 rojas, todas AssertionError sobre comportamiento. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 9 ramas sin ejecutar en verify-intake.mjs, con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 823 pruebas cada una, cobertura 31 de 31 scripts, y todos los gates en 0 incluida la trazabilidad de los 6 criterios contra las pruebas.",
+  "not_reviewed": "El gate verifica FORMA, nunca verdad: no sabe si una respuesta es correcta, ni si es suficiente, ni si alguien la contesto de verdad, y un intake coherente e inventado pasa igual. No puede ver un supuesto escondido adentro del texto de una respuesta en vez de declarado aparte, que es la manera mas facil de esquivarlo; quedo escrito como limite verificado por contrato. El minimo de veinte caracteres descarta el vacio y la palabra suelta, no distingue una respuesta real de relleno del mismo largo. Que las ocho preguntas sean las correctas no esta medido: salen del encargo. Las otras cinco fases que el encargo pide, CAIO y mapa de bucle y PRD y TRIANGULATE como fase propia y adopcion, siguen sin construirse. Y verify-evidence-trace claims --require-links sigue rojo por 4 claims sin vinculo de la decision d003: defecto preexistente confirmado contra un clon de af55a45 y ajeno a este trabajo.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 823, pass 823, fail 0",
+    "node --test tests/verify-intake.test.mjs -> 12 de 12 en verde; con el esqueleto permisivo eran 8 de 8 rojas, todas AssertionError",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 31 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 9 ramas sin ejecutar en verify-intake.mjs: :61, :64 x2, :66, :76, :89, :100, :130 x2",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 30 gate(s), 2 que verifican el propio checkout, 1 excluido con motivo escrito",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 100 user-visible protocol contract checks pass; 61 honest limits verified",
+    "node scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests -> OK: 6 criterio(s) de docs/spec.md nombrados por al menos una prueba",
+    "node scripts/verify-spec-wordcap.mjs check docs/spec.md --quality -> OK: 561/650 words, quality shape valid",
+    "node scripts/verify-intake.mjs check templates/intake.json -> OK: 8 respuesta(s), 1 supuesto(s), 1 riesgo(s), 1 pregunta(s) abierta(s), 0 bloqueante(s)",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 1 task(s), 11 declared writer path(s), sin conflictos",
+    "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 12 live changed file(s); no blocking Critical/High findings",
+    "grep -ci intake SKILL.md -> 4 (era 0 en af55a45)",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "f376bed8feb62bfa552c0aa77589b74f5fc933a6",
+  "tree_fingerprint": "585270ccef4db1df2350c410fefc8bdd140902d6e5f8ffef0ee6184655254588",
+  "terminal_state": "approved"
+}

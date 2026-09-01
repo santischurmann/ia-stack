@@ -214,6 +214,49 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
 
 ---
 
+## PHASE 1.5 — INTAKE (antes de Research)
+
+Lo primero que hay que preguntar, y lo que el protocolo no preguntaba. Bootstrap resuelve el
+stack y el nivel de rigor; Research ya asume que hay un producto definido. Entre las dos no había
+nada que capturara **qué se quiere construir**, así que el ciclo arrancaba sobre lo que el agente
+supuso — y el supuesto no quedaba escrito, de modo que nadie podía señalarlo después.
+
+Se salta sólo cuando el auto-routing ya mandó a Direct Build (Phase 1, paso 10): un cambio de tres
+archivos sin ambigüedad no necesita un expediente de producto. Para todo lo demás es entrada
+obligatoria de Research.
+
+Preguntale al usuario, una por una, y **esperá la respuesta**. No las contestes vos:
+
+1. ¿Qué querés construir?
+2. ¿Para quién? ¿En qué momento de su trabajo lo va a usar?
+3. ¿Qué problema resuelve? ¿Qué pasa hoy sin esto?
+4. ¿Qué resultado operativo esperás — qué va a poder hacer alguien que hoy no puede?
+5. ¿Qué restricciones hay? ¿Qué no se puede tocar, romper ni gastar?
+6. ¿Qué fuentes querés aportar? (Si no hay ninguna, se registra así.)
+7. ¿Hace falta un artefacto visual — diagrama, vista, maqueta — y para quién?
+8. ¿Pedís sólo diagnóstico, o también implementación?
+
+Escribí las respuestas en `docs/intake/<feature-slug>.json` desde `templates/intake.json`. Los
+**supuestos**, los **riesgos** y las **preguntas abiertas** van en sus listas propias, cada uno con
+id: lo que quede mezclado adentro de una respuesta no se puede señalar después. Una pregunta que
+el ciclo no puede saltear se marca `bloqueante: true`, y entonces el gate frena hasta que se
+conteste. **No inventes una respuesta para destrabar el gate**: eso convierte el expediente en
+decoración, que es exactamente lo que este archivo existe para evitar.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-intake.mjs check docs/intake/<feature-slug>.json
+```
+
+Sin ningún intake el gate escribe `VACÍO:` y sale `0`: un proyecto que todavía no arrancó no
+incumple nada. **El gate verifica forma, nunca verdad**: no sabe si una respuesta es correcta ni
+si alguien la contestó de verdad, y un supuesto escondido adentro del texto de una respuesta le es
+invisible. Que las respuestas digan algo sigue siendo juicio humano.
+
+Al cerrar, presentá 🔵 con al menos dos opciones y registrá la elección: seguir a Research, volver
+a preguntar lo que quedó flojo, o parar.
+
+---
+
 ## PHASE 2 — RESEARCH (antes de Spec)
 
 Para un cambio que excede Direct Build, Discovery es entrada obligatoria de la spec: no se entrega

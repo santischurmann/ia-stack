@@ -360,6 +360,12 @@
       "file": "README.md",
       "phrase": "no demuestran que la suite sea determinista",
       "why": "El defecto que hacía fallar la suite 2 de cada 5 corridas se cerró y se comprobó con diez corridas seguidas en verde. Diez corridas son la ausencia de un contraejemplo en diez intentos, no una demostración. Sin la frase, el número se lee como prueba y nadie vuelve a mirar si reaparece la intermitencia."
+    },
+    {
+      "limit_id": "intake-verifies-form-not-truth",
+      "file": "README.md",
+      "phrase": "no puede ver un supuesto escondido adentro del texto de una respuesta",
+      "why": "El gate exige que los supuestos vivan en su lista propia, con id, separados de las respuestas. Eso hace visible al que se declara, no al que no. Quien escriba \"asumimos que hay Node\" adentro de la respuesta de restricciones pasa el gate igual, y esa es la manera mas facil de esquivarlo. Sin la frase, el verde se lee como \"los supuestos estan declarados\", cuando lo unico probado es que la lista existe y tiene forma."
     }
   ]
 }

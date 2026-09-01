@@ -1,0 +1,25 @@
+{
+  "schema": "vcp.intake/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "answers": {
+    "que_construir": "Qué se quiere construir, en una o dos oraciones concretas.",
+    "para_quien": "Quién lo va a usar, y en qué momento de su trabajo.",
+    "que_problema": "Qué problema resuelve. Qué pasa hoy sin esto.",
+    "resultado_operativo": "Qué tiene que poder hacer alguien cuando esto exista, que hoy no puede.",
+    "restricciones": "Qué no se puede tocar, cambiar, romper ni gastar.",
+    "fuentes_aportadas": "Qué material aporta el usuario. Si no aporta ninguno, decirlo así.",
+    "artefacto_visual": "Si hace falta un diagrama, una vista o una maqueta, y para quién.",
+    "alcance": "Si se pide diagnóstico solamente, o también implementación."
+  },
+  "supuestos": [
+    { "id": "S1", "texto": "Lo que se está dando por cierto sin haberlo comprobado todavía." }
+  ],
+  "riesgos": [
+    { "id": "R1", "texto": "Qué puede salir mal, y qué se pierde si sale mal." }
+  ],
+  "preguntas_abiertas": [
+    { "id": "Q1", "texto": "Qué falta decidir. Bloqueante significa que el ciclo no avanza sin la respuesta.", "bloqueante": false }
+  ],
+  "exito": "Cómo se va a saber que esto sirvió, en términos observables."
+}

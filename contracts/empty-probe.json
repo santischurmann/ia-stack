@@ -42,18 +42,18 @@
       "expect": "reject"
     },
     {
-      "script": "verify-design-tokens.mjs",
-      "args": [
-        "check",
-        "contracts/design-tokens.json"
-      ],
-      "expect": "reject"
-    },
-    {
       "script": "verify-capability-matrix.mjs",
       "args": [
         "check",
         "contracts/capability-matrix.json"
+      ],
+      "expect": "reject"
+    },
+    {
+      "script": "verify-design-tokens.mjs",
+      "args": [
+        "check",
+        "contracts/design-tokens.json"
       ],
       "expect": "reject"
     },
@@ -92,6 +92,14 @@
       "expect": "reject"
     },
     {
+      "script": "verify-evidence-runner.mjs",
+      "args": [
+        "check",
+        "evidence.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-evidence-trace.mjs",
       "args": [
         "criteria",
@@ -103,25 +111,9 @@
       "expect": "empty"
     },
     {
-      "script": "verify-evidence-runner.mjs",
-      "args": [
-        "check",
-        "evidence.json"
-      ],
-      "expect": "reject"
-    },
-    {
       "script": "verify-graphify-manifest.mjs",
       "args": [
         "check"
-      ],
-      "expect": "reject"
-    },
-    {
-      "script": "verify-obsidian-export.mjs",
-      "args": [
-        "check",
-        "graphify-out/obsidian"
       ],
       "expect": "reject"
     },
@@ -133,6 +125,23 @@
       ],
       "expect": "usage",
       "why": "Sale 2 porque el informe de handoff no existe: su parseo no arranca sin archivo. Es una respuesta honesta -no llega a mirar-, pero como siempre sale 2, esta sonda no comprueba nada mas de este gate."
+    },
+    {
+      "script": "verify-intake.mjs",
+      "args": [
+        "check",
+        "docs/intake/x.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay ningun intake, y eso no es un incumplimiento: es un proyecto que todavia no arranco. El gate escribe VACIO y sale 0, con la frase que dice que no verifico nada. Escribir OK ahi seria vender por verificado un archivo que no existe."
+    },
+    {
+      "script": "verify-obsidian-export.mjs",
+      "args": [
+        "check",
+        "graphify-out/obsidian"
+      ],
+      "expect": "reject"
     },
     {
       "script": "verify-phase-decisions.mjs",
