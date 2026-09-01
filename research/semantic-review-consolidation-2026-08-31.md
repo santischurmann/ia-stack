@@ -4,23 +4,23 @@ Este archivo consolida shards generados por agentes para administrar la cola. No
 
 - Entradas PENDING del ledger: **14897**.
 - Registros consolidados: **14897**.
-- Duplicados descartados al elegir el shard preferido: **7627**.
+- Duplicados descartados al elegir el shard preferido: **7777**.
 - Filas sin shard: **0**.
 
-- Lectura semántica manual profunda (lotes revisados con citas): **397**; el resto es triage asistido y no se promueve.
+- Lectura semántica manual profunda (lotes revisados con citas): **547**; el resto es triage asistido y no se promueve.
 
 | Fuente | Total | READ_CANDIDATE | STATIC_ONLY | REVIEW_REQUIRED | PENDING_REVIEW | UNREVIEWED |
 |---|---:|---:|---:|---:|---:|---:|
 | AgriciDaniel/claude-obsidian | 192 | 17 | 29 | 0 | 146 | 0 |
-| ComposioHQ/awesome-claude-skills | 1080 | 150 | 2 | 0 | 928 | 0 |
+| ComposioHQ/awesome-claude-skills | 1080 | 250 | 2 | 0 | 828 | 0 |
 | ConardLi/garden-skills | 586 | 0 | 212 | 69 | 304 | 0 |
 | DietrichGebert/ponytail | 148 | 0 | 33 | 37 | 77 | 0 |
 | K-Dense-AI/scientific-agent-skills | 2435 | 50 | 304 | 484 | 1433 | 0 |
 | Panniantong/agent-reach | 104 | 68 | 4 | 32 | 0 | 0 |
 | anthropics/claude-plugins-official | 441 | 186 | 65 | 188 | 0 | 0 |
-| garrytan/gstack | 1419 | 1151 | 87 | 180 | 0 | 0 |
+| garrytan/gstack | 1419 | 1167 | 85 | 166 | 0 | 0 |
 | google/googletest | 249 | 12 | 6 | 0 | 231 | 0 |
-| marin-community/marin | 3530 | 90 | 200 | 0 | 3240 | 0 |
+| marin-community/marin | 3530 | 114 | 200 | 0 | 3216 | 0 |
 | msitarzewski/agency-agents | 339 | 12 | 312 | 15 | 0 | 0 |
 | rohitg00/ai-engineering-from-scratch | 2982 | 0 | 515 | 573 | 1894 | 0 |
 | thedotmack/claude-mem | 1022 | 50 | 80 | 511 | 370 | 0 |

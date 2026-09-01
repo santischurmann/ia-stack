@@ -5,8 +5,8 @@
 Se añadieron tres shards de lectura profunda, con citas y hashes verificados, y se consolidó la
 evidencia en `research/semantic-deep-evidence-2026-08-31.ndjson`.
 
-- Lecturas profundas verificadas: **397** filas únicas (antes 247).
-- Nuevos lotes: `awesome-claude-skills` (100), `gstack` (25) y `marin` (25).
+- Lecturas profundas verificadas: **547** filas únicas (antes 397).
+- Nuevos lotes: `awesome-claude-skills` (100 + 100), `gstack` (25 + 25) y `marin` (25 + 25).
 - Verificador nativo: `node research/verify-semantic-deep-evidence.mjs` → **exit 0**.
 - Pase exhaustivo de las **14.897** entradas PENDING: `node research/build-full-evidence-pass.mjs`
   leyó y hasheó **14.897/14.897** archivos materializados (14.365 textuales, 532 binarios/grandes);
@@ -54,7 +54,7 @@ Symlinks no dereferenciados:
 | Symlinks registrados | 6/6 | Que no se ocultaron entradas no materializadas |
 | Escaneo estructural | 15.575 | Líneas, extensiones y patrones aproximados |
 | Inventario funcional mecánico | 15.575/15.575 | Símbolos, señales de test, comandos, imports, claims y riesgos observables |
-| Lectura semántica manual profunda en lotes | 397/15.581 | Ocho lotes independientes con citas; no promovidos al ledger estricto |
+| Lectura semántica manual profunda en lotes | 547/15.581 | Once lotes independientes con citas; no promovidos al ledger estricto |
 | Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
 | Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
 | Evidencia exhaustiva de PENDING | 14.897/14.897 | Cada pendiente tiene fila 1:1, hash observado y estado conservador; no equivale a lectura semántica humana |
@@ -76,7 +76,7 @@ citas cuando un shard las aporta, pero todas mantienen `strict_status: PENDING`:
 profunda.
 
 La evidencia manual más fuerte de esta ejecución está consolidada en
-`research/semantic-deep-evidence-2026-08-31.ndjson` (397 filas). Los shards de trabajo originales
+`research/semantic-deep-evidence-2026-08-31.ndjson` (547 filas). Los shards de trabajo originales
 permanecen en `.scratch-semantic/` y están excluidos del control de versiones. Cada fila contiene
 propósito, entradas, conducta, salidas, invariantes, tests, riesgos, decisión VCP y citas
 `file:line`. El gate

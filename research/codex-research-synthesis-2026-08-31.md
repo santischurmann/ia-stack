@@ -2,8 +2,8 @@
 
 ## Actualización de evidencia — 2026-08-31 (última ejecución)
 
-La evidencia profunda consolidada pasó de 247 a **397 filas únicas**: Awesome Claude Skills (100),
-gstack (25) y Marin (25) se verificaron contra el manifest y los bytes del corpus con
+La evidencia profunda consolidada pasó de 397 a **547 filas únicas**: nuevos lotes de Awesome Claude
+Skills (100), gstack (25) y Marin (25) se verificaron contra el manifest y los bytes del corpus con
 `node research/verify-semantic-deep-evidence.mjs` (exit 0). El ledger estricto no se alteró:
 mantiene **14.897 PENDING** porque estos lotes asistidos aún requieren revisión adversarial antes de
 promoverse a `READ`. La contabilidad completa del corpus no debe confundirse con comprensión
@@ -77,7 +77,7 @@ commit, shard y citas cuando existen. Sus estados `READ_CANDIDATE`, `STATIC_ONLY
 `REVIEW_REQUIRED` son evidencia de cola, no estados canónicos: todas las filas conservan
 `strict_status: PENDING` hasta una revisión funcional adversarial.
 
-En esta ejecución se añadieron 397 lecturas manuales profundas en ocho lotes independientes
+En esta ejecución se añadieron 547 lecturas manuales profundas en once lotes independientes
 (`marin`, `awesome-claude-skills`, `gstack`, `scientific-agent-skills` y `claude-mem`, con lotes
 adicionales de marin/awesome/gstack). Sus registros verificables se conservan en
 `research/semantic-deep-evidence-2026-08-31.ndjson`; contienen hash, commit, propósito,
