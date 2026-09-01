@@ -55,11 +55,34 @@ function caio() {
     coverage,
   };
 }
-function loopMap() {
-  const stage = { input: 'entrada observable', measure: 'métrica actual', decision_owner: 'responsable', action: 'acción concreta', control: 'control verificable', learning: 'cómo se aprende' };
-  return { schema: SCHEMAS['loop-map'], feature: 'demo-feature', date: '2026-09-01', current: stage, target: clone(stage), first_loop: { id: 'loop-01', owner: 'owner', metric: 'métrica', cadence: 'semanal', success_threshold: 'umbral', next_candidate: 'siguiente proceso' } };
-}
+// Los trece campos que el encargo pide por bucle. `decision` es qué se decide; `decision_owner`,
+// quién decide. Son dos cosas distintas y un bucle sin las dos no se puede auditar.
+export const LOOP_FIELDS = Object.freeze(['input', 'transformation', 'actor', 'decision', 'decision_owner', 'action', 'measure', 'control', 'evidence', 'learning', 'next_iteration', 'exit_condition', 'block_condition']);
 
+const loopStage = (prefijo) => Object.fromEntries(LOOP_FIELDS.map((campo) => [campo, `${prefijo}: ${campo} declarado con texto suficiente`]));
+
+function loopMap() {
+  const current = loopStage('hoy');
+  const target = loopStage('hoy');
+  // Sólo dos campos cambian, así que el delta tiene que traer exactamente esos dos: ni uno que no
+  // cambió, ni faltar uno que sí. Es lo único del mapa que se puede verificar contra el documento.
+  target.measure = 'objetivo: measure declarado con texto suficiente';
+  target.control = 'objetivo: control declarado con texto suficiente';
+  const delta = [
+    { field: 'measure', from: current.measure, to: target.measure, why: 'hoy no se mide el tiempo entre entrada y decisión' },
+    { field: 'control', from: current.control, to: target.control, why: 'el control actual no frena nada, sólo informa' },
+  ];
+  return {
+    schema: SCHEMAS['loop-map'], feature: 'demo-feature', date: '2026-09-01',
+    current, delta, target,
+    first_loop: {
+      id: 'loop-01', owner: 'owner', metric: 'métrica', cadence: 'semanal',
+      success_threshold: 'umbral', next_candidate: 'siguiente proceso',
+      rollback: 'volver a la cadencia anterior y avisar al dueño en el mismo día',
+      failure_signals: ['el bucle se saltea dos revisiones seguidas', 'la métrica deja de moverse tres cadencias'],
+    },
+  };
+}
 function prd() {
   return {
     schema: SCHEMAS.prd, feature: 'demo-feature', date: '2026-09-01', problem: 'problema observable', users: [{ role: 'operador', context: 'cuando ejecuta el proceso' }], outcome: 'resultado operativo observable', in_scope: ['capacidad'], out_scope: ['servicio externo'], capabilities: [{ id: 'CAP1', description: 'capacidad principal', priority: 'must' }], technology: { stack: 'Node nativo', dependencies: ['ninguna'], access: ['repositorio'] }, acceptance_criteria: [{ id: 'AC1', statement: 'GIVEN estado WHEN acción THEN resultado' }], risks: [{ id: 'R1', description: 'riesgo', mitigation: 'mitigación' }],
@@ -276,4 +299,83 @@ test('FALSIFICACIÓN · los rechazos de evidencia y de cobertura mal formada tam
   const entradaMalFormada = caio();
   entradaMalFormada.coverage.hidden_costs = { estado: 'not_examined' };
   assert.ok(validateCaio(entradaMalFormada).some((v) => v.includes('state y reason')));
+});
+
+test('el mapa de bucle declara los trece campos que el encargo pide, en los dos flujos', () => {
+  assert.deepEqual(validateLoopMap(loopMap()), []);
+  assert.equal(LOOP_FIELDS.length, 13);
+  for (const campo of LOOP_FIELDS) {
+    for (const flujo of ['current', 'target']) {
+      const documento = loopMap();
+      delete documento[flujo][campo];
+      documento.delta = documento.delta.filter((cambio) => cambio.field !== campo);
+      assert.ok(validateLoopMap(documento).length > 0, `aceptó ${flujo} sin ${campo}`);
+    }
+  }
+});
+
+test('FALSIFICACIÓN · el delta tiene que decir la verdad sobre current y target', () => {
+  // Esto es lo único del mapa que el gate puede verificar de verdad: los otros campos son prosa.
+  // Un delta que miente sobre lo que cambió es peor que no tenerlo, porque parece auditado.
+  const inventado = loopMap();
+  inventado.delta.push({ field: 'actor', from: inventado.current.actor, to: inventado.target.actor, why: 'declaro un cambio que no existe' });
+  assert.ok(validateLoopMap(inventado).some((v) => v.includes('actor')),
+    'aceptó un delta sobre un campo idéntico entre current y target');
+
+  const omitido = loopMap();
+  omitido.delta = omitido.delta.filter((cambio) => cambio.field !== 'control');
+  assert.ok(validateLoopMap(omitido).some((v) => v.includes('control')),
+    'aceptó un delta que omite un campo que sí cambió');
+
+  const origenFalso = loopMap();
+  origenFalso.delta[0].from = 'algo que current nunca dijo';
+  assert.ok(validateLoopMap(origenFalso).some((v) => v.includes('from')),
+    'aceptó un delta cuyo from no es lo que dice current');
+
+  const destinoFalso = loopMap();
+  destinoFalso.delta[0].to = 'algo que target nunca dijo';
+  assert.ok(validateLoopMap(destinoFalso).some((v) => v.includes('to')),
+    'aceptó un delta cuyo to no es lo que dice target');
+
+  const campoInventado = loopMap();
+  campoInventado.delta.push({ field: 'karma', from: 'a', to: 'b', why: 'un campo que el bucle no tiene' });
+  assert.ok(validateLoopMap(campoInventado).some((v) => v.includes('karma')));
+
+  const sinMotivo = loopMap();
+  sinMotivo.delta[0].why = '';
+  assert.ok(validateLoopMap(sinMotivo).some((v) => v.includes('why')), 'un cambio sin motivo no es un delta, es una diferencia');
+
+  const deltaVacio = loopMap();
+  deltaVacio.delta = [];
+  assert.ok(validateLoopMap(deltaVacio).length > 0, 'target difiere de current: el delta no puede estar vacío');
+});
+
+test('FALSIFICACIÓN · el primer bucle declara cómo se deshace y cómo se sabe que falló', () => {
+  // Un bucle sin rollback es un cambio de una sola dirección, y uno sin señales de fallo se abandona
+  // en silencio: nadie puede decir cuándo dejó de servir.
+  const sinRollback = loopMap();
+  sinRollback.first_loop.rollback = '';
+  assert.ok(validateLoopMap(sinRollback).some((v) => v.includes('rollback')));
+
+  for (const valor of [[], 'una señal suelta', ['']]) {
+    const documento = loopMap();
+    documento.first_loop.failure_signals = valor;
+    assert.ok(validateLoopMap(documento).length > 0, `aceptó failure_signals = ${JSON.stringify(valor)}`);
+  }
+});
+
+test('FALSIFICACIÓN · el delta rechaza no ser lista, traer claves ajenas y repetir un campo', () => {
+  // Encontradas midiendo: verify-vcp-coverage nombró estas tres ramas de validateDelta con línea.
+  const noEsLista = loopMap();
+  noEsLista.delta = 'measure y control cambiaron';
+  assert.ok(validateLoopMap(noEsLista).some((v) => v.includes('delta debe ser una lista')));
+
+  const clavesAjenas = loopMap();
+  clavesAjenas.delta[0] = { field: 'measure', antes: 'x', despues: 'y' };
+  assert.ok(validateLoopMap(clavesAjenas).some((v) => v.includes('field, from, to y why')));
+
+  const repetido = loopMap();
+  repetido.delta.push({ ...repetido.delta[0] });
+  assert.ok(validateLoopMap(repetido).some((v) => v.includes('dos veces')),
+    'declarar dos veces el mismo cambio deja un delta que no se corresponde uno a uno con las diferencias');
 });

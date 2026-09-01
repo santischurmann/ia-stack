@@ -378,6 +378,12 @@
       "file": "README.md",
       "phrase": "el gate no abre el locator de una evidencia",
       "why": "La regla central del CAIO es que un observed sin evidencia se rechaza, y eso puede leerse como que la evidencia esta comprobada. No lo esta: el gate exige que la lista exista y que cada entrada declare source, locator y observation, pero nunca resuelve el locator contra el arbol ni contra la red. Un hallazgo observado con una cita inventada pasa en verde. Quien resuelve locators contra el arbol es verify-discovery-core.mjs sources, que es otro gate y otro momento."
+    },
+    {
+      "limit_id": "loop-map-delta-is-the-only-checkable-part",
+      "file": "README.md",
+      "phrase": "El delta se verifica contra el documento",
+      "why": "De los trece campos del bucle, doce son prosa que el gate no puede juzgar: no sabe si la metrica declarada se mide de verdad ni si el control frena algo. Lo unico que puede comprobar es la coherencia interna del delta contra current y target. Sin la frase, el verde del gate se lee como si el mapa entero estuviera verificado, cuando lo verificado es una sola relacion entre tres campos del propio archivo."
     }
   ]
 }

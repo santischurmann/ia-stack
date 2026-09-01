@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El mapa de bucle describe el bucle entero, y su delta se verifica.** Cada flujo pasa de seis
+  campos a los trece que el protocolo pide: se sumaron transformación, actor, decisión, evidencia,
+  siguiente iteración, condición de salida y condición de bloqueo. `decision` es qué se decide y
+  `decision_owner` quién decide: un bucle al que le falta una de las dos no se puede auditar.
+  Entre `current` y `target` ahora va un `delta` **exacto**: declarar un cambio en un campo que
+  quedó idéntico rechaza, omitir uno que sí cambió rechaza, y un `from` o un `to` que no coincide
+  con lo que el propio documento dice también. Es lo único del mapa que el gate puede comprobar
+  contra el archivo; los otros doce campos son prosa que no puede juzgar, y así queda declarado.
+  El primer bucle suma `rollback` y `failure_signals`: uno sin rollback es un cambio de una sola
+  dirección, y uno sin señales de fallo se abandona en silencio.
+
 - **El CAIO mira las doce dimensiones que el encargo pide, no cuatro.** Se sumaron decisiones sin
   dueño, estados no medidos, handoffs defectuosos, errores que se repiten, ausencia de aprendizaje,
   costos ocultos, riesgos de seguridad y dependencia de memoria conversacional. Y las clases pasan

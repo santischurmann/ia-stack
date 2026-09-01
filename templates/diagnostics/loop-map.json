@@ -2,7 +2,67 @@
   "schema": "vcp.loop-map/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
-  "current": { "input": "Qué entra hoy", "measure": "Qué se mide hoy", "decision_owner": "Quién decide hoy", "action": "Qué acción se ejecuta hoy", "control": "Cómo se controla hoy", "learning": "Cómo aprende hoy" },
-  "target": { "input": "Qué debería entrar", "measure": "Qué se medirá", "decision_owner": "Quién decidirá", "action": "Qué acción se ejecutará", "control": "Qué control se aplicará", "learning": "Cómo se incorporará el aprendizaje" },
-  "first_loop": { "id": "loop-01", "owner": "Dueño del primer bucle", "metric": "Métrica observable", "cadence": "Cadencia de revisión", "success_threshold": "Umbral que cierra el bucle", "next_candidate": "Siguiente proceso candidato" }
+  "current": {
+    "input": "Qué entra hoy al bucle",
+    "transformation": "Qué le pasa a esa entrada hoy",
+    "actor": "Quién ejecuta esa transformación hoy",
+    "decision": "Qué se decide hoy con el resultado",
+    "decision_owner": "Quién toma esa decisión hoy",
+    "action": "Qué acción se ejecuta hoy",
+    "measure": "Qué se mide hoy",
+    "control": "Qué frena el bucle hoy si algo sale mal",
+    "evidence": "Qué queda escrito hoy como prueba de que pasó",
+    "learning": "Cómo se incorpora hoy lo aprendido",
+    "next_iteration": "Qué dispara hoy la siguiente vuelta",
+    "exit_condition": "Cuándo se considera cerrado hoy",
+    "block_condition": "Qué lo deja bloqueado hoy, y quién lo destraba"
+  },
+  "delta": [
+    {
+      "field": "measure",
+      "from": "Qué se mide hoy",
+      "to": "Qué se va a medir, en unidades observables",
+      "why": "Por qué este campo tiene que cambiar. El gate comprueba que from y to sean exactamente lo que dicen current y target, y que no falte ni sobre ningún campo que cambió."
+    },
+    {
+      "field": "control",
+      "from": "Qué frena el bucle hoy si algo sale mal",
+      "to": "Qué va a frenar el bucle, no sólo informar",
+      "why": "Por qué este campo tiene que cambiar. El gate comprueba que from y to sean exactamente lo que dicen current y target, y que no falte ni sobre ningún campo que cambió."
+    },
+    {
+      "field": "evidence",
+      "from": "Qué queda escrito hoy como prueba de que pasó",
+      "to": "Qué artefacto va a quedar como prueba, y dónde",
+      "why": "Por qué este campo tiene que cambiar. El gate comprueba que from y to sean exactamente lo que dicen current y target, y que no falte ni sobre ningún campo que cambió."
+    }
+  ],
+  "target": {
+    "input": "Qué entra hoy al bucle",
+    "transformation": "Qué le pasa a esa entrada hoy",
+    "actor": "Quién ejecuta esa transformación hoy",
+    "decision": "Qué se decide hoy con el resultado",
+    "decision_owner": "Quién toma esa decisión hoy",
+    "action": "Qué acción se ejecuta hoy",
+    "measure": "Qué se va a medir, en unidades observables",
+    "control": "Qué va a frenar el bucle, no sólo informar",
+    "evidence": "Qué artefacto va a quedar como prueba, y dónde",
+    "learning": "Cómo se incorpora hoy lo aprendido",
+    "next_iteration": "Qué dispara hoy la siguiente vuelta",
+    "exit_condition": "Cuándo se considera cerrado hoy",
+    "block_condition": "Qué lo deja bloqueado hoy, y quién lo destraba"
+  },
+  "first_loop": {
+    "id": "loop-01",
+    "owner": "Dueño del primer bucle",
+    "metric": "Métrica observable",
+    "cadence": "Cadencia de revisión",
+    "success_threshold": "Umbral que cierra el bucle",
+    "next_candidate": "Siguiente proceso candidato",
+    "rollback": "Cómo se vuelve atrás si el bucle empeora las cosas, y en cuánto tiempo",
+    "failure_signals": [
+      "Señal observable de que el bucle dejó de servir",
+      "Segunda señal, distinta de la primera"
+    ]
+  }
 }

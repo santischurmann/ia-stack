@@ -176,6 +176,46 @@
       "rollback": "git revert del commit. B2 queda en su forma anterior de 4 dimensiones y 2 clases.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
+    },
+    {
+      "id": "B5",
+      "description": "Mapa de bucle completo: los trece campos del encargo por flujo, delta exacto verificado contra current y target, y rollback mas señales de fallo en el primer bucle",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-product-diagnostics.mjs",
+        "tests/verify-product-diagnostics.test.mjs",
+        "templates/diagnostics/loop-map.json",
+        "contracts/honest-limits.json",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-product-diagnostics.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B2",
+        "B3",
+        "B4"
+      ],
+      "status": "done",
+      "goal": "El mapa declaraba seis campos de los trece que el protocolo pide, no distinguia que se decide de quien decide, y no tenia delta: la comparacion entre hoy y objetivo quedaba a cargo del lector.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "Trece campos por flujo; delta exacto que rechaza un cambio inventado, uno omitido, un from o un to que no coincide, un campo ajeno, un duplicado y un motivo vacio; rollback y failure_signals en first_loop; cobertura 33/33 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "De los trece campos, doce son prosa que el gate no puede juzgar. Lo unico verificable contra el documento es la coherencia del delta: no sabe si la metrica declarada se mide de verdad ni si el control frena algo.",
+      "rollback": "git revert del commit. El mapa vuelve a sus seis campos sin delta.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "blocked_reason": ""
     }
   ]
 }

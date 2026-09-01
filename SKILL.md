@@ -277,8 +277,17 @@ antes de comprometer tareas de implementación.
    Una dimensión sin hallazgos no se deja en blanco: declara en `coverage` si se examinó y no
    había nada, o si no se examinó y por qué. Sin eso, ocho silencios se leen igual que ocho
    dimensiones sanas.
-3. **Mapa de bucle actual→objetivo:** para ambos, declarar entrada, medida, quién decide, acción,
-   control y aprendizaje. El primer bucle a cerrar debe tener dueño, métrica y cadencia.
+3. **Mapa de bucle actual→objetivo:** cada flujo declara **trece** campos: entrada,
+   transformación, actor, decisión, quién decide, acción, métrica, control, evidencia,
+   aprendizaje, siguiente iteración, condición de salida y condición de bloqueo. `decision` es
+   **qué** se decide y `decision_owner` es **quién**: un bucle al que le falta una de las dos no
+   se puede auditar —o no se sabe qué se resolvió, o no se sabe a quién preguntarle—.
+   Entre los dos flujos va un `delta` **exacto**: cada cambio declarado tiene que corresponderse
+   con una diferencia real entre `current` y `target`, y cada diferencia real tiene que estar
+   declarada, con su `from`, su `to` y su motivo. Es lo único del mapa que el gate puede
+   verificar contra el propio documento; el resto es prosa que no puede juzgar.
+   El primer bucle a cerrar declara además **rollback** y **señales de fallo**: uno sin rollback
+   es un cambio de una sola dirección, y uno sin señales de fallo se abandona en silencio.
 4. **PRD + implementación:** delimitar problema, usuario, resultado operativo, tecnología,
    funciones, dependencias, accesos, orden y validaciones. No improvisar instalaciones frente al
    cliente: un acceso desconocido bloquea el plan, no se asume.

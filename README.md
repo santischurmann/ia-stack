@@ -108,8 +108,12 @@ no es un reporte decorativo al final.
    que decir si se miró y no había nada o si no se miró: el silencio no pasa por diagnóstico.
    Límite: **el gate no abre el locator de una evidencia**, así que un observado con una cita
    inventada pasa igual. Comprueba que la etiqueta cargue lo que su nombre exige, no que sea cierta.
-3. **Mapa de bucle:** entrada, medida, responsable de decidir, acción, control y aprendizaje; se
-   compara el flujo actual con el flujo objetivo.
+3. **Mapa de bucle:** trece campos por flujo —entrada, transformación, actor, decisión, quién
+   decide, acción, métrica, control, evidencia, aprendizaje, siguiente iteración, condición de
+   salida y condición de bloqueo— más un `delta` entre el flujo de hoy y el objetivo.
+   **El delta se verifica contra el documento**: declarar un cambio en un campo que quedó
+   idéntico rechaza, y omitir uno que sí cambió también. Los otros doce campos son prosa que el
+   gate no puede juzgar. El primer bucle declara rollback y señales de fallo.
 4. **PRD y planes:** problema, usuarios, resultado operativo, dependencias, implementación,
    adopción y recurrencia del primer bucle a cerrar.
 

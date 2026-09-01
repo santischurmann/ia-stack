@@ -211,25 +211,86 @@ function validateCoverage(document, violations) {
     requireText(entry.reason, `coverage.${dimension}.reason`, violations);
   }
 }
+/**
+ * Los trece campos que describen un bucle. `decision` es QUE se decide y `decision_owner` es QUIEN
+ * decide: son dos cosas distintas, y un bucle al que le falta una de las dos no se puede auditar --
+ * o no se sabe que se resolvio, o no se sabe a quien preguntarle.
+ */
+export const LOOP_FIELDS = Object.freeze(['input', 'transformation', 'actor', 'decision', 'decision_owner', 'action', 'measure', 'control', 'evidence', 'learning', 'next_iteration', 'exit_condition', 'block_condition']);
+
 function validateLoopStage(stage, at, violations) {
-  if (!exactKeys(stage, ['input', 'measure', 'decision_owner', 'action', 'control', 'learning'])) {
-    add(violations, `${at} debe declarar input, measure, decision_owner, action, control y learning`);
+  if (!exactKeys(stage, LOOP_FIELDS)) {
+    add(violations, `${at} debe declarar exactamente los ${LOOP_FIELDS.length} campos del bucle: ${LOOP_FIELDS.join(", ")}`);
+    return false;
+  }
+  LOOP_FIELDS.forEach((key) => requireText(stage[key], `${at}.${key}`, violations));
+  return true;
+}
+
+/**
+ * El delta es lo unico del mapa que se puede verificar contra el propio documento: los demas campos
+ * son prosa que el gate no puede juzgar. Asi que se lo exige exacto -- cada cambio declarado tiene
+ * que corresponderse con una diferencia real entre current y target, y cada diferencia real tiene
+ * que estar declarada. Un delta que miente sobre lo que cambio es peor que no tenerlo: parece
+ * auditado.
+ */
+function validateDelta(document, violations) {
+  const delta = document.delta;
+  if (!Array.isArray(delta)) {
+    add(violations, 'delta debe ser una lista de cambios entre current y target');
     return;
   }
-  Object.keys(stage).forEach((key) => requireText(stage[key], `${at}.${key}`, violations));
+  const declarados = new Set();
+  delta.forEach((cambio, index) => {
+    const at = `delta[${index}]`;
+    if (!exactKeys(cambio, ['field', 'from', 'to', 'why'])) {
+      add(violations, `${at} debe declarar exactamente field, from, to y why`);
+      return;
+    }
+    if (!LOOP_FIELDS.includes(cambio.field)) {
+      add(violations, `${at}.field nombra ${cambio.field}, que no es un campo del bucle`);
+      return;
+    }
+    if (declarados.has(cambio.field)) add(violations, `delta declara ${cambio.field} dos veces`);
+    declarados.add(cambio.field);
+    requireText(cambio.why, `${at}.why`, violations);
+    if (document.current[cambio.field] === document.target[cambio.field]) {
+      add(violations, `${at} declara un cambio en ${cambio.field}, pero current y target dicen lo mismo`);
+      return;
+    }
+    if (cambio.from !== document.current[cambio.field]) add(violations, `${at}.from no es lo que current dice de ${cambio.field}`);
+    if (cambio.to !== document.target[cambio.field]) add(violations, `${at}.to no es lo que target dice de ${cambio.field}`);
+  });
+  for (const field of LOOP_FIELDS) {
+    if (document.current[field] !== document.target[field] && !declarados.has(field)) {
+      add(violations, `delta no declara el cambio en ${field}, que current y target sí traen distinto`);
+    }
+  }
 }
 
 export function validateLoopMap(document) {
   const violations = [];
-  if (!exactKeys(document, ['schema', 'feature', 'date', 'current', 'target', 'first_loop'])) return ['loop-map debe declarar exactamente schema, feature, date, current, target y first_loop'];
+  if (!exactKeys(document, ['schema', 'feature', 'date', 'current', 'delta', 'target', 'first_loop'])) {
+    return ['loop-map debe declarar exactamente schema, feature, date, current, delta, target y first_loop'];
+  }
   validateHeader(document, 'loop-map', violations);
-  validateLoopStage(document.current, 'current', violations);
-  validateLoopStage(document.target, 'target', violations);
-  if (!exactKeys(document.first_loop, ['id', 'owner', 'metric', 'cadence', 'success_threshold', 'next_candidate'])) add(violations, 'first_loop debe declarar id, owner, metric, cadence, success_threshold y next_candidate');
-  else Object.keys(document.first_loop).forEach((key) => requireText(document.first_loop[key], `first_loop.${key}`, violations));
+  const currentOk = validateLoopStage(document.current, 'current', violations);
+  const targetOk = validateLoopStage(document.target, 'target', violations);
+  // El delta se compara campo a campo, asi que sin los dos flujos completos no hay nada que comparar.
+  if (currentOk && targetOk) validateDelta(document, violations);
+
+  const FIRST_LOOP_KEYS = ['id', 'owner', 'metric', 'cadence', 'success_threshold', 'next_candidate', 'rollback', 'failure_signals'];
+  if (!exactKeys(document.first_loop, FIRST_LOOP_KEYS)) {
+    add(violations, `first_loop debe declarar ${FIRST_LOOP_KEYS.join(", ")}`);
+    return violations;
+  }
+  // Un bucle sin rollback es un cambio de una sola direccion, y uno sin señales de fallo se abandona
+  // en silencio: nadie puede decir cuando dejo de servir.
+  FIRST_LOOP_KEYS.filter((key) => key !== 'failure_signals')
+    .forEach((key) => requireText(document.first_loop[key], `first_loop.${key}`, violations));
+  requireStringArray(document.first_loop.failure_signals, 'first_loop.failure_signals', violations, { nonEmptyList: true });
   return violations;
 }
-
 function validateUsers(value, violations) {
   if (!Array.isArray(value) || value.length === 0) {
     add(violations, 'users debe tener al menos un usuario');

@@ -1,0 +1,146 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "mapa-de-bucle-completo",
+  "task": "B5 - los trece campos del bucle por flujo, un delta que se verifica contra el propio documento, y rollback mas señales de fallo en el primer bucle",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/mapa-de-bucle-completo-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/honest-limits.json",
+      "docs/tasks.json",
+      "scripts/verify-product-diagnostics.mjs",
+      "templates/diagnostics/loop-map.json",
+      "tests/verify-product-diagnostics.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Cada flujo del bucle declara los trece campos que el encargo pide, no seis. Se sumaron transformacion, actor, decision, evidencia, siguiente iteracion, condicion de salida y condicion de bloqueo. decision es QUE se decide y decision_owner es QUIEN: un bucle al que le falta una de las dos no se puede auditar, porque o no se sabe que se resolvio o no se sabe a quien preguntarle.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "61ee80e7f6e8c6f53dccb7180dc912222aa9739f3ed14c58f94433d1b12c81e4",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "20 de 20 en verde. La prueba quita cada uno de los trece campos en cada uno de los dos flujos -- veintiseis casos -- y exige rechazo en los veintiseis."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "El delta entre current y target se verifica contra el propio documento. Declarar un cambio en un campo que quedo identico rechaza; omitir uno que si cambio rechaza; y un from o un to que no coincide con lo que el documento dice tambien. Es lo unico del mapa que el gate puede comprobar: los otros doce campos son prosa.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "61ee80e7f6e8c6f53dccb7180dc912222aa9739f3ed14c58f94433d1b12c81e4",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Siete casos probados: cambio inventado sobre un campo identico, cambio omitido, from falso, to falso, campo que no existe en el bucle, motivo vacio y delta vacio con target distinto de current."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "El primer bucle declara como se deshace y como se sabe que fallo. Uno sin rollback es un cambio de una sola direccion; uno sin señales de fallo se abandona en silencio y nadie puede decir cuando dejo de servir.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "61ee80e7f6e8c6f53dccb7180dc912222aa9739f3ed14c58f94433d1b12c81e4",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza rollback vacio, failure_signals vacia, failure_signals que no es lista y una señal vacia adentro de la lista."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "El gate extendido no deja caminos de rechazo sin ejercitar, y la extension no rompio nada del resto del gate compartido -- PRD, implementacion, adopcion y recurrencia siguen validando igual.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "61ee80e7f6e8c6f53dccb7180dc912222aa9739f3ed14c58f94433d1b12c81e4",
+      "command": "node scripts/verify-vcp-coverage.mjs",
+      "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 3 ramas sin ejercitar en validateDelta: :239, :246 y :254."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Al reescribir el bloque del loop-map me lleve por delante cuatro helpers del PRD -- validateUsers, validateCapabilities, validateAcceptanceCriteria y validateRisks -- que vivian entre las dos funciones. La suite lo mostro al instante con un ReferenceError en la prueba del PRD.",
+      "mitigation": "Se recuperaron textualmente desde HEAD con git show, no de memoria, y se comprobo funcion por funcion que quedaran byte a byte identicas a las originales. Las cuatro coinciden."
+    },
+    "readability": {
+      "finding": "Trece campos por flujo mas un delta parece burocracia sobre un artefacto que antes tenia seis campos, y sin decir por que, el proximo lector lo recorta.",
+      "mitigation": "El motivo de cada agregado esta escrito: decision frente a decision_owner en el propio gate y en SKILL.md, y el delta con su razon -- es lo unico verificable del mapa, asi que se lo exige exacto en vez de aceptarlo como prosa."
+    },
+    "reliability": {
+      "finding": "Las pruebas escritas a mano dejaron tres ramas de validateDelta sin ejercitar: delta que no es lista, delta con claves ajenas y delta que repite un campo. Un camino de rechazo sin ejecutar es un camino del que no se sabe si rechaza.",
+      "mitigation": "Las tres cerradas con pruebas propias y la cobertura del proyecto volvio a 33 de 33 scripts con todas sus funciones y ramas ejecutadas."
+    },
+    "resilience": {
+      "finding": "El delta se compara campo a campo contra current y target, asi que sobre un flujo incompleto compararia contra undefined y produciria reproches sin sentido encima del error real.",
+      "mitigation": "validateLoopStage devuelve si el flujo quedo completo, y el delta solo se valida cuando los dos lo estan. Un flujo roto se reporta como flujo roto, no como veinte diferencias fantasma."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "campos declarados por flujo del bucle",
+      "measured": true,
+      "before": 6,
+      "after": 13
+    },
+    {
+      "metric": "campos del primer bucle",
+      "measured": true,
+      "before": 6,
+      "after": 8
+    },
+    {
+      "metric": "relaciones del mapa que el gate puede verificar contra el documento",
+      "measured": true,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "metric": "ramas de verify-product-diagnostics.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 3,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 848,
+      "after": 852
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 63,
+      "after": 64
+    },
+    {
+      "metric": "si los trece campos son los trece correctos",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Salen del encargo del usuario, no de una medicion sobre mapas de bucle reales. Se sabra usandolos."
+    },
+    {
+      "metric": "cuantos mapas reales quedaron cortos por tener seis campos",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No hay ningun loop-map.json real en el repositorio: el unico era la plantilla. Se midio la forma del gate, no su efecto."
+    }
+  ],
+  "reproduction": "Antes: validateLoopStage exigia exactamente input, measure, decision_owner, action, control y learning, y validateLoopMap no tenia delta ni pedia rollback ni señales de fallo. RED: con la fixture ampliada a trece campos y delta, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. Durante el BUILD, el reemplazo del bloque borro cuatro helpers del PRD y la suite lo delato con ReferenceError: validateUsers is not defined; se restauraron desde HEAD y se verificaron identicos. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 3 ramas sin ejecutar en validateDelta con archivo y linea. El gate de contrato tambien freno el trabajo: la frase del limite honesto quedaba partida por un salto de linea en el README y por lo tanto no existia literalmente; se reacomodo el texto. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 852 pruebas cada una, cobertura 33 de 33, y contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
+  "not_reviewed": "De los trece campos del bucle, doce son prosa que el gate no puede juzgar: no sabe si la metrica declarada se mide de verdad, ni si el control frena algo, ni si la condicion de bloqueo describe un bloqueo real. Lo unico verificado es la coherencia interna del delta contra current y target. Tampoco comprueba que el rollback sea ejecutable ni que las señales de fallo sean observables: exige que esten escritas. Que los trece campos sean los correctos no esta medido: salen del encargo. Y quedan sin auditar contra el encargo los otros cuatro artefactos del mismo gate: PRD, implementacion, adopcion y recurrencia; del PRD ya se sabe que sus criterios de aceptacion piden dos campos donde el encargo pide siete.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 852, pass 852, fail 0",
+    "node --test tests/verify-product-diagnostics.test.mjs -> 20 de 20 en verde; con el gate anterior eran 6 rojas conductuales",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 3 ramas sin ejecutar en validateDelta: :239, :246, :254",
+    "diff de los 4 helpers del PRD entre HEAD y el arbol -> IDENTICO en validateUsers, validateCapabilities, validateAcceptanceCriteria y validateRisks",
+    "node scripts/verify-vcp-contract.mjs check -> primero REJECTED por el limite honesto partido en dos lineas; tras reacomodar el README, OK con 107 checks y 64 limites",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s)",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 5 task(s), 24 declared writer path(s), sin conflictos sin secuenciar",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "validateLoopMap sobre templates/diagnostics/loop-map.json -> 0 violaciones, con 13 campos por flujo y 3 cambios en el delta",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "60ca3ad347ed497f3b2137c5cc74a24a46a14508",
+  "tree_fingerprint": "dfcba10adb69267b6de7b60f3e103cebbdf01c6d01d5c20becfde278f9e65cdf",
+  "terminal_state": "approved"
+}
