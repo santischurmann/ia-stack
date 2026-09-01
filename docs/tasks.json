@@ -216,6 +216,47 @@
       "rollback": "git revert del commit. El mapa vuelve a sus seis campos sin delta.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
+    },
+    {
+      "id": "B6",
+      "description": "PRD completo: las veintiuna secciones de contenido del encargo y criterios de aceptacion de siete campos, con metricas y requisitos no funcionales que traen con que medirse",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-product-diagnostics.mjs",
+        "tests/verify-product-diagnostics.test.mjs",
+        "templates/diagnostics/prd.json",
+        "contracts/honest-limits.json",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-product-diagnostics.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ],
+      "status": "done",
+      "goal": "El PRD tenia nueve secciones de contenido y sus criterios de aceptacion eran {id, statement}: un texto libre que dice que alguien penso algo, sin manera de ver que parte falta.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "Veintiuna secciones obligatorias, cada una rechazable por su nombre; criterios con evento, precondicion, accion, resultado observable, test y evidencia esperada; metricas con linea de base y objetivo; requisitos no funcionales con medida; cobertura 33/33 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "El campo test se exige escrito, nunca resuelto: el gate no abre el archivo ni comprueba que esa prueba nombre al criterio. Eso lo hace verify-evidence-trace.mjs criteria, otro gate y otro momento.",
+      "rollback": "git revert del commit. El PRD vuelve a nueve secciones y criterios de dos campos.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "blocked_reason": ""
     }
   ]
 }

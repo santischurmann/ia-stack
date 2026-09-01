@@ -1,0 +1,147 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "prd-completo",
+  "task": "B6 - las veintiuna secciones de contenido que el encargo pide, y criterios de aceptacion que se pueden comprobar en vez de un texto libre",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/prd-completo-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/honest-limits.json",
+      "docs/tasks.json",
+      "scripts/verify-product-diagnostics.mjs",
+      "templates/diagnostics/prd.json",
+      "tests/verify-product-diagnostics.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "El PRD declara las veintiuna secciones de contenido del encargo, no nueve. Se sumaron jobs-to-be-done, no-objetivos, requisitos no funcionales, seguridad, privacidad, observabilidad, integraciones, datos, arquitectura, metricas, rollout y rollback. Seguridad, privacidad y observabilidad son campos propios y no notas al pie de la tecnologia: una seccion que no existe no se puede dejar sin contestar por olvido.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "28f265f3efa3955b9151945b76f1bee8ee001f2d51655f0c2cd355e5bcffe4a3",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "25 de 25 en verde. La prueba quita cada una de las veintiuna secciones por separado y exige rechazo en las veintiuna, y ademas rechaza una seccion inventada."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Cada criterio de aceptacion trae seis partes ademas del id: evento, precondicion, accion, resultado observable, test y evidencia esperada. Antes eran {id, statement}: un texto libre que dice que alguien penso algo, sin manera de ver que parte falta.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "28f265f3efa3955b9151945b76f1bee8ee001f2d51655f0c2cd355e5bcffe4a3",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza el criterio en prosa, cada uno de los seis campos vacios por separado nombrando cual, dos criterios con el mismo id, y la lista vacia."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Las metricas y los requisitos no funcionales traen con que medirse. Una metrica sin linea de base no dice si mejoro, solo donde esta; un requisito no funcional sin medida es un deseo, porque rapido no se comprueba.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "28f265f3efa3955b9151945b76f1bee8ee001f2d51655f0c2cd355e5bcffe4a3",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza cada campo vacio de una metrica y de un requisito no funcional, la lista vacia, las claves ajenas y el id repetido."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "La extension no dejo caminos de rechazo sin ejercitar y no rompio el resto del gate compartido: CAIO, mapa de bucle, implementacion, adopcion y recurrencia siguen validando igual.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "28f265f3efa3955b9151945b76f1bee8ee001f2d51655f0c2cd355e5bcffe4a3",
+      "command": "node scripts/verify-vcp-coverage.mjs",
+      "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 2 ramas sin ejercitar en validateIdentifiedList: :349 y :351. Se comprobo ademas, con git show, que ninguna funcion del archivo se perdiera al reescribir el bloque."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Veintiuna secciones obligatorias sobre un artefacto que tenia nueve es mucha friccion nueva, y la reaccion natural a la friccion es llenar campos con relleno para destrabar el gate -- que convierte el PRD en decoracion, justo lo que existe para evitar.",
+      "mitigation": "El gate no puede impedirlo y asi queda declarado. Lo que si hace es que el relleno sea visible: cada seccion se rechaza por su nombre, asi que quien lea el PRD ve exactamente que se contesto y que no. La alternativa -- dejar nueve secciones -- hacia invisible el mismo silencio."
+    },
+    "readability": {
+      "finding": "Por que seguridad, privacidad y observabilidad son campos propios y no parte de technology no es evidente, y el proximo lector los va a querer agrupar.",
+      "mitigation": "El motivo esta escrito en el gate, en SKILL.md y en el README: una seccion que no existe no se puede dejar sin contestar por olvido. Agrupadas adentro de otra, el olvido no deja rastro."
+    },
+    "reliability": {
+      "finding": "Al reescribir el bloque del loop-map en la tanda anterior me lleve por delante cuatro helpers del PRD sin darme cuenta hasta que la suite lo mostro. El mismo riesgo estaba en esta reescritura, que toca el mismo archivo.",
+      "mitigation": "Esta vez se comparo la lista de funciones del archivo contra HEAD con git show antes de seguir: cero perdidas, una nueva. La comprobacion quedo en la evidencia del receipt para que sea el paso normal y no una reaccion a un susto."
+    },
+    "resilience": {
+      "finding": "metrics y non_functional_requirements comparten forma -- una lista de objetos con id -- y duplicar la validacion habria dejado dos caminos que envejecen distinto.",
+      "mitigation": "Los dos usan validateIdentifiedList con su propio juego de claves, asi que una regla nueva sobre ids vale para los dos a la vez. Las cuatro ramas de esa funcion quedaron ejercitadas por pruebas de las dos listas."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "secciones de contenido del PRD",
+      "measured": true,
+      "before": 9,
+      "after": 21
+    },
+    {
+      "metric": "campos por criterio de aceptacion",
+      "measured": true,
+      "before": 2,
+      "after": 7
+    },
+    {
+      "metric": "ramas de verify-product-diagnostics.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 2,
+      "after": 0
+    },
+    {
+      "metric": "funciones del archivo perdidas al reescribir el bloque",
+      "measured": true,
+      "before": 4,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 852,
+      "after": 857
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 64,
+      "after": 65
+    },
+    {
+      "metric": "si las veintiuna secciones son las correctas",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Salen del encargo del usuario, no de una medicion sobre PRDs reales. Se sabra usandolas."
+    },
+    {
+      "metric": "cuanto relleno aparece cuando se exigen veintiuna secciones",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No hay ningun prd.json real todavia: el unico era la plantilla. Es el riesgo principal del cambio y no esta medido."
+    }
+  ],
+  "reproduction": "Antes: validatePrd exigia exactamente schema, feature, date, problem, users, outcome, in_scope, out_scope, capabilities, technology, acceptance_criteria y risks -- nueve secciones de contenido -- y validateAcceptanceCriteria exigia exactKeys(item, ['id','statement']). RED: con la fixture ampliada a veintiuna secciones y criterios de siete campos, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 2 ramas sin ejecutar en validateIdentifiedList con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 857 pruebas cada una, cobertura 33 de 33 scripts, y contrato, sonda vacia, conflictos de plan, seguridad y sincronizacion del runtime en 0.",
+  "not_reviewed": "El campo test de cada criterio se exige escrito, nunca resuelto: el gate no abre el archivo ni comprueba que esa prueba nombre al criterio. Eso lo hace verify-evidence-trace.mjs criteria, otro gate y otro momento, asi que un PRD con seis campos llenos y un test inventado pasa igual. Tampoco juzga si una seccion dice algo: veintiuna secciones de relleno pasan, y ese es el riesgo principal del cambio, declarado y no medido. Que las veintiuna sean las correctas sale del encargo, no de una medicion. Y quedan sin auditar contra el encargo los tres artefactos restantes del gate: implementacion, adopcion y recurrencia.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 857, pass 857, fail 0",
+    "node --test tests/verify-product-diagnostics.test.mjs -> 25 de 25 en verde; con el gate anterior eran 6 rojas conductuales",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 2 ramas sin ejecutar en validateIdentifiedList: :349 y :351",
+    "comparacion de funciones del archivo contra HEAD -> 0 perdidas, 1 nueva (validateIdentifiedList)",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 65 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s)",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 6 task(s), 24 declared writer path(s), sin conflictos sin secuenciar",
+    "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 8 live changed file(s); no blocking Critical/High findings",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "validatePrd sobre templates/diagnostics/prd.json -> 0 violaciones, con las 21 secciones y un criterio de 7 campos",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "71fa107ad9cde34a06fef1134acea03c486fb92c",
+  "tree_fingerprint": "c5e8ce8aaa61299ee01257dbc1352b382ce0b5952e002d3ee0a2314fbb73c351",
+  "terminal_state": "approved"
+}

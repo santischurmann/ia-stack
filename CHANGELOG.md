@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El PRD declara las veintiuna secciones que el protocolo pide, y sus criterios se pueden**
+  **comprobar.** Antes tenía nueve secciones de contenido; se sumaron jobs-to-be-done, no-objetivos,
+  requisitos no funcionales, seguridad, privacidad, observabilidad, integraciones, datos,
+  arquitectura, métricas, rollout y rollback. Seguridad, privacidad y observabilidad son campos
+  propios y no notas al pie de la tecnología: una sección que no existe no se deja sin contestar
+  por olvido. Y cada criterio de aceptación pasa de `{id, statement}` a seis partes más el id:
+  evento, precondición, acción, resultado observable, test y evidencia esperada. Un texto libre
+  decía que alguien pensó algo; esto deja ver cuál de las seis partes falta. Límite declarado: el
+  campo `test` se exige escrito, nunca resuelto.
+
 - **El mapa de bucle describe el bucle entero, y su delta se verifica.** Cada flujo pasa de seis
   campos a los trece que el protocolo pide: se sumaron transformación, actor, decisión, evidencia,
   siguiente iteración, condición de salida y condición de bloqueo. `decision` es qué se decide y

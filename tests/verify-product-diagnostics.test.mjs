@@ -83,12 +83,45 @@ function loopMap() {
     },
   };
 }
+// Un criterio de aceptacion con evento, precondicion, accion, resultado observable, test y
+// evidencia esperada se puede comprobar. Un statement en prosa, no: dice que alguien penso algo.
+const criterio = (id, extra = {}) => ({
+  id,
+  event: 'el operador cierra la fase',
+  precondition: 'existe un intake completo y el research ya cerro',
+  action: 'corre el gate de diagnosticos sobre el feature',
+  observable_result: 'el gate sale 0 y nombra los seis artefactos validados',
+  test: 'tests/verify-product-diagnostics.test.mjs',
+  expected_evidence: 'la linea OK con el conteo, guardada en el receipt de la fase',
+  ...extra,
+});
+
 function prd() {
   return {
-    schema: SCHEMAS.prd, feature: 'demo-feature', date: '2026-09-01', problem: 'problema observable', users: [{ role: 'operador', context: 'cuando ejecuta el proceso' }], outcome: 'resultado operativo observable', in_scope: ['capacidad'], out_scope: ['servicio externo'], capabilities: [{ id: 'CAP1', description: 'capacidad principal', priority: 'must' }], technology: { stack: 'Node nativo', dependencies: ['ninguna'], access: ['repositorio'] }, acceptance_criteria: [{ id: 'AC1', statement: 'GIVEN estado WHEN acción THEN resultado' }], risks: [{ id: 'R1', description: 'riesgo', mitigation: 'mitigación' }],
+    schema: SCHEMAS.prd, feature: 'demo-feature', date: '2026-09-01',
+    problem: 'problema observable',
+    users: [{ role: 'operador', context: 'cuando ejecuta el proceso' }],
+    jobs_to_be_done: ['cerrar una fase sin releer todo el expediente'],
+    outcome: 'resultado operativo observable',
+    non_goals: ['no reemplaza la revision humana del diagnostico'],
+    in_scope: ['capacidad'],
+    out_scope: ['servicio externo'],
+    capabilities: [{ id: 'CAP1', description: 'capacidad principal', priority: 'must' }],
+    non_functional_requirements: [{ id: 'NFR1', description: 'el gate cierra en menos de un segundo sobre un feature', measure: 'tiempo de pared medido en la suite' }],
+    security: 'no lee rutas fuera del proyecto ni sale a la red',
+    privacy: 'no registra datos de personas: el expediente es sobre el proceso',
+    observability: 'cada rechazo nombra el artefacto y el campo que lo causo',
+    integrations: ['ninguna: Node nativo'],
+    data: 'seis archivos JSON por feature, versionados con el repositorio',
+    architecture: 'un verificador puro por artefacto y un CLI que los orquesta',
+    technology: { stack: 'Node nativo', dependencies: ['ninguna'], access: ['repositorio'] },
+    acceptance_criteria: [criterio('AC1')],
+    metrics: [{ id: 'M1', name: 'fases cerradas con los seis artefactos validos', baseline: '0 de 3 en agosto', target: '3 de 3 en septiembre' }],
+    risks: [{ id: 'R1', description: 'riesgo', mitigation: 'mitigacion' }],
+    rollout: 'se exige primero en features nuevas, y recien despues en las que ya estaban abiertas',
+    rollback: 'se vuelve a exigir solo los cuatro artefactos anteriores, sin tocar los ya escritos',
   };
 }
-
 function implementation() {
   return { schema: SCHEMAS.implementation, feature: 'demo-feature', date: '2026-09-01', order: [{ id: 'STEP1', action: 'construir base', depends_on: [], validation: 'node --test', access_needed: ['repo'] }, { id: 'STEP2', action: 'validar integración', depends_on: ['STEP1'], validation: 'gate E2E', access_needed: ['repo'] }], rollback: 'revertir el commit del lote', release_gate: 'suite y seguridad verdes' };
 }
@@ -378,4 +411,105 @@ test('FALSIFICACIÓN · el delta rechaza no ser lista, traer claves ajenas y rep
   repetido.delta.push({ ...repetido.delta[0] });
   assert.ok(validateLoopMap(repetido).some((v) => v.includes('dos veces')),
     'declarar dos veces el mismo cambio deja un delta que no se corresponde uno a uno con las diferencias');
+});
+
+test('el PRD declara las secciones que el protocolo pide, no un subconjunto', () => {
+  assert.deepEqual(validatePrd(prd()), []);
+  const secciones = [
+    'problem', 'users', 'jobs_to_be_done', 'outcome', 'non_goals', 'in_scope', 'out_scope',
+    'capabilities', 'non_functional_requirements', 'security', 'privacy', 'observability',
+    'integrations', 'data', 'architecture', 'technology', 'acceptance_criteria', 'metrics',
+    'risks', 'rollout', 'rollback',
+  ];
+  assert.equal(secciones.length, 21, 'el PRD tiene veintiún secciones de contenido más schema, feature y date');
+  for (const seccion of secciones) {
+    const documento = prd();
+    delete documento[seccion];
+    assert.ok(validatePrd(documento).length > 0, `aceptó un PRD sin ${seccion}`);
+  }
+  const conExtra = prd();
+  conExtra.seccion_inventada = 'algo';
+  assert.ok(validatePrd(conExtra).length > 0, 'aceptó una sección que el PRD no declara');
+});
+
+test('FALSIFICACIÓN · un criterio de aceptación en prosa ya no alcanza', () => {
+  // Antes exigía {id, statement}: un texto libre que dice que alguien pensó algo. Con evento,
+  // precondición, acción, resultado observable, test y evidencia esperada, el criterio se puede
+  // comprobar — y sobre todo, se puede ver cuál de las seis partes falta.
+  const enProsa = prd();
+  enProsa.acceptance_criteria = [{ id: 'AC1', statement: 'el gate tiene que andar bien' }];
+  assert.ok(validatePrd(enProsa).length > 0, 'aceptó un criterio en prosa');
+
+  for (const campo of ['event', 'precondition', 'action', 'observable_result', 'test', 'expected_evidence']) {
+    const documento = prd();
+    documento.acceptance_criteria = [criterio('AC1', { [campo]: '' })];
+    assert.ok(validatePrd(documento).some((v) => v.includes(campo)), `aceptó un criterio sin ${campo}`);
+  }
+
+  const repetido = prd();
+  repetido.acceptance_criteria = [criterio('AC1'), criterio('AC1')];
+  assert.ok(validatePrd(repetido).some((v) => v.includes('AC1')), 'dos criterios con el mismo id no se distinguen después');
+
+  const vacio = prd();
+  vacio.acceptance_criteria = [];
+  assert.ok(validatePrd(vacio).length > 0, 'un PRD sin un solo criterio no se puede aceptar ni rechazar');
+});
+
+test('FALSIFICACIÓN · las métricas y los requisitos no funcionales traen con qué medirse', () => {
+  // Una métrica sin línea de base no dice si mejoró, y un requisito no funcional sin medida es un
+  // deseo: "rápido" no se puede comprobar.
+  for (const campo of ['id', 'name', 'baseline', 'target']) {
+    const documento = prd();
+    documento.metrics = [{ id: 'M1', name: 'n', baseline: 'b', target: 't', [campo]: '' }];
+    assert.ok(validatePrd(documento).length > 0, `aceptó una métrica sin ${campo}`);
+  }
+  const sinMetricas = prd();
+  sinMetricas.metrics = [];
+  assert.ok(validatePrd(sinMetricas).length > 0, 'un PRD sin métricas no declara cómo se va a saber si sirvió');
+
+  for (const campo of ['id', 'description', 'measure']) {
+    const documento = prd();
+    documento.non_functional_requirements = [{ id: 'NFR1', description: 'd', measure: 'm', [campo]: '' }];
+    assert.ok(validatePrd(documento).length > 0, `aceptó un requisito no funcional sin ${campo}`);
+  }
+});
+
+test('FALSIFICACIÓN · las secciones de texto y de lista rechazan el vacío por separado', () => {
+  for (const campo of ['security', 'privacy', 'observability', 'data', 'architecture', 'rollout', 'rollback']) {
+    const documento = prd();
+    documento[campo] = '';
+    assert.ok(validatePrd(documento).some((v) => v.includes(campo)), `aceptó ${campo} vacío`);
+  }
+  for (const campo of ['jobs_to_be_done', 'non_goals', 'integrations']) {
+    const vacia = prd();
+    vacia[campo] = [];
+    assert.ok(validatePrd(vacia).some((v) => v.includes(campo)), `aceptó ${campo} sin una sola entrada`);
+    const noEsLista = prd();
+    noEsLista[campo] = 'una sola cosa suelta';
+    assert.ok(validatePrd(noEsLista).some((v) => v.includes(campo)), `aceptó ${campo} que no es una lista`);
+  }
+});
+
+test('FALSIFICACIÓN · métricas y requisitos no funcionales rechazan claves ajenas e ids repetidos', () => {
+  // Las nombró la cobertura: verify-product-diagnostics.mjs:349 y :351, las dos en la lista
+  // identificada que comparten metrics y non_functional_requirements.
+  const clavesAjenas = prd();
+  clavesAjenas.metrics = [{ id: 'M1', nombre: 'con la clave en castellano', baseline: 'b', target: 't' }];
+  assert.ok(validatePrd(clavesAjenas).some((v) => v.includes('id, name, baseline, target')));
+
+  const idRepetido = prd();
+  idRepetido.metrics = [
+    { id: 'M1', name: 'una', baseline: 'b', target: 't' },
+    { id: 'M1', name: 'otra', baseline: 'b', target: 't' },
+  ];
+  assert.ok(validatePrd(idRepetido).some((v) => v.includes('repite el id M1')),
+    'dos métricas con el mismo id no se pueden seguir por separado');
+
+  const idInvalido = prd();
+  idInvalido.non_functional_requirements = [{ id: 'no vale', description: 'd', measure: 'm' }];
+  assert.ok(validatePrd(idInvalido).some((v) => v.includes('no es válido')));
+
+  const clavesAjenasNfr = prd();
+  clavesAjenasNfr.non_functional_requirements = [{ id: 'NFR1', description: 'd', medida: 'm' }];
+  assert.ok(validatePrd(clavesAjenasNfr).some((v) => v.includes('id, description, measure')));
 });

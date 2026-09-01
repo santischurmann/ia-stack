@@ -2,13 +2,83 @@
   "schema": "vcp.prd/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
-  "problem": "Problema observable que se va a resolver.",
-  "users": [{ "role": "Rol usuario", "context": "Momento concreto en que lo usa" }],
-  "outcome": "Resultado operativo observable.",
-  "in_scope": ["Capacidad incluida"],
-  "out_scope": ["Capacidad excluida"],
-  "capabilities": [{ "id": "CAP1", "description": "Capacidad que el sistema debe entregar", "priority": "must" }],
-  "technology": { "stack": "Tecnología existente o elegida", "dependencies": ["Ninguna dependencia nueva sin justificar"], "access": ["Acceso necesario" ] },
-  "acceptance_criteria": [{ "id": "AC1", "statement": "GIVEN un estado, WHEN ocurre una acción, THEN se observa el resultado." }],
-  "risks": [{ "id": "R1", "description": "Qué puede salir mal", "mitigation": "Cómo se reduce y cómo se detecta" }]
+  "problem": "Qué está roto hoy, en términos observables.",
+  "users": [
+    {
+      "role": "Quién lo usa",
+      "context": "En qué momento de su trabajo"
+    }
+  ],
+  "jobs_to_be_done": [
+    "Qué está tratando de lograr esa persona cuando llega acá."
+  ],
+  "outcome": "Qué va a poder hacer, cuando esto exista, que hoy no puede.",
+  "non_goals": [
+    "Qué NO se propone resolver, aunque quede cerca."
+  ],
+  "in_scope": [
+    "Qué entra en esta entrega."
+  ],
+  "out_scope": [
+    "Qué queda afuera de esta entrega."
+  ],
+  "capabilities": [
+    {
+      "id": "CAP1",
+      "description": "Requisito funcional: qué tiene que poder hacer.",
+      "priority": "must"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR1",
+      "description": "Requisito no funcional.",
+      "measure": "Con qué se mide. Sin medida es un deseo: \"rápido\" no se comprueba."
+    }
+  ],
+  "security": "Qué superficie toca, qué no puede leer ni escribir, y qué pasa si falla.",
+  "privacy": "Qué datos de personas toca. Si no toca ninguno, decirlo así.",
+  "observability": "Cómo se ve desde afuera que funcionó o falló, y dónde queda registrado.",
+  "integrations": [
+    "Con qué se integra. Si con nada, escribir \"ninguna\" y por qué."
+  ],
+  "data": "Qué datos se guardan, dónde viven y quién los puede borrar.",
+  "architecture": "Cómo se acomodan las piezas, y por qué así y no de otra forma.",
+  "technology": {
+    "stack": "Node nativo",
+    "dependencies": [
+      "ninguna"
+    ],
+    "access": [
+      "repositorio"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "event": "Qué ocurre que dispara este criterio.",
+      "precondition": "Qué tiene que ser cierto antes.",
+      "action": "Qué se ejecuta exactamente.",
+      "observable_result": "Qué se ve después, y que se puede mirar sin interpretar.",
+      "test": "Ruta de la prueba que lo comprueba. El gate la exige escrita, no la resuelve.",
+      "expected_evidence": "Qué queda como prueba de que se cumplió, y dónde."
+    }
+  ],
+  "metrics": [
+    {
+      "id": "M1",
+      "name": "Qué se mide",
+      "baseline": "Cuánto da hoy",
+      "target": "Cuánto tiene que dar"
+    }
+  ],
+  "risks": [
+    {
+      "id": "R1",
+      "description": "Qué puede salir mal",
+      "mitigation": "Qué lo acota"
+    }
+  ],
+  "rollout": "Cómo entra en uso: a quién primero, y qué habilita pasar al siguiente.",
+  "rollback": "Cómo se vuelve atrás si empeora las cosas, y en cuánto tiempo."
 }

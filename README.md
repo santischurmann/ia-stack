@@ -114,8 +114,10 @@ no es un reporte decorativo al final.
    **El delta se verifica contra el documento**: declarar un cambio en un campo que quedó
    idéntico rechaza, y omitir uno que sí cambió también. Los otros doce campos son prosa que el
    gate no puede juzgar. El primer bucle declara rollback y señales de fallo.
-4. **PRD y planes:** problema, usuarios, resultado operativo, dependencias, implementación,
-   adopción y recurrencia del primer bucle a cerrar.
+4. **PRD y planes:** veintiuna secciones —incluidas seguridad, privacidad, observabilidad, datos,
+   arquitectura, métricas, rollout y rollback como campos propios— y criterios de aceptación de
+   seis partes: evento, precondición, acción, resultado observable, test y evidencia esperada.
+   **Un criterio en prosa no alcanza**, porque no deja ver cuál de las seis partes falta.
 
 Cada decisión se guarda como JSON inmutable bajo
 `docs/discovery/<feature>/runs/run-NNN/{decisions,packets}/`. Un packet completed conserva su

@@ -315,15 +315,42 @@ function validateCapabilities(value, violations) {
   });
 }
 
+/**
+ * Un criterio con evento, precondicion, accion, resultado observable, test y evidencia esperada se
+ * puede comprobar, y sobre todo se puede ver CUAL de las seis partes falta. El `statement` en prosa
+ * que habia antes no permitia ninguna de las dos cosas: decia que alguien penso algo.
+ *
+ * LIMITE: `test` se exige escrito, no resuelto. Que la prueba nombrada exista y nombre al criterio
+ * lo comprueba verify-evidence-trace.mjs criteria, que es otro gate y otro momento.
+ */
+const ACCEPTANCE_KEYS = Object.freeze(['id', 'event', 'precondition', 'action', 'observable_result', 'test', 'expected_evidence']);
+
 function validateAcceptanceCriteria(value, violations) {
   if (!Array.isArray(value) || value.length === 0) { add(violations, 'acceptance_criteria debe tener al menos un criterio'); return; }
   const ids = new Set();
   value.forEach((item, index) => {
-    if (!exactKeys(item, ['id', 'statement'])) { add(violations, `acceptance_criteria[${index}] debe declarar id y statement`); return; }
-    if (!isId(item.id)) add(violations, `acceptance_criteria[${index}].id no es válido`);
+    const at = `acceptance_criteria[${index}]`;
+    if (!exactKeys(item, ACCEPTANCE_KEYS)) { add(violations, `${at} debe declarar exactamente ${ACCEPTANCE_KEYS.join(", ")}`); return; }
+    if (!isId(item.id)) add(violations, `${at}.id no es válido`);
     else if (ids.has(item.id)) add(violations, `acceptance_criteria repite el id ${item.id}`);
     else ids.add(item.id);
-    requireText(item.statement, `acceptance_criteria[${index}].statement`, violations);
+    ACCEPTANCE_KEYS.filter((key) => key !== 'id').forEach((key) => requireText(item[key], `${at}.${key}`, violations));
+  });
+}
+/**
+ * Un requisito no funcional sin medida es un deseo: "rapido" no se puede comprobar. Y una metrica
+ * sin linea de base no dice si mejoro, solo donde esta.
+ */
+function validateIdentifiedList(value, at, keys, violations) {
+  if (!Array.isArray(value) || value.length === 0) { add(violations, `${at} debe tener al menos una entrada`); return; }
+  const ids = new Set();
+  value.forEach((item, index) => {
+    const itemAt = `${at}[${index}]`;
+    if (!exactKeys(item, keys)) { add(violations, `${itemAt} debe declarar exactamente ${keys.join(", ")}`); return; }
+    if (!isId(item.id)) add(violations, `${itemAt}.id no es válido`);
+    else if (ids.has(item.id)) add(violations, `${at} repite el id ${item.id}`);
+    else ids.add(item.id);
+    keys.filter((key) => key !== 'id').forEach((key) => requireText(item[key], `${itemAt}.${key}`, violations));
   });
 }
 
@@ -335,20 +362,29 @@ function validateRisks(value, violations) {
   });
 }
 
+/**
+ * El PRD declara las veintiuna secciones de contenido que el protocolo pide, mas schema, feature y
+ * date. Seguridad, privacidad, observabilidad, datos y arquitectura son campos propios y no notas
+ * al pie de la tecnologia: una seccion que no existe no se puede dejar sin contestar por olvido.
+ * La adopcion y la recurrencia NO estan aca a proposito: tienen artefacto propio en el mismo gate.
+ */
 export function validatePrd(document) {
   const violations = [];
-  const keys = ['schema', 'feature', 'date', 'problem', 'users', 'outcome', 'in_scope', 'out_scope', 'capabilities', 'technology', 'acceptance_criteria', 'risks'];
-  if (!exactKeys(document, keys)) return [`prd debe declarar exactamente ${keys.join(', ')}`];
+  const keys = ['schema', 'feature', 'date', 'problem', 'users', 'jobs_to_be_done', 'outcome', 'non_goals', 'in_scope', 'out_scope', 'capabilities', 'non_functional_requirements', 'security', 'privacy', 'observability', 'integrations', 'data', 'architecture', 'technology', 'acceptance_criteria', 'metrics', 'risks', 'rollout', 'rollback'];
+  if (!exactKeys(document, keys)) return [`prd debe declarar exactamente ${keys.join(", ")}`];
   validateHeader(document, 'prd', violations);
-  requireText(document.problem, 'problem', violations); requireText(document.outcome, 'outcome', violations);
-  validateUsers(document.users, violations); requireStringArray(document.in_scope, 'in_scope', violations, { nonEmptyList: true }); requireStringArray(document.out_scope, 'out_scope', violations, { nonEmptyList: true });
+  ['problem', 'outcome', 'security', 'privacy', 'observability', 'data', 'architecture', 'rollout', 'rollback'].forEach((key) => requireText(document[key], key, violations));
+  ['jobs_to_be_done', 'non_goals', 'in_scope', 'out_scope', 'integrations'].forEach((key) => requireStringArray(document[key], key, violations, { nonEmptyList: true }));
+  validateUsers(document.users, violations);
   validateCapabilities(document.capabilities, violations);
+  validateIdentifiedList(document.non_functional_requirements, 'non_functional_requirements', ['id', 'description', 'measure'], violations);
+  validateIdentifiedList(document.metrics, 'metrics', ['id', 'name', 'baseline', 'target'], violations);
   if (!exactKeys(document.technology, ['stack', 'dependencies', 'access'])) add(violations, 'technology debe declarar stack, dependencies y access');
   else { requireText(document.technology.stack, 'technology.stack', violations); requireStringArray(document.technology.dependencies, 'technology.dependencies', violations); requireStringArray(document.technology.access, 'technology.access', violations); }
-  validateAcceptanceCriteria(document.acceptance_criteria, violations); validateRisks(document.risks, violations);
+  validateAcceptanceCriteria(document.acceptance_criteria, violations);
+  validateRisks(document.risks, violations);
   return violations;
 }
-
 function validatePlanSteps(value, violations) {
   if (!Array.isArray(value) || value.length === 0) { add(violations, 'order debe tener al menos un paso'); return; }
   const ids = new Set();

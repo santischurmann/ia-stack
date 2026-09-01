@@ -288,9 +288,20 @@ antes de comprometer tareas de implementación.
    verificar contra el propio documento; el resto es prosa que no puede juzgar.
    El primer bucle a cerrar declara además **rollback** y **señales de fallo**: uno sin rollback
    es un cambio de una sola dirección, y uno sin señales de fallo se abandona en silencio.
-4. **PRD + implementación:** delimitar problema, usuario, resultado operativo, tecnología,
-   funciones, dependencias, accesos, orden y validaciones. No improvisar instalaciones frente al
-   cliente: un acceso desconocido bloquea el plan, no se asume.
+4. **PRD + implementación:** el PRD declara **veintiuna secciones**, no un subconjunto: problema,
+   usuarios, jobs-to-be-done, resultado, no-objetivos, alcance, fuera de alcance, requisitos
+   funcionales, requisitos no funcionales, seguridad, privacidad, observabilidad, integraciones,
+   datos, arquitectura, tecnología, criterios de aceptación, métricas, riesgos, rollout y
+   rollback. Seguridad, privacidad y observabilidad son campos propios y no notas al pie de la
+   tecnología: una sección que no existe no se puede dejar sin contestar por olvido.
+   **Cada criterio de aceptación trae seis partes además del id**: evento, precondición, acción,
+   resultado observable, test y evidencia esperada. Un `statement` en prosa no alcanza —no deja
+   comprobar nada, y sobre todo no deja ver cuál de las seis partes falta—. El `test` se exige
+   escrito, no resuelto: que la prueba exista y nombre al criterio lo comprueba
+   `verify-evidence-trace.mjs criteria`, que es otro gate y otro momento.
+   Una métrica sin línea de base no dice si mejoró, y un requisito no funcional sin medida es un
+   deseo: «rápido» no se comprueba. La adopción y la recurrencia no van acá: tienen artefacto
+   propio.
 5. **Adopción + recurrencia:** identificar responsable interno, cambio de hábito, señal de uso,
    mantenimiento y siguiente proceso candidato. Entregar software sin estas condiciones es un
    riesgo declarado, no éxito.

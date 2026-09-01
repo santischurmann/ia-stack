@@ -384,6 +384,12 @@
       "file": "README.md",
       "phrase": "El delta se verifica contra el documento",
       "why": "De los trece campos del bucle, doce son prosa que el gate no puede juzgar: no sabe si la metrica declarada se mide de verdad ni si el control frena algo. Lo unico que puede comprobar es la coherencia interna del delta contra current y target. Sin la frase, el verde del gate se lee como si el mapa entero estuviera verificado, cuando lo verificado es una sola relacion entre tres campos del propio archivo."
+    },
+    {
+      "limit_id": "prd-test-field-is-written-not-resolved",
+      "file": "README.md",
+      "phrase": "Un criterio en prosa no alcanza",
+      "why": "El criterio ahora exige seis partes y una de ellas es el test que lo comprueba. Eso puede leerse como que el gate verifica la prueba. No la verifica: exige que el campo este escrito, nunca abre el archivo ni comprueba que esa prueba nombre al criterio. Quien lo hace es verify-evidence-trace.mjs criteria, otro gate y otro momento. Sin esta frase, un PRD con seis campos llenos y un test inventado se lee como trazabilidad probada."
     }
   ]
 }
