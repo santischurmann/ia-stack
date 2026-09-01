@@ -100,8 +100,14 @@ no es un reporte decorativo al final.
 
 1. **Research trazable:** fuentes, versión/fecha, límites de lectura y claims que sí o no sostienen
    una decisión.
-2. **Diagnóstico CAIO:** qué proceso está roto, dónde se pierde información, qué trabajo se repite
-   y qué bucle queda abierto.
+2. **Diagnóstico CAIO:** doce dimensiones —proceso roto, información perdida, trabajo repetido,
+   bucles abiertos, decisiones sin dueño, estados no medidos, handoffs defectuosos, errores que
+   se repiten, ausencia de aprendizaje, costos ocultos, riesgos de seguridad y dependencia de
+   memoria conversacional—, cada hallazgo clasificado como observado, hipótesis, inferencia o
+   dato faltante. **Un observado sin evidencia se rechaza**, y una dimensión sin hallazgos tiene
+   que decir si se miró y no había nada o si no se miró: el silencio no pasa por diagnóstico.
+   Límite: **el gate no abre el locator de una evidencia**, así que un observado con una cita
+   inventada pasa igual. Comprueba que la etiqueta cargue lo que su nombre exige, no que sea cierta.
 3. **Mapa de bucle:** entrada, medida, responsable de decidir, acción, control y aprendizaje; se
    compara el flujo actual con el flujo objetivo.
 4. **PRD y planes:** problema, usuarios, resultado operativo, dependencias, implementación,

@@ -30,7 +30,27 @@ export const EMPTY_PREFIX = 'VACÍO: ';
 const FEATURE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const DATE = /^\d{4}-\d{2}-\d{2}$/u;
 const IDENTIFIER = /^[A-Za-z][A-Za-z0-9_-]*$/u;
-const STATUSES = new Set(['observed', 'hypothesis']);
+/**
+ * Las doce dimensiones del diagnostico. Estan todas o no esta el diagnostico: con cuatro campos,
+ * las otras ocho son invisibles y no se distingue "lo mire y no habia nada" de "no lo mire".
+ */
+export const CAIO_DIMENSIONS = Object.freeze(['broken_process', 'information_loss', 'repeated_work', 'open_loops', 'ownerless_decisions', 'unmeasured_states', 'broken_handoffs', 'recurring_errors', 'absent_learning', 'hidden_costs', 'security_risks', 'conversational_memory_dependency']);
+
+/**
+ * Las cuatro clases que el encargo separa, y lo que cada etiqueta obliga a cargar. Un observado sin
+ * evidencia no es un hecho; una inferencia que no dice de que se infiere es una hipotesis con mejor
+ * nombre; un dato faltante que no dice como conseguirlo es un encogimiento de hombros.
+ */
+const FINDING_KEYS = Object.freeze({
+  observed: ['id', 'status', 'description', 'evidence', 'reason'],
+  hypothesis: ['id', 'status', 'description', 'evidence', 'reason'],
+  inference: ['id', 'status', 'description', 'evidence', 'reason', 'derived_from'],
+  missing_data: ['id', 'status', 'description', 'evidence', 'reason', 'what_is_missing', 'how_to_get_it'],
+});
+const STATUSES = new Set(Object.keys(FINDING_KEYS));
+
+/** Una dimension sin hallazgos tiene que decir cual de las dos cosas es. */
+const COVERAGE_STATES = new Set(['examined_clean', 'not_examined']);
 const PRIORITIES = new Set(['must', 'should', 'could']);
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -76,7 +96,7 @@ function validateEvidenceList(value, at, violations) {
   });
 }
 
-function validateFindingList(value, at, violations) {
+function validateFindingList(value, at, violations, knownIds = null) {
   if (!Array.isArray(value)) {
     add(violations, `${at} debe ser una lista de hallazgos`);
     return;
@@ -84,21 +104,39 @@ function validateFindingList(value, at, violations) {
   const ids = new Set();
   value.forEach((item, index) => {
     const itemAt = `${at}[${index}]`;
-    if (!exactKeys(item, ['id', 'status', 'description', 'evidence', 'reason'])) {
-      add(violations, `${itemAt} debe declarar id, status, description, evidence y reason`);
+    if (!isObject(item) || !STATUSES.has(item.status)) {
+      add(violations, `${itemAt}.status debe ser una de: ${[...STATUSES].join(", ")}`);
+      return;
+    }
+    if (!exactKeys(item, FINDING_KEYS[item.status])) {
+      add(violations, `${itemAt} de clase ${item.status} debe declarar exactamente ${FINDING_KEYS[item.status].join(", ")}`);
       return;
     }
     if (!isId(item.id)) add(violations, `${itemAt}.id debe ser un identificador simple`);
     else if (ids.has(item.id)) add(violations, `${at} repite el id ${item.id}`);
     else ids.add(item.id);
-    if (!STATUSES.has(item.status)) add(violations, `${itemAt}.status debe ser observed o hypothesis`);
     requireText(item.description, `${itemAt}.description`, violations);
     if (item.status === 'observed') validateEvidenceList(item.evidence, `${itemAt}.evidence`, violations);
-    else if (!Array.isArray(item.evidence)) add(violations, `${itemAt}.evidence debe ser una lista, aunque la hipótesis no tenga evidencia`);
-    if (item.status === 'hypothesis') requireText(item.reason, `${itemAt}.reason`, violations);
+    else if (!Array.isArray(item.evidence)) add(violations, `${itemAt}.evidence debe ser una lista, aunque la clase no exija evidencia`);
+    if (item.status === 'hypothesis' || item.status === 'inference') requireText(item.reason, `${itemAt}.reason`, violations);
+    if (item.status === 'inference') {
+      requireStringArray(item.derived_from, `${itemAt}.derived_from`, violations, { nonEmptyList: true });
+      // Una inferencia tiene que apoyarse en algo que este en el documento. Sin resolver la
+      // referencia, derived_from es una lista de nombres y la inferencia sigue sin origen.
+      if (knownIds !== null && Array.isArray(item.derived_from)) {
+        for (const origen of item.derived_from) {
+          if (typeof origen === "string" && !knownIds.has(origen)) {
+            add(violations, `${itemAt}.derived_from apunta a ${origen}, que no es un hallazgo de este diagnóstico`);
+          }
+        }
+      }
+    }
+    if (item.status === 'missing_data') {
+      requireText(item.what_is_missing, `${itemAt}.what_is_missing`, violations);
+      requireText(item.how_to_get_it, `${itemAt}.how_to_get_it`, violations);
+    }
   });
 }
-
 function validateHeader(document, kind, violations) {
   if (document.schema !== SCHEMAS[kind]) add(violations, `schema debe ser ${SCHEMAS[kind]}`);
   if (!FEATURE_SLUG.test(document.feature ?? '')) add(violations, 'feature debe ser un slug en kebab-case');
@@ -107,20 +145,72 @@ function validateHeader(document, kind, violations) {
 
 export function validateCaio(document) {
   const violations = [];
-  if (!exactKeys(document, ['schema', 'feature', 'date', 'process', 'findings'])) return ['caio debe declarar exactamente schema, feature, date, process y findings'];
+  if (!exactKeys(document, ['schema', 'feature', 'date', 'process', 'findings', 'coverage'])) {
+    return ['caio debe declarar exactamente schema, feature, date, process, findings y coverage'];
+  }
   validateHeader(document, 'caio', violations);
   if (!exactKeys(document.process, ['name', 'owner', 'scope'])) add(violations, 'process debe declarar name, owner y scope');
   else ['name', 'owner', 'scope'].forEach((key) => requireText(document.process[key], `process.${key}`, violations));
-  if (!exactKeys(document.findings, ['broken_process', 'information_loss', 'repeated_work', 'open_loops'])) {
-    add(violations, 'findings debe declarar broken_process, information_loss, repeated_work y open_loops');
-  } else {
-    const all = Object.entries(document.findings);
-    all.forEach(([key, value]) => validateFindingList(value, `findings.${key}`, violations));
-    if (all.every(([, value]) => Array.isArray(value) && value.length === 0)) add(violations, 'findings debe registrar al menos un hallazgo');
+
+  if (!exactKeys(document.findings, CAIO_DIMENSIONS)) {
+    add(violations, `findings debe declarar exactamente las ${CAIO_DIMENSIONS.length} dimensiones del diagnóstico: ${CAIO_DIMENSIONS.join(", ")}`);
+    return violations;
   }
+
+  // Los ids se juntan antes de validar para que una inferencia pueda apoyarse en un hallazgo de
+  // otra dimensión: el diagnóstico es uno solo, no doce listas sueltas.
+  const knownIds = new Set();
+  for (const dimension of CAIO_DIMENSIONS) {
+    const list = document.findings[dimension];
+    if (!Array.isArray(list)) continue;
+    for (const item of list) if (isObject(item) && isId(item.id)) knownIds.add(item.id);
+  }
+  for (const dimension of CAIO_DIMENSIONS) {
+    validateFindingList(document.findings[dimension], `findings.${dimension}`, violations, knownIds);
+  }
+  if (CAIO_DIMENSIONS.every((dimension) => Array.isArray(document.findings[dimension]) && document.findings[dimension].length === 0)) {
+    add(violations, 'findings debe registrar al menos un hallazgo');
+  }
+
+  validateCoverage(document, violations);
   return violations;
 }
 
+/**
+ * Una dimension sin hallazgos tiene que decir cual de las dos cosas es: se examino y no habia nada,
+ * o no se examino y por que. Sin esto, ocho silencios se leen igual que ocho dimensiones sanas, que
+ * es exactamente el modo en que un diagnostico parcial se vende como completo.
+ */
+function validateCoverage(document, violations) {
+  const coverage = document.coverage;
+  if (!isObject(coverage)) {
+    add(violations, 'coverage debe ser un objeto que declare cada dimensión sin hallazgos');
+    return;
+  }
+  const vacias = CAIO_DIMENSIONS.filter((dimension) => Array.isArray(document.findings[dimension]) && document.findings[dimension].length === 0);
+  for (const dimension of vacias) {
+    if (!Object.hasOwn(coverage, dimension)) {
+      add(violations, `coverage debe declarar ${dimension}: no tiene hallazgos, y un silencio sin motivo se lee igual que una dimensión sana`);
+    }
+  }
+  for (const dimension of Object.keys(coverage)) {
+    if (!CAIO_DIMENSIONS.includes(dimension)) {
+      add(violations, `coverage declara ${dimension}, que no es una dimensión del diagnóstico`);
+      continue;
+    }
+    if (!vacias.includes(dimension)) {
+      add(violations, `coverage declara ${dimension} como sin hallazgos, pero findings.${dimension} sí los trae`);
+      continue;
+    }
+    const entry = coverage[dimension];
+    if (!exactKeys(entry, ['state', 'reason'])) {
+      add(violations, `coverage.${dimension} debe declarar exactamente state y reason`);
+      continue;
+    }
+    if (!COVERAGE_STATES.has(entry.state)) add(violations, `coverage.${dimension}.state debe ser una de: ${[...COVERAGE_STATES].join(", ")}`);
+    requireText(entry.reason, `coverage.${dimension}.reason`, violations);
+  }
+}
 function validateLoopStage(stage, at, violations) {
   if (!exactKeys(stage, ['input', 'measure', 'decision_owner', 'action', 'control', 'learning'])) {
     add(violations, `${at} debe declarar input, measure, decision_owner, action, control y learning`);

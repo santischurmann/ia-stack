@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El CAIO mira las doce dimensiones que el encargo pide, no cuatro.** Se sumaron decisiones sin
+  dueño, estados no medidos, handoffs defectuosos, errores que se repiten, ausencia de aprendizaje,
+  costos ocultos, riesgos de seguridad y dependencia de memoria conversacional. Y las clases pasan
+  de dos a las cuatro pedidas: además de `observed` e `hypothesis` ahora existen `inference`, que
+  exige `derived_from` con hallazgos **que existan en el documento** —una inferencia sin origen es
+  una hipótesis con mejor nombre—, y `missing_data`, que exige qué falta y **cómo conseguirlo**.
+  Cada clase declara exactamente los campos que su etiqueta obliga a cargar, ni uno más.
+  Una dimensión sin hallazgos ya no se deja en blanco: `coverage` obliga a decir si se examinó y
+  no había nada o si no se examinó, y por qué. Sin eso, ocho silencios se leían igual que ocho
+  dimensiones sanas, que es el modo en que un diagnóstico parcial se vende como completo.
+  Límite declarado: el gate no abre el locator de una evidencia, así que un observado con una cita
+  inventada pasa igual.
+
 - **Discovery ahora produce artefactos operativos verificables.** CAIO, mapa de bucle, PRD, plan de
   implementación, adopción y recurrencia tienen plantillas y un gate nativo en
   `verify-product-diagnostics.mjs`; se validan antes de Spec y sus límites semánticos quedan

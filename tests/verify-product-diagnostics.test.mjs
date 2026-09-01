@@ -19,16 +19,42 @@ import {
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const ev = () => ({ source: 'test', locator: 'fixture:1', observation: 'observación medida en un fixture real' });
-const finding = (id, status = 'observed') => ({ id, status, description: 'hallazgo suficientemente descrito para revisión', evidence: status === 'observed' ? [ev()] : [], reason: status === 'hypothesis' ? 'falta medir esta hipótesis antes de convertirla en hecho' : '' });
+// Las cuatro clases que el encargo separa. Cada una carga lo que su etiqueta exige: un observado
+// no vale sin evidencia, una inferencia sin decir de que se infiere es una hipotesis con mejor
+// nombre, y un dato faltante que no dice como conseguirlo es un encogimiento de hombros.
+export const DIMENSIONS = Object.freeze(['broken_process', 'information_loss', 'repeated_work', 'open_loops', 'ownerless_decisions', 'unmeasured_states', 'broken_handoffs', 'recurring_errors', 'absent_learning', 'hidden_costs', 'security_risks', 'conversational_memory_dependency']);
+
+const finding = (id, status = 'observed', extra = {}) => {
+  const base = {
+    id,
+    status,
+    description: 'hallazgo suficientemente descrito para revisión',
+    evidence: status === 'observed' ? [ev()] : [],
+    reason: status === 'hypothesis' || status === 'inference' ? 'falta medir esto antes de convertirlo en hecho' : '',
+  };
+  if (status === 'inference') return { ...base, derived_from: ['BP1'], ...extra };
+  if (status === 'missing_data') return { ...base, what_is_missing: 'cuántas veces se repitió el mes pasado', how_to_get_it: 'contar los receipts de .vibe/receipts del último mes', ...extra };
+  return { ...base, ...extra };
+};
 
 function caio() {
+  const findings = Object.fromEntries(DIMENSIONS.map((dimension) => [dimension, []]));
+  findings.broken_process = [finding('BP1')];
+  findings.information_loss = [finding('IL1', 'hypothesis')];
+  findings.repeated_work = [finding('RW1', 'inference')];
+  findings.open_loops = [finding('OL1', 'missing_data')];
+  // Una dimensión sin hallazgos tiene que decir si se miró y no había nada, o si no se miró y por
+  // qué. Sin eso, ocho silencios se leen igual que ocho dimensiones sanas.
+  const coverage = Object.fromEntries(DIMENSIONS
+    .filter((dimension) => findings[dimension].length === 0)
+    .map((dimension) => [dimension, { state: 'examined_clean', reason: 'se revisaron los tres últimos ciclos y no apareció nada en esta dimensión' }]));
   return {
     schema: SCHEMAS.caio, feature: 'demo-feature', date: '2026-09-01',
     process: { name: 'Proceso de prueba', owner: 'Owner de prueba', scope: 'Entrada a salida del proceso' },
-    findings: { broken_process: [finding('BP1')], information_loss: [finding('IL1', 'hypothesis')], repeated_work: [finding('RW1', 'hypothesis')], open_loops: [finding('OL1')] },
+    findings,
+    coverage,
   };
 }
-
 function loopMap() {
   const stage = { input: 'entrada observable', measure: 'métrica actual', decision_owner: 'responsable', action: 'acción concreta', control: 'control verificable', learning: 'cómo se aprende' };
   return { schema: SCHEMAS['loop-map'], feature: 'demo-feature', date: '2026-09-01', current: stage, target: clone(stage), first_loop: { id: 'loop-01', owner: 'owner', metric: 'métrica', cadence: 'semanal', success_threshold: 'umbral', next_candidate: 'siguiente proceso' } };
@@ -70,14 +96,15 @@ test('CAIO rejects shape, duplicate ids, bad evidence and unsupported statuses',
   assert.match(validateCaio({}).join('\n'), /exactamente/);
   const bad = caio(); bad.schema = 'wrong'; bad.feature = 'Bad'; bad.date = 'tomorrow'; bad.process.owner = ''; bad.findings.broken_process.push(finding('BP1')); bad.findings.information_loss[0].status = 'made-up'; bad.findings.open_loops[0].evidence = []; assert.ok(validateCaio(bad).length >= 6);
   const malformed = caio(); malformed.findings.repeated_work = 'no'; assert.ok(validateCaio(malformed).some((x) => x.includes('lista')));
-  const malformedItem = caio(); malformedItem.findings.broken_process = [{}]; assert.ok(validateCaio(malformedItem).some((x) => x.includes('id, status')));
+  const malformedItem = caio(); malformedItem.findings.broken_process = [{}]; assert.ok(validateCaio(malformedItem).some((x) => x.includes('status debe ser una de')), 'un hallazgo sin clase no se puede juzgar: la clase decide qué campos exige');
+  const incompleteItem = caio(); incompleteItem.findings.broken_process = [{ status: 'observed' }]; assert.ok(validateCaio(incompleteItem).some((x) => x.includes('id, status')), 'con la clase declarada, el gate nombra las claves que faltan');
   const badId = caio(); badId.findings.broken_process[0].id = 'bad id'; assert.ok(validateCaio(badId).some((x) => x.includes('identificador')));
   const badProcess = caio(); badProcess.process = {}; assert.ok(validateCaio(badProcess).some((x) => x.includes('process debe')));
   const badFindings = caio(); badFindings.findings = { broken_process: [] }; assert.ok(validateCaio(badFindings).some((x) => x.includes('findings debe')));
   const item = caio(); item.findings.broken_process[0].evidence = [{ source: '', locator: '', observation: '' }]; assert.ok(validateCaio(item).some((x) => x.includes('source')));
   const badEvidenceShape = caio(); badEvidenceShape.findings.broken_process[0].evidence = [{}]; assert.ok(validateCaio(badEvidenceShape).some((x) => x.includes('source')));
   const hyp = caio(); hyp.findings.information_loss[0].evidence = 'not-list'; hyp.findings.information_loss[0].reason = ''; assert.ok(validateCaio(hyp).some((x) => x.includes('evidence')));
-  const empty = caio(); empty.findings = { broken_process: [], information_loss: [], repeated_work: [], open_loops: [] }; assert.ok(validateCaio(empty).some((x) => x.includes('al menos un hallazgo')));
+  const empty = caio(); empty.findings = Object.fromEntries(DIMENSIONS.map((d) => [d, []])); empty.coverage = Object.fromEntries(DIMENSIONS.map((d) => [d, { state: 'not_examined', reason: 'no se examinó ninguna dimensión en esta corrida de prueba' }])); assert.ok(validateCaio(empty).some((x) => x.includes('al menos un hallazgo')));
   assert.ok(validateArtifact('unknown', caio()).some((x) => x.includes('desconocido')));
   assert.ok(validateArtifact('caio', null).length > 0);
   const nullFeature = caio(); nullFeature.feature = null; assert.ok(validateCaio(nullFeature).some((x) => x.includes('slug')));
@@ -155,4 +182,98 @@ test('CLI rejects unsupported flags and accepts empty diagnostics without strict
   const errors = []; const output = [];
   assert.equal(main(['check', 'demo-feature', '--unexpected'], '.', {}, output.push.bind(output), errors.push.bind(errors)), 2);
   assert.equal(main(['check', 'demo-feature'], '.', { stat: () => undefined }, output.push.bind(output), errors.push.bind(errors)), 0);
+});
+
+test('CAIO exige las doce dimensiones del diagnóstico, no cuatro', () => {
+  // El encargo lista doce cosas que hay que mirar. Con cuatro campos, las otras ocho son invisibles:
+  // no se distingue "lo miré y no había nada" de "no lo miré".
+  assert.deepEqual(validateCaio(caio()), []);
+  assert.equal(DIMENSIONS.length, 12);
+  for (const dimension of DIMENSIONS) {
+    const sinUna = caio();
+    delete sinUna.findings[dimension];
+    delete sinUna.coverage[dimension];
+    assert.ok(validateCaio(sinUna).length > 0, `aceptó un CAIO sin la dimensión ${dimension}`);
+  }
+  const conExtra = caio();
+  conExtra.findings.dimension_inventada = [];
+  assert.ok(validateCaio(conExtra).length > 0, 'aceptó una dimensión que el diagnóstico no declara');
+});
+
+test('CAIO separa las cuatro clases que el encargo pide', () => {
+  const clases = ['observed', 'hypothesis', 'inference', 'missing_data'];
+  for (const status of clases) {
+    const documento = caio();
+    documento.findings.security_risks = [finding('SR1', status)];
+    delete documento.coverage.security_risks;
+    assert.deepEqual(validateCaio(documento), [], `rechazó un hallazgo válido de clase ${status}`);
+  }
+  const inventada = caio();
+  inventada.findings.hidden_costs = [finding('HC1', 'sospecha')];
+  delete inventada.coverage.hidden_costs;
+  assert.ok(validateCaio(inventada).some((v) => v.includes('status')), 'aceptó una clase que no existe');
+});
+
+test('FALSIFICACIÓN · una inferencia que no dice de qué se infiere es una hipótesis con mejor nombre', () => {
+  const sinOrigen = caio();
+  sinOrigen.findings.repeated_work = [finding('RW1', 'inference', { derived_from: [] })];
+  assert.ok(validateCaio(sinOrigen).some((v) => v.includes('derived_from')), 'aceptó una inferencia sin origen');
+  const origenFantasma = caio();
+  origenFantasma.findings.repeated_work = [finding('RW1', 'inference', { derived_from: ['NO_EXISTE'] })];
+  assert.ok(validateCaio(origenFantasma).some((v) => v.includes('NO_EXISTE')),
+    'aceptó una inferencia derivada de un hallazgo que no está en el documento');
+});
+
+test('FALSIFICACIÓN · un dato faltante que no dice cómo conseguirlo es un encogimiento de hombros', () => {
+  for (const campo of ['what_is_missing', 'how_to_get_it']) {
+    const documento = caio();
+    documento.findings.open_loops = [finding('OL1', 'missing_data', { [campo]: '' })];
+    assert.ok(validateCaio(documento).some((v) => v.includes(campo)), `aceptó un dato faltante sin ${campo}`);
+  }
+});
+
+test('FALSIFICACIÓN · una dimensión vacía sin cobertura declarada pasa desapercibida', () => {
+  const sinDeclarar = caio();
+  delete sinDeclarar.coverage.hidden_costs;
+  assert.ok(validateCaio(sinDeclarar).some((v) => v.includes('hidden_costs')),
+    'ocho dimensiones vacías sin declarar se leen igual que ocho dimensiones sanas');
+
+  const contradictoria = caio();
+  contradictoria.coverage.broken_process = { state: 'examined_clean', reason: 'no encontré nada acá' };
+  assert.ok(validateCaio(contradictoria).some((v) => v.includes('broken_process')),
+    'declaró limpia una dimensión que sí trae hallazgos');
+
+  const estadoInventado = caio();
+  estadoInventado.coverage.hidden_costs = { state: 'quizas', reason: 'un motivo suficientemente largo' };
+  assert.ok(validateCaio(estadoInventado).some((v) => v.includes('state')), 'aceptó un estado de cobertura que no existe');
+
+  const sinMotivo = caio();
+  sinMotivo.coverage.hidden_costs = { state: 'not_examined', reason: '' };
+  assert.ok(validateCaio(sinMotivo).some((v) => v.includes('reason')), 'no examinar sin decir por qué es un silencio');
+});
+
+test('FALSIFICACIÓN · los rechazos de evidencia y de cobertura mal formada también se ejercitan', () => {
+  // Encontradas midiendo, no leyendo: verify-vcp-coverage nombró estas cuatro ramas una por una.
+  // Un camino de rechazo que ningún proceso ejecutó es un camino del que no se sabe si rechaza.
+  const sinEvidencia = caio();
+  sinEvidencia.findings.broken_process[0].evidence = [];
+  assert.ok(validateCaio(sinEvidencia).some((v) => v.includes('al menos una evidencia')),
+    'un observado con la lista de evidencia vacía no es un hecho');
+
+  const evidenciaNoLista = caio();
+  evidenciaNoLista.findings.broken_process[0].evidence = 'una cita suelta';
+  assert.ok(validateCaio(evidenciaNoLista).some((v) => v.includes('al menos una evidencia')));
+
+  const coberturaNoObjeto = caio();
+  coberturaNoObjeto.coverage = ['hidden_costs'];
+  assert.ok(validateCaio(coberturaNoObjeto).some((v) => v.includes('coverage debe ser un objeto')));
+
+  const dimensionInventada = caio();
+  dimensionInventada.coverage.karma_del_equipo = { state: 'not_examined', reason: 'motivo suficientemente largo para pasar' };
+  assert.ok(validateCaio(dimensionInventada).some((v) => v.includes('karma_del_equipo')),
+    'aceptó cobertura sobre una dimensión que el diagnóstico no tiene');
+
+  const entradaMalFormada = caio();
+  entradaMalFormada.coverage.hidden_costs = { estado: 'not_examined' };
+  assert.ok(validateCaio(entradaMalFormada).some((v) => v.includes('state y reason')));
 });

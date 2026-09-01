@@ -43,7 +43,9 @@
       "role": "builder",
       "verifier": "node scripts/verify-intake.mjs check docs/intake/<feature>.json",
       "approval_criteria": "AC1-AC6 de docs/spec.md, cada uno nombrado por una prueba; cobertura completa del gate; fila en empty-probe.json; limite honesto registrado; suite verde diez veces.",
-      "evidence": ["tests/verify-intake.test.mjs: AC1-AC6 y falsificaciones de forma"],
+      "evidence": [
+        "tests/verify-intake.test.mjs: AC1-AC6 y falsificaciones de forma"
+      ],
       "not_reviewed": "El gate verifica forma, no verdad: no puede saber si una respuesta es correcta ni si un supuesto quedo escondido adentro de una respuesta en vez de declarado aparte.",
       "rollback": "git revert del commit: el gate es nuevo y nadie depende de el todavia.",
       "handoff": "B1 implementada y verificada; B2/B3 agregan Discovery estructurado y plan canónico de fases.",
@@ -62,11 +64,24 @@
         "templates/diagnostics/adoption.json",
         "templates/diagnostics/recurrence.json"
       ],
-      "files_to_modify": ["contracts/empty-probe.json", "contracts/honest-limits.json", "scripts/verify-vcp-contract.mjs", "SKILL.md", "README.md"],
-      "test_files": ["tests/verify-product-diagnostics.test.mjs"],
-      "test_types": ["unit", "integration"],
+      "files_to_modify": [
+        "contracts/empty-probe.json",
+        "contracts/honest-limits.json",
+        "scripts/verify-vcp-contract.mjs",
+        "SKILL.md",
+        "README.md"
+      ],
+      "test_files": [
+        "tests/verify-product-diagnostics.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
       "subagents": [],
-      "depends_on": ["B1"],
+      "depends_on": [
+        "B1"
+      ],
       "status": "done",
       "goal": "No comenzar una spec sin describir el proceso roto, el bucle operativo y cómo se implementa y adopta el resultado.",
       "owner": "Constructor",
@@ -74,7 +89,9 @@
       "role": "builder",
       "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
       "approval_criteria": "Seis artefactos con esquema, invariantes, evidencia y dependencias; tests focalizados verdes y comportamiento vacío declarado.",
-      "evidence": ["tests/verify-product-diagnostics.test.mjs: validación de los seis artefactos y casos inválidos"],
+      "evidence": [
+        "tests/verify-product-diagnostics.test.mjs: validación de los seis artefactos y casos inválidos"
+      ],
       "not_reviewed": "El gate verifica forma e invariantes, nunca verdad semántica ni suficiencia del diagnóstico.",
       "rollback": "git revert del commit de B2; los artefactos son aditivos y no cambian gates existentes.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
@@ -83,12 +100,29 @@
     {
       "id": "B3",
       "description": "Plan canónico de fases y verificación de que cada fase cerró con menú y elección",
-      "files_to_create": ["scripts/verify-phase-menu.mjs", "tests/verify-phase-menu.test.mjs", "templates/phase-plan.json", "docs/phase-plan.json"],
-      "files_to_modify": ["contracts/empty-probe.json", "scripts/verify-vcp-contract.mjs", "SKILL.md", "README.md"],
-      "test_files": ["tests/verify-phase-menu.test.mjs"],
-      "test_types": ["unit", "integration"],
+      "files_to_create": [
+        "scripts/verify-phase-menu.mjs",
+        "tests/verify-phase-menu.test.mjs",
+        "templates/phase-plan.json",
+        "docs/phase-plan.json"
+      ],
+      "files_to_modify": [
+        "contracts/empty-probe.json",
+        "scripts/verify-vcp-contract.mjs",
+        "SKILL.md",
+        "README.md"
+      ],
+      "test_files": [
+        "tests/verify-phase-menu.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
       "subagents": [],
-      "depends_on": ["B2"],
+      "depends_on": [
+        "B2"
+      ],
       "status": "done",
       "goal": "Evitar que el archivo de decisiones se autoautorice cambiando su propio orden de fases.",
       "owner": "Constructor",
@@ -96,10 +130,51 @@
       "role": "builder",
       "verifier": "node scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json",
       "approval_criteria": "Plan válido, orden idéntico al registro, todas las fases con decisión vigente, tests focalizados verdes.",
-      "evidence": ["tests/verify-phase-menu.test.mjs: orden, plan inválido, incompleto y CLI"],
+      "evidence": [
+        "tests/verify-phase-menu.test.mjs: orden, plan inválido, incompleto y CLI"
+      ],
       "not_reviewed": "El gate prueba consistencia del registro, no que el plan sea correcto ni que una persona haya elegido realmente.",
       "rollback": "git revert del commit de B3; verify-phase-decisions.mjs sigue disponible para compatibilidad.",
       "handoff": "B3 implementada; usar el wrapper en cada cierre final.",
+      "blocked_reason": ""
+    },
+    {
+      "id": "B4",
+      "description": "CAIO completo: las doce dimensiones del encargo y las cuatro clases (observed, hypothesis, inference, missing_data), con cobertura declarada para toda dimension sin hallazgos",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-product-diagnostics.mjs",
+        "tests/verify-product-diagnostics.test.mjs",
+        "templates/diagnostics/caio.json",
+        "contracts/honest-limits.json",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-product-diagnostics.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B2",
+        "B3"
+      ],
+      "status": "done",
+      "goal": "B2 cerro con 4 de las 12 dimensiones y 2 de las 4 clases que el encargo pide. Con cuatro campos las otras ocho dimensiones son invisibles: no se distingue lo mire y no habia nada de no lo mire.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "Las doce dimensiones obligatorias; las cuatro clases con los campos que cada etiqueta exige; derived_from resoluble contra los ids del propio documento; coverage declarada para exactamente las dimensiones sin hallazgos; cobertura 33/33 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "El gate no abre el locator de una evidencia: un observado con una cita inventada pasa igual. Verifica que la etiqueta cargue lo que su nombre exige, no que sea cierta.",
+      "rollback": "git revert del commit. B2 queda en su forma anterior de 4 dimensiones y 2 clases.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
     }
   ]

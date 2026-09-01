@@ -266,8 +266,17 @@ antes de comprometer tareas de implementación.
 1. **Research verificable:** inventariar fuentes, versión/fecha/locator, alcance realmente leído y
    claims. Separar `SUPPORTED`, `CONTRADICTED`, `INFERRED`, `INSUFFICIENT_EVIDENCE` y
    `NOT_APPLICABLE`; nunca convertir una fuente no leída en una recomendación.
-2. **CAIO:** escribir proceso roto, pérdida de información, trabajo repetido y bucle abierto con
-   evidencia observable. Si no hay evidencia, queda como hipótesis, no como diagnóstico.
+2. **CAIO:** el diagnóstico mira **doce** dimensiones, no cuatro: proceso roto, información
+   perdida, trabajo repetido, bucles abiertos, decisiones sin dueño, estados no medidos,
+   handoffs defectuosos, errores que se repiten, ausencia de aprendizaje, costos ocultos,
+   riesgos de seguridad y dependencia de memoria conversacional. Cada hallazgo se clasifica en
+   una de **cuatro** clases, y cada etiqueta obliga a cargar lo suyo: `observed` no vale sin
+   evidencia; `hypothesis` exige el motivo por el que todavía no es un hecho; `inference` exige
+   `derived_from` con hallazgos que existan en el documento —una inferencia sin origen es una
+   hipótesis con mejor nombre—; y `missing_data` exige qué falta **y cómo conseguirlo**.
+   Una dimensión sin hallazgos no se deja en blanco: declara en `coverage` si se examinó y no
+   había nada, o si no se examinó y por qué. Sin eso, ocho silencios se leen igual que ocho
+   dimensiones sanas.
 3. **Mapa de bucle actual→objetivo:** para ambos, declarar entrada, medida, quién decide, acción,
    control y aprendizaje. El primer bucle a cerrar debe tener dueño, métrica y cadencia.
 4. **PRD + implementación:** delimitar problema, usuario, resultado operativo, tecnología,

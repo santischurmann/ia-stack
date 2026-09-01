@@ -1,0 +1,149 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "caio-doce-dimensiones",
+  "task": "B4 - completar el CAIO a las doce dimensiones y las cuatro clases que el encargo pide, extendiendo el gate existente en vez de construir uno paralelo",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/caio-doce-dimensiones-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/honest-limits.json",
+      "docs/tasks.json",
+      "scripts/verify-product-diagnostics.mjs",
+      "templates/diagnostics/caio.json",
+      "tests/verify-product-diagnostics.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "El diagnostico mira las doce dimensiones que el encargo lista, no cuatro. Con cuatro campos las otras ocho eran invisibles: no se distinguia lo mire y no habia nada de no lo mire.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "16 de 16 en verde. La prueba quita cada una de las doce dimensiones por separado y exige rechazo en las doce, y ademas rechaza una dimension inventada."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Las cuatro clases del encargo existen y cada etiqueta obliga a cargar lo suyo: observed exige evidencia, hypothesis exige motivo, inference exige derived_from, missing_data exige que falta y como conseguirlo. Cada clase declara exactamente sus campos, ni uno mas.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Las cuatro clases probadas una por una sobre un documento valido, mas una clase inventada que se rechaza nombrando el campo status."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Una inferencia tiene que apoyarse en hallazgos que existan en el propio documento. Sin resolver la referencia, derived_from es una lista de nombres y la inferencia sigue sin origen: una hipotesis con mejor nombre.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza derived_from vacio y derived_from que apunta a un id inexistente, nombrando el id que no existe. Los ids se juntan de las doce dimensiones antes de validar, asi que una inferencia puede apoyarse en un hallazgo de otra dimension."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "Una dimension sin hallazgos no se deja en blanco: coverage obliga a declarar si se examino y no habia nada, o si no se examino y por que. Y no puede declararse cobertura sobre una dimension que si trae hallazgos.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza la dimension vacia sin declarar, la cobertura contradictoria sobre una dimension con hallazgos, un estado inventado, un motivo vacio, una dimension inventada en coverage y una entrada con claves equivocadas."
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "El gate extendido no deja caminos de rechazo sin ejercitar. Un camino de rechazo que ningun proceso ejecuto es un camino del que no se sabe si rechaza.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
+      "command": "node scripts/verify-vcp-coverage.mjs",
+      "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 4 ramas sin ejercitar: verify-product-diagnostics.mjs:83, :186, :197 y :206."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Se cambio el esquema de un artefacto que otra sesion habia cerrado horas antes, y se tocaron dos aserciones de sus pruebas. Un cambio de esquema rompe cualquier caio.json existente.",
+      "mitigation": "Se comprobo primero que el unico caio.json del repositorio fuera la plantilla, asi que no hay expedientes reales que romper. Las dos aserciones ajenas no se debilitaron: la que probaba un item sin clase ahora exige el mensaje de status, y se agrego una segunda que conserva el caso original con la clase declarada."
+    },
+    "readability": {
+      "finding": "Por que una dimension vacia necesita una entrada en coverage no es evidente: parece burocracia sobre un campo que ya esta vacio.",
+      "mitigation": "El motivo esta escrito en el propio gate, en SKILL.md y en el README: ocho silencios se leen igual que ocho dimensiones sanas, y ese es el modo exacto en que un diagnostico parcial se vende como completo."
+    },
+    "reliability": {
+      "finding": "Las pruebas escritas a mano cubrian los caminos que se me ocurrieron. La medicion mostro cuatro ramas de rechazo que ninguna tocaba: evidencia vacia o no-lista, coverage que no es objeto, dimension inventada en coverage, y entrada de coverage con claves equivocadas.",
+      "mitigation": "Las cuatro cerradas con pruebas propias y la cobertura del proyecto volvio a 33 de 33 scripts con todas sus funciones y ramas ejecutadas."
+    },
+    "resilience": {
+      "finding": "El juego de claves de un hallazgo depende ahora de su clase, asi que un item sin clase valida no se puede juzgar y podria arrastrar mensajes confusos sobre campos que su clase nunca exigio.",
+      "mitigation": "El gate valida la clase primero y corta ahi con su propio mensaje. Recien con la clase declarada compara el juego exacto de claves, y una prueba fija las dos mitades por separado."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "dimensiones del diagnostico CAIO",
+      "measured": true,
+      "before": 4,
+      "after": 12
+    },
+    {
+      "metric": "clases de hallazgo",
+      "measured": true,
+      "before": 2,
+      "after": 4
+    },
+    {
+      "metric": "ramas de verify-product-diagnostics.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 4,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 842,
+      "after": 848
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 62,
+      "after": 63
+    },
+    {
+      "metric": "si las doce dimensiones son las doce correctas",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Salen del encargo del usuario, no de una medicion sobre diagnosticos reales. Se sabra usandolas."
+    },
+    {
+      "metric": "cuantos diagnosticos reales quedaron a un tercio por tener solo cuatro dimensiones",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "No hay ningun caio.json real en el repositorio todavia: el unico era la plantilla. Se midio la forma del gate, no su efecto sobre diagnosticos escritos."
+    }
+  ],
+  "reproduction": "Antes: validateCaio exigia exactamente broken_process, information_loss, repeated_work y open_loops, y STATUSES era new Set(['observed','hypothesis']). Las otras ocho dimensiones del encargo y las clases inference y missing_data no existian. RED: con la fixture ampliada a doce dimensiones y cuatro clases, node --test tests/verify-product-diagnostics.test.mjs da 8 rojas, todas conductuales -- el gate rechaza la forma nueva y no reconoce las clases. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 4 ramas sin ejecutar con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 848 pruebas cada una, cobertura 33 de 33 scripts, y los gates de contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
+  "not_reviewed": "El gate no abre el locator de una evidencia: un hallazgo observado con una cita inventada pasa igual. Comprueba que la etiqueta cargue lo que su nombre exige, no que sea cierta; resolver locators contra el arbol es trabajo de verify-discovery-core.mjs sources, otro gate y otro momento. Tampoco juzga si un hallazgo esta bien clasificado: alguien puede escribir como observed lo que en realidad dedujo, y mientras adjunte una evidencia con forma valida el gate lo acepta. Que las doce dimensiones sean las correctas no esta medido: salen del encargo. Y no se auditaron los otros cinco artefactos del mismo gate -- loop-map, prd, implementation, adoption y recurrence -- contra lo que el encargo pide para cada uno; el mapa de bucle ya se sabe corto y queda como trabajo siguiente.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 848, pass 848, fail 0",
+    "node --test tests/verify-product-diagnostics.test.mjs -> 16 de 16 en verde; con el gate anterior eran 8 rojas conductuales",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 4 ramas sin ejecutar: verify-product-diagnostics.mjs:83, :186, :197, :206",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 63 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s) se comportan sobre un directorio vacio como declara el contrato",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> primero CONFLICT: B3 and B4 both declare write access to skill.md; tras declarar depends_on, OK con 4 tareas y 24 solapamientos serializados",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 8 live changed file(s); no blocking Critical/High findings",
+    "validateCaio sobre templates/diagnostics/caio.json -> 0 violaciones, con las 12 dimensiones y 8 coberturas declaradas",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "aebcc26f59d46cb00c63a004b2aa451606387ac4",
+  "tree_fingerprint": "e009984e25d1dfc463243f3b4d2f43153b39bcbb6c855eb0ffa91f3a543ad52e",
+  "terminal_state": "approved"
+}

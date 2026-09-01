@@ -372,6 +372,12 @@
       "file": "README.md",
       "phrase": "Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.",
       "why": "El gate puede verificar que CAIO, mapa de bucle, PRD y planes tengan campos, relaciones y evidencia con forma válida. No puede saber si el proceso descrito es realmente el negocio, si el resultado se conseguirá o si una fuente sostiene toda la conclusión."
+    },
+    {
+      "limit_id": "caio-does-not-open-the-locator",
+      "file": "README.md",
+      "phrase": "el gate no abre el locator de una evidencia",
+      "why": "La regla central del CAIO es que un observed sin evidencia se rechaza, y eso puede leerse como que la evidencia esta comprobada. No lo esta: el gate exige que la lista exista y que cada entrada declare source, locator y observation, pero nunca resuelve el locator contra el arbol ni contra la red. Un hallazgo observado con una cita inventada pasa en verde. Quien resuelve locators contra el arbol es verify-discovery-core.mjs sources, que es otro gate y otro momento."
     }
   ]
 }

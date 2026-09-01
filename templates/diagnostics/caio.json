@@ -2,11 +2,100 @@
   "schema": "vcp.caio/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
-  "process": { "name": "Proceso que se quiere mejorar", "owner": "Responsable actual", "scope": "Límite del proceso observado" },
+  "process": {
+    "name": "Proceso que se quiere mejorar",
+    "owner": "Responsable actual",
+    "scope": "Límite del proceso observado"
+  },
   "findings": {
-    "broken_process": [{ "id": "BP1", "status": "observed", "description": "Qué parte del proceso se rompe y qué efecto produce.", "evidence": [{ "source": "repo", "locator": "ruta:línea", "observation": "Qué se observó exactamente." }], "reason": "" }],
-    "information_loss": [{ "id": "IL1", "status": "hypothesis", "description": "Dónde podría perderse información.", "evidence": [], "reason": "Todavía falta medir el punto de pérdida." }],
-    "repeated_work": [{ "id": "RW1", "status": "hypothesis", "description": "Qué trabajo parece repetirse.", "evidence": [], "reason": "Todavía falta comparar dos recorridos reales." }],
-    "open_loops": [{ "id": "OL1", "status": "observed", "description": "Qué decisión o control queda sin cerrar.", "evidence": [{ "source": "session", "locator": "registro:línea", "observation": "El proceso termina sin dueño o señal." }], "reason": "" }]
+    "broken_process": [
+      {
+        "id": "BP1",
+        "status": "observed",
+        "description": "Qué parte del proceso se rompe y qué efecto produce.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "ruta:línea",
+            "observation": "Qué se observó exactamente."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "information_loss": [
+      {
+        "id": "IL1",
+        "status": "hypothesis",
+        "description": "Dónde podría perderse información.",
+        "evidence": [],
+        "reason": "Todavía falta medir el punto de pérdida."
+      }
+    ],
+    "repeated_work": [
+      {
+        "id": "RW1",
+        "status": "inference",
+        "description": "Qué trabajo se deduce que se repite, a partir de lo ya observado.",
+        "evidence": [],
+        "reason": "Se deduce del efecto observado en BP1, no se midió por separado.",
+        "derived_from": [
+          "BP1"
+        ]
+      }
+    ],
+    "open_loops": [
+      {
+        "id": "OL1",
+        "status": "missing_data",
+        "description": "Qué decisión o control queda sin cerrar, y todavía no se pudo comprobar.",
+        "evidence": [],
+        "reason": "",
+        "what_is_missing": "Cuántas veces el ciclo terminó sin dueño en el último mes.",
+        "how_to_get_it": "Contar los cierres en .vibe/receipts y cruzarlos contra DECISIONS.md."
+      }
+    ],
+    "ownerless_decisions": [],
+    "unmeasured_states": [],
+    "broken_handoffs": [],
+    "recurring_errors": [],
+    "absent_learning": [],
+    "hidden_costs": [],
+    "security_risks": [],
+    "conversational_memory_dependency": []
+  },
+  "coverage": {
+    "ownerless_decisions": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "unmeasured_states": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "broken_handoffs": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "recurring_errors": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "absent_learning": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "hidden_costs": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "security_risks": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    },
+    "conversational_memory_dependency": {
+      "state": "not_examined",
+      "reason": "Reemplazá esto por el motivo real: o se examinó y no había nada (examined_clean), o no se examinó y acá va por qué."
+    }
   }
 }
