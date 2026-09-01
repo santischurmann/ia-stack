@@ -29,7 +29,7 @@ function completeReadBase(path) {
 ## PHASE 7 — SIMPLIFY
 ## PHASE 8 — DEPLOY
 simplificar sin volver a
-verificar es exactamente cómo se rompe algo en silencio\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nReproducir antes de diagnosticar\nContexto acotado por agente\nCuándo una fase está terminada\nRedacción reutilizable\nverify-audit-chain.mjs history .vibe/AUDIT.md
+verificar es exactamente cómo se rompe algo en silencio\nverify-discovery-core.mjs\nverify-scope-diff.mjs check\nverify-graphify-manifest.mjs check\nverify-obsidian-export.mjs check graphify-out/obsidian\nEl gate prueba contabilidad, no comprensión\nverify-runtime-sync.mjs check\nnunca desde el runtime\nReproducir antes de diagnosticar\nContexto acotado por agente\nCuándo una fase está terminada\nRedacción reutilizable\nverify-audit-chain.mjs history .vibe/AUDIT.md
 No agarra recortar el final ni
 verify-audit-chain.mjs append\nLo que el gate no detecta\n--baseline <archivo>\nLo que no cubre\nverify-receipt.mjs custody
 si el agente puede correr \`git commit -S\`, firma como vos

@@ -118,6 +118,14 @@
       "expect": "reject"
     },
     {
+      "script": "verify-obsidian-export.mjs",
+      "args": [
+        "check",
+        "graphify-out/obsidian"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-handoff-report.mjs",
       "args": [
         "check",

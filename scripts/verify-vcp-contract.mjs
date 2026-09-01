@@ -26,6 +26,8 @@ export const REQUIREMENTS = [
   ['README.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
+  ['SKILL.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
+  ['README.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
   ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
   ['SKILL.md', /verify-receipt\.mjs commit/u, 'validate-and-write in one run'],

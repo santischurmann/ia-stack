@@ -62,6 +62,18 @@
       "why": "El manifest sólo verifica que cada archivo rastreado esté indexado o excluido con razón declarada. Un archivo indexado puede haber producido cero nodos: sin el límite, \"cubierto\" se lee como \"entendido\"."
     },
     {
+      "limit_id": "obsidian-export-gate-proves-shape-not-semantics",
+      "file": "README.md",
+      "phrase": "no la semántica de las notas ni que Graphify haya interpretado correctamente su contenido",
+      "why": "El gate sólo valida destino, tipos de entrada, JSON de graph.canvas y presencia de Markdown. Sin este límite, un export estructuralmente válido se leería como una revisión del contenido y nadie volvería a comprobar si las notas representan correctamente el proyecto."
+    },
+    {
+      "limit_id": "obsidian-export-gate-skill-limit",
+      "file": "SKILL.md",
+      "phrase": "No juzga la semántica de las notas ni si Graphify interpretó correctamente cada nota",
+      "why": "La instrucción operativa debe conservar la misma frontera honesta que el README: destino y forma no prueban significado. Sin esta frase, una sesión puede cerrar el backup al ver un canvas válido aunque sus notas estén incompletas o mal interpretadas."
+    },
+    {
       "limit_id": "pretooluse-hook-is-not-a-sandbox",
       "file": "README.md",
       "phrase": "No es un sandbox ni un límite de confianza",

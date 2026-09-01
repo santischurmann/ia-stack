@@ -1092,6 +1092,10 @@ custodia vale hasta donde tu clave exija presencia humana.
 **8.2 Backups**:
 - Obsidian: if `Obsidian/07_Backups_Log/` exists → note with path, sha256, size (see any project's log for format).
 - Graphify/Obsidian: after the commit, run `graphify update .` and `graphify export obsidian --dir graphify-out/obsidian`.
+  Then run `node .vibe/vcp-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian`.
+  This gate verifies that the export destination is project-local, a regular symlink-free tree,
+  and contains a valid `graph.canvas` JSON with `nodes`/`edges` plus at least one Markdown note;
+  No juzga la semántica de las notas ni si Graphify interpretó correctamente cada nota.
   Bind that generated backup to the committed tree — it is stale if HEAD, the report, or the graph
   changes. El orden es **commit → graphify → record → check**, y no es cosmético: `record` sella el
   HEAD real leyéndolo con `git rev-parse`, así que registrar antes de commitear ata el receipt al
