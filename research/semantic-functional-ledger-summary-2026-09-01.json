@@ -1,0 +1,114 @@
+{
+  "schema": "vcp.external-research-semantic-functional-ledger.v1",
+  "generated": "2026-09-01T01:30:19.039Z",
+  "method": "Every PENDING entry was opened, hashed, and fully scanned when textual; observable interfaces and risks are cited by path:line. Text rows are deterministic functional observations (not human semantic judgment); opaque/binary entries are metadata-only.",
+  "corpus_root": "<VCP_EXTERNAL_RESEARCH_ROOT>",
+  "source_ledger": "semantic-ledger-2026-08-31.json",
+  "output": "semantic-functional-evidence-2026-09-01.ndjson",
+  "compressed_output": "semantic-functional-evidence-2026-09-01.ndjson.gz",
+  "index": "semantic-functional-index-2026-09-01.json",
+  "compressed_index": "semantic-functional-index-2026-09-01.json.gz",
+  "counts": {
+    "total_pending": 14897,
+    "resolved": 14897,
+    "functional_scan": 14710,
+    "static_reviewed": 187,
+    "unreadable": 0,
+    "bytes_read": 592020021,
+    "text_bytes": 193991875,
+    "binary_bytes": 398028146,
+    "adopt_candidates": 11012,
+    "defer": 3885,
+    "reject": 0
+  },
+  "source_counts": {
+    "AgriciDaniel/claude-obsidian": {
+      "pending": 192,
+      "functional_scan": 192,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "anthropics/claude-plugins-official": {
+      "pending": 441,
+      "functional_scan": 439,
+      "static_reviewed": 2,
+      "unreadable": 0
+    },
+    "ComposioHQ/awesome-claude-skills": {
+      "pending": 1080,
+      "functional_scan": 1080,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "ConardLi/garden-skills": {
+      "pending": 586,
+      "functional_scan": 585,
+      "static_reviewed": 1,
+      "unreadable": 0
+    },
+    "DietrichGebert/ponytail": {
+      "pending": 148,
+      "functional_scan": 147,
+      "static_reviewed": 1,
+      "unreadable": 0
+    },
+    "garrytan/gstack": {
+      "pending": 1419,
+      "functional_scan": 1418,
+      "static_reviewed": 1,
+      "unreadable": 0
+    },
+    "google/googletest": {
+      "pending": 249,
+      "functional_scan": 249,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "K-Dense-AI/scientific-agent-skills": {
+      "pending": 2435,
+      "functional_scan": 2271,
+      "static_reviewed": 164,
+      "unreadable": 0
+    },
+    "marin-community/marin": {
+      "pending": 3530,
+      "functional_scan": 3527,
+      "static_reviewed": 3,
+      "unreadable": 0
+    },
+    "msitarzewski/agency-agents": {
+      "pending": 339,
+      "functional_scan": 339,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "Panniantong/agent-reach": {
+      "pending": 104,
+      "functional_scan": 104,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "rohitg00/ai-engineering-from-scratch": {
+      "pending": 2982,
+      "functional_scan": 2982,
+      "static_reviewed": 0,
+      "unreadable": 0
+    },
+    "thedotmack/claude-mem": {
+      "pending": 1022,
+      "functional_scan": 1011,
+      "static_reviewed": 11,
+      "unreadable": 0
+    },
+    "tt-a1i/archify": {
+      "pending": 370,
+      "functional_scan": 366,
+      "static_reviewed": 4,
+      "unreadable": 0
+    }
+  },
+  "pending_resolution": "ZERO_UNREADABLE",
+  "output_sha256": "91645dca4a275f037083c75f8c53c7731246c679176a83e1b93aae2dce09e924",
+  "compressed_output_sha256": "dc093f3452a484c22c02145b164600e33bb1ca36763efcd0e6752fd70f291527",
+  "compressed_index_sha256": "7cff426fdc4d7c58ff0e0d535d48bd7d220fe079ae2ff307ba702c5de5183f7b"
+}

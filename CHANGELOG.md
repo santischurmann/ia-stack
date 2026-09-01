@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Cierre funcional reproducible del research externo.** Se agregó un ledger nativo que abre y
+  hashea las 14.897 entradas que estaban `PENDING`, recorre todas las líneas textuales y registra
+  interfaces, dependencias, tests, salidas, límites, riesgos y citas verificables. El verificador
+  confirma 14.897/14.897 sin duplicados: 14.710 `FUNCTIONAL_SCAN`, 187 `STATIC_REVIEWED` (opacos),
+  0 ilegibles. La evidencia comprimida se conserva como salida local reproducible (ignorada por Git)
+  y la síntesis compacta se versiona; ninguna señal lexical se
+  auto-adopta y cada capacidad vuelve al ciclo VCP con menú 🔵. El baseline estricto histórico se
+  mantiene separado para no reescribir la historia.
+
 - `verify-capability-matrix.mjs` agrega una matriz nativa de roles, herramientas y superficies:
   rechaza auto-aprobación y contradicciones entre roles de sólo lectura y `Write`/`Edit`. Es un
   contrato declarativo revisable, no un sandbox contra herramientas externas.

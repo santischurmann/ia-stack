@@ -1,0 +1,2813 @@
+{
+  "schema": "vcp.external-research-semantic-functional-synthesis.v1",
+  "generated": "2026-09-01T01:30:40.331Z",
+  "input": "semantic-functional-evidence-2026-09-01.ndjson",
+  "input_sha256": "91645dca4a275f037083c75f8c53c7731246c679176a83e1b93aae2dce09e924",
+  "rows": 14897,
+  "method": "Aggregates only cited observations after an independent verification pass. Group membership is a lexical signal for prioritization, not a semantic adoption decision.",
+  "source_counts": {
+    "AgriciDaniel/claude-obsidian": {
+      "total": 192,
+      "functional_scan": 192,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 143,
+      "defer": 49,
+      "encoding_warning": 1
+    },
+    "anthropics/claude-plugins-official": {
+      "total": 441,
+      "functional_scan": 439,
+      "static_reviewed": 2,
+      "lexical_adopt_signal": 317,
+      "defer": 124,
+      "encoding_warning": 0
+    },
+    "ComposioHQ/awesome-claude-skills": {
+      "total": 1080,
+      "functional_scan": 1080,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 937,
+      "defer": 143,
+      "encoding_warning": 0
+    },
+    "ConardLi/garden-skills": {
+      "total": 586,
+      "functional_scan": 585,
+      "static_reviewed": 1,
+      "lexical_adopt_signal": 147,
+      "defer": 439,
+      "encoding_warning": 0
+    },
+    "DietrichGebert/ponytail": {
+      "total": 148,
+      "functional_scan": 147,
+      "static_reviewed": 1,
+      "lexical_adopt_signal": 86,
+      "defer": 62,
+      "encoding_warning": 0
+    },
+    "garrytan/gstack": {
+      "total": 1419,
+      "functional_scan": 1418,
+      "static_reviewed": 1,
+      "lexical_adopt_signal": 1280,
+      "defer": 139,
+      "encoding_warning": 9
+    },
+    "google/googletest": {
+      "total": 249,
+      "functional_scan": 249,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 225,
+      "defer": 24,
+      "encoding_warning": 0
+    },
+    "K-Dense-AI/scientific-agent-skills": {
+      "total": 2435,
+      "functional_scan": 2271,
+      "static_reviewed": 164,
+      "lexical_adopt_signal": 1761,
+      "defer": 674,
+      "encoding_warning": 1
+    },
+    "marin-community/marin": {
+      "total": 3530,
+      "functional_scan": 3527,
+      "static_reviewed": 3,
+      "lexical_adopt_signal": 2209,
+      "defer": 1321,
+      "encoding_warning": 0
+    },
+    "msitarzewski/agency-agents": {
+      "total": 339,
+      "functional_scan": 339,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 335,
+      "defer": 4,
+      "encoding_warning": 0
+    },
+    "Panniantong/agent-reach": {
+      "total": 104,
+      "functional_scan": 104,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 87,
+      "defer": 17,
+      "encoding_warning": 0
+    },
+    "rohitg00/ai-engineering-from-scratch": {
+      "total": 2982,
+      "functional_scan": 2982,
+      "static_reviewed": 0,
+      "lexical_adopt_signal": 2380,
+      "defer": 602,
+      "encoding_warning": 0
+    },
+    "thedotmack/claude-mem": {
+      "total": 1022,
+      "functional_scan": 1011,
+      "static_reviewed": 11,
+      "lexical_adopt_signal": 770,
+      "defer": 252,
+      "encoding_warning": 0
+    },
+    "tt-a1i/archify": {
+      "total": 370,
+      "functional_scan": 366,
+      "static_reviewed": 4,
+      "lexical_adopt_signal": 335,
+      "defer": 35,
+      "encoding_warning": 0
+    }
+  },
+  "adversarial_flags": {
+    "claims_without_test_signal": 1696,
+    "sparse_semantic_surface": 2991,
+    "security_or_maintenance_risk_signal": 4566,
+    "external_or_persistent_side_effect_signal": 3673,
+    "non_textual_or_opaque": 187
+  },
+  "capability_signals": {
+    "gates-and-evidence": [
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:1",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:784",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:2",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:137"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "infra/pulumi/iam_audit.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "infra/pulumi/iam_audit.py:1",
+          "infra/pulumi/iam_audit.py:238",
+          "infra/pulumi/iam_audit.py:2",
+          "infra/pulumi/iam_audit.py:3"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/code-intelligence/contract.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/code-intelligence/contract.ts:1",
+          "lib/code-intelligence/contract.ts:201",
+          "lib/code-intelligence/contract.ts:164",
+          "lib/code-intelligence/contract.ts:178"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/egress-receipt.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/egress-receipt.ts:1",
+          "lib/egress-receipt.ts:392",
+          "lib/egress-receipt.ts:104",
+          "lib/egress-receipt.ts:110"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/finelog/rust/src/query/exact_aggregate.rs",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/finelog/rust/src/query/exact_aggregate.rs:1",
+          "lib/finelog/rust/src/query/exact_aggregate.rs:1149",
+          "lib/finelog/rust/src/query/exact_aggregate.rs:84",
+          "lib/finelog/rust/src/query/exact_aggregate.rs:98"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/data/text/trace_chat.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/data/text/trace_chat.py:1",
+          "lib/levanter/src/levanter/data/text/trace_chat.py:635",
+          "lib/levanter/src/levanter/data/text/trace_chat.py:2",
+          "lib/levanter/src/levanter/data/text/trace_chat.py:56"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/layers/gated_deltanet.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/layers/gated_deltanet.py:1",
+          "lib/levanter/src/levanter/layers/gated_deltanet.py:902",
+          "lib/levanter/src/levanter/layers/gated_deltanet.py:2",
+          "lib/levanter/src/levanter/layers/gated_deltanet.py:4"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/processing/classification/deduplication/verify_fuzzy_dups.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/marin/src/marin/processing/classification/deduplication/verify_fuzzy_dups.py:1",
+          "lib/marin/src/marin/processing/classification/deduplication/verify_fuzzy_dups.py:958",
+          "lib/marin/src/marin/processing/classification/deduplication/verify_fuzzy_dups.py:2",
+          "lib/marin/src/marin/processing/classification/deduplication/verify_fuzzy_dups.py:59"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/profiling/trace_summary.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/marin/src/marin/profiling/trace_summary.py:1",
+          "lib/marin/src/marin/profiling/trace_summary.py:1601",
+          "lib/marin/src/marin/profiling/trace_summary.py:2",
+          "lib/marin/src/marin/profiling/trace_summary.py:165"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/outputs/skill-release-gate/scripts/evaluate_skill.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/outputs/skill-release-gate/scripts/evaluate_skill.py:1",
+          "phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/outputs/skill-release-gate/scripts/evaluate_skill.py:945",
+          "phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/outputs/skill-release-gate/scripts/evaluate_skill.py:74",
+          "phases/13-tools-and-protocols/27-skill-evals-packaging-and-portability/outputs/skill-release-gate/scripts/evaluate_skill.py:87"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/14-agent-engineering/36-scope-contracts/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/14-agent-engineering/36-scope-contracts/code/main.py:1",
+          "phases/14-agent-engineering/36-scope-contracts/code/main.py:235",
+          "phases/14-agent-engineering/36-scope-contracts/code/main.py:63",
+          "phases/14-agent-engineering/36-scope-contracts/code/main.py:67"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/14-agent-engineering/38-verification-gates/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/14-agent-engineering/38-verification-gates/code/main.py:1",
+          "phases/14-agent-engineering/38-verification-gates/code/main.py:265",
+          "phases/14-agent-engineering/38-verification-gates/code/main.py:29",
+          "phases/14-agent-engineering/38-verification-gates/code/main.py:30"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      }
+    ],
+    "orchestration-and-agents": [
+      {
+        "source": "Panniantong/agent-reach",
+        "path": "agent_reach/cli.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "agent_reach/cli.py:1",
+          "agent_reach/cli.py:2350",
+          "agent_reach/cli.py:20",
+          "agent_reach/cli.py:251"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "tt-a1i/archify",
+        "path": "archify/renderers/workflow/render-workflow.mjs",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "archify/renderers/workflow/render-workflow.mjs:1",
+          "archify/renderers/workflow/render-workflow.mjs:749",
+          "archify/renderers/workflow/render-workflow.mjs:69",
+          "archify/renderers/workflow/render-workflow.mjs:80"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "DietrichGebert/ponytail",
+        "path": "benchmarks/agentic/run.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "benchmarks/agentic/run.py:1",
+          "benchmarks/agentic/run.py:471",
+          "benchmarks/agentic/run.py:44",
+          "benchmarks/agentic/run.py:45"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "DietrichGebert/ponytail",
+        "path": "benchmarks/agentic/tasks.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "benchmarks/agentic/tasks.py:1",
+          "benchmarks/agentic/tasks.py:968",
+          "benchmarks/agentic/tasks.py:26",
+          "benchmarks/agentic/tasks.py:27"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "browse/src/terminal-agent-control.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "browse/src/terminal-agent-control.ts:1",
+          "browse/src/terminal-agent-control.ts:150",
+          "browse/src/terminal-agent-control.ts:30",
+          "browse/src/terminal-agent-control.ts:54"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "browse/src/terminal-agent.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "browse/src/terminal-agent.ts:1",
+          "browse/src/terminal-agent.ts:1046",
+          "browse/src/terminal-agent.ts:196",
+          "browse/src/terminal-agent.ts:230"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/checkpoint.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/checkpoint.py:1",
+          "claude_obsidian/checkpoint.py:1385",
+          "claude_obsidian/checkpoint.py:62",
+          "claude_obsidian/checkpoint.py:69"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/iris/src/iris/cluster/controller/checkpoint.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/iris/src/iris/cluster/controller/checkpoint.py:1",
+          "lib/iris/src/iris/cluster/controller/checkpoint.py:550",
+          "lib/iris/src/iris/cluster/controller/checkpoint.py:2",
+          "lib/iris/src/iris/cluster/controller/checkpoint.py:50"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/iris/src/iris/cluster/node_agent/kubernetes.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/iris/src/iris/cluster/node_agent/kubernetes.py:1",
+          "lib/iris/src/iris/cluster/node_agent/kubernetes.py:915",
+          "lib/iris/src/iris/cluster/node_agent/kubernetes.py:2",
+          "lib/iris/src/iris/cluster/node_agent/kubernetes.py:50"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/checkpoint.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/checkpoint.py:1",
+          "lib/levanter/src/levanter/checkpoint.py:1306",
+          "lib/levanter/src/levanter/checkpoint.py:2",
+          "lib/levanter/src/levanter/checkpoint.py:58"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/compat/hf_checkpoints.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/compat/hf_checkpoints.py:1",
+          "lib/levanter/src/levanter/compat/hf_checkpoints.py:1704",
+          "lib/levanter/src/levanter/compat/hf_checkpoints.py:2",
+          "lib/levanter/src/levanter/compat/hf_checkpoints.py:291"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/testing/eight_device_checkpoints.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/testing/eight_device_checkpoints.py:1",
+          "lib/levanter/src/levanter/testing/eight_device_checkpoints.py:288",
+          "lib/levanter/src/levanter/testing/eight_device_checkpoints.py:2",
+          "lib/levanter/src/levanter/testing/eight_device_checkpoints.py:44"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      }
+    ],
+    "research-and-citations": [
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/datakit/reference_pipeline.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/datakit/reference_pipeline.py:1",
+          "experiments/datakit/reference_pipeline.py:1131",
+          "experiments/datakit/reference_pipeline.py:2",
+          "experiments/datakit/reference_pipeline.py:186"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "hosts/claude/hooks/question-preference-hook.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "hosts/claude/hooks/question-preference-hook.ts:1",
+          "hosts/claude/hooks/question-preference-hook.ts:506",
+          "hosts/claude/hooks/question-preference-hook.ts:68",
+          "hosts/claude/hooks/question-preference-hook.ts:76"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "infra/grafana/src/iris_source.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "infra/grafana/src/iris_source.py:1",
+          "infra/grafana/src/iris_source.py:185",
+          "infra/grafana/src/iris_source.py:2",
+          "infra/grafana/src/iris_source.py:32"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "infra/grafana/src/k8s_source.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "infra/grafana/src/k8s_source.py:1",
+          "infra/grafana/src/k8s_source.py:1274",
+          "infra/grafana/src/k8s_source.py:2",
+          "infra/grafana/src/k8s_source.py:55"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "infra/grafana/src/wandb_source.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "infra/grafana/src/wandb_source.py:1",
+          "infra/grafana/src/wandb_source.py:299",
+          "infra/grafana/src/wandb_source.py:2",
+          "infra/grafana/src/wandb_source.py:41"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/gbrain-sources.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/gbrain-sources.ts:1",
+          "lib/gbrain-sources.ts:347",
+          "lib/gbrain-sources.ts:60",
+          "lib/gbrain-sources.ts:96"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/data/sharded_datasource.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/data/sharded_datasource.py:1",
+          "lib/levanter/src/levanter/data/sharded_datasource.py:562",
+          "lib/levanter/src/levanter/data/sharded_datasource.py:2",
+          "lib/levanter/src/levanter/data/sharded_datasource.py:46"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/rigging/src/rigging/provenance.py",
+        "score": 22,
+        "relevance_signal": "DEFER",
+        "citations": [
+          "lib/rigging/src/rigging/provenance.py:1",
+          "lib/rigging/src/rigging/provenance.py:254",
+          "lib/rigging/src/rigging/provenance.py:2",
+          "lib/rigging/src/rigging/provenance.py:187"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/version-source.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/version-source.ts:1",
+          "lib/version-source.ts:130",
+          "lib/version-source.ts:40",
+          "lib/version-source.ts:47"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/19-capstone-projects/54-paper-writer/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/19-capstone-projects/54-paper-writer/code/main.py:1",
+          "phases/19-capstone-projects/54-paper-writer/code/main.py:316",
+          "phases/19-capstone-projects/54-paper-writer/code/main.py:29",
+          "phases/19-capstone-projects/54-paper-writer/code/main.py:46"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "K-Dense-AI/scientific-agent-skills",
+        "path": "skills/citation-management/scripts/_common.py",
+        "score": 22,
+        "relevance_signal": "DEFER",
+        "citations": [
+          "skills/citation-management/scripts/_common.py:1",
+          "skills/citation-management/scripts/_common.py:331",
+          "skills/citation-management/scripts/_common.py:28",
+          "skills/citation-management/scripts/_common.py:29"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "K-Dense-AI/scientific-agent-skills",
+        "path": "skills/citation-management/scripts/extract_metadata.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "skills/citation-management/scripts/extract_metadata.py:1",
+          "skills/citation-management/scripts/extract_metadata.py:689",
+          "skills/citation-management/scripts/extract_metadata.py:30",
+          "skills/citation-management/scripts/extract_metadata.py:43"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      }
+    ],
+    "testing-and-quality": [
+      {
+        "source": "DietrichGebert/ponytail",
+        "path": "benchmarks/agentic/run.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "benchmarks/agentic/run.py:1",
+          "benchmarks/agentic/run.py:471",
+          "benchmarks/agentic/run.py:44",
+          "benchmarks/agentic/run.py:45"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "DietrichGebert/ponytail",
+        "path": "benchmarks/agentic/tasks.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "benchmarks/agentic/tasks.py:1",
+          "benchmarks/agentic/tasks.py:968",
+          "benchmarks/agentic/tasks.py:26",
+          "benchmarks/agentic/tasks.py:27"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "ComposioHQ/awesome-claude-skills",
+        "path": "document-skills/pdf/scripts/check_bounding_boxes_test.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "document-skills/pdf/scripts/check_bounding_boxes_test.py:1",
+          "document-skills/pdf/scripts/check_bounding_boxes_test.py:226",
+          "document-skills/pdf/scripts/check_bounding_boxes_test.py:7",
+          "document-skills/pdf/scripts/check_bounding_boxes_test.py:10"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/benchmarks/fa4/tile_sweep.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/benchmarks/fa4/tile_sweep.py:1",
+          "experiments/benchmarks/fa4/tile_sweep.py:325",
+          "experiments/benchmarks/fa4/tile_sweep.py:2",
+          "experiments/benchmarks/fa4/tile_sweep.py:55"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/datakit/cluster/quality/fast_transformer/train.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/datakit/cluster/quality/fast_transformer/train.py:1",
+          "experiments/datakit/cluster/quality/fast_transformer/train.py:349",
+          "experiments/datakit/cluster/quality/fast_transformer/train.py:2",
+          "experiments/datakit/cluster/quality/fast_transformer/train.py:44"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/datakit/decontam/prepare_eval_corpus.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/datakit/decontam/prepare_eval_corpus.py:1",
+          "experiments/datakit/decontam/prepare_eval_corpus.py:844",
+          "experiments/datakit/decontam/prepare_eval_corpus.py:2",
+          "experiments/datakit/decontam/prepare_eval_corpus.py:109"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:1",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:784",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:2",
+          "experiments/datakit/scripts/verify_fuzzy_dups_testbed.py:137"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/evaluation/migrations/cli.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/evaluation/migrations/cli.py:1",
+          "experiments/evaluation/migrations/cli.py:400",
+          "experiments/evaluation/migrations/cli.py:2",
+          "experiments/evaluation/migrations/cli.py:59"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "experiments/evaluation/migrations/migrate_archive.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "experiments/evaluation/migrations/migrate_archive.py:1",
+          "experiments/evaluation/migrations/migrate_archive.py:590",
+          "experiments/evaluation/migrations/migrate_archive.py:2",
+          "experiments/evaluation/migrations/migrate_archive.py:136"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "google/googletest",
+        "path": "googletest/include/gtest/gtest-matchers.h",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "googletest/include/gtest/gtest-matchers.h:1",
+          "googletest/include/gtest/gtest-matchers.h:986",
+          "googletest/include/gtest/gtest-matchers.h:32",
+          "googletest/include/gtest/gtest-matchers.h:63"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "google/googletest",
+        "path": "googletest/include/gtest/gtest-param-test.h",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "googletest/include/gtest/gtest-param-test.h:1",
+          "googletest/include/gtest/gtest-param-test.h:602",
+          "googletest/include/gtest/gtest-param-test.h:50",
+          "googletest/include/gtest/gtest-param-test.h:55"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "google/googletest",
+        "path": "googletest/include/gtest/gtest-printers.h",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "googletest/include/gtest/gtest-printers.h:1",
+          "googletest/include/gtest/gtest-printers.h:1243",
+          "googletest/include/gtest/gtest-printers.h:37",
+          "googletest/include/gtest/gtest-printers.h:147"
+        ],
+        "adversarial_flags": []
+      }
+    ],
+    "memory-and-learning": [
+      {
+        "source": "garrytan/gstack",
+        "path": "bin/gstack-brain-context-load.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "bin/gstack-brain-context-load.ts:1",
+          "bin/gstack-brain-context-load.ts:482",
+          "bin/gstack-brain-context-load.ts:78",
+          "bin/gstack-brain-context-load.ts:97"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "bin/gstack-memory-ingest.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "bin/gstack-memory-ingest.ts:1",
+          "bin/gstack-memory-ingest.ts:2447",
+          "bin/gstack-memory-ingest.ts:202",
+          "bin/gstack-memory-ingest.ts:226"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:1",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:338",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:22",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:60"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/08-messages-api-and-application-lifecycle/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/08-messages-api-and-application-lifecycle/code/main.py:1",
+          "certifications/claude/lessons/08-messages-api-and-application-lifecycle/code/main.py:367",
+          "certifications/claude/lessons/08-messages-api-and-application-lifecycle/code/main.py:40",
+          "certifications/claude/lessons/08-messages-api-and-application-lifecycle/code/main.py:60"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/13-application-security-and-secrets/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:1",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:126",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:40",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:44"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/30-developer-application-capstone/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/30-developer-application-capstone/code/main.py:1",
+          "certifications/claude/lessons/30-developer-application-capstone/code/main.py:368",
+          "certifications/claude/lessons/30-developer-application-capstone/code/main.py:30",
+          "certifications/claude/lessons/30-developer-application-capstone/code/main.py:36"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/bin-context.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/bin-context.ts:1",
+          "lib/bin-context.ts:294",
+          "lib/bin-context.ts:14",
+          "lib/bin-context.ts:25"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/context-bill.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/context-bill.ts:1",
+          "lib/context-bill.ts:1017",
+          "lib/context-bill.ts:131",
+          "lib/context-bill.ts:141"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "lib/gstack-memory-helpers.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/gstack-memory-helpers.ts:1",
+          "lib/gstack-memory-helpers.ts:516",
+          "lib/gstack-memory-helpers.ts:95",
+          "lib/gstack-memory-helpers.ts:130"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/zephyr/src/zephyr/context.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/zephyr/src/zephyr/context.py:1",
+          "lib/zephyr/src/zephyr/context.py:728",
+          "lib/zephyr/src/zephyr/context.py:2",
+          "lib/zephyr/src/zephyr/context.py:70"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/zephyr/src/zephyr/memory_store.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/zephyr/src/zephyr/memory_store.py:1",
+          "lib/zephyr/src/zephyr/memory_store.py:477",
+          "lib/zephyr/src/zephyr/memory_store.py:2",
+          "lib/zephyr/src/zephyr/memory_store.py:53"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/02-ml-fundamentals/01-what-is-machine-learning/code/ml_intro.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/02-ml-fundamentals/01-what-is-machine-learning/code/ml_intro.py:1",
+          "phases/02-ml-fundamentals/01-what-is-machine-learning/code/ml_intro.py:196",
+          "phases/02-ml-fundamentals/01-what-is-machine-learning/code/ml_intro.py:5",
+          "phases/02-ml-fundamentals/01-what-is-machine-learning/code/ml_intro.py:9"
+        ],
+        "adversarial_flags": []
+      }
+    ],
+    "security-and-boundaries": [
+      {
+        "source": "garrytan/gstack",
+        "path": "browse/src/file-permissions.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "browse/src/file-permissions.ts:1",
+          "browse/src/file-permissions.ts:244",
+          "browse/src/file-permissions.ts:53",
+          "browse/src/file-permissions.ts:85"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "browse/src/security.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "browse/src/security.ts:1",
+          "browse/src/security.ts:328",
+          "browse/src/security.ts:124",
+          "browse/src/security.ts:148"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "browse/src/token-registry.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "browse/src/token-registry.ts:1",
+          "browse/src/token-registry.ts:719",
+          "browse/src/token-registry.ts:109",
+          "browse/src/token-registry.ts:130"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:1",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:338",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:22",
+          "certifications/claude/lessons/02-model-selection-and-token-economics/code/main.py:60"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/13-application-security-and-secrets/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:1",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:126",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:40",
+          "certifications/claude/lessons/13-application-security-and-secrets/code/main.py:44"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/data/text/_batch_tokenizer.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/data/text/_batch_tokenizer.py:1",
+          "lib/levanter/src/levanter/data/text/_batch_tokenizer.py:222",
+          "lib/levanter/src/levanter/data/text/_batch_tokenizer.py:2",
+          "lib/levanter/src/levanter/data/text/_batch_tokenizer.py:15"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/tokenizers.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/tokenizers.py:1",
+          "lib/levanter/src/levanter/tokenizers.py:1038",
+          "lib/levanter/src/levanter/tokenizers.py:2",
+          "lib/levanter/src/levanter/tokenizers.py:45"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/processing/tokenize/_core.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/marin/src/marin/processing/tokenize/_core.py:1",
+          "lib/marin/src/marin/processing/tokenize/_core.py:404",
+          "lib/marin/src/marin/processing/tokenize/_core.py:2",
+          "lib/marin/src/marin/processing/tokenize/_core.py:40"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/processing/tokenize/store_builder.py",
+        "score": 22,
+        "relevance_signal": "DEFER",
+        "citations": [
+          "lib/marin/src/marin/processing/tokenize/store_builder.py:1",
+          "lib/marin/src/marin/processing/tokenize/store_builder.py:381",
+          "lib/marin/src/marin/processing/tokenize/store_builder.py:2",
+          "lib/marin/src/marin/processing/tokenize/store_builder.py:95"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/processing/tokenize/tokenize.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/marin/src/marin/processing/tokenize/tokenize.py:1",
+          "lib/marin/src/marin/processing/tokenize/tokenize.py:389",
+          "lib/marin/src/marin/processing/tokenize/tokenize.py:2",
+          "lib/marin/src/marin/processing/tokenize/tokenize.py:57"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/rigging/src/rigging/token_authority.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/rigging/src/rigging/token_authority.py:1",
+          "lib/rigging/src/rigging/token_authority.py:331",
+          "lib/rigging/src/rigging/token_authority.py:2",
+          "lib/rigging/src/rigging/token_authority.py:48"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/code/main.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/code/main.py:1",
+          "phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/code/main.py:327",
+          "phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/code/main.py:52",
+          "phases/13-tools-and-protocols/26-skill-permissions-sandboxes-and-trust/code/main.py:72"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      }
+    ],
+    "graph-and-backup": [
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/capture.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/capture.py:1",
+          "claude_obsidian/capture.py:2231",
+          "claude_obsidian/capture.py:63",
+          "claude_obsidian/capture.py:64"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/checkpoint.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/checkpoint.py:1",
+          "claude_obsidian/checkpoint.py:1385",
+          "claude_obsidian/checkpoint.py:62",
+          "claude_obsidian/checkpoint.py:69"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/cli.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/cli.py:1",
+          "claude_obsidian/cli.py:1274",
+          "claude_obsidian/cli.py:61",
+          "claude_obsidian/cli.py:72"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/legacy_lock.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/legacy_lock.py:1",
+          "claude_obsidian/legacy_lock.py:689",
+          "claude_obsidian/legacy_lock.py:64",
+          "claude_obsidian/legacy_lock.py:76"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/lint_engine.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/lint_engine.py:1",
+          "claude_obsidian/lint_engine.py:1279",
+          "claude_obsidian/lint_engine.py:50",
+          "claude_obsidian/lint_engine.py:51"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/paths.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/paths.py:1",
+          "claude_obsidian/paths.py:413",
+          "claude_obsidian/paths.py:101",
+          "claude_obsidian/paths.py:102"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/release.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/release.py:1",
+          "claude_obsidian/release.py:2591",
+          "claude_obsidian/release.py:39",
+          "claude_obsidian/release.py:40"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "AgriciDaniel/claude-obsidian",
+        "path": "claude_obsidian/transaction.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "claude_obsidian/transaction.py:1",
+          "claude_obsidian/transaction.py:4771",
+          "claude_obsidian/transaction.py:60",
+          "claude_obsidian/transaction.py:61"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "infra/ci/analyze_import_graph.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "infra/ci/analyze_import_graph.py:1",
+          "infra/ci/analyze_import_graph.py:255",
+          "infra/ci/analyze_import_graph.py:2",
+          "infra/ci/analyze_import_graph.py:51"
+        ],
+        "adversarial_flags": []
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/finestore/src/finestore/migrations/m0001_manifest.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/finestore/src/finestore/migrations/m0001_manifest.py:1",
+          "lib/finestore/src/finestore/migrations/m0001_manifest.py:354",
+          "lib/finestore/src/finestore/migrations/m0001_manifest.py:2",
+          "lib/finestore/src/finestore/migrations/m0001_manifest.py:107"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/levanter/src/levanter/recovery/snapshot.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/levanter/src/levanter/recovery/snapshot.py:1",
+          "lib/levanter/src/levanter/recovery/snapshot.py:330",
+          "lib/levanter/src/levanter/recovery/snapshot.py:2",
+          "lib/levanter/src/levanter/recovery/snapshot.py:59"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "marin-community/marin",
+        "path": "lib/marin/src/marin/datakit/ingestion_manifest.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "lib/marin/src/marin/datakit/ingestion_manifest.py:1",
+          "lib/marin/src/marin/datakit/ingestion_manifest.py:216",
+          "lib/marin/src/marin/datakit/ingestion_manifest.py:2",
+          "lib/marin/src/marin/datakit/ingestion_manifest.py:63"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      }
+    ],
+    "product-and-communication": [
+      {
+        "source": "garrytan/gstack",
+        "path": "design/src/compare.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "design/src/compare.ts:1",
+          "design/src/compare.ts:639",
+          "design/src/compare.ts:20",
+          "design/src/compare.ts:401"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "design/src/daemon-client.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "design/src/daemon-client.ts:1",
+          "design/src/daemon-client.ts:419",
+          "design/src/daemon-client.ts:77",
+          "design/src/daemon-client.ts:89"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "design/src/daemon-state.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "design/src/daemon-state.ts:1",
+          "design/src/daemon-state.ts:220",
+          "design/src/daemon-state.ts:29",
+          "design/src/daemon-state.ts:46"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "design/src/daemon.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "design/src/daemon.ts:1",
+          "design/src/daemon.ts:582",
+          "design/src/daemon.ts:92",
+          "design/src/daemon.ts:102"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/11-llm-engineering/13-production-app/code/production_app.py",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/11-llm-engineering/13-production-app/code/production_app.py:1",
+          "phases/11-llm-engineering/13-production-app/code/production_app.py:713",
+          "phases/11-llm-engineering/13-production-app/code/production_app.py:23",
+          "phases/11-llm-engineering/13-production-app/code/production_app.py:74"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/13-tools-and-protocols/18-mcp-auth-production/code/main.py",
+        "score": 22,
+        "relevance_signal": "DEFER",
+        "citations": [
+          "phases/13-tools-and-protocols/18-mcp-auth-production/code/main.py:1",
+          "phases/13-tools-and-protocols/18-mcp-auth-production/code/main.py:739",
+          "phases/13-tools-and-protocols/18-mcp-auth-production/code/main.py:35",
+          "phases/13-tools-and-protocols/18-mcp-auth-production/code/main.py:36"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "garrytan/gstack",
+        "path": "scripts/resolvers/design.ts",
+        "score": 22,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "scripts/resolvers/design.ts:1",
+          "scripts/resolvers/design.ts:1156",
+          "scripts/resolvers/design.ts:72",
+          "scripts/resolvers/design.ts:75"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/code/main.py",
+        "score": 21,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/code/main.py:1",
+          "phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/code/main.py:194",
+          "phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/code/main.py:20",
+          "phases/16-multi-agent-and-swarms/22-production-scaling-queues-checkpoints/code/main.py:72"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "phases/17-infrastructure-and-production/14-prompt-semantic-caching/code/main.ts",
+        "score": 21,
+        "relevance_signal": "DEFER",
+        "citations": [
+          "phases/17-infrastructure-and-production/14-prompt-semantic-caching/code/main.ts:1",
+          "phases/17-infrastructure-and-production/14-prompt-semantic-caching/code/main.ts:410",
+          "phases/17-infrastructure-and-production/14-prompt-semantic-caching/code/main.ts:89",
+          "phases/17-infrastructure-and-production/14-prompt-semantic-caching/code/main.ts:111"
+        ],
+        "adversarial_flags": [
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "tt-a1i/archify",
+        "path": "scripts/build-readme-showcase.mjs",
+        "score": 21,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "scripts/build-readme-showcase.mjs:1",
+          "scripts/build-readme-showcase.mjs:362",
+          "scripts/build-readme-showcase.mjs:50",
+          "scripts/build-readme-showcase.mjs:54"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "thedotmack/claude-mem",
+        "path": "scripts/translate-readme/index.ts",
+        "score": 21,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "scripts/translate-readme/index.ts:1",
+          "scripts/translate-readme/index.ts:403",
+          "scripts/translate-readme/index.ts:16",
+          "scripts/translate-readme/index.ts:20"
+        ],
+        "adversarial_flags": [
+          "external_or_persistent_side_effect_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      },
+      {
+        "source": "rohitg00/ai-engineering-from-scratch",
+        "path": "certifications/claude/lessons/11-mcp-server-design-and-integration/code/main.py",
+        "score": 20,
+        "relevance_signal": "ADOPT",
+        "citations": [
+          "certifications/claude/lessons/11-mcp-server-design-and-integration/code/main.py:1",
+          "certifications/claude/lessons/11-mcp-server-design-and-integration/code/main.py:660",
+          "certifications/claude/lessons/11-mcp-server-design-and-integration/code/main.py:2",
+          "certifications/claude/lessons/11-mcp-server-design-and-integration/code/main.py:3"
+        ],
+        "adversarial_flags": [
+          "claims_without_test_signal",
+          "security_or_maintenance_risk_signal"
+        ]
+      }
+    ]
+  },
+  "top_symbol_files": [
+    {
+      "source": "google/googletest",
+      "path": "googletest/include/gtest/gtest.h",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "googletest/include/gtest/gtest.h:1",
+        "googletest/include/gtest/gtest.h:2352",
+        "googletest/include/gtest/gtest.h:78",
+        "googletest/include/gtest/gtest.h:180"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googletest/test/gtest_pred_impl_unittest.cc",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "googletest/test/gtest_pred_impl_unittest.cc:1",
+        "googletest/test/gtest_pred_impl_unittest.cc:2070",
+        "googletest/test/gtest_pred_impl_unittest.cc:54",
+        "googletest/test/gtest_pred_impl_unittest.cc:85"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googletest/test/gtest_unittest.cc",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "googletest/test/gtest_unittest.cc:1",
+        "googletest/test/gtest_unittest.cc:7874",
+        "googletest/test/gtest_unittest.cc:78",
+        "googletest/test/gtest_unittest.cc:83"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finelog/rust/src/store/namespace.rs",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/finelog/rust/src/store/namespace.rs:1",
+        "lib/finelog/rust/src/store/namespace.rs:4163",
+        "lib/finelog/rust/src/store/namespace.rs:71",
+        "lib/finelog/rust/src/store/namespace.rs:111"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finelog/rust/src/store/schema.rs",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/finelog/rust/src/store/schema.rs:1",
+        "lib/finelog/rust/src/store/schema.rs:2616",
+        "lib/finelog/rust/src/store/schema.rs:85",
+        "lib/finelog/rust/src/store/schema.rs:108"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/haliax/tests/test_scan.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/haliax/tests/test_scan.py:1",
+        "lib/haliax/tests/test_scan.py:1139",
+        "lib/haliax/tests/test_scan.py:3",
+        "lib/haliax/tests/test_scan.py:21"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/backends/k8s/test_pod_manifest.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/backends/k8s/test_pod_manifest.py:1",
+        "lib/iris/tests/cluster/backends/k8s/test_pod_manifest.py:1733",
+        "lib/iris/tests/cluster/backends/k8s/test_pod_manifest.py:2",
+        "lib/iris/tests/cluster/backends/k8s/test_pod_manifest.py:49"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/backends/test_config.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/backends/test_config.py:1",
+        "lib/iris/tests/cluster/backends/test_config.py:2118",
+        "lib/iris/tests/cluster/backends/test_config.py:2",
+        "lib/iris/tests/cluster/backends/test_config.py:55"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_autoscaler.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_autoscaler.py:1",
+        "lib/iris/tests/cluster/controller/test_autoscaler.py:1972",
+        "lib/iris/tests/cluster/controller/test_autoscaler.py:2",
+        "lib/iris/tests/cluster/controller/test_autoscaler.py:126"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_reconcile.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_reconcile.py:1",
+        "lib/iris/tests/cluster/controller/test_reconcile.py:1876",
+        "lib/iris/tests/cluster/controller/test_reconcile.py:2",
+        "lib/iris/tests/cluster/controller/test_reconcile.py:155"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_transitions.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_transitions.py:1",
+        "lib/iris/tests/cluster/controller/test_transitions.py:4068",
+        "lib/iris/tests/cluster/controller/test_transitions.py:2",
+        "lib/iris/tests/cluster/controller/test_transitions.py:27"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/worker/test_worker.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/worker/test_worker.py:1",
+        "lib/iris/tests/cluster/worker/test_worker.py:1593",
+        "lib/iris/tests/cluster/worker/test_worker.py:2",
+        "lib/iris/tests/cluster/worker/test_worker.py:54"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/tests/kernels/test_pallas_fused_cross_entropy_loss.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/levanter/tests/kernels/test_pallas_fused_cross_entropy_loss.py:1",
+        "lib/levanter/tests/kernels/test_pallas_fused_cross_entropy_loss.py:2487",
+        "lib/levanter/tests/kernels/test_pallas_fused_cross_entropy_loss.py:2",
+        "lib/levanter/tests/kernels/test_pallas_fused_cross_entropy_loss.py:28"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/tests/test_tokenizers.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/levanter/tests/test_tokenizers.py:1",
+        "lib/levanter/tests/test_tokenizers.py:1500",
+        "lib/levanter/tests/test_tokenizers.py:2",
+        "lib/levanter/tests/test_tokenizers.py:53"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/rigging/tests/test_fsutil.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "lib/rigging/tests/test_fsutil.py:1",
+        "lib/rigging/tests/test_fsutil.py:945",
+        "lib/rigging/tests/test_fsutil.py:2",
+        "lib/rigging/tests/test_fsutil.py:40"
+      ]
+    },
+    {
+      "source": "Panniantong/agent-reach",
+      "path": "tests/test_channels.py",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "tests/test_channels.py:1",
+        "tests/test_channels.py:1822",
+        "tests/test_channels.py:22",
+        "tests/test_channels.py:27"
+      ]
+    },
+    {
+      "source": "thedotmack/claude-mem",
+      "path": "workers/sync-hub/worker-configuration.d.ts",
+      "symbols": 96,
+      "tests": 96,
+      "citations": [
+        "workers/sync-hub/worker-configuration.d.ts:1",
+        "workers/sync-hub/worker-configuration.d.ts:14724",
+        "workers/sync-hub/worker-configuration.d.ts:298",
+        "workers/sync-hub/worker-configuration.d.ts:299"
+      ]
+    },
+    {
+      "source": "thedotmack/claude-mem",
+      "path": "plugin/scripts/server-service.cjs",
+      "symbols": 96,
+      "tests": 92,
+      "citations": [
+        "plugin/scripts/server-service.cjs:1",
+        "plugin/scripts/server-service.cjs:10107",
+        "plugin/scripts/server-service.cjs:4",
+        "plugin/scripts/server-service.cjs:6"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googlemock/include/gmock/gmock-spec-builders.h",
+      "symbols": 96,
+      "tests": 91,
+      "citations": [
+        "googlemock/include/gmock/gmock-spec-builders.h:1",
+        "googlemock/include/gmock/gmock-spec-builders.h:2151",
+        "googlemock/include/gmock/gmock-spec-builders.h:88",
+        "googlemock/include/gmock/gmock-spec-builders.h:93"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/backends/k8s/tasks.py",
+      "symbols": 96,
+      "tests": 83,
+      "citations": [
+        "lib/iris/src/iris/cluster/backends/k8s/tasks.py:1",
+        "lib/iris/src/iris/cluster/backends/k8s/tasks.py:3363",
+        "lib/iris/src/iris/cluster/backends/k8s/tasks.py:2",
+        "lib/iris/src/iris/cluster/backends/k8s/tasks.py:149"
+      ]
+    },
+    {
+      "source": "thedotmack/claude-mem",
+      "path": "plugin/scripts/worker-service.cjs",
+      "symbols": 96,
+      "tests": 76,
+      "citations": [
+        "plugin/scripts/worker-service.cjs:1",
+        "plugin/scripts/worker-service.cjs:2900",
+        "plugin/scripts/worker-service.cjs:771",
+        "plugin/scripts/worker-service.cjs:801"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/controller/service.py",
+      "symbols": 96,
+      "tests": 73,
+      "citations": [
+        "lib/iris/src/iris/cluster/controller/service.py:1",
+        "lib/iris/src/iris/cluster/controller/service.py:3626",
+        "lib/iris/src/iris/cluster/controller/service.py:2",
+        "lib/iris/src/iris/cluster/controller/service.py:129"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googlemock/include/gmock/gmock-actions.h",
+      "symbols": 96,
+      "tests": 58,
+      "citations": [
+        "googlemock/include/gmock/gmock-actions.h:1",
+        "googlemock/include/gmock/gmock-actions.h:2409",
+        "googlemock/include/gmock/gmock-actions.h:156",
+        "googlemock/include/gmock/gmock-actions.h:172"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/pathogen-variant-surveillance/test_scripts.py",
+      "symbols": 96,
+      "tests": 47,
+      "citations": [
+        "tests/pathogen-variant-surveillance/test_scripts.py:1",
+        "tests/pathogen-variant-surveillance/test_scripts.py:965",
+        "tests/pathogen-variant-surveillance/test_scripts.py:959",
+        "tests/pathogen-variant-surveillance/test_scripts.py:960"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/onekgpd/test_scripts.py",
+      "symbols": 96,
+      "tests": 38,
+      "citations": [
+        "tests/onekgpd/test_scripts.py:1",
+        "tests/onekgpd/test_scripts.py:1311",
+        "tests/onekgpd/test_scripts.py:43",
+        "tests/onekgpd/test_scripts.py:44"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/config.py",
+      "symbols": 96,
+      "tests": 31,
+      "citations": [
+        "lib/iris/src/iris/cluster/config.py:1",
+        "lib/iris/src/iris/cluster/config.py:1620",
+        "lib/iris/src/iris/cluster/config.py:2",
+        "lib/iris/src/iris/cluster/config.py:63"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/timesfm-forecasting/test_scripts.py",
+      "symbols": 96,
+      "tests": 30,
+      "citations": [
+        "tests/timesfm-forecasting/test_scripts.py:1",
+        "tests/timesfm-forecasting/test_scripts.py:693",
+        "tests/timesfm-forecasting/test_scripts.py:59",
+        "tests/timesfm-forecasting/test_scripts.py:66"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/haliax/src/haliax/core.py",
+      "symbols": 96,
+      "tests": 30,
+      "citations": [
+        "lib/haliax/src/haliax/core.py:1",
+        "lib/haliax/src/haliax/core.py:2161",
+        "lib/haliax/src/haliax/core.py:3",
+        "lib/haliax/src/haliax/core.py:130"
+      ]
+    },
+    {
+      "source": "rohitg00/ai-engineering-from-scratch",
+      "path": "site/tts.js",
+      "symbols": 96,
+      "tests": 29,
+      "citations": [
+        "site/tts.js:1",
+        "site/tts.js:1862",
+        "site/tts.js:23",
+        "site/tts.js:28"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/bioservices/test_scripts.py",
+      "symbols": 96,
+      "tests": 27,
+      "citations": [
+        "tests/bioservices/test_scripts.py:1",
+        "tests/bioservices/test_scripts.py:938",
+        "tests/bioservices/test_scripts.py:49",
+        "tests/bioservices/test_scripts.py:50"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/scientific-slides/test_scripts.py",
+      "symbols": 96,
+      "tests": 26,
+      "citations": [
+        "tests/scientific-slides/test_scripts.py:1",
+        "tests/scientific-slides/test_scripts.py:1019",
+        "tests/scientific-slides/test_scripts.py:49",
+        "tests/scientific-slides/test_scripts.py:50"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/analytical-method-validation/test_scripts.py",
+      "symbols": 96,
+      "tests": 24,
+      "citations": [
+        "tests/analytical-method-validation/test_scripts.py:1",
+        "tests/analytical-method-validation/test_scripts.py:956",
+        "tests/analytical-method-validation/test_scripts.py:53",
+        "tests/analytical-method-validation/test_scripts.py:114"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/etetoolkit/test_scripts.py",
+      "symbols": 96,
+      "tests": 23,
+      "citations": [
+        "tests/etetoolkit/test_scripts.py:1",
+        "tests/etetoolkit/test_scripts.py:912",
+        "tests/etetoolkit/test_scripts.py:58",
+        "tests/etetoolkit/test_scripts.py:63"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/uncertainty-and-units/test_scripts.py",
+      "symbols": 96,
+      "tests": 22,
+      "citations": [
+        "tests/uncertainty-and-units/test_scripts.py:1",
+        "tests/uncertainty-and-units/test_scripts.py:1077",
+        "tests/uncertainty-and-units/test_scripts.py:38",
+        "tests/uncertainty-and-units/test_scripts.py:67"
+      ]
+    },
+    {
+      "source": "AgriciDaniel/claude-obsidian",
+      "path": "claude_obsidian/transaction.py",
+      "symbols": 96,
+      "tests": 20,
+      "citations": [
+        "claude_obsidian/transaction.py:1",
+        "claude_obsidian/transaction.py:4771",
+        "claude_obsidian/transaction.py:60",
+        "claude_obsidian/transaction.py:61"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/pkpd-modeling/test_scripts.py",
+      "symbols": 96,
+      "tests": 20,
+      "citations": [
+        "tests/pkpd-modeling/test_scripts.py:1",
+        "tests/pkpd-modeling/test_scripts.py:867",
+        "tests/pkpd-modeling/test_scripts.py:34",
+        "tests/pkpd-modeling/test_scripts.py:35"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/genomic-coordinates/test_scripts.py",
+      "symbols": 96,
+      "tests": 18,
+      "citations": [
+        "tests/genomic-coordinates/test_scripts.py:1",
+        "tests/genomic-coordinates/test_scripts.py:661",
+        "tests/genomic-coordinates/test_scripts.py:62",
+        "tests/genomic-coordinates/test_scripts.py:63"
+      ]
+    },
+    {
+      "source": "thedotmack/claude-mem",
+      "path": "openclaw/test-install.sh",
+      "symbols": 96,
+      "tests": 18,
+      "citations": [
+        "openclaw/test-install.sh:1",
+        "openclaw/test-install.sh:2086",
+        "openclaw/test-install.sh:11",
+        "openclaw/test-install.sh:17"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/scripts/benchmark_controller.py",
+      "symbols": 96,
+      "tests": 17,
+      "citations": [
+        "lib/iris/scripts/benchmark_controller.py:1",
+        "lib/iris/scripts/benchmark_controller.py:2994",
+        "lib/iris/scripts/benchmark_controller.py:2",
+        "lib/iris/scripts/benchmark_controller.py:3"
+      ]
+    },
+    {
+      "source": "rohitg00/ai-engineering-from-scratch",
+      "path": "site/lesson-figures.js",
+      "symbols": 96,
+      "tests": 16,
+      "citations": [
+        "site/lesson-figures.js:1",
+        "site/lesson-figures.js:1345",
+        "site/lesson-figures.js:13",
+        "site/lesson-figures.js:57"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/evaldash/src/server.py",
+      "symbols": 96,
+      "tests": 12,
+      "citations": [
+        "infra/evaldash/src/server.py:1",
+        "infra/evaldash/src/server.py:1228",
+        "infra/evaldash/src/server.py:2",
+        "infra/evaldash/src/server.py:105"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/citation-management/test_scripts.py",
+      "symbols": 96,
+      "tests": 11,
+      "citations": [
+        "tests/citation-management/test_scripts.py:1",
+        "tests/citation-management/test_scripts.py:648",
+        "tests/citation-management/test_scripts.py:62",
+        "tests/citation-management/test_scripts.py:68"
+      ]
+    },
+    {
+      "source": "tt-a1i/archify",
+      "path": "archify/renderers/shared/geometry.mjs",
+      "symbols": 96,
+      "tests": 10,
+      "citations": [
+        "archify/renderers/shared/geometry.mjs:1",
+        "archify/renderers/shared/geometry.mjs:1334",
+        "archify/renderers/shared/geometry.mjs:10",
+        "archify/renderers/shared/geometry.mjs:16"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/grafana/src/k8s_source.py",
+      "symbols": 96,
+      "tests": 9,
+      "citations": [
+        "infra/grafana/src/k8s_source.py:1",
+        "infra/grafana/src/k8s_source.py:1274",
+        "infra/grafana/src/k8s_source.py:2",
+        "infra/grafana/src/k8s_source.py:55"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/client/client.py",
+      "symbols": 96,
+      "tests": 9,
+      "citations": [
+        "lib/iris/src/iris/client/client.py:1",
+        "lib/iris/src/iris/client/client.py:1530",
+        "lib/iris/src/iris/client/client.py:2",
+        "lib/iris/src/iris/client/client.py:602"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/store/cache.py",
+      "symbols": 96,
+      "tests": 8,
+      "citations": [
+        "lib/levanter/src/levanter/store/cache.py:1",
+        "lib/levanter/src/levanter/store/cache.py:1599",
+        "lib/levanter/src/levanter/store/cache.py:2",
+        "lib/levanter/src/levanter/store/cache.py:999"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/echo/api/app.py",
+      "symbols": 96,
+      "tests": 6,
+      "citations": [
+        "infra/echo/api/app.py:1",
+        "infra/echo/api/app.py:1699",
+        "infra/echo/api/app.py:2",
+        "infra/echo/api/app.py:149"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/haliax/src/haliax/__init__.py",
+      "symbols": 96,
+      "tests": 5,
+      "citations": [
+        "lib/haliax/src/haliax/__init__.py:1",
+        "lib/haliax/src/haliax/__init__.py:1372",
+        "lib/haliax/src/haliax/__init__.py:3",
+        "lib/haliax/src/haliax/__init__.py:144"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/rpc/controller_connect.py",
+      "symbols": 96,
+      "tests": 0,
+      "citations": [
+        "lib/iris/src/iris/rpc/controller_connect.py:1",
+        "lib/iris/src/iris/rpc/controller_connect.py:2182",
+        "lib/iris/src/iris/rpc/controller_connect.py:2",
+        "lib/iris/src/iris/rpc/controller_connect.py:3"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/rpc/controller_pb2.pyi",
+      "symbols": 96,
+      "tests": 0,
+      "citations": [
+        "lib/iris/src/iris/rpc/controller_pb2.pyi:1",
+        "lib/iris/src/iris/rpc/controller_pb2.pyi:936",
+        "lib/iris/src/iris/rpc/controller_pb2.pyi:114",
+        "lib/iris/src/iris/rpc/controller_pb2.pyi:125"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/rpc/job_pb2.pyi",
+      "symbols": 96,
+      "tests": 0,
+      "citations": [
+        "lib/iris/src/iris/rpc/job_pb2.pyi:1",
+        "lib/iris/src/iris/rpc/job_pb2.pyi:764",
+        "lib/iris/src/iris/rpc/job_pb2.pyi:153",
+        "lib/iris/src/iris/rpc/job_pb2.pyi:157"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finelog/tests/test_client.py",
+      "symbols": 95,
+      "tests": 96,
+      "citations": [
+        "lib/finelog/tests/test_client.py:1",
+        "lib/finelog/tests/test_client.py:1071",
+        "lib/finelog/tests/test_client.py:2",
+        "lib/finelog/tests/test_client.py:42"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_dashboard.py",
+      "symbols": 95,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_dashboard.py:1",
+        "lib/iris/tests/cluster/controller/test_dashboard.py:2230",
+        "lib/iris/tests/cluster/controller/test_dashboard.py:2",
+        "lib/iris/tests/cluster/controller/test_dashboard.py:71"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/ncats-arax/test_scripts.py",
+      "symbols": 95,
+      "tests": 13,
+      "citations": [
+        "tests/ncats-arax/test_scripts.py:1",
+        "tests/ncats-arax/test_scripts.py:1531",
+        "tests/ncats-arax/test_scripts.py:29",
+        "tests/ncats-arax/test_scripts.py:42"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/controller/reads.py",
+      "symbols": 94,
+      "tests": 21,
+      "citations": [
+        "lib/iris/src/iris/cluster/controller/reads.py:1",
+        "lib/iris/src/iris/cluster/controller/reads.py:2302",
+        "lib/iris/src/iris/cluster/controller/reads.py:2",
+        "lib/iris/src/iris/cluster/controller/reads.py:84"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/pyopenms/test_scripts.py",
+      "symbols": 93,
+      "tests": 18,
+      "citations": [
+        "tests/pyopenms/test_scripts.py:1",
+        "tests/pyopenms/test_scripts.py:823",
+        "tests/pyopenms/test_scripts.py:54",
+        "tests/pyopenms/test_scripts.py:84"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/zephyr/tests/test_execution.py",
+      "symbols": 91,
+      "tests": 96,
+      "citations": [
+        "lib/zephyr/tests/test_execution.py:1",
+        "lib/zephyr/tests/test_execution.py:1788",
+        "lib/zephyr/tests/test_execution.py:2",
+        "lib/zephyr/tests/test_execution.py:63"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/tests/test_new_cache.py",
+      "symbols": 91,
+      "tests": 63,
+      "citations": [
+        "lib/levanter/tests/test_new_cache.py:1",
+        "lib/levanter/tests/test_new_cache.py:838",
+        "lib/levanter/tests/test_new_cache.py:2",
+        "lib/levanter/tests/test_new_cache.py:35"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/diffdock/test_scripts.py",
+      "symbols": 91,
+      "tests": 18,
+      "citations": [
+        "tests/diffdock/test_scripts.py:1",
+        "tests/diffdock/test_scripts.py:657",
+        "tests/diffdock/test_scripts.py:43",
+        "tests/diffdock/test_scripts.py:44"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/data/dataset.py",
+      "symbols": 91,
+      "tests": 7,
+      "citations": [
+        "lib/levanter/src/levanter/data/dataset.py:1",
+        "lib/levanter/src/levanter/data/dataset.py:636",
+        "lib/levanter/src/levanter/data/dataset.py:2",
+        "lib/levanter/src/levanter/data/dataset.py:25"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "skills/ncats-arax/scripts/arax_client.py",
+      "symbols": 91,
+      "tests": 1,
+      "citations": [
+        "skills/ncats-arax/scripts/arax_client.py:1",
+        "skills/ncats-arax/scripts/arax_client.py:2087",
+        "skills/ncats-arax/scripts/arax_client.py:90",
+        "skills/ncats-arax/scripts/arax_client.py:109"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/backends/k8s/test_provider.py",
+      "symbols": 90,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/backends/k8s/test_provider.py:1",
+        "lib/iris/tests/cluster/backends/k8s/test_provider.py:1826",
+        "lib/iris/tests/cluster/backends/k8s/test_provider.py:2",
+        "lib/iris/tests/cluster/backends/k8s/test_provider.py:54"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/backends/test_scaling_group.py",
+      "symbols": 90,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/backends/test_scaling_group.py:1",
+        "lib/iris/tests/cluster/backends/test_scaling_group.py:1351",
+        "lib/iris/tests/cluster/backends/test_scaling_group.py:2",
+        "lib/iris/tests/cluster/backends/test_scaling_group.py:59"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_demand_routing.py",
+      "symbols": 90,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_demand_routing.py:1",
+        "lib/iris/tests/cluster/controller/test_demand_routing.py:1590",
+        "lib/iris/tests/cluster/controller/test_demand_routing.py:2",
+        "lib/iris/tests/cluster/controller/test_demand_routing.py:49"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finelog/rust/src/migrations/telemetry_v1.rs",
+      "symbols": 90,
+      "tests": 47,
+      "citations": [
+        "lib/finelog/rust/src/migrations/telemetry_v1.rs:1",
+        "lib/finelog/rust/src/migrations/telemetry_v1.rs:2461",
+        "lib/finelog/rust/src/migrations/telemetry_v1.rs:56",
+        "lib/finelog/rust/src/migrations/telemetry_v1.rs:60"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/zephyr/tests/test_dataset.py",
+      "symbols": 89,
+      "tests": 96,
+      "citations": [
+        "lib/zephyr/tests/test_dataset.py:1",
+        "lib/zephyr/tests/test_dataset.py:1437",
+        "lib/zephyr/tests/test_dataset.py:2",
+        "lib/zephyr/tests/test_dataset.py:1271"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/grafana/src/server.py",
+      "symbols": 89,
+      "tests": 7,
+      "citations": [
+        "infra/grafana/src/server.py:1",
+        "infra/grafana/src/server.py:924",
+        "infra/grafana/src/server.py:2",
+        "infra/grafana/src/server.py:158"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/echo/api/test_app.py",
+      "symbols": 88,
+      "tests": 96,
+      "citations": [
+        "infra/echo/api/test_app.py:1",
+        "infra/echo/api/test_app.py:1557",
+        "infra/echo/api/test_app.py:2",
+        "infra/echo/api/test_app.py:22"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "infra/grafana/tests/test_bridge.py",
+      "symbols": 88,
+      "tests": 96,
+      "citations": [
+        "infra/grafana/tests/test_bridge.py:1",
+        "infra/grafana/tests/test_bridge.py:1325",
+        "infra/grafana/tests/test_bridge.py:2",
+        "infra/grafana/tests/test_bridge.py:46"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/haliax/src/haliax/nn/scan.py",
+      "symbols": 88,
+      "tests": 17,
+      "citations": [
+        "lib/haliax/src/haliax/nn/scan.py:1",
+        "lib/haliax/src/haliax/nn/scan.py:810",
+        "lib/haliax/src/haliax/nn/scan.py:3",
+        "lib/haliax/src/haliax/nn/scan.py:48"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/paper-lookup/test_scripts.py",
+      "symbols": 88,
+      "tests": 13,
+      "citations": [
+        "tests/paper-lookup/test_scripts.py:1",
+        "tests/paper-lookup/test_scripts.py:586",
+        "tests/paper-lookup/test_scripts.py:50",
+        "tests/paper-lookup/test_scripts.py:60"
+      ]
+    },
+    {
+      "source": "Panniantong/agent-reach",
+      "path": "tests/test_transcribe.py",
+      "symbols": 87,
+      "tests": 86,
+      "citations": [
+        "tests/test_transcribe.py:1",
+        "tests/test_transcribe.py:908",
+        "tests/test_transcribe.py:13",
+        "tests/test_transcribe.py:49"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/inference/jit_scheduler.py",
+      "symbols": 87,
+      "tests": 12,
+      "citations": [
+        "lib/levanter/src/levanter/inference/jit_scheduler.py:1",
+        "lib/levanter/src/levanter/inference/jit_scheduler.py:1180",
+        "lib/levanter/src/levanter/inference/jit_scheduler.py:2",
+        "lib/levanter/src/levanter/inference/jit_scheduler.py:50"
+      ]
+    },
+    {
+      "source": "msitarzewski/agency-agents",
+      "path": "scripts/install.sh",
+      "symbols": 86,
+      "tests": 5,
+      "citations": [
+        "scripts/install.sh:1",
+        "scripts/install.sh:1384",
+        "scripts/install.sh:3",
+        "scripts/install.sh:4"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/controller/controller.py",
+      "symbols": 84,
+      "tests": 44,
+      "citations": [
+        "lib/iris/src/iris/cluster/controller/controller.py:1",
+        "lib/iris/src/iris/cluster/controller/controller.py:1982",
+        "lib/iris/src/iris/cluster/controller/controller.py:2",
+        "lib/iris/src/iris/cluster/controller/controller.py:135"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/matchms/test_scripts.py",
+      "symbols": 84,
+      "tests": 24,
+      "citations": [
+        "tests/matchms/test_scripts.py:1",
+        "tests/matchms/test_scripts.py:763",
+        "tests/matchms/test_scripts.py:98",
+        "tests/matchms/test_scripts.py:111"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/trainer.py",
+      "symbols": 83,
+      "tests": 11,
+      "citations": [
+        "lib/levanter/src/levanter/trainer.py:1",
+        "lib/levanter/src/levanter/trainer.py:1196",
+        "lib/levanter/src/levanter/trainer.py:2",
+        "lib/levanter/src/levanter/trainer.py:103"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/tokenizers.py",
+      "symbols": 83,
+      "tests": 5,
+      "citations": [
+        "lib/levanter/src/levanter/tokenizers.py:1",
+        "lib/levanter/src/levanter/tokenizers.py:1038",
+        "lib/levanter/src/levanter/tokenizers.py:2",
+        "lib/levanter/src/levanter/tokenizers.py:45"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/generate-image/test_scripts.py",
+      "symbols": 82,
+      "tests": 17,
+      "citations": [
+        "tests/generate-image/test_scripts.py:1",
+        "tests/generate-image/test_scripts.py:553",
+        "tests/generate-image/test_scripts.py:58",
+        "tests/generate-image/test_scripts.py:59"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/rigging/src/rigging/timing.py",
+      "symbols": 81,
+      "tests": 1,
+      "citations": [
+        "lib/rigging/src/rigging/timing.py:1",
+        "lib/rigging/src/rigging/timing.py:651",
+        "lib/rigging/src/rigging/timing.py:2",
+        "lib/rigging/src/rigging/timing.py:18"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googletest/src/gtest.cc",
+      "symbols": 80,
+      "tests": 96,
+      "citations": [
+        "googletest/src/gtest.cc:1",
+        "googletest/src/gtest.cc:7153",
+        "googletest/src/gtest.cc:537",
+        "googletest/src/gtest.cc:823"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/cluster/controller/autoscaler/scaling_group.py",
+      "symbols": 80,
+      "tests": 27,
+      "citations": [
+        "lib/iris/src/iris/cluster/controller/autoscaler/scaling_group.py:1",
+        "lib/iris/src/iris/cluster/controller/autoscaler/scaling_group.py:1340",
+        "lib/iris/src/iris/cluster/controller/autoscaler/scaling_group.py:2",
+        "lib/iris/src/iris/cluster/controller/autoscaler/scaling_group.py:1245"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googlemock/include/gmock/gmock-matchers.h",
+      "symbols": 79,
+      "tests": 91,
+      "citations": [
+        "googlemock/include/gmock/gmock-matchers.h:1",
+        "googlemock/include/gmock/gmock-matchers.h:6092",
+        "googlemock/include/gmock/gmock-matchers.h:247",
+        "googlemock/include/gmock/gmock-matchers.h:250"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/src/iris/testing/controller.py",
+      "symbols": 79,
+      "tests": 35,
+      "citations": [
+        "lib/iris/src/iris/testing/controller.py:1",
+        "lib/iris/src/iris/testing/controller.py:1269",
+        "lib/iris/src/iris/testing/controller.py:2",
+        "lib/iris/src/iris/testing/controller.py:348"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/marin/src/marin/inference/vllm_server.py",
+      "symbols": 79,
+      "tests": 18,
+      "citations": [
+        "lib/marin/src/marin/inference/vllm_server.py:1",
+        "lib/marin/src/marin/inference/vllm_server.py:1179",
+        "lib/marin/src/marin/inference/vllm_server.py:2",
+        "lib/marin/src/marin/inference/vllm_server.py:49"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "scripts/ci/wait_for.py",
+      "symbols": 79,
+      "tests": 14,
+      "citations": [
+        "scripts/ci/wait_for.py:1",
+        "scripts/ci/wait_for.py:1004",
+        "scripts/ci/wait_for.py:2",
+        "scripts/ci/wait_for.py:3"
+      ]
+    },
+    {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "path": "tests/ontology-term-resolution/test_scripts.py",
+      "symbols": 78,
+      "tests": 17,
+      "citations": [
+        "tests/ontology-term-resolution/test_scripts.py:1",
+        "tests/ontology-term-resolution/test_scripts.py:488",
+        "tests/ontology-term-resolution/test_scripts.py:482",
+        "tests/ontology-term-resolution/test_scripts.py:483"
+      ]
+    },
+    {
+      "source": "AgriciDaniel/claude-obsidian",
+      "path": "claude_obsidian/capture.py",
+      "symbols": 78,
+      "tests": 3,
+      "citations": [
+        "claude_obsidian/capture.py:1",
+        "claude_obsidian/capture.py:2231",
+        "claude_obsidian/capture.py:63",
+        "claude_obsidian/capture.py:64"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_scheduler.py",
+      "symbols": 77,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_scheduler.py:1",
+        "lib/iris/tests/cluster/controller/test_scheduler.py:2353",
+        "lib/iris/tests/cluster/controller/test_scheduler.py:2",
+        "lib/iris/tests/cluster/controller/test_scheduler.py:238"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finelog/rust/src/store/trigram.rs",
+      "symbols": 77,
+      "tests": 61,
+      "citations": [
+        "lib/finelog/rust/src/store/trigram.rs:1",
+        "lib/finelog/rust/src/store/trigram.rs:1153",
+        "lib/finelog/rust/src/store/trigram.rs:119",
+        "lib/finelog/rust/src/store/trigram.rs:138"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/analysis/backward_flow.py",
+      "symbols": 77,
+      "tests": 0,
+      "citations": [
+        "lib/levanter/src/levanter/analysis/backward_flow.py:1",
+        "lib/levanter/src/levanter/analysis/backward_flow.py:1230",
+        "lib/levanter/src/levanter/analysis/backward_flow.py:2",
+        "lib/levanter/src/levanter/analysis/backward_flow.py:64"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/tests/cluster/controller/test_auth.py",
+      "symbols": 75,
+      "tests": 96,
+      "citations": [
+        "lib/iris/tests/cluster/controller/test_auth.py:1",
+        "lib/iris/tests/cluster/controller/test_auth.py:865",
+        "lib/iris/tests/cluster/controller/test_auth.py:2",
+        "lib/iris/tests/cluster/controller/test_auth.py:66"
+      ]
+    },
+    {
+      "source": "Panniantong/agent-reach",
+      "path": "tests/test_p0_cli.py",
+      "symbols": 75,
+      "tests": 96,
+      "citations": [
+        "tests/test_p0_cli.py:1",
+        "tests/test_p0_cli.py:1359",
+        "tests/test_p0_cli.py:19",
+        "tests/test_p0_cli.py:23"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/checkpoint.py",
+      "symbols": 75,
+      "tests": 22,
+      "citations": [
+        "lib/levanter/src/levanter/checkpoint.py:1",
+        "lib/levanter/src/levanter/checkpoint.py:1306",
+        "lib/levanter/src/levanter/checkpoint.py:2",
+        "lib/levanter/src/levanter/checkpoint.py:58"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/levanter/src/levanter/compat/hf_checkpoints.py",
+      "symbols": 75,
+      "tests": 22,
+      "citations": [
+        "lib/levanter/src/levanter/compat/hf_checkpoints.py:1",
+        "lib/levanter/src/levanter/compat/hf_checkpoints.py:1704",
+        "lib/levanter/src/levanter/compat/hf_checkpoints.py:2",
+        "lib/levanter/src/levanter/compat/hf_checkpoints.py:291"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/finestore/tests/test_finestore.py",
+      "symbols": 74,
+      "tests": 96,
+      "citations": [
+        "lib/finestore/tests/test_finestore.py:1",
+        "lib/finestore/tests/test_finestore.py:1162",
+        "lib/finestore/tests/test_finestore.py:2",
+        "lib/finestore/tests/test_finestore.py:39"
+      ]
+    },
+    {
+      "source": "marin-community/marin",
+      "path": "lib/iris/rust/src/lib.rs",
+      "symbols": 74,
+      "tests": 23,
+      "citations": [
+        "lib/iris/rust/src/lib.rs:1",
+        "lib/iris/rust/src/lib.rs:1522",
+        "lib/iris/rust/src/lib.rs:124",
+        "lib/iris/rust/src/lib.rs:138"
+      ]
+    },
+    {
+      "source": "garrytan/gstack",
+      "path": "test/helpers/claude-pty-runner.ts",
+      "symbols": 73,
+      "tests": 96,
+      "citations": [
+        "test/helpers/claude-pty-runner.ts:1",
+        "test/helpers/claude-pty-runner.ts:2412",
+        "test/helpers/claude-pty-runner.ts:31",
+        "test/helpers/claude-pty-runner.ts:40"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googlemock/test/gmock-spec-builders_test.cc",
+      "symbols": 73,
+      "tests": 96,
+      "citations": [
+        "googlemock/test/gmock-spec-builders_test.cc:1",
+        "googlemock/test/gmock-spec-builders_test.cc:2599",
+        "googlemock/test/gmock-spec-builders_test.cc:64",
+        "googlemock/test/gmock-spec-builders_test.cc:66"
+      ]
+    },
+    {
+      "source": "google/googletest",
+      "path": "googletest/include/gtest/internal/gtest-port.h",
+      "symbols": 73,
+      "tests": 96,
+      "citations": [
+        "googletest/include/gtest/internal/gtest-port.h:1",
+        "googletest/include/gtest/internal/gtest-port.h:2509",
+        "googletest/include/gtest/internal/gtest-port.h:216",
+        "googletest/include/gtest/internal/gtest-port.h:399"
+      ]
+    }
+  ],
+  "policy": {
+    "adopt": "No capability is auto-adopted. A signal enters a separate SPEC→PLAN→RED→BUILD→VERIFY decision cycle.",
+    "defer": "External side effects, vendor integrations, and ambiguous claims remain deferred until a human selects them.",
+    "static": "Binary/opaque files are closed as STATIC_REVIEWED with byte metadata only; no textual semantics are claimed."
+  }
+}

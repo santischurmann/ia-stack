@@ -36,16 +36,13 @@ El orquestador de la próxima sesión y quien audite el repo después.
 
 **T01 — hash-chain de `AUDIT.md`** (slice mínimo: se valida primero)
 
-- [x] **AC1:** GIVEN un `AUDIT.md` cuyas líneas encadenan cada hash con el de su predecesora, WHEN
-      se corre el gate, THEN exit 0 informando cuántas verificó.
+- [x] **AC1:** GIVEN un `AUDIT.md` cuyas líneas encadenan cada hash con el de su predecesora, WHEN se corre el gate, THEN exit 0 informando cuántas verificó.
 - [x] **AC2 (error):** GIVEN una línea ya escrita fue editada, WHEN se corre el gate, THEN exit 1
       nombrando la línea donde se rompe la cadena.
 - [x] **AC3 (edge):** GIVEN un `AUDIT.md` vacío o inexistente, WHEN se corre el gate, THEN exit 0.
 - [x] **AC4 (compat):** GIVEN líneas heredadas sin hash, WHEN se corre el gate, THEN las acepta y
       encadena desde la primera línea que declara hash.
-- [x] **AC11 (escritor):** GIVEN una línea nueva, WHEN se la agrega con el subcomando `append`,
-      THEN queda sellada y el gate la verifica. Escritor y verificador comparten la función de
-      sellado: no pueden divergir.
+- [x] **AC11 (escritor):** GIVEN una línea nueva, WHEN se la agrega con el subcomando `append`, THEN queda sellada y el gate la verifica. Escritor y verificador comparten la función de sellado: no pueden divergir.
 - [x] **AC12:** GIVEN una línea con sello mal formado, WHEN se corre el gate, THEN exit 1: un
       sello borrado es manipulación, no una línea heredada.
 
@@ -58,10 +55,8 @@ El orquestador de la próxima sesión y quien audite el repo después.
 
 **T03 — commit atómico con receipt revalidado**
 
-- [x] **AC8:** GIVEN un receipt aprobado y el árbol sin cambios, WHEN se pide el commit atómico,
-      THEN revalida y commitea en una sola invocación.
-- [x] **AC9 (error):** GIVEN el árbol cambió tras escribir el receipt, WHEN se pide el commit,
-      THEN aborta sin commitear y explica qué cambió.
+- [x] **AC8:** GIVEN un receipt aprobado y el árbol sin cambios, WHEN se pide el commit atómico, THEN revalida y commitea en una sola invocación.
+- [x] **AC9 (error):** GIVEN el árbol cambió tras escribir el receipt, WHEN se pide el commit, THEN aborta sin commitear y explica qué cambió.
 
 **T04 — microtests de wording crítico**
 

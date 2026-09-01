@@ -127,6 +127,26 @@ y luego `node research/verify-full-evidence-pass.mjs`. El resultado cubre cada p
 bytes, pero conserva un estado asistido: una lectura física completa no reemplaza una interpretación
 semántica funcional.
 
+El cierre funcional reproducible de esas entradas usa el ledger nativo:
+
+```bash
+node research/build-semantic-functional-ledger.mjs
+node research/verify-semantic-functional-ledger.mjs research/semantic-functional-evidence-2026-09-01.ndjson.gz
+node research/build-semantic-functional-synthesis.mjs
+```
+
+Cada fila queda `FUNCTIONAL_SCAN` si se recorrió todo el texto con interfaces, señales y citas de
+línea, o `STATIC_REVIEWED` si es un artefacto binario/opaco con locator de bytes. No quedan
+pendientes ilegibles, pero esto no convierte señales lexicales en aprobación: `FUNCTIONAL_SCAN`
+es observación determinista (`semantic_claim: false`), no comprensión humana; la síntesis es una
+cola de candidatos y cada adopción vuelve a pasar por el ciclo completo y un menú
+🔵. El loop de aprendizaje y deduplicación se describe en
+`skills/vibe-memory.md` (§ RESEARCH SELF-IMPROVEMENT LOOP).
+
+Los `.ndjson` y `.gz` son salidas generadas e ignoradas por Git por su tamaño; el resumen, la
+síntesis y los builders/verificadores sí viajan con la skill y permiten regenerarlos en un checkout
+que tenga el corpus materializado.
+
 ```bash
 # Verifica la cadena inmutable de decisiones y snapshots.
 node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>

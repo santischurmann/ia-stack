@@ -264,6 +264,39 @@ mistake" payoff, not just accumulation.
 
 ---
 
+## RESEARCH SELF-IMPROVEMENT LOOP — evidence first, choice gated
+
+La investigación también aprende, pero no puede convertir un barrido automático en una verdad.
+Cuando exista el expediente funcional `research/semantic-functional-synthesis-*.md`:
+
+1. **Observe:** leer el índice verificado y conservar `source`, commit, SHA-256, path y citas
+   de línea. Si cambió el hash del corpus, la conclusión anterior queda `stale` y no se reutiliza.
+2. **Extract:** agrupar sólo señales citadas (gates/evidence, agents/orchestration,
+   research/citations, testing, memory, security, graph/backup y product). Un grupo es una
+   cola de candidatos, no una recomendación.
+3. **Challenge:** para cada candidato elegido, registrar evidencia a favor, contraejemplo,
+   límite, costo de adopción y riesgo de copiar contexto ajeno. Una señal sin cita exacta o con
+   efecto externo queda `DEFER`, nunca se rellena con imaginación.
+4. **Choose (🔵 obligatorio):** mostrar por fase un menú explícito — `A) adoptar en un lote`,
+   `B) prototipar en fixture`, `C) diferir`, `D) rechazar` — y guardar la elección junto con el
+   hash del expediente. No hay auto-adopción por score lexical ni por mayoría de agentes.
+5. **Build/verify:** cada adopción atraviesa SPEC → PLAN → RED → GREEN → TRIANGULATE →
+   VERIFY → seguridad → receipt. Si falla, registrar causa raíz y contraejemplo en `SESSION.md`
+   como señal, no escribir una lección todavía.
+6. **Learn:** durante Reflect, proponer como máximo 15 lecciones deduplicadas y con contenido
+   sensible marcado; el usuario confirma antes de `LESSONS.md`. La lección debe enlazar al
+   candidato, la cita, el test y el resultado observado.
+7. **Refresh:** la próxima investigación compara hashes y resultados; conserva decisiones
+   históricas, retira lo obsoleto con motivo y no borra evidencia. El loop se considera cerrado
+   sólo si la elección, el cambio y su verificación son recuperables.
+
+Este loop reduce trabajo repetido sin prometer comprensión perfecta: `FUNCTIONAL_SCAN` significa
+observación funcional determinista con citas (`semantic_claim: false`); `STATIC_REVIEWED` significa
+cobertura de bytes/metadatos con locator para artefactos opacos. Ninguno autoriza copiar código
+externo ni sustituye juicio de producto.
+
+---
+
 ## ENGRAM GUARDRAIL (si el MCP de Engram está presente)
 
 NUNCA pegar código `.mq5`, lógica de licencia, tokens o passwords dentro de un `content` de

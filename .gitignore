@@ -33,3 +33,9 @@ research/complete-review-index-2026-08-31.json
 research/.scratch-semantic/
 research/semantic-review-index-2026-08-31.json
 research/semantic-full-evidence-2026-08-31.ndjson
+research/semantic-functional-evidence-2026-09-01.ndjson
+research/semantic-functional-index-2026-09-01.json
+# The functional corpus evidence is reproducible and compressed locally; keep large generated
+# payloads out of the distributable skill while tracking its summary, synthesis, and generators.
+research/semantic-functional-evidence-2026-09-01.ndjson.gz
+research/semantic-functional-index-2026-09-01.json.gz

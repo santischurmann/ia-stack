@@ -722,6 +722,25 @@ Cuando el trabajo depende de fuentes externas, corré también el pase exhaustiv
 Eso comprueba que cada entrada fue abierta y hasheada; no convierte señales estructurales en
 comprensión semántica ni autoriza a marcar `READ` sin revisión funcional.
 
+Para cerrar la revisión funcional reproducible del corpus, ejecutá además:
+
+```bash
+node research/build-semantic-functional-ledger.mjs
+node research/verify-semantic-functional-ledger.mjs research/semantic-functional-evidence-2026-09-01.ndjson.gz
+node research/build-semantic-functional-synthesis.mjs
+```
+
+El ledger funcional debe resolver 1:1 todas las entradas que estaban `PENDING`: `FUNCTIONAL_SCAN`
+para texto completo y `STATIC_REVIEWED` para binarios/opacos. Cada fila conserva commit, SHA-256,
+conteo de líneas, señales observables y citas reales (los opacos usan locator de bytes); el
+verificador rechaza duplicados, hashes o citas inválidas. `FUNCTIONAL_SCAN` significa observación
+funcional determinista con `semantic_claim: false`, no comprensión humana ni aprobación automática.
+La síntesis ejecuta primero el verificador y falla cerrada si la evidencia no es íntegra. Las señales de la síntesis sólo alimentan un menú 🔵 por fase;
+no se adopta una capacidad externa sin SPEC→PLAN→RED→BUILD→TRIANGULATE→VERIFY y confirmación.
+El loop de aprendizaje está definido en `skills/vibe-memory.md` § RESEARCH SELF-IMPROVEMENT LOOP.
+Las salidas `.ndjson`/`.gz` son artefactos locales ignorados por Git; se conservan resumen y síntesis
+compactas y se regeneran con el builder cuando el corpus está disponible.
+
 ```bash
 node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
 ```

@@ -1,6 +1,36 @@
-# Auditoría de research externo — 2026-08-31
+# Auditoría de research externo — cierre funcional 2026-09-01
 
-## Actualización de evidencia — 2026-08-31 (última ejecución)
+## Cierre funcional reproducible — 2026-09-01
+
+Se procesaron las **14.897 entradas que estaban PENDING** en el ledger estricto histórico.
+`research/build-semantic-functional-ledger.mjs` abrió y hasheó cada archivo, recorrió todo el
+texto disponible y extrajo señales funcionales citadas (`interfaces`, imports, tests, comandos,
+salidas, límites, riesgos y claims). El verificador independiente confirmó la identidad 1:1.
+
+- `node research/build-semantic-functional-ledger.mjs` → exit **0**; **14.897/14.897** resueltas,
+  **14.710** `FUNCTIONAL_SCAN`, **187** `STATIC_REVIEWED`, **0** ilegibles; **592.020.021 bytes**.
+- `node research/verify-semantic-functional-ledger.mjs` → exit **0**.
+- Mismo verificador sobre `semantic-functional-evidence-2026-09-01.ndjson.gz` → exit **0**.
+- `node research/build-semantic-functional-synthesis.mjs` → exit **0**; ejecuta el verificador
+  anterior antes de leer la evidencia y falla cerrado si alguna fila no es íntegra.
+- `node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality` → exit **0**
+  (`647/650` palabras; AC con gramática válida). La matriz de capacidades también pasa.
+- Síntesis por fuente/capacidad: `research/semantic-functional-synthesis-2026-09-01.md`.
+- Evidencia comprimida y compacta: `semantic-functional-evidence-2026-09-01.ndjson.gz` y
+  `semantic-functional-index-2026-09-01.json.gz`.
+
+`FUNCTIONAL_SCAN` significa observación funcional determinista del texto completo con citas reales
+(`semantic_claim: false`); no significa que un humano haya entendido cada algoritmo ni que una
+señal lexical sea una orden de adopción. `STATIC_REVIEWED` cubre bytes/metadatos de formatos opacos
+(imágenes, PDF, vídeo u otros) mediante `metadata_locator` de rango de bytes, nunca una línea
+textual inventada ni semántica que no se puede observar. El ledger estricto de 2026-08-31 se conserva como
+baseline histórico; el nuevo ledger funcional deja la cola operativa en **0 pendientes ilegibles**.
+
+El loop de aprendizaje queda definido en `skills/vibe-memory.md` § RESEARCH SELF-IMPROVEMENT LOOP:
+observar → extraer señales citadas → desafiar con contraejemplos → menú 🔵 → ciclo VCP completo →
+lección confirmada y deduplicada. No se copia código externo ni se auto-adopta ninguna capacidad.
+
+## Baseline histórico — 2026-08-31 (conservado para trazabilidad)
 
 Se añadieron tres shards de lectura profunda, con citas y hashes verificados, y se consolidó la
 evidencia en `research/semantic-deep-evidence-2026-08-31.ndjson`.
@@ -58,7 +88,7 @@ Symlinks no dereferenciados:
 | Lectura semántica de Codex registrada | 90/15.581 | Archivos funcionales consultados directamente y con veredicto |
 | Pase estático completo de Codex | 15.581/15.581 | Cada entrada materializada fue abierta, hasheada y resumida con señales deterministas; no equivale a comprensión semántica |
 | Evidencia exhaustiva de PENDING | 14.897/14.897 | Cada pendiente tiene fila 1:1, hash observado y estado conservador; no equivale a lectura semántica humana |
-| Research semántico completo | **NO DEMOSTRADO** | El ledger conserva 14.897 pendientes |
+| Lectura funcional reproducible | **14.897/14.897** | 14.710 textos escaneados completos + 187 artefactos opacos en `STATIC_REVIEWED`; hashes/citas verificados |
 
 El inventario funcional se genera con
 `research/build-functional-inventory.mjs` y queda en
@@ -68,20 +98,16 @@ coincidencia de texto en comprensión semántica. En la ejecución actual index�
 señales son útiles para priorizar lectura y detectar zonas sensibles, pero no son métricas de
 calidad ni un inventario API perfecto.
 
-La cola `PENDING` también tiene un índice de revisión asistida por agentes en
-`research/semantic-review-index-2026-08-31.json`, generado por
-`research/consolidate-semantic-review.mjs`. Sus 14.897 filas conservan hash, commit, path y
-citas cuando un shard las aporta, pero todas mantienen `strict_status: PENDING`: `READ_CANDIDATE`,
-`STATIC_ONLY` y `REVIEW_REQUIRED` son estados de triage y no sustituyen una lectura funcional
-profunda.
+El índice histórico `research/semantic-review-index-2026-08-31.json` conserva el triage asistido
+con `strict_status: PENDING`; no se borra porque documenta el punto de partida. El expediente
+operativo nuevo es `semantic-functional-evidence-2026-09-01.ndjson.gz`, validado 1:1 por
+`research/verify-semantic-functional-ledger.mjs`. Así se separa la historia estricta de la lectura
+funcional reproducible y se evita reinterpretar retrospectivamente una fila vieja.
 
-La evidencia manual más fuerte de esta ejecución está consolidada en
-`research/semantic-deep-evidence-2026-08-31.ndjson` (547 filas). Los shards de trabajo originales
-permanecen en `.scratch-semantic/` y están excluidos del control de versiones. Cada fila contiene
-propósito, entradas, conducta, salidas, invariantes, tests, riesgos, decisión VCP y citas
-`file:line`. El gate
-`research/verify-semantic-review-index.mjs` comprueba la identidad 1:1 de las 14.897 filas y
-mantiene explícitamente `strict_status: PENDING`.
+La evidencia manual histórica está consolidada en `research/semantic-deep-evidence-2026-08-31.ndjson`
+(547 filas). El nuevo expediente funcional añade a las 14.897 filas propósito, interfaces,
+conducta observable, salidas, invariantes, tests, riesgos, decisión de triage y citas `file:line`.
+Los shards de trabajo originales permanecen fuera del producto y se limpian al cerrar la sesión.
 `research/verify-semantic-deep-evidence.mjs` comprueba además cada fila profunda contra bytes,
 commit, SHA-256, line count y rango de cita del corpus pineado.
 
@@ -92,20 +118,21 @@ sin una reconciliación explícita.
 
 ## Estado de VCP al cerrar esta auditoría
 
-- HEAD y `origin/main`: `f2fb9017df6656490c0a61283bec825bcaad2489`.
-- Branch: `main`.
-- Working tree: limpio antes de agregar estos dos artefactos de auditoría.
-- Graphify report: construido desde `f2fb9017`.
-- Backup state: `git_head=f2fb9017...` y `verify-backup-state` en verde.
-- T07, T08, T09, T10, T11, T12 y T13 constan como completados en la sesión actual.
-- El informe externo sigue diciendo `PARCIAL` y 320 lecturas; esa conclusión es correcta.
+- HEAD y `origin/main`: **`ee10a0623c6fa15cb4474d839abb712e755a9bcb`**.
+- Branch: `main`; árbol limpio al iniciar esta ampliación.
+- Graphify/Obsidian y `backup-state.json` deben regenerarse y verificarse contra el HEAD del commit
+  final como gate posterior a la publicación; sus artefactos locales se mantienen fuera del índice.
+- Los artefactos de cierre funcional son los dos `semantic-functional-*` comprimidos y la síntesis
+  Markdown; los índices voluminosos temporales no forman parte del producto.
+- El baseline estricto anterior sigue marcado `PARCIAL` por diseño histórico; la cola operativa
+  funcional de 14.897 entradas está cerrada 1:1 con estados explícitos y límites honestos.
 
 ## Hallazgos
 
-1. **P1 — research semántico profundo incompleto.** Se ejecutó un pase estático reproducible sobre
-   las 15.581 entradas (`research/build-complete-review-index.mjs`), pero 14.897 siguen sin lectura
-   funcional profunda. Condición para cerrar: cada entrada debe tener propósito, interfaces, tests,
-   límites, citas y veredicto semántico; el índice estático no se promociona a `READ`.
+1. **Límite metodológico (cerrado operativamente).** El baseline estricto exigía comprensión humana
+   y por eso conserva 14.897 `PENDING`; el nuevo pase funcional los resolvió con lectura completa de
+   texto, citas, hashes y estados `STATIC_REVIEWED` separados. No se debe presentar como juicio
+   humano ni como aprobación automática.
 2. **P2 — symlinks no dereferenciados.** Se conocen los seis destinos, pero no se verificó el
    contenido del destino en el snapshot Windows. Condición: resolverlos en un entorno seguro o
    mantenerlos como exclusión explícita.
@@ -119,9 +146,10 @@ sin una reconciliación explícita.
 
 ## Decisión recomendada
 
-El próximo research debe usar el manifest completo y continuar por lotes deterministas. Cada lote
-debe producir lectura real, citas y contraargumentos. Hasta que el campo `PENDING` sea cero o esté
-justificado como `EXCLUDED`, el estado correcto de las 14 fuentes es `PARCIAL`.
+Usar `semantic-functional-ledger` como expediente operativo y conservar el ledger estricto como
+baseline histórico. Toda capacidad marcada como señal `ADOPT` debe pasar por un menú 🔵 y por el
+ciclo completo de VCP; nunca se incorpora por score lexical. Si el corpus cambia, repetir el pase y
+comparar hashes antes de reutilizar cualquier conclusión.
 
 Los tres índices JSON completos (manifiesto, ledger e inventario funcional) se conservaron en el
 checkout local para reproducibilidad y quedaron ignorados por Git por su tamaño y por contener

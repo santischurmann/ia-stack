@@ -1,6 +1,22 @@
 # Research directo de VibeCodeProtocols — síntesis y mejoras aplicables
 
-## Actualización de evidencia — 2026-08-31 (última ejecución)
+## Actualización de cierre funcional — 2026-09-01
+
+La cola histórica de **14.897 PENDING** ya fue procesada con el analizador nativo
+`research/build-semantic-functional-ledger.mjs`: 14.897/14.897 filas únicas, hashes y citas
+verificados por `research/verify-semantic-functional-ledger.mjs` (exit 0). Resultado: **14.710**
+archivos de texto en `FUNCTIONAL_SCAN` (recorrido completo de líneas y señales funcionales) y **187**
+artefactos en `STATIC_REVIEWED` (bytes/metadatos, sin inventar semántica de binarios). La síntesis
+compacta está en `research/semantic-functional-synthesis-2026-09-01.md` y la evidencia comprimida
+en `research/semantic-functional-evidence-2026-09-01.ndjson.gz`.
+
+Esto cierra la cobertura funcional determinista, no convierte un filtro lexical en aprobación de
+producto ni demuestra comprensión humana de cada algoritmo. Las propuestas permanecen en cola y
+entran por menú 🔵 y por el ciclo completo de VCP. Las secciones posteriores conservan el baseline
+histórico del 2026-08-31 para trazabilidad; sus cifras de `PENDING` no describen el estado operativo
+actual.
+
+## Baseline histórico — 2026-08-31 (conservado para trazabilidad)
 
 La evidencia profunda consolidada pasó de 397 a **547 filas únicas**: nuevos lotes de Awesome Claude
 Skills (100), gstack (25) y Marin (25) se verificaron contra el manifest y los bytes del corpus con
