@@ -18,6 +18,7 @@
 // que es la manera mas facil de esquivarlo. El minimo de largo por respuesta no distingue una
 // respuesta real de relleno del mismo largo: descarta el vacio y la palabra suelta, nada mas.
 import { readFileSync } from 'node:fs';
+import { safeProjectFile } from './ratchet.mjs';
 
 export const SCHEMA = 'vcp.intake/1';
 export const USAGE = 'usage: verify-intake.mjs check <intake.json>';
@@ -119,9 +120,24 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
   const path = args[1];
 
+  // La ruta se resuelve ANTES de abrirla: un enlace o un `..` no llegan al lector. La lectura no
+  // se reimplementa (regla #46): safeProjectFile de ratchet.mjs ya fija el criterio del repo, y
+  // devuelve null cuando el archivo no existe -- que acá es el verde de un proyecto que no arrancó.
+  const resolverRuta = options.safePath ?? safeProjectFile;
+  let archivo;
+  try {
+    archivo = resolverRuta(options.root ?? process.cwd(), path);
+  } catch (error) {
+    writeError(`REJECTED: ${error.message}`);
+    return 1;
+  }
+  if (archivo === null) {
+    write(`${EMPTY}: no hay ningún intake en ${path}. Un proyecto que todavía no arrancó no incumple nada, y esto no verificó nada.`);
+    return 0;
+  }
   let raw;
   try {
-    raw = read(path, 'utf8');
+    raw = read(archivo, 'utf8');
   } catch (error) {
     // Un proyecto que todavia no arranco no incumple nada. Se dice VACIO y no OK: no comparar nada
     // no se escribe igual que verificar algo.

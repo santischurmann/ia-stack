@@ -60,12 +60,12 @@
       "reason": "No inspecciona permisos ni el bit de ejecución de ningún archivo."
     },
     "symlinks": {
-      "state": "pending",
-      "reason": "El gate abre la ruta que le pasan sin comprobar que no sea un enlace hacia afuera del proyecto. Falta decidir si eso es responsabilidad suya o de quien lo invoca; hoy no está resuelto ni probado."
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
     },
     "paths-externos": {
-      "state": "pending",
-      "reason": "Mismo hueco que symlinks: una ruta con .. o absoluta se abre igual. El contrato de seguridad del gate no está escrito todavía."
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
     },
     "corrupcion-de-json": {
       "state": "covered",

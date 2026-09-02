@@ -408,6 +408,12 @@
       "file": "README.md",
       "phrase": "una cita textual inventada pasa igual",
       "why": "El gate exige que la evidencia traiga la cita textual de la linea, y eso puede leerse como que la cita esta comprobada. No lo esta: el gate compara la FORMA del locator contra el archivo declarado y nunca abre el archivo. Comprobar el texto exige reclonar los 15581 archivos del corpus pineado, que no estan en el repositorio. Sin esta frase, catorce campos llenos se leen como catorce campos verificados."
+    },
+    {
+      "limit_id": "safe-path-is-a-check-not-a-sandbox",
+      "file": "README.md",
+      "phrase": "no es un sandbox",
+      "why": "Los gates que leen una ruta la resuelven con safeProjectFile antes de abrirla: nada fuera del proyecto, ningun symlink, ningun archivo que no sea regular. Eso puede leerse como aislamiento y no lo es. Queda una ventana entre la comprobacion y la lectura -- el archivo puede cambiar en el medio, que es TOCTOU-- y el gate corre con los permisos de quien lo invoca: cualquier proceso con acceso al mismo filesystem hace lo que quiera sin pasar por aca."
     }
   ]
 }

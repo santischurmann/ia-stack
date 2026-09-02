@@ -8,7 +8,8 @@
 // `covered` nombre la prueba que lo cubre y que un `not_applicable` o un `pending` traigan motivo.
 // No comprueba que esa prueba ejercite ese vector.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
@@ -29,6 +30,9 @@ function correr(contenido, ...flags) {
   const salida = [];
   const errores = [];
   const code = main(['check', 'docs/triangulate/x.json', ...flags], {
+    // El gate resuelve la ruta antes de leer; acá se inyecta la identidad porque estos casos
+    // prueban CONTENIDO. La seguridad de la ruta la prueban sus tests propios y ratchet.test.mjs.
+    safePath: (_root, ruta) => ruta,
     read: (ruta) => {
       if (String(ruta).includes('triangulate-vectors')) return JSON.stringify(contrato);
       if (contenido instanceof Error) throw contenido;
@@ -110,7 +114,7 @@ test('AC6 · sin expediente informa VACÍO, y un esquema ajeno se rechaza antes 
 
 test('FALSIFICACIÓN · uso inválido, JSON roto y contrato ilegible se distinguen entre sí', () => {
   const errores = [];
-  const io = { read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
+  const io = { safePath: (_r, p) => p, read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
   assert.equal(main([], io), 2);
   assert.equal(errores.at(-1), USAGE);
   assert.equal(main(['check', 'x.json', '--otra'], io), 2, 'una bandera desconocida es error de uso');
@@ -119,6 +123,7 @@ test('FALSIFICACIÓN · uso inválido, JSON roto y contrato ilegible se distingu
 
   const contratoRoto = [];
   const code = main(['check', 'docs/triangulate/x.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('triangulate-vectors') ? '{' : JSON.stringify(expediente())),
     write: () => {}, writeError: (l) => contratoRoto.push(l),
   });
@@ -155,6 +160,7 @@ test('FALSIFICACIÓN · un archivo válido con BOM no se reporta como JSON invá
   const salida = [];
   const errores = [];
   const code = main(['check', 'docs/triangulate/x.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => BOM + JSON.stringify(String(ruta).includes('triangulate-vectors') ? contrato : expediente()),
     write: (l) => salida.push(l),
     writeError: (l) => errores.push(l),
@@ -210,9 +216,62 @@ test('FALSIFICACIÓN · un expediente ilegible por otro motivo no se confunde co
   const errores = [];
   const permiso = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
   const code = main(['check', 'docs/triangulate/x.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => { if (String(ruta).includes('triangulate-vectors')) return JSON.stringify(contrato); throw permiso; },
     write: () => {}, writeError: (l) => errores.push(l),
   });
   assert.equal(code, 1, 'trató un problema de permisos como un proyecto que todavía no trianguló');
   assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+});
+
+test('FALSIFICACIÓN · una ruta que escapa del proyecto se rechaza antes de abrirla', () => {
+  // Cierra el vector `paths-externos`. La lectura no se reimplementa (regla #46): se usa
+  // safeProjectFile de ratchet.mjs, que ya fija el criterio del repo. Estas pruebas comprueban que
+  // el gate lo LLAME y propague su rechazo, no que el criterio funcione — eso lo prueba ratchet.
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-tri-path-'));
+  try {
+    writeFileSync(join(raiz, 'vectores.json'), JSON.stringify(contrato), 'utf8');
+    let leyo = false;
+    const errores = [];
+    const code = main(['check', '../fuera.json'], {
+      root: raiz,
+      read: (ruta) => {
+        if (String(ruta).includes('triangulate-vectors')) return JSON.stringify(contrato);
+        leyo = true;
+        return '{}';
+      },
+      write: () => {}, writeError: (l) => errores.push(l),
+    });
+    assert.equal(code, 1, 'aceptó una ruta que sale del proyecto');
+    assert.equal(leyo, false, 'abrió el archivo antes de comprobar que la ruta fuera segura');
+    assert.match(errores.at(-1), /escapes the project/iu);
+    assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · un symlink rechazado por el helper no se lee como proyecto sin expediente', () => {
+  // Cierra el vector `symlinks`. La mecánica del enlace la prueba tests/ratchet.test.mjs con una
+  // junction; acá se comprueba que el rechazo del helper llegue como rechazo y no como VACÍO.
+  const errores = [];
+  const code = main(['check', 'docs/triangulate/x.json'], {
+    safePath: () => { throw new Error('ratchet path is not a regular project file: docs/triangulate/x.json'); },
+    read: () => JSON.stringify(contrato),
+    write: () => {}, writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.match(errores.at(-1), /not a regular project file/iu);
+  assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+});
+
+test('un expediente que no existe sigue siendo VACÍO, no un rechazo de ruta', () => {
+  const salida = [];
+  const code = main(['check', 'docs/triangulate/x.json'], {
+    safePath: () => null,
+    read: () => JSON.stringify(contrato),
+    write: (l) => salida.push(l), writeError: () => {},
+  });
+  assert.equal(code, 0, 'un proyecto que todavía no trianguló no incumple nada');
+  assert.match(salida.at(-1), /^VACÍO: /u);
 });

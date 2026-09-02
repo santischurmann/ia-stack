@@ -44,6 +44,9 @@ function correr(contenido) {
   const salida = [];
   const errores = [];
   const code = main(['check', 'research/candidates.json'], {
+    // El gate resuelve la ruta antes de leer; acá se inyecta la identidad porque estos casos
+    // prueban CONTENIDO. La seguridad de la ruta la prueban sus tests propios y ratchet.test.mjs.
+    safePath: (_root, ruta) => ruta,
     read: (ruta) => {
       if (String(ruta).includes('research-citations')) return JSON.stringify(contrato);
       if (contenido instanceof Error) throw contenido;
@@ -134,7 +137,7 @@ test('FALSIFICACIÓN · los campos obligatorios se rechazan uno por uno, y los i
 
 test('FALSIFICACIÓN · uso inválido, JSON roto, contrato ilegible y lista vacía se distinguen', () => {
   const errores = [];
-  const io = { read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
+  const io = { safePath: (_r, p) => p, read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
   assert.equal(main([], io), 2);
   assert.equal(errores.at(-1), USAGE);
   assert.equal(main(['check', 'x.json', 'extra'], io), 2);
@@ -145,6 +148,7 @@ test('FALSIFICACIÓN · uso inválido, JSON roto, contrato ilegible y lista vac�
 
   const contratoRoto = [];
   assert.equal(main(['check', 'research/candidates.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('research-citations') ? '{' : JSON.stringify(expediente())),
     write: () => {}, writeError: (l) => contratoRoto.push(l),
   }), 1);
@@ -175,6 +179,7 @@ test('FALSIFICACIÓN · fecha ausente, evidencia no-objeto, contrato sin fuentes
   // Un contrato que parsea pero no declara ninguna fuente utilizable no puede validar procedencia.
   const sinFuentes = [];
   assert.equal(main(['check', 'research/candidates.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => JSON.stringify(String(ruta).includes('research-citations') ? { schema: 'x', sources: [] } : expediente()),
     write: () => {}, writeError: (l) => sinFuentes.push(l),
   }), 1);
@@ -184,8 +189,28 @@ test('FALSIFICACIÓN · fecha ausente, evidencia no-objeto, contrato sin fuentes
   const permiso = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
   const errores = [];
   assert.equal(main(['check', 'research/candidates.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => { if (String(ruta).includes('research-citations')) return JSON.stringify(contrato); throw permiso; },
     write: () => {}, writeError: (l) => errores.push(l),
   }), 1);
   assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+});
+
+test('FALSIFICACIÓN · la ruta se resuelve antes de leer: insegura rechaza, inexistente es VACÍO', () => {
+  const errores = [];
+  assert.equal(main(['check', 'research/candidates.json'], {
+    safePath: () => { throw new Error('ratchet path is not a regular project file: research/candidates.json'); },
+    read: () => JSON.stringify(contrato),
+    write: () => {}, writeError: (l) => errores.push(l),
+  }), 1, 'abrió una ruta que el helper rechazó');
+  assert.match(errores.at(-1), /not a regular project file/iu);
+  assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+
+  const salida = [];
+  assert.equal(main(['check', 'research/candidates.json'], {
+    safePath: () => null,
+    read: () => JSON.stringify(contrato),
+    write: (l) => salida.push(l), writeError: () => {},
+  }), 0);
+  assert.match(salida.at(-1), /^VACÍO: /u);
 });

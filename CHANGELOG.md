@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los tres gates que leen un expediente ya no abren la ruta a ciegas.** `verify-intake`,
+  `verify-triangulate` y `verify-research-candidates` la resuelven con `safeProjectFile` de
+  `ratchet.mjs` **antes** de leer: una ruta que escapa del proyecto, un symlink o un archivo que
+  no es regular se rechazan sin abrirse, y un archivo que no existe sigue siendo `VACÍO`. La
+  lectura no se reimplementa —regla #46—: el criterio es el que ya usaban `ratchet` y
+  `verify-session-state`, así que el rechazo conserva su misma redacción.
+  Con esto se cierran los dos vectores que el expediente de TRIANGULATE declaraba pendientes:
+  `symlinks` y `paths-externos`. **Los 26 vectores quedan en 11 cubiertos, 15 no aplican y 0
+  pendientes**, así que `--require-complete` ya no frena. Límite declarado: es una comprobación,
+  no un sandbox.
+
 - **Un puntaje lexical ya no puede pasar por evidencia.** La síntesis del research agrupa 14.897
   entradas y las llama «señales de adopción»: son filtros que cuentan palabras. No había ningún
   artefacto entre esa tabla y una capacidad adoptada, así que el salto no dejaba rastro ni tenía

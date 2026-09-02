@@ -19,6 +19,7 @@
 // juzga si el motivo de un `not_applicable` es bueno, ni descubre vectores nuevos -- la lista es
 // fija y su completitud es una decision humana, no un resultado del gate.
 import { readFileSync } from 'node:fs';
+import { safeProjectFile } from './ratchet.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -142,9 +143,24 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
 
+  // La ruta se resuelve ANTES de abrirla: un enlace o un `..` no llegan al lector. La lectura no
+  // se reimplementa (regla #46): safeProjectFile de ratchet.mjs ya fija el criterio del repo, y
+  // devuelve null cuando el archivo no existe -- que acá es el verde de un proyecto que no arrancó.
+  const resolverRuta = options.safePath ?? safeProjectFile;
+  let archivo;
+  try {
+    archivo = resolverRuta(options.root ?? process.cwd(), path);
+  } catch (error) {
+    writeError(`REJECTED: ${error.message}`);
+    return 1;
+  }
+  if (archivo === null) {
+    write(`${EMPTY}: no hay ningún expediente de triangulación en ${path}. Esto no verificó nada.`);
+    return 0;
+  }
   let document;
   try {
-    document = JSON.parse(stripBom(read(path, 'utf8')));
+    document = JSON.parse(stripBom(read(archivo, 'utf8')));
   } catch (error) {
     // Un expediente ausente es un proyecto que todavia no triangulo, no un incumplimiento. Se dice
     // VACIO y no OK: no comparar nada no se escribe igual que verificar algo.

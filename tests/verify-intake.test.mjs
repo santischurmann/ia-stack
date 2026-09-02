@@ -34,6 +34,9 @@ function correr(archivo, contenido) {
   const salida = [];
   const errores = [];
   const code = main(['check', archivo], {
+    // El gate resuelve la ruta antes de leer; acá se inyecta la identidad porque estos casos
+    // prueban CONTENIDO. La seguridad de la ruta la prueban sus tests propios y ratchet.test.mjs.
+    safePath: (_root, ruta) => ruta,
     read: () => (contenido instanceof Error ? (() => { throw contenido; })() : JSON.stringify(contenido)),
     write: (line) => salida.push(line),
     writeError: (line) => errores.push(line),
@@ -94,7 +97,7 @@ test('AC6 · FALSIFICACIÓN · un esquema ajeno se rechaza antes de mirar cualqu
 
 test('FALSIFICACIÓN · uso inválido y JSON roto se distinguen entre sí y del contenido', () => {
   const errores = [];
-  const opciones = { read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
+  const opciones = { safePath: (_r, p) => p, read: () => '{', write: () => {}, writeError: (l) => errores.push(l) };
   assert.equal(main([], opciones), 2, 'sin argumentos es error de uso, no un veredicto');
   assert.equal(errores.at(-1), USAGE);
   assert.equal(main(['check', 'x.json', 'extra'], opciones), 2);
@@ -154,6 +157,7 @@ test('FALSIFICACIÓN · un archivo ilegible por permisos no se confunde con uno 
   const errores = [];
   const permiso = Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
   const code = main(['check', 'docs/intake/x.json'], {
+    safePath: (_r, p) => p,
     read: () => { throw permiso; },
     write: () => {},
     writeError: (line) => errores.push(line),
@@ -161,4 +165,26 @@ test('FALSIFICACIÓN · un archivo ilegible por permisos no se confunde con uno 
   assert.equal(code, 1, 'trató un problema de permisos como un proyecto sin intake');
   assert.match(errores.at(-1), /^REJECTED: no se pudo leer/u);
   assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+});
+
+test('FALSIFICACIÓN · la ruta se resuelve antes de leer: insegura rechaza, inexistente es VACÍO', () => {
+  // La lectura no se reimplementa (regla #46): se usa safeProjectFile de ratchet.mjs. Estas pruebas
+  // comprueban que el gate lo LLAME y distinga sus dos salidas; la mecánica del enlace y del escape
+  // la prueba tests/ratchet.test.mjs con una junction.
+  const errores = [];
+  assert.equal(main(['check', 'docs/intake/x.json'], {
+    safePath: () => { throw new Error('ratchet path escapes the project: ../fuera.json'); },
+    read: () => { throw new Error('no debería leerse'); },
+    write: () => {}, writeError: (l) => errores.push(l),
+  }), 1, 'abrió una ruta que el helper rechazó');
+  assert.match(errores.at(-1), /escapes the project/iu);
+  assert.doesNotMatch(errores.at(-1), /VACÍO/u);
+
+  const salida = [];
+  assert.equal(main(['check', 'docs/intake/x.json'], {
+    safePath: () => null,
+    read: () => { throw new Error('no debería leerse'); },
+    write: (l) => salida.push(l), writeError: () => {},
+  }), 0, 'un proyecto que todavía no arrancó no incumple nada');
+  assert.match(salida.at(-1), /^VACÍO: /u);
 });

@@ -16,6 +16,7 @@
 // juzga si un contraejemplo es bueno, si un costo es realista ni si una decision es sensata. Y no
 // adopta nada: la decision sigue siendo humana.
 import { readFileSync } from 'node:fs';
+import { safeProjectFile } from './ratchet.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -143,9 +144,24 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
 
+  // La ruta se resuelve ANTES de abrirla: un enlace o un `..` no llegan al lector. La lectura no
+  // se reimplementa (regla #46): safeProjectFile de ratchet.mjs ya fija el criterio del repo, y
+  // devuelve null cuando el archivo no existe -- que acá es el verde de un proyecto que no arrancó.
+  const resolverRuta = options.safePath ?? safeProjectFile;
+  let archivo;
+  try {
+    archivo = resolverRuta(options.root ?? process.cwd(), path);
+  } catch (error) {
+    writeError(`REJECTED: ${error.message}`);
+    return 1;
+  }
+  if (archivo === null) {
+    write(`${EMPTY}: no hay ningún expediente de candidatos en ${path}. Esto no verificó nada.`);
+    return 0;
+  }
   let document;
   try {
-    document = JSON.parse(read(path, 'utf8'));
+    document = JSON.parse(read(archivo, 'utf8'));
   } catch (error) {
     if (error.code === 'ENOENT') {
       write(`${EMPTY}: no hay ningún expediente de candidatos en ${path}. Esto no verificó nada.`);
