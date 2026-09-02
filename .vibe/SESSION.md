@@ -515,3 +515,39 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   secciones o 26 vectores inviten al relleno está declarado y **no medido**.
 - **LESSONS.md sigue sin tocarse**: el protocolo exige confirmación humana explícita.
 - Nada se probó en Linux ni macOS.
+
+## Sesión 2026-09-01 — Bloque C cerrado
+
+**Publicado:** `4a94d5b`. Con esto los tres bloques del plan aprobado están cerrados.
+
+- **Repineado · DONE.** 14 fuentes: 5 con el HEAD igual al commit pineado, 9 movidas, **14 con el
+  commit todavía alcanzable**. Deriva no invalida el corpus —se leyó *en* el commit pineado—; lo
+  que sí lo invalidaría es que dejara de resolverse. En `research/pin-revalidation-2026-09-01.json`,
+  que acompaña al contrato sin borrarlo.
+- **Fuentes ausentes · DONE.** De las 19 adicionales del encargo, **14 cubiertas y 5 no**. Las 5
+  declaradas `EXCLUDED` en `source-matrix.md` con tamaño medido y motivo: 711 MB en total.
+- **Gate de candidatos · DONE.** `verify-research-candidates.mjs`: catorce campos, fuente y commit
+  cruzados contra las 14 pineadas, evidencia que cite `archivo:línea` del archivo declarado, y
+  contraejemplo que no repita esa cita.
+
+## Retomar acá
+
+- **No hay ningún candidato real escrito, y es el resultado esperado**: producir uno obliga a leer
+  la línea citada en el commit pineado, y el corpus no está en el repositorio. Si alguien quiere
+  adoptar algo del research, ése es el trabajo que falta: reclonar la fuente, leer la línea,
+  escribir el contraejemplo.
+- **Dos pendientes declarados** en `docs/triangulate/triangulate-como-fase.json`: `symlinks` y
+  `paths-externos`.
+- **F16, preexistente:** `verify-evidence-trace claims --require-links` sigue rojo por 4 claims sin
+  vínculo de `d003`.
+
+## No verificado (cierre del Bloque C)
+
+- La revalidación de pines leyó **códigos HTTP, no contenido**: dice que los 14 commits se
+  resuelven hoy, no que su árbol sea el que el corpus leyó.
+- Los commits del contrato tienen **8 caracteres**: desambiguan dentro de un repositorio, **no son
+  un pin criptográfico**.
+- Los motivos de solapamiento de dos de las 5 fuentes excluidas son juicios sobre el dominio
+  declarado de cada repositorio, **no** el resultado de comparar contenidos. Nadie las leyó.
+- Ningún artefacto de producto real existe todavía: las plantillas validan, nadie llenó una en
+  serio. El riesgo de relleno sigue declarado y **no medido**.

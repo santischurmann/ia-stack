@@ -118,3 +118,28 @@ no después del susto. Lo incorporé recién en la tercera tanda.
 TRIANGULATE (`symlinks`, `paths-externos`). Y ningún artefacto de producto real escrito todavía:
 las plantillas validan, pero nadie llenó un PRD de 21 secciones en serio, así que el riesgo de
 relleno está declarado y no medido.
+
+---
+
+## [2026-09-01] bloque-c-research
+
+**Shipped:** el puente que faltaba entre una señal lexical y una capacidad adoptada, los 14 commits
+revalidados con evidencia, y las 5 fuentes que nadie investigó declaradas con su costo.
+
+**Plan vs actual:** el plan decía «8 fuentes ausentes». Medidas eran **5**: las otras 3 ya estaban
+en `research/sources/` y yo había estimado sin cruzar. Corregido en el reporte y en el registro.
+
+**Friction:** la primera comparación de pines dio 14/14 derivadas, y era falsa — comparé commits
+truncados de 8 caracteres contra los 40 del head. Lo vi porque la primera fila mostraba `ad67087c`
+contra `ad67087cad22`, que es prefijo. Si hubiera leído sólo el resumen, publicaba un número
+inventado.
+
+**Keep:** mirar la salida cruda antes de creerle al resumen. El resumen decía «DERIVO: 14» y era
+consistente consigo mismo; sólo las filas mostraban el error.
+
+**Change:** medir antes de estimar en el plan. «8 fuentes» era un número que me pareció, no uno que
+conté, y quedó escrito en un plan aprobado.
+
+**Open:** ningún candidato real escrito — y eso es lo que el gate hace visible, no una omisión.
+Escribir uno obliga a reclonar la fuente y leer la línea, que es exactamente el costo que la tabla
+de puntajes permitía saltear gratis.
