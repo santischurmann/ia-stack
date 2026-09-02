@@ -19,6 +19,7 @@
 // set, no juzga si son representativas, y no sabe si el resultado que dice `igual` era igual: un
 // registro coherente e inventado pasa en verde. Tampoco decide que merece archivarse -- el filtro
 // de las tres R lo aplica una persona y el gate solo comprueba que no se contradiga.
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -72,7 +73,16 @@ const ARCHIVED_KEYS = ['path', 'archived_to', ...R, 'verdict', 'reason'];
  * importante salia roja. Con `mode: lines` el origen SIGUE existiendo, que es justamente el punto.
  */
 const LINES_KEYS = [...ARCHIVED_KEYS, 'mode', 'lines'];
-export const MODES = new Set(['file', 'lines']);
+/**
+ * El archivo puede ser git, y de hecho es lo que el propio protocolo de limpieza prescribe: "git
+ * init + commit si no hay repo... el backup existe antes que el primer mv". Exigir una copia en
+ * disco habria rechazado como BORRADO la limpieza hecha del modo correcto -- medido sobre una
+ * corrida real: tres skills fuera del arbol, ninguna en .claude-archive/, las tres recuperables de
+ * un commit. Aca el objeto se comprueba contra git de verdad, no se declara.
+ */
+const GIT_KEYS = [...ARCHIVED_KEYS, 'mode', 'repo', 'commit'];
+export const MODES = new Set(['file', 'lines', 'git']);
+const SHA = /^[0-9a-f]{40}$/u;
 const MIN_REASON = 20;
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -241,7 +251,9 @@ function checkMeasurement(rows, ids, donde, violations) {
 function checkArchived(entry, batchNo, record, scope, io, violations) {
   const donde = `tanda ${batchNo}`;
   const porLineas = isObject(entry) && entry.mode === 'lines';
-  if (!exactKeys(entry, porLineas ? LINES_KEYS : ARCHIVED_KEYS) && !exactKeys(entry, [...ARCHIVED_KEYS, 'mode'])) {
+  const enGit = isObject(entry) && entry.mode === 'git';
+  const forma = porLineas ? LINES_KEYS : (enGit ? GIT_KEYS : ARCHIVED_KEYS);
+  if (!exactKeys(entry, forma) && !exactKeys(entry, [...ARCHIVED_KEYS, 'mode'])) {
     violations.push(`${donde}: un archivado debe declarar exactamente ${ARCHIVED_KEYS.join(', ')}, y si sale por líneas también mode y lines`);
     return;
   }
@@ -278,6 +290,23 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   }
   if (!longEnough(entry.reason)) {
     violations.push(`${donde}: ${entry.path} se archiva sin un motivo escrito: archivar sin razón es borrar con otro nombre`);
+  }
+  if (enGit) {
+    if (!SHA.test(entry.commit)) {
+      violations.push(`${donde}: ${entry.path} dice estar archivado en git y ${JSON.stringify(entry.commit)} no es un sha completo: una referencia movible no es un archivo`);
+      return;
+    }
+    if (typeof entry.repo !== 'string' || entry.repo.trim() === '') {
+      violations.push(`${donde}: ${entry.path} no dice en qué repositorio quedó el objeto`);
+      return;
+    }
+    if (!io.gitHas(entry.repo, entry.commit, entry.archived_to)) {
+      violations.push(`${donde}: ${entry.archived_to} no está en el commit ${entry.commit.slice(0, 8)} de ${entry.repo}: eso no es un archivado, es un borrado`);
+    }
+    if (io.exists(entry.path)) {
+      violations.push(`${donde}: ${entry.path} sigue en su lugar, así que no se movió nada y el registro dice lo contrario`);
+    }
+    return;
   }
   const destino = normalizePath(entry.archived_to);
   const carpeta = normalizePath(record.archive_dir);
@@ -428,6 +457,16 @@ export function validateAblation(record, scope, io) {
 }
 
 /** `~/` se expande contra el home real; lo demás se resuelve contra la raíz del proyecto. */
+function makeGitHas() {
+  // ¿Existe ese objeto en ese commit? Se le pregunta a git, no se cree lo que dice el registro.
+  // Cinco gates del repo ya consultan git, así que el mecanismo no es nuevo acá.
+  return (repo, commit, ruta) => {
+    const carpeta = repo.startsWith('~/') ? join(homedir(), repo.slice(2)) : repo;
+    const salida = spawnSync('git', ['-C', carpeta, 'cat-file', '-e', `${commit}:${ruta}`], { encoding: 'utf8' });
+    return salida.status === 0;
+  };
+}
+
 function makeExists(root) {
   return (path) => {
     const raw = String(path);
@@ -517,7 +556,7 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 0;
   }
 
-  const io = { exists: options.exists ?? makeExists(root) };
+  const io = { exists: options.exists ?? makeExists(root), gitHas: options.gitHas ?? makeGitHas() };
   const violations = validateAblation(record, scope, io);
   if (violations.length > 0) {
     for (const violation of violations) writeError(`REJECTED: ${path}: ${violation}`);

@@ -1415,6 +1415,12 @@ ruta, y la vuelta atrás es un solo comando. Si en algún momento parece que la 
 borrar, se para y se pregunta. Los patrones intocables viven en `contracts/ablation-scope.json` —
 entre ellos los `.mq5`, que no están en git y cuya pérdida sería irreversible.
 
+**El archivo puede ser git, y muchas veces conviene que lo sea.** Si la configuración está bajo
+git —y el primer paso de la limpieza es justamente `git init` + commit si no lo está—, sacar un
+archivo del árbol no lo pierde: queda en el commit anterior. Eso se declara con `mode: "git"`, el
+repositorio y el **sha completo**, y el gate **le pregunta a git** si el objeto está ahí. Un sha
+corto o un `HEAD~1` no valen: una referencia que se mueve no es un archivo.
+
 **Un archivo sale entero o sale por líneas.** `CLAUDE.md` es el caso típico del segundo: la parte
 de datos que el modelo no puede adivinar —tus rutas, tu tono, tus reglas— se queda, y la que le dice
 cómo razonar se va. Eso se declara con `mode: "lines"` y el rango, y ahí el archivo **sigue en su

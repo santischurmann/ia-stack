@@ -42,9 +42,13 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   refrescarlo.
 - **Límites honestos nuevos (76):** la lista de intocables protege de más y nunca de menos; y el
   respaldo se comprueba **declarado**, no hecho: el gate no abre el grafo ni mira las notas.
-- **Observado y no tapado:** con concurrencia 32 la suite completa falló 1 de 3 corridas por latencia
-  de spawn, y tardó **más** que con concurrencia 8 (242s contra 180s, cero fallos). Es una sola
-  muestra por nivel y en una sola máquina, así que queda anotado y no se cambió el valor por defecto.
+- **CORRECCIÓN de una afirmación de este mismo CHANGELOG.** Se había anotado que con concurrencia
+  32 la suite era más lenta e inestable que con 8 (242s contra 180s). **No reproduce.** Con tres
+  muestras por nivel: 32 da 67,0 / 64,9 / 58,7 s y 8 da 75,8 / 63,1 / 60,8 s, **las seis con cero
+  fallos**. La media favorece a 32 (63,5 s contra 66,6 s). Las corridas anteriores estaban
+  contendidas con otro trabajo corriendo en paralelo, así que no eran una medición: es LESSON-3
+  —una medición sobre algo que se mueve no es una medición— aplicada a mí mismo. El valor por
+  defecto se queda en 32, ahora por evidencia y no por inercia.
 
 - **La protección de los archivos intocables era evadible de cuatro formas, y la encontró una
   auditoría adversarial contra el gate publicado media hora antes.** Seis defectos confirmados

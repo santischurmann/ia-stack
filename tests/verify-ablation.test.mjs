@@ -990,3 +990,168 @@ test('FALSIFICACIÓN · una limpieza que SÍ archivó y no probó la vuelta atr�
   });
   assert.equal(validateAblation(excusa, contrato, io).some((v) => /vuelta atrás/iu.test(v)), true);
 });
+
+// --- El archivo puede ser git, y de hecho es lo que el propio protocolo de limpieza prescribe:
+// "git init + commit si no hay repo... el backup existe antes que el primer mv". El gate exigía un
+// archivo en disco, así que habría rechazado como BORRADO la limpieza hecha del modo correcto.
+
+test('RA-06 · un archivado en git se acepta si el objeto existe de verdad en ese commit', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = {
+    exists: () => false, // el origen ya no está: se borró del árbol, que es el punto
+    gitHas: (repo, commit, ruta) => repo === '~/.claude' && commit === 'a'.repeat(40) && ruta === 'skills/design-loop/SKILL.md',
+  };
+  const enGit = registro();
+  enGit.batches[0].archived = [{
+    path: '~/.claude/skills/design-loop/SKILL.md',
+    archived_to: 'skills/design-loop/SKILL.md',
+    mode: 'git',
+    repo: '~/.claude',
+    commit: 'a'.repeat(40),
+    repetible: false,
+    requisito: false,
+    repartible: false,
+    verdict: 'ARCHIVAR',
+    reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+  }];
+  enGit.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+  enGit.survivors = [];
+  assert.deepEqual(validateAblation(enGit, contrato, io), []);
+});
+
+test('RA-06 · FALSIFICACIÓN · si el objeto no está en ese commit, eso es un borrado y se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: () => false, gitHas: () => false };
+  const mentira = registro();
+  mentira.batches[0].archived = [{
+    path: '~/.claude/skills/design-loop/SKILL.md',
+    archived_to: 'skills/design-loop/SKILL.md',
+    mode: 'git',
+    repo: '~/.claude',
+    commit: 'b'.repeat(40),
+    repetible: false,
+    requisito: false,
+    repartible: false,
+    verdict: 'ARCHIVAR',
+    reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+  }];
+  mentira.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+  mentira.survivors = [];
+  const violaciones = validateAblation(mentira, contrato, io);
+  assert.equal(violaciones.some((v) => /no está en el commit|borrado/iu.test(v)), true);
+});
+
+test('RA-06 · FALSIFICACIÓN · un commit que no es un sha completo no vale como archivo', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: () => false, gitHas: () => true };
+  for (const commit of ['a424be4', '', 'HEAD~1', 'z'.repeat(40)]) {
+    const malo = registro();
+    malo.batches[0].archived = [{
+      path: '~/.claude/skills/design-loop/SKILL.md',
+      archived_to: 'skills/design-loop/SKILL.md',
+      mode: 'git',
+      repo: '~/.claude',
+      commit,
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    malo.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    malo.survivors = [];
+    assert.deepEqual({ commit, rechaza: validateAblation(malo, contrato, io).length > 0 }, { commit, rechaza: true });
+  }
+});
+
+test('RA-06 · FALSIFICACIÓN · un archivado en git sin repositorio, o cuyo origen sigue ahí, se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const enGit = (over = {}) => {
+    const r = registro();
+    r.batches[0].archived = [{
+      path: '~/.claude/skills/design-loop/SKILL.md',
+      archived_to: 'skills/design-loop/SKILL.md',
+      mode: 'git',
+      repo: '~/.claude',
+      commit: 'a'.repeat(40),
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+      ...over,
+    }];
+    r.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+    return r;
+  };
+  const sinRepo = validateAblation(enGit({ repo: '   ' }), contrato, { exists: () => false, gitHas: () => true });
+  const sigueAhi = validateAblation(enGit(), contrato, { exists: () => true, gitHas: () => true });
+  assert.deepEqual(
+    { sinRepo: sinRepo.some((v) => /repositorio/iu.test(v)), sigueAhi: sigueAhi.some((v) => /sigue en su lugar/iu.test(v)) },
+    { sinRepo: true, sigueAhi: true },
+  );
+});
+
+test('el lector de git real responde sobre este mismo repositorio', () => {
+  // Sin inyectar `gitHas`: se le pregunta a git de verdad, que es la diferencia entre comprobar
+  // el archivo y creerle al registro.
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const errores = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const inventado = registro();
+    inventado.batches[0].archived = [{
+      path: '~/.claude/skills/design-loop/SKILL.md',
+      archived_to: 'skills/design-loop/SKILL.md',
+      mode: 'git',
+      repo: repoRoot,
+      commit: '0'.repeat(40),
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    inventado.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    inventado.survivors = [];
+    writeFileSync(join(root, RUTA), json(inventado), 'utf8');
+    // Un commit de ceros no existe en ningún repositorio: git lo dice, y el gate lo repite.
+    const code = main(['check', RUTA], { root, write: () => {}, writeError: (l) => errores.push(l) });
+    assert.deepEqual({ code, acusa: /no está en el commit/iu.test(errores.join('\n')) }, { code: 1, acusa: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('el lector de git expande ~/ contra el home real, igual que el lector de archivos', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const errores = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const conTilde = registro();
+    conTilde.batches[0].archived = [{
+      path: '~/.claude/skills/design-loop/SKILL.md',
+      archived_to: 'skills/design-loop/SKILL.md',
+      mode: 'git',
+      repo: '~/.claude',
+      commit: '0'.repeat(40),
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    conTilde.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    conTilde.survivors = [];
+    writeFileSync(join(root, RUTA), json(conTilde), 'utf8');
+    const code = main(['check', RUTA], { root, write: () => {}, writeError: (l) => errores.push(l) });
+    assert.deepEqual({ code, acusa: /no está en el commit/iu.test(errores.join('\n')) }, { code: 1, acusa: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

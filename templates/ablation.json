@@ -62,6 +62,18 @@
           "repartible": false,
           "verdict": "REESCRIBIR",
           "reason": "sale por lineas: la parte de datos que el modelo no puede adivinar se queda, la de estilo de razonamiento se va. El archivo sigue en su lugar, recortado."
+        },
+        {
+          "path": "~/.claude/skills/ejemplo-borrado/SKILL.md",
+          "archived_to": "skills/ejemplo-borrado/SKILL.md",
+          "mode": "git",
+          "repo": "~/.claude",
+          "commit": "el sha completo de 40 caracteres del commit donde el objeto TODAVIA existe",
+          "repetible": false,
+          "requisito": false,
+          "repartible": false,
+          "verdict": "ARCHIVAR",
+          "reason": "el archivo salio del arbol y git es el archivo: el gate le pregunta a git si el objeto esta en ese commit."
         }
       ],
       "measured": [
