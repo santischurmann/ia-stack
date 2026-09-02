@@ -420,6 +420,12 @@
       "file": "SKILL.md",
       "phrase": "no comprueba que esa spec sea",
       "why": "claims --spec resuelve los vinculos de un packet contra el archivo que se le pasa. El gate comprueba que el identificador enlazado exista ahi, no que ese archivo sea la spec que le corresponde al packet: pasarle la spec equivocada da verde si por casualidad declara los mismos identificadores. Sin --spec resuelve contra docs/spec.md, que rota con el feature activo, asi que para un feature cerrado el verde por defecto no significa nada. Elegir el archivo es responsabilidad de quien corre el gate."
+    },
+    {
+      "limit_id": "lessons-gate-checks-form-not-worth",
+      "file": "SKILL.md",
+      "phrase": "No verifica que la causa raíz declarada sea la causa real",
+      "why": "verify-lessons comprueba que los seis campos esten, que no esten vacios ni copiados de la plantilla, que la fecha sea real, que el status este en el conjunto y que las marcas [overlaps with: LESSON-N] resuelvan contra este mismo archivo. Nada de eso mira si la leccion sirve: una causa raiz que reformula el sintoma con otras palabras pasa verde, y una senal de deteccion que no detectaria nada tambien. Esa parte es revision humana y el gate imprime el limite en verde y en rojo para que su linea de exito no se cite sola."
     }
   ]
 }

@@ -7,6 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **`LESSONS.md` deja de ser el único artefacto que nadie verifica.** `verify-lessons.mjs` (gate 36)
+  comprueba los seis campos de cada lección, que ninguno esté vacío ni copiado de la plantilla, que
+  la fecha sea real, que el `status` esté en `{active, retired}` y que cada
+  `[overlaps with: LESSON-N]` resuelva contra los números de este mismo archivo.
+  El diseño salió de un ataque adversarial: cinco lentes propusieron 40 degradaciones y las
+  probaron ejecutando gates de juguete contra el archivo real. Tres resultados cambiaron el diseño:
+  (1) el archivo **no** separa lecciones con `---` —sólo tiene dos, y delimitan la plantilla—, así
+  que un gate que parte por ahí valida un único bloque gigante y salió verde en las 9 mutaciones
+  probadas, incluida borrar un campo entero; la frontera es el encabezado `## ` anclado.
+  (2) Si el valor de un campo se corta al final del bloque en vez de en el próximo marcador, un
+  `**Why (root cause):**` vacío se llena con el texto del campo siguiente: esa mutación salió verde
+  en los seis gates de juguete probados. (3) `d{4}-d{2}-d{2}` acepta `2026-02-30` y
+  `new Date` la rueda a marzo en vez de rechazarla, así que la fecha se valida por round-trip UTC.
+- **Las guardias defensivas del gate traen la prueba que las hace fallar**, según LESSON-7: los dos
+  conteos de encabezados y el doble barrido de marcas de dedup son inyectables, y hay una
+  falsificación que fuerza cada desacuerdo. Cero marcas encontradas por un patrón roto se leería
+  igual que cero referencias rotas.
+- **Límite honesto nuevo (71):** el gate no verifica que la causa raíz declarada sea la causa real,
+  ni que se distinga del síntoma, ni que la señal de detección detecte algo. Lo imprime en verde y
+  en rojo, para que su línea de éxito no se cite sola.
+
 - **Un vínculo de claim ya no se resuelve contra la spec equivocada.** `verify-evidence-trace
   claims` resolvía `linked_requirement_id` y `linked_ac_id` contra `docs/spec.md` fijo. Un packet
   es inmutable y pertenece a su feature, pero `docs/spec.md` rota con el feature activo: al rotar,

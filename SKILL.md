@@ -1293,6 +1293,27 @@ candidates desde los `⚠ signal` de `SESSION.md`, dedup contra `LESSONS.md` exi
 gate, escribir solo lo confirmado. Esto sí requiere respuesta del usuario — a diferencia del
 resto de 8.3, no es "corre siempre sin preguntar".
 
+Una vez escrita la entrada, el archivo se verifica. Era el único artefacto del protocolo que ningún
+gate miraba:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-lessons.mjs check .vibe/LESSONS.md
+```
+
+La frontera entre lecciones es el encabezado `## ` anclado, nunca un `---` ni una línea en blanco:
+el archivo real sólo tiene dos `---` y delimitan la plantilla, así que un gate que parte por ahí
+valida un solo bloque gigante y sale verde aunque falte un campo entero. El valor de un campo
+termina en el próximo marcador y no al final del bloque, porque si no un campo vacío se llena con
+el texto del siguiente. La plantilla se identifica por su fecha literal `YYYY-MM-DD` —nunca por
+número de línea— y sus propios valores son la lista negra de relleno. Las marcas
+`[overlaps with: LESSON-N]` tienen que resolver contra los números de este mismo archivo.
+
+El gate verifica forma, unicidad de identificadores y resolución de referencias internas.
+**No verifica que la causa raíz declarada sea la causa real**, ni que se distinga del síntoma,
+ni que la señal de detección detecte algo: un verde acá no es evidencia de que la lección sirva.
+Por eso
+imprime sus límites en verde y en rojo, para que la línea de éxito no se cite sola.
+
 ```
 ## [YYYY-MM-DD] <feature-name>
 **Shipped:** <1 línea, qué salió>
