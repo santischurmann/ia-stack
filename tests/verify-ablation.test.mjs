@@ -876,3 +876,73 @@ test('`due` cuando el registro desaparece entre resolver la ruta y leerlo dice q
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// --- RA-02: el contrato dice que CLAUDE.md se archiva POR LÍNEAS, y el gate exigía que el archivo
+// entero desapareciera. Se contradecían: la operación que la fase prescribe para el archivo más
+// importante salía roja.
+
+test('RA-02 · archivar líneas sueltas deja el origen en su lugar, y eso es correcto', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') || String(p).includes('CLAUDE.md') };
+  const porLineas = registro();
+  porLineas.batches[0].archived = [{
+    path: '~/.claude/skills/CLAUDE.md',
+    archived_to: `${ARCHIVO}/.claude/skills/CLAUDE.md`,
+    mode: 'lines',
+    lines: '12-31',
+    repetible: false,
+    requisito: false,
+    repartible: false,
+    verdict: 'REESCRIBIR',
+    reason: 'las veinte líneas de estilo de razonamiento no aprueban ninguna de las tres R; el resto del archivo sí',
+  }];
+  porLineas.inventory = [{ path: '~/.claude/skills/CLAUDE.md', words: 400, percent: 100, last_modified: '2026-01-02' }];
+  porLineas.survivors = [];
+  assert.deepEqual(validateAblation(porLineas, contrato, io), []);
+});
+
+test('RA-02 · FALSIFICACIÓN · archivar por líneas sin decir cuáles, o con el archivo entero, se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') || String(p).includes('CLAUDE.md') };
+  const base = () => {
+    const r = registro();
+    r.batches[0].archived = [{
+      path: '~/.claude/skills/CLAUDE.md',
+      archived_to: `${ARCHIVO}/.claude/skills/CLAUDE.md`,
+      mode: 'lines',
+      lines: '12-31',
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'REESCRIBIR',
+      reason: 'las veinte líneas de estilo de razonamiento no aprueban ninguna de las tres R',
+    }];
+    r.inventory = [{ path: '~/.claude/skills/CLAUDE.md', words: 400, percent: 100, last_modified: '2026-01-02' }];
+    r.survivors = [];
+    return r;
+  };
+  const sinLineas = base();
+  sinLineas.batches[0].archived[0].lines = '';
+  const modoRaro = base();
+  modoRaro.batches[0].archived[0].mode = 'a medias';
+  // Un archivo movido entero declarado como `file` sigue exigiendo que el origen desaparezca.
+  const entero = base();
+  entero.batches[0].archived[0].mode = 'file';
+  entero.batches[0].archived[0].verdict = 'ARCHIVAR';
+  for (const [nombre, caso] of [['sin líneas', sinLineas], ['modo raro', modoRaro], ['entero pero presente', entero]]) {
+    assert.deepEqual({ nombre, rechaza: validateAblation(caso, contrato, io).length > 0 }, { nombre, rechaza: true });
+  }
+});
+
+test('FALSIFICACIÓN · un mode que no es ni file ni lines se rechaza por nombre', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const malo = registro();
+  malo.batches[0].archived = [{ ...archivado('vieja'), mode: 'a medias' }];
+  const violaciones = validateAblation(malo, contrato, io);
+  assert.equal(violaciones.some((v) => /mode debe ser/u.test(v)), true);
+  // Y `file` explícito es válido: es el modo por defecto dicho en voz alta.
+  const explicito = registro();
+  explicito.batches[0].archived = [{ ...archivado('vieja'), mode: 'file' }];
+  assert.deepEqual(validateAblation(explicito, contrato, io), []);
+});

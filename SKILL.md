@@ -1412,6 +1412,11 @@ ruta, y la vuelta atrás es un solo comando. Si en algún momento parece que la 
 borrar, se para y se pregunta. Los patrones intocables viven en `contracts/ablation-scope.json` —
 entre ellos los `.mq5`, que no están en git y cuya pérdida sería irreversible.
 
+**Un archivo sale entero o sale por líneas.** `CLAUDE.md` es el caso típico del segundo: la parte
+de datos que el modelo no puede adivinar —tus rutas, tu tono, tus reglas— se queda, y la que le dice
+cómo razonar se va. Eso se declara con `mode: "lines"` y el rango, y ahí el archivo **sigue en su
+lugar**, recortado. Sin ese modo, el gate exige que el origen haya desaparecido.
+
 **El comando de vuelta atrás no puede borrar.** Si contiene `rm`, `del`, `Remove-Item` o
 `git clean`, el gate lo rechaza: la vuelta atrás mueve de vuelta, nunca elimina. Y el destino
 conserva la ruta de origen, porque el rollback mueve el árbol entero y un archivo aplanado no vuelve

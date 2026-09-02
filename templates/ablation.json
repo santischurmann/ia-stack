@@ -51,6 +51,17 @@
           "repartible": false,
           "verdict": "ARCHIVAR",
           "reason": "por qué no aprueba ninguna de las tres R. Alcanza que una diga sí para que se quede."
+        },
+        {
+          "path": "~/.claude/CLAUDE.md",
+          "archived_to": ".claude-archive/AAAA-MM-DD/.claude/CLAUDE.md",
+          "mode": "lines",
+          "lines": "12-31",
+          "repetible": false,
+          "requisito": false,
+          "repartible": false,
+          "verdict": "REESCRIBIR",
+          "reason": "sale por lineas: la parte de datos que el modelo no puede adivinar se queda, la de estilo de razonamiento se va. El archivo sigue en su lugar, recortado."
         }
       ],
       "measured": [

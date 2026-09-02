@@ -65,6 +65,14 @@ const RECORD_KEYS = ['schema', 'run_id', 'archive_dir', 'rollback_command', 'rol
 /** PHASE 9 promete respaldar ANTES de limpiar. Sin esto era una promesa que ningun campo sostenia. */
 const BACKUP_KEYS = ['graphify', 'obsidian'];
 const ARCHIVED_KEYS = ['path', 'archived_to', ...R, 'verdict', 'reason'];
+/**
+ * Un archivo se saca entero o se saca por lineas. El contrato dice que CLAUDE.md se archiva "por
+ * lineas, no entero" -- la parte de datos se queda y la de estilo de razonamiento se va --, y el
+ * gate exigia que el origen desapareciera: la operacion que la fase prescribe para el archivo mas
+ * importante salia roja. Con `mode: lines` el origen SIGUE existiendo, que es justamente el punto.
+ */
+const LINES_KEYS = [...ARCHIVED_KEYS, 'mode', 'lines'];
+export const MODES = new Set(['file', 'lines']);
 const MIN_REASON = 20;
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -232,9 +240,17 @@ function checkMeasurement(rows, ids, donde, violations) {
 
 function checkArchived(entry, batchNo, record, scope, io, violations) {
   const donde = `tanda ${batchNo}`;
-  if (!exactKeys(entry, ARCHIVED_KEYS)) {
-    violations.push(`${donde}: un archivado debe declarar exactamente ${ARCHIVED_KEYS.join(', ')}`);
+  const porLineas = isObject(entry) && entry.mode === 'lines';
+  if (!exactKeys(entry, porLineas ? LINES_KEYS : ARCHIVED_KEYS) && !exactKeys(entry, [...ARCHIVED_KEYS, 'mode'])) {
+    violations.push(`${donde}: un archivado debe declarar exactamente ${ARCHIVED_KEYS.join(', ')}, y si sale por líneas también mode y lines`);
     return;
+  }
+  if (entry.mode !== undefined && !MODES.has(entry.mode)) {
+    violations.push(`${donde}: mode debe ser ${[...MODES].join(' o ')}, no ${JSON.stringify(entry.mode)}`);
+    return;
+  }
+  if (porLineas && (typeof entry.lines !== 'string' || entry.lines.trim() === '')) {
+    violations.push(`${donde}: ${entry.path} sale por líneas y no dice cuáles: sin el rango, nadie puede devolverlas`);
   }
   const dentro = (scope.inScope ?? []).some((s) => {
     const ruta = normalizePath(entry.path);
@@ -255,8 +271,10 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   if (R.some((r) => typeof entry[r] !== 'boolean')) {
     violations.push(`${donde}: ${entry.path} no responde las tres R con sí o no`);
   }
-  if (entry.verdict !== 'ARCHIVAR') {
-    violations.push(`${donde}: ${entry.path} lleva veredicto ${JSON.stringify(entry.verdict)} y sólo se archiva lo que dice ARCHIVAR`);
+  // Sacar lineas de un archivo que se queda es REESCRIBIR; sacar el archivo entero es ARCHIVAR.
+  const esperado = porLineas ? new Set(['ARCHIVAR', 'REESCRIBIR']) : new Set(['ARCHIVAR']);
+  if (!esperado.has(entry.verdict)) {
+    violations.push(`${donde}: ${entry.path} lleva veredicto ${JSON.stringify(entry.verdict)} y acá sólo vale ${[...esperado].join(' o ')}`);
   }
   if (!longEnough(entry.reason)) {
     violations.push(`${donde}: ${entry.path} se archiva sin un motivo escrito: archivar sin razón es borrar con otro nombre`);
@@ -274,7 +292,9 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   if (!io.exists(entry.archived_to)) {
     violations.push(`${donde}: ${entry.path} no está en el archivo (${entry.archived_to}): eso no es un archivado, es un borrado`);
   }
-  if (io.exists(entry.path)) {
+  // Un archivado por lineas deja el origen: el archivo se queda, recortado. Exigir que desaparezca
+  // era pedir lo contrario de lo que el contrato prescribe para CLAUDE.md.
+  if (!porLineas && io.exists(entry.path)) {
     violations.push(`${donde}: ${entry.path} sigue en su lugar, así que no se movió nada y el registro dice lo contrario`);
   }
 }
