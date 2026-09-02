@@ -29,6 +29,9 @@ export const LIMITS = 'LÍMITE';
 export const LIMITS_TEXT = `${LIMITS}: verifica las plantillas de menú que el protocolo prescribe en sus documentos. NO verifica el mensaje que el agente escribió en la conversación, ni cómo lo pintó la terminal, ni que la persona lo haya visto. Nada verifica eso de forma portable.`;
 
 const HEADING = /^🔵 \*\*/u;
+// El mismo emoji al principio de linea pero SIN negrita: es el formato viejo, y no reconocerlo
+// hacia que esos menus no existieran para el gate. Encontrado sobre el SKILL.md real.
+const LOOSE_HEADING = /^🔵 /u;
 // La letra va adentro del item: `- **A)** texto`. Una lista ordenada nativa borraria el token.
 const OPTION = /^\s*[-*] \*\*[A-Z]\)\*\*\s/u;
 // La forma que colapsa: la letra al principio de linea, sin item de lista.
@@ -85,7 +88,15 @@ export function parseMenus(source) {
   const { rows } = scan(source);
   const menus = [];
   for (const [index, row] of rows.entries()) {
-    if (row.delimiter || !HEADING.test(row.text)) continue;
+    if (row.delimiter) continue;
+    // Un `🔵` al principio de línea SIN negrita es el formato viejo, y el gate ni siquiera lo veía
+    // como menú: encontrado sobre el SKILL.md real, dos menús de PHASE 1 escritos así. Se registra
+    // igual, para acusarlo por nombre en vez de dejarlo pasar por no reconocerlo.
+    if (LOOSE_HEADING.test(row.text) && !HEADING.test(row.text)) {
+      menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: null, loose: true });
+      continue;
+    }
+    if (!HEADING.test(row.text)) continue;
     if (row.fence || row.comment) {
       // No se descarta: un menu escondido es el verde mas peligroso, porque el gate contaba menos
       // menus y decia OK. Se registra con su motivo para que el bloque se acuse por nombre.
@@ -116,6 +127,10 @@ export function validateMenus(source) {
   }
   for (const menu of parseMenus(source)) {
     const donde = `línea ${menu.line} (${menu.title.slice(0, 48)})`;
+    if (menu.loose === true) {
+      violations.push(`${donde}: el título del menú no está en negrita (\`🔵 **título**\`), así que el barrido no lo reconoce como menú y todo lo que sigue queda sin verificar`);
+      continue;
+    }
     if (menu.hidden !== null) {
       violations.push(`${donde}: el menú está adentro de ${menu.hidden}, así que no se le muestra a nadie`);
       continue;

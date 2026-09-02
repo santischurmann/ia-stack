@@ -311,3 +311,11 @@ test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido'
   }
   assert.deepEqual({ desajustes, hayMenus: total > 0 }, { desajustes: [], hayMenus: true });
 });
+
+test('FALSIFICACIÓN · un menú con el 🔵 sin negrita no se escapa del barrido', () => {
+  // Punto ciego encontrado sobre el SKILL.md real: dos menús de PHASE 1 estaban escritos en el
+  // formato viejo con `🔵 SESSION.md ...` sin negrita, y el gate no los veía siquiera como menús.
+  const viejo = ['🔵 SESSION.md pertenece a otra funcionalidad', 'A) archivar', 'B) seguir', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(viejo));
+  assert.deepEqual({ code, acusa: /negrita|título/iu.test(errores) }, { code: 1, acusa: true });
+});

@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El protocolo se lee sin saber jerga.** Las nueve fases estaban escritas mitad en inglés técnico:
+  **165 de 998 líneas de prosa (17%) no tenían una sola palabra en castellano**. Quedó **una**, que
+  es una cita textual y se conserva a propósito. Se tradujeron PHASE 1, 3, 5, 6, 7 y 8, el contrato
+  de orquestación, las leyes, la rúbrica 4R y la tabla de memoria. Los nombres técnicos, comandos,
+  rutas y los identificadores de papel —Test-Engineer, Builder, Triangulator, Refactor-Engineer—
+  siguen en inglés: son nombres, no prosa.
+- **Dos defectos encontrados al traducir, que no se veían leyendo el texto en inglés:**
+  - Un **párrafo duplicado** en PHASE 1: la misma explicación del gate de identidad escrita dos
+    veces, una en línea larga y otra partida en tres.
+  - **Dos menús de PHASE 1 en el formato viejo** —dentro de un bloque de código y con el `🔵` sin
+    negrita—. El gate de menús **no los veía siquiera como menús**, así que no los contaba ni los
+    acusaba: el verde más peligroso, porque un menú que desaparece del barrido no aparece en ningún
+    conteo. Convertidos a la forma canónica.
+- **Punto ciego del gate cerrado:** un `🔵` al principio de línea sin negrita ahora se registra y se
+  acusa por nombre, en vez de quedar invisible. Con su falsificación.
+
 - **La regla de oro dejó de ser una frase del encabezado.** `rollback_command` era texto libre: un
   comando de vuelta atrás que decía `rm -rf ~/.claude/skills` **pasaba en verde**, en el gate cuyo
   propio encabezado dice «acá no existe rm». Ahora se rechaza `rm`, `rmdir`, `del`, `erase`,
