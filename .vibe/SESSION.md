@@ -477,3 +477,41 @@ raíz es que Graphify sella el HEAD del momento de ejecución, no el contenido q
   diagnósticos reales para una feature concreta y registrar decisiones contra su plan canónico.
 - **No verificado:** la semántica de los diagnósticos, el consentimiento humano y cualquier fuente
   externa siguen requiriendo revisión; no se presentan como cobertura automática.
+
+## Sesión 2026-09-01 — Bloque B cerrado: las seis fases del encargo
+
+**Publicado:** `f376bed`, `a492b3d`, `97f209a`, `60ca3ad`, `71fa107`, `9481cdc`, `f23c832` y
+`c810397`, todos en `origin/main`. Más `aebcc26`, de otra sesión.
+
+- **Bloque A · DONE** (`f376bed`): suite determinista, clon verde en Windows, gate de cobertura
+  portado, NUL crudos, verificadores de research que rechazan en vez de reventar, denominador
+  declarado y base de seguridad real.
+- **Las seis fases · DONE.** Intake (`a492b3d`), CAIO a 12 dimensiones y 4 clases (`60ca3ad`),
+  mapa de bucle a 13 campos con delta verificable (`71fa107`), PRD a 21 secciones con criterios de
+  7 campos (`9481cdc`), TRIANGULATE como fase con expediente (`f23c832`), adopción y recurrencia
+  con dos responsables y criterio de retiro (`c810397`).
+- **No se duplicó trabajo.** `aebcc26` llegó de otra sesión con cuatro de los seis artefactos ya
+  gateados. Se midió la brecha contra el encargo y se **extendió** ese gate en vez de construir uno
+  paralelo; sus dos aserciones tocadas se actualizaron conservando el caso que cubrían.
+
+## Retomar acá
+
+- **Falta el Bloque C (research):** repinear los 14 commits de `contracts/research-citations.json`,
+  decidir con 🔵 qué hacer con las 8 fuentes del encargo que no están en el corpus, y convertir las
+  señales lexicales en candidatos con contraejemplo, costo, riesgo y test necesario.
+- **Dos pendientes declarados en `docs/triangulate/triangulate-como-fase.json`:** `symlinks` y
+  `paths-externos`. El gate abre la ruta que le pasan sin comprobar que no escape del proyecto.
+  Falta decidir si eso es responsabilidad suya o de quien lo invoca.
+- **Patrón que funcionó, tres veces seguidas:** esqueleto permisivo → RED conductual → BUILD →
+  dejar que `verify-vcp-coverage.mjs` nombre las ramas sin ejercitar → cerrarlas → 10 corridas.
+  Y antes de seguir tras reescribir un bloque, comparar la lista de funciones contra `HEAD`.
+
+## No verificado (cierre del Bloque B)
+
+- **F16, preexistente y abierto:** `verify-evidence-trace claims --require-links` sigue en rojo por
+  4 claims sin vínculo de `d003`. Confirmado idéntico contra un clon de `af55a45`.
+- **Ningún artefacto de producto real existe todavía**: las seis plantillas validan, pero el único
+  expediente escrito de verdad es el de TRIANGULATE sobre su propio gate. El riesgo de que 21
+  secciones o 26 vectores inviten al relleno está declarado y **no medido**.
+- **LESSONS.md sigue sin tocarse**: el protocolo exige confirmación humana explícita.
+- Nada se probó en Linux ni macOS.

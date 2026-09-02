@@ -88,3 +88,33 @@ trabajo mide la máquina del autor, no el proyecto. Los tres defectos que más c
 **Open:** el resto de `research/` sigue sin prueba (declarado en `contracts/coverage-scope.json`).
 Y las 6 fases nuevas del protocolo —Intake, CAIO, Mapa de Bucle, PRD, TRIANGULATE, Adopción— siguen
 existiendo sólo como prosa en `SKILL.md:226-235`, que era el objetivo central del encargo.
+
+---
+
+## [2026-09-01] bloque-b-las-seis-fases
+
+**Shipped:** las seis capacidades que el encargo pedía y que existían sólo como cinco bullets de
+prosa en `SKILL.md:226-235` ahora tienen artefacto, contrato, gate y prueba: Intake, CAIO, mapa de
+bucle, PRD, TRIANGULATE y adopción/recurrencia.
+
+**Plan vs actual:** el plan preveía seis ciclos propios. Salieron cinco míos más uno que ya había
+hecho otra sesión: `aebcc26` apareció a mitad de camino con cuatro artefactos gateados. Medir la
+brecha contra el encargo antes de escribir una línea evitó construir un gate paralelo.
+
+**Friction:**
+- Los gates que construí me frenaron a mí cinco veces: la guardia de alcance de cobertura, el gate
+  de conflictos de plan, el de contrato —dos veces, una por una frase partida en dos líneas— y la
+  cobertura, que nombró 26 ramas de rechazo sin ejercitar repartidas en cuatro tandas.
+- Una reescritura se llevó cuatro helpers del PRD por delante sin que yo lo notara.
+
+**Keep:** dejar que la cobertura enumere las ramas en vez de buscarlas leyendo. Las 26 que encontró
+eran todas caminos de rechazo, que son justo los que nadie prueba y de los que no se sabe si
+rechazan.
+
+**Change:** comparar la lista de funciones contra `HEAD` **después de cada reescritura de bloque**,
+no después del susto. Lo incorporé recién en la tercera tanda.
+
+**Open:** el Bloque C de research sin empezar. Dos pendientes declarados en el expediente de
+TRIANGULATE (`symlinks`, `paths-externos`). Y ningún artefacto de producto real escrito todavía:
+las plantillas validan, pero nadie llenó un PRD de 21 secciones en serio, así que el riesgo de
+relleno está declarado y no medido.
