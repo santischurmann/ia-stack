@@ -676,7 +676,9 @@ test('F14 · FALSIFICACIÓN · una limpieza sin ninguna tanda no certifica nada'
     { path: '~/.claude/skills/vieja.md', why: 'aprueba requisito: trae las rutas propias del proyecto' },
     { path: '~/.claude/skills/util.md', why: 'trae las rutas y el tono propios, que el modelo no puede adivinar' },
   ] });
-  assert.equal(validateAblation(vacia, contrato, io).some((v) => /tanda|nada que/iu.test(v)), true);
+  // El fixture trae `rollback_tested.done: true`, que es justamente lo que una corrida sin tandas
+  // no puede afirmar: no se movió nada, así que no hubo qué restaurar.
+  assert.equal(validateAblation(vacia, contrato, io).some((v) => /no archivó nada|vuelta atrás/iu.test(v)), true);
 });
 
 test('FALSIFICACIÓN · un contrato sin alcance, con una entrada rota, o sin la regla de oro, se rechaza', () => {
@@ -945,4 +947,46 @@ test('FALSIFICACIÓN · un mode que no es ni file ni lines se rechaza por nombre
   const explicito = registro();
   explicito.batches[0].archived = [{ ...archivado('vieja'), mode: 'file' }];
   assert.deepEqual(validateAblation(explicito, contrato, io), []);
+});
+
+test('RA-04 · una limpieza donde no hubo nada que archivar se puede registrar y cerrar', () => {
+  // Sin esto la fase era incorrible en el caso más común de la segunda semana: se mira todo, todo
+  // aprueba alguna R, no se archiva nada — y no había forma de dejarlo registrado, así que `due`
+  // iba a decir «toca limpiar» para siempre.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const nada = registro({
+    batches: [],
+    rollback_tested: { done: false, evidence: 'no se archivó ningún archivo en esta corrida, así que no hay nada que restaurar' },
+    survivors: [
+      { path: '~/.claude/skills/vieja.md', why: 'aprueba requisito: trae las rutas propias que el modelo no puede adivinar' },
+      { path: '~/.claude/skills/util.md', why: 'trae las rutas y el tono propios, que el modelo no puede adivinar' },
+    ],
+    totals: { words_before: 1000, words_after: 1000, files_before: 2, files_after: 2 },
+  });
+  assert.deepEqual(validateAblation(nada, contrato, io), []);
+});
+
+test('RA-04 · FALSIFICACIÓN · una limpieza sin tandas que igual dice haber probado la vuelta atrás se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const miente = registro({
+    batches: [],
+    survivors: [
+      { path: '~/.claude/skills/vieja.md', why: 'aprueba requisito: trae las rutas propias que el modelo no puede adivinar' },
+      { path: '~/.claude/skills/util.md', why: 'trae las rutas y el tono propios, que el modelo no puede adivinar' },
+    ],
+    totals: { words_before: 1000, words_after: 1000, files_before: 2, files_after: 2 },
+  });
+  const violaciones = validateAblation(miente, contrato, io);
+  assert.equal(violaciones.some((v) => /no archivó nada|vuelta atrás/iu.test(v)), true);
+});
+
+test('FALSIFICACIÓN · una limpieza que SÍ archivó y no probó la vuelta atrás no cierra, por más explicación que traiga', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const excusa = registro({
+    rollback_tested: { done: false, evidence: 'no llegué a probar la restauración porque se hizo tarde y quedó para mañana' },
+  });
+  assert.equal(validateAblation(excusa, contrato, io).some((v) => /vuelta atrás/iu.test(v)), true);
 });

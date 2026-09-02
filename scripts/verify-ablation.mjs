@@ -370,7 +370,16 @@ export function validateAblation(record, scope, io) {
       destinos.add(destino);
     }
   }
-  if (!isObject(record.rollback_tested) || record.rollback_tested.done !== true || !longEnough(record.rollback_tested.evidence)) {
+  // Una corrida sin ninguna tanda es el caso mas comun de la segunda semana: se mira todo, todo
+  // aprueba alguna R, y no se archiva nada. Ahi no hay vuelta atras que probar -- no se movio nada --
+  // y exigirla hacia que esa corrida no se pudiera registrar, con lo cual `due` iba a decir que
+  // toca limpiar para siempre. Lo que si se exige es que lo diga: done en false con el motivo.
+  const sinTandas = Array.isArray(record.batches) && record.batches.length === 0;
+  if (!isObject(record.rollback_tested) || !longEnough(record.rollback_tested.evidence)) {
+    violations.push('la vuelta atrás no se probó: restaurar, verificar y volver a limpiar es uno de los cuatro criterios de término');
+  } else if (sinTandas && record.rollback_tested.done !== false) {
+    violations.push('la limpieza no archivó nada y aun así declara haber probado la vuelta atrás: no se movió nada, así que no había qué restaurar');
+  } else if (!sinTandas && record.rollback_tested.done !== true) {
     violations.push('la vuelta atrás no se probó: restaurar, verificar y volver a limpiar es uno de los cuatro criterios de término');
   }
   if (!longEnough(record.rollback_command)) {
@@ -414,11 +423,7 @@ export function validateAblation(record, scope, io) {
       violations.push(`los totales dicen que la limpieza agrandó la configuración (${wb}→${wa} palabras, ${fb}→${fa} archivos): eso no es una limpieza`);
     }
   }
-  // Una corrida sin ninguna tanda es legitima -- puede que nada haya que archivarse -- pero
-  // entonces no puede certificar una vuelta atras que nunca hizo falta probar.
-  if (Array.isArray(record.batches) && record.batches.length === 0) {
-    violations.push('la limpieza no archivó nada: si no había nada que archivar, decilo en el registro y no lo cierres como una ablación medida');
-  }
+
   return violations;
 }
 
