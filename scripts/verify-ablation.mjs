@@ -47,7 +47,46 @@ const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 const exactKeys = (v, keys) => isObject(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
 const longEnough = (v) => typeof v === 'string' && v.trim().length >= MIN_REASON;
 const stripBom = (t) => (typeof t === 'string' && t.charCodeAt(0) === 0xFEFF ? t.slice(1) : t);
-const slashes = (p) => String(p).replaceAll('\\', '/');
+const slashes = (p) => String(p).replaceAll(String.fromCharCode(92), '/');
+
+/**
+ * Una ruta a su forma comparable. Medido: sin esto, la lista de intocables se esquivaba de cuatro
+ * formas distintas -- `./src/x`, la carpeta a secas `.git`, una ruta absoluta `C:/repo/.git/x`, y
+ * `sub/../.git/x` --, y cada una archivaba en verde algo que el contrato declara intocable.
+ */
+export function normalizePath(path) {
+  const bruto = slashes(path).trim().replace(/^[a-zA-Z]:/u, '');
+  const partes = [];
+  for (const segmento of bruto.split('/')) {
+    if (segmento === '' || segmento === '.') continue;
+    if (segmento === '..') {
+      partes.pop();
+      continue;
+    }
+    partes.push(segmento);
+  }
+  if (partes[0] === '~') partes.shift();
+  return partes.join('/');
+}
+
+/**
+ * La ruta y cada uno de sus sufijos. Un patron relativo como `.git/**` tiene que proteger tambien
+ * a `C:/lo/que/sea/.git/config`: protege de mas y nunca de menos, que es la direccion segura
+ * cuando lo que esta en juego es mover un archivo que no esta en git.
+ */
+export function pathCandidates(path) {
+  const normal = normalizePath(path);
+  const segmentos = normal.split('/').filter(Boolean);
+  const salida = [normal];
+  for (let i = 1; i < segmentos.length; i += 1) salida.push(segmentos.slice(i).join('/'));
+  return salida;
+}
+
+/** Un intocable golpea si CUALQUIER forma de la ruta matchea CUALQUIERA de sus expresiones. */
+export function hits(entry, path) {
+  const formas = pathCandidates(path);
+  return entry.res.some((re) => formas.some((forma) => re.test(forma)));
+}
 
 /** Un glob de los que usa el contrato -- `**\/*.mq5`, `.git/**`, `src/**` -- a expresion regular. */
 export function globToRegExp(pattern) {
@@ -91,7 +130,13 @@ export function loadScope(contract) {
       violations.push(`el contrato de alcance: untouchable[${index}] necesita un patrón y un motivo escrito`);
       continue;
     }
-    untouchable.push({ pattern: entry.pattern, why: entry.why, re: globToRegExp(entry.pattern) });
+    // Sin `i`, `**/*.mq5` no matchea `EA.MQ5` -- y en Windows son el MISMO archivo, medido.
+    const desnudo = entry.pattern.replace(/^~\//u, '');
+    const res = [new RegExp(globToRegExp(desnudo).source, 'iu')];
+    // `.git/**` tiene que proteger tambien a `.git`: archivar la carpeta entera es la unica forma
+    // de perder el backup que esta limpieza promete.
+    if (desnudo.endsWith('/**')) res.push(new RegExp(globToRegExp(desnudo.slice(0, -3)).source, 'iu'));
+    untouchable.push({ pattern: entry.pattern, why: entry.why, res });
   }
   const set = isObject(contract.test_set) ? contract.test_set : {};
   const batch = isObject(contract.batch) ? contract.batch : {};
@@ -148,8 +193,7 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
     violations.push(`${donde}: un archivado debe declarar exactamente ${ARCHIVED_KEYS.join(', ')}`);
     return;
   }
-  const ruta = slashes(entry.path);
-  const golpe = scope.untouchable.find((u) => u.re.test(ruta) || u.re.test(ruta.replace(/^~\//u, '')));
+  const golpe = scope.untouchable.find((u) => hits(u, entry.path));
   if (golpe) {
     violations.push(`${donde}: ${entry.path} está protegido por el patrón intocable \`${golpe.pattern}\` — ${golpe.why}`);
     return;
@@ -167,8 +211,10 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   if (!longEnough(entry.reason)) {
     violations.push(`${donde}: ${entry.path} se archiva sin un motivo escrito: archivar sin razón es borrar con otro nombre`);
   }
-  if (!slashes(entry.archived_to).startsWith(slashes(record.archive_dir))) {
-    violations.push(`${donde}: ${entry.path} se guardó fuera de ${record.archive_dir}, así que el comando de vuelta atrás no lo alcanza`);
+  const destino = normalizePath(entry.archived_to);
+  const carpeta = normalizePath(record.archive_dir);
+  if (carpeta === '' || !destino.startsWith(`${carpeta}/`)) {
+    violations.push(`${donde}: ${entry.path} se guardó fuera de ${JSON.stringify(record.archive_dir)}, así que el comando de vuelta atrás no lo alcanza`);
   }
   // La regla de oro contra el disco: tiene que estar en el archivo y NO en su lugar original.
   if (!io.exists(entry.archived_to)) {
@@ -208,8 +254,11 @@ export function validateAblation(record, scope, io) {
     if (!COMPARISONS.has(batch.comparison)) {
       violations.push(`${donde}: comparison debe ser una de ${[...COMPARISONS].join(', ')}`);
     }
-    if (batch.comparison === 'peor' && batch.restored.length === 0) {
-      violations.push(`${donde}: salió peor que la línea base y no devolvió nada. Una regresión se arregla devolviendo las líneas mínimas, no dejándola pasar`);
+    // `comparison` es la comparación FINAL, después de devolver lo que haga falta. PHASE 9 declara
+    // como criterio de cierre que el set salga igual o mejor que la línea base: una tanda que sigue
+    // diciendo "peor" no cerró, haya devuelto líneas o no.
+    if (batch.comparison === 'peor') {
+      violations.push(`${donde}: quedó peor que la línea base. Una regresión se arregla devolviendo las líneas mínimas y midiendo de nuevo hasta que dé igual o mejor, no dejándola anotada`);
     }
     for (const vuelta of batch.restored) {
       if (!exactKeys(vuelta, ['path', 'lines', 'why']) || !longEnough(vuelta.why)) {
@@ -218,6 +267,16 @@ export function validateAblation(record, scope, io) {
     }
   }
 
+  const destinos = new Set();
+  for (const batch of Array.isArray(record.batches) ? record.batches : []) {
+    for (const entry of Array.isArray(batch.archived) ? batch.archived : []) {
+      if (!isObject(entry)) continue;
+      const destino = normalizePath(entry.archived_to);
+      // Dos orígenes con el mismo destino: en disco el segundo mv pisa al primero y se pierde uno.
+      if (destinos.has(destino)) violations.push(`dos archivos distintos se guardaron en ${entry.archived_to}: el segundo pisa al primero y uno se pierde`);
+      destinos.add(destino);
+    }
+  }
   if (!isObject(record.rollback_tested) || record.rollback_tested.done !== true || !longEnough(record.rollback_tested.evidence)) {
     violations.push('la vuelta atrás no se probó: restaurar, verificar y volver a limpiar es uno de los cuatro criterios de término');
   }
@@ -237,7 +296,14 @@ export function validateAblation(record, scope, io) {
     violations.push('no hay inventario: sin la lista de lo que había antes, no se puede decir qué sobrevivió ni cuánto pesaba');
   }
   for (const entry of Array.isArray(record.inventory) ? record.inventory : []) {
-    if (!isObject(entry) || archivados.has(entry.path) || sobrevivientes.has(entry.path)) continue;
+    // Saltear en silencio una entrada que no es objeto desactivaba la contabilidad entera: escribir
+    // el inventario como lista de rutas es lo más natural del mundo y hacía desaparecer el criterio
+    // de cierre que exige una frase por cada sobreviviente.
+    if (!exactKeys(entry, ['path', 'words', 'percent', 'last_modified'])) {
+      violations.push(`el inventario trae una entrada que no declara path, words, percent y last_modified: ${JSON.stringify(entry).slice(0, 60)}`);
+      continue;
+    }
+    if (archivados.has(entry.path) || sobrevivientes.has(entry.path)) continue;
     violations.push(`${entry.path} sobrevivió y no hay una frase que diga por qué: no poder decirlo en una línea es la señal de que nadie lo miró`);
   }
   if (!isObject(record.totals) || !exactKeys(record.totals, ['words_before', 'words_after', 'files_before', 'files_after'])) {

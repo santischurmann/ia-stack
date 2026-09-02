@@ -444,6 +444,12 @@
       "file": "SKILL.md",
       "phrase": "verifica el **registro** de la limpieza, no la limpieza",
       "why": "verify-ablation comprueba que el registro este completo y no se contradiga: que el set tenga entre 6 y 8 tareas acordadas antes de mover nada, que la linea base cubra todas, que cada tanda archive como maximo cinco archivos y vuelva a medir el mismo set, que ningun archivado apruebe una de las tres R ni caiga bajo un patron intocable, que una tanda que empeoro haya devuelto lineas, que la vuelta atras se haya probado, y que cada sobreviviente traiga su frase. Contra el disco comprueba la regla de oro: el archivo tiene que estar en el archivo y ya no en su lugar. Lo que NO hace es correr las pruebas del set, juzgar si son representativas, ni saber si un resultado que dice igual era igual: un registro coherente e inventado pasa en verde. Tampoco decide que merece archivarse; el filtro de las tres R lo aplica una persona."
+    },
+    {
+      "limit_id": "untouchable-overprotects-on-purpose",
+      "file": "SKILL.md",
+      "phrase": "protege de más, nunca de menos",
+      "why": "Un patron intocable se compara contra la ruta normalizada y contra cada uno de sus sufijos, sin distinguir mayusculas. Eso protege de mas: `src/**` alcanza a cualquier `src/` anidado, `tests/**` a cualquier `tests/`. Es deliberado y es la direccion segura -- proteger de mas cuesta una molestia, proteger de menos cuesta un archivo que no esta en git --, pero significa que la lista puede frenar el archivado de algo que en rigor no era el archivo protegido. La contrapartida medida: antes de esto, `EA.MQ5` en mayusculas, `.git` como carpeta a secas, `./src/main.py` con prefijo y `C:/repo/src/x` absoluta esquivaban las cuatro la proteccion y se archivaban en verde."
     }
   ]
 }

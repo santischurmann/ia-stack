@@ -1448,6 +1448,14 @@ Si falta alguna, no se cierra: se dice cuál falta y qué hace falta de tu parte
 
 Esperando tu respuesta antes de continuar.
 
+**La lista de intocables protege de más, nunca de menos.** Un patrón se compara contra la ruta
+normalizada —sin `./`, sin `..`, sin letra de unidad, sin `~/`— y contra **cada uno de sus
+sufijos**, sin distinguir mayúsculas. Eso quiere decir que `src/**` protege también un `src/`
+anidado en cualquier lado, y `**/*.mq5` protege `EA.MQ5`. Es a propósito: cuando lo que está en
+juego es mover un archivo que no está en git, proteger de más cuesta una molestia y proteger de
+menos cuesta el archivo. Medido antes de esto: la extensión en mayúsculas, la carpeta a secas, el
+prefijo `./` y la ruta absoluta esquivaban las cuatro la protección.
+
 **Límite honesto.** El gate verifica el **registro** de la limpieza, no la limpieza: no corre tus
 pruebas, no juzga si son representativas y no sabe si un resultado que dice «igual» era igual. Un
 registro coherente e inventado pasa en verde. Lo que sí comprueba contra el disco es la regla de

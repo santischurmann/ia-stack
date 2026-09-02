@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { EMPTY, LIMITS, SCHEMA, USAGE, globToRegExp, loadScope, main, validateAblation } from '../scripts/verify-ablation.mjs';
+import { EMPTY, LIMITS, SCHEMA, USAGE, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const RUTA = 'docs/ablation.json';
@@ -183,9 +183,13 @@ test('FALSIFICACIÓN · una tanda que empeoró y no restauró nada se rechaza', 
   assert.match(errores, /peor/iu);
 });
 
-test('una tanda que empeoró y devolvió las líneas mínimas pasa', () => {
+test('una tanda que empeoró, devolvió las líneas mínimas y volvió a medir en igual, pasa', () => {
+  // Reemplaza a una prueba anterior que dejaba pasar una tanda con `comparison: "peor"` mientras
+  // hubiera algo en `restored`. La auditoría probó que eso contradice el criterio 1 de cierre de
+  // PHASE 9 —el set sale igual o mejor que la línea base—: `comparison` es la comparación FINAL,
+  // después de devolver lo que haga falta, y una que sigue diciendo «peor» no cerró.
   const bueno = registro();
-  bueno.batches[0].comparison = 'peor';
+  bueno.batches[0].comparison = 'igual';
   bueno.batches[0].restored = [{ path: '~/.claude/skills/vieja.md', lines: '12-14', why: 'esas tres líneas traían las rutas del proyecto y sin ellas la prueba t3 falló' }];
   const { code, errores } = corrida(json(bueno));
   assert.deepEqual({ code, errores }, { code: 0, errores: '' });
@@ -482,4 +486,112 @@ test('si el registro desaparece entre resolver la ruta y leerlo, eso es VACÍO y
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- Los seis defectos que la auditoria adversarial confirmo ejecutando --------------------------
+// Todos son evasiones de la lista de intocables o huecos de contabilidad. Se reproducen aca antes
+// de tocar el gate. El mas grave: la proteccion de los .mq5 -- REGLA DURA, archivos que no estan
+// en git y cuya perdida es irreversible -- se esquivaba escribiendo la extension en mayusculas.
+
+test('A1 · FALSIFICACIÓN · la protección no se esquiva cambiando mayúsculas', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  for (const ruta of ['el proyecto/EA.MQ5', 'el proyecto/EA.Mq5', 'EL PROYECTO/ea.mq5']) {
+    const malo = registro();
+    malo.batches[0].archived = [archivado('x', { path: ruta, archived_to: `${ARCHIVO}/${ruta}` })];
+    const violaciones = validateAblation(malo, contrato, io);
+    assert.deepEqual({ ruta, protegido: violaciones.some((v) => /intocable/u.test(v)) }, { ruta, protegido: true });
+  }
+});
+
+test('A2 · FALSIFICACIÓN · la protección no se esquiva con ./ , con la carpeta a secas ni con ruta absoluta', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const rutas = [
+    './.git/config',
+    '.git',
+    'C:/repo/.git/config',
+    'sub/../.git/config',
+  ];
+  for (const ruta of rutas) {
+    const malo = registro();
+    malo.batches[0].archived = [archivado('x', { path: ruta, archived_to: `${ARCHIVO}/x.md` })];
+    const violaciones = validateAblation(malo, contrato, io);
+    assert.deepEqual({ ruta, protegido: violaciones.some((v) => /intocable/u.test(v)) }, { ruta, protegido: true });
+  }
+});
+
+test('A3 · FALSIFICACIÓN · un intocable escrito sin ~/ sigue estando protegido', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const conTilde = JSON.parse(readScope());
+  conTilde.untouchable.push({ pattern: '~/.claude/settings.json', why: 'decide permisos y hooks: ese cambio es de la persona' });
+  const scope = loadScope(conTilde);
+  for (const ruta of ['.claude/settings.json', '~/.claude/./settings.json', '~/.CLAUDE/settings.json']) {
+    const malo = registro();
+    malo.batches[0].archived = [archivado('x', { path: ruta, archived_to: `${ARCHIVO}/settings.json` })];
+    const violaciones = validateAblation(malo, scope, io);
+    assert.deepEqual({ ruta, protegido: violaciones.some((v) => /intocable/u.test(v)) }, { ruta, protegido: true });
+  }
+  assert.equal(io && contrato ? true : true, true);
+});
+
+test('A4 · FALSIFICACIÓN · un inventario escrito como lista de rutas no desactiva la contabilidad', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const malo = registro({ inventory: ['~/.claude/skills/vieja.md', '~/.claude/skills/nadie-lo-miro.md'] });
+  assert.equal(validateAblation(malo, contrato, io).length > 0, true);
+});
+
+test('A5 · FALSIFICACIÓN · el archivo de destino tiene que estar adentro del proyecto y ser único', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') || String(p).includes('fuera') };
+  const vacio = registro({ archive_dir: '' });
+  const afuera = registro({ archive_dir: '../fuera-del-proyecto' });
+  afuera.batches[0].archived = [archivado('x', { archived_to: '../fuera-del-proyecto/robado.md' })];
+  const colision = registro();
+  colision.batches[0].archived = [
+    archivado('uno', { path: 'a/uno.md', archived_to: `${ARCHIVO}/dump` }),
+    archivado('dos', { path: 'b/dos.md', archived_to: `${ARCHIVO}/dump` }),
+  ];
+  colision.inventory = [
+    { path: 'a/uno.md', words: 1, percent: 50, last_modified: '2026-01-01' },
+    { path: 'b/dos.md', words: 1, percent: 50, last_modified: '2026-01-01' },
+  ];
+  colision.survivors = [];
+  for (const [nombre, caso] of [['vacio', vacio], ['afuera', afuera], ['colision', colision]]) {
+    assert.deepEqual({ nombre, rechaza: validateAblation(caso, contrato, io).length > 0 }, { nombre, rechaza: true });
+  }
+});
+
+test('A6 · FALSIFICACIÓN · una tanda que quedó peor que la línea base no cierra, aunque haya devuelto líneas', () => {
+  // PHASE 9, criterio 1: el set sale igual o mejor que la línea base. `comparison` es la
+  // comparación FINAL, después de devolver lo que haga falta: si sigue diciendo peor, no cerró.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const malo = registro();
+  malo.batches[0].comparison = 'peor';
+  malo.batches[0].restored = [{ path: '~/.claude/skills/vieja.md', lines: '12-14', why: 'esas tres líneas traían las rutas del proyecto y sin ellas la prueba t3 falló' }];
+  assert.equal(validateAblation(malo, contrato, io).length > 0, true);
+});
+
+test('FALSIFICACIÓN · una tanda que trae basura en vez de archivados se rechaza, no se saltea', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const malo = registro();
+  malo.batches[0].archived = ['~/.claude/skills/vieja.md', null];
+  assert.equal(validateAblation(malo, contrato, io).length > 0, true);
+});
+
+test('normalizePath y pathCandidates hacen lo que dicen, caso por caso', () => {
+  const casos = [
+    ['./src/main.py', 'src/main.py'],
+    ['C:/repo/.git/config', 'repo/.git/config'],
+    ['sub/../.git/config', '.git/config'],
+    ['~/.claude/./settings.json', '.claude/settings.json'],
+    ['a\\b\\c.md', 'a/b/c.md'],
+    ['', ''],
+  ];
+  assert.deepEqual(casos.map(([entrada]) => normalizePath(entrada)), casos.map(([, salida]) => salida));
+  assert.deepEqual(pathCandidates('a/b/c.md'), ['a/b/c.md', 'b/c.md', 'c.md']);
 });

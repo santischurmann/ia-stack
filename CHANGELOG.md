@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La protección de los archivos intocables era evadible de cuatro formas, y la encontró una
+  auditoría adversarial contra el gate publicado media hora antes.** Seis defectos confirmados
+  ejecutando, todos arreglados acá con su falsificación escrita primero:
+  - **Mayúsculas.** `**/*.mq5` no matcheaba `EA.MQ5` porque la expresión se compilaba sin el flag
+    de insensibilidad. En Windows el filesystem no distingue caja: `EA.MQ5` y `EA.mq5` son **el
+    mismo archivo real**, el que la regla dura prohíbe mover y que no está en git. El mismo agujero
+    alcanzaba a `.EX5`, `.ENV`, `.KEY`, `.PEM` y `.GIT/`.
+  - **La carpeta a secas.** `.git/**` exigía algo después de la barra, así que un registro que
+    archivaba `.git` **entero** —"el único backup real que existe", según el propio contrato— pasaba
+    en verde. Con él se iba el camino de vuelta que la limpieza promete. Idem `_audit_scratch`.
+  - **El prefijo `./` y la ruta absoluta.** `./src/main.py` y `C:/repo/.git/config` pasaban libres.
+  - **La grafía sin `~/`.** `.claude/settings.json` esquivaba el patrón **y** redirigía la única
+    comprobación contra disco a un archivo distinto del que se movió.
+  - **El inventario como lista de rutas.** Una entrada que no fuera objeto se salteaba en silencio,
+    y con eso desaparecía el criterio de cierre que exige una frase por cada sobreviviente.
+  - **El destino sin validar.** `archive_dir` vacío o `../fuera-del-proyecto` pasaban, y dos
+    orígenes distintos podían declarar el mismo destino: en disco el segundo pisa al primero.
+- **Contradicción cerrada:** una tanda con `comparison: "peor"` cerraba si había algo en `restored`,
+  contra el criterio 1 de PHASE 9 —el set sale igual o mejor que la línea base—. `comparison` es
+  ahora la comparación **final**, después de devolver lo que haga falta: si sigue diciendo «peor»,
+  no cerró. La prueba que fijaba la conducta vieja fue reemplazada, no borrada en silencio.
+- **Límite honesto nuevo (75):** la lista de intocables **protege de más, nunca de menos** — el
+  patrón se compara contra cada sufijo de la ruta. Es deliberado: proteger de más cuesta una
+  molestia, proteger de menos cuesta un archivo que no está en git.
+
 - **VCP deja de ser invisible para Codex en todo proyecto, no sólo en su propio repo.** Verificado
   ejecutando: Codex descubre skills de repositorio **sólo** en `.agents/skills/<nombre>/SKILL.md` y
   `.codex/skills/`, y sus instrucciones sólo en `AGENTS.md`; el `SKILL.md` de la raíz y los doce
