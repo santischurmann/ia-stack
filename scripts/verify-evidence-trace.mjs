@@ -23,7 +23,7 @@ import { join, resolve } from 'node:path';
 import { readDiscoveryHistory } from './verify-discovery-core.mjs';
 import { hasLiteralTestDeclaration } from './verify-test-bindings.mjs';
 
-export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> [--require-inputs] | verify-evidence-trace.mjs claims --feature <feature-slug> [--require-inputs] [--require-links]';
+export const USAGE = 'usage: verify-evidence-trace.mjs criteria --spec <spec-file> --tests <tests-dir> [--require-inputs] | verify-evidence-trace.mjs claims --feature <feature-slug> [--spec <spec-file>] [--require-inputs] [--require-links]';
 export const NO_INPUTS_CODE = 'EVIDENCE_TRACE_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
@@ -115,13 +115,13 @@ export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) 
   return { ok: true, message: `${criteria.length} criterio(s) de ${specPath} nombrados por al menos una prueba de ${testsDir}.` };
 }
 
-export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHistory = readDiscoveryHistory, { requireLinks = false } = {}) {
+export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHistory = readDiscoveryHistory, { requireLinks = false, spec = SPEC_PATH } = {}) {
   if (!io.exists(resolve(projectRoot, 'docs', 'discovery', featureSlug))) {
     return { ok: true, vacuous: true, message: `${featureSlug} no tiene Discovery en docs/discovery/: no hay claims que verificar.` };
   }
-  const specFile = resolve(projectRoot, SPEC_PATH);
+  const specFile = resolve(projectRoot, spec);
   if (!io.exists(specFile)) {
-    return { ok: true, vacuous: true, message: `sin ${SPEC_PATH}: no hay identificadores declarados contra los cuales resolver los vínculos de ${featureSlug}.` };
+    return { ok: true, vacuous: true, message: `sin ${spec}: no hay identificadores declarados contra los cuales resolver los vínculos de ${featureSlug}.` };
   }
   let history;
   try {
@@ -160,7 +160,7 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
     return {
       ok: false,
       code: 'EVIDENCE_TRACE_CLAIM_REFERENCE_BROKEN',
-      message: `${broken.length} vínculo(s) de la decisión vigente ${current.decision.decision_id} apuntan a un identificador que ${SPEC_PATH} no declara: ${broken.join('; ')}`,
+      message: `${broken.length} vínculo(s) de la decisión vigente ${current.decision.decision_id} apuntan a un identificador que ${spec} no declara: ${broken.join('; ')}`,
     };
   }
   if (requireLinks && unlinked.length > 0) {
@@ -170,7 +170,7 @@ export function checkClaims(projectRoot, featureSlug, io = DEFAULT_IO, readHisto
       message: `${unlinked.length} claim(s) de la decisión vigente ${current.decision.decision_id} no enlazan ningún linked_requirement_id ni linked_ac_id: ${unlinked.join(', ')}`,
     };
   }
-  return { ok: true, message: `${linked} vínculo(s) de claims de la decisión vigente ${current.decision.decision_id} de ${featureSlug} resuelven contra ${SPEC_PATH}.` };
+  return { ok: true, message: `${linked} vínculo(s) de claims de la decisión vigente ${current.decision.decision_id} de ${featureSlug} resuelven contra ${spec}.` };
 }
 
 export function parseArgs(args) {
@@ -181,8 +181,16 @@ export function parseArgs(args) {
     if (requireLinks) return null;
     return { command: 'criteria', spec: rest[2], tests: rest[4], requireInputs };
   }
-  if (rest.length === 3 && rest[0] === 'claims' && rest[1] === '--feature' && FEATURE_SLUG.test(rest[2])) {
-    return { command: 'claims', feature: rest[2], requireInputs: requireInputs || requireLinks, ...(requireLinks ? { requireLinks: true } : {}) };
+  if (rest[0] === 'claims' && rest[1] === '--feature' && FEATURE_SLUG.test(rest[2])) {
+    // Un packet es inmutable y pertenece a un feature; docs/spec.md rota con el feature activo. Sin
+    // --spec los vínculos se resuelven contra la spec vigente, que para un feature ya cerrado puede
+    // declarar el mismo identificador con otro significado.
+    if (rest.length === 5 && rest[3] === '--spec' && rest[4] !== '') {
+      return { command: 'claims', feature: rest[2], spec: rest[4], requireInputs: requireInputs || requireLinks, ...(requireLinks ? { requireLinks: true } : {}) };
+    }
+    if (rest.length === 3) {
+      return { command: 'claims', feature: rest[2], requireInputs: requireInputs || requireLinks, ...(requireLinks ? { requireLinks: true } : {}) };
+    }
   }
   return null;
 }
@@ -195,7 +203,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   }
   const result = parsed.command === 'criteria'
     ? checks.criteria(cwd, parsed.spec, parsed.tests)
-    : checks.claims(cwd, parsed.feature, DEFAULT_IO, readDiscoveryHistory, { requireLinks: parsed.requireLinks === true });
+    : checks.claims(cwd, parsed.feature, DEFAULT_IO, readDiscoveryHistory, { requireLinks: parsed.requireLinks === true, ...(parsed.spec === undefined ? {} : { spec: parsed.spec }) });
   if (!result.ok) {
     writeError(`REJECTED: ${result.code}: ${result.message}`);
     return 1;

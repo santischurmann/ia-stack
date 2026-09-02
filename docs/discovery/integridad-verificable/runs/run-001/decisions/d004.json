@@ -1,0 +1,24 @@
+{
+  "schema": "vcp.discovery-decision/3",
+  "run_id": "run-001",
+  "feature_slug": "integridad-verificable",
+  "decision_id": "d004",
+  "evaluated_at": "2026-09-01",
+  "status": "completed",
+  "transition_kind": "correction",
+  "supersedes": "d003",
+  "predecessor_hash": "f88c62a574ca27f630a10e22a8da2a6fb302862fc6b49304fcbd9e146c92bbe7",
+  "previous_status": "completed",
+  "activation_result": "required",
+  "triggers_observed": [
+    "ventana-toctou-declarada",
+    "convencion-sin-detector",
+    "deuda-indistinguible-de-hallazgo-nuevo",
+    "limite-honesto-sin-fijar"
+  ],
+  "correction_reason": "Los cuatro claims no enlazaban ningun criterio porque el gate resolvia los vinculos contra docs/spec.md, que rota con el feature activo: un feature cerrado no tenia contra que resolver. verify-evidence-trace claims acepta ahora --spec, y esta correccion enlaza cada claim al slice y al criterio que esa evidencia motivo en la spec propia del feature, archivada en docs/discovery/integridad-verificable/spec.md.",
+  "skip": null,
+  "override": null,
+  "packet_ref": "packets/d004.json",
+  "packet_sha256": "0588f0e68e65ce6daaadbe21d824604b50f6b411d4bbbc59c5743b9e6a4f595d"
+}

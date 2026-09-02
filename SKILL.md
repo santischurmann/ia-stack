@@ -385,6 +385,19 @@ sin vínculo. El gate sigue comprobando que el identificador enlazado exista, pe
 el texto del claim sea semánticamente suficiente: esa parte continúa siendo revisión adversarial
 humana.
 
+Sin `--spec`, los vínculos se resuelven contra `docs/spec.md`, que es la spec del feature activo.
+Eso es correcto mientras el feature esté abierto, y deja de serlo en cuanto `docs/spec.md` rota: un
+packet es inmutable y pertenece a su feature, así que un vínculo correcto se rompe al rotar y —peor—
+un identificador que la spec nueva reutiliza resuelve en verde significando otra cosa. Para releer
+un Discovery ya cerrado hay que decir contra qué spec se resuelve:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --spec docs/discovery/<feature-slug>/spec.md --require-inputs --require-links
+```
+
+El gate comprueba que el identificador exista en la spec indicada; **no comprueba que esa spec sea
+la que le corresponde al packet**: elegir el archivo correcto es responsabilidad de quien lo corre.
+
 `views/*.md` es sólo una vista derivada y reproducible: no admite timestamps, rutas absolutas ni
 datos del entorno, y jamás sustituye los JSON inmutables. Los gates prueban forma, cadena, hashes y
 reproducibilidad; no prueban por sí mismos suficiencia semántica de un claim. La decisión de pasar

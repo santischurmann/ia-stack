@@ -414,6 +414,12 @@
       "file": "README.md",
       "phrase": "no es un sandbox",
       "why": "Los gates que leen una ruta la resuelven con safeProjectFile antes de abrirla: nada fuera del proyecto, ningun symlink, ningun archivo que no sea regular. Eso puede leerse como aislamiento y no lo es. Queda una ventana entre la comprobacion y la lectura -- el archivo puede cambiar en el medio, que es TOCTOU-- y el gate corre con los permisos de quien lo invoca: cualquier proceso con acceso al mismo filesystem hace lo que quiera sin pasar por aca."
+    },
+    {
+      "limit_id": "claim-spec-is-chosen-not-verified",
+      "file": "SKILL.md",
+      "phrase": "no comprueba que esa spec sea",
+      "why": "claims --spec resuelve los vinculos de un packet contra el archivo que se le pasa. El gate comprueba que el identificador enlazado exista ahi, no que ese archivo sea la spec que le corresponde al packet: pasarle la spec equivocada da verde si por casualidad declara los mismos identificadores. Sin --spec resuelve contra docs/spec.md, que rota con el feature activo, asi que para un feature cerrado el verde por defecto no significa nada. Elegir el archivo es responsabilidad de quien corre el gate."
     }
   ]
 }

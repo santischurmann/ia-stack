@@ -527,3 +527,73 @@ test('FALSIFICACIÓN · el CLI real rechaza el verde vacío bajo --require-input
   const verde = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']);
   assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
 }));
+
+// --- claims --spec: contra QUÉ spec resuelven los vínculos ---------------------------------------
+// Un packet es inmutable y pertenece a un feature; docs/spec.md rota con el feature activo.
+// Resolver siempre contra la activa hace que un vínculo correcto se rompa al rotar, y —peor— que
+// un identificador que la activa reutiliza para otra cosa resuelva en verde significando otra cosa.
+
+test('parseArgs acepta claims --spec para resolver contra la spec del propio feature', () => {
+  assert.deepEqual(parseArgs(['claims', '--feature', feature, '--spec', 'docs/archivo/spec.md']), {
+    command: 'claims',
+    feature,
+    spec: 'docs/archivo/spec.md',
+    requireInputs: false,
+  });
+});
+
+test('claims --spec resuelve los vínculos contra la spec indicada, no contra docs/spec.md', () => fixture((root) => {
+  writeSpec(root, SPEC_WITHOUT_CRITERIA);
+  mkdirSync(join(root, 'docs', 'archivo'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'archivo', 'spec.md'), SPEC, 'utf8');
+  writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
+  const result = checkClaims(root, feature, undefined, undefined, { spec: 'docs/archivo/spec.md' });
+  assert.equal(result.ok, true);
+  assert.match(result.message, /docs\/archivo\/spec\.md/u);
+}));
+
+test('FALSIFICACIÓN · el vínculo que la spec activa daba por bueno sale rojo contra la spec que de verdad le corresponde', () => fixture((root) => {
+  writeSpec(root);
+  mkdirSync(join(root, 'docs', 'archivo'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'archivo', 'spec.md'), SPEC_WITHOUT_CRITERIA, 'utf8');
+  writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
+  assert.equal(checkClaims(root, feature).ok, true);
+  const result = checkClaims(root, feature, undefined, undefined, { spec: 'docs/archivo/spec.md' });
+  assert.deepEqual({ ok: result.ok, code: result.code }, {
+    ok: false,
+    code: 'EVIDENCE_TRACE_CLAIM_REFERENCE_BROKEN',
+  });
+}));
+
+test('FALSIFICACIÓN · claims con --spec vacío no resuelve contra nada: es uso inválido, no un verde', () => {
+  assert.equal(parseArgs(['claims', '--feature', feature, '--spec', '']), null);
+  assert.equal(parseArgs(['claims', '--feature', feature, '--spec']), null);
+});
+
+test('main reenvía --spec al chequeo de claims, y sin la bandera no inventa ninguna', () => {
+  const visto = [];
+  const checks = {
+    criteria: () => ({ ok: true, message: 'ok' }),
+    claims: (...args) => {
+      visto.push(args.at(-1));
+      return { ok: true, message: 'ok' };
+    },
+  };
+  const noop = () => {};
+  main(['claims', '--feature', 'demo', '--spec', 'docs/archivo/spec.md'], '.', noop, noop, checks);
+  main(['claims', '--feature', 'demo'], '.', noop, noop, checks);
+  assert.deepEqual(visto, [
+    { requireLinks: false, spec: 'docs/archivo/spec.md' },
+    { requireLinks: false },
+  ]);
+});
+
+test('claims combina --spec con --require-links: el modo estricto también vale para un feature cerrado', () => {
+  assert.deepEqual(parseArgs(['claims', '--feature', feature, '--spec', 'docs/archivo/spec.md', REQUIRE_LINKS_FLAG]), {
+    command: 'claims',
+    feature,
+    spec: 'docs/archivo/spec.md',
+    requireInputs: true,
+    requireLinks: true,
+  });
+});

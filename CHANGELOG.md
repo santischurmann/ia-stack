@@ -7,6 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Un vínculo de claim ya no se resuelve contra la spec equivocada.** `verify-evidence-trace
+  claims` resolvía `linked_requirement_id` y `linked_ac_id` contra `docs/spec.md` fijo. Un packet
+  es inmutable y pertenece a su feature, pero `docs/spec.md` rota con el feature activo: al rotar,
+  un vínculo correcto se rompía y —peor— un identificador que la spec nueva reutilizara resolvía en
+  verde significando otra cosa. El subcomando acepta ahora `--spec <archivo>`, igual que `criteria`,
+  y el mensaje nombra el archivo contra el que resolvió. El defecto quedó fijado por una prueba de
+  falsificación: el mismo vínculo que la spec activa daba por bueno sale rojo contra la spec que de
+  verdad le corresponde.
+- **Los cuatro claims de `integridad-verificable` enlazan el criterio que motivaron.** No se editó
+  el packet sellado: se agregó la decisión `d004` como corrección de `d003` —el mismo patrón que
+  `d003` usó sobre `d002`— y la spec del feature quedó archivada en
+  `docs/discovery/integridad-verificable/spec.md`. `claim-audit-sin-gate` → T01/AC1,
+  `claim-baseline-ausente` → T02/AC5, `claim-toctou` → T03/AC8, `claim-wording-parcial` → T04/AC10:
+  cada claim es la evidencia observada que motivó ese slice. Con `--spec`, el cierre estricto de ese
+  Discovery pasa de rechazo a 8 vínculos resueltos.
+- **Límite honesto nuevo (70):** el gate comprueba que el identificador exista en la spec indicada,
+  **no** que esa spec sea la que le corresponde al packet. Elegir el archivo es de quien lo corre.
+
 - **Los tres gates que leen un expediente ya no abren la ruta a ciegas.** `verify-intake`,
   `verify-triangulate` y `verify-research-candidates` la resuelven con `safeProjectFile` de
   `ratchet.mjs` **antes** de leer: una ruta que escapa del proyecto, un symlink o un archivo que
