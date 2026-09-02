@@ -120,3 +120,51 @@ es verificar en destino; ésta gobierna la fase de diagnóstico, que no instala 
 es clonar antes de concluir. Anotada, no fusionada.
 **Nota de pre-chequeo:** ⚠ coincidencia con `hash` en el barrido de contenido sensible. Es «cadena
 de hashes de git», no un secreto. Marca, no bloqueo.
+
+## [2026-09-01] LESSON-6 Un resumen puede ser coherente consigo mismo y falso — status: active
+
+**Project/phase/run:** vibecodeprotocols/bloque-c/repineado-research-2026-09-01
+**What happened:** al revalidar los 14 commits pineados del research, el resumen dijo
+`IGUAL: 0  DERIVO: 14`. Era falso: el contrato guarda commits de 8 caracteres y yo los comparaba
+contra los 40 del HEAD remoto, así que ninguno podía coincidir nunca. El error se vio sólo porque
+miré las filas: la primera decía `pineado=ad67087c  head=ad67087cad22`, que es el mismo commit.
+Con la comparación por prefijo el resultado real fue 5 iguales y 9 movidas.
+**Why (root cause):** el resumen se calcula a partir de las mismas filas que contiene, así que un
+error en el criterio de comparación se propaga a los dos por igual y quedan de acuerdo. La
+coherencia interna no es evidencia: un contador que cuenta mal cuenta mal en las dos columnas.
+**How to avoid:** antes de publicar un agregado, mirar al menos una fila cruda y comprobarla a
+mano contra lo que el agregado afirma sobre ella. Una sola alcanza para detectar un criterio roto.
+**Detection signal:** un total redondo o extremo —todos, ninguno, 0 %, 100 %— sobre una comparación
+que uno mismo escribió esa misma corrida. También: un resumen que se reproduce idéntico al
+repetirlo, porque el determinismo no distingue «correcto» de «consistentemente equivocado».
+**Confidence:** high
+
+**Nota de dedup:** adyacente a `LESSON-3` («una medición sobre código que se mueve no es una
+medición»), pero no la misma: la señal de LESSON-3 es un resultado que **no** se reproduce, y éste
+se reproduce perfecto todas las veces. LESSON-3 no lo habría marcado. Anotada, no fusionada.
+
+## [2026-09-01] LESSON-7 Una guardia sin prueba que la haga fallar puede estar ciega — status: active
+
+**Project/phase/run:** vibecodeprotocols/bloque-a/spawn-budget-2026-09-01
+**What happened:** escribí una guardia que debía acusar presupuestos de tiempo escritos a ojo en
+los archivos de prueba. Barrió 63 archivos y devolvió cero violaciones, y había dos. El escáner
+construía su expresión regular con un template literal, donde `\s` degrada a `s`: el patrón quedó
+`timeout_msss*:...` y no podía coincidir con nada. Lo delataron sus propias pruebas de
+FALSIFICACIÓN, que le pasaban entrada sintética con violaciones conocidas y exigían que las
+acusara. Sin ellas habría publicado un verde que no miraba nada.
+**Why (root cause):** «no encontré nada» y «no puedo encontrar nada» producen exactamente la misma
+salida. Una guardia probada sólo contra entrada limpia confirma la primera lectura y nunca examina
+la segunda, y cuanto más limpia esté la base, más convincente se ve el verde vacío.
+**How to avoid:** toda guardia, escáner o comprobación llega con al menos una prueba que le pasa
+entrada sintética que **sí** viola la regla y exige que la acuse por nombre. Se escribe junto con
+la guardia, no después: es lo único que distingue el cero real del cero ciego.
+**Detection signal:** una función que devuelve una lista de hallazgos y cuyas pruebas sólo la
+corren sobre casos válidos esperando `[]`. También: un barrido nuevo que sale limpio en su primera
+corrida sobre una base que nadie había barrido antes.
+**Confidence:** high
+
+**Nota de dedup:** `[overlaps with: LESSON-1]` — «Enumerar defectos leyendo código no alcanza»,
+cuyo run se llama `verde-vacio`. Se mantiene separada: LESSON-1 gobierna la lista armada leyendo,
+sin programa que la reproduzca, y su remedio es escribir la sonda. Acá la sonda existía y era
+ciega, así que LESSON-1 no la habría marcado. Anotada, no fusionada.
+**Nota de pre-chequeo:** barrido de contenido sensible sobre las dos entradas: cero coincidencias.
