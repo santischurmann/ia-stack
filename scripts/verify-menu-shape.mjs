@@ -33,7 +33,12 @@ const HEADING = /^🔵 \*\*/u;
 const OPTION = /^\s*[-*] \*\*[A-Z]\)\*\*\s/u;
 // La forma que colapsa: la letra al principio de linea, sin item de lista.
 const BARE = /^\s*[A-Z]\)\s/u;
-const SECTION = /^#{1,6}\s/u;
+// Solo h1-h3 cierran un menu. Un `####` es contenido adentro del bloque -- una leccion sobre el
+// propio formato empieza justamente asi -- y cortar ahi acusaba tres carencias que el menu no tenia.
+const SECTION = /^#{1,3}\s/u;
+// Cuatro espacios de indentacion convierten la linea en bloque de codigo en Markdown: la opcion
+// deja de ser un item de lista y colapsa igual que dentro de un fence.
+const INDENTED_OPTION = /^ {4,}[-*] \*\*[A-Z]\)\*\*\s/u;
 // Una pregunta dentro de un menú de varias: `**1. ¿Cuánto detalle?**`. Las letras reinician acá.
 const QUESTION = /^\*\*\d+\./u;
 // El texto de una opción de plantilla: `[opción]`, `<tema>`. No es contenido, es un hueco a llenar.
@@ -115,7 +120,11 @@ export function validateMenus(source) {
       violations.push(`${donde}: el menú está adentro de ${menu.hidden}, así que no se le muestra a nadie`);
       continue;
     }
-    const opciones = menu.body.filter((row) => !row.fence && OPTION.test(row.text));
+    const opciones = menu.body.filter((row) => !row.fence && OPTION.test(row.text) && !INDENTED_OPTION.test(row.text));
+    const indentadas = menu.body.filter((row) => !row.fence && INDENTED_OPTION.test(row.text));
+    if (indentadas.length > 0) {
+      violations.push(`${donde}: ${indentadas.length} opción(es) indentadas cuatro espacios o más (línea ${indentadas[0].line}): Markdown las lee como bloque de código y colapsan igual que dentro de un fence`);
+    }
     const enFence = menu.body.filter((row) => row.fence && !row.delimiter && BARE.test(row.text));
     const sueltas = menu.body.filter((row) => !row.fence && BARE.test(row.text) && !OPTION.test(row.text));
     if (enFence.length > 0) {
@@ -146,6 +155,9 @@ export function validateMenus(source) {
       letras.set(letra, fila.line);
       // Un placeholder no es una opción repetida: las plantillas canónicas escriben `[opción]` dos
       // veces a propósito, y compararlas como texto rechazaba las plantillas del propio protocolo.
+      if (texto === '') {
+        violations.push(`${donde}: la opción ${letra}) de la línea ${fila.line} no dice nada: una letra sin texto no es una opción`);
+      }
       if (texto !== '' && !PLACEHOLDER.test(texto) && textos.has(texto)) {
         violations.push(`${donde}: las opciones de las líneas ${textos.get(texto)} y ${fila.line} dicen lo mismo: eso no es una elección`);
       }

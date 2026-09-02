@@ -267,3 +267,47 @@ test('FR-1 · una nota que nombra sus propias letras dentro del menú no lo romp
   const { code, errores } = corrida(doc(conNota));
   assert.deepEqual({ code, errores }, { code: 0, errores: '' });
 });
+
+// --- Tercera tanda de la auditoría sobre el gate de menús ---------------------------------------
+
+test('FV-6 · FALSIFICACIÓN · opciones indentadas cuatro espacios se rechazan: Markdown las lee como código', () => {
+  const bloque = ['🔵 **Una decisión**', '', '    - **A)** una — *(recomendado)*', '    - **B)** otra', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(bloque));
+  assert.deepEqual({ code, acusa: /indenta|código/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FV-7 · FALSIFICACIÓN · opciones sin texto no son opciones', () => {
+  const bloque = ['🔵 **Una decisión**', '', '- **A)** ', '- **B)** ', '', '*(recomendado)*', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(bloque));
+  assert.deepEqual({ code, acusa: /sin texto|vacía/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FR-5 · un subencabezado adentro del menú no lo parte', () => {
+  const bloque = ['🔵 **Una decisión**', '', '#### Contexto', '', 'por qué importa', '', '- **A)** una — *(recomendado)*', '- **B)** otra', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(bloque));
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});
+
+test('FR-5 · pero un encabezado de sección sí cierra un menú sin línea de espera', () => {
+  const texto = `# Doc\n\n🔵 **Trunca**\n\n- **A)** una — *(recomendado)*\n- **B)** otra\n\n## Otra sección\n\nA) esto es prosa\n`;
+  const [bloque] = parseMenus(texto);
+  assert.deepEqual({ cerrado: bloque.closed, absorbio: bloque.body.some((r) => r.text.includes('esto es prosa')) }, { cerrado: false, absorbio: false });
+});
+
+test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido', () => {
+  // La prueba de "los documentos reales pasan" sólo miraba el exit code, así que un menú que
+  // DESAPARECIERA del barrido la dejaba verde: el gate contaba menos y decía OK. Acá se fija la
+  // invariante que importa — tantos bloques reconocidos como títulos hay en el archivo.
+  const docs = ['SKILL.md', 'README.md', 'AGENTS.md', '.agents/skills/vibecodeprotocols/SKILL.md',
+    ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
+  const desajustes = [];
+  let total = 0;
+  for (const doc of docs) {
+    const fuente = readFileSync(join(repoRoot, doc), 'utf8');
+    const titulos = fuente.split(/\r?\n/u).filter((l) => /^(\s*>)*\s*🔵 \*\*/u.test(l)).length;
+    const reconocidos = parseMenus(fuente).length;
+    total += reconocidos;
+    if (titulos !== reconocidos) desajustes.push(`${doc}: ${titulos} títulos contra ${reconocidos} bloques`);
+  }
+  assert.deepEqual({ desajustes, hayMenus: total > 0 }, { desajustes: [], hayMenus: true });
+});

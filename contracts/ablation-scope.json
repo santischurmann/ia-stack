@@ -17,7 +17,7 @@
     },
     {
       "path": "~/.claude/output-styles",
-      "why": "Cambian como responde el modelo en toda sesion. Un estilo viejo compite con las instrucciones nuevas."
+      "why": "Cambian como responde el modelo en toda sesion. Un estilo viejo compite con las instrucciones nuevas. Si la carpeta no existe en esta maquina, no hay nada que limpiar ahi: el alcance declara donde mirar, no afirma que exista."
     },
     {
       "path": ".claude",
