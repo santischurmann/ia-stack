@@ -257,6 +257,53 @@
       "rollback": "git revert del commit. El PRD vuelve a nueve secciones y criterios de dos campos.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
+    },
+    {
+      "id": "B7",
+      "description": "TRIANGULATE como fase propia: los 26 vectores del encargo en un contrato, un expediente por funcionalidad que declara cada uno, y --require-complete que frena el cierre con un pendiente",
+      "files_to_create": [
+        "scripts/verify-triangulate.mjs",
+        "tests/verify-triangulate.test.mjs",
+        "contracts/triangulate-vectors.json",
+        "docs/triangulate/triangulate-como-fase.json"
+      ],
+      "files_to_modify": [
+        "contracts/empty-probe.json",
+        "contracts/honest-limits.json",
+        "tests/protocolo-e2e.test.mjs",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/spec.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-triangulate.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6"
+      ],
+      "status": "done",
+      "goal": "TRIANGULATE existia como prosa adentro del bucle de Build y no dejaba rastro: quien refactorizaba decidia solo que vectores buscó. Sin lista fija se revisa lo que uno ya sabe buscar.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "AC1-AC6 de docs/spec.md, cada uno nombrado por una prueba; los 26 vectores obligatorios; covered exige prueba nombrada; not_applicable y pending exigen motivo; --require-complete frena con un pendiente; cobertura 34/34 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "El gate no abre la prueba que un vector dice tener ni comprueba que la ejercite. No descubre vectores nuevos: la lista es fija y su completitud es humana. Su propio expediente deja dos pendientes declarados: symlinks y rutas externas.",
+      "rollback": "git revert del commit. El gate es nuevo y nadie depende de el todavia.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "blocked_reason": ""
     }
   ]
 }

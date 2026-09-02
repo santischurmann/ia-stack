@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **TRIANGULATE es una fase con expediente, no una instrucción de prosa.** Existía adentro del
+  bucle de Build y no dejaba rastro: quien refactorizaba decidía solo qué buscó. Ahora los 26
+  vectores viven en `contracts/triangulate-vectors.json` y el expediente de la funcionalidad los
+  declara uno por uno — `covered` nombra la prueba, `not_applicable` y `pending` traen motivo—.
+  Un vector que falta rechaza, y uno que el contrato no declara también. Con `--require-complete`
+  un pendiente frena el cierre, que es la regla del protocolo. **El primer expediente real es el
+  del propio gate**, y declara dos pendientes: el gate abre la ruta que le pasan sin comprobar
+  symlinks ni rutas externas. Límite declarado: verifica que cada vector esté declarado, nunca
+  que la prueba nombrada lo ejercite.
+
 - **El PRD declara las veintiuna secciones que el protocolo pide, y sus criterios se pueden**
   **comprobar.** Antes tenía nueve secciones de contenido; se sumaron jobs-to-be-done, no-objetivos,
   requisitos no funcionales, seguridad, privacidad, observabilidad, integraciones, datos,

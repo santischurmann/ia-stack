@@ -1,0 +1,177 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "triangulate-como-fase",
+  "task": "B7 - TRIANGULATE deja de ser una instruccion de prosa y pasa a ser una fase con expediente: los 26 vectores del encargo declarados uno por uno, y un pendiente que frena el cierre",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/triangulate-como-fase-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/empty-probe.json",
+      "contracts/honest-limits.json",
+      "contracts/triangulate-vectors.json",
+      "docs/spec.md",
+      "docs/tasks.json",
+      "docs/triangulate/triangulate-como-fase.json",
+      "scripts/verify-triangulate.mjs",
+      "tests/protocolo-e2e.test.mjs",
+      "tests/verify-triangulate.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Un expediente que declara los 26 vectores sale en verde y dice el reparto: cuantos cubiertos, cuantos no aplican y cuantos quedan pendientes. Un verde que no dice el reparto no deja ver cuanto se miró de verdad.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node scripts/verify-triangulate.mjs check docs/triangulate/triangulate-como-fase.json",
+      "result": "OK: declara los 26 vectores: 9 cubierto(s), 15 no aplica(n), 2 pendiente(s). 13 de 13 pruebas en verde."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Un vector que falta, o uno que el contrato no declara, se rechazan nombrandolo. El punto entero de la fase es que el silencio no pase por revision.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node --test tests/verify-triangulate.test.mjs",
+      "result": "Rechaza el expediente al que le falta un vector nombrandolo, y el que declara un vector que el contrato no tiene."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Un vector declarado covered que no nombra la prueba que lo cubre se rechaza: cubierto sin prueba es una afirmacion sin respaldo.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node --test tests/verify-triangulate.test.mjs",
+      "result": "Rechaza covered sin el campo test, con el campo vacio, y con campos de mas que su estado no admite."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "Un not_applicable o un pending sin motivo escrito se rechazan: descartar un vector sin razon es no haberlo mirado.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node --test tests/verify-triangulate.test.mjs",
+      "result": "Los dos estados probados sin motivo, con motivo vacio y con motivo demasiado corto. Y un estado inventado se rechaza nombrando el campo state."
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "Un pendiente informa sin bloquear mientras se trabaja, y bloquea el cierre con --require-complete, que es la regla del protocolo: no se refactoriza hasta cerrar TRIANGULATE.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node scripts/verify-triangulate.mjs check docs/triangulate/triangulate-como-fase.json --require-complete",
+      "result": "REJECTED: 2 vector(es) siguen pendientes y --require-complete no los deja pasar: symlinks, paths-externos. Sin la bandera el mismo expediente sale 0."
+    },
+    {
+      "ac_id": "AC6",
+      "scenario": "Sin expediente informa VACIO y sale 0 -- un proyecto que todavia no triangulo no incumple nada --, y un esquema ajeno se rechaza antes de mirar cualquier vector.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-triangulate.test.mjs",
+      "test_hash_sha256": "ce0907190514d6ced0e35c319fb098a619896c11677ac512d5bdb911049a801a",
+      "command": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "result": "OK: 33 gate(s) se comportan sobre un directorio vacio como declara el contrato; el gate nuevo entro con su fila y su motivo. La prueba comprueba ademas que el rechazo por esquema ajeno NO enumere vectores."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Veintiseis vectores obligatorios por funcionalidad son mucha friccion, y la salida barata es marcar todo not_applicable con un motivo generico. El gate no puede distinguir un motivo real de uno de relleno.",
+      "mitigation": "No puede impedirlo y asi queda declarado. Lo que hace es que el relleno sea visible y atribuible: cada vector se rechaza por su nombre y cada descarte lleva su motivo escrito al lado, asi que quien revise ve exactamente que se descarto y con que argumento. La alternativa -- no tener lista -- hacia invisible el mismo silencio."
+    },
+    "readability": {
+      "finding": "Por que la lista de vectores vive en un contrato aparte y no adentro del gate no es evidente, y el proximo lector la va a querer meter en el codigo.",
+      "mitigation": "Esta escrito en la cabecera del gate: cambiar la lista no debe exigir tocar codigo. Un vector nuevo es una fila de contrato, no un despliegue."
+    },
+    "reliability": {
+      "finding": "Las pruebas escritas a mano dejaron once ramas sin ejercitar, y las once eran caminos de rechazo: contrato mal formado, cabecera invalida, expediente ilegible por permisos. Un camino de rechazo sin ejecutar es un camino del que no se sabe si rechaza.",
+      "mitigation": "Las once cerradas con pruebas propias y la cobertura del proyecto llego a 34 de 34 scripts con todas sus funciones y ramas ejecutadas."
+    },
+    "resilience": {
+      "finding": "El gate lee dos archivos y cualquiera de los dos puede estar roto, ausente o ilegible por otro motivo. Confundir los casos manda a corregir el archivo equivocado.",
+      "mitigation": "Los tres caminos estan separados y probados: un contrato roto se reporta como contrato, un expediente ausente sale VACIO con 0, y un fallo de lectura que no sea ENOENT se rechaza. Ademas se saca el BOM antes de parsear, porque un archivo valido con marca de orden salia como JSON invalido."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "vectores de triangulacion declarados en el repositorio",
+      "measured": true,
+      "before": 0,
+      "after": 26
+    },
+    {
+      "metric": "huecos reales que el gate encontro en su propio trabajo",
+      "measured": true,
+      "before": 0,
+      "after": 4
+    },
+    {
+      "metric": "de esos, cerrados en esta misma tanda",
+      "measured": true,
+      "before": 0,
+      "after": 2
+    },
+    {
+      "metric": "ramas de verify-triangulate.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 11,
+      "after": 0
+    },
+    {
+      "metric": "scripts Node medidos al 100 por ciento",
+      "measured": true,
+      "before": 33,
+      "after": 34
+    },
+    {
+      "metric": "gates declarados en la sonda de directorio vacio",
+      "measured": true,
+      "before": 32,
+      "after": 33
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 65,
+      "after": 66
+    },
+    {
+      "metric": "si los 26 vectores son los 26 correctos",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Salen del encargo del usuario. El gate no descubre vectores nuevos: su completitud es una decision humana y asi esta declarado."
+    },
+    {
+      "metric": "cuantos motivos de not_applicable son reales y cuantos son relleno",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "El gate no puede distinguirlos y es el riesgo principal del cambio. Solo hay un expediente real -- el suyo propio -- asi que no hay poblacion para medirlo."
+    }
+  ],
+  "reproduction": "Antes: TRIANGULATE aparecia diez veces en SKILL.md, todas adentro del bucle de Phase 5, sin artefacto, sin contrato y sin gate; no habia manera de leer despues que vectores se miraron. RED: con el esqueleto permisivo, node --test tests/verify-triangulate.test.mjs da 8 de 8 rojas, todas AssertionError sobre comportamiento. TRIANGULATE sobre si mismo: el primer expediente real es el del propio gate y declaro cuatro pendientes -- symlinks, rutas externas, BOM e instalacion limpia. Dos se cerraron en la misma tanda: el BOM rompia JSON.parse y salia como JSON invalido, y el gate no entraba en la prueba de instalacion limpia. Los otros dos quedan declarados. La cobertura nombro once ramas de rechazo sin ejercitar, con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde, cobertura 34 de 34 scripts, y contrato, sonda vacia, conflictos de plan, seguridad y sincronizacion del runtime en 0.",
+  "not_reviewed": "El gate NO abre la prueba que un vector dice tener ni comprueba que la ejercite: un covered que apunta a cualquier ruta pasa en verde. Tampoco juzga si el motivo de un not_applicable es bueno, ni descubre vectores nuevos -- la lista es fija y su completitud es humana. Su propio expediente deja dos pendientes declarados y no resueltos: el gate abre la ruta que le pasan sin comprobar que no sea un symlink hacia afuera del proyecto ni una ruta con .. o absoluta; falta decidir si eso es responsabilidad suya o de quien lo invoca. Y hay un solo expediente real en el repositorio, el del propio gate, asi que el riesgo de que veintiseis vectores inviten al relleno esta declarado y no medido.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0",
+    "node --test tests/verify-triangulate.test.mjs -> 13 de 13 en verde; con el esqueleto permisivo eran 8 de 8 rojas, todas AssertionError",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 11 ramas sin ejecutar en verify-triangulate.mjs: :58, :65, :69, :73, :75, :86, :87, :88, :140 y :154 x2",
+    "node scripts/verify-triangulate.mjs check docs/triangulate/triangulate-como-fase.json -> OK: 26 vectores, 9 cubiertos, 15 no aplican, 2 pendientes",
+    "node scripts/verify-triangulate.mjs check ... --require-complete -> REJECTED: 2 vector(es) siguen pendientes: symlinks, paths-externos",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 33 gate(s)",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 66 honest limits verified",
+    "node scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests -> OK: 6 criterio(s) nombrados por al menos una prueba",
+    "node scripts/verify-spec-wordcap.mjs check docs/spec.md --quality -> OK: 554/650 words, quality shape valid",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 7 task(s), sin conflictos sin secuenciar",
+    "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 12 live changed file(s); no blocking Critical/High findings",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "9481cdc8c0b3da7c7de6b55713e74b7acc63d1b7",
+  "tree_fingerprint": "de2a3e2c1f0ba60bf8fced440d86425754036fc101ed372373b37cfac1a1ecff",
+  "terminal_state": "approved"
+}

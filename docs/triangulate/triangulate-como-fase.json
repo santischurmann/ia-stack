@@ -1,0 +1,111 @@
+{
+  "schema": "vcp.triangulate/1",
+  "feature": "triangulate-como-fase",
+  "date": "2026-09-01",
+  "vectors": {
+    "edge-cases": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "entradas-vacias": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "valores-nulos": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "division-por-cero": {
+      "state": "not_applicable",
+      "reason": "El gate no hace aritmética: cuenta estados y compara conjuntos de identificadores."
+    },
+    "promesas-rechazadas": {
+      "state": "not_applicable",
+      "reason": "Todo el gate es síncrono. No crea ni consume ninguna promesa."
+    },
+    "procesos-muertos": {
+      "state": "not_applicable",
+      "reason": "No lanza procesos hijos: lee dos archivos y decide en memoria."
+    },
+    "interrupciones": {
+      "state": "not_applicable",
+      "reason": "No guarda estado entre corridas ni escribe nada, así que una interrupción no deja nada a medias."
+    },
+    "timeout": {
+      "state": "not_applicable",
+      "reason": "No espera a nada ni impone presupuesto de tiempo: lee, compara y sale."
+    },
+    "retry": {
+      "state": "not_applicable",
+      "reason": "No reintenta ninguna operación. Un fallo de lectura se reporta, no se vuelve a intentar."
+    },
+    "doble-ejecucion": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "ejecucion-concurrente": {
+      "state": "not_applicable",
+      "reason": "No escribe ningún archivo, así que dos corridas simultáneas no se pueden pisar."
+    },
+    "cambios-staged": {
+      "state": "not_applicable",
+      "reason": "No consulta git en ningún momento: el expediente es un archivo del árbol de trabajo."
+    },
+    "cambios-unstaged": {
+      "state": "not_applicable",
+      "reason": "Mismo motivo: el gate no distingue index de árbol porque no mira ninguno de los dos."
+    },
+    "cambios-de-modo": {
+      "state": "not_applicable",
+      "reason": "No inspecciona permisos ni el bit de ejecución de ningún archivo."
+    },
+    "symlinks": {
+      "state": "pending",
+      "reason": "El gate abre la ruta que le pasan sin comprobar que no sea un enlace hacia afuera del proyecto. Falta decidir si eso es responsabilidad suya o de quien lo invoca; hoy no está resuelto ni probado."
+    },
+    "paths-externos": {
+      "state": "pending",
+      "reason": "Mismo hueco que symlinks: una ruta con .. o absoluta se abre igual. El contrato de seguridad del gate no está escrito todavía."
+    },
+    "corrupcion-de-json": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "crlf-lf": {
+      "state": "not_applicable",
+      "reason": "JSON.parse acepta los dos finales de línea, y el gate no hashea el archivo ni compara su contenido byte a byte."
+    },
+    "utf8-bom": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "archivos-binarios": {
+      "state": "not_applicable",
+      "reason": "Un binario cae en el mismo camino que un JSON corrupto, que ya está cubierto: JSON.parse falla y el gate lo reporta como ilegible."
+    },
+    "rename-copy": {
+      "state": "not_applicable",
+      "reason": "No lee historia de git ni interpreta estados de diff."
+    },
+    "git-sha1-sha256": {
+      "state": "not_applicable",
+      "reason": "No calcula ni compara hashes de git en ningún punto."
+    },
+    "bash-powershell": {
+      "state": "not_applicable",
+      "reason": "Node puro, sin invocar shell. Corre igual donde corra Node."
+    },
+    "instalacion-limpia": {
+      "state": "covered",
+      "test": "tests/protocolo-e2e.test.mjs"
+    },
+    "datos-falsos": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    },
+    "evidencia-insuficiente": {
+      "state": "covered",
+      "test": "tests/verify-triangulate.test.mjs"
+    }
+  }
+}

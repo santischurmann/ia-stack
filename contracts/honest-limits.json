@@ -390,6 +390,12 @@
       "file": "README.md",
       "phrase": "Un criterio en prosa no alcanza",
       "why": "El criterio ahora exige seis partes y una de ellas es el test que lo comprueba. Eso puede leerse como que el gate verifica la prueba. No la verifica: exige que el campo este escrito, nunca abre el archivo ni comprueba que esa prueba nombre al criterio. Quien lo hace es verify-evidence-trace.mjs criteria, otro gate y otro momento. Sin esta frase, un PRD con seis campos llenos y un test inventado se lee como trazabilidad probada."
+    },
+    {
+      "limit_id": "triangulate-does-not-open-the-named-test",
+      "file": "README.md",
+      "phrase": "nunca que la prueba nombrada lo ejercite",
+      "why": "La regla central es que un vector cubierto nombre la prueba que lo cubre, y eso puede leerse como que la cobertura esta comprobada. No lo esta: el gate exige el campo escrito y nunca abre el archivo. Un covered que apunta a cualquier ruta pasa en verde. Sin la frase, veintiseis vectores en covered se leen como veintiseis vectores probados."
     }
   ]
 }

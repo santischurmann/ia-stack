@@ -1,0 +1,136 @@
+{
+  "schema": "vcp.triangulate-vectors/1",
+  "why": "Los vectores que hay que buscar a proposito antes de refactorizar. La lista existe para que TRIANGULATE no dependa de lo que a cada uno se le ocurra ese dia: sin una lista fija, se revisa lo que ya se sabe buscar, que es justo lo que no encuentra nada nuevo.",
+  "vectors": [
+    {
+      "vector_id": "edge-cases",
+      "name": "Casos borde",
+      "why": "El camino feliz es el que se escribe solo. Los bordes son donde el codigo decide, y donde nadie mira hasta que rompe."
+    },
+    {
+      "vector_id": "entradas-vacias",
+      "name": "Entradas vacias",
+      "why": "Una lista vacia, un string vacio o un objeto sin claves suelen recorrer un camino distinto que nadie probo, y muchas veces salen en verde sin haber comparado nada."
+    },
+    {
+      "vector_id": "valores-nulos",
+      "name": "Valores nulos",
+      "why": "null y undefined no son lo mismo y casi nunca se prueban los dos. Un ?? que tapa un null legitimo esconde el defecto en vez de manejarlo."
+    },
+    {
+      "vector_id": "division-por-cero",
+      "name": "Division por cero",
+      "why": "Todo denominador puede ser cero. Un porcentaje sobre cero elementos da NaN, y un NaN se propaga hasta un reporte que nadie sabe leer."
+    },
+    {
+      "vector_id": "promesas-rechazadas",
+      "name": "Promesas rechazadas",
+      "why": "Una promesa sin catch termina el proceso o se pierde en silencio segun la version del runtime. Las dos son peores que un rechazo explicito."
+    },
+    {
+      "vector_id": "procesos-muertos",
+      "name": "Procesos muertos",
+      "why": "Un hijo que muere sin exit code deja status null y signal, no un numero. Leer solo status trata una muerte violenta como un exito."
+    },
+    {
+      "vector_id": "interrupciones",
+      "name": "Interrupciones",
+      "why": "Ctrl+C, cuota agotada o una caida en el medio dejan estado a mitad. Lo que importa es si se puede retomar sin reconstruir a mano."
+    },
+    {
+      "vector_id": "timeout",
+      "name": "Timeout",
+      "why": "Un presupuesto de tiempo mal calibrado convierte una corrida lenta en un rojo. Medido en este mismo proyecto: 1000ms contra una latencia real de 4895ms."
+    },
+    {
+      "vector_id": "retry",
+      "name": "Reintento",
+      "why": "Un reintento sobre una operacion no idempotente duplica efectos. Y un reintento que no cuenta sus intentos esconde que el problema es sistematico."
+    },
+    {
+      "vector_id": "doble-ejecucion",
+      "name": "Doble ejecucion",
+      "why": "Correr dos veces el mismo comando tiene que dar el mismo resultado, o decir por que no. Un gate que solo funciona la primera vez no es un gate."
+    },
+    {
+      "vector_id": "ejecucion-concurrente",
+      "name": "Ejecucion concurrente",
+      "why": "Dos procesos sobre el mismo archivo se pisan. Y una suite concurrente expone carreras que la misma suite serializada esconde."
+    },
+    {
+      "vector_id": "cambios-staged",
+      "name": "Cambios en el index",
+      "why": "git compara tres estados, no dos. Lo que esta en el index puede diferir del arbol y del commit, y un gate que mira uno solo miente sobre los otros."
+    },
+    {
+      "vector_id": "cambios-unstaged",
+      "name": "Cambios sin agregar",
+      "why": "Una edicion sin git add es invisible para quien lea el index. Un receipt que valida el index y se publica con el arbol sucio certifica otra cosa."
+    },
+    {
+      "vector_id": "cambios-de-modo",
+      "name": "Cambios de modo",
+      "why": "Un archivo que deja de ser ejecutable no cambia de contenido: el hash es el mismo y el diff parece vacio, pero el script ya no corre."
+    },
+    {
+      "vector_id": "symlinks",
+      "name": "Enlaces simbolicos",
+      "why": "Un symlink deja escribir afuera del proyecto sin que la ruta lo diga. Y un chequeo que sigue el enlace mide otro archivo del que cree."
+    },
+    {
+      "vector_id": "paths-externos",
+      "name": "Rutas fuera del proyecto",
+      "why": "Un .. de mas, una ruta absoluta o una letra de unidad en Windows sacan la operacion del arbol. Hay que probar que se rechacen, no suponerlo."
+    },
+    {
+      "vector_id": "corrupcion-de-json",
+      "name": "JSON corrupto",
+      "why": "Un archivo truncado a la mitad no es un archivo ausente. Confundirlos hace que un disco lleno se lea como un proyecto que todavia no arranco."
+    },
+    {
+      "vector_id": "crlf-lf",
+      "name": "Finales de linea",
+      "why": "El mismo commit puede dar bytes distintos segun la plataforma. Medido en este proyecto: rompio la cadena de hashes de Discovery en cualquier clon en Windows."
+    },
+    {
+      "vector_id": "utf8-bom",
+      "name": "UTF-8 y BOM",
+      "why": "Un BOM al principio hace que la primera clave de un JSON no sea la que se ve, y que una comparacion de texto falle sin motivo aparente."
+    },
+    {
+      "vector_id": "archivos-binarios",
+      "name": "Archivos binarios",
+      "why": "Leer un binario como texto produce basura silenciosa. Y un byte NUL adentro de un fuente hace que git y grep lo traten como binario: medido en dos gates de este proyecto."
+    },
+    {
+      "vector_id": "rename-copy",
+      "name": "Renombrado y copia",
+      "why": "git puede reportar un renombrado como borrado mas alta, o como R con similitud. Un gate que solo entiende M pierde el cambio entero."
+    },
+    {
+      "vector_id": "git-sha1-sha256",
+      "name": "Formato de hash de git",
+      "why": "Un repositorio en SHA-256 tiene identificadores de 64 caracteres. Una expresion regular de 40 los rechaza sin decir por que."
+    },
+    {
+      "vector_id": "bash-powershell",
+      "name": "Los dos shells",
+      "why": "El proyecto instala en Bash y en PowerShell. Un arreglo probado en uno solo deja la mitad de los usuarios sin cubrir."
+    },
+    {
+      "vector_id": "instalacion-limpia",
+      "name": "Instalacion limpia",
+      "why": "El checkout del autor tiene archivos que ningun clon tiene. Medido acá: tres defectos serios solo aparecieron clonando."
+    },
+    {
+      "vector_id": "datos-falsos",
+      "name": "Datos inventados",
+      "why": "Un expediente coherente e inventado pasa cualquier gate de forma. Hay que saber cual es la parte que el gate no puede distinguir, y escribirla."
+    },
+    {
+      "vector_id": "evidencia-insuficiente",
+      "name": "Evidencia insuficiente",
+      "why": "Una salida que dice OK sin haber comparado nada es un verde vacio. Hay que probar que el gate rechaza cuando no tuvo con que decidir."
+    }
+  ]
+}

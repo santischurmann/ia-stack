@@ -152,6 +152,16 @@
       "expect": "empty"
     },
     {
+      "script": "verify-phase-menu.mjs",
+      "args": [
+        "check",
+        "docs/phase-decisions.json",
+        "--plan",
+        "docs/phase-plan.json"
+      ],
+      "expect": "reject"
+    },
+    {
       "script": "verify-plan-conflicts.mjs",
       "args": [
         "check",
@@ -159,6 +169,15 @@
       ],
       "expect": "usage",
       "why": "Sale 2 porque exige el plan y la tarea como argumentos, y sin plan no hay conflicto que buscar. La sonda no prueba nada mas de este gate."
+    },
+    {
+      "script": "verify-product-diagnostics.mjs",
+      "args": [
+        "check",
+        "demo",
+        "--require-inputs"
+      ],
+      "expect": "reject"
     },
     {
       "script": "verify-receipt.mjs",
@@ -260,23 +279,13 @@
       "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de VCP siguen apuntando a pruebas que existen."
     },
     {
-      "script": "verify-product-diagnostics.mjs",
+      "script": "verify-triangulate.mjs",
       "args": [
         "check",
-        "demo",
-        "--require-inputs"
+        "docs/triangulate/x.json"
       ],
-      "expect": "reject"
-    },
-    {
-      "script": "verify-phase-menu.mjs",
-      "args": [
-        "check",
-        "docs/phase-decisions.json",
-        "--plan",
-        "docs/phase-plan.json"
-      ],
-      "expect": "reject"
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay expediente de triangulacion, y eso no es un incumplimiento: es un proyecto que todavia no triangulo. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados veintiseis vectores que nadie miro."
     },
     {
       "script": "verify-vcp-contract.mjs",

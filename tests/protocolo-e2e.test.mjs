@@ -125,6 +125,7 @@ test('E2E · en un proyecto que todavía no arrancó, cada gate dice VACÍO o re
     ['verify-evidence-trace.mjs', ['criteria', '--spec', 'docs/spec.md', '--tests', 'tests'], 'empty'],
     ['verify-spec-wordcap.mjs', ['check', 'docs/spec.md'], 'reject'],
     ['verify-receipt.mjs', ['check', '.vibe/receipts/x.json'], 'reject'],
+    ['verify-triangulate.mjs', ['check', 'docs/triangulate/x.json'], 'empty'],
     ['verify-graphify-manifest.mjs', ['check'], 'reject'],
   ];
 

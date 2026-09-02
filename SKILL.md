@@ -617,6 +617,35 @@ Parallel: tasks with no `depends_on` overlap → spawn simultaneously (if config
 
 ---
 
+## PHASE 5.5 — TRIANGULATE (antes de refactorizar)
+
+Existía como una instrucción de prosa adentro del bucle de Build, y por eso no dejaba rastro:
+quien refactorizaba decidía solo qué vectores buscó, y nadie podía leer después cuáles miró.
+**Sin una lista fija se revisa lo que uno ya sabe buscar**, que es justo lo que no encuentra
+nada nuevo.
+
+Los vectores viven en `contracts/triangulate-vectors.json` —hoy 26, cada uno con el motivo por
+el que está—. El expediente de la funcionalidad declara **cada uno** con uno de tres estados:
+`covered` nombra la prueba que lo cubre, `not_applicable` y `pending` traen motivo escrito. Un
+vector que falta rechaza, y uno que el contrato no declara también.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json
+node .vibe/vcp-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json --require-complete
+```
+
+Sin la bandera informa cuántos quedan pendientes y sale `0`: sirve mientras se trabaja. Con
+`--require-complete` **un pendiente frena el cierre**, que es la regla del protocolo: no se
+refactoriza hasta cerrar TRIANGULATE.
+
+**El gate verifica que cada vector esté declarado, nunca que la prueba nombrada lo ejercite.**
+Un `covered` que apunta a un archivo cualquiera pasa igual, y la lista de vectores es fija: su
+completitud es una decisión humana, no un resultado del gate.
+
+Al cerrar, presentá 🔵 con al menos dos opciones y registrá la elección.
+
+---
+
 ## PHASE 6 — TEST (cierre orquestado)
 
 Re-affirm the orchestration contract (§ top of file) — this phase leans hardest on its native
