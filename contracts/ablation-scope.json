@@ -1,0 +1,90 @@
+{
+  "schema": "vcp.ablation-scope/1",
+  "why": "La limpieza mueve archivos de configuracion del usuario. Sin este contrato, que puede tocar y que no queda en la cabeza de quien la corre, y esa es exactamente la clase de decision que no se recuerda a las tres de la manana. El alcance se declara antes de mover el primer archivo, y el gate lo compara contra lo que efectivamente se archivo.",
+  "golden_rule": "En la limpieza NO EXISTE rm. Nada se borra: todo se mueve a .claude-archive/<fecha>/ conservando la ruta relativa. Si parece que la unica salida es borrar, se para y se pregunta.",
+  "in_scope": [
+    {
+      "path": "~/.claude/skills",
+      "why": "Skills globales. Cada una carga palabras en el contexto antes de que la persona escriba la primera letra, y una que no pasa el filtro de las 3R esta cobrando ese peaje sin devolver nada."
+    },
+    {
+      "path": "~/.claude/CLAUDE.md",
+      "why": "Reglas globales. Se archiva por lineas, no entero: la parte de datos que el modelo no puede adivinar se queda, la parte que le dice como razonar es la primera que sobra."
+    },
+    {
+      "path": "~/.claude/hooks",
+      "why": "Se ejecutan solos en cada sesion. Un hook que ya no aplica cuesta tiempo en cada arranque y nadie lo nota."
+    },
+    {
+      "path": "~/.claude/output-styles",
+      "why": "Cambian como responde el modelo en toda sesion. Un estilo viejo compite con las instrucciones nuevas."
+    },
+    {
+      "path": ".claude",
+      "why": "Configuracion del proyecto: skills, comandos y ajustes locales."
+    },
+    {
+      "path": ".vibe",
+      "why": "Memoria de VCP en el proyecto. Se compacta y se respalda; las piezas append-only estan excluidas abajo."
+    }
+  ],
+  "untouchable": [
+    {
+      "pattern": "**/*.mq5",
+      "why": "REGLA DURA del usuario. El fuente .mq5 no esta en git por diseno, asi que moverlo o borrarlo es perdida irreversible sin backup ni papelera. No se toca ni para archivarlo."
+    },
+    {
+      "pattern": "**/*.ex5",
+      "why": "Binario compilado del EA, mismo territorio que el .mq5. No se toca."
+    },
+    {
+      "pattern": "**/_audit_scratch/**",
+      "why": "Puede contener fuentes del usuario. La regla dura prohibe explicitamente barrer esta carpeta."
+    },
+    {
+      "pattern": ".git/**",
+      "why": "Es el unico backup real que existe. Tocarlo destruye el camino de vuelta que esta limpieza promete."
+    },
+    {
+      "pattern": "**/.env",
+      "why": "Credenciales. No se mueven, no se copian y no se escriben en ningun reporte."
+    },
+    {
+      "pattern": "**/*.key",
+      "why": "Material criptografico."
+    },
+    {
+      "pattern": "**/*.pem",
+      "why": "Material criptografico."
+    },
+    {
+      "pattern": "~/.claude/settings.json",
+      "why": "Se pueden PROPONER cambios; no se aplican. Es el archivo que decide permisos y hooks: un cambio ahi altera lo que el agente puede hacer, y esa decision es de la persona."
+    },
+    {
+      "pattern": ".vibe/AUDIT.md",
+      "why": "Cadena de auditoria append-only y sellada. Archivarla rompe la cadena, que es justamente lo que prueba que nada se edito despues."
+    },
+    {
+      "pattern": ".vibe/LESSONS.md",
+      "why": "Memoria de errores: retire-not-delete. Una leccion se retira cambiando su status, nunca sacando el archivo de lugar."
+    },
+    {
+      "pattern": "src/**",
+      "why": "Codigo fuente del proyecto. La limpieza es de configuracion del agente, no del producto."
+    },
+    {
+      "pattern": "tests/**",
+      "why": "Pruebas del proyecto. Son la evidencia con la que se mide la propia ablacion."
+    }
+  ],
+  "test_set": {
+    "min": 6,
+    "max": 8,
+    "why": "Menos de seis no cubre lo que la persona hace de verdad y la linea base no significa nada; mas de ocho hace que cada tanda cueste tanto que la limpieza no se corre. El set se acuerda con la persona ANTES de mover el primer archivo."
+  },
+  "batch": {
+    "max_files": 5,
+    "why": "Archivar de a cinco y volver a medir es lo que permite atribuir una regresion a un archivo concreto. Una tanda grande dice que algo empeoro y no cual."
+  }
+}

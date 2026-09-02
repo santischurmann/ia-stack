@@ -7,6 +7,31 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **PHASE 9 — LIMPIEZA: la configuración se poda sola cada 7 días, midiendo.** Cada skill, regla y
+  hook se le carga al modelo antes de que la persona escriba la primera letra; lo que ya no sirve no
+  es neutral, compite con lo que sí importa. La fase corre al abrir sesión si pasaron 7 días, y
+  **nunca mueve un archivo sin un click**. El orden es fijo: **actualizar** el grafo → **compactar**
+  la memoria → **limpiar** → **respaldar** en graphify y Obsidian. Por eso no se pierde nada: cuando
+  algo se saca de en medio, su contenido ya está en dos lugares.
+- **Regla de oro, mecánica y no declarativa: acá no existe `rm`.** Nada se borra; todo se mueve a
+  `.claude-archive/<fecha>/` conservando la ruta. `contracts/ablation-scope.json` declara qué es
+  intocable —`.mq5` y `.ex5` a la cabeza, que no están en git y cuya pérdida sería irreversible—,
+  qué entra en alcance y por qué, y `verify-ablation.mjs` lo comprueba **contra el disco**: cada
+  archivo archivado tiene que existir en el archivo y ya no en su origen. Un registro que dice haber
+  archivado algo que no está en ninguno de los dos lados describe un borrado, y se rechaza.
+- **Gate 38, `verify-ablation.mjs`:** exige lo que convierte una limpieza en una ablación medida —
+  entre 6 y 8 tareas acordadas antes de mover nada, línea base, tandas de a cinco como máximo,
+  re-medición del mismo set en cada tanda, líneas devueltas cuando algo empeora, y los cuatro
+  criterios de término. El filtro de las tres R se comprueba por contradicción: archivar algo que
+  aprueba **cualquiera** de las tres se rechaza por nombre.
+- **Bytes de control en el propio gate, encontrados por su prueba.** La primera versión de
+  `globToRegExp` —el comparador que protege los `.mq5`— daba el resultado correcto por un motivo que
+  no se podía explicar: tenía bytes NUL y 0x01 literales adentro, así que sus `replaceAll('')` no
+  operaban sobre cadenas vacías. Reescrita explícita, con una prueba caso por caso, y una
+  falsificación nueva que barre `scripts/` y `tests/` buscando bytes de control.
+- **Límite honesto nuevo (74):** el gate verifica el **registro** de la limpieza, no la limpieza. No
+  corre las pruebas del set ni sabe si un resultado que dice «igual» era igual.
+
 - **El protocolo prescribía por escrito el único formato que garantiza que un menú NO se vea como
   menú.** La plantilla canónica de `CONFIG MENU PROTOCOL` y `CONTENT DECISION PROTOCOL` escribía las
   opciones dentro de un bloque de código, con líneas sueltas `A)` / `B)`. Medido sobre motores de

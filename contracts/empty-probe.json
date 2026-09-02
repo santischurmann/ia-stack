@@ -326,6 +326,15 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo VCP. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
+    },
+    {
+      "script": "verify-ablation.mjs",
+      "args": [
+        "check",
+        "docs/ablation.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay ninguna corrida de limpieza que revisar, y eso no es un incumplimiento: es un proyecto que todavia no limpio nada. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por medida una ablacion que nunca ocurrio."
     }
   ]
 }

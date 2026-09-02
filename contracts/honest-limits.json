@@ -438,6 +438,12 @@
       "file": "SKILL.md",
       "phrase": "Verifica las plantillas, no la conversación",
       "why": "verify-menu-shape lee los documentos del protocolo -- SKILL.md, README.md, skills/*.md -- y comprueba que cada bloque de decision sea una lista con al menos dos opciones, recomendacion explicita y linea de espera. Eso ataca la causa medida del problema: la plantilla canonica prescribia un bloque de codigo, que colapsa a un solo parrafo en todo motor de Markdown. Lo que NO puede hacer es mirar el mensaje que el agente efectivamente escribio en la conversacion, ni como lo renderizo la terminal, ni si la persona vio opciones: no hay forma portable de comprobar nada de eso, y leer los transcripts del usuario seria un adaptador por agente mas una invasion de su historial. Tampoco juzga si las opciones son buenas ni si la recomendacion es la correcta."
+    },
+    {
+      "limit_id": "ablation-gate-checks-record-not-run",
+      "file": "SKILL.md",
+      "phrase": "verifica el **registro** de la limpieza, no la limpieza",
+      "why": "verify-ablation comprueba que el registro este completo y no se contradiga: que el set tenga entre 6 y 8 tareas acordadas antes de mover nada, que la linea base cubra todas, que cada tanda archive como maximo cinco archivos y vuelva a medir el mismo set, que ningun archivado apruebe una de las tres R ni caiga bajo un patron intocable, que una tanda que empeoro haya devuelto lineas, que la vuelta atras se haya probado, y que cada sobreviviente traiga su frase. Contra el disco comprueba la regla de oro: el archivo tiene que estar en el archivo y ya no en su lugar. Lo que NO hace es correr las pruebas del set, juzgar si son representativas, ni saber si un resultado que dice igual era igual: un registro coherente e inventado pasa en verde. Tampoco decide que merece archivarse; el filtro de las tres R lo aplica una persona."
     }
   ]
 }

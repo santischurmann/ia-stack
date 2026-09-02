@@ -1377,6 +1377,82 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 
 ---
 
+## PHASE 9 — LIMPIEZA (cada 7 días, al abrir sesión)
+
+**Qué es, en una línea.** Cada skill, cada regla y cada hook que tenés configurado se le carga al
+modelo **antes** de que escribas la primera letra. Lo que ya no sirve no es neutral: ocupa lugar y
+compite con lo que sí importa. Esta fase saca lo que sobra **sin perder nada**.
+
+**Cuándo.** Al abrir sesión, si pasaron 7 días desde la última limpieza. VCP te lo ofrece con un
+menú. Nunca mueve un archivo sin tu click.
+
+**El orden importa y es siempre el mismo:**
+
+1. **Actualizar** — el grafo de conocimiento se pone al día con lo que se hizo.
+2. **Compactar** — la memoria de la sesión se resume: lo largo se vuelve corto sin perder el hecho.
+3. **Limpiar** — recién acá se archiva, por tandas y midiendo.
+4. **Respaldar** — todo lo archivado entra al grafo y a Obsidian, para poder consultarlo después
+   sin restaurarlo.
+
+Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya está en dos lugares.
+
+### La regla de oro
+
+**Acá no existe `rm`.** Nada se borra. Todo se **mueve** a `.claude-archive/<fecha>/` conservando la
+ruta, y la vuelta atrás es un solo comando. Si en algún momento parece que la única salida es
+borrar, se para y se pregunta. Los patrones intocables viven en `contracts/ablation-scope.json` —
+entre ellos los `.mq5`, que no están en git y cuya pérdida sería irreversible.
+
+### El filtro de las tres R
+
+Para cada archivo se responden tres preguntas de sí o no. **Alcanza que una diga que sí para que
+se quede:**
+
+- **¿Repetible?** ¿Es una tarea que hacés exactamente igual más de tres veces por mes?
+- **¿Requisito?** ¿Tiene un dato que el modelo no puede adivinar — tu tono, tus rutas, tus reglas?
+- **¿Repartible?** ¿Se lo pasarías a otra persona para que le funcione igual que a vos?
+
+Lo que no aprueba ninguna se archiva. Y hay una señal aparte que conviene mirar primero: lo que son
+**instrucciones de cómo pensar** en vez de datos o límites. Eso es lo primero que sobra, porque le
+saca al modelo su mejor camino en vez de darle información.
+
+### Medir, no suponer
+
+Archivar sin medir es borrar con buena letra. Antes de mover el primer archivo se acuerdan **entre
+6 y 8 tareas tuyas reales** y se corre la línea base. Después se archiva **de a cinco como máximo**
+y se vuelve a correr el mismo set. Si algo empeora, se devuelven **las líneas mínimas** que arreglan
+la regresión — no el archivo entero — y se mide otra vez. De a cinco, porque con una tanda más
+grande sabés que algo empeoró pero no cuál.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-ablation.mjs check docs/ablation.json
+```
+
+### La fase no cierra hasta que se cumplen las cuatro
+
+1. El set de pruebas sale igual o mejor que la línea base, y se puede mostrar.
+2. Todo lo archivado tiene una razón escrita.
+3. La vuelta atrás se probó una vez de verdad: restaurar, verificar, volver a limpiar.
+4. Se puede decir en una frase por qué sobrevive cada archivo que quedó.
+
+Si falta alguna, no se cierra: se dice cuál falta y qué hace falta de tu parte.
+
+### El menú
+
+🔵 **Pasaron 7 días desde la última limpieza**
+
+- **A)** Limpiar ahora — acordamos el set de pruebas, mido, y archivo de a cinco — *(recomendado)*
+- **B)** Mostrarme primero qué se archivaría — inventario y veredictos, sin mover nada
+- **C)** Posponer una semana
+- **D)** No preguntarme más — se apaga el recordatorio
+
+Esperando tu respuesta antes de continuar.
+
+**Límite honesto.** El gate verifica el **registro** de la limpieza, no la limpieza: no corre tus
+pruebas, no juzga si son representativas y no sabe si un resultado que dice «igual» era igual. Un
+registro coherente e inventado pasa en verde. Lo que sí comprueba contra el disco es la regla de
+oro: cada archivo archivado tiene que estar en el archivo y ya no en su lugar.
+
 ## CONFIG MENU PROTOCOL
 
 **La linea de exito de un gate se cita sola, asi que su limite tiene que viajar con ella.**
