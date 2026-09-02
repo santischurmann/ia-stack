@@ -234,13 +234,18 @@ match doesn't block the candidate, it flags it: `⚠ possible sensitive content`
 **4. Confirm gate — hard rule, no exceptions.** Never write a candidate straight to
 `LESSONS.md`. Present the numbered list (title + confidence, sensitive-content warning if any)
 to the user:
-```
-🔵 LESSONS learned this session — confirm which to keep:
-1) [title] (confidence: high) — <1-line>
-2) [title] (confidence: medium) [overlaps with: LESSON-3] — <1-line>
-3) [title] (confidence: high) [⚠ possible sensitive content] — <1-line>
-A) all  B) none  C) pick by number  D) edit [n]
-```
+🔵 **Lecciones de esta sesión — ¿cuáles guardo?**
+
+1. [título] (confianza: alta) — <una línea>
+2. [título] (confianza: media) [overlaps with: LESSON-3] — <una línea>
+3. [título] (confianza: alta) [⚠ posible contenido sensible] — <una línea>
+
+- **A)** Elegir por número — [decime cuáles] — *(recomendado: guardar de menos antes que de más)*
+- **B)** Guardar todas
+- **C)** Editar una antes de guardarla — [decime cuál]
+- **D)** Ninguna
+
+Esperando tu respuesta antes de continuar.
 A false positive locked into memory is worse than repeating a correction three times — bias
 toward under-writing. Nothing is appended without this answer.
 

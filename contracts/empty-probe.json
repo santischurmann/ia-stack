@@ -317,6 +317,15 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay archivo de lecciones, y eso no es un incumplimiento: es un proyecto que todavia no registro ninguna. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por verificada una memoria de errores que no existe."
+    },
+    {
+      "script": "verify-menu-shape.mjs",
+      "args": [
+        "check",
+        "SKILL.md"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo VCP. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
     }
   ]
 }

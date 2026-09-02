@@ -34,7 +34,7 @@ No external skill is required or invoked for this. The VCP-native floor, always 
 4. Orchestrator codes zero features — spec/plan/verify/simplify/security/deploy only.
 5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail, escrita con `verify-audit-chain.mjs append`, nunca a mano — el sello encadena cada línea con la anterior y `check` detecta una edición posterior; ver `skills/vibe-memory.md`). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
 6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
-7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú.
+7. Config menus (model/effort/detail) at phase start. Content menus (approve/modify) at decisions. Both wait for answer. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (8.1). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
 
 **IRON LAW — sin claims de completitud sin evidencia fresca.** Refuerzo textual de "trust what's
@@ -407,7 +407,10 @@ a Spec sigue siendo humana y se presenta con 🔵.
 
 ## PHASE 3 — SPEC
 
-🔵 **FORCING QUESTIONS** (una por vez, esperar respuesta antes de la siguiente):
+**FORCING QUESTIONS** (una por vez, esperar respuesta antes de la siguiente). **Excepción nombrada
+a LAW 7 y por eso sin 🔵**: son texto libre a propósito, porque son una entrevista para levantar
+información, no una decisión de protocolo. Lo que LAW 7 prohíbe es cerrar una fase con una pregunta
+abierta; esto no cierra nada.
 ```
 1. Necesidad — ¿qué se rompe, cuesta tiempo o bloquea HOY sin esto? (no "estaría bueno")
 2. Status quo — ¿cuál es el workaround actual y qué cuesta (tiempo/errores/horas)?
@@ -422,11 +425,20 @@ sustantiva tras su respectiva repregunta → cortar ahí, generar spec con lo qu
 `Forcing Questions: N/6 (resto: skipped(count))` en `.vibe/SESSION.md`. Respuestas a 5 y 6
 alimentan directo las secciones Non-Goals/Constraints del spec — no las repreguntes ahí.
 
-🔵 **CONFIG** (ask once):
-```
-A) Detail: minimal (ACs only) / standard (+ constraints+non-goals) / exhaustive (+ risk notes)
-B) Include non-goals section? Y/N
-```
+🔵 **SPEC CONFIG** (una vez, dos preguntas — no son dos opciones de la misma pregunta):
+
+**1. ¿Cuánto detalle?**
+
+- **A)** Estándar — criterios de aceptación + restricciones + non-goals — *(recomendado)*
+- **B)** Mínimo — sólo criterios de aceptación
+- **C)** Exhaustivo — agrega notas de riesgo
+
+**2. ¿Incluir la sección de non-goals?**
+
+- **A)** Sí — deja escrito qué NO se construye en esta vuelta — *(recomendado)*
+- **B)** No
+
+Esperando tu respuesta antes de continuar.
 
 Generate `docs/spec.md` — template: `skills/spec-plan-templates.md`.
 
@@ -454,12 +466,13 @@ Ese modo exige las secciones canónicas, al menos un AC único con gramática
 
 **No acota el largo del documento: una spec entera en tablas o código pasa.** El tope cuenta narración, que es lo que nadie lee cuando sobra; una spec de diez mil palabras escrita toda en tablas cumple el gate.
 
-🔵 **CONTENT** review:
-```
-A) Approved — proceed to Plan
-B) Modify: [specify]
-C) Cancel
-```
+🔵 **Revisión de la spec**
+
+- **A)** Aprobada — seguir a Plan — *(recomendado si los gates están en verde)*
+- **B)** Modificar — [decime qué]
+- **C)** Cancelar
+
+Esperando tu respuesta antes de continuar.
 
 `.vibe/SESSION.md` += what/why specced + resumen de Forcing Questions.
 
@@ -467,11 +480,20 @@ C) Cancel
 
 ## PHASE 4 — PLAN
 
-🔵 **CONFIG** (ask once):
-```
-A) Task granularity: coarse (module-level) / atomic (1 fn/module, default) / hyper-atomic (split further)
-B) Parallel build allowed for independent tasks? Y/N (default Y — see orchestrator-opus.md § PARALLEL)
-```
+🔵 **PLAN CONFIG** (una vez, dos preguntas — no son dos opciones de la misma pregunta):
+
+**1. ¿De qué tamaño son las tareas?**
+
+- **A)** Atómicas — una función o módulo por tarea — *(recomendado)*
+- **B)** Gruesas — a nivel módulo
+- **C)** Híper-atómicas — partir todavía más
+
+**2. ¿Se permite construir tareas independientes en paralelo?**
+
+- **A)** Sí — más rápido; sólo se despachan juntas las que el preflight dejó sin conflicto de escritura — *(recomendado)*
+- **B)** No — una por vez, en orden
+
+Esperando tu respuesta antes de continuar.
 
 Generate `docs/plan.md` + `docs/tasks.json` — template: `skills/spec-plan-templates.md`. Status lifecycle per task: `pending→red→green→triangulate→refactor→done`.
 
@@ -487,23 +509,33 @@ desconocida/cíclica, campo no-array o path fuera del proyecto devuelve exit 1: 
 (serializá o dividí las tareas) y re-ejecutá el gate. No reemplaces este chequeo con la afirmación
 del orchestrator de que las tareas “parecen independientes”.
 
-🔵 **CONTENT** review:
-```
-A) Approved — start Build
-B) Add/remove tasks: [specify]
-C) Change order
-D) Cancel
-```
+🔵 **Revisión del plan**
+
+- **A)** Aprobado — arrancar Build — *(recomendado si los gates están en verde)*
+- **B)** Agregar o sacar tareas — [decime cuáles]
+- **C)** Cambiar el orden
+- **D)** Cancelar
+
+Esperando tu respuesta antes de continuar.
 
 ---
 
 ## PHASE 5 — BUILD (Sonnet 5 subagents, per task)
 
-🔵 **CONFIG** (ask once before first task):
-```
-A) Model/effort: sonnet low (default, fast+cheap) / sonnet standard / sonnet high (complex logic)
-B) Override per-task later if a task looks harder than expected? Y/N
-```
+🔵 **BUILD CONFIG** (una vez, antes de la primera tarea — dos preguntas, no dos opciones):
+
+**1. ¿Con cuánto esfuerzo trabajan los subagentes?**
+
+- **A)** Bajo — rápido y barato, alcanza para la mayoría de las tareas — *(recomendado)*
+- **B)** Estándar
+- **C)** Alto — para lógica complicada
+
+**2. ¿Puedo subirle el esfuerzo a una tarea suelta si resulta más difícil de lo esperado?**
+
+- **A)** Sí — te aviso y lo subo sólo en esa tarea — *(recomendado)*
+- **B)** No — el mismo esfuerzo para todas
+
+Esperando tu respuesta antes de continuar.
 
 Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`. Si Phase 4
 permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto
@@ -846,13 +878,15 @@ bloquea seguir sin replanificar):
 2. Actualizar `docs/plan.md`/`tasks.json` (nueva entrada o ampliación de `approval_criteria`) y,
    si corresponde, `.vibe/DECISIONS.md` con la decisión de ampliar scope.
 3. 🔵 pedir confirmación explícita del usuario antes de aplicar el fix o seguir:
-```
-🔵 El fix para "<finding>" excede el scope original — <razón concreta: N líneas / M archivos /
-   qué contrato/API/dependencia se amplía>.
-A) Aplicar igual — scope ampliado, ya documentado arriba
-B) Recortar el fix a lo mínimo que cierra el finding sin ampliar scope
-C) Tratar como tarea nueva — vuelve a Plan (Phase 4)
-```
+🔵 **El fix para "<finding>" se pasa del scope original**
+
+<razón concreta: N líneas / M archivos / qué contrato, API o dependencia se amplía>
+
+- **A)** Recortar el fix a lo mínimo que cierra el finding, sin ampliar scope — *(recomendado)*
+- **B)** Aplicarlo igual — scope ampliado, ya documentado arriba
+- **C)** Tratarlo como tarea nueva — vuelve a Plan (Phase 4)
+
+Esperando tu respuesta antes de continuar.
 Esto no reemplaza el criterio del reviewer — un finding real sigue siendo un finding real. Lo
 que este gate frena es seguir corrigiendo en silencio cuando la corrección deja de ser "el fix
 de este finding" y pasa a ser un cambio de scope no planeado.
@@ -1201,11 +1235,13 @@ mensaje:**
 git add -A && git commit -m "<type>(<scope>): <what+why>"
 ```
 Commit = reversible, do it. **Push/merge = show the exact command, ask 🔵 confirm first** — never automatic, never `--force`, never skip hooks.
-```
-🔵 A) git push origin <branch>
-B) git push + open PR
-C) Hold — don't push yet
-```
+🔵 **¿Publico?**
+
+- **A)** `git push origin <branch>` — *(recomendado si todos los gates están en verde)*
+- **B)** `git push` y además abrir un PR
+- **C)** Todavía no — dejarlo local
+
+Esperando tu respuesta antes de continuar.
 
 **8.1.1 Ancla de la traza** — antes de publicar, la historia de git tiene que respaldar la traza:
 
@@ -1350,13 +1386,17 @@ el gate afirma algo que no prueba, esa afirmacion sobrevive sin su descargo. Por
 cualquier gate nuevo que afirme algo sobre personas tiene que hacer lo mismo.
 
 
-Once per phase, before content decisions:
-```
-🔵 [PHASE] CONFIG
-A) [option] — [default marked]
-B) [option]
-Waiting for answer before continuing.
-```
+Once per phase, before content decisions. **Lista, nunca bloque de código**: medido en CommonMark
+estricto y en GFM, las líneas sueltas `A)` / `B)` dentro de un fence colapsan a un solo párrafo, y
+un fence renderiza como caja de código. La letra va **adentro** del ítem, no como lista ordenada
+nativa, porque `A)` es el token con el que la persona contesta y una `<ol>` lo borra.
+
+🔵 **[FASE] CONFIG**
+
+- **A)** [opción] — *(recomendado)*
+- **B)** [opción]
+
+Esperando tu respuesta antes de continuar.
 
 **Registrar la decisión EN EL MOMENTO, no después.** Apenas la persona responde, se agrega la
 entrada a `docs/phase-decisions.json` con el menú textual que se le mostró, la recomendación, la
@@ -1374,15 +1414,60 @@ El hueco no fue de las personas: el protocolo pedía **mostrar** el menú y no o
 **escribirlo** en ninguna parte. Una decisión que no se registra mientras ocurre no se puede
 registrar honestamente nunca más.
 
+**El formato del menú lo verifica un gate, no la buena memoria.** Un menú escrito como bloque de
+código colapsa a un solo párrafo: la plantilla que este mismo archivo prescribía lo hacía así, y
+ningún gate se enteraba.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-menu-shape.mjs check SKILL.md
+```
+
+Rechaza todo bloque `🔵` que no sea una lista de al menos dos opciones `- **A)** texto`, con marca
+de recomendación explícita y línea de espera al final. **Verifica las plantillas, no la conversación**:
+no puede saber qué mensaje escribió el agente ni cómo lo pintó la terminal, y nada verifica eso de
+forma portable.
+
+## EL MENÚ CLICKEABLE ES UN UPGRADE POR HOST, NO EL PROTOCOLO
+
+**Medido, no supuesto.** No existe forma portable de que un menú sea clickeable. En Claude Code hay
+una herramienta nativa de selección. En Codex el cliente MCP declara la capacidad `elicitation` y
+parsea correctamente un menú con etiquetas —verificado con una traza real— pero **nadie observó
+todavía uno renderizado**: en tres intentos el servidor declinó al instante y el formulario nunca
+llegó a una persona. En un agente genérico que sólo lee Markdown no hay mecanismo alguno.
+
+El piso común en toda IA es Markdown. Por eso **el canon es la lista Markdown**, y "clickeable" es
+una capa de presentación que se dibuja sobre las **mismas** `options[]` cuando el host la tiene. Un
+menú Markdown no es una versión degradada del clickeable: es la forma completa.
+
+**Regla de integración, y va escrita antes de usar cualquier selector nativo.** Un selector nativo
+puede ofrecerle a la persona una salida que el menú no tenía —en Claude Code la UI agrega siempre
+una opción "Other" de texto libre, y no se puede desactivar—. Entonces:
+
+1. `options[]` se registra con las etiquetas **tal como se mostraron**. La herramienta devuelve la
+   etiqueta, no un identificador: si el registro guarda otra cosa, guarda una ficción.
+2. **El texto de "Other" NUNCA se escribe como `selected_option`.** Reproducido: hacerlo hace que
+   `verify-phase-decisions.mjs` rechace la fase entera con `PHASE_DECISION_OPTION_UNKNOWN`.
+3. Si la persona responde por fuera del menú, hay dos caminos honestos y ninguno más: **volver a
+   preguntar** con un menú que ya incluya esa opción, o marcar la decisión anterior como
+   `superseded` y abrir una nueva. Nunca reescribir el menú viejo para que la respuesta encaje —
+   eso rompe el hash de esa decisión y toda la cadena hacia adelante, que es exactamente para lo
+   que el sello existe.
+
+**Límite honesto.** Esto mejora cómo se ve la decisión y hace verificable su FORMA. **No hace
+verificable la voluntad**: un registro coherente e inventado sigue pasando en verde, y ningún
+mecanismo de acá acerca a probar que una persona vio un menú. `verify-phase-decisions.mjs` ya lo
+dice en su propio texto y nada de esto lo mueve.
+
 ## CONTENT DECISION PROTOCOL (unchanged)
 
-```
-🔵 [DECISION TOPIC]
-[Context: why this matters]
-A) [Option] — [trade-off]
-B) [Option] — [trade-off]
+🔵 **[TEMA DE LA DECISIÓN]**
+
+[Contexto: por qué importa, en una línea]
+
+- **A)** [opción] — [trade-off] — *(recomendado)*
+- **B)** [opción] — [trade-off]
+
 Esperando tu respuesta antes de continuar.
-```
 
 Respondido el 🔵 que cierra una fase, la decisión se registra en `docs/phase-decisions.json`
 (plantilla: `templates/phase-decisions.json`) antes de abrir la fase siguiente. Cada entrada lleva

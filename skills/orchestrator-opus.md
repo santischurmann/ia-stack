@@ -260,22 +260,26 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 
 ## MULTIPLE CHOICE TEMPLATES
 
-**Config (phase-start, once):**
-```
-🔵 [PHASE] CONFIG
-A) [option, default marked]
-B) [option]
-Waiting for answer before continuing.
-```
+**Config (phase-start, once).** Lista, nunca bloque de código: un fence colapsa a un solo párrafo
+y el menú llega como prosa. La letra va adentro del ítem porque es el token con el que se contesta.
+
+🔵 **[FASE] CONFIG**
+
+- **A)** [opción] — *(recomendado)*
+- **B)** [opción]
+
+Esperando tu respuesta antes de continuar.
 
 **Content decision:**
-```
-🔵 DECISION: <topic>
-Context: <why this matters>
-A) <option> — Pro/Con
-B) <option> — Pro/Con
+
+🔵 **<tema de la decisión>**
+
+<contexto: por qué importa, en una línea>
+
+- **A)** <opción> — <trade-off> — *(recomendado)*
+- **B)** <opción> — <trade-off>
+
 Esperando tu respuesta antes de continuar.
-```
 
 ---
 

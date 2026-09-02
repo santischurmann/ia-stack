@@ -432,6 +432,12 @@
       "file": "SKILL.md",
       "phrase": "al menos una letra con caso o un dígito",
       "why": "La unica medida de sustancia de un campo es que contenga una letra con caso o un digito, mas un minimo de longitud y una lista negra derivada de la plantilla. Eso alcanza para acusar un campo lleno de invisibles -medido: 15 copias de U+2060 pasaban el gate publicado-, y no alcanza para nada mas: seis campos con la misma frase creible repetida pasan, y una escritura sin distincion de caso (chino, japones, coreano) saldria rechazada aunque el contenido sea real. El repo escribe en espanol e ingles, asi que el falso rojo es teorico hoy y esta declarado en vez de resuelto."
+    },
+    {
+      "limit_id": "menu-shape-checks-templates-not-conversation",
+      "file": "SKILL.md",
+      "phrase": "Verifica las plantillas, no la conversación",
+      "why": "verify-menu-shape lee los documentos del protocolo -- SKILL.md, README.md, skills/*.md -- y comprueba que cada bloque de decision sea una lista con al menos dos opciones, recomendacion explicita y linea de espera. Eso ataca la causa medida del problema: la plantilla canonica prescribia un bloque de codigo, que colapsa a un solo parrafo en todo motor de Markdown. Lo que NO puede hacer es mirar el mensaje que el agente efectivamente escribio en la conversacion, ni como lo renderizo la terminal, ni si la persona vio opciones: no hay forma portable de comprobar nada de eso, y leer los transcripts del usuario seria un adaptador por agente mas una invasion de su historial. Tampoco juzga si las opciones son buenas ni si la recomendacion es la correcta."
     }
   ]
 }

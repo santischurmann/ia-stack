@@ -22,10 +22,13 @@ grep -m1 "^version" pyproject.toml | cut -d'"' -f2          # Python
 cat go.mod | head -3                                        # Go
 ```
 
-```
-🔵 VERSION BUMP — current X.Y.Z
-A) Patch (bugfix) B) Minor (feature, compat) C) Major (breaking)
-```
+🔵 **Subir versión — hoy es X.Y.Z**
+
+- **A)** Patch — corrige un bug, nada cambia para quien la usa — *(recomendado por defecto)*
+- **B)** Minor — agrega algo nuevo sin romper lo anterior
+- **C)** Major — rompe compatibilidad
+
+Esperando tu respuesta antes de continuar.
 
 ---
 

@@ -7,6 +7,45 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El protocolo prescribía por escrito el único formato que garantiza que un menú NO se vea como
+  menú.** La plantilla canónica de `CONFIG MENU PROTOCOL` y `CONTENT DECISION PROTOCOL` escribía las
+  opciones dentro de un bloque de código, con líneas sueltas `A)` / `B)`. Medido sobre motores de
+  Markdown: esas líneas colapsan a **un solo párrafo**, y un fence además renderiza como caja de
+  código. Por eso las decisiones llegaban como prosa. Ningún gate se enteraba: `verify-vcp-contract`
+  pasaba 107 checks sin una sola regla de forma sobre los menús.
+  - **Forma canónica nueva:** `- **A)** texto — *(recomendado)*`. Es el único formato que produce
+    ítems separados tanto en CommonMark estricto como en GFM, y la letra va **adentro** del ítem
+    porque `A)` es el token con el que la persona contesta — una lista ordenada nativa lo borraría.
+  - **13 menús reescritos** en `SKILL.md`, `skills/orchestrator-opus.md`, `skills/vibe-memory.md` y
+    `skills/deploy-zip.md`. No queda ningún menú dentro de un bloque de código.
+- **Dos contradicciones internas que no las causaba ningún host:**
+  - `FORCING QUESTIONS` llevaba 🔵 con seis preguntas de texto libre, que es justo lo que LAW 7
+    prohíbe para una decisión de protocolo. Queda declarada **excepción nombrada y sin 🔵**: es una
+    entrevista para levantar información, no cierra ninguna fase.
+  - Los tres menús `CONFIG` de Spec, Plan y Build no eran menús: cada `A)`/`B)` era una **pregunta
+    distinta** con sus propias sub-opciones. Partidos en dos preguntas con sus opciones cada una.
+- **Gate 37, `verify-menu-shape.mjs`:** rechaza todo bloque `🔵` que no sea lista con al menos dos
+  opciones, recomendación explícita y línea de espera. Ataca la causa —la plantilla— y no el
+  síntoma. Su falsificación cubre las dos formas que colapsan: opciones dentro de un fence y
+  opciones como líneas sueltas.
+- **`AGENTS.md` puntero en la raíz.** Verificado ejecutando: Codex sólo descubre instrucciones de
+  repo por `AGENTS.md`, y skills sólo en `.agents/skills` o `.codex/skills` — el `SKILL.md` suelto de
+  la raíz y los `skills/*.md` le son invisibles. VCP era literalmente invisible para Codex. Es un
+  puntero y no una copia: una copia se desincroniza y no hay gate que las mantenga iguales.
+- **Límite honesto nuevo (73):** el gate verifica las plantillas que el protocolo prescribe, **no**
+  el mensaje que el agente escribió en la conversación ni cómo lo pintó la terminal.
+- **Escrito, no simulado: no existe forma portable de que un menú sea clickeable.** Verificado
+  ejecutando que el cliente MCP de Codex 0.147.0 declara la capacidad `elicitation` y parsea bien un
+  menú con etiquetas, pero **en tres intentos nadie observó uno renderizado**: el servidor declinó al
+  instante. Por eso no entra al repo. Condición de salida escrita: reproducir una aceptación real en
+  la terminal de Codex. Hasta entonces no se menciona como capacidad. El canon es Markdown, y
+  "clickeable" es una capa de presentación sobre las mismas `options[]` donde el host la tenga.
+- **Regla de integración del selector nativo, escrita antes de usarlo:** la UI de Claude Code agrega
+  siempre una opción "Other" de texto libre que no se puede desactivar. Ese texto **nunca** se
+  escribe como `selected_option` — reproducido, hace que `verify-phase-decisions.mjs` rechace la fase
+  con `PHASE_DECISION_OPTION_UNKNOWN`. Se vuelve a preguntar con un menú que incluya esa opción, o se
+  marca la decisión previa como `superseded`.
+
 - **El gate de lecciones rompía toda instalación nueva, y lo encontró una auditoría adversarial
   contra el código ya publicado.** Las dos lentes que habían muerto por límite de sesión se
   re-corrieron con `resume` —los cinco atacantes desde caché— y esta vez, además de votar los 40
