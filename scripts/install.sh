@@ -71,6 +71,16 @@ if [ -n "$PROJECT_DIR" ]; then
   # gate de seguridad lo trata como superficie viva -- un hallazgo dentro del runtime bloquearia el
   # proyecto con un CRITICAL que el usuario no escribio y no puede arreglar editando su codigo.
   IGNORE_FILE="$PROJECT_DIR/.gitignore"
+  # PHASE 9 archiva configuracion en .claude-archive/. Puede traer rutas, tokens o datos propios:
+  # si queda con seguimiento, el primer commit del usuario se lleva todo eso adentro.
+  ARCHIVE_RULE=".claude-archive/"
+  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$ARCHIVE_RULE" "$IGNORE_FILE"; then
+    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
+    printf '# VibeCodeProtocols PHASE 9: lo que la limpieza archiva, nunca se commitea
+%s
+' "$ARCHIVE_RULE" >> "$IGNORE_FILE"
+    echo "OK: $ARCHIVE_RULE agregado a .gitignore"
+  fi
   IGNORE_RULE=".vibe/vcp-runtime/"
   if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
     [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
@@ -85,7 +95,13 @@ if [ -n "$PROJECT_DIR" ]; then
   # proyecto pero Codex no ve nada de el. Son punteros al runtime, no copias: una copia se
   # desincroniza y ningun gate las mantiene iguales.
   mkdir -p "$PROJECT_DIR/.agents/skills/vibecodeprotocols"
-  cp "$PACKAGE_DIR/.agents/skills/vibecodeprotocols/SKILL.md" "$PROJECT_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
+  CODEX_SKILL_SRC="$PACKAGE_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
+  CODEX_SKILL_DST="$PROJECT_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
+  # Instalar VCP dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen y
+  # destino son el mismo archivo y `cp` falla. No es un error, es que ya esta donde tiene que estar.
+  if [ "$CODEX_SKILL_SRC" != "$CODEX_SKILL_DST" ]; then
+    cp "$CODEX_SKILL_SRC" "$CODEX_SKILL_DST"
+  fi
   if [ ! -f "$PROJECT_DIR/AGENTS.md" ]; then
     cp "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
     echo "OK: AGENTS.md creado -> Codex ya ve el protocolo"

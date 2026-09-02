@@ -25,9 +25,15 @@ import { join, resolve } from 'node:path';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { safeProjectFile } from './ratchet.mjs';
+// La validacion de fecha no se reimplementa: `\d{4}-\d{2}-\d{2}` acepta 2026-02-30 y `new Date` la
+// rueda a marzo, asi que el criterio correcto -- round-trip en UTC -- ya vive probado en el gate de
+// lecciones. Una segunda copia seria una segunda cosa que arreglar cuando aparezca el proximo caso.
+import { realDate } from './verify-lessons.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-export const USAGE = 'usage: verify-ablation.mjs check <ablation.json>';
+export const USAGE = 'usage: verify-ablation.mjs check <ablation.json> | verify-ablation.mjs due <ablation.json> [--today <AAAA-MM-DD>]';
+/** Cada cuantos dias vuelve a tocar la limpieza. PHASE 9 lo declara; hasta ahora nadie lo calculaba. */
+export const PERIOD_DAYS = 7;
 export const EMPTY = 'VACÍO';
 export const LIMITS = 'LÍMITE';
 export const LIMITS_TEXT = `${LIMITS}: verifica el registro de una ablación, no la ablación. No corre las pruebas del set, no juzga si son representativas y no sabe si un resultado que dice "igual" era igual. Un registro coherente e inventado pasa en verde.`;
@@ -36,10 +42,28 @@ export const SCOPE_SCHEMA = 'vcp.ablation-scope/1';
 export const SCOPE_PATH = join(repoRoot, 'contracts', 'ablation-scope.json');
 export const VERDICTS = new Set(['QUEDA', 'ARCHIVAR', 'REESCRIBIR']);
 export const COMPARISONS = new Set(['igual', 'mejor', 'peor']);
+/** Un resultado se declara con una palabra fija: el texto libre no lo leia nadie. */
+export const OUTCOMES = new Set(['pass', 'fail']);
+/**
+ * La regla de oro decia "aca no existe rm" en el encabezado del gate, y un rollback_command con
+ * `rm -rf` pasaba en verde. Ahora se comprueba: el comando de vuelta atras restaura, no destruye.
+ */
+export const DESTRUCTIVE = [
+  /(^|[\s;&|(])rm(\.exe)?([\s]|$)/iu,
+  /(^|[\s;&|(])rmdir([\s]|$)/iu,
+  /(^|[\s;&|(])del([\s]|$)/iu,
+  /(^|[\s;&|(])erase([\s]|$)/iu,
+  /Remove-Item/iu,
+  /(^|[\s;&|(])unlink([\s]|$)/iu,
+  /(^|[\s;&|(])shred([\s]|$)/iu,
+  /git\s+clean/iu,
+];
 /** Las tres R del filtro. Aprobar CUALQUIERA alcanza para no archivar. */
 export const R = Object.freeze(['repetible', 'requisito', 'repartible']);
 
-const RECORD_KEYS = ['schema', 'run_id', 'archive_dir', 'rollback_command', 'rollback_tested', 'test_set', 'baseline', 'inventory', 'batches', 'survivors', 'totals'];
+const RECORD_KEYS = ['schema', 'run_id', 'archive_dir', 'rollback_command', 'rollback_tested', 'test_set', 'baseline', 'inventory', 'batches', 'survivors', 'totals', 'backup'];
+/** PHASE 9 promete respaldar ANTES de limpiar. Sin esto era una promesa que ningun campo sostenia. */
+const BACKUP_KEYS = ['graphify', 'obsidian'];
 const ARCHIVED_KEYS = ['path', 'archived_to', ...R, 'verdict', 'reason'];
 const MIN_REASON = 20;
 
@@ -138,6 +162,20 @@ export function loadScope(contract) {
     if (desnudo.endsWith('/**')) res.push(new RegExp(globToRegExp(desnudo.slice(0, -3)).source, 'iu'));
     untouchable.push({ pattern: entry.pattern, why: entry.why, res });
   }
+  // in_scope estaba declarado y ningun codigo lo leia: un campo decorativo en un contrato de
+  // seguridad es peor que no tenerlo, porque se lee como si algo lo hiciera cumplir.
+  const inScope = [];
+  for (const [index, entry] of (contract.in_scope ?? []).entries()) {
+    if (!isObject(entry) || typeof entry.path !== 'string' || entry.path === '' || !longEnough(entry.why)) {
+      violations.push(`el contrato de alcance: in_scope[${index}] necesita una ruta y un motivo escrito`);
+      continue;
+    }
+    inScope.push({ path: entry.path, normal: normalizePath(entry.path) });
+  }
+  if (inScope.length === 0) violations.push('el contrato de alcance debe declarar al menos una ruta en alcance');
+  if (typeof contract.golden_rule !== 'string' || !/no existe .?rm/iu.test(contract.golden_rule)) {
+    violations.push('el contrato de alcance debe declarar la regla de oro y decir que rm no existe en la limpieza');
+  }
   const set = isObject(contract.test_set) ? contract.test_set : {};
   const batch = isObject(contract.batch) ? contract.batch : {};
   if (!Number.isInteger(set.min) || !Number.isInteger(set.max) || set.min < 1 || set.max < set.min) {
@@ -146,7 +184,7 @@ export function loadScope(contract) {
   if (!Number.isInteger(batch.max_files) || batch.max_files < 1) {
     violations.push('el contrato de alcance debe declarar batch.max_files');
   }
-  return { untouchable, minTests: set.min, maxTests: set.max, maxBatch: batch.max_files, violations };
+  return { untouchable, inScope, minTests: set.min, maxTests: set.max, maxBatch: batch.max_files, violations };
 }
 
 function checkTestSet(record, scope, violations) {
@@ -155,6 +193,7 @@ function checkTestSet(record, scope, violations) {
     return new Set();
   }
   const ids = new Set();
+  const tareas = new Map();
   for (const [index, entry] of record.test_set.entries()) {
     if (!exactKeys(entry, ['test_id', 'task', 'why_representative']) || typeof entry.test_id !== 'string' || entry.test_id === '') {
       violations.push(`el set de pruebas: la tarea ${index + 1} necesita test_id, task y why_representative`);
@@ -165,6 +204,9 @@ function checkTestSet(record, scope, violations) {
     }
     if (ids.has(entry.test_id)) violations.push(`el set de pruebas repite ${entry.test_id}`);
     ids.add(entry.test_id);
+    const firma = String(entry.task).trim().toLowerCase();
+    if (tareas.has(firma)) violations.push(`el set de pruebas repite la misma tarea en ${tareas.get(firma)} y ${entry.test_id}: seis copias de una prueba no son seis pruebas`);
+    tareas.set(firma, entry.test_id);
   }
   return ids;
 }
@@ -181,6 +223,7 @@ function checkMeasurement(rows, ids, donde, violations) {
       continue;
     }
     if (!longEnough(row.evidence)) violations.push(`${donde}: ${row.test_id} no trae la evidencia de lo que salió`);
+    if (!OUTCOMES.has(row.outcome)) violations.push(`${donde}: ${row.test_id} declara outcome ${JSON.stringify(row.outcome)} y sólo vale ${[...OUTCOMES].join(' o ')}`);
     vistos.add(row.test_id);
   }
   const faltan = [...ids].filter((id) => !vistos.has(id));
@@ -192,6 +235,13 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   if (!exactKeys(entry, ARCHIVED_KEYS)) {
     violations.push(`${donde}: un archivado debe declarar exactamente ${ARCHIVED_KEYS.join(', ')}`);
     return;
+  }
+  const dentro = (scope.inScope ?? []).some((s) => {
+    const ruta = normalizePath(entry.path);
+    return ruta === s.normal || ruta.startsWith(`${s.normal}/`);
+  });
+  if (!dentro) {
+    violations.push(`${donde}: ${entry.path} está fuera del alcance declarado en el contrato (${(scope.inScope ?? []).map((s) => s.path).join(', ')})`);
   }
   const golpe = scope.untouchable.find((u) => hits(u, entry.path));
   if (golpe) {
@@ -215,6 +265,10 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
   const carpeta = normalizePath(record.archive_dir);
   if (carpeta === '' || !destino.startsWith(`${carpeta}/`)) {
     violations.push(`${donde}: ${entry.path} se guardó fuera de ${JSON.stringify(record.archive_dir)}, así que el comando de vuelta atrás no lo alcanza`);
+  } else if (!destino.endsWith(normalizePath(entry.path))) {
+    // Aplanar la ruta hace que el archivo pierda su mapa de vuelta: el rollback mueve carpetas
+    // enteras, y un archivo que no conserva su ruta relativa no vuelve al lugar del que salio.
+    violations.push(`${donde}: ${entry.archived_to} no conserva la ruta de ${entry.path}: la vuelta atrás mueve el árbol entero y un archivo aplanado no vuelve a su lugar`);
   }
   // La regla de oro contra el disco: tiene que estar en el archivo y NO en su lugar original.
   if (!io.exists(entry.archived_to)) {
@@ -251,6 +305,12 @@ export function validateAblation(record, scope, io) {
       if (isObject(entry)) archivados.add(entry.path);
     }
     checkMeasurement(batch.measured, ids, donde, violations);
+    // Una tanda con pruebas en rojo no puede declararse igual ni mejor: eso es el resultado
+    // afirmado contra el resultado medido, que es la contradiccion que este gate existe para ver.
+    const fallaron = (Array.isArray(batch.measured) ? batch.measured : []).filter((row) => row?.outcome === 'fail');
+    if (fallaron.length > 0 && batch.comparison !== 'peor') {
+      violations.push(`${donde}: ${fallaron.length} prueba(s) dieron outcome "fail" y la tanda se declara ${JSON.stringify(batch.comparison)}`);
+    }
     if (!COMPARISONS.has(batch.comparison)) {
       violations.push(`${donde}: comparison debe ser una de ${[...COMPARISONS].join(', ')}`);
     }
@@ -267,6 +327,19 @@ export function validateAblation(record, scope, io) {
     }
   }
 
+  if (!realDate(record.run_id)) {
+    violations.push(`run_id debe ser la fecha real de la corrida en formato AAAA-MM-DD, no ${JSON.stringify(record.run_id)}: sin ella no se puede saber cuándo toca la próxima limpieza`);
+  }
+  if (!exactKeys(record.backup, BACKUP_KEYS)) {
+    violations.push(`backup debe declarar exactamente ${BACKUP_KEYS.join(' y ')}: la fase respalda ANTES de limpiar, y sin registro eso es una promesa sin respaldo`);
+  } else {
+    for (const destino of BACKUP_KEYS) {
+      const paso = record.backup[destino];
+      if (!isObject(paso) || paso.done !== true || !longEnough(paso.evidence)) {
+        violations.push(`el respaldo en ${destino} no está hecho o no trae evidencia: nada se archiva antes de que su contenido esté en los dos lados`);
+      }
+    }
+  }
   const destinos = new Set();
   for (const batch of Array.isArray(record.batches) ? record.batches : []) {
     for (const entry of Array.isArray(batch.archived) ? batch.archived : []) {
@@ -282,6 +355,11 @@ export function validateAblation(record, scope, io) {
   }
   if (!longEnough(record.rollback_command)) {
     violations.push('no hay un comando de vuelta atrás escrito');
+  } else {
+    const arma = DESTRUCTIVE.find((re) => re.test(record.rollback_command));
+    if (arma !== undefined) {
+      violations.push(`el comando de vuelta atrás borra en vez de restaurar (${JSON.stringify(record.rollback_command.slice(0, 60))}). En la limpieza no existe rm: la vuelta atrás mueve de vuelta, nunca elimina`);
+    }
   }
 
   const sobrevivientes = new Set();
@@ -308,6 +386,18 @@ export function validateAblation(record, scope, io) {
   }
   if (!isObject(record.totals) || !exactKeys(record.totals, ['words_before', 'words_after', 'files_before', 'files_after'])) {
     violations.push('faltan los totales de antes y después en palabras y archivos');
+  } else {
+    const { words_before: wb, words_after: wa, files_before: fb, files_after: fa } = record.totals;
+    if ([wb, wa, fb, fa].some((n) => !Number.isInteger(n) || n < 0)) {
+      violations.push('los totales tienen que ser números enteros y no negativos');
+    } else if (wa > wb || fa > fb) {
+      violations.push(`los totales dicen que la limpieza agrandó la configuración (${wb}→${wa} palabras, ${fb}→${fa} archivos): eso no es una limpieza`);
+    }
+  }
+  // Una corrida sin ninguna tanda es legitima -- puede que nada haya que archivarse -- pero
+  // entonces no puede certificar una vuelta atras que nunca hizo falta probar.
+  if (Array.isArray(record.batches) && record.batches.length === 0) {
+    violations.push('la limpieza no archivó nada: si no había nada que archivar, decilo en el registro y no lo cierres como una ablación medida');
   }
   return violations;
 }
@@ -320,11 +410,22 @@ function makeExists(root) {
   };
 }
 
+/** Dias entre dos fechas AAAA-MM-DD, sin husos ni relojes: la resta en UTC alcanza. */
+export function daysBetween(from, to) {
+  const dia = 86_400_000;
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / dia);
+}
+
 export function main(args = process.argv.slice(2), options = {}) {
   const write = options.write ?? console.log;
   const writeError = options.writeError ?? console.error;
   const read = options.read ?? readFileSync;
-  if (args.length !== 2 || args[0] !== 'check' || args[1] === '') {
+  const esDue = args[0] === 'due';
+  const flags = args.slice(2);
+  const okDue = esDue && args.length >= 2 && args[1] !== ''
+    && (flags.length === 0 || (flags.length === 2 && flags[0] === '--today' && realDate(flags[1])));
+  const okCheck = args.length === 2 && args[0] === 'check' && args[1] !== '';
+  if (!okCheck && !okDue) {
     writeError(USAGE);
     return 2;
   }
@@ -352,7 +453,9 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
   if (archivo === null) {
-    write(`${EMPTY}: no hay ninguna corrida de limpieza en ${path}. Esto no verificó nada.`);
+    write(esDue
+      ? `toca limpiar: nunca se corrió una limpieza en este proyecto (${path} no existe).`
+      : `${EMPTY}: no hay ninguna corrida de limpieza en ${path}. Esto no verificó nada.`);
     write(LIMITS_TEXT);
     return 0;
   }
@@ -361,13 +464,32 @@ export function main(args = process.argv.slice(2), options = {}) {
     record = JSON.parse(stripBom(read(archivo, 'utf8')));
   } catch (error) {
     if (error.code === 'ENOENT') {
-      write(`${EMPTY}: no hay ninguna corrida de limpieza en ${path}. Esto no verificó nada.`);
+      write(esDue
+        ? `toca limpiar: nunca se corrió una limpieza en este proyecto (${path} no existe).`
+        : `${EMPTY}: no hay ninguna corrida de limpieza en ${path}. Esto no verificó nada.`);
       write(LIMITS_TEXT);
       return 0;
     }
     writeError(`REJECTED: ${path} no es JSON válido ni se pudo leer: ${error.message}`);
     writeError(LIMITS_TEXT);
     return 1;
+  }
+
+  if (esDue) {
+    const hoy = flags.length === 2 ? flags[1] : new Date().toISOString().slice(0, 10);
+    if (!realDate(record.run_id)) {
+      write(`toca limpiar: ${path} no declara una fecha de corrida válida, así que no hay última limpieza que contar.`);
+      write(LIMITS_TEXT);
+      return 0;
+    }
+    const pasaron = daysBetween(record.run_id, hoy);
+    if (pasaron >= PERIOD_DAYS) {
+      write(`toca limpiar: pasaron ${pasaron} día(s) desde la última limpieza (${record.run_id}) y el período es de ${PERIOD_DAYS}.`);
+    } else {
+      write(`todavía no: pasaron ${pasaron} día(s) desde ${record.run_id}, falta(n) ${PERIOD_DAYS - pasaron} para los ${PERIOD_DAYS} del período.`);
+    }
+    write(LIMITS_TEXT);
+    return 0;
   }
 
   const io = { exists: options.exists ?? makeExists(root) };

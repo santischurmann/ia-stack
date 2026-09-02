@@ -7,6 +7,45 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La regla de oro dejó de ser una frase del encabezado.** `rollback_command` era texto libre: un
+  comando de vuelta atrás que decía `rm -rf ~/.claude/skills` **pasaba en verde**, en el gate cuyo
+  propio encabezado dice «acá no existe rm». Ahora se rechaza `rm`, `rmdir`, `del`, `erase`,
+  `Remove-Item`, `unlink`, `shred` y `git clean`: la vuelta atrás mueve de vuelta, nunca elimina.
+- **`in_scope` y `golden_rule` dejaron de ser decorativos.** Estaban declarados en el contrato y
+  **ningún código los leía** — un campo decorativo en un contrato de seguridad es peor que no
+  tenerlo, porque se lee como si algo lo hiciera cumplir. Ahora archivar algo fuera del alcance
+  declarado se rechaza, y un contrato que no declara la regla de oro no carga.
+- **Lo archivado ya no se commitea.** `.claude-archive/` entra al `.gitignore` del repo y los dos
+  instaladores lo agregan al del proyecto destino. Es configuración con rutas y datos propios: si
+  queda con seguimiento, el primer commit del usuario se la lleva adentro.
+- **El disparador de los 7 días existe de verdad.** Antes la fase decía «cada 7 días» y **nada podía
+  calcularlo**: ningún campo guardaba la fecha de la última limpieza. Ahora `run_id` es una fecha
+  real validada por round-trip UTC, y `verify-ablation.mjs due` responde si toca, cuántos días
+  pasaron, o que nunca se limpió.
+- **El respaldo dejó de ser una promesa.** El registro lleva `backup.graphify` y `backup.obsidian`
+  con evidencia escrita, y sin los dos la fase no cierra. Es lo que hace que «no se pierde nada» sea
+  una afirmación con respaldo y no una intención.
+- **Otras cuatro contradicciones cerradas:** `outcome` era texto libre que nadie leía (ahora es
+  `pass`/`fail`, y una tanda con pruebas en rojo no puede declararse igual ni mejor); seis copias de
+  la misma tarea contaban como un set de seis; los totales aceptaban `"cero"` y decían que la
+  limpieza había agrandado la configuración; y el destino podía aplanar la ruta de origen, con lo
+  que el archivo no volvía a su lugar en el rollback.
+- **El gate de menús ya no se queda ciego.** Un menú dentro de una cita `>`, dentro de un bloque de
+  código, o detrás de un fence sin cerrar **desaparecía del barrido** — el verde más peligroso,
+  porque el gate contaba menos menús y decía OK. Ahora se acusan por nombre, junto con las letras
+  repetidas dentro de una misma pregunta y las opciones que dicen lo mismo. Y una nota legítima que
+  nombra sus propias letras («A) y B) publican; C) no») dejó de tumbar el documento entero.
+- **Faltaban las tres cosas que hacían usable la fase:** `templates/ablation.json`, la sección de
+  PHASE 9 en el README con sus dos filas en la tabla de gates, y el runtime del propio repo, que
+  estaba viejo — el comando que PHASE 9 documenta daba `MODULE_NOT_FOUND`. Los instaladores además
+  toleran ahora instalar VCP dentro de su propio repositorio, que es justo lo que se hace para
+  refrescarlo.
+- **Límites honestos nuevos (76):** la lista de intocables protege de más y nunca de menos; y el
+  respaldo se comprueba **declarado**, no hecho: el gate no abre el grafo ni mira las notas.
+- **Observado y no tapado:** con concurrencia 32 la suite completa falló 1 de 3 corridas por latencia
+  de spawn, y tardó **más** que con concurrencia 8 (242s contra 180s, cero fallos). Es una sola
+  muestra por nivel y en una sola máquina, así que queda anotado y no se cambió el valor por defecto.
+
 - **La protección de los archivos intocables era evadible de cuatro formas, y la encontró una
   auditoría adversarial contra el gate publicado media hora antes.** Seis defectos confirmados
   ejecutando, todos arreglados acá con su falsificación escrita primero:

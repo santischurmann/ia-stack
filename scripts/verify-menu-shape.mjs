@@ -34,26 +34,41 @@ const OPTION = /^\s*[-*] \*\*[A-Z]\)\*\*\s/u;
 // La forma que colapsa: la letra al principio de linea, sin item de lista.
 const BARE = /^\s*[A-Z]\)\s/u;
 const SECTION = /^#{1,6}\s/u;
+// Una pregunta dentro de un menú de varias: `**1. ¿Cuánto detalle?**`. Las letras reinician acá.
+const QUESTION = /^\*\*\d+\./u;
+// El texto de una opción de plantilla: `[opción]`, `<tema>`. No es contenido, es un hueco a llenar.
+const PLACEHOLDER = /^[[<].*[\]>]$/u;
 const FENCE = /^\s*(```|~~~)/u;
 export const RECOMMENDATION = '*(recomendado';
 export const CLOSER = 'Esperando tu respuesta';
 
 const newlines = (source) => source.replace(/\r\n?/gu, '\n');
+// Una cita markdown no cambia lo que el bloque ES, solo como se muestra: un menu citado sigue
+// siendo un menu, y antes desaparecia del barrido entero.
+const unquote = (line) => line.replace(/^(\s*>)+\s?/u, '');
+const COMMENT_OPEN = '<!--';
+const COMMENT_CLOSE = '-->';
 
 /** Las lineas con su estado de fence: una opcion adentro de un fence no es una opcion. */
 function scan(source) {
   const lines = newlines(source).split('\n');
   const out = [];
   let fence = false;
-  for (const [index, text] of lines.entries()) {
+  let comment = false;
+  for (const [index, raw] of lines.entries()) {
+    const text = unquote(raw);
+    if (!fence && text.includes(COMMENT_OPEN)) comment = true;
+    const dentroDelComentario = comment;
+    if (comment && text.includes(COMMENT_CLOSE)) comment = false;
     if (FENCE.test(text)) {
-      out.push({ line: index + 1, text, fence: true, delimiter: true });
+      out.push({ line: index + 1, text, fence: true, delimiter: true, comment: dentroDelComentario });
       fence = !fence;
       continue;
     }
-    out.push({ line: index + 1, text, fence, delimiter: false });
+    out.push({ line: index + 1, text, fence, delimiter: false, comment: dentroDelComentario });
   }
-  return out;
+  // Un fence sin cerrar se traga todo lo que sigue: el gate contaba menos menus y salia verde.
+  return { rows: out, unclosedFence: fence };
 }
 
 /**
@@ -62,10 +77,16 @@ function scan(source) {
  * produzca un rojo falso.
  */
 export function parseMenus(source) {
-  const rows = scan(source);
+  const { rows } = scan(source);
   const menus = [];
   for (const [index, row] of rows.entries()) {
-    if (row.fence || row.delimiter || !HEADING.test(row.text)) continue;
+    if (row.delimiter || !HEADING.test(row.text)) continue;
+    if (row.fence || row.comment) {
+      // No se descarta: un menu escondido es el verde mas peligroso, porque el gate contaba menos
+      // menus y decia OK. Se registra con su motivo para que el bloque se acuse por nombre.
+      menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: row.fence ? 'un bloque de código' : 'un comentario HTML' });
+      continue;
+    }
     const body = [];
     let closed = false;
     for (let j = index + 1; j < rows.length; j += 1) {
@@ -77,7 +98,7 @@ export function parseMenus(source) {
         break;
       }
     }
-    menus.push({ line: row.line, title: row.text.trim(), body, closed });
+    menus.push({ line: row.line, title: row.text.trim(), body, closed, hidden: null });
   }
   return menus;
 }
@@ -85,16 +106,50 @@ export function parseMenus(source) {
 /** Todas las violaciones, sin lanzar nunca. */
 export function validateMenus(source) {
   const violations = [];
+  if (scan(source).unclosedFence) {
+    violations.push('hay un bloque de código sin cerrar: todo lo que viene después queda escondido del barrido, así que un menú roto ahí abajo no se vería');
+  }
   for (const menu of parseMenus(source)) {
     const donde = `línea ${menu.line} (${menu.title.slice(0, 48)})`;
+    if (menu.hidden !== null) {
+      violations.push(`${donde}: el menú está adentro de ${menu.hidden}, así que no se le muestra a nadie`);
+      continue;
+    }
     const opciones = menu.body.filter((row) => !row.fence && OPTION.test(row.text));
     const enFence = menu.body.filter((row) => row.fence && !row.delimiter && BARE.test(row.text));
     const sueltas = menu.body.filter((row) => !row.fence && BARE.test(row.text) && !OPTION.test(row.text));
     if (enFence.length > 0) {
       violations.push(`${donde}: ${enFence.length} opción(es) dentro de un bloque de código (línea ${enFence[0].line}): un fence renderiza como caja de código y sus líneas colapsan a un solo párrafo`);
     }
-    if (sueltas.length > 0) {
+    // Una linea suelta `A)` solo se acusa cuando el menu no tiene opciones de verdad: si no, una
+    // nota legitima que nombra sus propias letras -- "A) y B) publican; C) no" -- tumbaba el
+    // documento entero. Reproducido sobre el SKILL.md real.
+    if (sueltas.length > 0 && opciones.length < 2) {
       violations.push(`${donde}: la opción de la línea ${sueltas[0].line} no es un ítem de lista: escribila como \`- **A)** texto\`, que es el único formato que se separa en opciones`);
+    }
+    // Las letras se comparan DENTRO de cada pregunta, no en todo el menú: un CONFIG de dos
+    // preguntas reinicia en A) legítimamente, y compararlas juntas rechazaba los menús reales de
+    // Spec, Plan y Build. Una pregunta empieza en una línea `**N. ¿...?**`.
+    let letras = new Map();
+    let textos = new Map();
+    for (const fila of menu.body) {
+      if (fila.fence) continue;
+      if (QUESTION.test(fila.text)) {
+        letras = new Map();
+        textos = new Map();
+        continue;
+      }
+      if (!OPTION.test(fila.text)) continue;
+      const letra = fila.text.match(/\*\*([A-Z])\)\*\*/u)[1];
+      const texto = fila.text.replace(OPTION, '').replace(/—\s*\*\(recomendado[^)]*\)\*/u, '').trim().toLowerCase();
+      if (letras.has(letra)) violations.push(`${donde}: la letra ${letra}) aparece dos veces en la misma pregunta (líneas ${letras.get(letra)} y ${fila.line}): la persona contesta con la letra, y con dos iguales no hay respuesta posible`);
+      letras.set(letra, fila.line);
+      // Un placeholder no es una opción repetida: las plantillas canónicas escriben `[opción]` dos
+      // veces a propósito, y compararlas como texto rechazaba las plantillas del propio protocolo.
+      if (texto !== '' && !PLACEHOLDER.test(texto) && textos.has(texto)) {
+        violations.push(`${donde}: las opciones de las líneas ${textos.get(texto)} y ${fila.line} dicen lo mismo: eso no es una elección`);
+      }
+      textos.set(texto, fila.line);
     }
     if (opciones.length < 2) {
       violations.push(`${donde}: tiene ${opciones.length} opción(es) y un menú necesita al menos dos opciones`);

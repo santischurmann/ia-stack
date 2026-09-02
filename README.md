@@ -292,11 +292,39 @@ otro binario).
 | `verify-scope-diff.mjs` | Los tres campos escritores de la tarea contra el delta real de Git desde una base explícita, incluidos los archivos sin versionar. | **No ve los archivos que Git ignora: escribir ahí pasa en verde.** Enumera con `--exclude-standard`, así que todo lo que cubra el `.gitignore` queda fuera del alcance verificado. |
 | `verify-test-bindings.mjs` | Cada requisito activo tiene una prueba real: archivo local del proyecto, corrida en aislamiento, resultado leído del formato de salida exacto. | **No compara la prueba con la regla: un cuerpo vacío pasa verde.** Prueba que existe una prueba con ese título, que corre sola y que sale ok; nada obliga a que verifique lo que el requisito dice. |
 | `verify-handoff-report.mjs` | Cada entrega entre roles declara explícitamente qué NO revisó su autor, para que una revisión acotada no se lea como completa. | **No bloquea placeholders en castellano: `ninguno` y `nada` pasan igual.** La lista de rellenos prohibidos son literales en inglés (`n/a`, `unknown`, `nothing`), así que el equivalente en castellano satisface el gate sin declarar nada. |
+| `verify-menu-shape.mjs` | Que cada decisión del protocolo esté escrita como lista de opciones con recomendación explícita y línea de espera. La plantilla anterior las escribía dentro de un bloque de código, que colapsa a un solo párrafo: el protocolo prescribía por escrito el único formato que garantiza que un menú no se vea como menú. | **Verifica las plantillas, no la conversación.** No puede saber qué mensaje escribió el agente ni cómo lo pintó la terminal, y nada verifica eso de forma portable. Tampoco juzga si las opciones son buenas. |
+| `verify-ablation.mjs` | El registro de la limpieza de PHASE 9: set de 6 a 8 tareas acordado antes de mover nada, línea base, tandas de a cinco, re-medición, filtro de las tres R sin contradecirse, respaldo previo en graphify y Obsidian, y la regla de oro comprobada contra el disco — lo archivado está en el archivo y ya no en su origen. `due` calcula si pasaron los 7 días. | **Verifica el registro, no la ablación.** No corre las pruebas del set, no juzga si son representativas y no sabe si un resultado que dice «igual» era igual: un registro coherente e inventado pasa en verde. |
 
 El hook opcional `pretooluse-red.mjs` agrega fricción a `Write` y `Edit`: exige receipts
 consistentes, tests reales hasheados y TTL válido. No es un sandbox ni un límite de confianza:
 Bash, PowerShell y cualquier proceso que pueda escribir en el mismo filesystem pueden eludirlo.
 VCP documenta ese límite para que la revisión humana no confunda fricción con una garantía.
+
+## La limpieza semanal (PHASE 9)
+
+Cada skill, regla y hook se le carga al modelo **antes** de que escribas la primera letra. Lo que ya
+no sirve no es neutral: ocupa lugar y compite con lo que sí importa. PHASE 9 corre al abrir sesión
+si pasaron 7 días y **nunca mueve un archivo sin tu click**.
+
+El orden es fijo: **actualizar** el grafo → **compactar** la memoria → **limpiar** → **respaldar** en
+graphify y Obsidian. Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya
+está en dos lugares y se puede consultar sin restaurarlo.
+
+**Regla de oro, y es mecánica, no una promesa:** acá no existe `rm`. Nada se borra; todo se mueve a
+`.claude-archive/<fecha>/` conservando la ruta, y la vuelta atrás es un solo comando —que el gate
+rechaza si contiene `rm`, `del` o `Remove-Item`—. `contracts/ablation-scope.json` declara qué es
+intocable y qué entra en alcance; los patrones se comparan sin distinguir mayúsculas y contra cada
+sufijo de la ruta, así que protegen de más y nunca de menos.
+
+Archivar sin medir es borrar con buena letra: el gate exige entre 6 y 8 tareas tuyas acordadas antes
+de mover nada, tandas de a cinco como máximo y volver a medir después de cada una. Si algo empeora,
+se devuelven las líneas mínimas y se mide de nuevo hasta que dé igual o mejor.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
+```
+
+Plantilla del registro: `templates/ablation.json`.
 
 ## Seguridad nativa y límites
 

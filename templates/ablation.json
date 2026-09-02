@@ -1,0 +1,79 @@
+{
+  "schema": "vcp.ablation/1",
+  "run_id": "AAAA-MM-DD",
+  "archive_dir": ".claude-archive/AAAA-MM-DD",
+  "rollback_command": "un comando que MUEVE de vuelta lo archivado. Nunca rm, del ni Remove-Item: el gate lo rechaza.",
+  "rollback_tested": {
+    "done": false,
+    "evidence": "restaurar, correr el set completo y volver a limpiar. Sin esto la fase no cierra."
+  },
+  "backup": {
+    "graphify": {
+      "done": false,
+      "evidence": "la salida real de `graphify update .` corrida ANTES de mover el primer archivo"
+    },
+    "obsidian": {
+      "done": false,
+      "evidence": "dónde quedaron las notas espejadas y con qué hash, para poder consultarlas sin restaurar"
+    }
+  },
+  "test_set": [
+    {
+      "test_id": "t1",
+      "task": "una tarea real que hacés seguido, escrita de forma que se pueda correr en sesión limpia",
+      "why_representative": "por qué esta tarea representa tu trabajo de verdad y no un caso de juguete"
+    }
+  ],
+  "baseline": [
+    {
+      "test_id": "t1",
+      "outcome": "pass",
+      "evidence": "la salida real de la corrida, citada. `pass` o `fail`, nada de texto libre."
+    }
+  ],
+  "inventory": [
+    {
+      "path": "~/.claude/skills/ejemplo.md",
+      "words": 0,
+      "percent": 0,
+      "last_modified": "AAAA-MM-DD"
+    }
+  ],
+  "batches": [
+    {
+      "batch": 1,
+      "archived": [
+        {
+          "path": "~/.claude/skills/ejemplo.md",
+          "archived_to": ".claude-archive/AAAA-MM-DD/.claude/skills/ejemplo.md",
+          "repetible": false,
+          "requisito": false,
+          "repartible": false,
+          "verdict": "ARCHIVAR",
+          "reason": "por qué no aprueba ninguna de las tres R. Alcanza que una diga sí para que se quede."
+        }
+      ],
+      "measured": [
+        {
+          "test_id": "t1",
+          "outcome": "pass",
+          "evidence": "la salida real después de archivar esta tanda"
+        }
+      ],
+      "comparison": "igual",
+      "restored": []
+    }
+  ],
+  "survivors": [
+    {
+      "path": "~/.claude/skills/otro.md",
+      "why": "la frase que dice por qué se queda. Si no se puede decir en una línea, nadie lo miró."
+    }
+  ],
+  "totals": {
+    "words_before": 0,
+    "words_after": 0,
+    "files_before": 0,
+    "files_after": 0
+  }
+}

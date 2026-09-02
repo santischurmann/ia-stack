@@ -223,3 +223,47 @@ test('FALSIFICACIÓN · un menú sin cierre corta en el encabezado de sección s
     { cerrado: false, absorbio: false, violaciones: 1 },
   );
 });
+
+// --- Segunda tanda de la auditoria: el gate no veia menus escondidos ----------------------------
+// parseMenus solo reconocia un titulo al principio de linea y fuera de un fence, asi que un menu
+// dentro de una cita, dentro de un bloque de codigo, o detras de un fence sin cerrar, DESAPARECIA
+// -- y desaparecer es el verde mas peligroso: el gate contaba menos menus y salia OK.
+
+test('FV-2 · FALSIFICACIÓN · un menú dentro de una cita markdown no desaparece', () => {
+  const citado = ['> 🔵 **Una decisión**', '>', '> A) hacer una cosa', '> B) hacer la otra', '>', '> Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(citado));
+  assert.deepEqual({ code, acusa: /cita|lista/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FV-3 · FALSIFICACIÓN · un menú entero dentro de un bloque de código no desaparece', () => {
+  const dentro = ['```', '🔵 **Una decisión**', 'A) hacer una cosa', 'B) hacer la otra', 'Esperando tu respuesta antes de continuar.', '```'].join('\n');
+  const { code, errores } = corrida(doc(dentro));
+  assert.deepEqual({ code, acusa: /bloque de código/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FV-4 · FALSIFICACIÓN · un bloque de código sin cerrar no esconde el resto del documento', () => {
+  const texto = `# Doc\n\n\`\`\`bash\necho sin cerrar\n\n${menu()}\n`;
+  const { code, errores } = corrida(texto);
+  assert.deepEqual({ code, acusa: /sin cerrar/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FV-1 · FALSIFICACIÓN · dos opciones con la misma letra, o dos opciones idénticas, se rechazan', () => {
+  const letraRepetida = ['🔵 **Una decisión**', '', '- **A)** una cosa — *(recomendado)*', '- **A)** otra cosa', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const identicas = ['🔵 **Una decisión**', '', '- **A)** la misma — *(recomendado)*', '- **B)** la misma', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  for (const [nombre, bloque] of [['letra repetida', letraRepetida], ['idénticas', identicas]]) {
+    const { code } = corrida(doc(bloque));
+    assert.deepEqual({ nombre, code }, { nombre, code: 1 });
+  }
+});
+
+test('FV-5 · FALSIFICACIÓN · un menú dentro de un comentario HTML no cuenta como menú mostrado', () => {
+  const oculto = `<!--\n${menu()}\n-->`;
+  const { code, errores } = corrida(doc(oculto));
+  assert.deepEqual({ code, acusa: /comentario/iu.test(errores) }, { code: 1, acusa: true });
+});
+
+test('FR-1 · una nota que nombra sus propias letras dentro del menú no lo rompe', () => {
+  const conNota = ['🔵 **¿Publico?**', '', '- **A)** publicar — *(recomendado)*', '- **B)** publicar y abrir un PR', '- **C)** todavía no', '', 'A) y B) publican; C) no. No se pueden combinar.', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(conNota));
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});

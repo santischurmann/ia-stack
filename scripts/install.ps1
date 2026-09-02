@@ -51,6 +51,14 @@ if ($ProjectDir) {
   # archivo sin seguimiento, y entonces: se commitea sin querer junto al trabajo del usuario, y el
   # gate de seguridad lo trata como superficie viva -- un hallazgo dentro del runtime bloquearia el
   # proyecto con un CRITICAL que el usuario no escribio y no puede arreglar editando su codigo.
+  # PHASE 9 archiva configuracion en .claude-archive/. Puede traer rutas, tokens o datos propios:
+  # si queda con seguimiento, el primer commit del usuario se lleva todo eso adentro.
+  $IgnoreFile = Join-Path $ProjectDir '.gitignore'
+  $ArchiveRule = '.claude-archive/'
+  if (-not (Test-Path -LiteralPath $IgnoreFile) -or -not ((Get-Content -LiteralPath $IgnoreFile) -contains $ArchiveRule)) {
+    Add-Content -LiteralPath $IgnoreFile -Value "`n# VibeCodeProtocols PHASE 9: lo que la limpieza archiva, nunca se commitea`n$ArchiveRule"
+    Write-Output "OK: $ArchiveRule agregado a .gitignore"
+  }
   $ignoreFile = Join-Path $ProjectDir '.gitignore'
   $ignoreRule = '.vibe/vcp-runtime/'
   $yaEsta = (Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $ignoreRule)
@@ -64,7 +72,13 @@ if ($ProjectDir) {
   # punteros, VCP existe en el proyecto pero Codex no ve nada de el. Son punteros, no copias.
   $CodexSkillDir = Join-Path $ProjectDir '.agents\skills\vibecodeprotocols'
   New-Item -ItemType Directory -Force -Path $CodexSkillDir | Out-Null
-  Copy-Item "$PackageDir\.agents\skills\vibecodeprotocols\SKILL.md" $CodexSkillDir -Force
+  # Instalar VCP dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen
+  # y destino son el mismo archivo. No es un error, es que ya esta donde tiene que estar.
+  $CodexSkillSrc = "$PackageDir\.agents\skills\vibecodeprotocols\SKILL.md"
+  $CodexSkillDst = Join-Path $CodexSkillDir 'SKILL.md'
+  if ((Resolve-Path -LiteralPath $CodexSkillSrc).Path -ne $CodexSkillDst) {
+    Copy-Item $CodexSkillSrc $CodexSkillDir -Force
+  }
   $ProjectAgents = Join-Path $ProjectDir 'AGENTS.md'
   if (-not (Test-Path -LiteralPath $ProjectAgents)) {
     Copy-Item "$PackageDir\AGENTS.md" $ProjectAgents -Force

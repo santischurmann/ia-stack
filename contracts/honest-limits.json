@@ -450,6 +450,12 @@
       "file": "SKILL.md",
       "phrase": "protege de más, nunca de menos",
       "why": "Un patron intocable se compara contra la ruta normalizada y contra cada uno de sus sufijos, sin distinguir mayusculas. Eso protege de mas: `src/**` alcanza a cualquier `src/` anidado, `tests/**` a cualquier `tests/`. Es deliberado y es la direccion segura -- proteger de mas cuesta una molestia, proteger de menos cuesta un archivo que no esta en git --, pero significa que la lista puede frenar el archivado de algo que en rigor no era el archivo protegido. La contrapartida medida: antes de esto, `EA.MQ5` en mayusculas, `.git` como carpeta a secas, `./src/main.py` con prefijo y `C:/repo/src/x` absoluta esquivaban las cuatro la proteccion y se archivaban en verde."
+    },
+    {
+      "limit_id": "ablation-backup-is-declared-not-verified",
+      "file": "SKILL.md",
+      "phrase": "El respaldo **no es una promesa**",
+      "why": "El registro lleva un campo backup con la evidencia de los dos pasos -- graphify y Obsidian -- y sin el la fase no cierra. Lo que el gate comprueba es que ese campo exista, diga done y traiga evidencia escrita: NO abre el grafo, no cuenta nodos, no mira las notas de Obsidian ni compara hashes. Un backup declarado y no hecho pasa en verde, igual que cualquier otra parte del registro. Lo que si esta comprobado contra el disco es la regla de oro: lo archivado esta en el archivo y ya no en su origen."
     }
   ]
 }

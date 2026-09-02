@@ -27,7 +27,7 @@ function readScope() {
 }
 
 const prueba = (n) => ({ test_id: `t${n}`, task: `tarea representativa número ${n}`, why_representative: `es una de las cosas que la persona hace todas las semanas, caso ${n}` });
-const medicion = (n, outcome = 'igual') => ({ test_id: `t${n}`, outcome, evidence: `salida real de la corrida ${n}, citada entera` });
+const medicion = (n, outcome = 'pass') => ({ test_id: `t${n}`, outcome, evidence: `salida real de la corrida ${n}, citada entera` });
 
 function archivado(nombre, over = {}) {
   return {
@@ -67,6 +67,10 @@ function registro(over = {}) {
     ],
     survivors: [{ path: '~/.claude/skills/util.md', why: 'trae las rutas y el tono propios, que el modelo no puede adivinar' }],
     totals: { words_before: 1000, words_after: 600, files_before: 2, files_after: 1 },
+    backup: {
+      graphify: { done: true, evidence: 'graphify update . reconstruyo el grafo antes de mover el primer archivo' },
+      obsidian: { done: true, evidence: 'las notas quedaron espejadas en Obsidian/07_Backups_Log con su sha256' },
+    },
     ...over,
   };
 }
@@ -431,10 +435,13 @@ test('sin inyectar exists, el gate mira el disco de verdad', () => {
     mkdirSync(join(root, 'contracts'), { recursive: true });
     mkdirSync(join(root, ARCHIVO, '.claude', 'skills'), { recursive: true });
     writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
-    writeFileSync(join(root, ARCHIVO, '.claude', 'skills', 'vieja.md'), 'archivada', 'utf8');
+    writeFileSync(join(root, ARCHIVO, '.claude', 'skills', '__vcp-inexistente__.md'), 'archivada', 'utf8');
     // El origen es una ruta con `~/` que no existe: cubre las dos ramas de la expansión.
     const real = registro();
-    real.batches[0].archived = [archivado('vieja', { path: '~/.claude/skills/__vcp-inexistente__.md' })];
+    real.batches[0].archived = [archivado('vieja', {
+      path: '~/.claude/skills/__vcp-inexistente__.md',
+      archived_to: `${ARCHIVO}/.claude/skills/__vcp-inexistente__.md`,
+    })];
     real.inventory = [{ path: '~/.claude/skills/__vcp-inexistente__.md', words: 400, percent: 40, last_modified: '2026-01-02' }];
     real.survivors = [];
     writeFileSync(join(root, RUTA), json(real), 'utf8');
@@ -594,4 +601,278 @@ test('normalizePath y pathCandidates hacen lo que dicen, caso por caso', () => {
   ];
   assert.deepEqual(casos.map(([entrada]) => normalizePath(entrada)), casos.map(([, salida]) => salida));
   assert.deepEqual(pathCandidates('a/b/c.md'), ['a/b/c.md', 'b/c.md', 'c.md']);
+});
+
+// --- Segunda tanda de la auditoria: la regla de oro no era mecanica ------------------------------
+
+test('F3 · FALSIFICACIÓN · un comando de vuelta atrás que borra se rechaza: la regla de oro es mecánica', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const peligrosos = [
+    'rm -rf ~/.claude/skills && echo listo',
+    'rm ~/.claude/skills/vieja.md y despues restaurar',
+    'Remove-Item -Recurse -Force ~/.claude/skills',
+    'del /s /q <home>\\.claude\\skills',
+  ];
+  for (const comando of peligrosos) {
+    const violaciones = validateAblation(registro({ rollback_command: comando }), contrato, io);
+    assert.deepEqual({ comando: comando.slice(0, 24), rechaza: violaciones.some((v) => /borra|rm/iu.test(v)) }, { comando: comando.slice(0, 24), rechaza: true });
+  }
+});
+
+test('F4 · FALSIFICACIÓN · archivar algo fuera del alcance declarado se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  // El contrato de prueba declara in_scope solo ~/.claude/skills.
+  const malo = registro();
+  malo.batches[0].archived = [archivado('x', { path: 'docs/spec.md', archived_to: `${ARCHIVO}/docs/spec.md` })];
+  malo.inventory = [{ path: 'docs/spec.md', words: 10, percent: 100, last_modified: '2026-01-01' }];
+  malo.survivors = [];
+  const violaciones = validateAblation(malo, contrato, io);
+  assert.equal(violaciones.some((v) => /alcance/iu.test(v)), true);
+});
+
+test('A7 · FALSIFICACIÓN · una tanda cuyas mediciones fallaron no puede declararse igual o mejor', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const malo = registro();
+  malo.batches[0].measured = [1, 2, 3, 4, 5, 6].map((n) => ({ test_id: `t${n}`, outcome: 'fail', evidence: `la sesión crashea al arrancar, corrida ${n}` }));
+  malo.batches[0].comparison = 'mejor';
+  const violaciones = validateAblation(malo, contrato, io);
+  assert.equal(violaciones.some((v) => /se declara/u.test(v)), true);
+  // Y el texto libre en outcome tampoco pasa: antes nadie lo leía.
+  const textoLibre = registro();
+  textoLibre.batches[0].measured = [1, 2, 3, 4, 5, 6].map((n) => ({ test_id: `t${n}`, outcome: 'todo bien', evidence: `salida real de la corrida ${n}, citada entera` }));
+  assert.equal(validateAblation(textoLibre, contrato, io).some((v) => /outcome/u.test(v)), true);
+});
+
+test('A8 · FALSIFICACIÓN · un set de pruebas clonado seis veces no es un set de seis pruebas', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const clon = [1, 2, 3, 4, 5, 6].map((n) => ({
+    test_id: `t${n}`,
+    task: 'la misma tarea escrita igual para las seis',
+    why_representative: 'el mismo motivo escrito igual para las seis',
+  }));
+  assert.equal(validateAblation(registro({ test_set: clon }), contrato, io).some((v) => /repite|clonad|iguales/iu.test(v)), true);
+});
+
+test('A9 · FALSIFICACIÓN · totales que no son números, o que dicen que la limpieza agrandó todo, se rechazan', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  for (const totals of [
+    { words_before: 'cero', words_after: 10, files_before: 1, files_after: 1 },
+    { words_before: 10, words_after: 999999, files_before: 1, files_after: 1 },
+    { words_before: 10, words_after: 5, files_before: -1, files_after: 1 },
+  ]) {
+    assert.equal(validateAblation(registro({ totals }), contrato, io).length > 0, true);
+  }
+});
+
+test('F14 · FALSIFICACIÓN · una limpieza sin ninguna tanda no certifica nada', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const vacia = registro({ batches: [], survivors: [
+    { path: '~/.claude/skills/vieja.md', why: 'aprueba requisito: trae las rutas propias del proyecto' },
+    { path: '~/.claude/skills/util.md', why: 'trae las rutas y el tono propios, que el modelo no puede adivinar' },
+  ] });
+  assert.equal(validateAblation(vacia, contrato, io).some((v) => /tanda|nada que/iu.test(v)), true);
+});
+
+test('FALSIFICACIÓN · un contrato sin alcance, con una entrada rota, o sin la regla de oro, se rechaza', () => {
+  const base = JSON.parse(readScope());
+  const sinAlcance = { ...base };
+  delete sinAlcance.in_scope;
+  const casos = [
+    sinAlcance,
+    { ...base, in_scope: [] },
+    { ...base, in_scope: [{ path: '', why: 'un motivo suficientemente largo para pasar el mínimo' }] },
+    { ...base, in_scope: ['no soy un objeto'] },
+    { ...base, in_scope: [{ path: '~/.claude/skills', why: 'corto' }] },
+    { ...base, golden_rule: 'limpiamos la configuración con cuidado y buen criterio' },
+  ];
+  for (const [i, caso] of casos.entries()) {
+    assert.deepEqual({ i, rechaza: loadScope(caso).violations.length > 0 }, { i, rechaza: true });
+  }
+  const sinRegla = { ...base };
+  delete sinRegla.golden_rule;
+  assert.equal(loadScope(sinRegla).violations.length > 0, true);
+});
+
+test('FALSIFICACIÓN · un scope sin lista de alcance no deja pasar nada por omisión', () => {
+  // La rama defensiva: si el objeto de alcance llega sin `inScope`, nada puede estar adentro.
+  const cojo = { untouchable: [], minTests: 6, maxTests: 8, maxBatch: 5, violations: [] };
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const violaciones = validateAblation(registro(), cojo, io);
+  assert.equal(violaciones.some((v) => /alcance/iu.test(v)), true);
+});
+
+test('FALSIFICACIÓN · una tanda sin mediciones y una que ya se declaró peor se acusan igual', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const sinMedir = registro();
+  sinMedir.batches[0].measured = 'no soy lista';
+  assert.equal(validateAblation(sinMedir, contrato, io).length > 0, true);
+  const yaPeor = registro();
+  yaPeor.batches[0].measured = [1, 2, 3, 4, 5, 6].map((n) => ({ test_id: `t${n}`, outcome: 'fail', evidence: `la prueba ${n} quedó en rojo después de archivar` }));
+  yaPeor.batches[0].comparison = 'peor';
+  const violaciones = validateAblation(yaPeor, contrato, io);
+  assert.deepEqual(
+    { acusaPeor: violaciones.some((v) => /peor/iu.test(v)), noAcusaContradiccion: !violaciones.some((v) => /se declara/u.test(v)) },
+    { acusaPeor: true, noAcusaContradiccion: true },
+  );
+});
+
+// --- Tercera tanda: lo que la fase promete y el registro no decia -------------------------------
+
+test('F7 · FALSIFICACIÓN · una limpieza sin respaldo previo en graphify y Obsidian no cierra', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const casos = [
+    undefined,
+    { graphify: { done: false, evidence: 'no se corrio' }, obsidian: { done: true, evidence: 'las notas quedaron espejadas en Obsidian con su sha256' } },
+    { graphify: { done: true, evidence: 'corto' }, obsidian: { done: true, evidence: 'las notas quedaron espejadas en Obsidian con su sha256' } },
+    { graphify: { done: true, evidence: 'graphify update . reconstruyo el grafo antes de mover nada' } },
+  ];
+  for (const [i, backup] of casos.entries()) {
+    const malo = registro();
+    if (backup === undefined) delete malo.backup; else malo.backup = backup;
+    assert.deepEqual({ i, rechaza: validateAblation(malo, contrato, io).length > 0 }, { i, rechaza: true });
+  }
+});
+
+test('F9 · FALSIFICACIÓN · el destino tiene que conservar la ruta de origen, no aplanarla', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const aplanado = registro();
+  aplanado.batches[0].archived = [archivado('vieja', { archived_to: `${ARCHIVO}/vieja.md` })];
+  const violaciones = validateAblation(aplanado, contrato, io);
+  assert.equal(violaciones.some((v) => /ruta|conserv/iu.test(v)), true);
+});
+
+test('F12 · el subcomando `due` dice si pasaron los 7 días, que es lo que dispara la fase', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const salida = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    writeFileSync(join(root, RUTA), json(registro({ run_id: '2026-09-01' })), 'utf8');
+    const corr = (hoy) => {
+      const out = [];
+      const code = main(['due', RUTA, '--today', hoy], { root, write: (l) => out.push(l), writeError: (l) => out.push(l) });
+      return { code, texto: out.join('\n') };
+    };
+    const pronto = corr('2026-09-05');
+    const vencido = corr('2026-09-09');
+    salida.push(pronto.texto, vencido.texto);
+    assert.deepEqual(
+      { prontoCode: pronto.code, prontoDice: /falta/iu.test(pronto.texto), vencidoCode: vencido.code, vencidoDice: /toca|vencid|pasaron/iu.test(vencido.texto) },
+      { prontoCode: 0, prontoDice: true, vencidoCode: 0, vencidoDice: true },
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('F12 · sin ninguna limpieza previa, `due` dice que toca y no se rompe', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const out = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const code = main(['due', RUTA, '--today', '2026-09-09'], { root, write: (l) => out.push(l), writeError: (l) => out.push(l) });
+    assert.deepEqual({ code, dice: /nunca|toca/iu.test(out.join('\n')) }, { code: 0, dice: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · un run_id que no es una fecha real se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  for (const run_id of ['no-es-fecha', '2026-02-30', '', null]) {
+    assert.deepEqual({ run_id, rechaza: validateAblation(registro({ run_id }), contrato, io).length > 0 }, { run_id, rechaza: true });
+  }
+});
+
+test('`due` sin --today usa la fecha de hoy, y con un run_id inválido dice que toca', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const corr = (contenido, args) => {
+      const out = [];
+      writeFileSync(join(root, RUTA), contenido, 'utf8');
+      const code = main(args, { root, write: (l) => out.push(l), writeError: (l) => out.push(l) });
+      return { code, texto: out.join('\n') };
+    };
+    // Sin --today: la fecha la pone el reloj, y una corrida de 2026-09-01 ya está vencida.
+    const sinFecha = corr(json(registro({ run_id: '2026-09-01' })), ['due', RUTA]);
+    const rotoId = corr(json(registro({ run_id: 'no-es-fecha' })), ['due', RUTA, '--today', '2026-09-09']);
+    assert.deepEqual(
+      {
+        sinFechaCode: sinFecha.code,
+        sinFechaDice: /toca|falta/iu.test(sinFecha.texto),
+        rotoCode: rotoId.code,
+        rotoDice: /toca limpiar/iu.test(rotoId.texto),
+      },
+      { sinFechaCode: 0, sinFechaDice: true, rotoCode: 0, rotoDice: true },
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('`due` sobre una ruta que ni siquiera existe dice que toca, sin romperse', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const out = [];
+  try {
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const code = main(['due', RUTA], { root, write: (l) => out.push(l), writeError: (l) => out.push(l) });
+    assert.deepEqual({ code, dice: /nunca se corrió/iu.test(out.join('\n')) }, { code: 0, dice: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · `due` con una bandera inventada o una fecha falsa sale 2 con el usage', () => {
+  for (const args of [['due'], ['due', ''], ['due', RUTA, '--ayer', '2026-09-09'], ['due', RUTA, '--today', '2026-02-30'], ['due', RUTA, '--today']]) {
+    const { code, errores } = corrida(json(registro()), args);
+    assert.deepEqual({ args: args.join(' '), code, usage: errores.includes(USAGE) }, { args: args.join(' '), code: 2, usage: true });
+  }
+});
+
+test('`due` con la carpeta creada pero sin registro también dice que toca', () => {
+  // Cubre la rama en que la ruta se resuelve bien y el archivo simplemente no está, distinta del
+  // caso en que ni la carpeta existe: las dos tienen que decir lo mismo.
+  const { code, salida } = corrida(null, ['due', RUTA]);
+  assert.deepEqual({ code, dice: /nunca se corrió/iu.test(salida) }, { code: 0, dice: true });
+});
+
+test('`due` cuando el registro desaparece entre resolver la ruta y leerlo dice que toca, no se rompe', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const salida = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    writeFileSync(join(root, RUTA), json(registro()), 'utf8');
+    let primera = true;
+    const code = main(['due', RUTA, '--today', '2026-09-09'], {
+      root,
+      write: (l) => salida.push(l),
+      writeError: () => {},
+      read: (p, enc) => {
+        if (primera) { primera = false; return readFileSync(p, enc); }
+        const error = new Error('ENOENT'); error.code = 'ENOENT'; throw error;
+      },
+    });
+    assert.deepEqual({ code, dice: /nunca se corrió/iu.test(salida.join('\n')) }, { code: 0, dice: true });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

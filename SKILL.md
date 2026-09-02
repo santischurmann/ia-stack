@@ -1383,8 +1383,15 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 modelo **antes** de que escribas la primera letra. Lo que ya no sirve no es neutral: ocupa lugar y
 compite con lo que sí importa. Esta fase saca lo que sobra **sin perder nada**.
 
-**Cuándo.** Al abrir sesión, si pasaron 7 días desde la última limpieza. VCP te lo ofrece con un
-menú. Nunca mueve un archivo sin tu click.
+**Cuándo.** Al abrir sesión, si pasaron 7 días desde la última limpieza. Eso **se calcula, no se
+recuerda** — la fecha de la última corrida vive en `docs/ablation.json`:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
+```
+
+Si nunca se limpió, dice que toca. VCP te lo ofrece con un menú y **nunca mueve un archivo sin tu
+click**.
 
 **El orden importa y es siempre el mismo:**
 
@@ -1395,6 +1402,8 @@ menú. Nunca mueve un archivo sin tu click.
    sin restaurarlo.
 
 Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya está en dos lugares.
+El respaldo **no es una promesa**: el registro lleva un campo `backup` con la evidencia de los dos
+pasos, y sin él la fase no cierra. Plantilla del registro: `templates/ablation.json`.
 
 ### La regla de oro
 
@@ -1402,6 +1411,12 @@ Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya est�
 ruta, y la vuelta atrás es un solo comando. Si en algún momento parece que la única salida es
 borrar, se para y se pregunta. Los patrones intocables viven en `contracts/ablation-scope.json` —
 entre ellos los `.mq5`, que no están en git y cuya pérdida sería irreversible.
+
+**El comando de vuelta atrás no puede borrar.** Si contiene `rm`, `del`, `Remove-Item` o
+`git clean`, el gate lo rechaza: la vuelta atrás mueve de vuelta, nunca elimina. Y el destino
+conserva la ruta de origen, porque el rollback mueve el árbol entero y un archivo aplanado no vuelve
+al lugar del que salió. La carpeta del archivo va al `.gitignore`: lo archivado es configuración con
+datos propios y no se commitea nunca.
 
 ### El filtro de las tres R
 

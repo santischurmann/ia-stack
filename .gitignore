@@ -39,3 +39,7 @@ research/semantic-functional-index-2026-09-01.json
 # payloads out of the distributable skill while tracking its summary, synthesis, and generators.
 research/semantic-functional-evidence-2026-09-01.ndjson.gz
 research/semantic-functional-index-2026-09-01.json.gz
+
+# VibeCodeProtocols PHASE 9: lo que la limpieza archiva. No es codigo del proyecto, y puede
+# contener configuracion con datos propios: no se commitea nunca.
+.claude-archive/
