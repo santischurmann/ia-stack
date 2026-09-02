@@ -402,6 +402,12 @@
       "file": "README.md",
       "phrase": "cuándo se retira",
       "why": "El gate exige que el criterio de retiro este escrito, nunca que alguien lo aplique. Una mejora puede cumplir su criterio de retiro durante meses y seguir viva, y el gate no lo va a notar porque no mide el mundo: mide el archivo. Sin esta frase, tener el campo lleno se lee como tener el proceso."
+    },
+    {
+      "limit_id": "candidates-do-not-open-the-cited-line",
+      "file": "README.md",
+      "phrase": "una cita textual inventada pasa igual",
+      "why": "El gate exige que la evidencia traiga la cita textual de la linea, y eso puede leerse como que la cita esta comprobada. No lo esta: el gate compara la FORMA del locator contra el archivo declarado y nunca abre el archivo. Comprobar el texto exige reclonar los 15581 archivos del corpus pineado, que no estan en el repositorio. Sin esta frase, catorce campos llenos se leen como catorce campos verificados."
     }
   ]
 }

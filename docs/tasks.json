@@ -348,6 +348,49 @@
       "rollback": "git revert del commit. Los dos artefactos vuelven a su forma anterior.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
+    },
+    {
+      "id": "C1",
+      "description": "Bloque C research: repinear los 14 commits y registrar deriva y alcanzabilidad, declarar las 5 fuentes del encargo que nadie investigo, y un gate que exige contraejemplo para que un puntaje lexical no pase por evidencia",
+      "files_to_create": [
+        "scripts/verify-research-candidates.mjs",
+        "tests/verify-research-candidates.test.mjs",
+        "templates/research-candidates.json",
+        "research/pin-revalidation-2026-09-01.json"
+      ],
+      "files_to_modify": [
+        "contracts/empty-probe.json",
+        "contracts/honest-limits.json",
+        "research/source-matrix.md",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/spec.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-research-candidates.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B8"
+      ],
+      "status": "done",
+      "goal": "La sintesis del research llama señales de adopcion a filtros lexicales que cuentan palabras. No habia ningun artefacto entre esa tabla y una capacidad adoptada, asi que el salto no dejaba rastro ni tenia donde escribir el contraejemplo.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "AC1-AC6 de docs/spec.md nombrados por pruebas; fuente y commit cruzados contra las 14 pineadas; evidencia que cite archivo:linea del archivo declarado; contraejemplo que no repita la evidencia; adopt sin test rechaza; cobertura 35/35 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "El gate no abre el archivo citado ni comprueba que la linea diga lo que el candidato afirma: una cita textual inventada pasa igual. Y no se escribio ningun candidato real, porque producir uno obliga a leer la linea en el commit pineado y el corpus no esta en el repositorio.",
+      "rollback": "git revert del commit. El gate es nuevo y nadie depende de el.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "blocked_reason": ""
     }
   ]
 }

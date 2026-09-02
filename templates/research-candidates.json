@@ -1,0 +1,27 @@
+{
+  "schema": "vcp.research-candidates/1",
+  "date": "2026-01-01",
+  "candidates": [
+    {
+      "candidate_id": "C1",
+      "source": "garrytan/gstack",
+      "commit": "394db326",
+      "file": "ruta/dentro/del/repo.ts",
+      "line": 1,
+      "function": "nombreDeLaFuncion",
+      "problem": "Qué problema nuestro resuelve esto. No qué hace el código ajeno: qué se rompe hoy acá sin ello.",
+      "evidence": [
+        {
+          "locator": "ruta/dentro/del/repo.ts:1",
+          "quote": "El texto de esa línea, leído en el commit pineado. Si no la leíste, no la escribas."
+        }
+      ],
+      "counterexample": "Dónde esta idea NO aplica o falla. Repetir la evidencia acá no cuenta: el gate lo rechaza.",
+      "cost": "Qué cuesta traerlo: archivos nuevos, dependencias, tiempo, superficie que pasa a mantenerse.",
+      "risk": "Qué se rompe si sale mal, y a quién le pega.",
+      "compatibility": "Cómo encaja con lo que ya existe acá, y qué habría que cambiar para que encaje.",
+      "decision": "defer",
+      "test_needed": "La prueba que tendría que existir y estar en rojo antes de adoptarlo."
+    }
+  ]
+}

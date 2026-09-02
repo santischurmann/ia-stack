@@ -1,0 +1,189 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "candidatos-de-research",
+  "task": "C1 - cerrar el Bloque C: repinear los 14 commits con evidencia, declarar las 5 fuentes que nadie investigo, y poner un gate entre una señal lexical y una capacidad adoptada",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/candidatos-de-research-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/empty-probe.json",
+      "contracts/honest-limits.json",
+      "docs/spec.md",
+      "docs/tasks.json",
+      "research/pin-revalidation-2026-09-01.json",
+      "research/source-matrix.md",
+      "scripts/verify-research-candidates.mjs",
+      "templates/research-candidates.json",
+      "tests/verify-research-candidates.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Un candidato con sus catorce campos sale en verde y dice el reparto por decision propuesta. Un verde sin el reparto no deja ver que se esta proponiendo adoptar.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node scripts/verify-research-candidates.mjs check templates/research-candidates.json",
+      "result": "OK: 1 candidato(s) contra 14 fuente(s) pineadas: 0 adopt, 1 defer, 0 reject. 10 de 10 pruebas en verde."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Una fuente que no esta entre las 14 pineadas, o un commit que no es el que el contrato pineo para esa fuente, se rechazan nombrandolos. Sin esto un candidato puede citar un repositorio que nadie leyo.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node --test tests/verify-research-candidates.test.mjs",
+      "result": "Rechaza la fuente inventada y el commit ajeno, nombrando en el mensaje el commit que si estaba pineado."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "Un puntaje lexical no es una cita. La evidencia tiene que apuntar a archivo y linea DEL ARCHIVO QUE EL CANDIDATO DECLARA, y ese es exactamente el salto que antes no dejaba rastro.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node --test tests/verify-research-candidates.test.mjs",
+      "result": "Siete formas de evidencia invalida probadas: lista vacia, string suelto, locator que es un puntaje, locator de otro archivo, locator sin linea, cita vacia y entrada sin quote."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "Repetir la evidencia no es un contraejemplo. Copiar la cita y llamarla contraejemplo es la manera mas facil de esquivar la regla, y la comparacion se hace normalizando espacios y mayusculas.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node --test tests/verify-research-candidates.test.mjs",
+      "result": "Rechaza el contraejemplo identico a una evidencia, el vacio y el de dos letras."
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "Adoptar sin test declarado es adoptar sin condicion de adopcion. La decision es una de tres y solo adopt exige el test.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node --test tests/verify-research-candidates.test.mjs",
+      "result": "Rechaza adopt sin test, acepta adopt con test, y rechaza una decision que no existe."
+    },
+    {
+      "ac_id": "AC6",
+      "scenario": "Sin expediente informa VACIO y sale 0, y un esquema ajeno se rechaza antes de mirar ningun candidato.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-research-candidates.test.mjs",
+      "test_hash_sha256": "1b58b16d17b7d3a9599c2ad2ea593452fe860b8787d0adc35e904f5c05c62eca",
+      "command": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "result": "OK: 34 gate(s) se comportan sobre un directorio vacio como declara el contrato. La prueba comprueba ademas que el rechazo por esquema ajeno NO enumere campos de candidato."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Catorce campos por candidato son mucha friccion, y la salida barata es escribir una cita textual inventada: el gate compara la FORMA del locator y nunca abre el archivo, asi que no puede distinguirla de una real.",
+      "mitigation": "No puede impedirlo y quedo declarado como limite verificado por contrato. Lo que si logra es que la afirmacion sea atribuible: hoy la tabla de puntajes no obligaba a escribir ninguna cita, asi que no habia nada que revisar ni nadie a quien preguntarle."
+    },
+    "readability": {
+      "finding": "Por que un candidato necesita contraejemplo, y por que repetir la evidencia no cuenta, no es obvio para quien llega despues y ve catorce campos.",
+      "mitigation": "El motivo esta en la cabecera del gate, en SKILL.md y en el README: la tabla de origen es un filtro lexical, y sin contraejemplo el salto de un puntaje a una adopcion no deja rastro. La comparacion normaliza espacios y mayusculas para que copiar y retocar tampoco alcance."
+    },
+    "reliability": {
+      "finding": "Las pruebas escritas a mano dejaron cinco ramas de rechazo sin ejercitar: fecha ausente, evidencia que no es objeto, contrato sin fuentes utilizables y lectura fallida por permisos.",
+      "mitigation": "Las cinco cerradas con pruebas propias y la cobertura del proyecto llego a 35 de 35 scripts con todas sus funciones y ramas ejecutadas."
+    },
+    "resilience": {
+      "finding": "El gate lee dos archivos -- el contrato pineado y el expediente -- y compara el contraejemplo contra las citas. Una entrada de evidencia que no fuera un objeto habria hecho estallar esa comparacion en vez de rechazar.",
+      "mitigation": "La comparacion mira si cada entrada es objeto antes de leer su quote, y hay una prueba propia para ese caso. Los tres caminos de lectura estan separados: contrato roto, expediente ausente (VACIO, exit 0) y expediente ilegible por otro motivo (rechazo)."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "artefactos entre una señal lexical y una capacidad adoptada",
+      "measured": true,
+      "before": 0,
+      "after": 1
+    },
+    {
+      "metric": "campos obligatorios por candidato",
+      "measured": true,
+      "before": 0,
+      "after": 14
+    },
+    {
+      "metric": "commits pineados revalidados contra el remoto",
+      "measured": true,
+      "before": 0,
+      "after": 14
+    },
+    {
+      "metric": "de esos, con el HEAD movido desde la captura",
+      "measured": true,
+      "before": 0,
+      "after": 9
+    },
+    {
+      "metric": "de esos, con el commit pineado todavia alcanzable",
+      "measured": true,
+      "before": 0,
+      "after": 14
+    },
+    {
+      "metric": "fuentes del encargo sin investigar, declaradas con motivo",
+      "measured": true,
+      "before": 0,
+      "after": 5
+    },
+    {
+      "metric": "ramas de verify-research-candidates.mjs que ningun proceso ejecutaba",
+      "measured": true,
+      "before": 5,
+      "after": 0
+    },
+    {
+      "metric": "scripts Node medidos al 100 por ciento",
+      "measured": true,
+      "before": 34,
+      "after": 35
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 67,
+      "after": 68
+    },
+    {
+      "metric": "candidatos reales escritos",
+      "measured": true,
+      "before": 0,
+      "after": 0
+    },
+    {
+      "metric": "cuantas de las señales lexicales de la sintesis sobrevivirian a un contraejemplo",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Requiere leer la linea citada de cada una en su commit pineado, y el corpus no esta en el repositorio. Esa es justamente la razon por la que no se escribio ningun candidato real."
+    }
+  ],
+  "reproduction": "Repineado: para cada una de las 14 fuentes, git ls-remote <repo> HEAD comparado por prefijo contra el commit del contrato -- 5 iguales, 9 movidas -- y GET api.github.com/repos/<slug>/commits/<sha> leyendo solo el codigo HTTP -- 14 de 14 en 200. Una primera pasada comparo el commit truncado de 8 caracteres contra los 40 del head y dio 14 de 14 derivadas: falso, el error era de la comparacion y se corrigio comparando por prefijo. Fuentes ausentes: se cruzaron las 19 adicionales del encargo contra research/sources/ y contra el contrato pineado; 14 cubiertas, 5 ausentes, con tamaño leido de api.github.com/repos/<slug>. Gate: con el esqueleto permisivo, node --test tests/verify-research-candidates.test.mjs da 9 de 9 rojas, todas AssertionError sobre comportamiento. TRIANGULATE: la cobertura nombro 5 ramas de rechazo sin ejercitar con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde, cobertura 35 de 35, y contrato, sonda vacia, conflictos de plan, citas de research, seguridad y sincronizacion del runtime en 0.",
+  "not_reviewed": "El gate NO abre el archivo citado ni comprueba que la linea diga lo que el candidato afirma: una cita textual inventada pasa igual, y comprobarla exige reclonar los 15581 archivos del corpus. No juzga si un contraejemplo es bueno, si un costo es realista ni si una decision es sensata. NO SE ESCRIBIO NINGUN CANDIDATO REAL, y no es una omision: producir uno obliga a leer la linea citada en el commit pineado, y el corpus no esta en el repositorio -- el gate hace visible ese costo, que antes se saltaba gratis. La revalidacion de pines leyo codigos HTTP, no contenido: dice que los 14 commits se resuelven hoy, no que su arbol sea el que el corpus leyo. Los commits guardados tienen 8 caracteres y no son un pin criptografico. Y de las 5 fuentes declaradas EXCLUDED, los motivos de solapamiento son juicios sobre el dominio declarado de cada repositorio, no el resultado de comparar contenidos: nadie las leyo.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0",
+    "node --test tests/verify-research-candidates.test.mjs -> 10 de 10 en verde; con el esqueleto permisivo eran 9 de 9 rojas, todas AssertionError",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 35 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 5 ramas sin ejecutar: :56, :107, :141 y :153 x2",
+    "git ls-remote sobre las 14 fuentes -> 5 con el HEAD igual al commit pineado, 9 movidas",
+    "api.github.com/repos/<slug>/commits/<sha> sobre las 14 -> 14 respuestas 200, 0 no-existe, 0 limite de API",
+    "cruce de las 19 fuentes adicionales del encargo contra research/sources/ -> 14 cubiertas, 5 ausentes",
+    "tamaños de las 5 ausentes leidos de la API -> 12, 13, 21, 93 y 570 MB; 711 MB en total",
+    "node scripts/verify-research-candidates.mjs check templates/research-candidates.json -> OK: 1 candidato contra 14 fuentes pineadas",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 68 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 34 gate(s)",
+    "node scripts/verify-research-citations.mjs check contracts/research-citations.json -> OK: 145 citas contra 14 fuentes pineadas, contrato original sin tocar",
+    "node scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests -> OK: 6 criterio(s) nombrados por al menos una prueba",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "5510f55d106427c36d69258a38de25b5325e65c7",
+  "tree_fingerprint": "ef663106fec073a18457f6cc9abd3db68039277711c385f5320b0f4555ea9dd4",
+  "terminal_state": "approved"
+}

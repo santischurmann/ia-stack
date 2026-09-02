@@ -145,3 +145,32 @@ final de 1 de 5 estados permitidos** (24 VALIDADO + 23 YA_CUBIERTO + 24 RECHAZAD
 candidatos/top-50: **no alcanzado** — 78 candidatos reales (no 100), 24 VALIDADO reales (no 50).
 Ver `sources/multi-repo-2026-08-21.md` § "LEDGER ÚNICO" para el detalle completo con file:line
 por candidato.
+
+---
+
+## Fuentes del encargo que NO se investigaron — declaradas el 2026-09-01
+
+El encargo lista, además de las 14 fuentes pineadas, 19 «fuentes adicionales previamente
+investigadas». Se cruzaron una por una contra `research/sources/` y contra
+`contracts/research-citations.json`: **14 están cubiertas y 5 no**. Estas cinco no tienen informe,
+no están en el corpus pineado y **ninguna afirmación del research se apoya en ellas**.
+
+Se declaran acá en vez de dejarlas ausentes en silencio, que es la misma disciplina que ya aplican
+`contracts/coverage-scope.json` y `contracts/empty-probe.json`: un hueco escrito se puede discutir;
+uno que nadie nombró, no.
+
+| Fuente | Tamaño medido | Estado | Motivo |
+|---|---:|---|---|
+| `mukul975/anthropic-cybersecurity-skills` | 12 MB | `EXCLUDED` | No investigada. Cubierta parcialmente en intención por `research/sources/cyber-neo.md`, que ataca el mismo dominio; no es la misma fuente y no se la leyó. |
+| `usestrix/strix` | 13 MB | `EXCLUDED` | No investigada. Herramienta de seguridad ofensiva; su adopción tocaría la superficie que `SECURITY.md` declara fuera de alcance, así que entrar requiere una decisión previa que no se tomó. |
+| `imbad0202/academic-research-skills` | 21 MB | `EXCLUDED` | No investigada. Se solapa con `K-Dense-AI/scientific-agent-skills`, que sí está en el corpus pineado y cubre el mismo espacio de capacidades. |
+| `mintplex-labs/anything-llm` | 93 MB | `EXCLUDED` | No investigada. Es una aplicación de producto, no un repositorio de skills o de protocolo: el corpus se armó sobre lo segundo. |
+| `cline/cline` | 570 MB | `EXCLUDED` | No investigada. Sola pesa más que las otras cuatro juntas y que todo el corpus pineado; incorporarla exige reconstruir el ledger de 14.897 entradas. |
+
+**Total no investigado: ~711 MB.** Los tamaños salen de `api.github.com/repos/<slug>` el 2026-09-01.
+
+**Lo que esto NO dice.** No dice que estas cinco no sirvan: dice que nadie las leyó. Los motivos de
+solapamiento —`cyber-neo` por la primera, `scientific-agent-skills` por la tercera— son juicios
+sobre el dominio declarado de cada repositorio, **no** el resultado de haber comparado sus
+contenidos. Si alguna decisión futura necesita apoyarse en una de las cinco, hay que investigarla
+primero: hoy no hay evidencia sobre ninguna.

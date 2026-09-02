@@ -266,6 +266,20 @@ antes de comprometer tareas de implementación.
 1. **Research verificable:** inventariar fuentes, versión/fecha/locator, alcance realmente leído y
    claims. Separar `SUPPORTED`, `CONTRADICTED`, `INFERRED`, `INSUFFICIENT_EVIDENCE` y
    `NOT_APPLICABLE`; nunca convertir una fuente no leída en una recomendación.
+1b. **Candidatos, no puntajes.** Una tabla de «señales de adopción» es un filtro lexical: cuenta
+   palabras, no entiende nada. Para proponer adoptar algo de una fuente externa se escribe un
+   candidato en `research/candidates.json` con catorce campos —fuente, commit pineado, archivo,
+   línea, función, problema que resuelve, evidencia, **contraejemplo**, costo, riesgo,
+   compatibilidad, decisión y test necesario—:
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-research-candidates.mjs check research/candidates.json
+   ```
+   La evidencia tiene que citar `archivo:línea` **del archivo que el candidato declara**, y el
+   contraejemplo no puede ser esa cita repetida. Un `adopt` sin test declarado rechaza.
+   **Escribir un candidato obliga a leer la línea citada en el commit pineado**: no se puede
+   producir desde la tabla de puntajes, y ése es exactamente el punto.
+   El gate verifica forma y procedencia, **nunca que la línea citada diga lo que el candidato
+   afirma**: no abre el archivo ni sale a la red.
 2. **CAIO:** el diagnóstico mira **doce** dimensiones, no cuatro: proceso roto, información
    perdida, trabajo repetido, bucles abiertos, decisiones sin dueño, estados no medidos,
    handoffs defectuosos, errores que se repiten, ausencia de aprendizaje, costos ocultos,

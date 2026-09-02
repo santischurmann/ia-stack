@@ -1,54 +1,55 @@
-# Spec: triangulate-como-fase
+# Spec: candidatos-de-research
 
 **Fecha:** 2026-09-01 · **Estado:** en construcción
-La spec anterior (`intake-de-producto`, implementada) se recupera con `git show a492b3d:docs/spec.md`.
+La spec anterior (`triangulate-como-fase`, implementada) se recupera con `git show f23c832:docs/spec.md`.
 
 ## Problem / Problema
 
-TRIANGULATE existe en el protocolo pero no es una fase: aparece dentro del bucle de Build como una
-instrucción de prosa, y no deja rastro. Consecuencia observable: quien refactoriza decide solo qué
-vectores buscó, y nadie puede leer después cuáles miró y cuáles no. Sin una lista fija se revisa lo
-que uno ya sabe buscar, que es exactamente lo que no encuentra nada nuevo. Medido en esta misma
-sesión: la lista de gates con verde vacío se armó tres veces leyendo código y quedó corta las tres.
+La síntesis del research externo agrupa 14.897 entradas por capacidad y las llama «señales de
+adopción». Esas señales son **filtros lexicales**: un puntaje que cuenta cuántas palabras de una
+lista aparecen en un archivo. El propio informe lo dice, pero nada impide que alguien tome esa
+tabla y adopte una idea porque salió con puntaje 22. Consecuencia observable: hoy no existe ningún
+artefacto entre «una señal lexical» y «una capacidad adoptada», así que el salto no deja rastro y
+no hay dónde escribir el contraejemplo.
 
 ## Discovery / Investigación previa
 
-El protocolo ya tiene la disciplina en otros lados y funciona: `contracts/empty-probe.json` obliga
-a declarar cómo se comporta cada gate sobre un directorio vacío, y `contracts/coverage-scope.json`
-obliga a declarar qué directorios se miden y cuáles no. Los dos convierten un silencio en una fila
-escrita. Falta el equivalente para los vectores de triangulación, que hoy son 26 en el encargo y
-cero en el repositorio.
+Medido el 2026-09-01. Los 14 commits pineados siguen alcanzables (14/14 vía la API de GitHub) y
+9 de 14 fuentes movieron su HEAD desde la captura, lo cual no invalida el corpus: se leyó *en* el
+commit pineado. Registrado en `research/pin-revalidation-2026-09-01.json`. El repositorio ya tiene
+la disciplina de exigir contraejemplo en otros lados —`contracts/honest-limits.json` obliga a
+escribir qué NO prueba cada gate— pero el research no la tenía.
 
 ## Target Users / Usuarios
 
-Quien va a refactorizar y necesita saber qué falta mirar, y quien revisa ese trabajo después y
-necesita distinguir «lo miré y no aplica» de «no lo miré».
+Quien propone adoptar una idea de una fuente externa, y quien tiene que decidir si se adopta sin
+volver a leer los 15.581 archivos del corpus.
 
 ## Acceptance Criteria / Criterios de aceptación
 
-- [ ] **AC1:** GIVEN un expediente que declara los 26 vectores con estado, WHEN corre el gate, THEN sale 0 y dice cuántos cubiertos, cuántos no aplican y cuántos quedan pendientes.
-- [ ] **AC2:** GIVEN un expediente al que le falta un vector del contrato, o que declara uno que el contrato no tiene, WHEN corre el gate, THEN rechaza nombrándolo.
-- [ ] **AC3:** GIVEN un vector declarado `covered`, WHEN no nombra la prueba que lo cubre, THEN el gate rechaza: cubierto sin prueba es una afirmación sin respaldo.
-- [ ] **AC4:** GIVEN un vector declarado `not_applicable` o `pending` sin motivo escrito, WHEN corre el gate, THEN rechaza: un vector descartado sin razón es un vector no mirado.
-- [ ] **AC5:** GIVEN un expediente con vectores `pending`, WHEN corre el gate con `--require-complete`, THEN rechaza nombrándolos; sin la bandera informa cuántos quedan y sale 0.
-- [ ] **AC6:** THE SYSTEM SHALL informar VACÍO y salir 0 cuando no hay ningún expediente, y rechazar un esquema ajeno antes de mirar cualquier otro campo.
+- [ ] **AC1:** GIVEN un candidato con sus catorce campos completos, WHEN corre el gate, THEN sale 0 y dice cuántos candidatos hay por decisión propuesta.
+- [ ] **AC2:** GIVEN un candidato cuya fuente no es una de las pineadas, o cuyo commit no es el que el contrato pineó para esa fuente, WHEN corre el gate, THEN rechaza nombrándolo.
+- [ ] **AC3:** GIVEN un candidato cuya evidencia no cita archivo y línea del archivo que declara, WHEN corre el gate, THEN rechaza: un puntaje lexical no es una cita.
+- [ ] **AC4:** GIVEN un candidato cuyo contraejemplo repite textualmente una de sus evidencias, WHEN corre el gate, THEN rechaza: repetir la evidencia no es un contraejemplo.
+- [ ] **AC5:** GIVEN un candidato con decisión `adopt` que no declara el test necesario, WHEN corre el gate, THEN rechaza: adoptar sin test es adoptar sin condición de adopción.
+- [ ] **AC6:** THE SYSTEM SHALL informar VACÍO y salir 0 sin ningún expediente de candidatos, y rechazar un esquema ajeno antes de mirar cualquier candidato.
 
 ## Constraints / Restricciones
 
-Sin dependencias nuevas: Node nativo. El gate se declara en `contracts/empty-probe.json`. Su límite
-honesto se registra en `contracts/honest-limits.json`. La lista de vectores vive en un contrato
-propio, no adentro del gate: cambiar la lista no debe exigir tocar código.
+Sin dependencias nuevas: Node nativo. Las fuentes y commits válidos salen de
+`contracts/research-citations.json`, que ya existe y no se toca. El gate se declara en
+`contracts/empty-probe.json` y su límite honesto en `contracts/honest-limits.json`.
 
 ## Non-Goals / No-Goals
 
-No comprueba que la prueba nombrada ejercite el vector que dice cubrir. No juzga si un motivo de
-`not_applicable` es bueno. No descubre vectores nuevos: la lista es fija y su completitud es una
-decisión humana. No reemplaza a la cobertura ni a la suite.
+No abre el archivo citado ni comprueba que la línea diga lo que el candidato afirma: eso es
+reclonar el corpus. No juzga si un contraejemplo es bueno, si un costo es realista ni si una
+decisión es sensata. No adopta nada por su cuenta: la decisión sigue siendo humana y con 🔵.
 
 ## Stack & Dependencies
 
-Node nativo, `node:test`. Reusa la disciplina de `verify-empty-probe.mjs` para el verde vacío y el
-patrón de `--require-complete` que ya usan `verify-evidence-runner.mjs` y `verify-phase-decisions.mjs`.
+Node nativo, `node:test`. Reusa el patrón de verde vacío de `verify-empty-probe.mjs` y la lectura
+del contrato pineado que ya hace `verify-research-citations.mjs`.
 
 ## Definition of Done (DoD)
 

@@ -1,0 +1,119 @@
+{
+  "schema": "vcp.pin-revalidation/1",
+  "date": "2026-09-01",
+  "why": "El encargo pide repetir la verificacion si una fuente cambio. Deriva no invalida el corpus: se leyo EN el commit pineado, y ese commit no se mueve. Lo que si lo invalidaria es que el commit dejara de ser alcanzable -- un force-push o un repo borrado dejan las citas huerfanas para siempre, sin manera de re-verificarlas. Por eso se miden las dos cosas por separado.",
+  "method": "git ls-remote <repo> HEAD para el head actual, comparado por prefijo contra el commit pineado; y GET api.github.com/repos/<slug>/commits/<sha> para la alcanzabilidad, leyendo solo el codigo HTTP.",
+  "supersedes": "No reemplaza ni borra contracts/research-citations.json: lo acompaña. El registro anterior queda intacto.",
+  "totals": {
+    "sources": 14,
+    "head_unchanged": 5,
+    "head_moved": 9,
+    "pinned_reachable": 14,
+    "pinned_unreachable": 0
+  },
+  "limits": [
+    "Los commits del contrato tienen 8 caracteres hexadecimales, no 40. Ocho caracteres son 32 bits: alcanzan para desambiguar dentro de un repositorio, pero NO son un pin criptografico. Un repositorio hostil podria fabricar otro objeto con el mismo prefijo; esto no lo detecta.",
+    "La alcanzabilidad se leyo del codigo HTTP de la API de GitHub, sin descargar el arbol. Dice que el commit se resuelve hoy, no que su contenido sea el que el corpus leyo: para eso habria que reclonar y rehashear los 15581 archivos.",
+    "No se comparo el contenido de ninguna cita contra el repositorio: eso es reclonar el corpus entero, y este registro no lo hace ni pretende hacerlo."
+  ],
+  "sources": [
+    {
+      "slug": "AgriciDaniel/claude-obsidian",
+      "pinned_commit": "ad67087c",
+      "pinned_commit_length": 8,
+      "head_moved": false,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "anthropics/claude-plugins-official",
+      "pinned_commit": "e33a9ec0",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "ComposioHQ/awesome-claude-skills",
+      "pinned_commit": "be2a4069",
+      "pinned_commit_length": 8,
+      "head_moved": false,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "ConardLi/garden-skills",
+      "pinned_commit": "aaf9a82f",
+      "pinned_commit_length": 8,
+      "head_moved": false,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "DietrichGebert/ponytail",
+      "pinned_commit": "2ed6c52c",
+      "pinned_commit_length": 8,
+      "head_moved": false,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "garrytan/gstack",
+      "pinned_commit": "394db326",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "google/googletest",
+      "pinned_commit": "36ba75f0",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "K-Dense-AI/scientific-agent-skills",
+      "pinned_commit": "36d8f13a",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "marin-community/marin",
+      "pinned_commit": "dc584e76",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "msitarzewski/agency-agents",
+      "pinned_commit": "3c958888",
+      "pinned_commit_length": 8,
+      "head_moved": false,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "Panniantong/agent-reach",
+      "pinned_commit": "06c202b0",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "rohitg00/ai-engineering-from-scratch",
+      "pinned_commit": "39ea8a1c",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "thedotmack/claude-mem",
+      "pinned_commit": "866a0ca3",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    },
+    {
+      "slug": "tt-a1i/archify",
+      "pinned_commit": "49a7821d",
+      "pinned_commit_length": 8,
+      "head_moved": true,
+      "pinned_commit_reachable": true
+    }
+  ]
+}

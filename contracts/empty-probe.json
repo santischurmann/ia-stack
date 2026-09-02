@@ -199,6 +199,15 @@
       "expect": "reject"
     },
     {
+      "script": "verify-research-candidates.mjs",
+      "args": [
+        "check",
+        "research/candidates.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay expediente de candidatos, y eso no es un incumplimiento: es un proyecto que todavia no propuso adoptar nada de una fuente externa. El gate escribe VACIO y sale 0."
+    },
+    {
       "script": "verify-research-citations.mjs",
       "args": [
         "check",

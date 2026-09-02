@@ -7,6 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Un puntaje lexical ya no puede pasar por evidencia.** La síntesis del research agrupa 14.897
+  entradas y las llama «señales de adopción»: son filtros que cuentan palabras. No había ningún
+  artefacto entre esa tabla y una capacidad adoptada, así que el salto no dejaba rastro ni tenía
+  dónde escribir el contraejemplo. `verify-research-candidates.mjs` exige catorce campos por
+  candidato, con la fuente y el commit **cruzados contra las 14 pineadas**, evidencia que cite
+  `archivo:línea` del archivo declarado, y un contraejemplo que no sea esa cita repetida. Un
+  `adopt` sin test declarado rechaza.
+  **Consecuencia medida: no se escribió ningún candidato real.** Producir uno obliga a leer la
+  línea citada en el commit pineado, y el corpus no está en el repositorio. Eso es el punto del
+  gate, no una omisión: hace visible el costo del salto que antes se daba gratis.
+
+- **Los 14 commits pineados revalidados.** 5 fuentes sin cambios y 9 con el HEAD movido, lo cual
+  no invalida el corpus —se leyó *en* el commit pineado—; lo que sí lo invalidaría es que el
+  commit dejara de resolverse, y los **14 siguen alcanzables**. Registrado en
+  `research/pin-revalidation-2026-09-01.json`, que acompaña al contrato sin borrarlo. Límite
+  escrito ahí: los commits guardados tienen 8 caracteres, que desambiguan dentro de un
+  repositorio pero **no son un pin criptográfico**.
+
 - **La adopción distingue quién sostiene el cambio de quién lo ejecuta, y la recurrencia dice
   cuándo retirar una mejora.** `owner` y `operational_owner` son dos personas: el que lo defiende
   en una reunión no es el que lo corre un martes a la mañana, y confundirlos es cómo un cambio
