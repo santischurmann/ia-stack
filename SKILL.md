@@ -1300,13 +1300,26 @@ gate miraba:
 node .vibe/vcp-runtime/scripts/verify-lessons.mjs check .vibe/LESSONS.md
 ```
 
+El archivo que el instalador escribe en un proyecto nuevo —cabecera y plantilla, cero lecciones—
+pasa: registrar la primera lección es trabajo pendiente, no un incumplimiento. Retirar una lección
+se escribe como lo define `skills/vibe-memory.md`, `status: retired (<date>, reason: <why>)`. No hay
+piso de fecha, porque el archivo es memoria de errores entre proyectos y una lección importada trae
+su fecha real; sí hay techo, porque no se aprende una lección mañana.
+
 La frontera entre lecciones es el encabezado `## ` anclado, nunca un `---` ni una línea en blanco:
 el archivo real sólo tiene dos `---` y delimitan la plantilla, así que un gate que parte por ahí
 valida un solo bloque gigante y sale verde aunque falte un campo entero. El valor de un campo
 termina en el próximo marcador y no al final del bloque, porque si no un campo vacío se llena con
 el texto del siguiente. La plantilla se identifica por su fecha literal `YYYY-MM-DD` —nunca por
-número de línea— y sus propios valores son la lista negra de relleno. Las marcas
-`[overlaps with: LESSON-N]` tienen que resolver contra los números de este mismo archivo.
+número de línea— y sus propios valores son la lista negra de relleno.
+Un campo tiene que traer al menos una letra con caso o un dígito: sacar los invisibles no alcanza,
+porque
+U+3164 HANGUL FILLER y U+2800 BRAILLE PATTERN BLANK no son de formato y miden como contenido.
+
+El barrido de marcas de dedup se ancla al corchete, no a la frase, y no distingue mayúsculas: toda
+marca del archivo —incluidas las de la plantilla— tiene que nombrar una lección que este archivo
+declare. El precio está escrito: una lección que documente la convención citando la forma genérica
+sale roja, y el rechazo dice que la marca no nombra ninguna lección en vez de culpar al patrón.
 
 El gate verifica forma, unicidad de identificadores y resolución de referencias internas.
 **No verifica que la causa raíz declarada sea la causa real**, ni que se distinga del síntoma,

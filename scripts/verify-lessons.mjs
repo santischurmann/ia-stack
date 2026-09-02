@@ -38,10 +38,14 @@ const MIN_PROSE = 12;
 // dejaria `retired` en rojo. La fuente es el encabezado del archivo: "retire-not-delete (nunca se
 // borra, solo `status: retired`)".
 export const STATUS = new Set(['active', 'retired']);
+// skills/vibe-memory.md:250 define el retiro como `status: retired (<date>, reason: <why>)`. Exigir
+// el token pelado prohibia la unica forma documentada de retirar una leccion, que es ademas la regla
+// dura del archivo: retire-not-delete.
+const STATUS_SHAPE = /^(active|retired)(\s*\(.+\))?$/u;
 export const CONFIDENCE = new Set(['high', 'medium', 'low']);
-// La primera leccion registrada del proyecto. Una fecha anterior no es un error de tipeo posible:
-// es una entrada copiada de otro lado o una fecha inventada.
-const FLOOR = '2026-08-28';
+// No hay piso de fecha: el archivo se titula "cross-project error memory" e install.sh copia
+// scripts/ a cada proyecto, asi que una leccion importada con su fecha real es legitima. Si hay
+// techo, que es lo que el gate publicado no tenia: no se aprende una leccion manana.
 const PLACEHOLDER_DATE = 'YYYY-MM-DD';
 const FILLER = new Set(['tbd', 'n/a', 'na', '-', '—', '?', 'pendiente', 'none', 'ver arriba', 'idem', 'ninguno']);
 
@@ -50,9 +54,23 @@ const HEADING_FULL = /^## \[([^\]]*)\] LESSON-(\d+) (.+?) — status: (.*)$/u;
 const MARKER = /^\*\*([^*]+?):\*\*/u;
 const PLACEHOLDER = /^<.+>$/u;
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/u;
+// Permisiva a proposito: encuentra toda marca entre corchetes sin importar mayusculas ni espacios,
+// para recien despues juzgar el destino. La version publicada era estricta y
+// `[Overlaps with: LESSON-99]` la esquivaba entera; el segundo camino de conteo buscaba el mismo
+// string sensible a mayusculas, asi que los dos "caminos independientes" degradaban juntos. El
+// ancla es el corchete, no la frase: contar 'overlaps with' en todo el texto rechazaba una leccion
+// legitima que mencionara la convencion en prosa, y encima culpaba a un patron que estaba sano.
+const MARK = /\[\s*overlaps\s+with\s*:\s*([^\]]*)\]/giu;
+const MARK_ANCHOR = '[overlaps';
+const MARK_TARGET = /^LESSON-(\d+)$/u;
 
 /** Espacios que no se ven pero cuentan como contenido si no se normalizan antes de medir. */
-const normalize = (raw) => raw.replace(/\r/gu, '').replace(/[ ​-‍﻿]/gu, ' ').trim();
+const normalize = (raw) => raw.replace(/\r/gu, '').replace(/\p{Cf}/gu, '').replace(/\p{Zs}/gu, ' ').trim();
+// Un campo tiene que traer al menos una letra con caso o un digito. Sacar los invisibles no alcanza:
+// U+3164 HANGUL FILLER es \p{Lo} y U+2800 BRAILLE PATTERN BLANK es \p{So}, asi que sobreviven a
+// cualquier limpieza por categoria de formato y miden como contenido. Medido sobre el gate
+// publicado: 15 copias de U+2060 pasaban el minimo de 12 caracteres.
+const hasSubstance = (value) => /[\p{Ll}\p{Lu}\p{Lt}\p{N}]/u.test(value);
 const newlines = (source) => source.replace(/\r\n?/gu, '\n');
 
 /**
@@ -112,6 +130,7 @@ function countLiteral(text, needle) {
 export const countAnchored = (text) => (text.match(/^## /gmu) ?? []).length;
 
 export function validateLessons(source, options = {}) {
+  const today = options.today ?? new Date().toISOString().slice(0, 10);
   const text = newlines(source);
   const blocks = parseBlocks(text);
   // Dos conteos por caminos independientes. Si difieren, el reconocedor de encabezados se degradó
@@ -120,8 +139,8 @@ export function validateLessons(source, options = {}) {
   if (blocks.length !== anchored) {
     return [`el barrido de encabezados no cierra: ${blocks.length} por línea contra ${anchored} por patrón`];
   }
-  if (blocks.length < 2) {
-    return ['el archivo debe traer la plantilla y al menos una lección: sin plantilla no hay contra qué comparar el relleno'];
+  if (blocks.length < 1) {
+    return ['el archivo no declara ninguna plantilla: sin plantilla no hay contra qué comparar el relleno'];
   }
 
   const violations = [];
@@ -168,7 +187,7 @@ export function validateLessons(source, options = {}) {
         continue;
       }
       const { value } = entries[0];
-      if (value === '') {
+      if (value === '' || !hasSubstance(value)) {
         violations.push(`${nombre}: **${field}:** está vacío. El marcador presente no es el campo escrito`);
         continue;
       }
@@ -198,22 +217,28 @@ export function validateLessons(source, options = {}) {
     numbers.add(entry.number);
     if (!realDate(entry.date)) {
       violations.push(`LESSON-${entry.number}: ${JSON.stringify(entry.date)} no es una fecha real`);
-    } else if (entry.date < FLOOR) {
-      violations.push(`LESSON-${entry.number}: la fecha ${entry.date} es anterior a la primera lección del proyecto (${FLOOR})`);
+    } else if (entry.date > today) {
+      violations.push(`LESSON-${entry.number}: la fecha ${entry.date} está en el futuro (hoy es ${today}): no se aprende una lección mañana`);
     }
-    if (!STATUS.has(entry.status)) {
-      violations.push(`LESSON-${entry.number}: status ${JSON.stringify(entry.status)} no es uno de ${[...STATUS].join(', ')}`);
+    if (!STATUS_SHAPE.test(entry.status)) {
+      violations.push(`LESSON-${entry.number}: status ${JSON.stringify(entry.status)} no es ${[...STATUS].join(' ni ')}, con o sin el paréntesis de fecha y motivo`);
     }
   }
 
-  for (const entry of lessons) {
-    const cuerpo = entry.block.body.join('\n');
-    for (const [, cited] of cuerpo.matchAll(/\[overlaps with: LESSON-(\d+)\]/gu)) {
-      const numero = Number(cited);
-      if (numero === entry.number) {
-        violations.push(`LESSON-${entry.number} se cita a sí misma: una nota de dedup contra uno mismo no dedupea nada`);
+  for (const entry of [template, ...lessons]) {
+    const esPlantilla = entry === template;
+    const nombre = esPlantilla ? 'la plantilla' : `LESSON-${entry.number}`;
+    for (const marca of entry.block.body.join('\n').matchAll(MARK)) {
+      const objetivo = MARK_TARGET.exec(marca[1].trim());
+      if (!objetivo) {
+        violations.push(`${nombre}: la marca ${JSON.stringify(marca[0])} no nombra ninguna lección: se escribe [overlaps with: LESSON-<n>]`);
+        continue;
+      }
+      const numero = Number(objetivo[1]);
+      if (!esPlantilla && numero === entry.number) {
+        violations.push(`${nombre} se cita a sí misma: una nota de dedup contra uno mismo no dedupea nada`);
       } else if (!numbers.has(numero)) {
-        violations.push(`LESSON-${entry.number} cita LESSON-${numero}, que este archivo no declara`);
+        violations.push(`${nombre} cita LESSON-${numero}, que este archivo no declara`);
       }
     }
   }
@@ -224,8 +249,8 @@ export function validateLessons(source, options = {}) {
 export function summarize(source) {
   const text = newlines(source);
   const lessons = parseBlocks(text).length - 1;
-  const parsed = [...text.matchAll(/\[overlaps with: LESSON-(\d+)\]/gu)].length;
-  const literal = countLiteral(text, 'overlaps with');
+  const parsed = [...text.matchAll(MARK)].length;
+  const literal = countLiteral(text.toLowerCase(), MARK_ANCHOR);
   return { lessons, marks: parsed, degraded: parsed !== literal, literal };
 }
 
@@ -270,9 +295,9 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
 
   const resumen = (options.summarize ?? summarize)(source);
-  const violations = validateLessons(source);
+  const violations = validateLessons(source, { ...(options.today === undefined ? {} : { today: options.today }) });
   if (resumen.degraded) {
-    violations.push(`el barrido de marcas de dedup no cierra: ${resumen.marks} por patrón contra ${resumen.literal} por texto literal. Cero marcas encontradas por un patrón roto se leería como cero referencias rotas`);
+    violations.push(`el barrido de marcas de dedup no cierra: ${resumen.marks} reconocidas contra ${resumen.literal} corchetes que empiezan con "${MARK_ANCHOR}". Cero marcas encontradas por un patrón roto se leería igual que cero referencias rotas`);
   }
   if (violations.length > 0) {
     for (const violation of violations) writeError(`REJECTED: ${path}: ${violation}`);

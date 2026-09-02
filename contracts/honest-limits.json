@@ -426,6 +426,12 @@
       "file": "SKILL.md",
       "phrase": "No verifica que la causa raíz declarada sea la causa real",
       "why": "verify-lessons comprueba que los seis campos esten, que no esten vacios ni copiados de la plantilla, que la fecha sea real, que el status este en el conjunto y que las marcas [overlaps with: LESSON-N] resuelvan contra este mismo archivo. Nada de eso mira si la leccion sirve: una causa raiz que reformula el sintoma con otras palabras pasa verde, y una senal de deteccion que no detectaria nada tambien. Esa parte es revision humana y el gate imprime el limite en verde y en rojo para que su linea de exito no se cite sola."
+    },
+    {
+      "limit_id": "lessons-substance-needs-cased-letters",
+      "file": "SKILL.md",
+      "phrase": "al menos una letra con caso o un dígito",
+      "why": "La unica medida de sustancia de un campo es que contenga una letra con caso o un digito, mas un minimo de longitud y una lista negra derivada de la plantilla. Eso alcanza para acusar un campo lleno de invisibles -medido: 15 copias de U+2060 pasaban el gate publicado-, y no alcanza para nada mas: seis campos con la misma frase creible repetida pasan, y una escritura sin distincion de caso (chino, japones, coreano) saldria rechazada aunque el contenido sea real. El repo escribe en espanol e ingles, asi que el falso rojo es teorico hoy y esta declarado en vez de resuelto."
     }
   ]
 }

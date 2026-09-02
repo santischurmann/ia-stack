@@ -7,6 +7,41 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El gate de lecciones rompía toda instalación nueva, y lo encontró una auditoría adversarial
+  contra el código ya publicado.** Las dos lentes que habían muerto por límite de sesión se
+  re-corrieron con `resume` —los cinco atacantes desde caché— y esta vez, además de votar los 40
+  checks propuestos, auditaron `cf19a91` ejecutándolo sobre copias mutadas. 23 hallazgos
+  confirmados corriendo el gate; siete arreglados acá, cada uno con su falsificación:
+  - **`templates/vibe/LESSONS.md` salía rojo.** `install.sh:60` copia ese archivo a `.vibe/` en todo
+    proyecto nuevo: trae la plantilla y cero lecciones, y `blocks.length < 2` lo rechazaba con exit
+    1. La rama `VACÍO` sólo se alcanzaba si el archivo no existía, estado que después del
+    instalador nunca ocurre, así que la sonda de vacío jamás probaba el caso real.
+  - **El gate prohibía la única forma documentada de retirar una lección.**
+    `skills/vibe-memory.md:250` la define como `status: retired (<date>, reason: <why>)`; el
+    conjunto cerrado exigía el token pelado. La fuente que había citado en el código —la cabecera
+    del propio archivo— era la equivocada.
+  - **El piso de fecha `2026-08-28` era la primera lección de VCP**, y `install.sh` copia `scripts/`
+    a cada proyecto: una lección importada con su fecha real salía roja en un archivo que se titula
+    *cross-project error memory*. Se retiró el piso y se agregó el techo que faltaba: una lección
+    fechada en el futuro ahora se rechaza.
+  - **La frase `overlaps with` en prosa tumbaba el archivo**, y el mensaje culpaba a un patrón que
+    estaba sano. El barrido se ancla ahora al corchete, no a la frase.
+  - **Una marca colgada dentro de la plantilla pasaba verde y la línea de éxito afirmaba lo
+    contrario de lo que había pasado**: decía "5 marcas que resuelven contra este mismo archivo"
+    cuando una no resolvía. El barrido recorre ahora todos los bloques, incluida la plantilla.
+  - **`[Overlaps with: LESSON-99]` esquivaba la comprobación entera.** Los "dos caminos
+    independientes" de conteo buscaban el mismo string sensible a mayúsculas, así que degradaban
+    juntos; el conteo bajaba de 4 a 3 en silencio.
+  - **Un campo relleno con 15 invisibles medía 15 caracteres y pasaba el mínimo.** U+2060, U+00AD,
+    U+3164 y U+2800 no estaban en la clase de normalización, y los dos últimos ni siquiera son
+    caracteres de formato. Un campo tiene que traer ahora al menos una letra con caso o un dígito.
+- **Prueba retirada:** la que fijaba el piso de fecha. Fijaba la conducta que la auditoría probó
+  incorrecta; su intención —que una fecha fuera de rango se rechace— la mantiene la prueba de fecha
+  futura.
+- **Límite honesto nuevo (72):** la medida de sustancia de un campo es que traiga una letra con caso
+  o un dígito, más un mínimo de longitud y la lista negra de la plantilla. Seis campos con la misma
+  frase creíble repetida siguen pasando, y una escritura sin distinción de caso saldría rechazada.
+
 - **`LESSONS.md` deja de ser el único artefacto que nadie verifica.** `verify-lessons.mjs` (gate 36)
   comprueba los seis campos de cada lección, que ninguno esté vacío ni copiado de la plantilla, que
   la fecha sea real, que el `status` esté en `{active, retired}` y que cada

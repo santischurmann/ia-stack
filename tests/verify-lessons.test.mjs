@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,7 +52,7 @@ function leccion({ n = 2, date = '2026-08-29', titulo = 'Un título de prueba', 
 
 const doc = (...bloques) => `${[PREAMBULO, PLANTILLA, ...bloques].join('\n\n')}\n`;
 
-function corrida(texto, args = ['check', RUTA]) {
+function corrida(texto, args = ['check', RUTA], extra = {}) {
   const root = mkdtempSync(join(tmpdir(), 'vcp-lessons-'));
   const salida = [];
   const errores = [];
@@ -61,7 +61,7 @@ function corrida(texto, args = ['check', RUTA]) {
       mkdirSync(join(root, '.vibe'), { recursive: true });
       writeFileSync(join(root, RUTA), texto, 'utf8');
     }
-    const code = main(args, { root, write: (l) => salida.push(l), writeError: (l) => errores.push(l) });
+    const code = main(args, { root, write: (l) => salida.push(l), writeError: (l) => errores.push(l), ...extra });
     return { code, salida: salida.join('\n'), errores: errores.join('\n') };
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -149,12 +149,6 @@ test('FALSIFICACIÓN · una fecha imposible se rechaza aunque matchee el formato
     const { code, errores } = corrida(doc(leccion({ n: 2, date })));
     assert.deepEqual({ date, code, acusa: /fecha/iu.test(errores) }, { date, code: 1, acusa: true });
   }
-});
-
-test('FALSIFICACIÓN · una fecha anterior a la primera lección del proyecto se rechaza', () => {
-  const { code, errores } = corrida(doc(leccion({ n: 2, date: '2019-01-01' })));
-  assert.equal(code, 1);
-  assert.match(errores, /fecha/iu);
 });
 
 // --- status: el conjunto no se deriva de lo observado --------------------------------------------
@@ -354,4 +348,79 @@ test('si el archivo desaparece entre resolver la ruta y leerla, eso es VACÍO y 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- Los siete defectos que la auditoría adversarial confirmó ejecutando --------------------------
+// Cada uno se reproduce acá antes de tocar el gate. Fueron encontrados corriendo el gate publicado
+// (cf19a91) contra copias mutadas del archivo real, no leyendo el código.
+
+const HOY = { today: '2026-09-02' };
+
+test('FR-1 · el archivo que el instalador copia a todo proyecto nuevo tiene que pasar', () => {
+  // scripts/install.sh:60 copia templates/vibe/* a .vibe/. Ese archivo es cabecera + plantilla y
+  // cero lecciones: el gate publicado lo rechazaba con exit 1, así que toda instalación nueva de
+  // VCP salía roja.
+  const plantilla = readFileSync(join(repoRoot, 'templates', 'vibe', 'LESSONS.md'), 'utf8');
+  const { code, errores, salida } = corrida(plantilla, ['check', RUTA], HOY);
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+  assert.match(salida, /0 lección/u);
+});
+
+test('FR-10 · la única forma documentada de retirar una lección tiene que pasar', () => {
+  // skills/vibe-memory.md:250 la define así: `status: retired (<date>, reason: <why>)`.
+  const texto = doc(leccion({ n: 2, status: 'retired (2026-09-01, reason: absorbida por LESSON-3)' }), leccion({ n: 3, date: '2026-08-30' }));
+  const { code, errores } = corrida(texto, ['check', RUTA], HOY);
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});
+
+test('FR-2 · una lección importada de otro proyecto con su fecha real tiene que pasar', () => {
+  // El archivo se titula "cross-project error memory" y install.sh copia scripts/ a cada proyecto:
+  // un piso fijado en la primera lección de VCP rechaza fechas reales ajenas.
+  const { code, errores } = corrida(doc(leccion({ n: 2, date: '2025-11-02' })), ['check', RUTA], HOY);
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});
+
+test('FALSIFICACIÓN · una fecha del futuro se rechaza: no hay lección aprendida mañana', () => {
+  const { code, errores } = corrida(doc(leccion({ n: 2, date: '2099-12-31' })), ['check', RUTA], HOY);
+  assert.equal(code, 1);
+  assert.match(errores, /futur/iu);
+});
+
+test('FR-3 · la frase "overlaps with" en prosa no rompe el archivo', () => {
+  const texto = doc(leccion({ n: 2, extra: '**Nota:** la convención se escribe overlaps with y punto.' }));
+  const { code, errores } = corrida(texto, ['check', RUTA], HOY);
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});
+
+test('F3 · FALSIFICACIÓN · una marca colgada dentro de la plantilla se acusa, y el verde no la cuenta como resuelta', () => {
+  const plantillaConMarca = PLANTILLA.replace('**Confidence:** high | medium | low', '**Confidence:** high | medium | low\n**Nota de dedup:** [overlaps with: LESSON-99]');
+  const texto = `${PREAMBULO}\n\n${plantillaConMarca}\n\n${leccion({ n: 2 })}\n`;
+  const { code, errores } = corrida(texto, ['check', RUTA], HOY);
+  assert.equal(code, 1);
+  assert.match(errores, /LESSON-99/u);
+});
+
+test('F2 · FALSIFICACIÓN · una marca con otra capitalización no esquiva la comprobación', () => {
+  const texto = doc(leccion({ n: 2, extra: '**Nota de dedup:** [Overlaps with: LESSON-99]' }));
+  const { code, errores } = corrida(texto, ['check', RUTA], HOY);
+  assert.equal(code, 1);
+  assert.match(errores, /LESSON-99/u);
+});
+
+test('F1 · FALSIFICACIÓN · un campo relleno con caracteres invisibles cuenta como vacío', () => {
+  // U+2060 WORD JOINER, U+00AD SOFT HYPHEN, U+3164 HANGUL FILLER y U+2800 BRAILLE BLANK no los
+  // sacaba la normalización publicada, así que 15 copias medían 15 caracteres y pasaban el mínimo.
+  for (const invisible of ['⁠', '­', 'ㅤ', '⠀']) {
+    const { code, errores } = corrida(doc(leccion({ n: 2, campos: { 'What happened': invisible.repeat(15) } })), ['check', RUTA], HOY);
+    assert.deepEqual({ char: invisible.codePointAt(0).toString(16), code, acusa: /What happened/u.test(errores) }, { char: invisible.codePointAt(0).toString(16), code: 1, acusa: true });
+  }
+});
+
+test('FALSIFICACIÓN · una marca cuyo destino no es un número se acusa como mal formada, no como referencia rota', () => {
+  // Es el precio de anclar el barrido al corchete en vez de a la frase: una lección que documente
+  // la convención escribiendo la forma genérica `[overlaps with: LESSON-N]` sale roja. El rechazo
+  // dice exactamente eso —la marca no nombra ninguna lección— en vez de acusar a un patrón sano.
+  const { code, errores } = corrida(doc(leccion({ n: 2, extra: '**Nota:** la forma es [overlaps with: LESSON-N].' })), ['check', RUTA], HOY);
+  assert.equal(code, 1);
+  assert.match(errores, /no nombra ninguna lección/u);
 });
