@@ -90,3 +90,33 @@ máquina» algo sobre claves, firmas o credenciales. También cualquier diálogo
 aparezca sin que el usuario haya pedido nada. Grep de arranque: `ssh-keygen`, `gpg --gen-key`,
 `--full-generate-key`, `certutil`, `New-SelfSignedCertificate` en prompts de agentes.
 **Confidence:** high
+
+## [2026-09-01] LESSON-5 Un diagnóstico que sólo mira el árbol de trabajo mide la máquina del autor — status: active
+
+**Project/phase/run:** vibecodeprotocols/fase-0/mejora-integral-vcp-2026-09-01
+**What happened:** la Fase 0 de preflight corrió 20 gates sobre el checkout y los 20 salieron
+verdes. El primer clon del mismo commit mostró tres defectos en minutos: 215 de 229 archivos
+llegaban CRLF y rompían la cadena de hashes de Discovery, tres de los cuatro verificadores de
+research reventaban con un stack trace en vez de rechazar, y el gate de cobertura declaraba 30/30
+al 100 % sobre 10 funciones o ramas que ningún proceso ejecutaba. Ninguno era detectable desde
+adentro.
+**Why (root cause):** el árbol de trabajo del autor tiene estado que ningún clon tiene —archivos
+generados, finales de línea ya normalizados, directorios que `.gitignore` excluye— y ese estado
+tapa exactamente los defectos que sólo aparecen sin él. Un diagnóstico hecho ahí no mide el
+proyecto: mide una máquina.
+**How to avoid:** la fase de diagnóstico clona antes de concluir, no al verificar. `git clone` del
+propio repositorio a un directorio temporal y correr ahí los mismos gates es de segundos, y va
+**antes** de escribir el informe de hallazgos, no después de arreglarlos.
+**Detection signal:** un informe de estado, auditoría o preflight cuyos comandos corren todos con
+el cwd en el checkout vivo. Grep del reporte: si ninguna evidencia menciona `clone`, `mkdtemp` o un
+directorio temporal, el diagnóstico no salió del árbol del autor. Aplica aunque no haya nada que
+instalar — ése es el hueco que deja `[overlaps with: LESSON-2]`, cuya señal nombra instaladores,
+empaquetadores y exportadores, y por eso no habría marcado esta fase.
+**Confidence:** high
+
+**Nota de dedup:** `[overlaps with: LESSON-2]` — «Probar desde afuera antes de declarar terminado».
+Se mantiene separada a propósito: LESSON-2 gobierna lo que se instala o se distribuye y su remedio
+es verificar en destino; ésta gobierna la fase de diagnóstico, que no instala nada y cuyo remedio
+es clonar antes de concluir. Anotada, no fusionada.
+**Nota de pre-chequeo:** ⚠ coincidencia con `hash` en el barrido de contenido sensible. Es «cadena
+de hashes de git», no un secreto. Marca, no bloqueo.
