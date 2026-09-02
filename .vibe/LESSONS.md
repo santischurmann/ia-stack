@@ -168,3 +168,36 @@ cuyo run se llama `verde-vacio`. Se mantiene separada: LESSON-1 gobierna la list
 sin programa que la reproduzca, y su remedio es escribir la sonda. Acá la sonda existía y era
 ciega, así que LESSON-1 no la habría marcado. Anotada, no fusionada.
 **Nota de pre-chequeo:** barrido de contenido sensible sobre las dos entradas: cero coincidencias.
+
+## [2026-09-01] LESSON-8 Un identificador que resuelve no es un identificador correcto — status: active
+
+**Project/phase/run:** vibecodeprotocols/bloque-c/vinculo-de-claim-2026-09-01
+**What happened:** cuatro claims de research no enlazaban ningún criterio y el cierre estricto los
+rechazaba. Al ir a enlazarlos apareció que el gate resolvía los vínculos contra `docs/spec.md`
+fijo, que rota con el feature activo, mientras que el packet es inmutable y pertenece al suyo. Los
+vínculos correctos eran T01/AC1, T02/AC5, T03/AC8 y T04/AC10: contra la spec activa, `AC1` y `AC5`
+habrían salido **verdes** —esa spec también los declara, para otra cosa— y los otros seis rojos. El
+verde no habría probado que el claim apunta a su criterio, sólo que ese string aparece en negrita
+en el archivo que hoy toca.
+**Why (root cause):** el gate comprobaba pertenencia a un conjunto —¿está este string declarado en
+este archivo?— y la presentaba como prueba de referencia —¿este claim apunta a ese criterio?—. Con
+un espacio de nombres corto y reutilizable (`AC1`, `AC2`, `T01`) y un archivo que rota, la
+pertenencia se cumple por coincidencia y la referencia no.
+**How to avoid:** cuando una comprobación resuelve un identificador contra un documento, el
+documento es argumento explícito y queda nombrado en la salida, nunca una constante fija dentro de
+la función. Un identificador de espacio corto sólo significa algo junto al documento al que
+pertenece; sin decir cuál, un verde no es evidencia.
+**Detection signal:** una constante de ruta fija (`SPEC_PATH`, `DEFAULT_*`) usada dentro de una
+función que ya recibe el identificador de la entidad a verificar (`featureSlug`). También: dos
+artefactos inmutables de features distintos que resuelven contra el mismo archivo mutable, y un
+mensaje de verde que no nombra el archivo contra el que resolvió.
+**Confidence:** high
+
+**Nota de dedup:** `[overlaps with: LESSON-6]` — «un resumen puede ser coherente consigo mismo y
+falso». Se mantiene separada: en LESSON-6 la comparación estaba mal hecha (8 caracteres contra 40)
+y el resultado era basura; acá la comparación es exacta y correcta, y lo que falla es **contra qué**
+se compara. Adyacente también a `LESSON-7` («una guardia sin prueba que la haga fallar puede estar
+ciega»): allá el verde no miraba nada, acá miraba —el archivo equivocado—, así que ninguna de las
+dos la habría marcado. Anotada, no fusionada.
+**Nota de pre-chequeo:** barrido de contenido sensible sobre el commit `383cf4b`, entrada de esta
+lección: cero coincidencias.
