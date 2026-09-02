@@ -118,6 +118,11 @@ no es un reporte decorativo al final.
    arquitectura, métricas, rollout y rollback como campos propios— y criterios de aceptación de
    seis partes: evento, precondición, acción, resultado observable, test y evidencia esperada.
    **Un criterio en prosa no alcanza**, porque no deja ver cuál de las seis partes falta.
+5. **Adopción y recurrencia:** quién sostiene el cambio y quién lo ejecuta todos los días son
+   dos personas distintas, y las dos se declaran. La adopción trae checklist y una métrica con
+   línea de base, no sólo una señal. La recurrencia declara cuándo se promueve una mejora y
+   **cuándo se retira**: sin criterio de retiro, una mejora que dejó de servir se sostiene por
+   inercia.
 
 Cada decisión se guarda como JSON inmutable bajo
 `docs/discovery/<feature>/runs/run-NNN/{decisions,packets}/`. Un packet completed conserva su

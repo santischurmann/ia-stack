@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La adopción distingue quién sostiene el cambio de quién lo ejecuta, y la recurrencia dice
+  cuándo retirar una mejora.** `owner` y `operational_owner` son dos personas: el que lo defiende
+  en una reunión no es el que lo corre un martes a la mañana, y confundirlos es cómo un cambio
+  queda sin nadie que lo haga. Se sumó `adoption_checklist` con ítems verificables y
+  `adoption_metric` con línea de base y objetivo —una señal cualitativa dice que se usa; una
+  métrica dice cuánto, desde dónde y hasta dónde—. Y la recurrencia declara `promotion_criteria`
+  y `retirement_criteria`: sin criterio de retiro, una mejora que dejó de servir se sostiene por
+  inercia y su costo no aparece en ningún lado. Límite: el gate exige el criterio escrito, nunca
+  que alguien lo aplique.
+
 - **TRIANGULATE es una fase con expediente, no una instrucción de prosa.** Existía adentro del
   bucle de Build y no dejaba rastro: quien refactorizaba decidía solo qué buscó. Ahora los 26
   vectores viven en `contracts/triangulate-vectors.json` y el expediente de la funcionalidad los

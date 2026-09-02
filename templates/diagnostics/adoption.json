@@ -2,12 +2,33 @@
   "schema": "vcp.adoption/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
-  "owner": "Responsable interno que mantiene el cambio",
-  "stakeholders": ["Equipo afectado"],
+  "owner": "Responsable interno que sostiene el cambio y lo defiende cuando se discute.",
+  "operational_owner": "Quien lo ejecuta todos los días. No es el mismo que lo sostiene, y confundirlos es cómo un cambio queda sin nadie que lo haga.",
+  "stakeholders": [
+    "Equipo afectado"
+  ],
   "workflow_change": "Qué hábito o paso cambia en el trabajo diario.",
   "training": "Cómo se enseña y dónde queda la guía.",
-  "success_signal": "Señal observable de uso sostenido.",
+  "success_signal": "Señal observable de uso sostenido. Cualitativa: dice que se usa.",
+  "adoption_checklist": [
+    {
+      "id": "CHK1",
+      "item": "Qué tiene que haber pasado para decir que el equipo lo adoptó. Un ítem por línea, verificable."
+    }
+  ],
+  "adoption_metric": {
+    "name": "Qué se cuenta",
+    "baseline": "Cuánto da hoy",
+    "target": "Cuánto tiene que dar para considerarlo adoptado"
+  },
   "review_cadence": "Cada cuánto se revisa la adopción.",
   "fallback": "Qué hacer si el equipo no adopta o la señal cae.",
-  "rollout_steps": [{ "id": "ROLLOUT1", "when": "Condición para iniciar", "action": "Acción de adopción", "exit_criteria": "Criterio para pasar al siguiente paso" }]
+  "rollout_steps": [
+    {
+      "id": "ROLLOUT1",
+      "when": "Condición para iniciar",
+      "action": "Acción de adopción",
+      "exit_criteria": "Criterio para pasar al siguiente paso"
+    }
+  ]
 }

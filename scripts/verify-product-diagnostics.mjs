@@ -420,22 +420,44 @@ function validateRollout(value, violations) {
   });
 }
 
+/**
+ * `owner` sostiene el cambio y `operational_owner` lo ejecuta todos los dias. Son dos personas
+ * distintas y confundirlas es exactamente como un cambio queda sin nadie que lo haga: el que lo
+ * defiende en una reunion no es el que lo corre un martes a la mañana.
+ *
+ * Y `success_signal` no es lo mismo que `adoption_metric`: la señal es cualitativa y dice que se
+ * usa; la metrica dice cuanto, desde donde y hasta donde. Sin linea de base no se puede afirmar
+ * que la adopcion mejoro, solo que alguien la mira.
+ */
 export function validateAdoption(document) {
   const violations = [];
-  const keys = ['schema', 'feature', 'date', 'owner', 'stakeholders', 'workflow_change', 'training', 'success_signal', 'review_cadence', 'fallback', 'rollout_steps'];
-  if (!exactKeys(document, keys)) return [`adoption debe declarar exactamente ${keys.join(', ')}`];
-  validateHeader(document, 'adoption', violations); ['owner', 'workflow_change', 'training', 'success_signal', 'review_cadence', 'fallback'].forEach((key) => requireText(document[key], key, violations)); requireStringArray(document.stakeholders, 'stakeholders', violations, { nonEmptyList: true }); validateRollout(document.rollout_steps, violations);
+  const keys = ['schema', 'feature', 'date', 'owner', 'operational_owner', 'stakeholders', 'workflow_change', 'training', 'success_signal', 'adoption_checklist', 'adoption_metric', 'review_cadence', 'fallback', 'rollout_steps'];
+  if (!exactKeys(document, keys)) return [`adoption debe declarar exactamente ${keys.join(", ")}`];
+  validateHeader(document, 'adoption', violations);
+  ['owner', 'operational_owner', 'workflow_change', 'training', 'success_signal', 'review_cadence', 'fallback'].forEach((key) => requireText(document[key], key, violations));
+  requireStringArray(document.stakeholders, 'stakeholders', violations, { nonEmptyList: true });
+  validateIdentifiedList(document.adoption_checklist, 'adoption_checklist', ['id', 'item'], violations);
+  if (!exactKeys(document.adoption_metric, ['name', 'baseline', 'target'])) {
+    add(violations, 'adoption_metric debe declarar name, baseline y target');
+  } else {
+    ['name', 'baseline', 'target'].forEach((key) => requireText(document.adoption_metric[key], `adoption_metric.${key}`, violations));
+  }
+  validateRollout(document.rollout_steps, violations);
   return violations;
 }
-
+/**
+ * Sin criterio de retiro, una mejora que dejo de servir se sostiene por inercia: nadie tiene con
+ * que argumentar que hay que sacarla, y el costo de mantenerla no aparece en ningun lado. El
+ * criterio de promocion es el espejo: sin el, una mejora que funciona se queda en su rincon.
+ */
 export function validateRecurrence(document) {
   const violations = [];
-  const keys = ['schema', 'feature', 'date', 'first_loop_id', 'maintenance', 'metric', 'cadence', 'review_owner', 'escalation', 'next_process', 'trigger'];
-  if (!exactKeys(document, keys)) return [`recurrence debe declarar exactamente ${keys.join(', ')}`];
-  validateHeader(document, 'recurrence', violations); keys.slice(3).forEach((key) => requireText(document[key], key, violations));
+  const keys = ['schema', 'feature', 'date', 'first_loop_id', 'maintenance', 'metric', 'cadence', 'review_owner', 'escalation', 'promotion_criteria', 'retirement_criteria', 'next_process', 'trigger'];
+  if (!exactKeys(document, keys)) return [`recurrence debe declarar exactamente ${keys.join(", ")}`];
+  validateHeader(document, 'recurrence', violations);
+  keys.slice(3).forEach((key) => requireText(document[key], key, violations));
   return violations;
 }
-
 export function validateArtifact(kind, document) {
   if (!ARTIFACTS.includes(kind)) return [`artefacto desconocido: ${kind}`];
   if (!isObject(document)) return [`${kind} debe ser un objeto JSON`];

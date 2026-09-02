@@ -127,11 +127,24 @@ function implementation() {
 }
 
 function adoption() {
-  return { schema: SCHEMAS.adoption, feature: 'demo-feature', date: '2026-09-01', owner: 'responsable interno', stakeholders: ['equipo'], workflow_change: 'se agrega un paso explícito', training: 'guía y sesión breve', success_signal: 'uso medido semanal', review_cadence: 'semanal', fallback: 'volver al flujo anterior y registrar causa', rollout_steps: [{ id: 'ROLLOUT1', when: 'piloto listo', action: 'activar con un equipo', exit_criteria: 'señal estable dos semanas' }] };
+  return { schema: SCHEMAS.adoption, feature: 'demo-feature', date: '2026-09-01',
+    owner: 'responsable interno que sostiene el cambio',
+    operational_owner: 'quien lo ejecuta todos los días, que no es el mismo que lo sostiene',
+    stakeholders: ['equipo'], workflow_change: 'se agrega un paso explícito',
+    training: 'guía y sesión breve', success_signal: 'uso medido semanal',
+    adoption_checklist: [{ id: 'CHK1', item: 'el equipo corrió el flujo nuevo una vez con acompañamiento' }],
+    adoption_metric: { name: 'ciclos cerrados con el flujo nuevo', baseline: '0 de 4 en agosto', target: '3 de 4 en septiembre' },
+    review_cadence: 'semanal', fallback: 'volver al flujo anterior y registrar causa',
+    rollout_steps: [{ id: 'ROLLOUT1', when: 'piloto listo', action: 'activar con un equipo', exit_criteria: 'señal estable dos semanas' }] };
 }
 
 function recurrence() {
-  return { schema: SCHEMAS.recurrence, feature: 'demo-feature', date: '2026-09-01', first_loop_id: 'loop-01', maintenance: 'revisión y actualización', metric: 'métrica de éxito', cadence: 'semanal', review_owner: 'owner', escalation: 'abrir diagnóstico si cae', next_process: 'siguiente proceso', trigger: 'señal por debajo del umbral' };
+  return { schema: SCHEMAS.recurrence, feature: 'demo-feature', date: '2026-09-01', first_loop_id: 'loop-01',
+    maintenance: 'revisión y actualización', metric: 'métrica de éxito', cadence: 'semanal',
+    review_owner: 'owner', escalation: 'abrir diagnóstico si cae',
+    promotion_criteria: 'qué tiene que pasar para que esta mejora se exija en todos los ciclos',
+    retirement_criteria: 'qué tiene que pasar para sacarla, y quién lo decide',
+    next_process: 'siguiente proceso', trigger: 'señal por debajo del umbral' };
 }
 
 function allDocs() { return { caio: caio(), 'loop-map': loopMap(), prd: prd(), implementation: implementation(), adoption: adoption(), recurrence: recurrence() }; }
@@ -512,4 +525,57 @@ test('FALSIFICACIÓN · métricas y requisitos no funcionales rechazan claves aj
   const clavesAjenasNfr = prd();
   clavesAjenasNfr.non_functional_requirements = [{ id: 'NFR1', description: 'd', medida: 'm' }];
   assert.ok(validatePrd(clavesAjenasNfr).some((v) => v.includes('id, description, measure')));
+});
+
+test('la adopción declara quién lo sostiene, quién lo ejecuta, con qué se mide y qué hay que hacer', () => {
+  assert.deepEqual(validateAdoption(adoption()), []);
+  // El encargo pide owner interno Y responsable operativo: son dos personas distintas y confundirlas
+  // es cómo un cambio queda sin nadie que lo haga todos los días.
+  for (const campo of ['owner', 'operational_owner', 'workflow_change', 'training', 'success_signal', 'review_cadence', 'fallback']) {
+    const documento = adoption();
+    documento[campo] = '';
+    assert.ok(validateAdoption(documento).some((v) => v.includes(campo)), `aceptó ${campo} vacío`);
+    const sin = adoption();
+    delete sin[campo];
+    assert.ok(validateAdoption(sin).length > 0, `aceptó un plan de adopción sin ${campo}`);
+  }
+});
+
+test('FALSIFICACIÓN · el checklist de adopción y su métrica rechazan el vacío y la forma', () => {
+  // Una señal de uso es cualitativa: dice que se usa. La métrica dice cuánto, desde dónde y hasta
+  // dónde. Sin línea de base no se puede afirmar que la adopción mejoró.
+  const sinChecklist = adoption();
+  sinChecklist.adoption_checklist = [];
+  assert.ok(validateAdoption(sinChecklist).some((v) => v.includes('adoption_checklist')));
+
+  const clavesAjenas = adoption();
+  clavesAjenas.adoption_checklist = [{ id: 'CHK1', tarea: 'en castellano' }];
+  assert.ok(validateAdoption(clavesAjenas).some((v) => v.includes('id, item')));
+
+  const repetido = adoption();
+  repetido.adoption_checklist = [{ id: 'CHK1', item: 'una' }, { id: 'CHK1', item: 'otra' }];
+  assert.ok(validateAdoption(repetido).some((v) => v.includes('repite el id CHK1')));
+
+  for (const campo of ['name', 'baseline', 'target']) {
+    const documento = adoption();
+    documento.adoption_metric = { name: 'n', baseline: 'b', target: 't', [campo]: '' };
+    assert.ok(validateAdoption(documento).some((v) => v.includes(campo)), `aceptó una métrica de adopción sin ${campo}`);
+  }
+  const metricaAjena = adoption();
+  metricaAjena.adoption_metric = { name: 'n', baseline: 'b' };
+  assert.ok(validateAdoption(metricaAjena).some((v) => v.includes('name, baseline y target')));
+});
+
+test('FALSIFICACIÓN · la recurrencia declara cuándo se promueve una mejora y cuándo se retira', () => {
+  // Sin criterio de retiro, una mejora que dejó de servir se sostiene por inercia: nadie tiene con
+  // qué argumentar que hay que sacarla.
+  assert.deepEqual(validateRecurrence(recurrence()), []);
+  for (const campo of ['promotion_criteria', 'retirement_criteria']) {
+    const vacio = recurrence();
+    vacio[campo] = '';
+    assert.ok(validateRecurrence(vacio).some((v) => v.includes(campo)), `aceptó ${campo} vacío`);
+    const sin = recurrence();
+    delete sin[campo];
+    assert.ok(validateRecurrence(sin).length > 0, `aceptó una recurrencia sin ${campo}`);
+  }
 });

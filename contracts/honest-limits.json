@@ -396,6 +396,12 @@
       "file": "README.md",
       "phrase": "nunca que la prueba nombrada lo ejercite",
       "why": "La regla central es que un vector cubierto nombre la prueba que lo cubre, y eso puede leerse como que la cobertura esta comprobada. No lo esta: el gate exige el campo escrito y nunca abre el archivo. Un covered que apunta a cualquier ruta pasa en verde. Sin la frase, veintiseis vectores en covered se leen como veintiseis vectores probados."
+    },
+    {
+      "limit_id": "adoption-declares-people-not-availability",
+      "file": "README.md",
+      "phrase": "cuándo se retira",
+      "why": "El gate exige que el criterio de retiro este escrito, nunca que alguien lo aplique. Una mejora puede cumplir su criterio de retiro durante meses y seguir viva, y el gate no lo va a notar porque no mide el mundo: mide el archivo. Sin esta frase, tener el campo lleno se lee como tener el proceso."
     }
   ]
 }

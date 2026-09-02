@@ -304,6 +304,50 @@
       "rollback": "git revert del commit. El gate es nuevo y nadie depende de el todavia.",
       "handoff": "B2 implementada y lista para ser consumida por la Spec.",
       "blocked_reason": ""
+    },
+    {
+      "id": "B8",
+      "description": "Adopcion y recurrencia completas: owner interno y responsable operativo como personas distintas, checklist y metrica de adopcion con linea de base, y criterios de promocion y de retiro",
+      "files_to_create": [],
+      "files_to_modify": [
+        "scripts/verify-product-diagnostics.mjs",
+        "tests/verify-product-diagnostics.test.mjs",
+        "templates/diagnostics/adoption.json",
+        "templates/diagnostics/recurrence.json",
+        "contracts/honest-limits.json",
+        "SKILL.md",
+        "README.md",
+        "CHANGELOG.md",
+        "docs/tasks.json"
+      ],
+      "test_files": [
+        "tests/verify-product-diagnostics.test.mjs"
+      ],
+      "test_types": [
+        "unit",
+        "integration"
+      ],
+      "subagents": [],
+      "depends_on": [
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7"
+      ],
+      "status": "done",
+      "goal": "La adopcion tenia un solo owner, una señal cualitativa y ningun checklist; la recurrencia no decia cuando promover ni cuando retirar una mejora. Sin criterio de retiro, una mejora que dejo de servir se sostiene por inercia.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
+      "approval_criteria": "owner y operational_owner como campos distintos; adoption_checklist con ids unicos; adoption_metric con name, baseline y target; promotion_criteria y retirement_criteria obligatorios; cobertura 34/34 y suite verde diez veces.",
+      "evidence": [],
+      "not_reviewed": "El gate exige el criterio de retiro escrito, nunca que alguien lo aplique. Una mejora puede cumplir su criterio durante meses y seguir viva: el gate mide el archivo, no el mundo.",
+      "rollback": "git revert del commit. Los dos artefactos vuelven a su forma anterior.",
+      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "blocked_reason": ""
     }
   ]
 }

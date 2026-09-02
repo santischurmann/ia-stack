@@ -1,0 +1,147 @@
+{
+  "schema": "vcp.receipt/v2",
+  "feature": "adopcion-y-recurrencia-completas",
+  "task": "B8 - la ultima de las seis fases: quien sostiene el cambio y quien lo ejecuta son dos personas, la adopcion se mide con linea de base, y la recurrencia dice cuando promover y cuando retirar",
+  "date": "2026-09-01",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/receipts/adopcion-y-recurrencia-completas-2026-09-01.json",
+      "CHANGELOG.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/honest-limits.json",
+      "docs/tasks.json",
+      "scripts/verify-product-diagnostics.mjs",
+      "templates/diagnostics/adoption.json",
+      "templates/diagnostics/recurrence.json",
+      "tests/verify-product-diagnostics.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "La adopcion distingue owner de operational_owner. El que sostiene el cambio y lo defiende cuando se discute no es el que lo corre un martes a la mañana, y confundirlos es exactamente como un cambio queda sin nadie que lo haga.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "a5166b55ad33ec248eb3c2070427e43d8922c8d15e3c66e968bcc80f4fb5ff0a",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "28 de 28 en verde. Los siete campos de texto de la adopcion se prueban vacios y ausentes por separado, incluidos los dos owners."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "La adopcion trae checklist con items verificables y una metrica con linea de base y objetivo. Una señal cualitativa dice que se usa; una metrica dice cuanto, desde donde y hasta donde. Sin linea de base no se puede afirmar que la adopcion mejoro, solo que alguien la mira.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "a5166b55ad33ec248eb3c2070427e43d8922c8d15e3c66e968bcc80f4fb5ff0a",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Rechaza el checklist vacio, con claves ajenas y con ids repetidos; y la metrica sin name, sin baseline, sin target y con la forma incompleta."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "La recurrencia declara promotion_criteria y retirement_criteria. Sin criterio de retiro, una mejora que dejo de servir se sostiene por inercia: nadie tiene con que argumentar que hay que sacarla y su costo de mantenimiento no aparece en ningun lado.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "a5166b55ad33ec248eb3c2070427e43d8922c8d15e3c66e968bcc80f4fb5ff0a",
+      "command": "node --test tests/verify-product-diagnostics.test.mjs",
+      "result": "Los dos criterios probados vacios y ausentes por separado. Las dos plantillas validan con 0 violaciones."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "La extension no dejo caminos de rechazo sin ejercitar, no perdio ninguna funcion del gate compartido, y los otros cuatro artefactos siguen validando igual.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-product-diagnostics.test.mjs",
+      "test_hash_sha256": "a5166b55ad33ec248eb3c2070427e43d8922c8d15e3c66e968bcc80f4fb5ff0a",
+      "command": "node scripts/verify-vcp-coverage.mjs",
+      "result": "OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas, sin ninguna rama nueva sin ejercitar. La comparacion de funciones contra HEAD dio cero perdidas."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Separar owner de operational_owner puede terminar en dos nombres que son la misma persona escrita dos veces, y entonces el campo no agrega nada salvo friccion.",
+      "mitigation": "El gate no puede comprobar que sean personas distintas y asi queda declarado. Lo que si logra es que la pregunta se haga: hoy no se hacia, y un solo campo permitia no notar que nadie ejecutaba el cambio a diario."
+    },
+    "readability": {
+      "finding": "success_signal y adoption_metric parecen lo mismo, y el proximo lector va a querer fusionarlos.",
+      "mitigation": "La diferencia esta escrita en el gate, en SKILL.md y en el README: la señal es cualitativa y dice que se usa; la metrica dice cuanto, desde donde y hasta donde. Sin linea de base no se puede afirmar que mejoro."
+    },
+    "reliability": {
+      "finding": "Esta es la cuarta reescritura sobre el mismo archivo compartido en la misma sesion, y una de las anteriores se llevo cuatro helpers por delante sin que nadie lo notara hasta que corrio la suite.",
+      "mitigation": "Se comparo la lista de funciones contra HEAD antes de seguir: cero perdidas. La comprobacion ya es parte del procedimiento y no una reaccion a un susto."
+    },
+    "resilience": {
+      "finding": "adoption_checklist y adoption_metric son formas nuevas que podrian haber quedado con caminos de rechazo sin ejercitar, como paso en las tres tandas anteriores.",
+      "mitigation": "El checklist reusa validateIdentifiedList, cuyas ramas ya estaban cubiertas por metrics y non_functional_requirements. La cobertura confirmo 34 de 34 sin ninguna rama nueva sin ejecutar."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "campos de la adopcion",
+      "measured": true,
+      "before": 11,
+      "after": 14
+    },
+    {
+      "metric": "campos de la recurrencia",
+      "measured": true,
+      "before": 11,
+      "after": 13
+    },
+    {
+      "metric": "personas distintas que la adopcion obliga a nombrar",
+      "measured": true,
+      "before": 1,
+      "after": 2
+    },
+    {
+      "metric": "ramas nuevas sin ejercitar tras la extension",
+      "measured": true,
+      "before": 0,
+      "after": 0
+    },
+    {
+      "metric": "funciones del archivo perdidas al reescribir",
+      "measured": true,
+      "before": 0,
+      "after": 0
+    },
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 870,
+      "after": 873
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 66,
+      "after": 67
+    },
+    {
+      "metric": "si owner y operational_owner terminan siendo la misma persona",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "El gate no puede comprobarlo y no hay ningun plan de adopcion real todavia: el unico es la plantilla. Es el riesgo principal del cambio y esta declarado, no medido."
+    }
+  ],
+  "reproduction": "Antes: validateAdoption exigia once claves con un solo owner, una success_signal cualitativa y sin checklist; validateRecurrence exigia once claves sin criterio de promocion ni de retiro. RED: con las fixtures ampliadas, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde, cobertura 34 de 34 scripts sin ninguna rama nueva sin ejercitar, comparacion de funciones contra HEAD con cero perdidas, y contrato, sonda vacia, conflictos de plan, seguridad y sincronizacion del runtime en 0.",
+  "not_reviewed": "El gate exige el criterio de retiro escrito, nunca que alguien lo aplique: una mejora puede cumplir su criterio durante meses y seguir viva, porque el gate mide el archivo y no el mundo. Tampoco puede comprobar que owner y operational_owner sean personas distintas, ni que un item del checklist sea verificable de verdad, ni que la linea de base de la metrica sea el numero real de hoy. No hay ningun plan de adopcion real en el repositorio: el unico es la plantilla, asi que el riesgo de que los dos owners terminen siendo el mismo nombre esta declarado y no medido. Con esto se cierran las seis fases del encargo, pero el Bloque C -- research: repinear los catorce commits, decidir las ocho fuentes ausentes y convertir las señales lexicales en candidatos con contraejemplo -- sigue sin empezar.",
+  "evidence": [
+    "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0",
+    "node --test tests/verify-product-diagnostics.test.mjs -> 28 de 28 en verde; con el gate anterior eran 6 rojas conductuales",
+    "node scripts/verify-vcp-coverage.mjs -> OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "comparacion de funciones del archivo contra HEAD -> 0 perdidas",
+    "validateAdoption sobre templates/diagnostics/adoption.json -> 0 violaciones",
+    "validateRecurrence sobre templates/diagnostics/recurrence.json -> 0 violaciones",
+    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 67 honest limits verified",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 33 gate(s)",
+    "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 8 task(s), sin conflictos sin secuenciar",
+    "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 9 live changed file(s); no blocking Critical/High findings",
+    "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",
+    "git diff --check -> sin problemas de whitespace"
+  ],
+  "git_head": "f23c83289de79bda8f724daa5b59875b6ffd1775",
+  "tree_fingerprint": "4f8124c8951214cc01820cddb0146a8869a296be9a4a55a678b46b59fd089908",
+  "terminal_state": "approved"
+}

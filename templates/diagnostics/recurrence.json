@@ -8,6 +8,8 @@
   "cadence": "Cadencia de medición y revisión.",
   "review_owner": "Quién revisa la métrica.",
   "escalation": "Qué ocurre si el umbral no se cumple.",
+  "promotion_criteria": "Qué tiene que pasar para que esta mejora se exija en todos los ciclos, no sólo en éste.",
+  "retirement_criteria": "Qué tiene que pasar para sacarla, y quién lo decide. Sin esto, una mejora que dejó de servir se sostiene por inercia.",
   "next_process": "Siguiente proceso candidato a mejorar.",
   "trigger": "Qué señal habilita abrir ese siguiente proceso."
 }

@@ -302,9 +302,15 @@ antes de comprometer tareas de implementación.
    Una métrica sin línea de base no dice si mejoró, y un requisito no funcional sin medida es un
    deseo: «rápido» no se comprueba. La adopción y la recurrencia no van acá: tienen artefacto
    propio.
-5. **Adopción + recurrencia:** identificar responsable interno, cambio de hábito, señal de uso,
-   mantenimiento y siguiente proceso candidato. Entregar software sin estas condiciones es un
-   riesgo declarado, no éxito.
+5. **Adopción + recurrencia:** la adopción distingue **dos personas**: `owner` sostiene el
+   cambio y lo defiende cuando se discute; `operational_owner` lo ejecuta todos los días.
+   Confundirlos es exactamente cómo un cambio queda sin nadie que lo haga. Además del
+   `success_signal` —cualitativo, dice que se usa— va una `adoption_metric` con línea de base y
+   objetivo: **sin línea de base no se puede afirmar que la adopción mejoró**, sólo que alguien
+   la mira. Y un `adoption_checklist` con ítems verificables, uno por línea.
+   La recurrencia declara `promotion_criteria` y `retirement_criteria`. Sin criterio de retiro,
+   una mejora que dejó de servir se sostiene por inercia: nadie tiene con qué argumentar que hay
+   que sacarla, y el costo de mantenerla no aparece en ningún lado.
 
 Los seis resultados durables de esta fase viven en
 `docs/discovery/<feature-slug>/diagnostics/`: `caio.json`, `loop-map.json`, `prd.json`,
