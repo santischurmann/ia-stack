@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **VCP deja de ser invisible para Codex en todo proyecto, no sólo en su propio repo.** Verificado
+  ejecutando: Codex descubre skills de repositorio **sólo** en `.agents/skills/<nombre>/SKILL.md` y
+  `.codex/skills/`, y sus instrucciones sólo en `AGENTS.md`; el `SKILL.md` de la raíz y los doce
+  `skills/*.md` le son invisibles. Los dos instaladores crean ahora esos punteros en el proyecto
+  destino. Probado de punta a punta sobre un proyecto limpio: `AGENTS.md`,
+  `.agents/skills/vibecodeprotocols/SKILL.md` y el destino al que apuntan existen los tres.
+- **Los punteros nombran los dos lugares posibles del protocolo**, porque no es el mismo: `SKILL.md`
+  en la raíz cuando se trabaja sobre el repo de VCP, y `.vibe/vcp-runtime/SKILL.md` cuando VCP está
+  instalado como herramienta. Un puntero que apunta a un archivo inexistente es peor que no tenerlo:
+  promete un documento y no lo entrega.
+- **Un `AGENTS.md` que ya existe no se pisa.** El instalador lo detecta, no lo toca, y avisa por
+  salida que hay que agregarle a mano el puntero. Sobrescribir el archivo de instrucciones de otro
+  proyecto sería exactamente la clase de pérdida silenciosa que la regla de oro prohíbe.
+
 - **PHASE 9 — LIMPIEZA: la configuración se poda sola cada 7 días, midiendo.** Cada skill, regla y
   hook se le carga al modelo antes de que la persona escriba la primera letra; lo que ya no sirve no
   es neutral, compite con lo que sí importa. La fase corre al abrir sesión si pasaron 7 días, y

@@ -1,7 +1,8 @@
 # VibeCodeProtocols
 
-El protocolo vive en `SKILL.md`. **Leelo entero antes de operar**: son 9 fases con gates
-mecánicos, y saltarse uno invalida el resto.
+**Leé el protocolo entero antes de operar**: son 9 fases con gates mecánicos, y saltarse uno
+invalida el resto. Está en `SKILL.md` si este es el repositorio de VCP, o en
+`.vibe/vcp-runtime/SKILL.md` si VCP está instalado acá como herramienta.
 
 Reglas que no dependen de la fase:
 
@@ -11,4 +12,6 @@ Reglas que no dependen de la fase:
 - Sin test rojo visible no hay implementación.
 - Los gates viven en `scripts/*.mjs`, son Node nativo sin dependencias y se corren, no se narran.
 
-Este archivo es un puntero, no una copia: si dice algo distinto de `SKILL.md`, manda `SKILL.md`.
+- La limpieza de PHASE 9 **no borra nada**: archiva y deja un comando de vuelta atrás.
+
+Este archivo es un puntero, no una copia: si dice algo distinto del protocolo, manda el protocolo.

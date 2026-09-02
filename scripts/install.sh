@@ -79,6 +79,19 @@ if [ -n "$PROJECT_DIR" ]; then
 ' "$IGNORE_RULE" >> "$IGNORE_FILE"
     echo "OK: $IGNORE_RULE agregado a .gitignore"
   fi
+  # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
+  # .codex/skills/, y sus instrucciones solo en AGENTS.md -- verificado ejecutando: un SKILL.md
+  # suelto en la raiz y los skills/*.md le son invisibles. Sin estos dos punteros, VCP existe en el
+  # proyecto pero Codex no ve nada de el. Son punteros al runtime, no copias: una copia se
+  # desincroniza y ningun gate las mantiene iguales.
+  mkdir -p "$PROJECT_DIR/.agents/skills/vibecodeprotocols"
+  cp "$PACKAGE_DIR/.agents/skills/vibecodeprotocols/SKILL.md" "$PROJECT_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
+  if [ ! -f "$PROJECT_DIR/AGENTS.md" ]; then
+    cp "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
+    echo "OK: AGENTS.md creado -> Codex ya ve el protocolo"
+  else
+    echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/vcp-runtime/SKILL.md."
+  fi
   echo "OK: project runtime -> $VIBE_DIR/vcp-runtime"
 else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."

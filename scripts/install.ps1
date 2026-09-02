@@ -59,6 +59,19 @@ if ($ProjectDir) {
     Add-Content -Path $ignoreFile -Value $ignoreRule
     Write-Host "OK: $ignoreRule agregado a .gitignore" -ForegroundColor Green
   }
+  # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
+  # .codex/skills/, y sus instrucciones solo en AGENTS.md -- verificado ejecutando. Sin estos dos
+  # punteros, VCP existe en el proyecto pero Codex no ve nada de el. Son punteros, no copias.
+  $CodexSkillDir = Join-Path $ProjectDir '.agents\skills\vibecodeprotocols'
+  New-Item -ItemType Directory -Force -Path $CodexSkillDir | Out-Null
+  Copy-Item "$PackageDir\.agents\skills\vibecodeprotocols\SKILL.md" $CodexSkillDir -Force
+  $ProjectAgents = Join-Path $ProjectDir 'AGENTS.md'
+  if (-not (Test-Path -LiteralPath $ProjectAgents)) {
+    Copy-Item "$PackageDir\AGENTS.md" $ProjectAgents -Force
+    Write-Output "OK: AGENTS.md creado -> Codex ya ve el protocolo"
+  } else {
+    Write-Output "NOTE: $ProjectAgents ya existe y no se toca. Agregale a mano un puntero a .vibe/vcp-runtime/SKILL.md."
+  }
   Write-Host "OK: project runtime -> $VibeDir\vcp-runtime" -ForegroundColor Green
 } else {
   Write-Host 'NOTE: no project initialized. Re-run with -ProjectDir <project-root>.' -ForegroundColor Yellow
