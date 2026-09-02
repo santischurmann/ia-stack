@@ -1396,7 +1396,10 @@ click**.
 **El orden importa y es siempre el mismo:**
 
 1. **Actualizar** — el grafo de conocimiento se pone al día con lo que se hizo.
-2. **Compactar** — la memoria de la sesión se resume: lo largo se vuelve corto sin perder el hecho.
+2. **Compactar** — `.vibe/SESSION.md` y `.vibe/RETRO.md` se resumen: lo largo se vuelve corto sin
+   perder el hecho. **Es un paso a mano y no hay ningún comando que lo haga**, así que ningún gate
+   lo verifica: se hace, se anota en `AUDIT.md` y ahí termina la garantía. Lo que **no** se compacta
+   nunca es `AUDIT.md` ni `LESSONS.md` — están en la lista de intocables por eso mismo.
 3. **Limpiar** — recién acá se archiva, por tandas y midiendo.
 4. **Respaldar** — todo lo archivado entra al grafo y a Obsidian, para poder consultarlo después
    sin restaurarlo.
