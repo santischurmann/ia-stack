@@ -62,7 +62,7 @@ export const DESTRUCTIVE = [
 /** Las tres R del filtro. Aprobar CUALQUIERA alcanza para no archivar. */
 export const R = Object.freeze(['repetible', 'requisito', 'repartible']);
 
-const RECORD_KEYS = ['schema', 'run_id', 'archive_dir', 'rollback_command', 'rollback_tested', 'test_set', 'baseline', 'inventory', 'batches', 'survivors', 'totals', 'backup'];
+export const RECORD_KEYS = ['schema', 'run_id', 'archive_dir', 'rollback_command', 'rollback_tested', 'test_set', 'baseline', 'inventory', 'batches', 'survivors', 'totals', 'backup'];
 /** PHASE 9 promete respaldar ANTES de limpiar. Sin esto era una promesa que ningun campo sostenia. */
 const BACKUP_KEYS = ['graphify', 'obsidian'];
 const ARCHIVED_KEYS = ['path', 'archived_to', ...R, 'verdict', 'reason'];
@@ -464,21 +464,29 @@ export function validateAblation(record, scope, io) {
 }
 
 /** `~/` se expande contra el home real; lo demás se resuelve contra la raíz del proyecto. */
+/**
+ * Una ruta del registro a una ruta real del disco. Se normalizan las barras ANTES de mirar el `~`:
+ * un registro escrito en Windows dice `~\.claude\...`, y comparar `~/` literal hacía que ese
+ * archivo -- correctamente archivado -- se resolviera adentro del proyecto y se reportara como
+ * borrado. El falso rojo caía justo sobre la comprobación de la regla de oro.
+ */
+function conHome(root, path) {
+  const barras = slashes(path).trim();
+  return barras.startsWith('~/') ? join(homedir(), barras.slice(2)) : resolve(root, barras);
+}
+
 function makeGitHas() {
   // ¿Existe ese objeto en ese commit? Se le pregunta a git, no se cree lo que dice el registro.
   // Cinco gates del repo ya consultan git, así que el mecanismo no es nuevo acá.
   return (repo, commit, ruta) => {
-    const carpeta = repo.startsWith('~/') ? join(homedir(), repo.slice(2)) : repo;
+    const carpeta = conHome('.', repo);
     const salida = spawnSync('git', ['-C', carpeta, 'cat-file', '-e', `${commit}:${ruta}`], { encoding: 'utf8' });
     return salida.status === 0;
   };
 }
 
 function makeExists(root) {
-  return (path) => {
-    const raw = String(path);
-    return existsSync(raw.startsWith('~/') ? join(homedir(), raw.slice(2)) : resolve(root, raw));
-  };
+  return (path) => existsSync(conHome(root, path));
 }
 
 /** Dias entre dos fechas AAAA-MM-DD, sin husos ni relojes: la resta en UTC alcanza. */

@@ -14,7 +14,10 @@
 // -- `- **A)** texto` --, que es el unico formato que produce items separados tanto en CommonMark
 // estricto como en GFM, y que conserva el token `A)` con el que la persona contesta (una lista
 // ordenada nativa lo borraria). Al menos una opcion lleva la marca de recomendacion. Una linea
-// suelta `A)` sin lista, o cualquier opcion dentro de un fence, se rechazan por nombre.
+// suelta `A)` sin lista, o cualquier opcion dentro de un fence, se rechazan por nombre. Unica
+// salida: un bloque precedido por el comentario `<!-- menu-shape: ejemplo -->` se saltea, para que
+// el protocolo pueda citar el anti-patron y explicarlo. Vale para UN bloque y el comentario tiene
+// que estar solo al principio de la linea; el gate NO juzga si lo marcado es de verdad un ejemplo.
 //
 // LIMITE HONESTO. Verifica las PLANTILLAS que el protocolo prescribe en sus propios documentos.
 // NO verifica el mensaje que el agente efectivamente escribio en la conversacion, ni como lo pinto
@@ -48,12 +51,23 @@ const QUESTION = /^\*\*\d+\./u;
 const PLACEHOLDER = /^[[<].*[\]>]$/u;
 const FENCE = /^\s*(```|~~~)/u;
 export const RECOMMENDATION = '*(recomendado';
+/**
+ * La linea que dice que la fase esta bloqueada, en las formas en que se escribe de verdad. Era un
+ * substring exacto y sensible a mayusculas, asi que "Quedo esperando tu respuesta" se rechazaba
+ * por la e minuscula -- obligada por estar a mitad de frase.
+ */
+export const CLOSER_RE = /\b(esperando|espero|espera de)\s+(tu|su)\s+(respuesta|decisi[óo]n)/iu;
 export const CLOSER = 'Esperando tu respuesta';
 
 const newlines = (source) => source.replace(/\r\n?/gu, '\n');
 // Una cita markdown no cambia lo que el bloque ES, solo como se muestra: un menu citado sigue
 // siendo un menu, y antes desaparecia del barrido entero.
 const unquote = (line) => line.replace(/^(\s*>)+\s?/u, '');
+// Marca explicita de ejemplo: el bloque que sigue se cita para ensenarlo, no es una decision.
+// Tiene que ser el comentario solo, al principio de la linea: la prosa que habla de la marca la
+// nombra entre backticks, y con un `includes` suelto ese parrafo apagaba el menu siguiente. Lo
+// agarro CONTR-2 sobre el SKILL.md real, no un caso de laboratorio.
+const EXAMPLE_MARK = /^<!--\s*menu-shape:\s*ejemplo/u;
 const COMMENT_OPEN = '<!--';
 const COMMENT_CLOSE = '-->';
 
@@ -87,8 +101,19 @@ function scan(source) {
 export function parseMenus(source) {
   const { rows } = scan(source);
   const menus = [];
+  let ejemplo = false;
   for (const [index, row] of rows.entries()) {
+    if (EXAMPLE_MARK.test(row.text.trim())) {
+      ejemplo = true;
+      continue;
+    }
     if (row.delimiter) continue;
+    // LOOSE_HEADING alcanza: matchea todo `🔵 ` al principio de linea, con negrita o sin ella.
+    if (ejemplo && LOOSE_HEADING.test(row.text)) {
+      // Vale para UN bloque: si no, una marca suelta arriba del archivo apagaría el gate entero.
+      ejemplo = false;
+      continue;
+    }
     // Un `🔵` al principio de línea SIN negrita es el formato viejo, y el gate ni siquiera lo veía
     // como menú: encontrado sobre el SKILL.md real, dos menús de PHASE 1 escritos así. Se registra
     // igual, para acusarlo por nombre en vez de dejarlo pasar por no reconocerlo.
@@ -109,7 +134,7 @@ export function parseMenus(source) {
       const next = rows[j];
       if (!next.fence && !next.delimiter && (HEADING.test(next.text) || SECTION.test(next.text))) break;
       body.push(next);
-      if (!next.fence && next.text.includes(CLOSER)) {
+      if (!next.fence && CLOSER_RE.test(next.text)) {
         closed = true;
         break;
       }
@@ -185,7 +210,7 @@ export function validateMenus(source) {
       violations.push(`${donde}: ninguna opción lleva la marca de recomendación \`${RECOMMENDATION})*\`, que LAW 7 exige explícita`);
     }
     if (!menu.closed) {
-      violations.push(`${donde}: no termina en la línea de espera («${CLOSER}…»), así que no dice que la fase está bloqueada`);
+      violations.push(`${donde}: no termina en una línea de espera («${CLOSER}…» o equivalente), así que no dice que la fase está bloqueada`);
     }
   }
   return violations;

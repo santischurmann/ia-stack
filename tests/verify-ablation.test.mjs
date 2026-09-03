@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { EMPTY, LIMITS, SCHEMA, USAGE, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
+import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const RUTA = 'docs/ablation.json';
@@ -1197,4 +1197,69 @@ test('3R · FALSIFICACIÓN · un archivado que aprueba una R y no trae motivo es
       { reason: String(reason), rechaza: true },
     );
   }
+});
+
+// --- RA-03: una ruta de home al estilo de Windows describia un archivado correcto y el gate lo
+// llamaba borrado. normalizePath ya la resolvia bien; los lectores de disco y de git comparaban
+// `~/` literal, asi que `~\\` caia al else y se buscaba adentro del proyecto.
+
+test('RA-03 · una ruta de home escrita al estilo de Windows se expande igual que la de Unix', () => {
+  const barra = String.fromCharCode(92);
+  assert.equal(
+    normalizePath(`~${barra}.claude${barra}skills${barra}x.md`),
+    normalizePath('~/.claude/skills/x.md'),
+  );
+});
+
+test('RA-03 · FALSIFICACIÓN · el lector de disco expande el home aunque la ruta venga con barras invertidas', () => {
+  const barra = String.fromCharCode(92);
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const errores = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    mkdirSync(join(root, ARCHIVO, '.claude', 'skills'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    writeFileSync(join(root, ARCHIVO, '.claude', 'skills', '__vcp-inexistente__.md'), 'archivada', 'utf8');
+    // El origen se escribe con barras invertidas y NO existe: es exactamente el caso correcto.
+    // El nombre imposible es a propósito: `~` se expande al home REAL, así que el chequeo de que
+    // el origen ya no está tiene que caer sobre un archivo que de verdad no existe en esta máquina.
+    const win = registro();
+    win.batches[0].archived = [archivado('vieja', {
+      path: `~${barra}.claude${barra}skills${barra}__vcp-inexistente__.md`,
+      archived_to: `${ARCHIVO}/.claude/skills/__vcp-inexistente__.md`,
+    })];
+    win.inventory = [{ path: `~${barra}.claude${barra}skills${barra}__vcp-inexistente__.md`, words: 1, percent: 100, last_modified: '2026-01-01' }];
+    win.survivors = [];
+    writeFileSync(join(root, RUTA), json(win), 'utf8');
+    const code = main(['check', RUTA], { root, write: () => {}, writeError: (l) => errores.push(l) });
+    assert.deepEqual({ code, errores }, { code: 0, errores: [] });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- F13: el gate exige una forma exacta de registro, y PHASE 9 nunca la nombraba. Quien siga el
+// protocolo al pie de la letra escribe un registro incompleto y se entera recién cuando el gate lo
+// rechaza. Un requisito que sólo vive en el código no es un protocolo: es una trampa.
+
+test('F13 · PHASE 9 nombra cada campo que el gate exige del registro', () => {
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const fase = skill.slice(skill.indexOf('## PHASE 9'));
+  const faltan = RECORD_KEYS.filter((campo) => !fase.includes(`\`${campo}\``));
+  assert.deepEqual(faltan, []);
+});
+
+test('F13 · PHASE 9 nombra los tres veredictos y el campo que justifica cada prueba', () => {
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const fase = skill.slice(skill.indexOf('## PHASE 9'));
+  const faltan = [...VERDICTS, 'why_representative'].filter((t) => !fase.includes(t));
+  assert.deepEqual(faltan, []);
+});
+
+test('F13 · FALSIFICACIÓN · la comprobación agarra un campo ausente', () => {
+  const fase = 'Lleva \`schema\` y nada más.';
+  const faltan = RECORD_KEYS.filter((campo) => !fase.includes(`\`${campo}\``));
+  assert.equal(faltan.includes('schema'), false);
+  assert.equal(faltan.includes('totals'), true);
 });

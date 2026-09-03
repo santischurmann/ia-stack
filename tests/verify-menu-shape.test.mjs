@@ -323,3 +323,101 @@ test('FALSIFICACIÓN · un menú con el 🔵 sin negrita no se escapa del barrid
   const { code, errores } = corrida(doc(viejo));
   assert.deepEqual({ code, acusa: /negrita|título/iu.test(errores) }, { code: 1, acusa: true });
 });
+
+// --- FR-3 y FR-2: el cierre tenia una sola redaccion aceptada, y no habia forma de citar el
+// anti-patron para ensenarlo sin que el documento entero se rechazara.
+
+test('FR-3 · la línea de espera admite las formas en que se escribe de verdad', () => {
+  const cierres = [
+    'Esperando tu respuesta antes de continuar.',
+    'Quedo esperando tu respuesta antes de continuar.',
+    'Espero tu decisión antes de seguir.',
+    'Espero tu respuesta.',
+    'Quedo a la espera de tu decisión.',
+  ];
+  const rojos = [];
+  for (const cierre of cierres) {
+    const { code, errores } = corrida(doc(menu({ cierre })));
+    if (code !== 0) rojos.push(`${cierre} → ${errores}`);
+  }
+  assert.deepEqual(rojos, []);
+});
+
+test('FR-3 · FALSIFICACIÓN · un menú sin ninguna forma de espera sigue rechazándose', () => {
+  const bloque = ['🔵 **Una decisión**', '', '- **A)** una — *(recomendado)*', '- **B)** otra', '', 'Y con eso terminamos el tema.'].join('\n');
+  const { code, errores } = corrida(doc(bloque));
+  assert.equal(code, 1);
+  assert.match(errores, /espera/iu);
+});
+
+test('FR-2 · un documento puede citar el anti-patrón para enseñarlo, si lo declara', () => {
+  // Sin esta salida, el protocolo no puede explicar por qué el formato viejo colapsa: citarlo
+  // rechazaba el archivo entero. La marca es explícita y va inmediatamente antes del bloque.
+  const ejemplo = [
+    '<!-- menu-shape: ejemplo, no es un menú -->',
+    '```',
+    '🔵 **CONFIG** (ask once)',
+    'A) una cosa',
+    'B) la otra',
+    '```',
+  ].join('\n');
+  const { code, errores } = corrida(doc(ejemplo, menu()));
+  assert.deepEqual({ code, errores }, { code: 0, errores: '' });
+});
+
+test('FR-2 · FALSIFICACIÓN · la marca de ejemplo no tapa el menú siguiente', () => {
+  const ejemplo = [
+    '<!-- menu-shape: ejemplo, no es un menú -->',
+    '```',
+    '🔵 **CONFIG** (ask once)',
+    'A) una cosa',
+    '```',
+  ].join('\n');
+  const roto = ['🔵 **Decisión real**', '', '- **A)** sola — *(recomendado)*', '', 'Esperando tu respuesta antes de continuar.'].join('\n');
+  const { code, errores } = corrida(doc(ejemplo, roto));
+  assert.equal(code, 1);
+  assert.match(errores, /dos opciones/u);
+});
+
+// --- CONTR-1 y FR-4: lo que los documentos prometen del gate 37 tiene que ser lo que el gate hace.
+// El gate ahora tiene una salida explícita (un bloque marcado como ejemplo), así que "rechaza todo
+// bloque 🔵" pasó a ser una promesa más grande que la comprobación. Y el emoji sólo significa algo
+// si está reservado: si se usa para avisos, un aviso correcto se ve como un menú roto.
+
+test('CONTR-1 · ningún documento promete más de lo que el gate comprueba', () => {
+  const archivos = ['SKILL.md', 'README.md', 'CHANGELOG.md'];
+  const excepcion = /salvo|excepto|marcad[oa] como ejemplo|declara.{0,20}ejemplo/iu;
+  const promesa = /(todo|cada) bloque `?🔵/iu;
+  const rotas = [];
+  for (const archivo of archivos) {
+    const lineas = readFileSync(join(repoRoot, archivo), 'utf8').split(/\r?\n/u);
+    for (const [i, linea] of lineas.entries()) {
+      if (!promesa.test(linea)) continue;
+      const ventana = lineas.slice(i, i + 6).join(' ');
+      if (!excepcion.test(ventana)) rotas.push(`${archivo}:${i + 1}: ${linea.trim()}`);
+    }
+  }
+  assert.deepEqual(rotas, []);
+});
+
+test('CONTR-1 · FALSIFICACIÓN · la comprobación agarra una promesa sin su excepción', () => {
+  const excepcion = /salvo|excepto|marcad[oa] como ejemplo|declara.{0,20}ejemplo/iu;
+  const promesa = /(todo|cada) bloque `?🔵/iu;
+  const linea = 'Rechaza todo bloque `🔵` que no sea una lista.';
+  assert.equal(promesa.test(linea), true);
+  assert.equal(excepcion.test(linea), false);
+});
+
+test('FR-4 · el emoji de decisión está declarado como reservado', () => {
+  // El gate rechaza un 🔵 que no sea un menú. Eso sólo es correcto si el documento dice que el
+  // emoji es exclusivo de las decisiones: si no, un aviso legítimo se lee como un menú roto.
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  assert.match(skill, /🔵.{0,120}reservad/isu);
+});
+
+test('FR-4 · un 🔵 usado como aviso se rechaza, y el error dice por qué', () => {
+  const aviso = ['🔵 **Ojo con esto**', '', 'Un párrafo de advertencia, sin opciones.'].join('\n');
+  const { code, errores } = corrida(doc(aviso, menu()));
+  assert.equal(code, 1);
+  assert.match(errores, /dos opciones/u);
+});
