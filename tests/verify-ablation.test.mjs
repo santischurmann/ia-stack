@@ -1263,3 +1263,44 @@ test('F13 · FALSIFICACIÓN · la comprobación agarra un campo ausente', () => 
   assert.equal(faltan.includes('schema'), false);
   assert.equal(faltan.includes('totals'), true);
 });
+
+// --- La fase exigia que el set de pruebas fueran tareas REALES y no decia nada sobre publicarlas.
+// Un registro real commiteado a un repositorio publico llevo adentro el nombre de otro producto,
+// sus rutas internas y una vulnerabilidad con archivo y linea. Realismo sin redaccion.
+
+test('PHASE 9 dice que el registro se publica redactado, no solo que sea real', () => {
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const fase = skill.slice(skill.indexOf('## PHASE 9'));
+  const falta = [];
+  if (!/redact/iu.test(fase)) falta.push('la palabra redactar');
+  if (!/p[úu]blic/iu.test(fase)) falta.push('que el repositorio puede ser publico');
+  if (!/vulnerabilidad|hallazgo de seguridad/iu.test(fase)) falta.push('el caso de la vulnerabilidad');
+  assert.deepEqual(falta, []);
+});
+
+test('PHASE 9 conserva la exigencia de que las tareas sean reales', () => {
+  // La regla nueva no puede cancelar la vieja: un set inventado se elige para que de bien.
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const fase = skill.slice(skill.indexOf('## PHASE 9'));
+  assert.match(fase, /tareas tuyas reales/iu);
+});
+
+test('la plantilla del registro no trae rutas de otro proyecto', () => {
+  // templates/ se copia a cada instalacion: una ruta ajena aca viaja a terceros.
+  const ajeno = /el proyecto|el expert advisor|generacion-de-licencias|RiskGuard|un-archivo-ajeno/iu;
+  const sucios = [];
+  for (const dir of ['templates', 'skills']) {
+    const base = join(repoRoot, dir);
+    const pila = [base];
+    while (pila.length > 0) {
+      const actual = pila.pop();
+      for (const e of readdirSync(actual, { withFileTypes: true })) {
+        const ruta = join(actual, e.name);
+        if (e.isDirectory()) { pila.push(ruta); continue; }
+        if (!/\.(md|json|txt)$/u.test(e.name)) continue;
+        if (ajeno.test(readFileSync(ruta, 'utf8'))) sucios.push(ruta.slice(repoRoot.length + 1));
+      }
+    }
+  }
+  assert.deepEqual(sucios, []);
+});

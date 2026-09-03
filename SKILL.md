@@ -1536,6 +1536,34 @@ grande sabés que algo empeoró pero no cuál.
 node .vibe/vcp-runtime/scripts/verify-ablation.mjs check docs/ablation.json
 ```
 
+### El registro se publica redactado
+
+Las tareas tienen que ser reales, y el registro se **commitea**. Eso son dos exigencias que
+chocan, y hay que resolverlas a mano porque **ningún gate puede hacerlo**: distinguir un nombre de
+producto de un nombre de módulo requiere saber de qué proyecto se trata.
+
+Antes de commitear el registro, se le sacan **las cuatro cosas que no son de este proyecto**:
+
+1. **Nombres de producto y versiones.** «el expert advisor», no «el expert advisor 1.27».
+2. **Rutas internas de otro árbol.** «el módulo de optimización», no `engine/opt/un modulo de otro producto`.
+3. **El modelo de negocio.** Quién paga, quién descarga, cómo se licencia.
+4. **Todo hallazgo de seguridad con archivo y línea.** Queda el **número** —«18 clases de
+   vulnerabilidad contra 15 de la línea base»—, que es lo único que la ablación necesita. **La
+   ubicación no se transcribe nunca.**
+
+Lo que sobrevive a la redacción sigue siendo la tarea real, descrita sin nombrar el producto, y la
+medición no cambia: se midió lo mismo.
+
+**Por qué está escrito acá y no es una obviedad.** Esta regla existe porque faltó. El registro del
+2026-09-02 de este mismo repositorio —que es **público**— se commiteó con el nombre de otro
+producto del autor, sus rutas internas y **un un hallazgo de seguridad con archivo, línea y la explicación del escaper
+que falla**. La fase pedía realismo y no decía nada sobre publicar. Y una vez publicado, sacarlo
+de la punta **no lo despublica**: queda en la historia.
+
+**Lo mismo vale para `PROJECT.md`.** La sección de rutas sensibles es, por definición, una lista de
+dónde vive lo que importa proteger. En un repositorio público eso es un mapa. Va con los nombres de
+**tu** árbol, nunca con los de otro proyecto tuyo.
+
 ### Qué lleva el registro
 
 El registro es el único lugar donde queda lo que pasó, así que el gate exige **exactamente** estos
