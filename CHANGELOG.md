@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **SEGURIDAD — se redactó contenido de otro proyecto que este repositorio había publicado.** Este
+  repositorio es **público**, y el commit `6db8595` había subido dos cosas que no son de acá:
+  - **Una vulnerabilidad concreta de otro producto del autor, con archivo y línea**, transcrita
+    literal dentro de la evidencia de `docs/ablation.json`: un un hallazgo de seguridad con la ruta del
+    archivo, las dos líneas y la explicación del escaper que falla. Reemplazada por el **resultado**
+    de la medición —18 clases de vulnerabilidad contra 15 de la línea base, que es lo único que la
+    ablación necesita— sin la referencia. Lo que el método requiere es el número, no la ubicación.
+  - **Un mapa de dónde vive lo sensible en ese otro árbol** —validación de licencia, generación de
+    licencias, pagos y el guard de riesgo— en `templates/vibe/PROJECT.md`, que es una **plantilla
+    que el instalador copia a cada proyecto** donde se instala VCP. Reemplazado por las *categorías*
+    que van en esa sección, más una advertencia explícita de no poner ahí rutas de otro proyecto:
+    en un repositorio público, una lista de "dónde vive lo sensible" es un mapa para cualquiera.
+  - También se sacaron los nombres de producto, versiones y rutas internas del set de 8 tareas de
+    `docs/ablation.json` y de los fixtures de `tests/verify-ablation.test.mjs`. **Las tareas siguen
+    siendo las reales** —eso es lo que PHASE 9 exige— descritas sin nombrar el producto.
+  - **Lo que esto NO hace:** el contenido estuvo publicado y sigue en la historia de git. Sacarlo de
+    la punta no lo despublica. Reescribir la historia es una decisión aparte, destructiva, y no se
+    tomó acá. La vulnerabilidad conviene arreglarla en su propio repositorio, que este protocolo no
+    toca.
+  - **La causa:** PHASE 9 pide que el set de pruebas sean tareas **tuyas reales**, y eso es correcto
+    —un set inventado se elige para que dé bien—. Lo que faltaba era la otra mitad de la regla: un
+    registro real se publica **redactado**. El protocolo pedía realismo y no decía nada sobre qué
+    pasa cuando el registro se commitea a un repositorio público.
+
 - **CORRECCIÓN — el nodo duplicado que se publicó en el sello anterior no existe.** La afirmación
   era propia y estaba escrita con número: «queda UN duplicado real en 2807 nodos, PHASE 6 bajo dos
   ids». Es falsa.

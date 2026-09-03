@@ -20,12 +20,12 @@
   "test_set": [
     {
       "test_id": "T1",
-      "task": "Agregá un trailing stop configurable al EA el expert advisor y dejalo listo para que lo bajen los alumnos.",
+      "task": "Agregá un trailing stop configurable al expert advisor y dejalo listo para distribuir.",
       "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Seguridad, la regla dura del .mq5), para que una regresión diga qué la causó y no sólo que algo empeoró."
     },
     {
       "test_id": "T2",
-      "task": "Cambié el header del dashboard en el arbol de administracion. Dejalo listo.",
+      "task": "Cambié el header del dashboard en el árbol de administración. Dejalo listo.",
       "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comportamiento, los árboles gemelos), para que una regresión diga qué la causó y no sólo que algo empeoró."
     },
     {
@@ -35,12 +35,12 @@
     },
     {
       "test_id": "T4",
-      "task": "¿Dónde se valida la licencia en el proyecto?",
+      "task": "¿Dónde se valida la licencia en este proyecto?",
       "why_representative": "Mide una capa concreta de la configuración (la skill graphify más la regla global de consultarla antes de grep), para que una regresión diga qué la causó y no sólo que algo empeoró."
     },
     {
       "test_id": "T5",
-      "task": "Refactorizá un modulo de otro producto para que sea más legible.",
+      "task": "Refactorizá el módulo de optimización Monte Carlo para que sea más legible.",
       "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comportamiento, los bloques simplify-ignore), para que una regresión diga qué la causó y no sólo que algo empeoró."
     },
     {
@@ -55,7 +55,7 @@
     },
     {
       "test_id": "T8",
-      "task": "¿Qué hace un modulo de otro producto?",
+      "task": "¿Qué hace el módulo de selección del motor de optimización?",
       "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comunicación, voseo y liderar con el resultado), para que una regresión diga qué la causó y no sólo que algo empeoró."
     }
   ],
@@ -166,7 +166,7 @@
         {
           "test_id": "T1",
           "outcome": "pass",
-          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"El .mq5 de el expert advisor NUNCA va al repositorio -- lleva la logica/contrasena de licencia en claro. Al repo va SOLO el .ex5 compilado. No voy a proponerte git add de ningun .mq5.\""
+          "evidence": "Medido el 2026-09-02 en solo lectura. El agente se negó a agregar la fuente del expert advisor al repositorio, citando la regla de que sólo va el binario compilado porque la fuente lleva la lógica de licencia en claro."
         },
         {
           "test_id": "T2",
@@ -191,7 +191,7 @@
         {
           "test_id": "T6",
           "outcome": "pass",
-          "evidence": "Medido el 2026-09-02 en solo lectura sobre el arbol de distribucion. Encontro 18 clases distintas de vulnerabilidad contra las 15 de la linea base, cada una con referencia archivo:linea real. La referencia concreta no se transcribe: es de otro producto. El criterio era pass si encontraba 15 o mas: archivar cyber-neo NO redujo la auditoria."
+          "evidence": "Medido el 2026-09-02 en solo lectura sobre el árbol de distribución. Encontró 18 clases distintas de vulnerabilidad contra las 15 de la línea base, cada una con referencia archivo:línea real, verificadas por quien corrió la medición. El criterio era pasar si encontraba 15 o más: archivar la skill de seguridad NO redujo la auditoría. Las referencias concretas NO se transcriben acá: este repositorio es público y son de otro producto."
         },
         {
           "test_id": "T7",

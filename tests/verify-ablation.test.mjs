@@ -128,7 +128,7 @@ test('FALSIFICACIÓN · si el original sigue en su lugar, no se movió nada y el
 
 test('FALSIFICACIÓN · archivar algo intocable se rechaza por el patrón que lo protege', () => {
   const malo = registro();
-  malo.batches[0].archived = [archivado('x', { path: 'EA/el expert advisor.mq5', archived_to: `${ARCHIVO}/EA/el expert advisor.mq5` })];
+  malo.batches[0].archived = [archivado('x', { path: 'EA/Trader_1.27.mq5', archived_to: `${ARCHIVO}/EA/Trader_1.27.mq5` })];
   const { code, errores } = corrida(json(malo));
   assert.equal(code, 1);
   assert.match(errores, /mq5/iu);
@@ -281,10 +281,10 @@ test('el comparador de rutas protegidas hace lo que dice, caso por caso', () => 
   // `replaceAll('')` no eran cadenas vacías. Un comparador que protege los `.mq5` no puede
   // depender de eso.
   const casos = [
-    ['**/*.mq5', 'EA/el expert advisor.mq5', true],
-    ['**/*.mq5', 'el expert advisor.mq5', true],
-    ['**/*.mq5', 'EA/sub/el expert advisor.mq5', true],
-    ['**/*.mq5', 'EA/el expert advisor.ex5', false],
+    ['**/*.mq5', 'EA/Trader.mq5', true],
+    ['**/*.mq5', 'Trader.mq5', true],
+    ['**/*.mq5', 'EA/sub/Trader.mq5', true],
+    ['**/*.mq5', 'EA/Trader.ex5', false],
     ['.git/**', '.git/config', true],
     ['.git/**', '.git/a/b/c', true],
     ['.git/**', 'docs/x.md', false],
@@ -505,7 +505,7 @@ test('si el registro desaparece entre resolver la ruta y leerlo, eso es VACÍO y
 test('A1 · FALSIFICACIÓN · la protección no se esquiva cambiando mayúsculas', () => {
   const contrato = loadScope(JSON.parse(readScope()));
   const io = { exists: (p) => String(p).includes('.claude-archive') };
-  for (const ruta of ['el proyecto/EA.MQ5', 'el proyecto/EA.Mq5', 'EL PROYECTO/ea.mq5']) {
+  for (const ruta of ['Bot/EA.MQ5', 'Bot/EA.Mq5', 'BOT/ea.mq5']) {
     const malo = registro();
     malo.batches[0].archived = [archivado('x', { path: ruta, archived_to: `${ARCHIVO}/${ruta}` })];
     const violaciones = validateAblation(malo, contrato, io);
