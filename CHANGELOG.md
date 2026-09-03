@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Un chequeo que no llegó a terminar decía que había fallado.** La suite fallaba de forma
+  intermitente bajo `--test-concurrency=32` —**3 rojas de 6 corridas**— y la causa no estaba en el
+  test sino en el gate que ese test ejercita.
+  - `runSelfTest` lanzaba un `node --test` anidado con un techo fijo de **30 segundos** y devolvía
+    `!result.error && result.status === 0`. Ese booleano **colapsaba tres desenlaces en dos**: pasó,
+    falló, y «lo maté al cruzar el techo». El tercero salía idéntico al segundo.
+  - **Medido, no supuesto:** el test que lo invoca corre `main(check --completed-phase I1)` sin
+    inyectar el registry, así que lanza dos suites anidadas de verdad. En aislamiento tarda **5,3 s**;
+    bajo la concurrencia que este mismo protocolo recomienda tardó **18,5 s cuando pasó** y
+    **34,8 / 35,9 / 36,5 s las tres veces que falló**. Cruzaba el techo.
+  - **El techo pasa a 300 s y es configurable** con `VCP_SELFTEST_TIMEOUT_MS`. Un techo tiene que
+    existir —un proceso colgado no puede colgar el gate— pero no puede estar tan cerca del tiempo
+    normal de la tarea que la carga lo cruce.
+  - **Lo que no se pudo verificar ya no se reporta como verificado-y-en-rojo:** `runSelfTest` lanza
+    `DISCOVERY_SELFTEST_UNFINISHED` con el techo que cruzó y cómo subirlo. **Acusar lo que no se pudo
+    comprobar es la misma falta que pintar de verde lo que no se comprobó:** en las dos el veredicto
+    no se ganó. Cubre las dos formas en que un proceso muere: con `error` y sólo con `signal`.
+  - **El mismo defecto vivía una función más abajo.** `createPreviousPhasesChecker` atrapaba
+    **todo** en un `catch` vacío y devolvía `false`, así que un «no pude verificar» salía como «la
+    fase anterior no cerró» —un rojo con la explicación equivocada—. Ahora hay un conjunto
+    `UNVERIFIABLE` que ninguna capa puede tragar: una fase que de verdad no cerró sigue siendo un
+    `false` legítimo, y lo que no se pudo comprobar sube.
+  - **Verificación:** **cinco corridas completas seguidas en verde**, 1073 pruebas cada una, contra
+    las 3 rojas de 6 de antes. Cobertura 38/38 en líneas, ramas y funciones.
+  - **Método, dicho porque se rompió una vez hoy:** las cinco corridas se hicieron sobre el código
+    **final**, sin tocar `scripts/` mientras medían. Las dos mediciones anteriores se descartaron
+    por editar el árbol mientras corrían — que es exactamente LESSON-3 aplicada al propio trabajo.
+
 - **SEGURIDAD — se redactó contenido de otro proyecto que este repositorio había publicado.** Este
   repositorio es **público**, y el commit `6db8595` había subido dos cosas que no son de acá:
   - **Una vulnerabilidad concreta de otro producto del autor, con archivo y línea**, transcrita

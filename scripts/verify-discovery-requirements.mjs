@@ -56,6 +56,10 @@ function reject(code, message) {
   throw new DiscoveryError(code, message);
 }
 
+// Códigos que significan «no pude verificar», no «verifiqué y no pasa». Ninguna capa los puede
+// tragar y devolver `false`: un veredicto que no se ganó no se reporta como veredicto.
+export const UNVERIFIABLE = new Set(['DISCOVERY_SELFTEST_UNFINISHED']);
+
 function isObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
@@ -338,7 +342,11 @@ export function createPreviousPhasesChecker(context, close = assertPhaseClosed) 
     try {
       close(PHASE_ORDER[index - 1], context);
       result = true;
-    } catch {
+    } catch (error) {
+      // Una fase anterior que de verdad no cerro es un `false` legitimo y esperado. Un chequeo que
+      // NO LLEGO A TERMINAR no lo es: tragarlo acá lo convertía en «la fase anterior no cerró»,
+      // que es un rojo con la explicación equivocada. Lo que no se pudo verificar sube.
+      if (error instanceof DiscoveryError && UNVERIFIABLE.has(error.code)) throw error;
       result = false;
     }
     results.set(targetPhase, result);
@@ -346,9 +354,26 @@ export function createPreviousPhasesChecker(context, close = assertPhaseClosed) 
   };
 }
 
-export function runSelfTest(testRef, cwd) {
-  const result = spawnSync(process.execPath, ['--test', '--test-reporter=tap', testRef], { cwd, encoding: 'utf8', timeout: 30_000 });
-  return !result.error && result.status === 0;
+// Techo de tiempo del selftest anidado. Era 30_000 fijo, y alcanzaba en aislamiento pero NO bajo la
+// concurrencia que este mismo repositorio recomienda: medido el 2026-09-03 con
+// `--test-concurrency=32`, el test que lo invoca tarda entre 18 y 37 segundos y fallaba 3 de cada 6
+// corridas. Un techo tiene que existir -- un proceso colgado no puede colgar el gate -- pero no
+// puede estar tan cerca del tiempo normal de la tarea que la carga lo cruce.
+export const SELFTEST_TIMEOUT_MS = Number.parseInt(process.env.VCP_SELFTEST_TIMEOUT_MS ?? '', 10) || 300_000;
+
+export function runSelfTest(testRef, cwd, { timeoutMs = SELFTEST_TIMEOUT_MS, run = spawnSync } = {}) {
+  const result = run(process.execPath, ['--test', '--test-reporter=tap', testRef], { cwd, encoding: 'utf8', timeout: timeoutMs });
+  // Un chequeo que NO LLEGO A TERMINAR no es un chequeo que fallo. La version anterior devolvia
+  // `false` en los dos casos, asi que una maquina cargada se leia como un selftest en rojo y el
+  // mensaje culpaba al archivo equivocado. Acusar lo que no se pudo verificar es lo mismo que
+  // pintar de verde lo que no se comprobo: en las dos el veredicto no se gano.
+  if (result.error || result.signal) {
+    reject(
+      'DISCOVERY_SELFTEST_UNFINISHED',
+      `el selftest ${testRef} no llegó a terminar (${result.error?.code ?? result.signal}) con un techo de ${timeoutMs} ms: no se pudo verificar, que no es lo mismo que haber fallado. Subilo con VCP_SELFTEST_TIMEOUT_MS si la máquina está cargada`,
+    );
+  }
+  return result.status === 0;
 }
 
 export function docsContract(cwd) {

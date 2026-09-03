@@ -11,6 +11,7 @@ const script = join(repoRoot, 'scripts', 'verify-discovery-requirements.mjs');
 const {
   BASE_REQ_IDS, EXPECTED_PHASE_PLAN, EXPECTED_REQ_BY_PHASE, PHASE_ORDER,
   assertPhaseClosed, assertReplacementTopology, createCheckRegistry, createPreviousPhasesChecker, main, parseArgs,
+  DiscoveryError, SELFTEST_TIMEOUT_MS,
   readPreviousInventory, resolveRequirement, runSelfTest, docsContract, validateInventory, validateLifecycle, validatePhasePlan,
 } = await import(pathToFileURL(script).href);
 
@@ -503,4 +504,67 @@ test('phase registry exercises selftests, docs contract and live diff activation
   if (existsSync(join(repoRoot, '.git'))) {
     assert.equal(main(['check', '--diff-against', 'HEAD'], repoRoot, {}, () => {}, () => {}), 0);
   }
+});
+
+// --- El selftest anidado se mataba a los 30 segundos y eso se reportaba como "no pasa".
+// Reproducido: bajo --test-concurrency=32 el test del parser tarda entre 18 y 37 segundos y fallo
+// 3 de 6 corridas. Un chequeo que NO PUDO terminar no puede devolver el mismo booleano que uno que
+// termino y fallo: es un rojo falso, y ademas miente sobre cual es el problema.
+
+test('runSelfTest distingue "no pude terminar" de "fallo", en vez de colapsarlos en false', () => {
+  const maton = () => ({ error: Object.assign(new Error('spawnSync ETIMEDOUT'), { code: 'ETIMEDOUT' }), status: null, signal: 'SIGTERM' });
+  assert.throws(
+    () => runSelfTest('tests/lo-que-sea.test.mjs', repoRoot, { run: maton }),
+    (e) => e instanceof DiscoveryError && e.code === 'DISCOVERY_SELFTEST_UNFINISHED',
+  );
+});
+
+test('runSelfTest sigue devolviendo false cuando el selftest CORRIO y fallo', () => {
+  // La distincion no puede tapar el rojo legitimo: si corrio y dio distinto de cero, es false.
+  assert.equal(runSelfTest('t.mjs', repoRoot, { run: () => ({ status: 1, signal: null }) }), false);
+  assert.equal(runSelfTest('t.mjs', repoRoot, { run: () => ({ status: 0, signal: null }) }), true);
+});
+
+test('el techo de tiempo del selftest es configurable y no es el que se quedo corto', () => {
+  // 30 s alcanzaba en aislamiento y no bajo la concurrencia que el propio protocolo recomienda.
+  assert.ok(SELFTEST_TIMEOUT_MS >= 120_000, `el techo es ${SELFTEST_TIMEOUT_MS} ms`);
+  const visto = [];
+  runSelfTest('t.mjs', repoRoot, {
+    timeoutMs: 4242,
+    run: (_bin, _args, opts) => { visto.push(opts.timeout); return { status: 0, signal: null }; },
+  });
+  assert.deepEqual(visto, [4242]);
+});
+
+// --- El mismo defecto, una funcion mas abajo: createPreviousPhasesChecker atrapa TODO y devuelve
+// false. Una fase anterior que de verdad no cerro es un false legitimo; un selftest que no llego a
+// terminar NO lo es, y salia con la explicacion equivocada ("la fase anterior no cerro").
+
+test('el chequeo de fases previas no convierte un "no pude verificar" en "no cerro"', () => {
+  const noPude = () => { throw new DiscoveryError('DISCOVERY_SELFTEST_UNFINISHED', 'no llegó a terminar'); };
+  const checker = createPreviousPhasesChecker({}, noPude);
+  assert.throws(
+    () => checker('I1'),
+    (e) => e instanceof DiscoveryError && e.code === 'DISCOVERY_SELFTEST_UNFINISHED',
+  );
+});
+
+test('una fase anterior que de verdad no cerro sigue siendo false, no una excepcion', () => {
+  const noCerro = () => { throw new DiscoveryError('DISCOVERY_PHASE_PREREQ_FAILED', 'I0/x failed now'); };
+  assert.equal(createPreviousPhasesChecker({}, noCerro)('I1'), false);
+  assert.equal(createPreviousPhasesChecker({}, () => {})('I1'), true);
+  // La primera fase no tiene anterior: cierra sin preguntar nada.
+  assert.equal(createPreviousPhasesChecker({}, () => { throw new Error('no deberia llamarse'); })(PHASE_ORDER[0]), true);
+});
+
+test('un selftest matado por señal, sin objeto de error, también sube como "no pude verificar"', () => {
+  // spawnSync no siempre deja `error`: un SIGKILL externo llega sólo como `signal`. Sin esta rama
+  // ese caso volvía a caer en `status !== 0` y se leía como el selftest fallando.
+  const matado = () => ({ error: undefined, status: null, signal: 'SIGKILL' });
+  assert.throws(
+    () => runSelfTest('t.mjs', repoRoot, { run: matado }),
+    (e) => e instanceof DiscoveryError
+      && e.code === 'DISCOVERY_SELFTEST_UNFINISHED'
+      && /SIGKILL/u.test(e.message),
+  );
 });
