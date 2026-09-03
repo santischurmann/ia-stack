@@ -1,0 +1,10 @@
+{
+  "schema": "vcp.graphify-backup/v1",
+  "git_head": "6db8595ffb524f2441722d12bdd1b7df1e60adc1",
+  "recorded_at": "2026-09-03T00:34:36.976Z",
+  "graph_report": "graphify-out/GRAPH_REPORT.md",
+  "graph_report_sha256": "6db1bd008703eb7752fc36ef0173b76ec1bb14a456dcd25aeadd2029278a9d61",
+  "graph": "graphify-out/graph.json",
+  "graph_sha256": "d8ab8f8cdc6567e023d4ced594c2890f213a11d13b138c1850929be3706d9a17",
+  "graph_inventory_sha256": "56682e3c9e74abade3d0c52f972336467607fc4da00d3d9d85005bb2327f0d87"
+}
