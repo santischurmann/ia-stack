@@ -7,6 +7,37 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **CORRECCIÓN — el nodo duplicado que se publicó en el sello anterior no existe.** La afirmación
+  era propia y estaba escrita con número: «queda UN duplicado real en 2807 nodos, PHASE 6 bajo dos
+  ids». Es falsa.
+  - **Cómo se cayó:** un barrido de cuatro lentes ciegas entre sí —etiqueta, identificador,
+    vecindario, significado— sobre los 400 nodos de `SKILL.md` y `CHANGELOG.md` propuso once pares
+    sospechosos, y la verificación adversarial —tres escépticos por par, con la instrucción de
+    refutar y de refutar por omisión ante la duda— **rechazó los once por mayoría**.
+  - **Comprobado después ejecutando, no por opinión de agente:** los dos nodos del par señalado
+    tienen **cero vecinos en común**; uno es `file_type: concept`, `_origin: semantic`, sin línea;
+    el otro es `file_type: document`, `_origin: ast`, en la línea 759 del archivo.
+  - **Lo que hay en realidad son dos capas deliberadas:** 44 nodos `ast` que son el esqueleto de
+    encabezados del archivo con su número de línea, y 356 nodos semánticos que son la red de
+    conceptos. **Cero ids compartidos entre las dos.** Fusionar el par habría roto el índice del
+    documento —ese nodo `ast` es lo único que hace la fase 6 alcanzable desde la raíz de
+    `SKILL.md`— y como el patrón se repite en nueve pares más, el mismo criterio habría borrado
+    del índice a las fases 1.5, 2, 5, 5.5 y 6. Nadie lo habría notado hasta preguntar qué secciones
+    tiene el archivo.
+  - Un par quedó sin votos por límite de sesión y se juzgó a mano con la misma prueba mecánica:
+    `ast` en la línea 1539 contra semántico, cero vecinos en común. **Cero fusiones aplicadas.**
+- **`graphify label` no se pudo correr, y la causa está medida:** el backend `claude-cli` lanza
+  `claude -p`, y ese CLI devuelve `Failed to authenticate: OAuth session expired and could not be
+  refreshed`. Los tres lotes fallaron con salida 1. **No se tocaron credenciales.** Se comprobó que
+  el fallback no dañó nada: 229 etiquetas, cero marcadores, los mismos 208 nombres antes y después.
+  - Las comunidades se nombraron por otra vía —diez agentes en paralelo sobre lotes de 23, con los
+    miembros ordenados por grado—: **229 de 229**, cero marcadores, un nombre repetido desambiguado
+    a mano. Aplicadas **sin re-agrupar**, usando las comunidades que ya estaban en el grafo, y el
+    sidecar firmado con `community_member_sigs`, la función del propio graphify. Sidecar y firma
+    con las mismas 229 claves.
+  - **Para volver a correr `graphify label` hay que reautenticar el CLI `claude` a mano.** Eso no
+    lo hace el protocolo y no lo hace el agente.
+
 - **Cinco hallazgos más de la auditoría, cerrados. Tres eran defectos de los gates nuevos, y los
   tres los encontró aplicarlos a datos reales — no los casos de laboratorio.**
   - **Una ruta de home escrita al estilo de Windows se reportaba como borrado.** `normalizePath` ya
