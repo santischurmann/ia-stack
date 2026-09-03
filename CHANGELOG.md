@@ -10,7 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - **La redacción se dejó una referencia adentro, y la guarda que escribí para verificarla no la
   vio.** Después de redactar el registro se comprobó el resultado con una guarda construida a partir
   de **la misma lista de nombres** que la redacción. Por construcción sólo podía encontrar lo que la
-  redacción ya había pensado, así que `un modulo de otro producto` —una ruta interna de otro producto, con
+  redacción ya había pensado, así que una referencia a un archivo de otro producto con
   rango de líneas y una regla de negocio concreta al lado— siguió publicada en un repositorio
   público hasta hoy. **Una lista sólo encuentra lo que ya pensó quien la escribió.**
   - Lo encontró una auditoría de **cinco lentes ciegas** —otro-proyecto, seguridad, datos

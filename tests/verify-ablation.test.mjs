@@ -1315,10 +1315,10 @@ test('la plantilla del registro no trae rutas de otro proyecto', () => {
   assert.deepEqual(sucios, []);
 });
 
-// --- La redaccion del 0442115 se dejo `un modulo de otro producto` adentro del registro, y la guarda que
-// escribi para verificarla NO lo vio: buscaba los nombres que yo ya conocia. Una guarda hecha con la
-// misma lista que la redaccion solo puede encontrar lo que la redaccion ya penso. Lo agarro una
-// auditoria con lentes ciegas, no la guarda.
+// --- La redaccion del 0442115 se dejo una referencia a un archivo de otro proyecto, con rango de
+// lineas, adentro del registro; y la guarda que escribi para verificarla NO lo vio, porque buscaba
+// los nombres que yo ya conocia. Una guarda hecha con la misma lista que la redaccion solo puede
+// encontrar lo que la redaccion ya penso. Lo agarro una auditoria con lentes ciegas, no la guarda.
 //
 // Este chequeo no usa nombres: busca la FORMA. Una referencia `archivo.ext:linea` dentro del
 // registro apunta a un arbol que no es este, porque las rutas de este repo se citan relativas y sin
@@ -1333,10 +1333,12 @@ test('el registro de la limpieza no cita archivo:linea de ningun arbol', () => {
 });
 
 test('FALSIFICACIÓN · la comprobación agarra la referencia que la redacción se dejó', () => {
-  // El texto real que sobrevivio a la redaccion, para que la prueba falle si el chequeo se afloja.
+  // La MISMA FORMA que tenia el texto que sobrevivio a la redaccion, no el texto. Pegar la cita
+  // real aca la volveria a publicar: probar que se redacto algo re-publicandolo es exactamente el
+  // error que esta prueba existe para impedir, un nivel mas arriba.
   const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
-  const real = 'Cita literal: "El piso -- un modulo de otro producto ... todo OOS de 6 meses exige 48 trades"';
-  assert.deepEqual(real.match(REFERENCIA), ['un modulo de otro producto']);
+  const mismaForma = 'Cita literal: "El piso -- modulo.py:66-74 ... el umbral exige 48 casos"';
+  assert.deepEqual(mismaForma.match(REFERENCIA), ['modulo.py:66']);
   // Y no acusa una ruta del propio repo citada como el registro las cita: sin numero de linea.
   assert.equal('archived_to: .claude-archive/2026-09-02/.claude/skills/cyber-neo/SKILL.md'.match(REFERENCIA), null);
 });
