@@ -1350,6 +1350,9 @@ custodia vale hasta donde tu clave exija presencia humana.
   regular y sin symlinks, y que contenga un `graph.canvas` JSON válido con `nodes` y `edges` más al
   menos una nota Markdown;
   No juzga la semántica de las notas ni si Graphify interpretó correctamente cada nota.
+  El manifiesto va a `graphify-out/`, que está ignorado por git **a propósito**: si se commiteara,
+  el propio commit del sello movería HEAD y lo dejaría viejo al instante. Por eso el sello es lo
+  último de la fase, después del último commit.
   Ese respaldo generado se ata al árbol commiteado: queda viejo si HEAD, el informe o el grafo
   changes. El orden es **commit → graphify → record → check**, y no es cosmético: `record` sella el
   HEAD real leyéndolo con `git rev-parse`, así que registrar antes de commitear ata el receipt al
