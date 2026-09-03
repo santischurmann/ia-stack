@@ -7,6 +7,40 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Cinco hallazgos más de la auditoría, cerrados. Tres eran defectos de los gates nuevos, y los
+  tres los encontró aplicarlos a datos reales — no los casos de laboratorio.**
+  - **Una ruta de home escrita al estilo de Windows se reportaba como borrado.** `normalizePath` ya
+    la resolvía bien, pero los dos lectores —el de disco y el de git— comparaban `~/` literal, así
+    que `~\.claude\...` caía al else y se buscaba adentro del proyecto. Un archivado correcto
+    salía acusado de borrar, y el falso rojo caía justo sobre la comprobación de la regla de oro.
+    Ahora las barras se normalizan **antes** de mirar el `~`.
+  - **La línea de espera aceptaba una sola redacción.** Era un substring exacto y sensible a
+    mayúsculas, así que un menú cerrado con «Quedo esperando tu respuesta» se rechazaba por la
+    `e` minúscula —obligada por estar a mitad de frase—. Ahora acepta las formas en que se
+    escribe de verdad, y la falsificación comprueba que un menú **sin** ninguna forma de espera
+    sigue cayendo.
+  - **El protocolo no podía citar el anti-patrón para enseñarlo:** citarlo rechazaba el documento
+    entero. Se agregó una salida explícita, `<!-- menu-shape: ejemplo -->`, acotada al bloque
+    siguiente y a uno solo. **La primera versión de esa salida tenía el defecto que decía evitar**:
+    un `includes` suelto hacía que el párrafo que *habla* de la marca apagara el menú siguiente.
+    Lo agarró CONTR-2 sobre el `SKILL.md` real, no una prueba de laboratorio. Ahora el comentario
+    tiene que estar solo al principio de la línea.
+- **El emoji `🔵` queda declarado reservado para las decisiones.** El gate rechaza un `🔵` que no
+  sea un menú, y eso sólo es correcto si el documento dice que el emoji es exclusivo: si
+  significara dos cosas, el gate no podría distinguir un aviso legítimo de un menú roto.
+- **PHASE 9 nombra ahora cada campo que el gate exige**, con una tabla de qué guarda cada uno, los
+  tres veredictos —incluido `REESCRIBIR`— y `why_representative`. Antes el gate exigía doce campos
+  exactos que la fase no mencionaba: quien siguiera el protocolo al pie de la letra escribía un
+  registro incompleto y se enteraba recién cuando el gate lo rechazaba. **Un requisito que sólo
+  vive en el código no es un protocolo.** Una prueba lo mantiene sincronizado: compara la lista real
+  `RECORD_KEYS` contra el texto de la fase.
+- **Se corrigieron cuatro frases que prometían más de lo que el gate comprueba** (`SKILL.md`,
+  `CHANGELOG.md`), y una prueba nueva las vigila: toda promesa de la forma «rechaza todo bloque
+  `🔵`» tiene que nombrar su excepción a menos de seis líneas.
+- **Límite honesto nuevo (78):** el gate **no juzga si el bloque marcado como ejemplo es de verdad
+  un ejemplo**. Es indecidible sin leer la intención. La mitigación es que la marca sea literal y
+  buscable: `grep -rn "menu-shape: ejemplo"` lista todas las excepciones de un repo en una línea.
+
 - **La vuelta atrás está probada, y el registro de la limpieza existe.** Se ejercitó PHASE 9 contra
   una limpieza **real** —la del 2026-09-02 sobre `~/.claude`— en vez de contra un caso de
   laboratorio, y el registro quedó en `docs/ablation.json`, reconstruido desde la evidencia
@@ -182,9 +216,9 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   - Los tres menús `CONFIG` de Spec, Plan y Build no eran menús: cada `A)`/`B)` era una **pregunta
     distinta** con sus propias sub-opciones. Partidos en dos preguntas con sus opciones cada una.
 - **Gate 37, `verify-menu-shape.mjs`:** rechaza todo bloque `🔵` que no sea lista con al menos dos
-  opciones, recomendación explícita y línea de espera. Ataca la causa —la plantilla— y no el
-  síntoma. Su falsificación cubre las dos formas que colapsan: opciones dentro de un fence y
-  opciones como líneas sueltas.
+  opciones, recomendación explícita y línea de espera, salvo uno marcado como ejemplo con
+  `<!-- menu-shape: ejemplo -->`. Ataca la causa —la plantilla— y no el síntoma. Su falsificación
+  cubre las dos formas que colapsan: opciones dentro de un fence y opciones como líneas sueltas.
 - **`AGENTS.md` puntero en la raíz.** Verificado ejecutando: Codex sólo descubre instrucciones de
   repo por `AGENTS.md`, y skills sólo en `.agents/skills` o `.codex/skills` — el `SKILL.md` suelto de
   la raíz y los `skills/*.md` le son invisibles. VCP era literalmente invisible para Codex. Es un

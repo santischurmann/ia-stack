@@ -1536,6 +1536,34 @@ grande sabés que algo empeoró pero no cuál.
 node .vibe/vcp-runtime/scripts/verify-ablation.mjs check docs/ablation.json
 ```
 
+### Qué lleva el registro
+
+El registro es el único lugar donde queda lo que pasó, así que el gate exige **exactamente** estos
+doce campos — ni uno menos, ni uno de más. La plantilla `templates/ablation.json` ya los trae
+vacíos; esto es qué significa cada uno:
+
+| Campo | Qué guarda |
+| --- | --- |
+| `schema` | La versión del formato, para que un registro viejo no se lea como uno nuevo. |
+| `run_id` | La fecha de esta limpieza. De acá sale la cuenta de los 7 días. |
+| `archive_dir` | La carpeta a donde se movió todo. Todo lo archivado tiene que caer adentro. |
+| `rollback_command` | El comando exacto que devuelve todo a su lugar. **No puede contener `rm`.** |
+| `rollback_tested` | La prueba de que ese comando se corrió de verdad una vez, con su evidencia. |
+| `test_set` | Las 6 a 8 tareas tuyas reales. Cada una con `test_id`, `task` y `why_representative`. |
+| `baseline` | Cómo salió cada tarea **antes** de tocar nada. |
+| `inventory` | Todo lo que había, con su tamaño. Sin esto no se puede decir cuánto se sacó. |
+| `batches` | Las tandas: qué se archivó, por qué, y cómo salió la medición después. |
+| `survivors` | Cada archivo que quedó, con una frase de por qué. |
+| `totals` | El antes y el después en palabras. Es el número que se puede mostrar. |
+| `backup` | La evidencia de los dos respaldos —grafo y Obsidian—. Sin esto la fase no cierra. |
+
+**`why_representative` es el campo que más se salta y el más importante**: dice por qué esa tarea
+representa tu trabajo. Sin él, el set se elige para que dé bien.
+
+Cada archivo del inventario lleva uno de tres veredictos: **`QUEDA`** (se queda entero),
+**`ARCHIVAR`** (sale entero) o **`REESCRIBIR`** (se queda recortado, que es lo que pasa cuando se
+sacan líneas de un archivo que sobrevive, como `CLAUDE.md`).
+
 ### La fase no cierra hasta que se cumplen las cuatro
 
 1. El set de pruebas sale igual o mejor que la línea base, y se puede mostrar.
@@ -1615,9 +1643,23 @@ node .vibe/vcp-runtime/scripts/verify-menu-shape.mjs check SKILL.md
 ```
 
 Rechaza todo bloque `🔵` que no sea una lista de al menos dos opciones `- **A)** texto`, con marca
-de recomendación explícita y línea de espera al final. **Verifica las plantillas, no la conversación**:
-no puede saber qué mensaje escribió el agente ni cómo lo pintó la terminal, y nada verifica eso de
-forma portable.
+de recomendación explícita y línea de espera al final, **salvo** uno precedido por la marca
+`<!-- menu-shape: ejemplo -->`, que el gate saltea para que el protocolo pueda citar el
+anti-patrón y explicarlo. La marca tiene que ser el comentario solo, al principio de la línea, y
+vale para un solo bloque: si valiera para el resto del archivo, una marca suelta arriba de todo
+apagaría el gate entero.
+
+**El gate no juzga si el bloque marcado es de verdad un ejemplo** — quien escribe la marca se hace
+cargo. La mitigación es que sea literal y buscable: `grep -rn "menu-shape: ejemplo"` lista todas
+las excepciones de un repo en una línea.
+
+**El emoji `🔵` queda reservado para las decisiones.** No es decoración: es la única señal por la
+que el gate encuentra un menú. Un aviso, una nota o un encabezado que lo use se rechaza, y así
+tiene que ser — si el emoji significara dos cosas, el gate no podría distinguir un aviso correcto
+de un menú roto. Para destacar algo que no es una decisión: negrita, cita o `**Nota:**`.
+
+**Verifica las plantillas, no la conversación**: no puede saber qué mensaje escribió el agente ni
+cómo lo pintó la terminal, y nada verifica eso de forma portable.
 
 ## EL MENÚ CLICKEABLE ES UN UPGRADE POR HOST, NO EL PROTOCOLO
 

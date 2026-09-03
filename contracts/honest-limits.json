@@ -434,6 +434,12 @@
       "why": "La unica medida de sustancia de un campo es que contenga una letra con caso o un digito, mas un minimo de longitud y una lista negra derivada de la plantilla. Eso alcanza para acusar un campo lleno de invisibles -medido: 15 copias de U+2060 pasaban el gate publicado-, y no alcanza para nada mas: seis campos con la misma frase creible repetida pasan, y una escritura sin distincion de caso (chino, japones, coreano) saldria rechazada aunque el contenido sea real. El repo escribe en espanol e ingles, asi que el falso rojo es teorico hoy y esta declarado en vez de resuelto."
     },
     {
+      "limit_id": "menu-shape-example-mark-is-trusted",
+      "file": "SKILL.md",
+      "phrase": "El gate no juzga si el bloque marcado es de verdad un ejemplo",
+      "why": "El gate necesita una salida: sin ella el protocolo no puede citar el anti-patron para explicar por que colapsa, porque citarlo rechazaba el documento entero. La salida es la marca `<!-- menu-shape: ejemplo -->` y esta acotada -- vale para el bloque siguiente y uno solo, asi que una marca suelta arriba del archivo no apaga el resto. Lo que no puede hacer es distinguir una cita didactica de un menu real al que le pusieron la marca encima para que pase. Eso es indecidible sin leer la intencion. La mitigacion es que la marca es literal y buscable: `grep -rn \"menu-shape: ejemplo\" SKILL.md README.md skills/` lista todas las excepciones de un repo en una linea, y son auditables de un vistazo."
+    },
+    {
       "limit_id": "menu-shape-checks-templates-not-conversation",
       "file": "SKILL.md",
       "phrase": "Verifica las plantillas, no la conversación",
