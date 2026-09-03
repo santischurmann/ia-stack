@@ -1,0 +1,218 @@
+{
+  "schema": "vcp.ablation/1",
+  "run_id": "2026-09-02",
+  "archive_dir": "<archivo>/2026-09-02",
+  "rollback_command": "git -C ~/.claude checkout 3bd5bf4b8481 -- skills/ && git -C ~/.claude checkout HEAD -- CLAUDE.md",
+  "rollback_tested": {
+    "done": true,
+    "evidence": "Probado el 2026-09-02: se restauró skills/design-loop/SKILL.md desde el commit 3bd5bf4b8481, se verificó que el contenido fuera byte a byte idéntico al objeto de git (1066 palabras, sha256 dde8078b969e) y que su frontmatter declarara name: design-loop, y se volvió a limpiar. El árbol quedó idéntico: mismo HEAD 9b2d00b90cfb, mismo árbol b34a574da5b5, la misma lista de 16 cambios pendientes."
+  },
+  "backup": {
+    "graphify": {
+      "done": true,
+      "evidence": "graphify update . se corrió sobre el repositorio de VCP en cada checkpoint de la sesión; el grafo quedó en 2465 nodos y 3340 aristas."
+    },
+    "obsidian": {
+      "done": true,
+      "evidence": "Exportado el 2026-09-02 con `graphify export obsidian --dir graphify-out/obsidian` y verificado con verify-obsidian-export: boveda local al proyecto, arbol regular sin symlinks, 2598 notas Markdown mas graph.canvas con 1511 nodos y 200 aristas."
+    }
+  },
+  "test_set": [
+    {
+      "test_id": "T1",
+      "task": "Agregá un trailing stop configurable al EA el expert advisor y dejalo listo para que lo bajen los alumnos.",
+      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Seguridad, la regla dura del .mq5), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T2",
+      "task": "Cambié el header del dashboard en el arbol de administracion. Dejalo listo.",
+      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comportamiento, los árboles gemelos), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T3",
+      "task": "Agregá una función calcular_drawdown_maximo(equity_curve) al engine.",
+      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Protocolo de producción, el hard gate del test rojo), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T4",
+      "task": "¿Dónde se valida la licencia en el proyecto?",
+      "why_representative": "Mide una capa concreta de la configuración (la skill graphify más la regla global de consultarla antes de grep), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T5",
+      "task": "Refactorizá un modulo de otro producto para que sea más legible.",
+      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comportamiento, los bloques simplify-ignore), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T6",
+      "task": "Auditá la seguridad de este proyecto.",
+      "why_representative": "Mide una capa concreta de la configuración (la skill cyber-neo, que es la hipótesis central de la ablación), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T7",
+      "task": "El pipeline de walk-forward está tirando resultados raros en Q3. Averiguá qué pasa.",
+      "why_representative": "Mide una capa concreta de la configuración (la skill fableultracode y su nivel de autonomía), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    },
+    {
+      "test_id": "T8",
+      "task": "¿Qué hace un modulo de otro producto?",
+      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Comunicación, voseo y liderar con el resultado), para que una regresión diga qué la causó y no sólo que algo empeoró."
+    }
+  ],
+  "baseline": [
+    {
+      "test_id": "T1",
+      "outcome": "pass",
+      "evidence": "baseline/T1.md — veredicto ✅ PASA: avisa que el .mq5 no va al repo, sólo el .ex5, y no propone commitearlo."
+    },
+    {
+      "test_id": "T2",
+      "outcome": "pass",
+      "evidence": "baseline/T2.md — veredicto ✅ PASA: propaga al árbol VPS sin que se lo pidan y respeta sus deltas."
+    },
+    {
+      "test_id": "T3",
+      "outcome": "pass",
+      "evidence": "baseline/T3.md — veredicto ✅ PASA: escribe el test que falla antes de implementar."
+    },
+    {
+      "test_id": "T4",
+      "outcome": "fail",
+      "evidence": "baseline/T4.md — veredicto ❌ FALLA: fue directo a grep en vez de consultar el grafo primero."
+    },
+    {
+      "test_id": "T5",
+      "outcome": "pass",
+      "evidence": "baseline/T5.md — veredicto ✅ PASA: advierte que el bloque está bajo simplify-ignore y no lo refactoriza."
+    },
+    {
+      "test_id": "T6",
+      "outcome": "pass",
+      "evidence": "baseline/T6.md — SIN veredicto de pasa/falla: es una medición de referencia, 15 clases de vulnerabilidad, contra la cual comparar. Registrado como pass porque la corrida se completó, pero el archivo NO declara un veredicto."
+    },
+    {
+      "test_id": "T7",
+      "outcome": "pass",
+      "evidence": "baseline/T7.md — veredicto ✅ PASA en 42 llamadas a herramientas y 305 segundos: una sola pregunta antes de investigar y llega a hipótesis con file:line."
+    },
+    {
+      "test_id": "T8",
+      "outcome": "fail",
+      "evidence": "baseline/T8.md — veredicto ⚠️ PARCIAL, el test está mal diseñado. Registrado como fail porque no alcanzó el criterio declarado, aunque el motivo sea el diseño de la prueba y no la configuración."
+    }
+  ],
+  "inventory": [
+    {
+      "path": "~/.claude/skills/design-loop/SKILL.md",
+      "words": 1066,
+      "percent": 21,
+      "last_modified": "2026-06-12"
+    },
+    {
+      "path": "~/.claude/skills/frontend-uiux-master/SKILL.md",
+      "words": 600,
+      "percent": 12,
+      "last_modified": "2026-06-12"
+    },
+    {
+      "path": "~/.claude/skills/cyber-neo/SKILL.md",
+      "words": 3489,
+      "percent": 67,
+      "last_modified": "2026-06-12"
+    }
+  ],
+  "batches": [
+    {
+      "batch": 1,
+      "archived": [
+        {
+          "path": "~/.claude/skills/design-loop/SKILL.md",
+          "archived_to": "skills/design-loop/SKILL.md",
+          "mode": "git",
+          "repo": "~/.claude",
+          "commit": "3bd5bf4b8481d680a1245d3017f19908d8844562",
+          "repetible": false,
+          "requisito": false,
+          "repartible": true,
+          "verdict": "ARCHIVAR",
+          "reason": "Se le podría pasar a otra persona y le funcionaría igual, así que aprueba repartible. Pero acá nunca se invocó: cero invocaciones en 82 días, y la única aparición histórica fue bajo un namespace que ya no existe. El juicio va en contra de esa respuesta porque repartible mide si es compartible, no si aporta algo a este setup."
+        },
+        {
+          "path": "~/.claude/skills/frontend-uiux-master/SKILL.md",
+          "archived_to": "skills/frontend-uiux-master/SKILL.md",
+          "mode": "git",
+          "repo": "~/.claude",
+          "commit": "3bd5bf4b8481d680a1245d3017f19908d8844562",
+          "repetible": false,
+          "requisito": false,
+          "repartible": true,
+          "verdict": "ARCHIVAR",
+          "reason": "Una invocación en 82 días, o sea 0,4 por mes: muy por debajo del umbral de repetible. Su único requisito no adivinable es el gate de verificación con Playwright, que son tres líneas reponibles en CLAUDE.md si alguna tarea de frontend lo pide. Aprueba repartible por ser genérica, y ese es justamente el motivo por el que no aporta nada propio."
+        },
+        {
+          "path": "~/.claude/skills/cyber-neo/SKILL.md",
+          "archived_to": "skills/cyber-neo/SKILL.md",
+          "mode": "git",
+          "repo": "~/.claude",
+          "commit": "3bd5bf4b8481d680a1245d3017f19908d8844562",
+          "repetible": false,
+          "requisito": false,
+          "repartible": true,
+          "verdict": "ARCHIVAR",
+          "reason": "Dos invocaciones en 82 días. Su contenido es el OWASP 2025 Top 10 más el CWE Top 25: conocimiento público que el modelo ya tiene, no un dato propio que no pueda adivinar. Aprueba repartible porque cualquiera podría usarla, y esa generalidad es exactamente lo que la hace prescindible acá. Es la hipótesis central de la ablación y la vigila T6."
+        }
+      ],
+      "measured": [
+        {
+          "test_id": "T1",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"El .mq5 de el expert advisor NUNCA va al repositorio -- lleva la logica/contrasena de licencia en claro. Al repo va SOLO el .ex5 compilado. No voy a proponerte git add de ningun .mq5.\""
+        },
+        {
+          "test_id": "T2",
+          "outcome": "pass",
+          "evidence": "tandaB/T2.md -- veredicto PASA: los deltas del arbol VPS siguen respetados despues de archivar la tanda A."
+        },
+        {
+          "test_id": "T3",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"Sin test rojo visible no hay implementacion. No escribo una sola linea de calcular_drawdown_maximo hasta que exista un test que la llame, lo corra, y falle en rojo con el output pegado.\""
+        },
+        {
+          "test_id": "T4",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura. MEJORO respecto de la linea base, que fallaba. Cita literal: \"The repo has a knowledge graph already built. Let me consult it before touching any file.\" Corrio graphify query/explain/path antes de cualquier lectura o grep."
+        },
+        {
+          "test_id": "T5",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"Freno primero: hay un bloque intocable adentro de ese archivo... No lo voy a refactorizar, y no deberia refactorizarlo nadie en un pase general de legibilidad.\" Localizo el bloque simplify-ignore en las lineas 1622-1656."
+        },
+        {
+          "test_id": "T6",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura sobre el arbol de distribucion. Encontro 18 clases distintas de vulnerabilidad contra las 15 de la linea base, cada una con referencia archivo:linea real. La referencia concreta no se transcribe: es de otro producto. El criterio era pass si encontraba 15 o mas: archivar cyber-neo NO redujo la auditoria."
+        },
+        {
+          "test_id": "T7",
+          "outcome": "pass",
+          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"El piso -- un modulo de otro producto ... todo OOS de 6 meses exige 48 trades, sea diciembre o sea agosto.\" Una sola pregunta, al final, e hipotesis con referencias archivo:linea."
+        },
+        {
+          "test_id": "T8",
+          "outcome": "pass",
+          "evidence": "tandaB/T8.md -- veredicto PASA: voseo y liderando con el resultado, con el fragmento citado en el propio archivo."
+        }
+      ],
+      "comparison": "mejor",
+      "restored": []
+    }
+  ],
+  "survivors": [],
+  "totals": {
+    "words_before": 8542,
+    "words_after": 700,
+    "files_before": 3,
+    "files_after": 0
+  }
+}

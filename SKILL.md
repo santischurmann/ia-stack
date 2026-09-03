@@ -1512,7 +1512,12 @@ se quede:**
 - **¿Requisito?** ¿Tiene un dato que el modelo no puede adivinar — tu tono, tus rutas, tus reglas?
 - **¿Repartible?** ¿Se lo pasarías a otra persona para que le funcione igual que a vos?
 
-Lo que no aprueba ninguna se archiva. Y hay una señal aparte que conviene mirar primero: lo que son
+**El filtro de las tres R es un juicio con las tres respuestas a la vista, no una cuenta
+mecánica.** Lo que no aprueba ninguna se archiva sin discusión. Lo que aprueba alguna **puede**
+archivarse igual, pero entonces hay que escribir por qué el juicio va en contra de esa respuesta —
+y el gate exige un motivo más largo justamente ahí. Ejemplo real: una skill genérica aprueba
+"repartible" porque cualquiera podría usarla, y esa misma generalidad es lo que la hace
+prescindible acá. Y hay una señal aparte que conviene mirar primero: lo que son
 **instrucciones de cómo pensar** en vez de datos o límites. Eso es lo primero que sobra, porque le
 saca al modelo su mejor camino en vez de darle información.
 

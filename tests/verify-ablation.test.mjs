@@ -269,7 +269,9 @@ test('FALSIFICACIÓN · un contrato de alcance roto se informa como contrato rot
 test('el gate del repo vive junto a su contrato real', () => {
   const errores = [];
   const code = main(['check', 'docs/ablation.json'], { root: repoRoot, write: () => {}, writeError: (l) => errores.push(l) });
-  // Todavía no hay ninguna corrida de limpieza en el repo: eso es VACÍO, no incumplimiento.
+  // El repo lleva el registro de una limpieza REAL: la del 2026-09-02 sobre ~/.claude, reconstruida
+  // desde la evidencia primaria que quedó en el archivo y verificada contra git. Que este gate lo
+  // acepte es la prueba de que el formato sirve para una corrida de verdad y no sólo para fixtures.
   assert.deepEqual({ code, errores }, { code: 0, errores: [] });
 });
 
@@ -1153,5 +1155,46 @@ test('el lector de git expande ~/ contra el home real, igual que el lector de ar
     assert.deepEqual({ code, acusa: /no está en el commit/iu.test(errores.join('\n')) }, { code: 1, acusa: true });
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- El filtro de las tres R es un juicio con las tres respuestas a la vista, no un AND mecanico.
+// Encontrado reconstruyendo una limpieza real: dos unidades aprobaban "repartible" y se archivaron
+// igual, con motivo escrito. El prompt del que sale el filtro dice "veredicto con una linea de
+// justificacion", no "si alguna dice si, se queda".
+
+test('3R · archivar algo que aprueba una R se permite si el motivo lo explica de verdad', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const conJuicio = registro();
+  conJuicio.batches[0].archived = [archivado('vieja', {
+    repartible: true,
+    reason: 'se le podría pasar a otra persona y le funcionaría igual, pero acá no se invocó ni una vez en 82 días y su contenido es conocimiento público que el modelo ya tiene: el juicio es archivarla',
+  })];
+  assert.deepEqual(validateAblation(conJuicio, contrato, io), []);
+});
+
+test('3R · FALSIFICACIÓN · archivar algo que aprueba una R con un motivo corto se rechaza', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const sinJuicio = registro();
+  sinJuicio.batches[0].archived = [archivado('vieja', {
+    requisito: true,
+    reason: 'no se usa casi nunca en la práctica',
+  })];
+  const violaciones = validateAblation(sinJuicio, contrato, io);
+  assert.equal(violaciones.some((v) => /aprueba|requisito/iu.test(v)), true);
+});
+
+test('3R · FALSIFICACIÓN · un archivado que aprueba una R y no trae motivo escrito se rechaza igual', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  for (const reason of [null, 42, undefined]) {
+    const malo = registro();
+    malo.batches[0].archived = [archivado('vieja', { repartible: true, reason })];
+    assert.deepEqual(
+      { reason: String(reason), rechaza: validateAblation(malo, contrato, io).some((v) => /aprueba/u.test(v)) },
+      { reason: String(reason), rechaza: true },
+    );
   }
 });

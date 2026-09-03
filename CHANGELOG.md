@@ -7,6 +7,40 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La vuelta atrás está probada, y el registro de la limpieza existe.** Se ejercitó PHASE 9 contra
+  una limpieza **real** —la del 2026-09-02 sobre `~/.claude`— en vez de contra un caso de
+  laboratorio, y el registro quedó en `docs/ablation.json`, reconstruido desde la evidencia
+  primaria que quedó en el archivo y desde el historial de git. Nada se completó de memoria.
+  - **La vuelta atrás:** se restauró `skills/design-loop/SKILL.md` desde el commit `3bd5bf4b8481`,
+    se verificó que el contenido fuera byte a byte idéntico al objeto de git —1066 palabras,
+    sha256 `dde8078b969e`— y se volvió a limpiar. El árbol quedó **idéntico**: mismo HEAD, mismo
+    árbol, la misma lista de 16 cambios pendientes.
+  - **La medición:** las cinco tareas del set que nunca se habían re-medido se corrieron hoy en
+    modo **sólo lectura**, y T6 aparte. **Ocho de ocho pasan.** Una que fallaba en la línea base
+    ahora pasa. Ningún agente escribió, editó ni borró nada.
+  - **La hipótesis central de esa limpieza era la skill de seguridad archivada**, y la respuesta es
+    que no hacía falta: **18 clases distintas de vulnerabilidad contra 15 de la línea base**, cada
+    una con su referencia `archivo:línea`.
+- **Aplicar el chequeo a datos reales encontró tres defectos que los casos de prueba no
+  encontraron, y los tres eran del chequeo:**
+  - Exigía que el origen desapareciera, cuando el contrato dice que `CLAUDE.md` se archiva **por
+    líneas**. Modo `lines`: el origen se queda, recortado, con el rango declarado.
+  - Exigía una copia en disco, cuando el procedimiento prescribe **git** como archivo. Modo `git`:
+    repositorio más sha completo, y el gate **le pregunta a git** si el objeto está ahí. Un sha
+    corto o un `HEAD~1` no valen: una referencia que se mueve no es un archivo.
+  - Mecanizaba el filtro de las tres R como un AND que bloqueaba decisiones correctas. Ahora es lo
+    que el prompt define: un **juicio** con las tres respuestas a la vista, y archivar algo que
+    aprobó una de ellas pide un motivo más largo, porque hay que decir por qué el juicio va en
+    contra de la respuesta.
+- **Otro defecto propio, encontrado por la prueba de instalación limpia:** una prueba nueva leía
+  `README.md` con `readFileSync` directo, y **el instalador no copia `README.md` al runtime**. En un
+  proyecto recién instalado explotaba. Es el mismo error que este repo ya había cometido una vez:
+  verificar desde el repositorio de origen en vez de desde el destino.
+- **Respaldo en Obsidian**, que la limpieza original nunca había hecho: 2598 notas más el
+  `graph.canvas`, verificado por su gate.
+- **Límite honesto nuevo (77):** el filtro de las tres R es un juicio; el gate comprueba que las
+  tres estén respondidas y que el motivo sea proporcionado, **no adjudica** si el juicio es correcto.
+
 - **El protocolo se lee sin saber jerga.** Las nueve fases estaban escritas mitad en inglés técnico:
   **165 de 998 líneas de prosa (17%) no tenían una sola palabra en castellano**. Quedó **una**, que
   es una cita textual y se conserva a propósito. Se tradujeron PHASE 1, 3, 5, 6, 7 y 8, el contrato

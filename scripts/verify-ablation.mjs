@@ -84,6 +84,8 @@ const GIT_KEYS = [...ARCHIVED_KEYS, 'mode', 'repo', 'commit'];
 export const MODES = new Set(['file', 'lines', 'git']);
 const SHA = /^[0-9a-f]{40}$/u;
 const MIN_REASON = 20;
+/** Archivar algo que aprobo una de las tres R pide mas explicacion que archivar algo que no. */
+const MIN_JUDGED_REASON = 120;
 
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const exactKeys = (v, keys) => isObject(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
@@ -276,9 +278,14 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
     violations.push(`${donde}: ${entry.path} está protegido por el patrón intocable \`${golpe.pattern}\` — ${golpe.why}`);
     return;
   }
+  // El filtro de las tres R es un JUICIO con las tres respuestas a la vista, no un AND mecanico:
+  // el prompt del que sale dice "veredicto con una linea de justificacion". Medido sobre una
+  // limpieza real: dos unidades aprobaban `repartible` y se archivaron con razon escrita, y la
+  // decision era correcta. Lo que si se exige es proporcion: archivar algo que aprobo una R pide
+  // mas explicacion que archivar algo que no aprobo ninguna.
   const aprueba = R.filter((r) => entry[r] === true);
-  if (aprueba.length > 0) {
-    violations.push(`${donde}: ${entry.path} se archiva pero aprueba ${aprueba.join(' y ')}: el filtro de las tres R dice que se queda`);
+  if (aprueba.length > 0 && !(typeof entry.reason === 'string' && entry.reason.trim().length >= MIN_JUDGED_REASON)) {
+    violations.push(`${donde}: ${entry.path} aprueba ${aprueba.join(' y ')} y se archiva igual con un motivo de ${String(entry.reason ?? '').trim().length} caracteres: archivar algo que pasó el filtro necesita al menos ${MIN_JUDGED_REASON}, porque hay que decir por qué el juicio va en contra de la respuesta`);
   }
   if (R.some((r) => typeof entry[r] !== 'boolean')) {
     violations.push(`${donde}: ${entry.path} no responde las tres R con sí o no`);

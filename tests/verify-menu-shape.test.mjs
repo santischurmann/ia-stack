@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -298,8 +298,12 @@ test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido'
   // La prueba de "los documentos reales pasan" sólo miraba el exit code, así que un menú que
   // DESAPARECIERA del barrido la dejaba verde: el gate contaba menos y decía OK. Acá se fija la
   // invariante que importa — tantos bloques reconocidos como títulos hay en el archivo.
+  // Sólo los documentos que existen: el runtime instalado no lleva README.md ni AGENTS.md, así que
+  // leerlos a ciegas rompía la prueba en una instalación limpia — el mismo error que este proyecto
+  // ya cometió una vez, verificar desde el repo de origen en vez de desde el destino.
   const docs = ['SKILL.md', 'README.md', 'AGENTS.md', '.agents/skills/vibecodeprotocols/SKILL.md',
-    ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
+    ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)]
+    .filter((doc) => existsSync(join(repoRoot, doc)));
   const desajustes = [];
   let total = 0;
   for (const doc of docs) {

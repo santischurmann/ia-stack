@@ -456,6 +456,12 @@
       "file": "SKILL.md",
       "phrase": "El respaldo **no es una promesa**",
       "why": "El registro lleva un campo backup con la evidencia de los dos pasos -- graphify y Obsidian -- y sin el la fase no cierra. Lo que el gate comprueba es que ese campo exista, diga done y traiga evidencia escrita: NO abre el grafo, no cuenta nodos, no mira las notas de Obsidian ni compara hashes. Un backup declarado y no hecho pasa en verde, igual que cualquier otra parte del registro. Lo que si esta comprobado contra el disco es la regla de oro: lo archivado esta en el archivo y ya no en su origen."
+    },
+    {
+      "limit_id": "three-r-is-a-judgement-not-an-and",
+      "file": "SKILL.md",
+      "phrase": "El filtro de las tres R es un juicio",
+      "why": "El gate comprueba que las tres respuestas esten declaradas como si o no, que haya motivo escrito, y que archivar algo que aprobo alguna de las tres traiga un motivo mas largo -- porque hay que decir por que el juicio va en contra de la respuesta. Lo que NO hace es adjudicar el filtro: no decide si el juicio es correcto. Medido sobre una limpieza real: dos unidades aprobaban repartible y se archivaron con razon escrita, y la decision era buena. Una version anterior del gate lo mecanizaba como un AND -- si alguna decia si, bloqueaba -- y eso habria rechazado esas dos decisiones correctas."
     }
   ]
 }
