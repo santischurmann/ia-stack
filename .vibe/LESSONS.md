@@ -201,3 +201,39 @@ ciega»): allá el verde no miraba nada, acá miraba —el archivo equivocado—
 dos la habría marcado. Anotada, no fusionada.
 **Nota de pre-chequeo:** barrido de contenido sensible sobre el commit `383cf4b`, entrada de esta
 lección: cero coincidencias.
+
+## [2026-09-03] LESSON-9 Un caso de prueba inventado no encuentra lo que encuentra el dato real — status: active
+
+**Project/phase/run:** vibecodeprotocols/fase-9/gates-contra-datos-reales-2026-09-03
+**What happened:** dos gates nuevos —el de la limpieza y el de la forma de los menús— salieron con
+su batería completa en verde y con pruebas de falsificación. Aplicarlos después a datos que ya
+existían encontró **seis defectos, los seis del gate**: exigía que el origen desapareciera cuando
+el contrato manda archivar por líneas; exigía copia en disco cuando el procedimiento prescribe git;
+mecanizaba como AND un filtro que el prompt define como juicio; comparaba `~/` literal, así que una
+ruta de home al estilo de Windows correctamente archivada se reportaba como borrada; aceptaba una
+sola redacción de la línea de espera; y era ciego a los menús escritos en el formato viejo. Ninguno
+lo encontró un caso de prueba.
+**Why (root cause):** los casos de prueba los escribe la misma persona que escribió el gate, en el
+mismo rato y con el mismo modelo mental. Por construcción sólo pueden contener las formas que esa
+persona ya tenía en la cabeza. El dato real trae las formas que nadie eligió: la ruta que la escribió
+otro sistema operativo, la frase que quedó a mitad de oración, el archivo que se archivó del modo que
+el procedimiento prescribe y el gate no previó. La falsificación ayuda contra el verde vacío, no
+contra el punto ciego: una prueba que falsifica lo que el autor imaginó sigue estando adentro de lo
+que el autor imaginó.
+**How to avoid:** un gate no cierra con su batería en verde. Cierra cuando corrió contra el artefacto
+real más viejo y más raro que haya en el repositorio o en el disco, y contra el que produjo otra
+máquina. Si no existe un dato real todavía, decirlo como límite en vez de contarlo como cobertura.
+**Detection signal:** un gate nuevo cuyas pruebas construyen **todas** sus entradas con un helper del
+propio archivo de pruebas (`registro()`, `menu()`, `doc()`), sin un solo caso leído del repositorio.
+También: un gate que en su primera corrida sobre datos reales acusa algo que estaba bien.
+**Confidence:** high
+
+**Nota de dedup:** `[overlaps with: LESSON-1]` — «enumerar defectos leyendo código no alcanza». Se
+mantiene separada porque LESSON-1 termina donde ésta empieza: allá el salto es de **leer** a
+**ejecutar**, y acá ejecutar ya se hacía —1065 pruebas verdes— y no alcanzó; el salto es de
+**ejecutar contra lo que inventé** a **ejecutar contra lo que ya existe**. Adyacente también a
+`[overlaps with: LESSON-2]` («probar desde afuera antes de declarar terminado»), cuya señal nombra
+instaladores y destinos limpios: acá no hay instalación de por medio y el destino es el repositorio
+de siempre, así que esa señal no lo habría marcado. Anotada, no fusionada.
+**Nota de pre-chequeo:** barrido de contenido sensible sobre la entrada de esta lección: cero
+coincidencias — no nombra rutas de usuario, tokens ni claves.
