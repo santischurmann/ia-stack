@@ -1286,8 +1286,18 @@ test('PHASE 9 conserva la exigencia de que las tareas sean reales', () => {
 });
 
 test('la plantilla del registro no trae rutas de otro proyecto', () => {
-  // templates/ se copia a cada instalacion: una ruta ajena aca viaja a terceros.
-  const ajeno = /el proyecto|el expert advisor|generacion-de-licencias|RiskGuard|un-archivo-ajeno/iu;
+  // templates/ y skills/ se copian a cada instalacion: una ruta ajena aca viaja a terceros.
+  //
+  // Se busca por FORMA, no por una lista de nombres. La primera version de esta guarda nombraba los
+  // productos que buscaba -- y asi el detector era, el mismo, la mencion que decia impedir --, y
+  // ademas solo podia encontrar lo que quien la escribio ya conocia: la redaccion del 0442115 se
+  // dejo una referencia adentro justamente por eso. Lo que se busca es la firma de una ruta que
+  // apunta afuera: una referencia `archivo.ext:linea` con una extension que este proyecto NO tiene
+  // -- lo versionado es .mjs, .json, .md, .sh, .ps1, .html, .txt --, o una ruta absoluta con el home
+  // de un usuario. Acotar por extension ajena y no por cualquier `archivo:linea` es a proposito: las
+  // plantillas usan ejemplos legitimos como `auth.js:42` y `ruta/dentro/del/repo.ts:1` para explicar
+  // el formato, y una guarda que los acusa se apaga al segundo dia.
+  const ajeno = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|java|cs|rb|go|php|swift|kt|cpp|hpp):\d+|[A-Za-z]:[\\/]Users[\\/]/u;
   const sucios = [];
   for (const dir of ['templates', 'skills']) {
     const base = join(repoRoot, dir);
@@ -1303,4 +1313,30 @@ test('la plantilla del registro no trae rutas de otro proyecto', () => {
     }
   }
   assert.deepEqual(sucios, []);
+});
+
+// --- La redaccion del 0442115 se dejo `un modulo de otro producto` adentro del registro, y la guarda que
+// escribi para verificarla NO lo vio: buscaba los nombres que yo ya conocia. Una guarda hecha con la
+// misma lista que la redaccion solo puede encontrar lo que la redaccion ya penso. Lo agarro una
+// auditoria con lentes ciegas, no la guarda.
+//
+// Este chequeo no usa nombres: busca la FORMA. Una referencia `archivo.ext:linea` dentro del
+// registro apunta a un arbol que no es este, porque las rutas de este repo se citan relativas y sin
+// numero de linea en los campos de evidencia.
+
+test('el registro de la limpieza no cita archivo:linea de ningun arbol', () => {
+  const registro = readFileSync(join(repoRoot, 'docs', 'ablation.json'), 'utf8');
+  // Extension seguida de dos puntos y numero: la firma de una referencia a codigo ajeno.
+  const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
+  const encontradas = [...new Set(registro.match(REFERENCIA) ?? [])];
+  assert.deepEqual(encontradas, []);
+});
+
+test('FALSIFICACIÓN · la comprobación agarra la referencia que la redacción se dejó', () => {
+  // El texto real que sobrevivio a la redaccion, para que la prueba falle si el chequeo se afloja.
+  const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
+  const real = 'Cita literal: "El piso -- un modulo de otro producto ... todo OOS de 6 meses exige 48 trades"';
+  assert.deepEqual(real.match(REFERENCIA), ['un modulo de otro producto']);
+  // Y no acusa una ruta del propio repo citada como el registro las cita: sin numero de linea.
+  assert.equal('archived_to: .claude-archive/2026-09-02/.claude/skills/cyber-neo/SKILL.md'.match(REFERENCIA), null);
 });

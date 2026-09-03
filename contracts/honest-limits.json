@@ -434,6 +434,12 @@
       "why": "La unica medida de sustancia de un campo es que contenga una letra con caso o un digito, mas un minimo de longitud y una lista negra derivada de la plantilla. Eso alcanza para acusar un campo lleno de invisibles -medido: 15 copias de U+2060 pasaban el gate publicado-, y no alcanza para nada mas: seis campos con la misma frase creible repetida pasan, y una escritura sin distincion de caso (chino, japones, coreano) saldria rechazada aunque el contenido sea real. El repo escribe en espanol e ingles, asi que el falso rojo es teorico hoy y esta declarado en vez de resuelto."
     },
     {
+      "limit_id": "redaction-checks-shape-not-names",
+      "file": "SKILL.md",
+      "phrase": "lo comprueba por la forma y no por una lista de nombres",
+      "why": "La redaccion del registro se comprueba por la FORMA de una referencia -- `archivo.ext:linea` -- y no por una lista de nombres de producto. Eso es deliberado y viene de un fallo medido: la primera redaccion se verifico con una guarda construida a partir de la misma lista que la redaccion, asi que no podia encontrar nada que la redaccion no hubiera pensado ya, y dejo `un modulo de otro producto` adentro de un repositorio publico. Lo encontro despues una auditoria con lentes ciegas. Lo que la comprobacion por forma NO puede hacer: en templates y skills esta acotada a extensiones que este proyecto no usa (.py, .mq5, .java y demas), porque las plantillas ensenan el formato con ejemplos legitimos como `auth.js:42` y una guarda que los acusa se apaga al segundo dia. O sea que una referencia ajena escrita en .js, .ts o .html dentro de una plantilla pasa. Tampoco entiende de nombres: un producto ajeno nombrado sin ruta ni linea no lo ve nadie mas que una persona leyendo."
+    },
+    {
       "limit_id": "menu-shape-example-mark-is-trusted",
       "file": "SKILL.md",
       "phrase": "El gate no juzga si el bloque marcado es de verdad un ejemplo",

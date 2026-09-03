@@ -7,6 +7,39 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La redacción se dejó una referencia adentro, y la guarda que escribí para verificarla no la
+  vio.** Después de redactar el registro se comprobó el resultado con una guarda construida a partir
+  de **la misma lista de nombres** que la redacción. Por construcción sólo podía encontrar lo que la
+  redacción ya había pensado, así que `un modulo de otro producto` —una ruta interna de otro producto, con
+  rango de líneas y una regla de negocio concreta al lado— siguió publicada en un repositorio
+  público hasta hoy. **Una lista sólo encuentra lo que ya pensó quien la escribió.**
+  - Lo encontró una auditoría de **cinco lentes ciegas** —otro-proyecto, seguridad, datos
+    personales, otra área, credenciales—, cada hallazgo verificado por tres escépticos con la
+    instrucción de refutar. 179 agentes, 67 lecturas de archivo, 54 sospechosos, **7 confirmados**.
+  - **El arreglo es de forma, no de lista.** Una prueba nueva rechaza **toda** referencia
+    `archivo.ext:línea` dentro del registro, sin conocer un solo nombre de producto, y su
+    falsificación usa el texto real que sobrevivió para que no se afloje. Se demostró en rojo
+    contra el registro sin redactar antes de aplicarla.
+  - **El detector de plantillas ya no nombra lo que prohíbe nombrar.** Listaba los productos que
+    buscaba, así que el propio detector era la mención que decía impedir. Ahora busca la firma de
+    una ruta que apunta afuera: una referencia con **una extensión que este proyecto no tiene**
+    —lo versionado es `.mjs`, `.json`, `.md`, `.sh`, `.ps1`, `.html`, `.txt`— o una ruta absoluta
+    con el home de un usuario. Acotarlo por extensión ajena es deliberado: las plantillas enseñan el
+    formato con ejemplos legítimos como `auth.js:42`, y una guarda que los acusa se apaga al segundo
+    día.
+  - **La regla de PHASE 9 nombraba el producto que prohíbe nombrar.** Corregida.
+  - **18 rutas con el nombre de usuario del sistema** salieron de 9 documentos de investigación,
+    reemplazadas por `<home>`. Una de ellas era la ruta completa de una transcripción de sesión con
+    su identificador.
+  - **Límite honesto nuevo (79):** la comprobación por forma no entiende de nombres. Un producto
+    ajeno nombrado **sin** ruta ni línea no lo ve ningún chequeo, y en las plantillas una referencia
+    escrita en `.js`, `.ts` o `.html` pasa, porque esas extensiones sí son de este proyecto.
+- **Cerrado el par de nodos que había quedado sin juzgar.** En la barrida de duplicados, los tres
+  escépticos de un par murieron por límite de sesión y el par se resolvió a mano. Rejuzgado ahora
+  con los mismos tres ángulos: **0 de 3 a favor de fusionar**, por la misma razón que los otros diez
+  —un nodo es el encabezado del archivo con su línea, el otro es el concepto; cero vecinos en común—.
+  El juicio manual queda confirmado por votos.
+
 - **Un chequeo que no llegó a terminar decía que había fallado.** La suite fallaba de forma
   intermitente bajo `--test-concurrency=32` —**3 rojas de 6 corridas**— y la causa no estaba en el
   test sino en el gate que ese test ejercita.

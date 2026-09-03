@@ -1544,8 +1544,11 @@ producto de un nombre de módulo requiere saber de qué proyecto se trata.
 
 Antes de commitear el registro, se le sacan **las cuatro cosas que no son de este proyecto**:
 
-1. **Nombres de producto y versiones.** «el expert advisor», no «el expert advisor 1.27».
-2. **Rutas internas de otro árbol.** «el módulo de optimización», no `engine/opt/un modulo de otro producto`.
+1. **Nombres de producto y versiones.** «el expert advisor», no el nombre y el número de versión.
+2. **Rutas internas de otro árbol.** «el módulo de optimización», no la ruta con su archivo y su
+   línea. **Ninguna referencia `archivo.ext:línea` sobrevive a la redacción**, y hay una prueba que
+   lo comprueba por la forma y no por una lista de nombres: una lista sólo encuentra lo que ya
+   pensó quien la escribió, y así fue como la primera redacción se dejó una adentro.
 3. **El modelo de negocio.** Quién paga, quién descarga, cómo se licencia.
 4. **Todo hallazgo de seguridad con archivo y línea.** Queda el **número** —«18 clases de
    vulnerabilidad contra 15 de la línea base»—, que es lo único que la ablación necesita. **La

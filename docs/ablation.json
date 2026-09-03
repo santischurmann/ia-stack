@@ -196,7 +196,7 @@
         {
           "test_id": "T7",
           "outcome": "pass",
-          "evidence": "Medido el 2026-09-02 en solo lectura. Cita literal: \"El piso -- un modulo de otro producto ... todo OOS de 6 meses exige 48 trades, sea diciembre o sea agosto.\" Una sola pregunta, al final, e hipotesis con referencias archivo:linea."
+          "evidence": "Medido el 2026-09-02 en solo lectura. El agente respondio con hipotesis referenciadas a archivo y linea, y una sola pregunta al final. Las referencias concretas NO se transcriben: este repositorio es publico y son de otro producto."
         },
         {
           "test_id": "T8",
