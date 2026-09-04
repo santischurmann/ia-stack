@@ -1474,3 +1474,41 @@ test('FALSIFICACIÓN · la marca exime el párrafo citado y NADA más', () => {
   // Una marca suelta no exime nada ni rompe.
   assert.deepEqual(concurrenciasAfirmadas(marca), []);
 });
+
+// --- El repositorio se renombro a ia-stack y el protocolo que vive adentro sigue llamandose
+// VibeCodeProtocols, a proposito: renombrar la skill habria roto toda instalacion existente por un
+// cambio que era solo de URL. Pero el README quedo con un titulo que no coincide con el repo que lo
+// aloja, y quien clona no tiene donde anclar la diferencia. Esta comprobacion no juzga la
+// redaccion: exige que el README nombre el repositorio en el que de verdad vive.
+
+export function repoRemoto(ejecutar = execFileSync, cwd = repoRoot) {
+  let url;
+  try {
+    url = ejecutar('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf8' }).trim();
+  } catch {
+    // Sin remote no se puede saber contra que comparar. Eso NO es un verde: es no haber medido.
+    throw new Error('NO SE PUDO VERIFICAR: no hay remote `origin`, asi que no se sabe en que repositorio vive este README');
+  }
+  // Se usa match y no el otro metodo de RegExp a proposito: el gate de seguridad marca ese nombre
+  // como ejecucion dinamica y no lo distingue del homonimo de child_process. Es un falso positivo
+  // suyo, no un riesgo de esta linea, y match es equivalente. Este comentario tampoco escribe el
+  // nombre: al hacerlo, el gate marcaba el comentario que explicaba por que no hay que usarlo.
+  const m = url.match(/[/:]([^/]+)\/([^/]+?)(?:\.git)?$/u);
+  if (m === null) throw new Error(`NO SE PUDO VERIFICAR: no se pudo leer duenio/nombre de la url del remote (${url})`);
+  return { duenio: m[1], nombre: m[2] };
+}
+
+test('el README nombra el repositorio en el que vive', () => {
+  const { nombre } = repoRemoto();
+  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  assert.ok(readme.includes(nombre), `el README no nombra a \`${nombre}\`, que es el repositorio donde esta`);
+});
+
+test('FALSIFICACIÓN · leer el repo del remote distingue url, y sin remote no da verde', () => {
+  const fake = (url) => () => url;
+  assert.deepEqual(repoRemoto(fake('https://github.com/santischurmann/ia-stack.git')), { duenio: 'santischurmann', nombre: 'ia-stack' });
+  assert.deepEqual(repoRemoto(fake('git@github.com:otro/proyecto')), { duenio: 'otro', nombre: 'proyecto' });
+  // Sin remote tiene que DOLER, no pasar en silencio.
+  assert.throws(() => repoRemoto(() => { throw new Error('no origin'); }), /NO SE PUDO VERIFICAR/u);
+  assert.throws(() => repoRemoto(fake('basura')), /NO SE PUDO VERIFICAR/u);
+});

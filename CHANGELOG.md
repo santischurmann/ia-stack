@@ -7,6 +7,36 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El repositorio pasó a llamarse `ia-stack` y el protocolo siguió llamándose VibeCodeProtocols.**
+  La distinción es deliberada: la invocación `/VibeCodeProtocols` y el `SKILL_NAME` del instalador
+  están escritos dentro de cada proyecto que ya lo instaló, así que renombrarlos habría roto esas
+  instalaciones por un cambio que era **sólo de URL**.
+  - **El README quedaba con un título que no coincidía con el repositorio que lo aloja**, y quien
+    clonara no tenía dónde anclar la diferencia. Ahora lo dice arriba, y **una prueba —vista en rojo
+    antes— exige que el README nombre el repositorio donde vive**, leído del remote. Si no hay
+    remote, la prueba **no da verde**: dice que no se pudo verificar, que no es lo mismo.
+  - **El nombre anterior dejó de redirigir**, con un repositorio vacío y privado que ocupa el nombre.
+    Comprobado con controles: la ruta vieja da 404 **sin saltar** al nuevo, el nuevo sigue
+    respondiendo, y un repositorio inexistente también da 404 —así que la sonda distingue—.
+  - **Cero archivos versionados necesitaron cambio de nombre.** `INSTALL.md` usa un marcador
+    `<repo-url>`. Las dos menciones de la ruta completa se dejaron intactas **a propósito**: son
+    registro histórico —un receipt de un comando corrido el 2026-08-29 y una nota que cita el README
+    de una fuente externa—. Reescribirlas sería falsear evidencia.
+
+- **El gate de seguridad marca `.exec(` de una expresión regular como ejecución dinámica**, sin poder
+  distinguirlo del homónimo de `child_process`. Es un piso de patrones, y su límite honesto ya lo
+  dice; queda anotado acá para que no se vuelva a descubrir. Se usó `match`, que es equivalente.
+  - **Y una vuelta más de lo mismo:** el comentario escrito para explicar el falso positivo
+    **nombraba el token**, así que el gate marcó el comentario. El detector volvió a tropezar con el
+    texto que lo describe — la misma forma que este repositorio ya había arreglado en el detector de
+    plantillas, que listaba los nombres que prohibía mencionar.
+
+- **Las 231 etiquetas del grafo volvieron al castellano sin volver a llamar al LLM.** El archivo de
+  firmas que acompaña a las etiquetas **indexa por comunidad y no firma el texto**: mapea número de
+  comunidad a un hash de pertenencia, así que cambiar el nombre no lo invalida. Verificado antes de
+  escribir —231 claves, cero faltantes, cero sobrantes— y medido después: **0 nombres de archivo y
+  0 marcadores vacíos**.
+
 - **El contrato tenía clavada una afirmación falsa del README, y por eso la corrección anterior sólo
   pudo arreglar la mitad.** El README decía en un párrafo que la cobertura corre con
   `--test-concurrency=32` y en la fila de su propia tabla de gates que «usa 1 worker por defecto».

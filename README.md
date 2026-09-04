@@ -12,6 +12,13 @@ Es un protocolo autocontenido: instala un runtime local con documentación, temp
 ejecutables. No necesita descargar otros skills ni conectar servicios externos para aplicar su
 flujo base.
 
+> **El repositorio se llama `ia-stack`; el protocolo que vive adentro se llama VibeCodeProtocols.**
+> No es un descuido. El repositorio se renombró y la skill **no**, porque la invocación
+> `/VibeCodeProtocols` y el `SKILL_NAME` del instalador están escritos en cada proyecto que ya lo
+> instaló: renombrarlos habría roto esas instalaciones por un cambio que era sólo de URL. El nombre
+> anterior del repositorio ya no redirige acá. Una prueba comprueba que este README siga nombrando
+> al repositorio donde vive, para que los dos nombres no vuelvan a separarse en silencio.
+
 ## Para qué sirve
 
 VCP organiza el trabajo de Claude Code, Codex u otro agente que pueda leer Markdown y ejecutar
