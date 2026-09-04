@@ -450,6 +450,11 @@ test('el contrato real de límites honestos del repositorio verifica en verde, y
   assert.ok(limits.length >= 80, `el contrato declara ${limits.length} límites: una caída así se mira`);
 });
 
+
+// El quinto argumento -- la raiz del script -- va explicito: esta prueba mide la LOGICA del contrato
+// contra un fixture, no el contexto donde vive el gate. Sin el, adentro del runtime instalado de otra
+// persona la guarda escribe VACIO y la prueba mide otra cosa. Se puso en rojo ahi, no aca.
+
 test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUIREMENTS y falla si el contrato falta, no parsea o la frase se debilitó', () => {
   const root = mkdtempSync(join(tmpdir(), 'vcp-honest-limits-'));
   try {
@@ -457,12 +462,12 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
     const rejections = (errors) => errors.filter((line) => line.startsWith('REJECTED'));
 
     const absent = [];
-    assert.equal(main(['check'], root, () => {}, (line) => absent.push(line)), 1);
+    assert.equal(main(['check'], root, () => {}, (line) => absent.push(line), root), 1);
     assert.match(absent.join('\n'), /honest-limits\.json/u);
 
     writeHonestLimits(root, '{ "schema": "vcp.honest-limits/1", "limits": [');
     const malformed = [];
-    assert.equal(main(['check'], root, () => {}, (line) => malformed.push(line)), 1);
+    assert.equal(main(['check'], root, () => {}, (line) => malformed.push(line), root), 1);
     assert.match(malformed.join('\n'), /honest-limits\.json/u);
 
     const limit = {
@@ -473,12 +478,12 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
     };
     writeHonestLimits(root, honestLimitsDocument([limit]));
     const output = [];
-    assert.equal(main(['check'], root, (line) => output.push(line), () => {}), 0);
+    assert.equal(main(['check'], root, (line) => output.push(line), () => {}, root), 0);
     assert.match(output.at(-1), /1 honest limit/u);
 
     writeContractFixture(root, { 'README.md': completeRead('README.md').replace(limit.phrase, 'El gate prueba comprensión') });
     const weakened = [];
-    assert.equal(main(['check'], root, () => {}, (line) => weakened.push(line)), 1);
+    assert.equal(main(['check'], root, () => {}, (line) => weakened.push(line), root), 1);
     // Los límites se suman a los REQUIREMENTS, no los reemplazan: acá el único rechazo es el límite.
     assert.equal(rejections(weakened).length, 1);
     assert.match(weakened.join('\n'), /graphify-coverage-is-bookkeeping/u);
