@@ -251,8 +251,9 @@ el working tree cambió.
 
 ## Los gates mecánicos
 
-La medición de cobertura Node usa un worker por defecto para que sea repetible; podés subirlo con
-`VCP_TEST_CONCURRENCY=<n>` si tu entorno está preparado. La cobertura de shell prefiere Git Bash
+La medición de cobertura Node corre la suite con `--test-concurrency=32`, el mismo valor que usa
+el protocolo. `VCP_TEST_CONCURRENCY=<n>` existe para **bajarlo** en una máquina con menos
+núcleos, no para volver a esconder un rojo serializando. La cobertura de shell prefiere Git Bash
 en Windows para no confundir el shim de WSL con un Bash funcional (`VCP_BASH_PATH` permite indicar
 otro binario).
 
@@ -294,6 +295,23 @@ otro binario).
 | `verify-handoff-report.mjs` | Cada entrega entre roles declara explícitamente qué NO revisó su autor, para que una revisión acotada no se lea como completa. | **No bloquea placeholders en castellano: `ninguno` y `nada` pasan igual.** La lista de rellenos prohibidos son literales en inglés (`n/a`, `unknown`, `nothing`), así que el equivalente en castellano satisface el gate sin declarar nada. |
 | `verify-menu-shape.mjs` | Que cada decisión del protocolo esté escrita como lista de opciones con recomendación explícita y línea de espera. La plantilla anterior las escribía dentro de un bloque de código, que colapsa a un solo párrafo: el protocolo prescribía por escrito el único formato que garantiza que un menú no se vea como menú. | **Verifica las plantillas, no la conversación.** No puede saber qué mensaje escribió el agente ni cómo lo pintó la terminal, y nada verifica eso de forma portable. Tampoco juzga si las opciones son buenas. |
 | `verify-ablation.mjs` | El registro de la limpieza de PHASE 9: set de 6 a 8 tareas acordado antes de mover nada, línea base, tandas de a cinco, re-medición, filtro de las tres R sin contradecirse, respaldo previo en graphify y Obsidian, y la regla de oro comprobada contra el disco — lo archivado está en el archivo y ya no en su origen. `due` calcula si pasaron los 7 días. | **Verifica el registro, no la ablación.** No corre las pruebas del set, no juzga si son representativas y no sabe si un resultado que dice «igual» era igual: un registro coherente e inventado pasa en verde. |
+| `verify-discovery-requirements.mjs` | El inventario de requisitos de Discovery: ciclo de vida, reemplazos y cierre de fase. Corre los selftests anidados que cada fase declara. | Un selftest que **no llegó a terminar** ya no se reporta como fallado: lanza `DISCOVERY_SELFTEST_UNFINISHED` con el techo que cruzó. El techo se sube con `VCP_SELFTEST_TIMEOUT_MS`. |
+| `verify-discovery-views.mjs` | Las vistas Markdown de un run de Discovery son derivadas y reproducibles: mismo run, mismo byte. | Prueba determinismo y forma, no que la vista describa bien el run. |
+| `verify-empty-probe.mjs` | Cada gate se comporta sobre un directorio vacío como declara `contracts/empty-probe.json`: el que no puede verificar dice `VACÍO`, no `OK`. | Prueba **una** invocación por gate, la que declara el contrato. Un gate con varios subcomandos puede tener un camino vacío en otro que la sonda no ve. |
+| `verify-intake.mjs` | El intake de Phase 1.5: que las preguntas obligatorias estén respondidas y con la forma declarada. | Comprueba **forma, nunca verdad**. No sabe si una respuesta es correcta ni si alguien la contestó de verdad: un intake coherente e inventado pasa igual. |
+| `verify-phase-decisions.mjs` | El registro de decisiones por fase, encadenado por hash: menú, recomendación, opción elegida y justificación. | Demuestra que la decisión quedó **registrada de forma coherente**, no que la persona la haya querido ni entendido sus consecuencias. |
+| `verify-phase-menu.mjs` | El menú de una fase contra su plan: que las opciones ofrecidas sean las del plan y en el orden declarado. | Prueba forma, orden y hashes; no que una persona haya elegido realmente, ni que el plan sea el producto correcto. |
+| `verify-research-candidates.mjs` | Los candidatos de Research: forma y procedencia de cada uno, con su contraejemplo, costo y condición de adopción. | No abre el archivo citado ni comprueba que la línea diga lo que el candidato afirma. Tampoco juzga si el contraejemplo es bueno. |
+| `verify-research-citations.mjs` | Cada cita del informe está registrada contra una fuente pineada por commit. | Comprueba el registro, no el contenido: que la cita exista en el índice no prueba que el texto citado diga eso. |
+| `verify-triangulate.mjs` | Los 26 vectores de triangulación declarados, cada uno cubierto o con un motivo escrito de por qué no aplica. | Comprueba **forma**. No abre la prueba que un vector dice tener ni verifica que ejercite ese vector: un `covered` que nombra un archivo cualquiera pasa igual. |
+| `verify-lessons.mjs` | El formato de `LESSONS.md`: los seis campos de cada lección, identificadores únicos y marcas de dedup que resuelven. | Verifica forma y referencias. **No** verifica que la causa raíz declarada sea la real, ni que la señal de detección detecte algo. |
+| `verify-session-state.mjs` | Que `SESSION.md` sea retomable: problemas con intentos declarados y sin interrupciones sin registrar. | Comprueba que el estado esté escrito, no que sea verdadero: una sesión puede declararse retomable y no serlo. |
+| `verify-resume-state.mjs` | La identidad al retomar: que la sesión que continúa sea la que dice ser. | Compara lo declarado contra el árbol; no puede saber quién está del otro lado del teclado. |
+| `verify-runtime-sync.mjs` | Que el runtime instalado en `.vibe/vcp-runtime` sea byte a byte el de este checkout, archivo por archivo. | Compara contenido. No prueba que el runtime instalado sea el que el agente efectivamente cargó en su contexto. |
+| `verify-spec-wordcap.mjs` | El tope de palabras del spec, excluyendo tablas y bloques de código. | Cuenta palabras. Un spec corto no es un spec bueno, y el gate no distingue. |
+| `verify-design-tokens.mjs` | Que cada superficie declarada tenga sus tokens completos en los tres estados de tema. | Comprueba completitud de tokens, no que el resultado se vea bien ni que contraste lo suficiente. |
+| `verify-product-diagnostics.mjs` | El paquete de diagnóstico de producto de una feature: que las dimensiones declaradas estén respondidas. | Forma otra vez: un diagnóstico completo y equivocado pasa igual. |
+| `verify-shell-coverage.mjs` | La cobertura de los scripts Bash y PowerShell contra los escenarios que declara su contrato. | Mide **líneas ejecutadas, no ramas**: un `if` cuenta como cubierto apenas se evalúa, sin importar si el `else` se probó alguna vez. |
 
 El hook opcional `pretooluse-red.mjs` agrega fricción a `Write` y `Edit`: exige receipts
 consistentes, tests reales hasheados y TTL válido. No es un sandbox ni un límite de confianza:
@@ -393,8 +411,11 @@ Para crear un paquete distribuible:
 ./scripts/build-zip.sh
 ```
 
-El empaquetador usa una allowlist, rechaza paths inseguros y genera el SHA-256 del ZIP. Nunca
-incluye `.git`, `.env`, `node_modules` ni backups locales.
+El empaquetador arma el paquete desde `git ls-files`, **archivo por archivo**, acotado a la
+allowlist de distribución: lo que no está versionado no viaja, ni siquiera si está adentro de un
+directorio incluido. Si el árbol no es un repositorio **falla cerrado**, porque publicar sin
+poder distinguir lo versionado de lo local es peor que no publicar. Rechaza paths inseguros y
+genera el SHA-256 del ZIP.
 
 ## Documentación
 

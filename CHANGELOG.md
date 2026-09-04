@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El README tenía una afirmación falsa sobre su propia herramienta y un mapa incompleto.**
+  - **Falsa:** decía que la medición de cobertura «usa un worker por defecto» y que
+    `VCP_TEST_CONCURRENCY` servía para subirlo. La constante del script se llama
+    `DEFAULT_TEST_CONCURRENCY = '32'`, y la variable existe para **bajarlo** en una máquina con menos
+    núcleos. El propio README lo decía bien treinta líneas más abajo: se contradecía consigo mismo.
+  - **Vencida:** describía el empaquetador como «usa una allowlist… nunca incluye `.git`, `.env`,
+    `node_modules` ni backups locales». Eso dejó de ser cierto en cuanto se supo que la allowlist
+    sólo acota el nivel de arriba. Ahora dice lo que hace: arma el paquete desde `git ls-files`,
+    archivo por archivo, y falla cerrado fuera de un repositorio.
+  - **Incompleto:** la tabla de gates listaba **19 de 36**. Fue quedando atrás a medida que el
+    protocolo crecía. Un mapa incompleto no miente en lo que dice, pero **omite en silencio**: nadie
+    se entera de que existe un gate que nadie describió. Agregados los 17 que faltaban, cada uno con
+    el límite que el propio gate declara en su cabecera; donde no había bloque declarado, con lo que
+    su salida dice que comprueba.
+  - **Una prueba lo mantiene sincronizado en las dos direcciones:** la tabla no puede omitir un gate
+    que existe, y tampoco nombrar uno que ya no existe.
+
 - **El empaquetador del release entregaba directorios y confiaba en que la lista blanca alcanzara.**
   La lista blanca acota el nivel de arriba y nada más: adentro de `scripts/`, `contracts/`,
   `tests/`, `skills/`, `templates/` y `examples/`, `zip -r` se lleva **todo lo que haya en disco**,

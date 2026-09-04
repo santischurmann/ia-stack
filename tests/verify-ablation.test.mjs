@@ -1389,3 +1389,22 @@ test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se ve
   assert.ok(versionados.length > 0, 'el listado de versionados no puede venir vacio');
   assert.deepEqual(versionados.filter((r) => preguntar(r).status === 0), []);
 });
+
+// --- La tabla de gates del README es el mapa que lee quien llega al proyecto. Fue quedando atras:
+// listaba 19 de 36. Un mapa incompleto no miente en lo que dice, pero omite en silencio, y nadie se
+// entera de que existe un gate que nadie describio. La tabla se compara contra el disco.
+
+test('la tabla de gates del README nombra todos los gates que existen', () => {
+  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const enTabla = new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]));
+  const enDisco = readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f));
+  assert.deepEqual(enDisco.filter((g) => !enTabla.has(g)).sort(), []);
+});
+
+test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe', () => {
+  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const enTabla = [...new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]))];
+  const enDisco = new Set(readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f)));
+  assert.ok(enTabla.length > 0, 'la tabla no puede venir vacia');
+  assert.deepEqual(enTabla.filter((g) => !enDisco.has(g)).sort(), []);
+});
