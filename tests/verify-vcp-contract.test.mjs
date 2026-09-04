@@ -6,7 +6,17 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-vcp-contract.mjs');
 const {
   FORBIDDEN_PHRASES,
@@ -196,7 +206,7 @@ test('FALSIFICACIÓN · contract rejects SKILL.md missing the mechanical spec wo
   assert.equal(missingWordcap.some((item) => /SKILL\.md: missing mechanical spec word-cap gate/u.test(item)), true);
 });
 
-test('main reports pass, invalid usage and a real repository contract failure without trusting narration', () => {
+test('main reports pass, invalid usage and a real repository contract failure without trusting narration', SOLO_FUENTE, () => {
   const output = [];
   const errors = [];
   assert.equal(main(['check'], repoRoot, (line) => output.push(line), (line) => errors.push(line)), 0);
@@ -417,7 +427,7 @@ test('FALSIFICACIÓN · AC10 · debilitar una frase de límite honesto en README
   ]);
 });
 
-test('el contrato real de límites honestos del repositorio verifica en verde contra README.md, SKILL.md y SECURITY.md', () => {
+test('el contrato real de límites honestos del repositorio verifica en verde contra README.md, SKILL.md y SECURITY.md', SOLO_FUENTE, () => {
   const readRepositoryFile = (path) => readFileSync(join(repoRoot, path), 'utf8');
   const limits = readHonestLimits(readRepositoryFile);
   assert.deepEqual(honestLimitViolations(readRepositoryFile, limits), []);

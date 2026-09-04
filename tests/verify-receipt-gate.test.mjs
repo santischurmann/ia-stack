@@ -7,7 +7,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const receiptGate = join(repoRoot, 'scripts', 'verify-receipt.mjs');
 const {
   parseRawDiff, byPath, formatEntry, isWithin, safeRegularFile,
@@ -1020,7 +1030,7 @@ test('FALSIFICACION · una firma MALA rechaza aunque no se pida firma', () => {
   assert.match(judgeSignature(mala, false).mensaje, /no valida/iu);
 });
 
-test('FALSIFICACION · el CLI real informa la custodia del recibo de este repo', () => {
+test('FALSIFICACION · el CLI real informa la custodia del recibo de este repo', SOLO_FUENTE, () => {
   const run = spawnSync(process.execPath, [receiptGate, 'custody', 'contracts/honest-limits.json'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /^(OK|VAC)/u);
@@ -1028,7 +1038,7 @@ test('FALSIFICACION · el CLI real informa la custodia del recibo de este repo',
   assert.match(run.stdout + run.stderr, /firma como vos/iu);
 });
 
-test('FALSIFICACION · custody sin recibo sale 2, y un recibo sin commitear sale VACIO', () => {
+test('FALSIFICACION · custody sin recibo sale 2, y un recibo sin commitear sale VACIO', SOLO_FUENTE, () => {
   const sinArg = spawnSync(process.execPath, [receiptGate, 'custody'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(sinArg.status, 2);
 

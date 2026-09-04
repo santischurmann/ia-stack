@@ -85,3 +85,21 @@ test('FALSIFICACIÓN · la guarda de entorno reconoce una instalación y no un c
   // Y el atajo que usan las pruebas: en el checkout no saltea nada.
   assert.equal(saltarSiEsRuntimeInstalado(t, repoRoot, 'prueba'), esRuntimeInstalado(repoRoot));
 });
+
+// --- LO QUE FALTA, Y NO SE FINGE QUE ESTE.
+//
+// La regla de arriba mira que ARCHIVOS lee una prueba. Falta la otra mitad: a QUIEN le pregunta.
+// Diez de los veintiseis fallos de una instalacion no leian ningun archivo de la raiz -- le pasaban
+// `repoRoot` a un gate o corrian `git` con `cwd: repoRoot`, y el instalador gitignora el runtime,
+// asi que git devuelve cero para todo.
+//
+// Esas diez se marcaron A MANO. Intente la regla de forma dos veces y las dos sobre-disparo:
+// primero marcando toda prueba que pasa `repoRoot` a cualquier funcion -- legitimo cuando lee un
+// archivo copiado --, y despues acotandola a git con una ventana de contexto, que agarra `git` y
+// `repoRoot` en partes del archivo que no tienen que ver entre si. Marcar pruebas correctas para
+// que mi regla quede verde habria sido peor que no tener regla: un guarda que grita en falso se
+// ignora, y uno que se ignora no detecta nada.
+//
+// Entonces queda dicho: el marcado de esa clase es MANUAL y puede volver a romperse. Lo que lo
+// cubre hoy no es una regla, es la medicion de punta a punta -- instalar en un proyecto limpio y
+// correr la suite, que hoy da cero fallos.

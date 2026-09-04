@@ -6,6 +6,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import {
   LIMIT,
   SCHEMA,
@@ -22,6 +24,14 @@ import {
 } from '../scripts/verify-research-citations.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-research-citations.mjs');
 
 const REPORT = [
@@ -292,7 +302,7 @@ test('main sin argumentos imprime el uso y devuelve 2', () => {
   assert.equal(errores.join('\n'), USAGE);
 });
 
-test('el gate corre de verdad contra el contrato del repositorio', () => {
+test('el gate corre de verdad contra el contrato del repositorio', SOLO_FUENTE, () => {
   const run = spawnSync(process.execPath, [script, 'check', 'contracts/research-citations.json'], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -302,7 +312,7 @@ test('el gate corre de verdad contra el contrato del repositorio', () => {
   assert.ok(run.stdout.includes(LIMIT));
 });
 
-test('el CLI rechaza argumentos sin leer nada', () => {
+test('el CLI rechaza argumentos sin leer nada', SOLO_FUENTE, () => {
   const run = spawnSync(process.execPath, [script], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(run.status, 2);
   assert.match(run.stderr, /usage:/u);
@@ -410,7 +420,7 @@ test('FALSIFICACION · una sonda con mas hallazgos que archivos escaneados no pa
   assert.match(fallas[0], /escaneado/u);
 });
 
-test('el contrato del repositorio trae el barrido y sus seis sondas validas', () => {
+test('el contrato del repositorio trae el barrido y sus seis sondas validas', SOLO_FUENTE, () => {
   const raw = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'research-citations.json'), 'utf8'));
   assert.equal(raw.sweep.probes.length, 6);
   assert.ok(raw.sweep.scanned > 14000, `escaneados: ${raw.sweep.scanned}`);

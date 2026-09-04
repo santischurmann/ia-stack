@@ -17,11 +17,16 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
   ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
   : {};
 
+// El import va CONDICIONADO, no suelto. `research/` no se copia al proyecto de otra persona, y un
+// import de nivel de modulo corre antes de que exista una prueba que saltear: el archivo no fallaba,
+// no arrancaba, con un stack trace de ERR_MODULE_NOT_FOUND. Es el peor modo de fallo posible, y
+// justo el que el encabezado de este archivo dice haber venido a eliminar. La guarda por prueba no
+// alcanza para esto: hay que no importar.
 const helper = join(repoRoot, 'research', 'require-artifact.mjs');
 const {
   MISSING_ARTIFACT, UNREADABLE_ARTIFACT, ResearchArtifactError,
   loadJsonArtifact, loadTextArtifact, reportArtifactProblem,
-} = await import(pathToFileURL(helper).href);
+} = esRuntimeInstalado(repoRoot) ? {} : await import(pathToFileURL(helper).href);
 
 /** assert.throws no devuelve el error, y acá el mensaje ES lo que se prueba. */
 function capturar(fn) {

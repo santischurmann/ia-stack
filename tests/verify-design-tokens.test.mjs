@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import {
   DARK_MEDIA,
   DARK_STAMPED,
@@ -21,6 +23,14 @@ import {
 } from '../scripts/verify-design-tokens.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-design-tokens.mjs');
 
 /** Una superficie sana minima: paleta clara, las dos oscuras identicas, pares completos, radio
@@ -303,7 +313,7 @@ test('extractTokenBlocks descarta un selector :root que no es ninguno de los tre
   assert.equal(bloques[0].tokens.get('paper'), '#fff', 'gana el bloque claro de verdad');
 });
 
-test('readContract y main leen del disco real cuando no se les pasa un lector', () => {
+test('readContract y main leen del disco real cuando no se les pasa un lector', SOLO_FUENTE, () => {
   const { document, error } = readContract('contracts/design-tokens.json');
   assert.equal(error, null);
   assert.ok(document.surfaces.length > 0);
@@ -331,7 +341,7 @@ test('classifyBlock acepta el selector con y sin comillas, como lo escribe una p
   assert.equal(classifyBlock(':root[data-theme="light"]'), null, 'el claro estampado no redefine la paleta');
 });
 
-test('main corrido sólo con argumentos usa sus salidas por defecto', () => {
+test('main corrido sólo con argumentos usa sus salidas por defecto', SOLO_FUENTE, () => {
   assert.equal(main(['check', 'contracts/design-tokens.json']), 0);
   // Sin argumentos toma los de la línea de comandos, que en una corrida de pruebas no son `check`.
   assert.equal(main(undefined, {}, () => {}, () => {}), 2);
@@ -362,7 +372,7 @@ test('un archivo sin ninguna regla body no satisface el fondo declarado', () => 
 
 // --- El contrato real de este repositorio ---------------------------------------------------------
 
-test('el mapa del protocolo de este repositorio cumple su propio contrato de diseño', () => {
+test('el mapa del protocolo de este repositorio cumple su propio contrato de diseño', SOLO_FUENTE, () => {
   const run = spawnSync(process.execPath, [script, 'check', 'contracts/design-tokens.json'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(run.status, 0, `${run.stdout}${run.stderr}`);
   assert.match(run.stdout, /^OK:/u);

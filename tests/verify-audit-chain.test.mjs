@@ -895,7 +895,7 @@ test('el árbol de trabajo también puede declarar su propio corte', () => {
   assert.equal(verifyGrowth(versions, `otra cosa\n${REWRITE_DECLARATION}\n`).ok, true);
 });
 
-test('la traza real de este repositorio pasa history con su reescritura declarada', () => {
+test('la traza real de este repositorio pasa history con su reescritura declarada', SOLO_FUENTE, () => {
   const salida = [];
   const errores = [];
   const code = historyCommand(['history', '.vibe/AUDIT.md'], { cwd: repoRoot }, (l) => salida.push(l), (l) => errores.push(l));

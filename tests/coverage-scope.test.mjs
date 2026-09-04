@@ -12,7 +12,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const contract = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'coverage-scope.json'), 'utf8'));
 const { listMjsScripts } = await import(pathToFileURL(join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs')).href);
 
@@ -58,7 +68,7 @@ test('cada exclusión con deuda la escribe, y ninguna sin deuda la finge', () =>
   }
 });
 
-test('ningún archivo Node del repositorio queda fuera del contrato', () => {
+test('ningún archivo Node del repositorio queda fuera del contrato', SOLO_FUENTE, () => {
   const archivos = repoMjs();
   assert.ok(archivos.length > 50, `git ls-files devolvió ${archivos.length} archivo(s): el barrido no miró el repositorio`);
   const declarados = new Set([...contract.measured, ...contract.excluded].map((entrada) => entrada.directory));
@@ -66,7 +76,7 @@ test('ningún archivo Node del repositorio queda fuera del contrato', () => {
   assert.deepEqual(huerfanos, [], `directorio(s) con archivos .mjs que el contrato de alcance no menciona: ${huerfanos.join(', ')}`);
 });
 
-test('lo que el gate inventaría es exactamente lo que el contrato declara medido', () => {
+test('lo que el gate inventaría es exactamente lo que el contrato declara medido', SOLO_FUENTE, () => {
   // Si el inventario y el contrato se separan, el contrato pasa a describir algo que no ocurre.
   const medidos = new Set(contract.measured.map((entrada) => entrada.directory));
   const inventario = listMjsScripts(repoRoot);

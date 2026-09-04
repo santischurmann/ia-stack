@@ -1390,7 +1390,7 @@ test('un artefacto de investigacion con fecha nueva queda ignorado igual', () =>
   assert.deepEqual(futuros.filter((r) => preguntar(r).status !== 0), []);
 });
 
-test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se versionan', () => {
+test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se versionan', SOLO_FUENTE, () => {
   // Un patron demasiado ancho dejaria de versionar la sintesis sin que nadie lo note.
   const preguntar = (ruta) => spawnSync('git', ['check-ignore', '-q', ruta], { cwd: repoRoot, encoding: 'utf8' });
   const versionados = execFileSync('git', ['ls-files', 'research/'], { cwd: repoRoot, encoding: 'utf8' })

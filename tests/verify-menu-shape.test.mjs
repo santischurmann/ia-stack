@@ -4,9 +4,19 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import { EMPTY, LIMITS, USAGE, main, parseMenus, validateMenus } from '../scripts/verify-menu-shape.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const RUTA = 'doc.md';
 
 const menu = ({
@@ -32,7 +42,7 @@ function corrida(texto, args = ['check', RUTA]) {
 
 // --- Falso rojo: los documentos reales del protocolo tienen que pasar --------------------------
 
-test('los documentos reales de VCP pasan: un gate que obliga a escribir mal es peor que ninguno', () => {
+test('los documentos reales de VCP pasan: un gate que obliga a escribir mal es peor que ninguno', SOLO_FUENTE, () => {
   const docs = ['SKILL.md', 'README.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
   const rojos = [];
   for (const doc of docs) {
@@ -197,7 +207,7 @@ test('un documento con CRLF se verifica igual que uno con LF', () => {
   assert.deepEqual(validateMenus(lf.replace(/\n/gu, '\r\n')), validateMenus(lf));
 });
 
-test('el propio README menciona el formato de menú que el gate exige', () => {
+test('el propio README menciona el formato de menú que el gate exige', SOLO_FUENTE, () => {
   const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
   assert.match(skill, /La forma canónica es una lista Markdown/u);
 });
@@ -294,7 +304,7 @@ test('FR-5 · pero un encabezado de sección sí cierra un menú sin línea de e
   assert.deepEqual({ cerrado: bloque.closed, absorbio: bloque.body.some((r) => r.text.includes('esto es prosa')) }, { cerrado: false, absorbio: false });
 });
 
-test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido', () => {
+test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido', SOLO_FUENTE, () => {
   // La prueba de "los documentos reales pasan" sólo miraba el exit code, así que un menú que
   // DESAPARECIERA del barrido la dejaba verde: el gate contaba menos y decía OK. Acá se fija la
   // invariante que importa — tantos bloques reconocidos como títulos hay en el archivo.
@@ -384,7 +394,7 @@ test('FR-2 · FALSIFICACIÓN · la marca de ejemplo no tapa el menú siguiente',
 // bloque 🔵" pasó a ser una promesa más grande que la comprobación. Y el emoji sólo significa algo
 // si está reservado: si se usa para avisos, un aviso correcto se ve como un menú roto.
 
-test('CONTR-1 · ningún documento promete más de lo que el gate comprueba', () => {
+test('CONTR-1 · ningún documento promete más de lo que el gate comprueba', SOLO_FUENTE, () => {
   const archivos = ['SKILL.md', 'README.md', 'CHANGELOG.md'];
   const excepcion = /salvo|excepto|marcad[oa] como ejemplo|declara.{0,20}ejemplo/iu;
   const promesa = /(todo|cada) bloque `?🔵/iu;
@@ -408,7 +418,7 @@ test('CONTR-1 · FALSIFICACIÓN · la comprobación agarra una promesa sin su ex
   assert.equal(excepcion.test(linea), false);
 });
 
-test('FR-4 · el emoji de decisión está declarado como reservado', () => {
+test('FR-4 · el emoji de decisión está declarado como reservado', SOLO_FUENTE, () => {
   // El gate rechaza un 🔵 que no sea un menú. Eso sólo es correcto si el documento dice que el
   // emoji es exclusivo de las decisiones: si no, un aviso legítimo se lee como un menú roto.
   const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');

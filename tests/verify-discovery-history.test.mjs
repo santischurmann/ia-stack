@@ -9,6 +9,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import {
   IMMUTABLE_IN_RUN,
   findMutations,
@@ -188,8 +190,15 @@ test('main informa las tres salidas de history: sin ancla, con violación y verd
 
 // --- El repositorio real ---------------------------------------------------------------------------------
 
-test('el expediente real de este repositorio sólo creció', () => {
+test('el expediente real de este repositorio sólo creció', (t) => {
   const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+  // Self-check del repositorio de VCP: le pregunta a git por ESTE checkout, con un slug de feature
+  // de VCP. Adentro del runtime instalado de otra persona no hay nada que afirmar, y ademas el
+  // instalador gitignora el runtime, asi que git tampoco puede contestar. Se saltea diciendo por que.
+  if (esRuntimeInstalado(repoRoot)) {
+    t.skip('runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala');
+    return;
+  }
   const r = verifyDiscoveryGrowth(repoRoot, 'integridad-verificable');
   assert.equal(r.anchored, true, JSON.stringify(r));
   assert.deepEqual(r.violations, [], 'ninguna decisión ni packet commiteado se modificó jamás');

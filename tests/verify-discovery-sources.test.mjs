@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import {
   SOURCE_DRIFTED,
   SOURCE_MISSING,
@@ -23,6 +25,14 @@ import {
 } from '../scripts/verify-discovery-core.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio de VCP: le preguntan a git o a un gate por ESTE checkout. Adentro del
+// runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
+// el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 
 const sha256 = (texto) => createHash('sha256').update(texto).digest('hex');
 
@@ -216,14 +226,14 @@ test('activeClaims tolera un run sin history y un packet sin research_snapshot',
   assert.deepEqual(activeClaims({ runs: [{ runId: 'run-001', history: [{ decision: {}, packet: {} }] }] }), [], 'un packet sin research_snapshot no aporta claims');
 });
 
-test('verifyDiscoverySources lee la historia real del repositorio cuando no se le pasa una', () => {
+test('verifyDiscoverySources lee la historia real del repositorio cuando no se le pasa una', SOLO_FUENTE, () => {
   const r = verifyDiscoverySources(repoRoot, 'integridad-verificable');
   assert.equal(r.empty, false, 'este repositorio tiene claims vigentes');
   assert.equal(r.blocking.length, 0, `las fuentes reales resuelven: ${JSON.stringify(r.blocking)}`);
   assert.ok(r.counts[SOURCE_DRIFTED] > 0, 'y varias cambiaron desde su captura, que es lo esperado');
 });
 
-test('main resuelve las fuentes reales cuando no se le inyecta el verificador', () => {
+test('main resuelve las fuentes reales cuando no se le inyecta el verificador', SOLO_FUENTE, () => {
   const salidas = [];
   assert.equal(main(['sources', '--feature', 'integridad-verificable'], repoRoot, (m) => salidas.push(m), () => {}), 0, salidas.join('\n'));
   assert.match(salidas.join('\n'), /^OK:/u);
