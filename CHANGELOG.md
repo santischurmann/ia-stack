@@ -7,6 +7,29 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El verificador de la reescritura daba verde sin haber corrido.** Al borrar el respaldo se hizo un
+  último barrido y aparecieron **dos revisiones** que la reescritura no había tocado. Dos fallas
+  encadenadas, las dos de la familia que este repositorio se pasó el día arreglando.
+  - **En las reglas:** un identificador sin su extensión no matcheaba ninguna regla, y el patrón de
+    palabra completa tampoco, porque no hay borde de palabra en medio de un nombre compuesto.
+    **Una lista sólo encuentra lo que ya pensó quien la escribió** — tercera vez en el día.
+  - **En el verificador, y es la grave:** uno de sus patrones contenía una barra. Git Bash convierte
+    las barras al pasar el argumento, git recibió una barra invertida final, lo rechazó con
+    `fatal: Trailing backslash` y **salida 128**. El `2>/dev/null` tapó el error y el `| wc -l`
+    contó cero líneas. **Cero líneas se leyó como cero rastros:** el comando nunca corrió, y el
+    barrido dijo «historia limpia» tres veces seguidas.
+  - **El arreglo que importa no es el patrón, es el criterio.** El verificador ahora mira el
+    **estado de salida** de cada búsqueda y distingue los tres casos que git devuelve —hubo
+    coincidencias, no hubo, o falló—, y si algo falla sale con error diciendo **«no se pudo
+    verificar»** en vez de imprimir un total. **Un comando que no corrió no es un verde.**
+  - Tercera pasada sobre las 162 revisiones y verificación con el verificador arreglado: cero
+    rastros en contenido, en mensajes de commit y en nombres de archivo.
+- **El respaldo con la historia vieja se borró**, junto con las otras **49 copias** que quedaban en
+  el directorio temporal de la sesión —incluido el registro sin redactar completo—, borradas una por
+  una y nombradas, nunca con un borrado recursivo sobre un directorio. Antes de sacar la red se
+  verificó que el repositorio estuviera completo: 162 commits, cero objetos rotos, árbol limpio y
+  sincronizado con el remoto.
+
 - **La historia de git fue reescrita, con autorización explícita, y lo que quedaba expuesto ya no
   está.** Las tres superficies que la redacción de la punta no podía alcanzar —el blob sin redactar,
   los cuerpos de los mensajes de commit y las líneas de `AUDIT.md`— se limpiaron de raíz.
