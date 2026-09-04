@@ -531,6 +531,14 @@
       "class": "gate"
     },
     {
+      "path": "scripts/tablero-modelo.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/tablero.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-ablation.mjs",
       "class": "gate"
     },
@@ -920,6 +928,14 @@
     },
     {
       "path": "tests/spawn-budget.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tablero-modelo.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tablero.test.mjs",
       "class": "prueba"
     },
     {

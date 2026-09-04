@@ -26,6 +26,22 @@
       "why": "Es una biblioteca de rutas seguras con un CLI minimo; sin subcomando valido sale 2. Lo que hace de verdad -confinar rutas al proyecto- lo prueban los gates que la importan, no esta sonda."
     },
     {
+      "script": "tablero-modelo.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "usage",
+      "why": "No es un gate de linea de comandos: es la mitad pura del tablero, que existe para poder probar las cuentas sin tocar el disco. Ejecutado solo no tiene nada que hacer y sale 2. Su comportamiento real se prueba en tests/tablero-modelo.test.mjs."
+    },
+    {
+      "script": "tablero.mjs",
+      "args": [
+        "due"
+      ],
+      "expect": "self",
+      "why": "No mira el directorio donde se lo corre: mira el estado de la maquina -- la marca del ultimo build en la carpeta del sistema -- asi que en un directorio vacio se comporta igual que en cualquier otro. Es deliberado: el tablero es de la persona, no del proyecto. Nunca escribe en el subcomando due, y eso lo prueba tests/tablero.test.mjs con un escritor que lanza si lo llaman."
+    },
+    {
       "script": "verify-ablation.mjs",
       "args": [
         "check",

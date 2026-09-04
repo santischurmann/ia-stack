@@ -5,7 +5,7 @@
 Esta auditoría no usa “intuiciones de agentes” como evidencia. Cruzó el código y tests actuales,
 el grafo local, el ledger de research y sesiones directamente vinculadas a VCP:
 
-- Claude: `<home>\.claude\projects\C--Users-Santi-Desktop-Claude-VibeCodeProtocols\8d69523c-56e9-4520-82b9-a88818e0c44f.jsonl` (4.743 eventos, 14–21 Ago).
+- Claude: `<home>\.claude\projects\<slug-del-proyecto>\<id-de-sesion>.jsonl` (4.743 eventos, 14–21 Ago).
 - Codex: 21 sesiones con `cwd` exactamente VCP (73 MB totales revisados por el auditor).
 - Graphify previo: `graphify-out/GRAPH_REPORT.md`, construido sobre `4df2a302` mientras el
   baseline de esta auditoría era `ad29447`.

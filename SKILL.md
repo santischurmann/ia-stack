@@ -1429,6 +1429,30 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 
 ## PHASE 9 — LIMPIEZA (cada 7 días, al abrir sesión)
 
+**9.0 El tablero** (mismo período de 7 días, misma lógica de `due`):
+
+```bash
+node .vibe/vcp-runtime/scripts/tablero.mjs due
+node .vibe/vcp-runtime/scripts/tablero.mjs build
+```
+
+Genera una página local con proyectos, sesiones, turnos, tokens y una **banda** de horas. Se abre
+con doble clic; el comando imprime la ruta y no abre nada por su cuenta.
+
+Tres cosas que el tablero hace a propósito, y que conviene no "arreglar":
+
+- **Escribe fuera del árbol** (`%LOCALAPPDATA%\ia-stack\` o `$XDG_STATE_HOME/ia-stack/`) y **se
+  niega** a escribir adentro de un repositorio. Agrega datos de todos tus proyectos: ahí adentro los
+  publicaría el próximo commit.
+- **Los tokens van deduplicados por identificador de mensaje.** Sumar líneas los infla hasta 2,67×,
+  medido.
+- **Las horas son una banda, no un número**, con su umbral a la vista. No hay valle en la
+  distribución que justifique uno: elegirlo mueve el resultado más que cualquier error de medición.
+
+**Sin tabla de precios no muestra dinero**, y dice por qué. Escribí la tuya en `precios.json`, dentro
+de esa misma carpeta, si querés la columna.
+
+
 **Qué es, en una línea.** Cada skill, cada regla y cada hook que tenés configurado se le carga al
 modelo **antes** de que escribas la primera letra. Lo que ya no sirve no es neutral: ocupa lugar y
 compite con lo que sí importa. Esta fase saca lo que sobra **sin perder nada**.
