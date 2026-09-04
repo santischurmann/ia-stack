@@ -26,14 +26,20 @@ done
 
 copy_runtime() {
   local destination="$1"
-  mkdir -p "$destination/scripts" "$destination/contracts" "$destination/tests" "$destination/templates" "$destination/skills"
+  mkdir -p "$destination/scripts" "$destination/contracts" "$destination/tests" "$destination/templates" "$destination/skills" "$destination/.agents"
   cp -R "$PACKAGE_DIR/scripts/." "$destination/scripts/"
   cp -R "$PACKAGE_DIR/contracts/." "$destination/contracts/"
   cp -R "$PACKAGE_DIR/tests/." "$destination/tests/"
   cp -R "$PACKAGE_DIR/templates/." "$destination/templates/"
   cp -R "$PACKAGE_DIR/skills/." "$destination/skills/"
+  # .agents y AGENTS.md se copian porque el propio instalador los LEE del paquete mas abajo, para
+  # dejarle a Codex sus punteros. Sin ellos, un runtime instalado no podia reinstalarse: `cp` fallaba
+  # con "cannot stat" y se llevaba puestas diez pruebas. Todo lo que el instalador lee del paquete
+  # tiene que estar en lo que el instalador copia -- es un punto fijo, y hay una prueba que lo exige.
+  cp -R "$PACKAGE_DIR/.agents/." "$destination/.agents/"
   cp "$PACKAGE_DIR/SKILL.md" "$destination/SKILL.md"
   cp "$PACKAGE_DIR/SECURITY.md" "$destination/SECURITY.md"
+  cp "$PACKAGE_DIR/AGENTS.md" "$destination/AGENTS.md"
 }
 
 echo "=== VibeCodeProtocols Installer ==="

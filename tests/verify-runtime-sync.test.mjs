@@ -32,6 +32,10 @@ const SOURCE_FILES = [
   ['skills/vibe-memory.md', '# memoria\n'],
   ['SKILL.md', '# skill\n'],
   ['SECURITY.md', '# security\n'],
+  // Los punteros de Codex: el instalador los LEE del paquete, asi que tienen que viajar con el
+  // runtime o una reinstalacion desde el runtime falla con "cannot stat".
+  ['.agents/skills/vibecodeprotocols/SKILL.md', '# puntero\n'],
+  ['AGENTS.md', '# agents\n'],
 ];
 
 /** A minimal checkout with exactly the surface copy_runtime() reads, and no runtime installed yet. */
@@ -76,8 +80,8 @@ test('la superficie comparada se deriva de lo que copia el instalador Bash', () 
   const files = [...body.matchAll(/cp "\$PACKAGE_DIR\/([^/"]+)" /gu)].map((match) => match[1]);
   // Pinned against the installer as it actually reads today: if copy_runtime() starts copying
   // something else, this goes red and the gate's surface must be re-derived, never guessed.
-  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills']);
-  assert.deepEqual(files, ['SKILL.md', 'SECURITY.md']);
+  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']);
+  assert.deepEqual(files, ['SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   assert.deepEqual([...COPIED_DIRECTORIES], directories);
   assert.deepEqual([...COPIED_FILES], files);
 });
@@ -94,8 +98,8 @@ test('el instalador PowerShell copia exactamente la misma superficie', () => {
   const body = installer.slice(start, cierre);
   const directories = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"]+)\\\*"/gu)].map((match) => match[1]);
   const files = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"*]+)" /gu)].map((match) => match[1]);
-  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills']);
-  assert.deepEqual(files, ['SKILL.md', 'SECURITY.md']);
+  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']);
+  assert.deepEqual(files, ['SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   assert.deepEqual([...COPIED_DIRECTORIES], directories);
   assert.deepEqual([...COPIED_FILES], files);
 });
@@ -183,7 +187,7 @@ test('missingSourceRoots nombra cada pieza que el instalador necesitaría copiar
     writeFileSync(join(source, 'contracts'), 'no soy un directorio\n');
     assert.deepEqual(missingSourceRoots(source), ['contracts/', 'SECURITY.md']);
     mkdirSync(join(root, 'vacio'));
-    assert.deepEqual(missingSourceRoots(join(root, 'vacio')), ['scripts/', 'contracts/', 'tests/', 'templates/', 'skills/', 'SKILL.md', 'SECURITY.md']);
+    assert.deepEqual(missingSourceRoots(join(root, 'vacio')), ['scripts/', 'contracts/', 'tests/', 'templates/', 'skills/', '.agents/', 'SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -212,7 +216,9 @@ test('FALSIFICACIÓN · readInventory no se traga un archivo ilegible', () => {
   try {
     const io = {
       read: (path) => {
-        if (String(path).endsWith('SKILL.md')) throw new Error('EACCES: permission denied');
+        // Se ancla en la ruta EXACTA y no en el sufijo: con `.agents/skills/.../SKILL.md` en la
+        // superficie, `endsWith('SKILL.md')` agarraba dos archivos y el mensaje nombraba el otro.
+        if (String(path) === join(source, 'SKILL.md')) throw new Error('EACCES: permission denied');
         return readFileSync(path);
       },
     };
@@ -245,7 +251,9 @@ test('un runtime idéntico al fuente pasa', () => {
     const result = run(['check'], source);
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /matches this source checkout/u);
-    assert.match(result.output, /7 file/u);
+    // Nueve, no siete: la superficie sumó `.agents/` y `AGENTS.md` cuando se cerró el defecto de
+    // que un runtime instalado no podía reinstalarse. El número sale de SOURCE_FILES.
+    assert.match(result.output, new RegExp(`${SOURCE_FILES.length} file`, 'u'));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -479,4 +487,53 @@ test('FALSIFICACIÓN · sin la regla, el runtime instalado queda como superficie
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- Un runtime instalado no podia reinstalarse, y eso contradice de frente la promesa de
+// "self-contained runtime" que el propio instalador imprime. `install.sh` lee de $PACKAGE_DIR dos
+// archivos que NO estan en la lista de copia -- `AGENTS.md` y el puntero de Codex --, asi que al
+// reinstalar desde el runtime `cp` falla con "cannot stat". Medido: de los 26 fallos que deja una
+// instalacion, DIEZ salen de aca, y siete son la misma llamada cascadeando.
+//
+// La regla es un PUNTO FIJO, no una lista de nombres: todo lo que el instalador lee de $PACKAGE_DIR
+// tiene que estar en la superficie que el instalador copia. Si manana lee un archivo nuevo y se
+// olvida de copiarlo, esto lo agarra sin que nadie actualice nada.
+
+export function leidoDelPaquete(texto) {
+  const rutas = new Set();
+  for (const m of texto.matchAll(/\$PACKAGE_DIR\/([A-Za-z0-9_.\-/]+)/gu)) rutas.add(m[1]);
+  const BARRA = String.fromCharCode(92);
+  for (const m of texto.matchAll(new RegExp(`\\$PackageDir[${BARRA}${BARRA}/]([A-Za-z0-9_.-]+(?:[${BARRA}${BARRA}/][A-Za-z0-9_.-]+)*)`, 'gu'))) {
+    rutas.add(m[1].split(BARRA).join('/'));
+  }
+  // `scripts/.` y compañía: el `copy_runtime` copia el contenido del directorio.
+  return [...rutas].map((r) => r.replace(/\/\.$/u, '')).filter((r) => r !== '');
+}
+
+export function fueraDeLaSuperficie(rutas, directorios = COPIED_DIRECTORIES, archivos = COPIED_FILES) {
+  return rutas.filter((r) => !directorios.includes(r.split('/')[0]) && !archivos.includes(r)).sort();
+}
+
+test('todo lo que el instalador lee del paquete está en la superficie que copia', () => {
+  const sh = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');
+  const rutas = leidoDelPaquete(sh);
+  assert.ok(rutas.length > 0, 'no se pudo leer ninguna ruta de $PACKAGE_DIR: la comprobación no midió nada');
+  assert.deepEqual(
+    fueraDeLaSuperficie(rutas),
+    [],
+    'el instalador lee esto del paquete pero no lo copia: un runtime instalado no puede reinstalarse',
+  );
+});
+
+test('FALSIFICACIÓN · la regla del punto fijo distingue copiado de leído-y-no-copiado', () => {
+  assert.deepEqual(leidoDelPaquete('cp "$PACKAGE_DIR/scripts/." x'), ['scripts']);
+  assert.deepEqual(leidoDelPaquete('cp "$PACKAGE_DIR/AGENTS.md" y').sort(), ['AGENTS.md']);
+  assert.deepEqual(leidoDelPaquete('nada que ver'), []);
+  // Lo que está en la lista no se acusa; lo que no, sí. Las listas se pasan explícitas: una
+  // falsificación que dependa de la configuración real deja de falsificar cuando la configuración
+  // cambia — pasó al agregar `.agents` y `AGENTS.md`, y esta prueba se volvió verde sin motivo.
+  const dirs = ['scripts'];
+  const files = ['SKILL.md'];
+  assert.deepEqual(fueraDeLaSuperficie(['scripts/x.mjs', 'SKILL.md'], dirs, files), []);
+  assert.deepEqual(fueraDeLaSuperficie(['AGENTS.md', '.agents/skills/x/SKILL.md'], dirs, files), ['.agents/skills/x/SKILL.md', 'AGENTS.md']);
 });

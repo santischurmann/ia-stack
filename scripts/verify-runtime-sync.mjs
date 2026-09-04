@@ -31,8 +31,8 @@ export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 // Derived from copy_runtime() in scripts/install.sh and Copy-Runtime in scripts/install.ps1 — not
 // invented here. tests/verify-runtime-sync.test.mjs parses both installers and fails if either one
 // starts copying something this list does not name, so the surface can never drift into a guess.
-export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills'];
-export const COPIED_FILES = ['SKILL.md', 'SECURITY.md'];
+export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents'];
+export const COPIED_FILES = ['SKILL.md', 'SECURITY.md', 'AGENTS.md'];
 
 export function parseArguments(args) {
   const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;

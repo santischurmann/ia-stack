@@ -11,14 +11,18 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PackageDir = Split-Path -Parent $ScriptDir
 
 function Copy-Runtime([string]$Destination) {
-  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills" | Out-Null
+  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills", "$Destination\.agents" | Out-Null
   Copy-Item "$PackageDir\scripts\*" "$Destination\scripts" -Recurse -Force
   Copy-Item "$PackageDir\contracts\*" "$Destination\contracts" -Recurse -Force
   Copy-Item "$PackageDir\tests\*" "$Destination\tests" -Recurse -Force
   Copy-Item "$PackageDir\templates\*" "$Destination\templates" -Recurse -Force
   Copy-Item "$PackageDir\skills\*" "$Destination\skills" -Recurse -Force
+  # Ver el comentario equivalente en install.sh: lo que el instalador lee del paquete tiene que
+  # estar en lo que copia, o el runtime instalado no puede reinstalarse.
+  Copy-Item "$PackageDir\.agents\*" "$Destination\.agents" -Recurse -Force
   Copy-Item "$PackageDir\SKILL.md" "$Destination\SKILL.md" -Force
   Copy-Item "$PackageDir\SECURITY.md" "$Destination\SECURITY.md" -Force
+  Copy-Item "$PackageDir\AGENTS.md" "$Destination\AGENTS.md" -Force
 }
 
 Write-Host '=== VibeCodeProtocols Installer ===' -ForegroundColor Cyan
