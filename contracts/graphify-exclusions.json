@@ -16,10 +16,6 @@
     {
       "path": "LICENSE",
       "reason": "Verbatim upstream license text, identical across projects. It carries no VCP-specific concept to relate."
-    },
-    {
-      "path": "research/semantic-deep-evidence-2026-08-31.ndjson",
-      "reason": "Machine-readable per-file research evidence. Graphify's code extractor produces no nodes for NDJSON; the evidence remains preserved and linked from the research reports, while the semantic graph covers the derived Markdown and verifier scripts."
     }
   ]
 }

@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El clon pesa 968 KB menos, y no se perdió nada.** `research/semantic-deep-evidence-*.ndjson` era
+  la única salida de esa familia que quedó versionada: el `.gitignore` ya excluía
+  `semantic-full-evidence-*.ndjson` y el propio verificador imprime **«no está en git a propósito: es
+  una salida regenerable del corpus»** cuando falta. Era una omisión del patrón, no una decisión.
+  El archivo sigue en disco y su verificador sigue en verde; deja de viajar en cada clon.
+- **Metadatos del repositorio en castellano.** La descripción hablaba en inglés de un stack y de
+  garantías envejecidas. Ahora dice qué es en una línea. Diez topics, sin duplicados
+  (`ai-agent`/`ai-agents`, `tdd`/`tdd-methodology`), y Discussions abierto.
+
 - **El protocolo ahora se propone mejoras a sí mismo, y no puede aplicarlas.** Cada 7 días, al abrir
   sesión, `verify-sereno.mjs due` avisa si toca una ronda; el agente escribe **como mucho cuatro**
   propuestas en `docs/mejoras/AAAA-MM-DD.json` y `check` las verifica.

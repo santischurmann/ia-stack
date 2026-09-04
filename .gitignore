@@ -50,6 +50,10 @@ research/functional-inventory-*.json
 research/complete-review-index-*.json
 research/semantic-review-index-*.json
 research/semantic-full-evidence-*.ndjson
+# El corpus profundo es la misma familia que el de arriba y quedo fuera del patron por omision:
+# 968 KB versionados que research/verify-semantic-deep-evidence.mjs ya trata como salida
+# regenerable ("No esta en git a proposito"). El archivo sigue en disco; deja de viajar en el clon.
+research/semantic-deep-evidence-*.ndjson
 research/semantic-functional-evidence-*.ndjson
 research/semantic-functional-index-*.json
 research/semantic-functional-evidence-*.ndjson.gz
