@@ -41,8 +41,29 @@ function proyectoLimpio() {
   return { root, git };
 }
 
+/** Traduce `C:\x\y` a `/c/x/y`: el argumento viaja adentro de un comando de bash, que interpreta
+ * la barra invertida como escape. Mismo helper que `tests/install-runtime.test.mjs`. */
+function aBash(ruta) {
+  return ruta.replace(/\\/g, '/').replace(/^([A-Za-z]):/u, (_, unidad) => `/${unidad.toLowerCase()}`);
+}
+
+/** El instalador escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/vcp-runtime`
+ * (install.sh:9-10), ANTES del bloque de `--project`: pasar sólo `--project` no suprime esa
+ * escritura. Estas pruebas corrían el instalador siete veces por pasada contra el `$HOME` real de
+ * quien corre la suite. Se aísla con los tres flags MÁS `HOME` sobrescrito —cinturón y tirantes,
+ * por si el instalador expandiera `$HOME` en algún lugar nuevo—, que es el patrón que
+ * `tests/install-runtime.test.mjs` ya usaba. Los destinos son hermanos del proyecto dentro del
+ * mismo temporal, así que se limpian con el mismo `rmSync`. */
 function instalar(root) {
-  return spawnSync(bash, [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
+  const target = join(root, '__skills-aisladas');
+  const runtime = join(root, '__runtime-aislado');
+  const env = { ...process.env, HOME: aBash(root) };
+  delete env.NODE_TEST_CONTEXT;
+  const comando = `'${aBash(join(repoRoot, 'scripts', 'install.sh'))}'`
+    + ` --target-dir '${aBash(target)}'`
+    + ` --runtime-dir '${aBash(runtime)}'`
+    + ` --project '${aBash(root)}'`;
+  return spawnSync(bash, ['-lc', comando], { encoding: 'utf8', env });
 }
 
 function gate(root, script, ...args) {

@@ -457,7 +457,17 @@ test('FALSIFICACIÓN · sin la regla, el runtime instalado queda como superficie
     git('add', '-A');
     git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'init');
 
-    const instalado = spawnSync(bash, [join(repoRoot, 'scripts', 'install.sh'), '--project', root], { encoding: 'utf8' });
+    // Los tres flags MÁS `HOME` sobrescrito: sin `--target-dir` y `--runtime-dir`, el instalador
+    // escribe en el `$HOME/.claude` real de quien corre la suite (install.sh:9-10), porque esa
+    // escritura ocurre antes del bloque de `--project`. Ver tests/home-intacto.test.mjs.
+    const aBash = (r) => r.replace(/\\/g, '/').replace(/^([A-Za-z]):/u, (_, u) => `/${u.toLowerCase()}`);
+    const entorno = { ...process.env, HOME: aBash(root) };
+    delete entorno.NODE_TEST_CONTEXT;
+    const comando = `'${aBash(join(repoRoot, 'scripts', 'install.sh'))}'`
+      + ` --target-dir '${aBash(join(root, '__skills-aisladas'))}'`
+      + ` --runtime-dir '${aBash(join(root, '__runtime-aislado'))}'`
+      + ` --project '${aBash(root)}'`;
+    const instalado = spawnSync(bash, ['-lc', comando], { encoding: 'utf8', env: entorno });
     assert.equal(instalado.status, 0, instalado.stderr);
 
     // Lo que git considera superficie viva del proyecto. El runtime no puede estar acá: un archivo
