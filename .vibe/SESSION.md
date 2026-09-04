@@ -1,8 +1,8 @@
-# Session — 2026-08-27
+# Session — 2026-09-04
 
-**Feature slug:** integridad-verificable
-**Goal:** convertir en detector mecánico cuatro reglas que hoy son convención sin gate
-(#22 commit atómico, #27 audit hash-chain, #47 baseline de findings, #40 wording crítico)
+**Feature slug:** lanzamiento-ia-stack
+**Goal:** dejar el protocolo instalable y entendible para alguien que no es su autor: cero fallos en
+una instalación ajena, cero datos cruzados, README con diagramas, tablero local y bucle de mejora
 **Status:** in progress
 
 ---

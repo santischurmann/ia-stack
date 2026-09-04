@@ -1560,3 +1560,46 @@ test('los self-checks del repositorio no corren dentro del runtime instalado de 
   if (!esRuntimeInstalado(raizInstalada)) repoRemoto(espia, raizInstalada);
   assert.equal(pregunto, false, 'la guarda dejó que el self-check leyera el remote de un tercero');
 });
+
+// --- La misma regla, para la documentación operativa -------------------------------------------
+//
+// `docs/spec.md` decía «la spec anterior se recupera con `git show f23c832:docs/spec.md`» y ese
+// commit NO existe: la reescritura de historia se lo llevó. Es documentación **operativa** — quien
+// la lee corre lo que dice — igual que el README, y ahí la regla ya existía.
+//
+// El CHANGELOG queda afuera A PROPÓSITO: es registro histórico y nombra commits que la reescritura
+// se llevó. Exigirle que todos existan obligaría a borrar la historia para poner el archivo en
+// verde, que es justo el incentivo que este repositorio no quiere.
+
+export function shasCitados(texto) {
+  return [...new Set([...texto.matchAll(/`([0-9a-f]{7,40})`/gu)].map((m) => m[1]))];
+}
+
+export function shasEnComando(texto) {
+  // Sólo los que aparecen dentro de un comando ejecutable: `git show <sha>:archivo`, `git cat-file
+  // -e <sha>`, `git checkout <sha>`. Un sha suelto en prosa puede estar citando historia contada, y
+  // eso es lo mismo que el CHANGELOG. Lo que no se puede tolerar es una instrucción que falla.
+  return [...new Set([...texto.matchAll(/git\s+(?:show|cat-file\s+-e|checkout|diff)\s+([0-9a-f]{7,40})\b/gu)].map((m) => m[1]))];
+}
+
+test('todo commit que docs/ manda a ejecutar existe de verdad', SOLO_FUENTE, () => {
+  const dir = join(repoRoot, 'docs');
+  const archivos = readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.md'))
+    .map((e) => join(e.parentPath ?? e.path ?? dir, e.name));
+  assert.ok(archivos.length > 0, 'el barrido tiene que encontrar documentación, o no prueba nada');
+  const fantasmas = [];
+  for (const ruta of archivos) {
+    for (const sha of shasEnComando(readFileSync(ruta, 'utf8'))) {
+      if (spawnSync('git', ['cat-file', '-e', sha], { cwd: repoRoot }).status !== 0) fantasmas.push(`${ruta.slice(repoRoot.length + 1)}: ${sha}`);
+    }
+  }
+  assert.deepEqual(fantasmas, [], 'un comando documentado que falla es peor que no documentar nada');
+});
+
+test('FALSIFICACIÓN · la regla ve el sha del comando y deja pasar el de la prosa', () => {
+  assert.deepEqual(shasEnComando('recuperalo con `git show f23c832:docs/spec.md`'), ['f23c832']);
+  assert.deepEqual(shasEnComando('git cat-file -e abc1234'), ['abc1234']);
+  assert.deepEqual(shasEnComando('el commit `f23c832` quedó fuera de la historia'), []);
+  assert.deepEqual(shasCitados('el commit `f23c832` quedó fuera'), ['f23c832']);
+});

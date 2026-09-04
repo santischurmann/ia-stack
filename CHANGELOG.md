@@ -7,6 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los cuatro defectos sueltos que el plan había listado aparte, cerrados.** Ninguno justificaba su
+  propia etapa y por eso ninguno había entrado.
+  - **`docs/spec.md` mandaba a un commit que no existe.** Decía «se recupera con
+    `git show f23c832:...`» y la reescritura de historia se había llevado ese identificador. El
+    contenido **sí** se recupera, con otro sha. Ahora una regla barre `docs/**.md` y verifica que
+    todo commit **que un comando manda a ejecutar** exista; el CHANGELOG queda afuera a propósito,
+    porque es registro histórico y exigirle eso obligaría a borrar historia para ponerlo en verde.
+  - **La feature activa no coincidía consigo misma**: `docs/spec.md` decía `candidatos-de-research`
+    y `.vibe/SESSION.md` decía `integridad-verificable`. Gate nuevo, `verify-feature-activa.mjs`.
+    Con menos de dos declarantes escribe `VACÍO:`, no `OK:`. **No mira `docs/phase-plan.json`**, y el
+    motivo está escrito: ese es un expediente cerrado y exigirle coincidir obligaría a borrarlo o a
+    fabricar decisiones de fase con menús que nunca se mostraron.
+  - **La spec anterior quedó sin terminar y se archivó declarándolo**, con su deuda en `.vibe/DEBT.md`
+    y el comando que la recupera entera.
+  - **Las plantillas de fábrica no pasaban su propio gate.** `templates/phase-plan.json` traía diez
+    slugs en inglés —`intake`, `diagnostics`, `verify`, `reflect`…— que no existían como fase en
+    ningún otro lado: un quinto vocabulario, huérfano, que hacía rechazar a la plantilla contra su
+    propia compañera. Quien la copiara se comía el rechazo el día uno. Ningún sello se invalidó: el
+    hash de cada decisión cubre el prefijo hasta su propia fase, así que recortar el final no toca
+    ninguno.
+
 - **La marca de reescritura de la traza valía por archivo, no por acto.** `verifyGrowth` buscaba la
   declaración en todo el contenido de la versión que corta — y la traza **sólo crece**, así que una
   vez escrita la frase, toda versión posterior la arrastraba. La primera reescritura declarada

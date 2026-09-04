@@ -583,6 +583,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-feature-activa.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-graphify-manifest.mjs",
       "class": "gate"
     },
@@ -1048,6 +1052,18 @@
     },
     {
       "path": "tests/verify-evidence-trace.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-feature-activa-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-feature-activa-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-feature-activa.test.mjs",
       "class": "prueba"
     },
     {

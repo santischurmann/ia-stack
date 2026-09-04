@@ -5,6 +5,17 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { checkPhaseMenu, checkPlan, main } from '../scripts/verify-phase-menu.mjs';
 import { hashDecision } from '../scripts/verify-phase-decisions.mjs';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
+
+const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+// Self-check: mide las plantillas de ESTE checkout. El instalador las copia, pero quien las verifica
+// es el repositorio que las publica.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 
 const ORDER = ['intake', 'research'];
 function row(id, previous = '', offset = 0) {
@@ -58,4 +69,32 @@ test('main covers malformed, unreadable, and successful files', () => {
     assert.equal(main(['check', decisions, '--plan', join(root, 'missing-plan.json')], output.push.bind(output), errors.push.bind(errors)), 1);
     assert.equal(main(['check', decisions, '--plan', planPath, '--bad'], output.push.bind(output), errors.push.bind(errors)), 2);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+// --- Las plantillas de fábrica tienen que pasar su propio gate ----------------------------------
+//
+// Medido el 2026-09-04: `verify-phase-menu.mjs check templates/phase-decisions.json --plan
+// templates/phase-plan.json` salía 1 con PHASE_DECISION_PHASE_MISSING para las fases 4, 5, 6, 7 y 8.
+// La plantilla declaraba un `phase_order` de ocho fases y ejemplificaba tres. Quien la copie y corra
+// el gate se come un rechazo el día uno, por un archivo que le dimos nosotros.
+//
+// Por qué esto no invalida ningún sello: `verify-phase-decisions` mete en el hash el
+// `phase_order_prefix` HASTA la fase de esa decisión inclusive. Las decisiones de la plantilla son
+// de las fases 1, 2 y 3, así que sus prefijos son ['1'], ['1','2'] y ['1','2','3']: recortar el
+// FINAL de la lista no toca ninguno. Agregar al final o recortar después del último sello es seguro;
+// reordenar o renombrar lo que está antes de un sello, no.
+//
+// No se generalizó a «toda plantilla pasa el gate de su schema» a propósito: ese mapeo no es
+// derivable por forma —habría que mantener una lista schema→gate, que es el anti-patrón de este
+// repositorio— y el defecto medido es éste. Queda dicho, no fingido.
+
+test('las plantillas de fase que distribuye el protocolo pasan su propio gate', SOLO_FUENTE, () => {
+  const salidas = [];
+  const errores = [];
+  const codigo = main(
+    ['check', join(repoRoot, 'templates', 'phase-decisions.json'), '--plan', join(repoRoot, 'templates', 'phase-plan.json')],
+    (l) => salidas.push(l),
+    (l) => errores.push(l),
+  );
+  assert.deepEqual({ codigo, errores }, { codigo: 0, errores: [] }, 'una plantilla que no pasa su gate le rechaza el día uno a quien la copie');
 });

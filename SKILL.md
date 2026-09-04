@@ -1780,7 +1780,12 @@ omitida no puede esconderse detrás de un verde parcial. `--require-complete` im
 `--require-inputs`, por lo que un archivo ausente o vacío rechaza.
 
 Para que el propio registro no pueda inventar su orden, copiá `templates/phase-plan.json` a
-`docs/phase-plan.json` y mantené allí el plan canónico de la feature. En el cierre corré además:
+`docs/phase-plan.json` y mantené allí el plan canónico de la feature. Reemplazá `feature` y listá
+**tus** fases con los números de este documento (`1`, `1.5`, `2`, `3`, `4`, `5`, `5.5`, `6`, `7`,
+`8`, `9`). La plantilla viene con `["1","2","3"]` —las mismas que ejemplifica
+`templates/phase-decisions.json`— para que las dos pasen el gate el día uno: hasta el 2026-09-04
+traía diez slugs en inglés que no existían como fase en ningún otro lado, y la plantilla rechazaba
+contra su propia compañera. En el cierre corré además:
 
 ```bash
 node .vibe/vcp-runtime/scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json

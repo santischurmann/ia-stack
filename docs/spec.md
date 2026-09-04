@@ -1,58 +1,67 @@
-# Spec: candidatos-de-research
+# Spec: lanzamiento-ia-stack
 
-**Fecha:** 2026-09-01 · **Estado:** en construcción
-La spec anterior (`triangulate-como-fase`, implementada) se recupera con `git show f23c832:docs/spec.md`.
+**Fecha:** 2026-09-04 · **Estado:** implementada
+La spec anterior (`candidatos-de-research`, **quedó sin terminar**) se recupera con
+`git show 3aac9cf:docs/spec.md`. Su deuda está anotada en `.vibe/DEBT.md`.
 
 ## Problem / Problema
 
-La síntesis del research externo agrupa 14.897 entradas por capacidad y las llama «señales de
-adopción». Esas señales son **filtros lexicales**: un puntaje que cuenta cuántas palabras de una
-lista aparecen en un archivo. El propio informe lo dice, pero nada impide que alguien tome esa
-tabla y adopte una idea porque salió con puntaje 22. Consecuencia observable: hoy no existe ningún
-artefacto entre «una señal lexical» y «una capacidad adoptada», así que el salto no deja rastro y
-no hay dónde escribir el contraejemplo.
+El protocolo era riguroso adentro y estaba roto para cualquiera que no fuera su autor. Tres
+defectos medidos, no supuestos: correr la suite sobrescribía la configuración global de quien
+clonara; toda instalación nacía con 26 fallos sobre 1096; y el repositorio publicaba datos de otro
+proyecto del autor. Encima, el README pedía ocho mil palabras para explicar once fases, y no había
+forma de ver el estado del trabajo sin leer archivos sueltos.
 
 ## Discovery / Investigación previa
 
-Medido el 2026-09-01. Los 14 commits pineados siguen alcanzables (14/14 vía la API de GitHub) y
-9 de 14 fuentes movieron su HEAD desde la captura, lo cual no invalida el corpus: se leyó *en* el
-commit pineado. Registrado en `research/pin-revalidation-2026-09-01.json`. El repositorio ya tiene
-la disciplina de exigir contraejemplo en otros lados —`contracts/honest-limits.json` obliga a
-escribir qué NO prueba cada gate— pero el research no la tenía.
+Dos rondas de investigación con pasada adversarial, que mató dos de cinco diseños. Lo que cambió el
+plan: los 26 fallos no eran self-checks mal ubicados sino **seis causas raíz**, y tres eran
+defectos operativos del producto. La medición de punta a punta —instalar en un proyecto ajeno y
+correr la suite ahí— no la corría nadie, y es la única que ve lo que ve quien clona.
 
 ## Target Users / Usuarios
 
-Quien propone adoptar una idea de una fuente externa, y quien tiene que decidir si se adopta sin
-volver a leer los 15.581 archivos del corpus.
+Quien instala el protocolo en su propio proyecto y nunca va a leer el repositorio de VCP. Todo lo
+que le hable del checkout de VCP es ruido que no puede accionar.
 
 ## Acceptance Criteria / Criterios de aceptación
 
-- [ ] **AC1:** GIVEN un candidato con sus catorce campos completos, WHEN corre el gate, THEN sale 0 y dice cuántos candidatos hay por decisión propuesta.
-- [ ] **AC2:** GIVEN un candidato cuya fuente no es una de las pineadas, o cuyo commit no es el que el contrato pineó para esa fuente, WHEN corre el gate, THEN rechaza nombrándolo.
-- [ ] **AC3:** GIVEN un candidato cuya evidencia no cita archivo y línea del archivo que declara, WHEN corre el gate, THEN rechaza: un puntaje lexical no es una cita.
-- [ ] **AC4:** GIVEN un candidato cuyo contraejemplo repite textualmente una de sus evidencias, WHEN corre el gate, THEN rechaza: repetir la evidencia no es un contraejemplo.
-- [ ] **AC5:** GIVEN un candidato con decisión `adopt` que no declara el test necesario, WHEN corre el gate, THEN rechaza: adoptar sin test es adoptar sin condición de adopción.
-- [ ] **AC6:** THE SYSTEM SHALL informar VACÍO y salir 0 sin ningún expediente de candidatos, y rechazar un esquema ajeno antes de mirar cualquier candidato.
+- [x] **AC1:** GIVEN un clon limpio instalado en un proyecto ajeno WHEN se corre la suite ahí THEN
+  cero fallos, y las salteadas dicen por qué.
+- [x] **AC2:** GIVEN una instalación WHEN se corre cualquier gate a mano THEN ninguno le reclama un
+  archivo que sólo existe en el repositorio de VCP.
+- [x] **AC3:** GIVEN una instalación en un proyecto destino WHEN termina THEN nada fuera de ese
+  proyecto cambió: la huella de la configuración global queda idéntica.
+- [x] **AC4:** GIVEN lo versionado WHEN un barrido por forma busca otros árboles THEN no hay ninguna
+  referencia a otro proyecto del autor.
+- [x] **AC5:** GIVEN alguien que nunca vio el protocolo WHEN lee el README THEN entiende las once
+  fases, la memoria entre sesiones y el bucle de auto-mejora, con diagramas.
+- [x] **AC6:** GIVEN siete días de trabajo WHEN se pide el tablero THEN muestra proyectos, sesiones,
+  turnos, tokens deduplicados y horas como banda, fuera del repositorio.
+- [x] **AC7:** GIVEN una ronda de auto-mejora WHEN el agente propone THEN escribe como mucho cuatro
+  mejoras, cada una con su cita resuelta contra el archivo, y no ejecuta nada.
 
 ## Constraints / Restricciones
 
-Sin dependencias nuevas: Node nativo. Las fuentes y commits válidos salen de
-`contracts/research-citations.json`, que ya existe y no se toca. El gate se declara en
-`contracts/empty-probe.json` y su límite honesto en `contracts/honest-limits.json`.
+Node nativo, cero dependencias de npm. Sin daemons, servicios cloud ni APIs externas. Nada se
+escribe fuera del árbol salvo pedido explícito con bandera. Cobertura total de líneas, ramas y
+funciones en `scripts/`. Todo script nuevo se declara en `contracts/empty-probe.json`. Sin test
+rojo visible no hay implementación.
 
 ## Non-Goals / No-Goals
 
-No abre el archivo citado ni comprueba que la línea diga lo que el candidato afirma: eso es
-reclonar el corpus. No juzga si un contraejemplo es bueno, si un costo es realista ni si una
-decisión es sensata. No adopta nada por su cuenta: la decisión sigue siendo humana y con 🔵.
+No se promete llegar a trending: se pueden arreglar defectos y escribir mejor, que la gente mire
+eso no depende del repositorio. No se toca el vocabulario de fases de las máquinas —tres gates
+validan orden y un hash cubre el prefijo—, sólo el de la documentación. No se convierte el tablero
+en un servidor: genera una página y termina.
 
 ## Stack & Dependencies
 
-Node nativo, `node:test`. Reusa el patrón de verde vacío de `verify-empty-probe.mjs` y la lectura
-del contrato pineado que ya hace `verify-research-citations.mjs`.
+Node 22 o superior, `node:test`, `git`. Nada más. La integración con herramientas de grafo queda
+opcional y declarada: el protocolo cierra su fase de deploy sin ellas.
 
 ## Definition of Done (DoD)
 
-Gate escrito con prueba roja previa, cobertura completa de sus funciones y ramas, fila en
-`empty-probe.json`, límite honesto registrado, `SKILL.md` y `README.md` actualizados, y suite en
-verde diez veces seguidas.
+Las nueve etapas del plan cerradas y publicadas; la suite en verde con la máquina sin carga; la
+cobertura completa; la cadena de auditoría intacta contra la historia de git; y la medición de
+punta a punta sobre un clon del estado publicado, con cero fallos y la configuración global intacta.
