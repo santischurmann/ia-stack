@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Se le pidió a GitHub que purgue los objetos huérfanos: ticket #4726900, abierto.** Antes de pedir
+  nada se comprobó si hacía falta, y hacía falta: **siete commits previos a la reescritura siguen
+  servidos**, y su contenido sigue recuperable por identificador. El force-push cambió lo que se ve
+  por defecto, **no lo que se puede pedir**.
+  - No existe endpoint de API para soporte, así que el pedido va por el formulario autenticado.
+  - **La propia herramienta de GitHub confirmó el diagnóstico** antes de dejar abrir el ticket:
+    reescribir la historia y forzar el push **no alcanza** si los commits viejos siguen accesibles
+    por identificador directo, vistas cacheadas o refs de pull request.
+  - El pedido lleva los datos que la documentación exige: **cero pull requests** afectados —así que
+    no hay refs de PR reteniendo los commits viejos— y **cero objetos LFS huérfanos**, los dos
+    verificados; más las puntas previa y actual, sin forks, sin releases y un solo colaborador.
+  - **Límite:** que Soporte lo ejecute no depende de este repositorio. Hasta entonces el contenido
+    sigue recuperable por identificador. Es seguible, no cerrable desde acá.
+
 - **El verificador de la reescritura daba verde sin haber corrido.** Al borrar el respaldo se hizo un
   último barrido y aparecieron **dos revisiones** que la reescritura no había tocado. Dos fallas
   encadenadas, las dos de la familia que este repositorio se pasó el día arreglando.
