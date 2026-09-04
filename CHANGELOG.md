@@ -7,6 +7,13 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los identificadores de commit anteriores a la reescritura ya no resuelven.** Este registro nombra
+  commits con el identificador que tenían cuando se escribió cada entrada, y la reescritura de
+  historia se los cambió a todos. Son **doce** referencias en este archivo y en `SKILL.md`. No se
+  corrigen a propósito: reescribirlas falsearía lo que se registró entonces. **El README sí se
+  corrigió**, porque es documentación operativa —quien la lee corre lo que dice— y una prueba nueva
+  comprueba que todo commit que el README nombra exista de verdad.
+
 - **Se le pidió a GitHub que purgue los objetos huérfanos: ticket #4726900, abierto.** Antes de pedir
   nada se comprobó si hacía falta, y hacía falta: **siete commits previos a la reescritura siguen
   servidos**, y su contenido sigue recuperable por identificador. El force-push cambió lo que se ve

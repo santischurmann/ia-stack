@@ -1408,3 +1408,16 @@ test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe'
   assert.ok(enTabla.length > 0, 'la tabla no puede venir vacia');
   assert.deepEqual(enTabla.filter((g) => !enDisco.has(g)).sort(), []);
 });
+
+// --- El README es documentacion OPERATIVA: quien lo lee va a correr lo que dice. Nombraba un commit
+// que la ultima reescritura de historia dejo sin existir, asi que la instruccion apuntaba al vacio.
+// El CHANGELOG queda fuera de esta comprobacion a proposito: es un registro historico y sus entradas
+// nombran los commits con el identificador que tenian entonces, que una reescritura necesariamente
+// invalida. Reescribirlos seria falsear el registro; el CHANGELOG lo declara en una linea.
+
+test('todo commit que el README nombra existe de verdad en el repositorio', () => {
+  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const shas = [...new Set([...readme.matchAll(/`([0-9a-f]{7,40})`/gu)].map((m) => m[1]))];
+  const fantasmas = shas.filter((s) => spawnSync('git', ['cat-file', '-e', s], { cwd: repoRoot }).status !== 0);
+  assert.deepEqual(fantasmas, []);
+});
