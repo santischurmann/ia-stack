@@ -1,6 +1,6 @@
 # VibeCodeProtocols
 
-**Leé el protocolo entero antes de operar**: son 9 fases con gates mecánicos, y saltarse uno
+**Leé el protocolo entero antes de operar**: son once fases con gates mecánicos, y saltarse uno
 invalida el resto. Está en `SKILL.md` si este es el repositorio de VCP, o en
 `.vibe/vcp-runtime/SKILL.md` si VCP está instalado acá como herramienta.
 

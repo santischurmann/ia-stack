@@ -5,7 +5,7 @@ description: Protocolo de 9 fases con gates mecánicos para investigar, diseñar
 
 # VibeCodeProtocols
 
-**Leé el protocolo entero antes de operar**: son 9 fases encadenadas por gates que se ejecutan, y
+**Leé el protocolo entero antes de operar**: son once fases encadenadas por gates que se ejecutan, y
 saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó VCP acá:
 
 - `SKILL.md` en la raíz — este es el repositorio de VCP.

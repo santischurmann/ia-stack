@@ -53,7 +53,7 @@
       "limit_id": "backup-seal-is-protocol-owned-not-graphify-owned",
       "file": "SKILL.md",
       "phrase": "El sello lo registra el protocolo, no Graphify",
-      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 4.7, y la razón por la que el orden commit → graphify → record → check importa. Sin esta frase, la próxima sesión que vea el sello atrasado en GRAPH_REPORT.md vuelve a cablear el gate contra esa línea y reintroduce el rechazo de un backup cuyo contenido estaba al día."
+      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 8.2, y la razón por la que el orden commit → graphify → record → check importa. Sin esta frase, la próxima sesión que vea el sello atrasado en GRAPH_REPORT.md vuelve a cablear el gate contra esa línea y reintroduce el rechazo de un backup cuyo contenido estaba al día."
     },
     {
       "limit_id": "graphify-manifest-proves-bookkeeping",
@@ -119,7 +119,7 @@
       "limit_id": "runtime-sync-gate-detects-drift-not-correctness",
       "file": "SKILL.md",
       "phrase": "detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea",
-      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 0. Sin esta frase, un runtime sincronizado se reporta como runtime verificado y nadie vuelve a mirar los gates que la copia y el fuente comparten rotos."
+      "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 1. Sin esta frase, un runtime sincronizado se reporta como runtime verificado y nadie vuelve a mirar los gates que la copia y el fuente comparten rotos."
     },
     {
       "limit_id": "audit-chain-misses-wholesale-rewrites",

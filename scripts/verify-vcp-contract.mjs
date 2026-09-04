@@ -79,8 +79,10 @@ export const REQUIREMENTS = [
   ['README.md', /verify-capability-matrix\.mjs/u, 'capability matrix gate'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
-  // The two halves are pinned separately on purpose: `criteria` closes Phase 4 and `claims` closes
-  // Phase 0.5, so deleting either command from its phase must fail on its own.
+  // The two halves are pinned separately on purpose: `criteria` closes Phase 6 and `claims` closes
+  // Phase 2, so deleting either command from its phase must fail on its own. The old comment said
+  // "Phase 4" and "Phase 0.5": neither matched where the commands actually live, and Phase 0.5 does
+  // not exist. Fixed when the five phase vocabularies were unified.
   ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
   ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
   ['SKILL.md', /claims --feature <feature-slug> --require-inputs --require-links/u, 'strict claim-link completeness at final close'],
@@ -95,9 +97,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-evidence-runner\.mjs run/u, 'native argv evidence runner'],
   ['SKILL.md', /verify-evidence-runner\.mjs check .*--require-complete/u, 'strict evidence completion gate'],
   ['README.md', /verify-evidence-runner\.mjs/u, 'native evidence runner'],
-  // Phase 4 runs `criteria` where the spec must already exist, so dropping the flag would turn a
+  // Phase 6 runs `criteria` where the spec must already exist, so dropping the flag would turn a
   // deleted spec back into a green. The flag is pinned separately from the command for that reason.
-  ['SKILL.md', /criteria --spec docs\/spec\.md --tests tests --require-inputs/u, 'Phase 4 criteria run rejects a missing spec instead of passing empty'],
+  ['SKILL.md', /criteria --spec docs\/spec\.md --tests tests --require-inputs/u, 'Phase 6 criteria run rejects a missing spec instead of passing empty'],
   ['SKILL.md', /escribe VACÍO, no OK/u, 'empty green is written as empty, never as verified'],
   // The gate and the rule are pinned separately: the retry limit is a protocol rule that must stay
   // written even if somebody moves, renames or deletes the gate that detects it.

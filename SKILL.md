@@ -719,7 +719,7 @@ declarado es aceptable.
 
 Checkpoint después de cada gate: una línea en `.vibe/SESSION.md` (`T<id> RED PASS` / `GREEN ✅` /
 `TRIANGULATE N casos en verde` / `REFACTOR verde`) que incluya el resumen del `NOT_REVIEWED` y la
-ruta del informe, y después se actualiza el estado en `tasks.json`. La entrega final de la Fase 4
+ruta del informe, y después se actualiza el estado en `tasks.json`. La entrega final de la Fase 5
 pasa por el mismo gate antes de ofrecer la decisión de commit o push.
 
 En paralelo: las tareas que no se pisan en `depends_on` se lanzan a la vez, si la configuración lo
@@ -1025,7 +1025,7 @@ suficiencia, y sin spec, sin criterios o sin Discovery el gate escribe VACÍO, n
 
 **Verde vacío.** Un gate que no encontró nada que comparar no escribe `OK:`, escribe `VACÍO:`. Son
 dos cosas distintas y hasta ahora se leían igual: "verifiqué y pasó" contra "no había nada que
-verificar". Acá en Fase 4 la spec ya tiene que existir, así que el comando va con `--require-inputs`
+verificar". Acá en Fase 6 la spec ya tiene que existir, así que el comando va con `--require-inputs`
 y ese vacío pasa a ser rechazo. Fuera de esta fase el flag se omite: en Bootstrap todavía no hay
 spec, y ahí la ausencia es normal, no una falta.
 

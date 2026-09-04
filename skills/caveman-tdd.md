@@ -21,7 +21,7 @@ allowed-tools: Read, Bash
 
 **Hard gate #5, same rank: coverage 100% de cada métrica medible before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
 
-**Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 4 Final, full DoD), `skills/subagent-{red,green,triangulate,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
+**Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 8 Deploy, full DoD), `skills/subagent-{red,green,triangulate,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
 
 ---
 

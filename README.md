@@ -87,14 +87,22 @@ verdad.** Pueden decirte que una decisión quedó registrada de forma coherente;
 que sea la decisión correcta, ni que la persona la haya entendido.
 ## El flujo, simple
 
+Son **once**, y son las mismas que `SKILL.md`. Una prueba lo comprueba: si los dos documentos se
+separan, la suite se pone roja.
+
 | Fase | Pregunta que responde | Resultado necesario |
 |---|---|---|
-| 0. Bootstrap | ¿Qué proyecto y feature son ésta? | Contexto, estado y feature activa claros |
-| 1. Research + diagnóstico | ¿Qué proceso está roto y qué conviene construir? | Fuentes, CAIO, mapa de bucle y artefactos de producto |
-| 2. Spec | ¿Qué problema resolvemos y qué no? | Criterios de aceptación y límites |
-| 3. Plan | ¿Qué se toca y en qué orden? | Tareas sin escritores en conflicto |
-| 4. Build | ¿La conducta está probada antes de cambiarla? | RED -> GREEN -> TRIANGULATE -> REFACTOR |
-| 5. Final | ¿La evidencia coincide con lo que se libera? | Suite, seguridad, revisión, receipt y backup |
+| 1. Bootstrap | ¿Qué proyecto y qué feature son ésta? | Contexto, estado y feature activa claros |
+| 1.5. Intake | ¿Alcanza con un cambio chico o hace falta el ciclo entero? | Triage escrito, con su motivo |
+| 2. Research | ¿Qué está roto de verdad, y qué dicen las fuentes? | Fuentes citadas y verificables, no recordadas |
+| 3. Spec | ¿Qué problema resolvemos y qué **no**? | Criterios de aceptación y límites |
+| 4. Plan | ¿Qué se toca y en qué orden? | Tareas sin dos que escriban lo mismo |
+| 5. Build | ¿La conducta está probada **antes** de cambiarla? | Un test rojo visible por cada cambio |
+| 5.5. Triangulate | ¿El test pasa por la razón correcta? | Casos borde que lo harían fallar |
+| 6. Test | ¿Está todo verde de verdad, o sólo lo que miré? | Suite, cobertura y gates, corridos |
+| 7. Simplify | ¿Qué sobra ahora que funciona? | Lo que se saca, con su motivo |
+| 8. Deploy | ¿La evidencia coincide con lo que se libera? | Receipt, seguridad y respaldo |
+| 9. Limpieza | ¿Qué se acumuló y ya no sirve? | Archivado, nunca borrado, y reversible |
 
 Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El
 agente recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.

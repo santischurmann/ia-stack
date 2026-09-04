@@ -287,16 +287,21 @@ Esperando tu respuesta antes de continuar.
 
 ```
 Phase 1 Bootstrap (native internal contract) → [x]
+Phase 1.5 INTAKE                    → [ ]
+Phase 2 RESEARCH                    → [ ]
 Phase 3 SPEC                        → [ ]
 Phase 4 PLAN                        → [ ]
 Phase 5 BUILD T01..TNN (RED→GREEN→TRIANGULATE→REFACTOR per task) → [ ]
-Phase 4 FINAL
-  4.1 Verify   → [ ]
-  4.2 Risk classification (bajo/estandar/alto/critico) + Simplify → [ ]
-  4.3 Security (native security-baseline.md) → [ ]
-  4.4 Adversarial review (4R: Risk/Readability/Reliability/Resilience) → [ ]
-  4.5 Tests (final) + receipt w/ fingerprint → [ ]
-  4.6 Commit/push/merge (verify-receipt.mjs mechanical gate) → [ ]
-  4.7 Backups              → [ ]
-  4.8 Reflect + Lessons    → [ ]
+Phase 5.5 TRIANGULATE               → [ ]
+Phase 6 TEST
+  6.1 Verify   → [ ]
+  6.2 Security (native security-baseline.md) → [ ]
+  6.3 Adversarial review (4R: Risk/Readability/Reliability/Resilience) → [ ]
+Phase 7 SIMPLIFY
+  7.1 Risk classification (bajo/estandar/alto/critico) + Simplify → [ ]
+Phase 8 DEPLOY
+  8.1 Commit/push/merge (verify-receipt.mjs mechanical gate) → [ ]
+  8.2 Backups              → [ ]
+  8.3 Reflect + Lessons    → [ ]
+Phase 9 LIMPIEZA (cada 7 días, al abrir sesión) → [ ]
 ```
