@@ -18,7 +18,16 @@ import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const CRLF = `${String.fromCharCode(13)}${String.fromCharCode(10)}`;
 const HASHED_TREE = join('docs', 'discovery');
 
@@ -63,18 +72,18 @@ function rematerialize(attributes) {
   }
 }
 
-test('un checkout con core.autocrlf=true materializa en LF todo lo que los gates hashean', () => {
+test('un checkout con core.autocrlf=true materializa en LF todo lo que los gates hashean', SOLO_FUENTE, () => {
   const { total, crlf } = rematerialize(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'));
   assert.deepEqual(crlf, [], `${crlf.length}/${total} archivo(s) volvieron con CRLF; la cadena de hashes de Discovery se rompe en cualquier clon:\n${crlf.join('\n')}`);
 });
 
-test('FALSIFICACIÓN · sin la regla de finales de línea, la sonda acusa el CRLF', () => {
+test('FALSIFICACIÓN · sin la regla de finales de línea, la sonda acusa el CRLF', SOLO_FUENTE, () => {
   // Sin esto, un cero arriba no distingue entre "el atributo funciona" y "la sonda no mira nada".
   const { total, crlf } = rematerialize('*.json text=auto\n*.md text=auto\n');
   assert.equal(crlf.length, total, 'la sonda no detectó el CRLF que el atributo permisivo produce');
 });
 
-test('la regla cubre todo el árbol trackeado, no sólo lo que ya rompió una vez', () => {
+test('la regla cubre todo el árbol trackeado, no sólo lo que ya rompió una vez', SOLO_FUENTE, () => {
   const tracked = git(repoRoot, 'ls-files').split('\n').filter(Boolean);
   assert.ok(tracked.length > 100, `git ls-files devolvió ${tracked.length} archivo(s): el barrido no miró el repositorio`);
   const attr = spawnSync('git', ['check-attr', '--stdin', 'eol'], { cwd: repoRoot, encoding: 'utf8', input: `${tracked.join('\n')}\n` });
@@ -100,7 +109,7 @@ export function rawNulBytes(buffer) {
   return buffer.filter((byte) => byte === 0).length;
 }
 
-test('ningún archivo trackeado esconde código detrás de un byte NUL crudo', () => {
+test('ningún archivo trackeado esconde código detrás de un byte NUL crudo', SOLO_FUENTE, () => {
   const tracked = git(repoRoot, 'ls-files').split(String.fromCharCode(10)).filter(Boolean);
   assert.ok(tracked.length > 100, `git ls-files devolvió ${tracked.length} archivo(s): el barrido no miró el repositorio`);
   const offenders = tracked
@@ -110,7 +119,7 @@ test('ningún archivo trackeado esconde código detrás de un byte NUL crudo', (
   assert.deepEqual(offenders, [], `git y grep tratan como binarios a:${String.fromCharCode(10)}${offenders.join(String.fromCharCode(10))}`);
 });
 
-test('FALSIFICACIÓN · el barrido de NUL distingue el byte crudo de su forma escrita', () => {
+test('FALSIFICACIÓN · el barrido de NUL distingue el byte crudo de su forma escrita', SOLO_FUENTE, () => {
   // Sin esto, un cero arriba no distingue entre "no hay NUL" y "el barrido no sabe buscarlos".
   assert.equal(rawNulBytes(Buffer.from(`a${String.fromCharCode(0)}b${String.fromCharCode(0)}`, 'utf8')), 2);
   // La forma escrita es la que se busca como reemplazo: son caracteres normales, no un NUL.

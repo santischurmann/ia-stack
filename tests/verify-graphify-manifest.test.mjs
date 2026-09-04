@@ -5,7 +5,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-graphify-manifest.mjs');
 const {
   EXCLUSIONS_SCHEMA,
@@ -126,7 +135,7 @@ test('readTrackedFiles normaliza la salida de Git y propaga un fallo real', () =
 // `graphify-out/` está en .gitignore, así que un clon recién hecho no tiene manifiesto y esta
 // prueba no se puede correr ahí. Se declara SALTEADA con el motivo a la vista, nunca en verde: un
 // pase por ausencia de entrada se leería como "la cobertura del grafo está bien", y no se miró.
-test('el repositorio real declara cobertura Graphify honesta', (t) => {
+test('el repositorio real declara cobertura Graphify honesta', SOLO_FUENTE, (t) => {
   if (!existsSync(join(repoRoot, 'graphify-out', 'manifest.json'))) {
     return t.skip('sin graphify-out/manifest.json: corré `graphify update .` antes. No es un verde, es una prueba que no corrió.');
   }

@@ -6,7 +6,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-discovery-requirements.mjs');
 const {
   BASE_REQ_IDS, EXPECTED_PHASE_PLAN, EXPECTED_REQ_BY_PHASE, PHASE_ORDER,
@@ -468,7 +477,7 @@ test('FALSIFICACIÓN · replacement resolution rejects phase drift, failed bindi
   assert.doesNotThrow(() => assertReplacementTopology(plannedInventory().requirements));
 });
 
-test('phase registry exercises selftests, docs contract and live diff activation using only injected fixed checks', () => {
+test('phase registry exercises selftests, docs contract and live diff activation using only injected fixed checks', SOLO_FUENTE, () => {
   const real = createCheckRegistry(repoRoot, readInventory());
   assert.equal(runSelfTest('tests/verify-test-bindings.test.mjs', repoRoot), true);
   assert.equal(typeof real.inventory_verifier_selftest, 'function');

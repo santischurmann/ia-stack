@@ -5,9 +5,18 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const RUTA = 'docs/ablation.json';
 const ARCHIVO = '.claude-archive/2026-09-01';
 
@@ -1325,7 +1334,7 @@ test('la plantilla del registro no trae rutas de otro proyecto', () => {
 // registro apunta a un arbol que no es este, porque las rutas de este repo se citan relativas y sin
 // numero de linea en los campos de evidencia.
 
-test('el registro de la limpieza no cita archivo:linea de ningun arbol', () => {
+test('el registro de la limpieza no cita archivo:linea de ningun arbol', SOLO_FUENTE, () => {
   const registro = readFileSync(join(repoRoot, 'docs', 'ablation.json'), 'utf8');
   // Extension seguida de dos puntos y numero: la firma de una referencia a codigo ajeno.
   const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
@@ -1394,14 +1403,14 @@ test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se ve
 // listaba 19 de 36. Un mapa incompleto no miente en lo que dice, pero omite en silencio, y nadie se
 // entera de que existe un gate que nadie describio. La tabla se compara contra el disco.
 
-test('la tabla de gates del README nombra todos los gates que existen', () => {
+test('la tabla de gates del README nombra todos los gates que existen', SOLO_FUENTE, () => {
   const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
   const enTabla = new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]));
   const enDisco = readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f));
   assert.deepEqual(enDisco.filter((g) => !enTabla.has(g)).sort(), []);
 });
 
-test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe', () => {
+test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe', SOLO_FUENTE, () => {
   const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
   const enTabla = [...new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]))];
   const enDisco = new Set(readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f)));
@@ -1415,7 +1424,7 @@ test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe'
 // nombran los commits con el identificador que tenian entonces, que una reescritura necesariamente
 // invalida. Reescribirlos seria falsear el registro; el CHANGELOG lo declara en una linea.
 
-test('todo commit que el README nombra existe de verdad en el repositorio', () => {
+test('todo commit que el README nombra existe de verdad en el repositorio', SOLO_FUENTE, () => {
   const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
   const shas = [...new Set([...readme.matchAll(/`([0-9a-f]{7,40})`/gu)].map((m) => m[1]))];
   const fantasmas = shas.filter((s) => spawnSync('git', ['cat-file', '-e', s], { cwd: repoRoot }).status !== 0);
@@ -1451,7 +1460,7 @@ export function concurrenciasAfirmadas(texto) {
   ];
 }
 
-test('el README no puede contradecir la concurrencia por defecto que declara el script', async () => {
+test('el README no puede contradecir la concurrencia por defecto que declara el script', SOLO_FUENTE, async () => {
   const { DEFAULT_TEST_CONCURRENCY } = await import('../scripts/verify-vcp-coverage.mjs');
   const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
   const afirmados = concurrenciasAfirmadas(readme);
@@ -1498,7 +1507,7 @@ export function repoRemoto(ejecutar = execFileSync, cwd = repoRoot) {
   return { duenio: m[1], nombre: m[2] };
 }
 
-test('el README nombra el repositorio en el que vive', (t) => {
+test('el README nombra el repositorio en el que vive', SOLO_FUENTE, (t) => {
   // Self-check del repositorio de VCP. Dentro del runtime instalado de otra persona no aplica, y
   // preguntarlo ahi seria leer el remote de esa persona. Se salta DICIENDO por que, no en silencio.
   if (esRuntimeInstalado(repoRoot)) {
@@ -1528,10 +1537,9 @@ test('FALSIFICACIÓN · leer el repo del remote distingue url, y sin remote no d
 //
 // La deteccion es por FORMA, no por una lista de rutas conocidas: un runtime instalado siempre vive
 // en `<proyecto>/.vibe/vcp-runtime`. Y no se salta en silencio -- se salta DICIENDO por que.
-
-export function esRuntimeInstalado(root) {
-  return basename(root) === 'vcp-runtime' && basename(dirname(root)) === '.vibe';
-}
+//
+// La funcion vivia aca y se mudo a `tests/_entorno.mjs` cuando aparecieron otros seis archivos con
+// el mismo problema. Dos copias de una guarda son dos guardas que se pueden desincronizar.
 
 test('FALSIFICACIÓN · se reconoce un runtime instalado por su forma, y sólo eso', () => {
   assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'vcp-runtime')), true);

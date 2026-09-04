@@ -7,7 +7,16 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const script = join(repoRoot, 'scripts', 'verify-audit-chain.mjs');
 const {
   USAGE,
@@ -300,7 +309,7 @@ test('FALSIFICACIÓN · main exige argumentos válidos y distingue el archivo au
   assert.deepEqual(quiet, []);
 });
 
-test('el CLI real refleja los exit codes de la librería sobre archivos en disco', () => {
+test('el CLI real refleja los exit codes de la librería sobre archivos en disco', SOLO_FUENTE, () => {
   const dir = mkdtempSync(join(tmpdir(), 'vcp-audit-chain-'));
   try {
     const signed = chained([LINE_A, LINE_B]);

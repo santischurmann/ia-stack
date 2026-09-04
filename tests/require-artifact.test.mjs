@@ -7,7 +7,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
+// proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
+
 const helper = join(repoRoot, 'research', 'require-artifact.mjs');
 const {
   MISSING_ARTIFACT, UNREADABLE_ARTIFACT, ResearchArtifactError,
@@ -28,12 +37,12 @@ const ausente = () => { const error = new Error('ENOENT: no such file or directo
 const ruta = join(repoRoot, 'research', 'semantic-ledger-2026-08-31.json');
 const COMO = 'node research/build-semantic-ledger.mjs';
 
-test('un expediente presente se devuelve tal cual, en texto y en JSON', () => {
+test('un expediente presente se devuelve tal cual, en texto y en JSON', SOLO_FUENTE, () => {
   assert.equal(loadTextArtifact(ruta, COMO, { read: () => 'contenido', root: repoRoot }), 'contenido');
   assert.deepEqual(loadJsonArtifact(ruta, COMO, { read: () => '{"a":1}', root: repoRoot }), { a: 1 });
 });
 
-test('FALSIFICACIÓN · un expediente ausente rechaza nombrando el archivo y el comando que lo regenera', () => {
+test('FALSIFICACIÓN · un expediente ausente rechaza nombrando el archivo y el comando que lo regenera', SOLO_FUENTE, () => {
   const error = capturar(() => loadTextArtifact(ruta, COMO, { read: ausente, root: repoRoot }));
   assert.ok(error instanceof ResearchArtifactError, `no es un rechazo de expediente: ${error}`);
   assert.equal(error.code, MISSING_ARTIFACT);
@@ -42,7 +51,7 @@ test('FALSIFICACIÓN · un expediente ausente rechaza nombrando el archivo y el 
   assert.ok(error.message.includes(COMO), 'sin el comando de regeneración, el rechazo no es accionable');
 });
 
-test('FALSIFICACIÓN · un archivo ilegible por otro motivo no se confunde con uno ausente', () => {
+test('FALSIFICACIÓN · un archivo ilegible por otro motivo no se confunde con uno ausente', SOLO_FUENTE, () => {
   const permiso = () => { const error = new Error('EACCES: permission denied'); error.code = 'EACCES'; throw error; };
   const error = capturar(() => loadTextArtifact(ruta, COMO, { read: permiso, root: repoRoot }));
   assert.ok(error instanceof ResearchArtifactError, `no es un rechazo de expediente: ${error}`);
@@ -50,14 +59,14 @@ test('FALSIFICACIÓN · un archivo ilegible por otro motivo no se confunde con u
   assert.doesNotMatch(error.message, /Regeneralo/u, 'regenerar no arregla un problema de permisos');
 });
 
-test('FALSIFICACIÓN · un JSON roto se nombra con su archivo, no con un offset suelto', () => {
+test('FALSIFICACIÓN · un JSON roto se nombra con su archivo, no con un offset suelto', SOLO_FUENTE, () => {
   const error = capturar(() => loadJsonArtifact(ruta, COMO, { read: () => '{', root: repoRoot }));
   assert.ok(error instanceof ResearchArtifactError, `no es un rechazo de expediente: ${error}`);
   assert.equal(error.code, UNREADABLE_ARTIFACT);
   assert.match(error.message, /semantic-ledger-2026-08-31\.json no es JSON válido/u);
 });
 
-test('FALSIFICACIÓN · reportArtifactProblem deja pasar un error que no es suyo', () => {
+test('FALSIFICACIÓN · reportArtifactProblem deja pasar un error que no es suyo', SOLO_FUENTE, () => {
   // Tragarse un error desconocido es peor que el crash: esconde un defecto real detrás de un
   // rechazo que dice otra cosa.
   const escritas = [];
