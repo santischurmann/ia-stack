@@ -508,3 +508,29 @@ test('adentro de un runtime instalado el contrato dice VACÍO, no rechaza', () =
   assert.deepEqual(errores, []);
   assert.match(salidas.join('\n'), /^VACÍO:/u);
 });
+
+// --- El gate corrido desde la raíz del proyecto, que es como lo corre una persona ---------------
+//
+// La guarda de runtime instalado miraba SOLO el directorio de trabajo. Quien instala VCP no hace
+// `cd .vibe/vcp-runtime` para correr un gate: corre `node .vibe/vcp-runtime/scripts/<gate>.mjs`
+// desde la raíz de su proyecto, y ahí el cwd es su proyecto, no el runtime. Medido el 2026-09-04
+// sobre una instalación real: 113 rechazos, todos hablando de README.md e INSTALL.md del
+// repositorio de VCP, que el instalador no copia.
+//
+// Lo que decide es DÓNDE VIVE EL SCRIPT, no desde dónde se lo llamó.
+
+test('el contrato escribe VACÍO cuando el script vive en un runtime instalado, se lo llame desde donde se lo llame', () => {
+  const salidas = [];
+  const errores = [];
+  const code = main(['check'], '/un/proyecto/cualquiera', (l) => salidas.push(l), (l) => errores.push(l), '/un/proyecto/.vibe/vcp-runtime');
+  assert.deepEqual({ code, errores }, { code: 0, errores: [] });
+  assert.match(salidas.join('\n'), /^VACÍO: /u);
+});
+
+test('FALSIFICACIÓN · desde un checkout de VCP el gate sigue verificando de verdad', SOLO_FUENTE, () => {
+  // Si esta prueba se pone verde por la guarda, el gate quedó apagado para todos.
+  const salidas = [];
+  const code = main(['check'], repoRoot, (l) => salidas.push(l), () => {}, join(repoRoot, 'scripts'));
+  assert.equal(code, 0);
+  assert.doesNotMatch(salidas.join('\n'), /^VACÍO: /u);
+});

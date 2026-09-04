@@ -352,7 +352,9 @@
       "args": [
         "check"
       ],
-      "expect": "reject"
+      "expect": "reject",
+      "expect_runtime": "empty",
+      "why_runtime": "Este contrato verifica los documentos de VCP -- README.md, INSTALL.md, SKILL.md -- y el instalador no copia los dos primeros. Adentro del runtime instalado en el proyecto de otra persona no hay nada que comparar, y eso es VACIO, no un rechazo. Medido el 2026-09-04 sobre una instalacion real: corrido desde la raiz del proyecto daba 113 rechazos, todos nombrando archivos del repositorio de VCP que ese proyecto no tiene ni tiene por que tener."
     },
     {
       "script": "verify-vcp-coverage.mjs",

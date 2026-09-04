@@ -21,8 +21,10 @@
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { esRuntimeInstalado } from './verify-runtime-sync.mjs';
 
 export const USAGE = 'usage: verify-empty-probe.mjs check <empty-probe.json>';
 export const SCHEMA = 'vcp.empty-probe/v1';
@@ -98,6 +100,23 @@ export function validateShape(gates) {
     if (JUSTIFIED.includes(gate.expect) && (typeof gate.why !== 'string' || gate.why.trim() === '')) {
       violations.push(`${gate.script}: "${gate.expect}" exige un "why" que lo justifique por escrito`);
     }
+    // Un gate cuyo veredicto cambia segun DONDE VIVE el script. verify-vcp-contract.mjs es el
+    // caso: desde el checkout rechaza porque faltan los documentos de VCP, y desde el runtime
+    // instalado escribe VACIO porque el instalador no los copia. Los dos son correctos, y con una
+    // sola casilla uno de los dos contextos quedaba en rojo para siempre.
+    const declaraRuntime = gate.expect_runtime !== undefined;
+    if (declaraRuntime && !EXPECTATIONS.includes(gate.expect_runtime)) {
+      violations.push(`${gate.script}: "expect_runtime" tiene que ser uno de ${EXPECTATIONS.join(', ')}, no ${JSON.stringify(gate.expect_runtime)}`);
+    }
+    // El motivo es obligatorio en las dos direcciones: sin el, "en instalacion es distinto" seria la
+    // puerta trasera para tapar cualquier verde vacio; y un why_runtime suelto justifica un contexto
+    // que nadie va a comprobar.
+    if (declaraRuntime && (typeof gate.why_runtime !== 'string' || gate.why_runtime.trim() === '')) {
+      violations.push(`${gate.script}: "expect_runtime" exige un "why_runtime" que lo justifique por escrito`);
+    }
+    if (!declaraRuntime && gate.why_runtime !== undefined) {
+      violations.push(`${gate.script}: trae "why_runtime" sin declarar "expect_runtime": justifica un contexto que nadie comprueba`);
+    }
   }
   return violations;
 }
@@ -118,6 +137,13 @@ export function classify(outcome) {
   return outcome.stdout.startsWith('VACÍO: ') ? 'empty' : 'self';
 }
 
+/** La raiz del arbol donde vive ESTA sonda: el checkout de VCP, o el runtime instalado adentro del
+ * proyecto de otra persona. Es `dirname` de scripts/, no scripts/ mismo -- la guarda compara los dos
+ * ultimos segmentos contra `.vibe/vcp-runtime`, y `<algo>/.vibe/vcp-runtime/scripts` no termina en
+ * eso. Ese error hizo que expect_runtime no se aplicara nunca, y lo agarro la prueba de punta a
+ * punta, no la unitaria: la unitaria pasaba el contexto a mano y por eso no miraba este calculo. */
+export const RAIZ_DE_ESTE_ARBOL = dirname(SCRIPTS_DIR);
+
 /** Corre un gate con su directorio vacío propio, para que ninguno vea lo que dejó otro. */
 export function runInEmptyDirectory(script, args, spawn = spawnSync) {
   const directory = mkdtempSync(join(tmpdir(), 'vcp-empty-probe-'));
@@ -131,15 +157,18 @@ export function runInEmptyDirectory(script, args, spawn = spawnSync) {
   }
 }
 
-export function probe(gates, run = runInEmptyDirectory) {
+export function probe(gates, run = runInEmptyDirectory, enRuntimeInstalado = esRuntimeInstalado(RAIZ_DE_ESTE_ARBOL)) {
   const violations = [];
   for (const gate of gates) {
     if (gate.expect === 'skip') continue;
     const outcome = run(gate.script, gate.args);
     const actual = classify(outcome);
-    if (actual === gate.expect) continue;
+    // `expect_runtime` solo manda donde vive este script. La sonda corre los gates del MISMO
+    // arbol que ella, asi que su propia ubicacion es la de ellos.
+    const esperado = enRuntimeInstalado && gate.expect_runtime !== undefined ? gate.expect_runtime : gate.expect;
+    if (actual === esperado) continue;
     const said = (outcome.stdout || outcome.stderr || '').split('\n')[0].trim();
-    violations.push(`${gate.script} sobre un directorio vacío se comporta como "${actual}" y el contrato declara "${gate.expect}": ${said}`);
+    violations.push(`${gate.script} sobre un directorio vacío se comporta como "${actual}" y el contrato declara "${esperado}"${enRuntimeInstalado && gate.expect_runtime !== undefined ? " (runtime instalado, expect_runtime)" : ""}: ${said}`);
   }
   return violations;
 }

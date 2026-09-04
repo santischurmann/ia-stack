@@ -7,6 +7,25 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los gates dejaron de hablarle al usuario del repositorio de VCP.** Medido sobre un clon limpio
+  instalado en un proyecto ajeno: `verify-vcp-contract.mjs check` daba **113 rechazos** nombrando
+  `README.md` e `INSTALL.md`, archivos que el instalador no copia.
+  - **La guarda existía y miraba el lugar equivocado**: el directorio de trabajo. Nadie hace
+    `cd .vibe/vcp-runtime` para correr un gate — se corre `node .vibe/vcp-runtime/scripts/<gate>.mjs`
+    desde la raíz del proyecto. Ahora decide **dónde vive el script**.
+  - **La fase I2 no se podía cerrar** en ningún proyecto instalado: exigía un `README.md` con la
+    palabra «Discovery». Adentro de un runtime instalado ahora se exige sólo lo que el instalador
+    **copia**, y la regla sale de la misma lista de la que sale la copia — si mañana el README viaja,
+    vuelve a exigirse solo.
+  - **El contrato de sondas ganó `expect_runtime`**, porque el veredicto de un gate puede depender de
+    dónde vive: desde el checkout rechaza, desde la instalación escribe `VACÍO:`. Los dos son
+    correctos y una sola casilla dejaba uno en rojo para siempre. Exige `why_runtime` escrito.
+  - **El default de esa casilla nació mal** —miraba `scripts/` en vez de la raíz del árbol, así que
+    no se aplicaba nunca— y lo agarró la prueba de punta a punta, **no** la unitaria: la unitaria le
+    pasaba el contexto a mano y por eso no podía ver ese cálculo.
+  - **Barrido final:** los 41 gates corridos desde el proyecto ajeno, **0** le reclaman al usuario un
+    archivo del repositorio de VCP.
+
 - **El clon pesa 968 KB menos, y no se perdió nada.** `research/semantic-deep-evidence-*.ndjson` era
   la única salida de esa familia que quedó versionada: el `.gitignore` ya excluía
   `semantic-full-evidence-*.ndjson` y el propio verificador imprime **«no está en git a propósito: es

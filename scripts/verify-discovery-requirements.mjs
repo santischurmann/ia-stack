@@ -9,6 +9,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkActiveBindings, checkTestBinding, createCachedBindingCheck } from './verify-test-bindings.mjs';
+import { COPIED_DIRECTORIES, COPIED_FILES, esRuntimeInstalado } from './verify-runtime-sync.mjs';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -376,13 +377,33 @@ export function runSelfTest(testRef, cwd, { timeoutMs = SELFTEST_TIMEOUT_MS, run
   return result.status === 0;
 }
 
+/** Una ruta relativa, ¿la copia el instalador? Se contesta con la MISMA lista de la que sale la
+ * copia, no con una lista paralela: si manana el instalador empieza a copiar el README, esta
+ * funcion lo dice sola. */
+function loCopiaElInstalador(ruta) {
+  const primero = ruta.split('/')[0];
+  return COPIED_FILES.includes(ruta) || COPIED_DIRECTORIES.includes(primero);
+}
+
+/** Los documentos que la fase I2 exige.
+ *
+ * ADENTRO DE UN RUNTIME INSTALADO se exigen solo los que el instalador COPIA. `README.md` no viaja,
+ * y exigirlo hacia rechazar la fase I2 en el proyecto de cualquiera por un archivo del repositorio
+ * de VCP. Medido el 2026-09-04 sobre una instalacion real: `check --completed-phase I2` rechazaba
+ * con DISCOVERY_PHASE_PREREQ_FAILED, y el mensaje hablaba de un archivo que ese proyecto no tiene ni
+ * tiene por que tener.
+ *
+ * La exencion es por FORMA -- que la ruta este en la superficie de copia -- y no una excepcion
+ * escrita a mano para README.md: una lista de excepciones solo cubre lo que ya penso quien la
+ * escribio. Lo que si se copia se sigue exigiendo igual que en el checkout. */
 export function docsContract(cwd) {
   const required = [
     ['SKILL.md', /verify-discovery-requirements\.mjs/u],
     ['README.md', /Discovery/u],
     ['templates/spec.md', /Discovery/u],
   ];
-  return required.every(([path, pattern]) => existsSync(resolve(cwd, path)) && pattern.test(readFileSync(resolve(cwd, path), 'utf8')));
+  const exigibles = esRuntimeInstalado(cwd) ? required.filter(([path]) => loCopiaElInstalador(path)) : required;
+  return exigibles.every(([path, pattern]) => existsSync(resolve(cwd, path)) && pattern.test(readFileSync(resolve(cwd, path), 'utf8')));
 }
 
 export function createCheckRegistry(cwd, inventory, { selfTest = runSelfTest, docsCheck = docsContract, bindingsCheck = checkActiveBindings } = {}) {

@@ -2,7 +2,8 @@
 // Guards the small set of user-visible protocol promises that previously drifted across docs.
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 import { EMPTY_PREFIX, esRuntimeInstalado } from './verify-runtime-sync.mjs';
 
@@ -290,7 +291,14 @@ export function contractViolations(read) {
   return violations;
 }
 
-export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error) {
+/** Donde vive ESTE script. Es lo que decide si el gate esta adentro de un runtime instalado, y no el
+ * directorio de trabajo: quien instala VCP no hace `cd .vibe/vcp-runtime` para correr un gate, corre
+ * `node .vibe/vcp-runtime/scripts/<gate>.mjs` desde la raiz de su proyecto. Medido el 2026-09-04
+ * sobre una instalacion real: asi invocado, el gate daba 113 rechazos que hablaban de README.md e
+ * INSTALL.md del repositorio de VCP, archivos que el instalador no copia. */
+export const RAIZ_DEL_SCRIPT = dirname(dirname(fileURLToPath(import.meta.url)));
+
+export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, raizDelScript = RAIZ_DEL_SCRIPT) {
   if (args.length !== 1 || args[0] !== 'check') {
     writeError(USAGE);
     return 2;
@@ -301,7 +309,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   // Este contrato habla de los documentos de VCP, y el instalador no copia README.md ni INSTALL.md.
   // Adentro del runtime instalado de otra persona no hay nada que verificar, y eso NO es un OK:
   // es VACIO. Antes rechazaba siempre, con violaciones que hablaban del repositorio de VCP.
-  if (esRuntimeInstalado(cwd)) {
+  if (esRuntimeInstalado(cwd) || esRuntimeInstalado(raizDelScript)) {
     write(`${EMPTY_PREFIX}este contrato verifica los documentos de VCP, que el instalador no copia: adentro de un runtime instalado no hay nada que comparar`);
     return 0;
   }

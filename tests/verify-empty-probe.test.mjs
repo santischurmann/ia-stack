@@ -5,12 +5,17 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 import {
   EXPECTATIONS,
   JUSTIFIED,
   SCHEMA,
   USAGE,
   classify,
+  RAIZ_DE_ESTE_ARBOL,
+  SCRIPTS_DIR,
   listGateScripts,
   main,
   missingGates,
@@ -24,6 +29,12 @@ import {
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-empty-probe.mjs');
+
+// Self-check del repositorio: afirma sobre la ubicacion de ESTE arbol. Adentro del runtime instalado
+// de otra persona la respuesta correcta es la contraria, y no hay nada que probar ahi.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 
 const GATE = { script: 'verify-uno.mjs', args: ['check'], expect: 'reject' };
 const contractOf = (gates) => JSON.stringify({ schema: SCHEMA, gates });
@@ -325,4 +336,45 @@ test('FALSIFICACIÓN · un spawn que falla del todo no puede clasificarse como v
 test('FALSIFICACION · un gate declarado usage SIN motivo es un skip invisible y se rechaza', () => {
   const violations = validateShape([{ script: 'verify-x.mjs', args: ['check'], expect: 'usage' }]);
   assert.deepEqual(violations, ['verify-x.mjs: "usage" exige un "why" que lo justifique por escrito']);
+});
+
+// --- Un gate cuyo veredicto depende de dónde vive el script --------------------------------------
+//
+// `verify-vcp-contract.mjs` verifica los documentos de VCP. Desde el checkout fuente, sobre una
+// carpeta vacía, RECHAZA: faltan README.md e INSTALL.md, y eso es información. Desde el runtime
+// instalado en el proyecto de otra persona escribe VACÍO, porque el instalador no copia esos
+// archivos y no hay nada que comparar. Son dos comportamientos correctos del mismo gate.
+//
+// El contrato tenía una sola casilla, así que uno de los dos contextos iba a quedar en rojo para
+// siempre. `expect_runtime` declara el segundo, y exige su propio `why`: sin motivo escrito sería
+// la puerta trasera para tapar cualquier verde vacío diciendo "en instalación es distinto".
+
+test('expect_runtime declara el veredicto del gate cuando el script vive en un runtime instalado', () => {
+  const gate = { script: 'verify-x.mjs', args: [], expect: 'reject', expect_runtime: 'empty', why_runtime: 'el instalador no copia esos documentos' };
+  const vacio = () => ({ status: 0, stdout: 'VACÍO: nada que comparar\n', stderr: '' });
+  const rechazo = () => ({ status: 1, stdout: '', stderr: 'REJECTED: falta README.md\n' });
+  assert.deepEqual(probe([gate], vacio, true), [], 'en runtime instalado manda expect_runtime');
+  assert.deepEqual(probe([gate], rechazo, false), [], 'en el checkout manda expect');
+  // Y cada contexto sigue rechazando el comportamiento del otro: la casilla nueva no afloja ninguna.
+  assert.equal(probe([gate], rechazo, true).length, 1);
+  assert.equal(probe([gate], vacio, false).length, 1);
+});
+
+test('FALSIFICACIÓN · expect_runtime sin motivo escrito, o con un veredicto inventado, se rechaza', () => {
+  const base = { script: 'verify-x.mjs', args: [], expect: 'reject' };
+  const con = (extra) => validateShape([{ ...base, ...extra }]).join(' ');
+  assert.match(con({ expect_runtime: 'empty' }), /why_runtime/u);
+  assert.match(con({ expect_runtime: 'inventado', why_runtime: 'x' }), /expect_runtime/u);
+  assert.match(con({ why_runtime: 'sobra sin expect_runtime' }), /why_runtime/u);
+  assert.deepEqual(validateShape([{ ...base, expect_runtime: 'empty', why_runtime: 'motivo escrito' }]), []);
+});
+
+test('la raíz que la sonda mira es el árbol, no scripts/ — el error que sólo agarró el e2e', SOLO_FUENTE, () => {
+  // `esRuntimeInstalado` compara los dos últimos segmentos contra `.vibe/vcp-runtime`, así que
+  // pasarle `<algo>/.vibe/vcp-runtime/scripts` devuelve false SIEMPRE y `expect_runtime` no se
+  // aplicaría nunca. La prueba unitaria de arriba pasa el contexto a mano, así que no puede ver
+  // este cálculo: hace falta afirmarlo sobre la ubicación real.
+  assert.equal(RAIZ_DE_ESTE_ARBOL, dirname(SCRIPTS_DIR));
+  assert.equal(esRuntimeInstalado(RAIZ_DE_ESTE_ARBOL), false, 'este checkout no es un runtime instalado');
+  assert.equal(esRuntimeInstalado(join(RAIZ_DE_ESTE_ARBOL, '.vibe', 'vcp-runtime')), true, 'y la forma instalada sí se reconoce');
 });

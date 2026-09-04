@@ -577,3 +577,46 @@ test('un selftest matado por señal, sin objeto de error, también sube como "no
       && /SIGKILL/u.test(e.message),
   );
 });
+
+// --- Cerrar la fase I2 en el proyecto de otra persona --------------------------------------------
+//
+// `docsContract` exigía `README.md`, y el instalador NO lo copia. Medido el 2026-09-04 sobre una
+// instalación real: `check --completed-phase I2` rechazaba con DISCOVERY_PHASE_PREREQ_FAILED por un
+// archivo del repositorio de VCP que en ese proyecto no existe ni tiene por qué existir.
+//
+// La regla no es una excepción escrita a mano para README.md: adentro de un runtime instalado se
+// exige lo que el instalador COPIA, que es lo único que puede estar ahí. Si mañana el instalador
+// empieza a copiar el README, vuelve a exigirse solo.
+
+test('adentro de un runtime instalado, la fase I2 sólo exige los documentos que el instalador copia', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-docs-runtime-'));
+  const runtime = join(raiz, '.vibe', 'vcp-runtime');
+  try {
+    mkdirSync(join(runtime, 'templates'), { recursive: true });
+    writeFileSync(join(runtime, 'SKILL.md'), 'verify-discovery-requirements.mjs\n');
+    writeFileSync(join(runtime, 'templates', 'spec.md'), 'Discovery\n');
+    // Sin README.md, que es exactamente como queda toda instalación.
+    assert.equal(esRuntimeInstalado(runtime), true, 'la guarda tiene que reconocer esta forma');
+    assert.equal(docsContract(runtime), true);
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACIÓN · la exención vale por la forma del runtime, no por el archivo que falte', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-docs-checkout-'));
+  try {
+    mkdirSync(join(raiz, 'templates'), { recursive: true });
+    writeFileSync(join(raiz, 'SKILL.md'), 'verify-discovery-requirements.mjs\n');
+    writeFileSync(join(raiz, 'templates', 'spec.md'), 'Discovery\n');
+    // Mismo contenido, pero NO es un runtime instalado: acá el README sigue siendo obligatorio.
+    assert.equal(docsContract(raiz), false);
+    // Y adentro del runtime, lo que SÍ se copia se sigue exigiendo: sacar SKILL.md rechaza igual.
+    const runtime = join(raiz, '.vibe', 'vcp-runtime');
+    mkdirSync(join(runtime, 'templates'), { recursive: true });
+    writeFileSync(join(runtime, 'templates', 'spec.md'), 'Discovery\n');
+    assert.equal(docsContract(runtime), false);
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
