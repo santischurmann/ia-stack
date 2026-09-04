@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La historia de git fue reescrita, con autorización explícita, y lo que quedaba expuesto ya no
+  está.** Las tres superficies que la redacción de la punta no podía alcanzar —el blob sin redactar,
+  los cuerpos de los mensajes de commit y las líneas de `AUDIT.md`— se limpiaron de raíz.
+  - **160 commits reescritos** sobre todas las refs, en dos pasadas, con las **mismas reglas** para
+    el contenido y para los mensajes: un mensaje que reconstruye la fuga y nombra el commit donde
+    mirarla es tan público como el archivo.
+  - **Qué se sacó:** nombres de producto y versión, rutas internas de otro árbol, el mapa de dónde
+    vive la validación y la generación de licencias y los pagos, la cita de un hallazgo de seguridad
+    con archivo, líneas y mecanismo, las rutas absolutas con el usuario del sistema, y la coordenada
+    que un mensaje daba para ir a buscar el texto sin redactar.
+  - **Verificado después, no supuesto:** **cero rastros** en contenido, en mensajes de commit y en
+    nombres de archivo, en las 160 revisiones de todas las refs. El barrido busca por patrón, no por
+    la lista con la que se limpió — la lección que este repositorio ya había pagado una vez.
+  - **La única mención que sobrevive** es la de un asistente ficticio de cine, en la transcripción de un video
+    estudiado. No es del autor y se excluyó a propósito.
+- **La cadena de auditoría se re-selló, y lo que eso cuesta está escrito dentro de ella.** La cadena
+  encadena por hash el **texto** de cada línea, así que reescribir siete líneas invalidó sus sellos y
+  los siguientes. Se recalcularon con la misma función que usa el gate, **sin borrar ni reordenar
+  una sola línea**; la traza vuelve a cerrar sobre 109.
+  - **El sello ya no prueba que el texto anterior sea el original**, sólo que nadie lo tocó después
+    de la reescritura. Esa garantía se rompió a propósito y con autorización, y por eso queda
+    declarada **adentro** de la cadena y no afuera.
+  - `verify-audit-chain history` rechaza el par de commits donde ocurrió el re-sellado, porque exige
+    crecimiento sólo-agregado. Es correcto que lo rechace: pasó exactamente eso.
+- **Lo que no depende de este repositorio:** GitHub puede conservar los objetos viejos accesibles por
+  su hash aunque el force-push los deje sin referencia. Sacarlos del todo requiere pedírselo a
+  GitHub. La copia completa de la historia previa quedó en un bundle local, fuera del repositorio.
+
 - **El README tenía una afirmación falsa sobre su propia herramienta y un mapa incompleto.**
   - **Falsa:** decía que la medición de cobertura «usa un worker por defecto» y que
     `VCP_TEST_CONCURRENCY` servía para subirlo. La constante del script se llama
