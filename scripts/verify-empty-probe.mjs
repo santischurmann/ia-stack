@@ -34,6 +34,9 @@ export const SCRIPTS_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)))
 // asi que la regla "un gate nuevo tiene que declarar que hace sin entradas" tenia un agujero del
 // tamano del prefijo de su nombre. Reproducido el 2026-08-28.
 export const GATE_FILE = /^(?!.*\.test\.mjs$).*\.mjs$/u;
+/** Un `script` del contrato: un .mjs adentro de scripts/, con subdirectorios permitidos y sin forma
+ * de salir del arbol. `..` y las rutas absolutas se rechazan por nombre, antes de tocar el disco. */
+export const GATE_PATH = /^(?!.*\.test\.mjs$)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*\.mjs$/u;
 /**
  * reject: sale distinto de 0 — no hay entradas y el gate lo dice.
  * usage:  sale 2 — le faltan argumentos obligatorios, ni siquiera llega a mirar.
@@ -83,7 +86,7 @@ export function validateShape(gates) {
       violations.push(`${at} no es un objeto`);
       continue;
     }
-    if (typeof gate.script !== 'string' || !GATE_FILE.test(gate.script)) {
+    if (typeof gate.script !== 'string' || !GATE_PATH.test(gate.script)) {
       violations.push(`${at}.script no nombra un script .mjs de scripts/: ${JSON.stringify(gate.script)}`);
       continue;
     }
@@ -173,8 +176,24 @@ export function probe(gates, run = runInEmptyDirectory, enRuntimeInstalado = esR
   return violations;
 }
 
+/** BAJA a los subdirectorios, por el mismo motivo que listMjsScripts en verify-vcp-coverage.mjs: un
+ * `scripts/sub/x.mjs` no aparecia como gate presente y nadie exigia declararlo. Comprobado el
+ * 2026-09-04 creando uno -- la sonda dio OK sin pedir nada. */
 export function listGateScripts(list = readdirSync) {
-  return list(SCRIPTS_DIR).filter((name) => GATE_FILE.test(name)).sort();
+  const encontrados = [];
+  const bajar = (relativo) => {
+    for (const entry of list(relativo === '' ? SCRIPTS_DIR : join(SCRIPTS_DIR, relativo), { withFileTypes: true })) {
+      // Un doble de pruebas puede devolver strings: sin `isFile` no hay subdirectorio que bajar, y
+      // eso es el comportamiento anterior, nunca un error.
+      const nombre = typeof entry === 'string' ? entry : entry.name;
+      const esDir = typeof entry === 'object' && typeof entry.isDirectory === 'function' && entry.isDirectory();
+      const ruta = relativo === '' ? nombre : `${relativo}/${nombre}`;
+      if (esDir) bajar(ruta);
+      else if (GATE_FILE.test(nombre)) encontrados.push(ruta);
+    }
+  };
+  bajar('');
+  return encontrados.sort();
 }
 
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {

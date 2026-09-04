@@ -261,13 +261,34 @@ export const REWRITE_DECLARATION = 'reescritura de historia AUTORIZADA';
 /** Cada versión tiene que empezar con la anterior. Nombra la primera que no, salvo que esa misma
  * versión declare su reescritura. Devuelve además los cortes que sí venían declarados, para que la
  * salida los diga en vez de que pasen callados. */
+/** Las lineas que `actual` trae y `anterior` no tenia.
+ *
+ * POR QUE HACE FALTA. `includes` sobre el contenido entero era de ARCHIVO, no de acto: la traza solo
+ * crece, asi que una vez escrita la frase TODA version posterior la arrastra, y la primera
+ * reescritura declarada dejaba autorizada en silencio cualquier reescritura futura. El comentario
+ * del propio codigo decia "la declaracion vale solo en la version que corta" y era falso en un
+ * archivo acumulativo. Comprobado con dos cortes seguidos: el segundo pasaba sin declarar nada.
+ *
+ * Se compara por CONJUNTO de lineas y no por prefijo justamente porque acá el prefijo ya se rompio:
+ * eso es lo que estamos juzgando. */
+export function lineasAgregadas(anterior, actual) {
+  const viejas = new Set(soloLF(anterior).split(String.fromCharCode(10)));
+  return soloLF(actual).split(String.fromCharCode(10)).filter((linea) => !viejas.has(linea));
+}
+
+/** Una version declara SU corte si la frase esta en lo que ella agrega. Heredarla no alcanza. */
+function declaraSuCorte(anterior, actual, declaration) {
+  return lineasAgregadas(anterior, actual).some((linea) => linea.includes(declaration));
+}
+
 export function verifyGrowth(versions, working, { declaration = REWRITE_DECLARATION } = {}) {
   const rewrites = [];
   for (let i = 1; i < versions.length; i += 1) {
     if (soloLF(versions[i].content).startsWith(soloLF(versions[i - 1].content))) continue;
-    // La declaración vale sólo en la versión que corta. Si valiera en cualquiera anterior, una sola
-    // línea vieja seria licencia abierta para reescribir todo lo que viniera después.
-    if (soloLF(versions[i].content).includes(declaration)) {
+    // La declaración tiene que estar en lo que ESTA versión agrega. Buscarla en todo el contenido
+    // la hacía de archivo y no de acto: la traza sólo crece, así que la frase de un corte viejo la
+    // arrastra toda versión posterior y dejaba autorizado en silencio cualquier corte futuro.
+    if (declaraSuCorte(versions[i - 1].content, versions[i].content, declaration)) {
       rewrites.push(versions[i].commit);
       continue;
     }
@@ -275,7 +296,7 @@ export function verifyGrowth(versions, working, { declaration = REWRITE_DECLARAT
   }
   const ultima = versions.at(-1);
   if (ultima !== undefined && working !== null && !soloLF(working).startsWith(soloLF(ultima.content))) {
-    if (soloLF(working).includes(declaration)) rewrites.push(null);
+    if (declaraSuCorte(ultima.content, working, declaration)) rewrites.push(null);
     else return { ok: false, commit: null, reason: `el archivo sin commitear no extiende la última versión registrada (${ultima.commit.slice(0, 7)})`, rewrites };
   }
   return { ok: true, commit: null, reason: null, rewrites };

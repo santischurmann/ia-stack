@@ -417,3 +417,32 @@ test('el gate mide contra un proyecto real de punta a punta', () => {
     rmSync(raiz, { recursive: true, force: true });
   }
 });
+
+// --- El escape que un subdirectorio abría --------------------------------------------------------
+//
+// Los dos gates que enumeran `scripts/` lo hacían sin bajar: `scripts/sub/x.mjs` escapaba a la
+// medición de cobertura Y a la obligación de declararse en el contrato de sondas. Comprobado el
+// 2026-09-04 creando uno: `empty-probe` daba OK sin exigir nada. Se evitaba por convención —todo
+// plano— y una convención no es una regla. Es la misma familia del agujero del prefijo `verify-`
+// que este repositorio ya cerró el 2026-08-28.
+
+test('listMjsScripts baja a los subdirectorios: un script anidado no escapa a la cobertura', () => {
+  const arbol = {
+    '/project/scripts': [
+      { name: 'verify-one.mjs', isFile: () => true, isDirectory: () => false },
+      { name: 'notes.md', isFile: () => true, isDirectory: () => false },
+      { name: 'sub', isFile: () => false, isDirectory: () => true },
+    ],
+    '/project/scripts/sub': [
+      { name: 'oculto.mjs', isFile: () => true, isDirectory: () => false },
+      { name: 'hondo', isFile: () => false, isDirectory: () => true },
+    ],
+    '/project/scripts/sub/hondo': [{ name: 'mas-hondo.mjs', isFile: () => true, isDirectory: () => false }],
+  };
+  const leer = (ruta) => arbol[String(ruta).split(String.fromCharCode(92)).join('/')] ?? [];
+  assert.deepEqual(listMjsScripts('/project', leer), [
+    'scripts/sub/hondo/mas-hondo.mjs',
+    'scripts/sub/oculto.mjs',
+    'scripts/verify-one.mjs',
+  ]);
+});

@@ -47,11 +47,23 @@ export const UNREADABLE_COVERAGE = 'COVERAGE_UNREADABLE';
 /** Inventory every Node executable we claim line/branch/function coverage for. */
 /** Rutas relativas al proyecto, no nombres sueltos: un ayudante de pruebas homonimo cubria a un
  * script sin tener una sola prueba. Reproducido el 2026-08-28. */
+/** BAJA a los subdirectorios. Antes no: `scripts/sub/x.mjs` escapaba a la medicion de cobertura Y a
+ * la obligacion de declararse en el contrato de sondas, porque los dos enumeradores miraban un solo
+ * nivel. Comprobado el 2026-09-04 creando uno: la sonda daba OK sin exigir nada. Se evitaba por
+ * convencion -- todo plano -- y una convencion no es una regla; es la misma familia del agujero del
+ * prefijo `verify-` que este repositorio cerro el 2026-08-28. */
 export function listMjsScripts(cwd = repoRoot, readDirectory = readdirSync) {
-  return readDirectory(`${cwd}/scripts`, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.mjs'))
-    .map((entry) => `scripts/${entry.name}`)
-    .sort();
+  const encontrados = [];
+  const bajar = (relativo) => {
+    for (const entry of readDirectory(`${cwd}/${relativo}`, { withFileTypes: true })) {
+      // `isDirectory` puede no existir en un doble de pruebas viejo: sin el, no se baja, que es el
+      // comportamiento anterior y nunca un error.
+      if (entry.isFile() && entry.name.endsWith('.mjs')) encontrados.push(`${relativo}/${entry.name}`);
+      else if (typeof entry.isDirectory === 'function' && entry.isDirectory()) bajar(`${relativo}/${entry.name}`);
+    }
+  };
+  bajar('scripts');
+  return encontrados.sort();
 }
 
 /**

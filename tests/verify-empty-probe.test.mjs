@@ -378,3 +378,29 @@ test('la raíz que la sonda mira es el árbol, no scripts/ — el error que sól
   assert.equal(esRuntimeInstalado(RAIZ_DE_ESTE_ARBOL), false, 'este checkout no es un runtime instalado');
   assert.equal(esRuntimeInstalado(join(RAIZ_DE_ESTE_ARBOL, '.vibe', 'vcp-runtime')), true, 'y la forma instalada sí se reconoce');
 });
+
+// --- El mismo escape, del otro lado --------------------------------------------------------------
+//
+// `listGateScripts` miraba un solo nivel, así que `scripts/sub/x.mjs` no aparecía como gate presente
+// y nadie exigía declararlo. Comprobado el 2026-09-04 creando uno: la sonda dio OK sin pedir nada.
+
+test('listGateScripts baja a los subdirectorios: un gate anidado no escapa a la declaración', () => {
+  const arbol = {
+    '': [
+      { name: 'verify-uno.mjs', isFile: () => true, isDirectory: () => false },
+      { name: 'verify-uno.test.mjs', isFile: () => true, isDirectory: () => false },
+      { name: 'sub', isFile: () => false, isDirectory: () => true },
+    ],
+    sub: [{ name: 'verify-oculto.mjs', isFile: () => true, isDirectory: () => false }],
+  };
+  const leer = (ruta) => arbol[String(ruta).slice(SCRIPTS_DIR.length).split(String.fromCharCode(92)).join('/').replace(/^\//u, '')] ?? [];
+  assert.deepEqual(listGateScripts(leer), ['sub/verify-oculto.mjs', 'verify-uno.mjs']);
+});
+
+test('un gate declarado dentro de un subdirectorio es un nombre válido para el contrato', () => {
+  const base = { args: [], expect: 'reject' };
+  assert.deepEqual(validateShape([{ ...base, script: 'sub/verify-oculto.mjs' }]), []);
+  // Y lo que nunca fue un gate sigue sin serlo: una prueba, o algo fuera de scripts/.
+  assert.equal(validateShape([{ ...base, script: 'sub/verify-oculto.test.mjs' }]).length, 1);
+  assert.equal(validateShape([{ ...base, script: '../fuera.mjs' }]).length, 1);
+});

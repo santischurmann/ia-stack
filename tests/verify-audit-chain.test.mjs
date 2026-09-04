@@ -933,3 +933,34 @@ test('FALSIFICACIÓN · el tope no toca hacia atrás: la traza real sigue verifi
   assert.ok(largos.some((n) => n > 1200), 'la traza tiene líneas largas: si no, esta prueba no prueba nada');
   assert.ok(Math.max(...largos) <= MAX_LINE_CHARS, `el tope ${MAX_LINE_CHARS} quedó por debajo del máximo ya sellado (${Math.max(...largos)}): sería una alarma rota el día uno`);
 });
+
+// --- La marca de reescritura era de ARCHIVO, no de acto ------------------------------------------
+//
+// `verifyGrowth` buscaba la declaración en cualquier parte del contenido de la versión que corta. Y
+// la traza es acumulativa: una vez escrita la frase, TODA versión posterior la contiene, porque
+// arrastra la línea vieja. Resultado: la primera reescritura declarada dejaba autorizada en silencio
+// cualquier reescritura futura. El comentario del propio código decía «la declaración vale sólo en
+// la versión que corta» y era falso en un archivo que sólo crece.
+//
+// La declaración tiene que estar en lo que ESA versión agrega. Una frase heredada no autoriza nada.
+
+test('FALSIFICACIÓN · una declaración vieja no autoriza el corte siguiente', () => {
+  const v1 = { commit: 'aaaaaaa', content: 'linea 1\nlinea 2\n' };
+  // Corta y lo declara: se acepta.
+  const v2 = { commit: 'bbbbbbb', content: `linea 1\notra cosa\n${REWRITE_DECLARATION} del 2026-01-01\n` };
+  assert.equal(verifyGrowth([v1, v2], null).ok, true);
+  // Corta OTRA VEZ y no declara nada nuevo: arrastra la frase de v2 y antes eso alcanzaba.
+  const v3 = { commit: 'ccccccc', content: `linea 1\nborrada a mano\n${REWRITE_DECLARATION} del 2026-01-01\n` };
+  const r = verifyGrowth([v1, v2, v3], null);
+  assert.equal(r.ok, false, 'un corte sin declaración propia no puede colarse heredando la vieja');
+  assert.equal(r.commit, 'ccccccc');
+  // Con su propia declaración, ese mismo corte sí pasa.
+  const v3ok = { commit: 'ccccccc', content: `linea 1\nborrada a mano\n${REWRITE_DECLARATION} del 2026-01-01\n${REWRITE_DECLARATION} del 2026-02-02\n` };
+  assert.equal(verifyGrowth([v1, v2, v3ok], null).ok, true);
+});
+
+test('FALSIFICACIÓN · el árbol de trabajo tampoco hereda la declaración de la última versión', () => {
+  const v1 = { commit: 'aaaaaaa', content: `linea 1\n${REWRITE_DECLARATION} del 2026-01-01\n` };
+  assert.equal(verifyGrowth([v1], `otra cosa\n${REWRITE_DECLARATION} del 2026-01-01\n`).ok, false);
+  assert.equal(verifyGrowth([v1], `otra cosa\n${REWRITE_DECLARATION} del 2026-01-01\n${REWRITE_DECLARATION} del 2026-03-03\n`).ok, true);
+});

@@ -7,6 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La marca de reescritura de la traza valía por archivo, no por acto.** `verifyGrowth` buscaba la
+  declaración en todo el contenido de la versión que corta — y la traza **sólo crece**, así que una
+  vez escrita la frase, toda versión posterior la arrastraba. La primera reescritura declarada
+  dejaba autorizada **en silencio** cualquier reescritura futura. El comentario del propio código
+  decía «la declaración vale sólo en la versión que corta» y era falso en un archivo acumulativo.
+  Ahora cuenta sólo si está en las líneas que **esa** versión agrega. Los dos cortes reales de este
+  repositorio siguen válidos con la regla estricta: estaban bien declarados.
+- **Un script en un subdirectorio de `scripts/` ya no escapa a nada.** Los dos enumeradores miraban
+  un solo nivel, así que `scripts/sub/x.mjs` quedaba fuera de la medición de cobertura **y** de la
+  obligación de declararse. Comprobado creando uno: antes la sonda daba OK sin pedir nada. Se evitaba
+  por convención —todo plano— y una convención no es una regla.
+- **Corrección: dos commits de hoy dicen «verificado con la máquina quieta» y no era cierto.** Había
+  una prueba de fondo colgada desde las 15:44 quemando un núcleo, con 10.635 s de CPU y cero bytes de
+  salida; el archivo que corría se editó siete minutos después de lanzarla. Los veredictos verdes se
+  sostienen —una máquina cargada produce falsos rojos, no falsos verdes— pero los tiempos de esos
+  mensajes no valen. Medición rehecha sin un solo proceso Node vivo: **1205 pruebas, 0 fallos, 1
+  salteada, 66,6 s**.
+
 - **Los gates dejaron de hablarle al usuario del repositorio de VCP.** Medido sobre un clon limpio
   instalado en un proyecto ajeno: `verify-vcp-contract.mjs check` daba **113 rechazos** nombrando
   `README.md` e `INSTALL.md`, archivos que el instalador no copia.
