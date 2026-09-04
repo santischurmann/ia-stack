@@ -48,18 +48,36 @@ for path in "${INCLUDE[@]}"; do
     exit 1
   fi
 done
-for tool in zip sha256sum; do
+for tool in zip sha256sum git; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "REJECTED: required packaging command is unavailable: $tool" >&2
     exit 1
   fi
 done
 
+# La lista blanca de arriba acota el nivel superior y nada mas: `zip -r` sobre un directorio se
+# lleva TODO lo que haya adentro, versionado o no. Que hoy esos seis directorios esten limpios es
+# una propiedad accidental, no un gate. Se enumera lo que git tiene versionado y se empaqueta eso.
+if ! git -C "$PACKAGE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "REJECTED: $PACKAGE_DIR is not a Git work tree, so tracked files cannot be told apart from local state" >&2
+  exit 1
+fi
+TRACKED=()
+while IFS= read -r -d '' rel; do
+  TRACKED+=("$PACKAGE_NAME/$rel")
+done < <(git -C "$PACKAGE_DIR" ls-files -z -- \
+  README.md SECURITY.md INSTALL.md SKILL.md CHANGELOG.md LICENSE \
+  scripts contracts tests skills templates examples)
+if [ "${#TRACKED[@]}" -eq 0 ]; then
+  echo "REJECTED: no tracked file matched the distribution allowlist" >&2
+  exit 1
+fi
+
 # Clean only names this invocation owns; never delete a generic checksums.txt in the parent.
 rm -f "$OUTPUT_ARCHIVE" "$CHECKSUM_FILE"
 
-# Create zip
-zip -r "$OUTPUT_ARCHIVE" "${INCLUDE[@]}"
+# Create zip — archivos versionados, uno por uno, nunca un directorio suelto.
+zip -r "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
 
 # Generate checksums
 sha256sum "$OUTPUT_ARCHIVE" > "$CHECKSUM_FILE"

@@ -7,6 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El empaquetador del release entregaba directorios y confiaba en que la lista blanca alcanzara.**
+  La lista blanca acota el nivel de arriba y nada más: adentro de `scripts/`, `contracts/`,
+  `tests/`, `skills/`, `templates/` y `examples/`, `zip -r` se lleva **todo lo que haya en disco**,
+  versionado o no. Que hoy estuvieran limpios era una propiedad accidental, no un gate — la misma
+  clase de defecto que este repositorio se pasó el día arreglando.
+  - **El paquete se arma ahora desde `git ls-files`**, archivo por archivo, nunca un directorio
+    suelto. Si el árbol no es un repositorio, **falla cerrado**: publicar sin poder distinguir lo
+    versionado de lo local es peor que no publicar.
+  - **La prueba vieja afirmaba «never local state or the full tree»** mirando sólo esa lista blanca,
+    que no dice nada de lo que hay adentro de cada directorio. Renombrada a lo que de verdad
+    comprueba, y acompañada de dos falsificaciones nuevas: un archivo **ignorado** plantado dentro de
+    un directorio empaquetado no viaja, y el rechazo sin git ocurre **por el chequeo de git** y no
+    por una herramienta ausente — un rojo por el motivo equivocado es una prueba hueca.
+- **Los artefactos de investigación estaban ignorados uno por uno, con la fecha adentro del nombre.**
+  Pesan cientos de megas y llevan código verbatim de catorce repositorios ajenos. El generado mañana
+  no quedaba cubierto, y un `git add -A` lo publicaba. Ahora se ignoran **por patrón**, con una
+  prueba que comprueba fechas futuras y una falsificación que verifica que ningún archivo versionado
+  de `research/` cayó en la regla nueva.
+- **Dos pruebas fallaron primero por `ReferenceError`** —`spawnSync` y `execFileSync` sin importar—,
+  que es el rojo que el propio protocolo prohíbe porque no prueba nada. Corregidas antes de seguir.
+
 - **Tres tags publicados seguían sirviendo el mapa que la redacción decía haber quitado.** Un
   crítico de completitud —cuya única pregunta era «qué quedó sin mirar»— encontró que las cinco
   lentes habían barrido **el contenido de los archivos en la punta**, y eso deja afuera todo lo que

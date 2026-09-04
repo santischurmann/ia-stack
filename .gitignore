@@ -40,6 +40,21 @@ research/semantic-functional-index-2026-09-01.json
 research/semantic-functional-evidence-2026-09-01.ndjson.gz
 research/semantic-functional-index-2026-09-01.json.gz
 
+# Las mismas familias, por patron y no por nombre: la lista de arriba lleva la fecha adentro, asi
+# que el artefacto generado manana no quedaba cubierto y un `git add -A` lo publicaba. Pesan
+# cientos de megas y llevan codigo verbatim de repositorios ajenos. Los resumenes y la sintesis SI
+# se versionan y no matchean ninguno de estos patrones: hay una prueba que lo comprueba.
+research/corpus-manifest-*.json
+research/semantic-ledger-*.json
+research/functional-inventory-*.json
+research/complete-review-index-*.json
+research/semantic-review-index-*.json
+research/semantic-full-evidence-*.ndjson
+research/semantic-functional-evidence-*.ndjson
+research/semantic-functional-index-*.json
+research/semantic-functional-evidence-*.ndjson.gz
+research/semantic-functional-index-*.json.gz
+
 # VibeCodeProtocols PHASE 9: lo que la limpieza archiva. No es codigo del proyecto, y puede
 # contener configuracion con datos propios: no se commitea nunca.
 .claude-archive/

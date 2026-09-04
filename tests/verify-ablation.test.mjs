@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -1359,4 +1359,33 @@ test('el propio .gitignore del repo protege .claude/, sin depender de la maquina
     if (r.status !== 0 || fuente !== '.gitignore') desprotegidos.push(`${ruta} -> ${fuente || 'nadie'}`);
   }
   assert.deepEqual(desprotegidos, []);
+});
+
+// --- Los artefactos de investigacion pesan cientos de megas y llevan codigo verbatim de repos
+// ajenos. Estaban ignorados UNO POR UNO, con la fecha adentro del nombre: el generado manana no
+// queda cubierto, y un `git add -A` lo publica en un repositorio publico. Misma clase que todo lo
+// demas de hoy -- una proteccion que se cumple por casualidad y no por regla.
+
+test('un artefacto de investigacion con fecha nueva queda ignorado igual', () => {
+  const preguntar = (ruta) => spawnSync('git', ['check-ignore', '-q', ruta], { cwd: repoRoot, encoding: 'utf8' });
+  const futuros = [
+    'research/corpus-manifest-2027-01-01.json',
+    'research/semantic-ledger-2027-01-01.json',
+    'research/functional-inventory-2027-01-01.json',
+    'research/complete-review-index-2027-01-01.json',
+    'research/semantic-review-index-2027-01-01.json',
+    'research/semantic-full-evidence-2027-01-01.ndjson',
+    'research/semantic-functional-evidence-2027-01-01.ndjson',
+    'research/semantic-functional-index-2027-01-01.json',
+  ];
+  assert.deepEqual(futuros.filter((r) => preguntar(r).status !== 0), []);
+});
+
+test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se versionan', () => {
+  // Un patron demasiado ancho dejaria de versionar la sintesis sin que nadie lo note.
+  const preguntar = (ruta) => spawnSync('git', ['check-ignore', '-q', ruta], { cwd: repoRoot, encoding: 'utf8' });
+  const versionados = execFileSync('git', ['ls-files', 'research/'], { cwd: repoRoot, encoding: 'utf8' })
+    .split('\n').map((l) => l.trim()).filter(Boolean);
+  assert.ok(versionados.length > 0, 'el listado de versionados no puede venir vacio');
+  assert.deepEqual(versionados.filter((r) => preguntar(r).status === 0), []);
 });
