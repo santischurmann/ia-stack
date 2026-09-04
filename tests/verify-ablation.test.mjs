@@ -28,7 +28,7 @@ function readScope() {
     golden_rule: 'En la limpieza NO EXISTE rm. Nada se borra: todo se mueve.',
     in_scope: [{ path: '~/.claude/skills', why: 'las skills globales cargan palabras en cada sesión' }],
     untouchable: [
-      { pattern: '**/*.mq5', why: 'regla dura del usuario: pérdida irreversible, no está en git' },
+      { pattern: '**/*.secreto', why: 'regla dura del usuario: pérdida irreversible, no está en git' },
       { pattern: '.git/**', why: 'es el único backup real que existe' },
     ],
     test_set: { min: 6, max: 8, why: 'menos de seis no cubre lo que la persona hace de verdad' },
@@ -138,10 +138,10 @@ test('FALSIFICACIÓN · si el original sigue en su lugar, no se movió nada y el
 
 test('FALSIFICACIÓN · archivar algo intocable se rechaza por el patrón que lo protege', () => {
   const malo = registro();
-  malo.batches[0].archived = [archivado('x', { path: 'EA/Trader_1.27.mq5', archived_to: `${ARCHIVO}/EA/Trader_1.27.mq5` })];
+  malo.batches[0].archived = [archivado('x', { path: 'fuente/App.secreto', archived_to: `${ARCHIVO}/fuente/App.secreto` })];
   const { code, errores } = corrida(json(malo));
   assert.equal(code, 1);
-  assert.match(errores, /mq5/iu);
+  assert.match(errores, /secreto/iu);
 });
 
 // --- El filtro de las 3R: archivar algo que aprueba una R es contradecir el propio filtro ---------
@@ -288,13 +288,13 @@ test('el gate del repo vive junto a su contrato real', () => {
 test('el comparador de rutas protegidas hace lo que dice, caso por caso', () => {
   // Se prueba caso por caso a propósito: la primera versión de esta función daba el resultado
   // correcto por un motivo que no pude explicar — tenía bytes NUL literales adentro, y sus
-  // `replaceAll('')` no eran cadenas vacías. Un comparador que protege los `.mq5` no puede
+  // `replaceAll('')` no eran cadenas vacías. Un comparador que protege los fuentes sin versionar no puede
   // depender de eso.
   const casos = [
-    ['**/*.mq5', 'EA/Trader.mq5', true],
-    ['**/*.mq5', 'Trader.mq5', true],
-    ['**/*.mq5', 'EA/sub/Trader.mq5', true],
-    ['**/*.mq5', 'EA/Trader.ex5', false],
+    ['**/*.secreto', 'fuente/App.secreto', true],
+    ['**/*.secreto', 'App.secreto', true],
+    ['**/*.secreto', 'fuente/sub/App.secreto', true],
+    ['**/*.secreto', 'fuente/App.bin', false],
     ['.git/**', '.git/config', true],
     ['.git/**', '.git/a/b/c', true],
     ['.git/**', 'docs/x.md', false],
@@ -333,7 +333,7 @@ test('FALSIFICACIÓN · un contrato sin patrones intocables, o con uno mal escri
   const casos = [
     { untouchable: [] },
     { untouchable: [{ pattern: '', why: 'un motivo suficientemente largo para pasar el mínimo' }] },
-    { untouchable: [{ pattern: '**/*.mq5', why: 'corto' }] },
+    { untouchable: [{ pattern: '**/*.secreto', why: 'corto' }] },
     { untouchable: ['no soy un objeto'] },
     { test_set: { min: 0, max: 8, why: 'x' } },
     { test_set: { min: 9, max: 8, why: 'x' } },
@@ -509,13 +509,13 @@ test('si el registro desaparece entre resolver la ruta y leerlo, eso es VACÍO y
 
 // --- Los seis defectos que la auditoria adversarial confirmo ejecutando --------------------------
 // Todos son evasiones de la lista de intocables o huecos de contabilidad. Se reproducen aca antes
-// de tocar el gate. El mas grave: la proteccion de los .mq5 -- REGLA DURA, archivos que no estan
+// de tocar el gate. El mas grave: la proteccion de los fuentes sin versionar -- REGLA DURA, archivos que no estan
 // en git y cuya perdida es irreversible -- se esquivaba escribiendo la extension en mayusculas.
 
 test('A1 · FALSIFICACIÓN · la protección no se esquiva cambiando mayúsculas', () => {
   const contrato = loadScope(JSON.parse(readScope()));
   const io = { exists: (p) => String(p).includes('.claude-archive') };
-  for (const ruta of ['Bot/EA.MQ5', 'Bot/EA.Mq5', 'BOT/ea.mq5']) {
+  for (const ruta of ['fuente/App.SECRETO', 'fuente/App.Secreto', 'fuente/app.secreto']) {
     const malo = registro();
     malo.batches[0].archived = [archivado('x', { path: ruta, archived_to: `${ARCHIVO}/${ruta}` })];
     const violaciones = validateAblation(malo, contrato, io);
@@ -1307,7 +1307,7 @@ test('la plantilla del registro no trae rutas de otro proyecto', () => {
   // de un usuario. Acotar por extension ajena y no por cualquier `archivo:linea` es a proposito: las
   // plantillas usan ejemplos legitimos como `auth.js:42` y `ruta/dentro/del/repo.ts:1` para explicar
   // el formato, y una guarda que los acusa se apaga al segundo dia.
-  const ajeno = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|java|cs|rb|go|php|swift|kt|cpp|hpp):\d+|[A-Za-z]:[\\/]Users[\\/]/u;
+  const ajeno = /[\w./\\-]+\.(?:py|rb|go|java|cs|php|swift|kt|cpp|hpp|scala|rs):\d+|[A-Za-z]:[\\/]Users[\\/]/u;
   const sucios = [];
   for (const dir of ['templates', 'skills']) {
     const base = join(repoRoot, dir);
@@ -1337,7 +1337,7 @@ test('la plantilla del registro no trae rutas de otro proyecto', () => {
 test('el registro de la limpieza no cita archivo:linea de ningun arbol', SOLO_FUENTE, () => {
   const registro = readFileSync(join(repoRoot, 'docs', 'ablation.json'), 'utf8');
   // Extension seguida de dos puntos y numero: la firma de una referencia a codigo ajeno.
-  const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
+  const REFERENCIA = /[\w./\\-]+\.(?:py|rb|go|java|cs|php|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
   const encontradas = [...new Set(registro.match(REFERENCIA) ?? [])];
   assert.deepEqual(encontradas, []);
 });
@@ -1346,7 +1346,7 @@ test('FALSIFICACIÓN · la comprobación agarra la referencia que la redacción 
   // La MISMA FORMA que tenia el texto que sobrevivio a la redaccion, no el texto. Pegar la cita
   // real aca la volveria a publicar: probar que se redacto algo re-publicandolo es exactamente el
   // error que esta prueba existe para impedir, un nivel mas arriba.
-  const REFERENCIA = /[\w./\\-]+\.(?:py|mq5|mqh|ex5|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
+  const REFERENCIA = /[\w./\\-]+\.(?:py|rb|go|java|cs|php|js|mjs|ts|jsx|tsx|html|css|sh|ps1)(?::\d+)/gu;
   const mismaForma = 'Cita literal: "El piso -- modulo.py:66-74 ... el umbral exige 48 casos"';
   assert.deepEqual(mismaForma.match(REFERENCIA), ['modulo.py:66']);
   // Y no acusa una ruta del propio repo citada como el registro las cita: sin numero de linea.

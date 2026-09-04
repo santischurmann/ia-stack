@@ -234,7 +234,7 @@ contradijeran el transcript); todo lo visual es consistente y en varios puntos m
 (Zillow explícito, Richmond KY, versión Claude Code v2.1.226, nombre "Gentle-Orchestrator",
 modelo GPT-5.6, pricing exacto de DataImpulse). Limpieza: el directorio scratchpad con el video
 descargado y los 17 JPEG se borró al finalizar (`rm -rf` sobre el scratchpad temporal, fuera del
-repo — no se tocó ningún `.mq5` ni archivo del proyecto).
+repo — no se tocó ningún fuente sin versionar ni archivo del proyecto).
 
 ## Status
 

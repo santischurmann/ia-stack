@@ -305,7 +305,7 @@ engram rechaza (fail-closed, no redacta) metadata de auditoría cuyas keys match
 (verificado en el código real, ubicación exacta: `internal/cloud/cloudstore/identity.go:909-967`
 — corregido de una cita anterior con ubicación errónea).
 VCP ya tiene una regla equivalente en texto (`skills/vibe-memory.md` § ENGRAM GUARDRAIL: "nunca
-pegar código .mq5, lógica de licencia, tokens o passwords") pero es solo una instrucción en
+pegar fuentes sin versionar, lógica de licencia, tokens o passwords") pero es solo una instrucción en
 prosa, sin un pre-chequeo mecánico antes de mostrar la lección candidata en el 🔵 confirm-gate.
 🔵 Candidato: agregar un grep de esas 7 palabras clave sobre el texto de la lección candidata,
    ANTES de mostrarla en el 🔵 confirm-gate de LESSONS — si hay match, marcar la candidata con

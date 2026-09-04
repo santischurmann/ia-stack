@@ -132,7 +132,7 @@ export function hits(entry, path) {
   return entry.res.some((re) => formas.some((forma) => re.test(forma)));
 }
 
-/** Un glob de los que usa el contrato -- `**\/*.mq5`, `.git/**`, `src/**` -- a expresion regular. */
+/** Un glob de los que usa el contrato -- `.git/**`, `src/**`, `**\/*.key` -- a expresion regular. */
 export function globToRegExp(pattern) {
   const glob = slashes(pattern);
   let body = '';
@@ -140,7 +140,7 @@ export function globToRegExp(pattern) {
     const char = glob[index];
     if (char !== '*') {
       // Todo lo que no sea alfanumerico o separador se escapa: el patron protege rutas, y un punto
-      // que matchee cualquier caracter volveria `**/*.mq5` mas ancho de lo que el contrato declara.
+      // que matchee cualquier caracter volveria `**/*.secreto` mas ancho de lo que el contrato declara.
       body += /[a-zA-Z0-9_~/-]/u.test(char) ? char : `\\${char}`;
       continue;
     }
@@ -174,7 +174,7 @@ export function loadScope(contract) {
       violations.push(`el contrato de alcance: untouchable[${index}] necesita un patrón y un motivo escrito`);
       continue;
     }
-    // Sin `i`, `**/*.mq5` no matchea `EA.MQ5` -- y en Windows son el MISMO archivo, medido.
+    // Sin `i`, `**/*.secreto` no matchea `App.SECRETO` -- y en Windows son el MISMO archivo, medido.
     const desnudo = entry.pattern.replace(/^~\//u, '');
     const res = [new RegExp(globToRegExp(desnudo).source, 'iu')];
     // `.git/**` tiene que proteger tambien a `.git`: archivar la carpeta entera es la unica forma

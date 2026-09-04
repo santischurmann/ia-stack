@@ -30,12 +30,8 @@
   ],
   "untouchable": [
     {
-      "pattern": "**/*.mq5",
-      "why": "REGLA DURA de este proyecto: un fuente que el repositorio NO versiona por diseno no tiene backup ni papelera, asi que moverlo o borrarlo es perdida irreversible. No se toca ni para archivarlo."
-    },
-    {
-      "pattern": "**/*.ex5",
-      "why": "Binario compilado del mismo fuente sin versionar: mismo territorio, misma regla. No se toca. Cada proyecto declara aca sus propios patrones intocables."
+      "pattern": "**/_sin-versionar/**",
+      "why": "Ejemplo del caso que MAS duele, y que cada proyecto tiene que reemplazar por el suyo: un fuente que el repositorio NO versiona no tiene backup ni papelera, asi que moverlo es perdida irreversible. Declara aca los patrones de TU proyecto antes de correr una ablacion; este contrato viaja con la instalacion y no puede adivinar tu stack."
     },
     {
       "pattern": "**/_audit_scratch/**",

@@ -43,7 +43,7 @@ paga porque hay algo real que perder. `risk_level` por-cambio (Phase 7.1) sigue 
 
 ## Risk-sensitive paths (Phase 7.1 risk classifier)
 
-Este repo no contiene `.mq5` ni fuentes de licencia. Los paths sensibles son los gates cuya
+Este repo no contiene fuentes sin versionar ni logica de licencia. Los paths sensibles son los gates cuya
 falla silenciosa deja pasar código no verificado:
 
 - `scripts/verify-receipt.mjs` — autoriza commit/push; un falso OK publica trabajo no revisado.

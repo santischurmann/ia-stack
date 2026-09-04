@@ -1619,7 +1619,8 @@ Esperando tu respuesta antes de continuar.
 **La lista de intocables protege de más, nunca de menos.** Un patrón se compara contra la ruta
 normalizada —sin `./`, sin `..`, sin letra de unidad, sin `~/`— y contra **cada uno de sus
 sufijos**, sin distinguir mayúsculas. Eso quiere decir que `src/**` protege también un `src/`
-anidado en cualquier lado, y `**/*.mq5` protege `EA.MQ5`. Es a propósito: cuando lo que está en
+anidado en cualquier lado, y un patrón de extensión protege también su variante en mayúsculas —en
+Windows son el **mismo archivo**—. Es a propósito: cuando lo que está en
 juego es mover un archivo que no está en git, proteger de más cuesta una molestia y proteger de
 menos cuesta el archivo. Medido antes de esto: la extensión en mayúsculas, la carpeta a secas, el
 prefijo `./` y la ruta absoluta esquivaban las cuatro la protección.

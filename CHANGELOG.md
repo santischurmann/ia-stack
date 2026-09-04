@@ -522,10 +522,10 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - **La protección de los archivos intocables era evadible de cuatro formas, y la encontró una
   auditoría adversarial contra el gate publicado media hora antes.** Seis defectos confirmados
   ejecutando, todos arreglados acá con su falsificación escrita primero:
-  - **Mayúsculas.** `**/*.mq5` no matcheaba `EA.MQ5` porque la expresión se compilaba sin el flag
-    de insensibilidad. En Windows el filesystem no distingue caja: `EA.MQ5` y `EA.mq5` son **el
+  - **Mayúsculas.** un patrón de extensión no matcheaba su variante en mayúsculas porque la expresión se compilaba sin el flag
+    de insensibilidad. En Windows el filesystem no distingue caja: una extensión en mayúsculas y en minúsculas son **el
     mismo archivo real**, el que la regla dura prohíbe mover y que no está en git. El mismo agujero
-    alcanzaba a `.EX5`, `.ENV`, `.KEY`, `.PEM` y `.GIT/`.
+    alcanzaba a `.ENV`, `.KEY`, `.PEM` y `.GIT/` escritos en mayúsculas.
   - **La carpeta a secas.** `.git/**` exigía algo después de la barra, así que un registro que
     archivaba `.git` **entero** —"el único backup real que existe", según el propio contrato— pasaba
     en verde. Con él se iba el camino de vuelta que la limpieza promete. Idem `_audit_scratch`.
@@ -566,7 +566,7 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   algo se saca de en medio, su contenido ya está en dos lugares.
 - **Regla de oro, mecánica y no declarativa: acá no existe `rm`.** Nada se borra; todo se mueve a
   `.claude-archive/<fecha>/` conservando la ruta. `contracts/ablation-scope.json` declara qué es
-  intocable —`.mq5` y `.ex5` a la cabeza, que no están en git y cuya pérdida sería irreversible—,
+  intocable —los fuentes sin versionar a la cabeza, que no están en git y cuya pérdida sería irreversible—,
   qué entra en alcance y por qué, y `verify-ablation.mjs` lo comprueba **contra el disco**: cada
   archivo archivado tiene que existir en el archivo y ya no en su origen. Un registro que dice haber
   archivado algo que no está en ninguno de los dos lados describe un borrado, y se rechaza.
@@ -576,7 +576,7 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   criterios de término. El filtro de las tres R se comprueba por contradicción: archivar algo que
   aprueba **cualquiera** de las tres se rechaza por nombre.
 - **Bytes de control en el propio gate, encontrados por su prueba.** La primera versión de
-  `globToRegExp` —el comparador que protege los `.mq5`— daba el resultado correcto por un motivo que
+  `globToRegExp` —el comparador que protege los intocables— daba el resultado correcto por un motivo que
   no se podía explicar: tenía bytes NUL y 0x01 literales adentro, así que sus `replaceAll('')` no
   operaban sobre cadenas vacías. Reescrita explícita, con una prueba caso por caso, y una
   falsificación nueva que barre `scripts/` y `tests/` buscando bytes de control.
@@ -1708,7 +1708,7 @@ full spec in `research/vcp-implementation-spec.md`.
 - **AI Company layer** (paperclip-style, self-contained — sin server/dependencia nueva): `.vibe/COMPANY.md` (nuevo, org chart Board→CEO→roles + budget policy), `.vibe/AUDIT.md` (nuevo, trail append-only role/action/evidence/ref), goal ancestry (`tasks.json` campo `goal`: mission→spec-AC→plan-item, inyectado en cada prompt de subagente), atomic task checkout (`tasks.json` campos `owner`/`locked`, previene doble-trabajo en Build paralelo), budget policy liviana (3 respawns sin gate pasado = hard stop, nunca reintento silencioso). `templates/vibe/COMPANY.md` nuevo. `orchestrator-opus.md` § AI COMPANY LAYER. Fuente: paperclip (org chart, goal ancestry, atomic checkout, budget-as-governance, audit log).
 - **Phase 0 step 4 — Engram recall** (opcional, best-effort): si el MCP `mem_*` está presente, recall de contexto antes del resume-check; nunca lo reemplaza. Mirror opcional de gate-state en `MEMORY UPDATES` (`topic_key: vcp/<project>/<feature-slug>/gate-state`).
 - **Phase 1 — Forcing Questions**: 6 preguntas obligatorias pre-spec (necesidad/status-quo/slice mínimo/evidencia/non-goal/reversibilidad), escape hatch objetivo y contable, no por "impaciencia". DoD de spec.md ahora exige `6/6` o `skipped(N)`.
-- **Phase 4.2 → Risk classification + Simplify**: `risk_level` (bajo/estandar/alto) mecánico por evidencia (`simplify_ignore_touch`, `sensitive_path`, `large_change` — nunca sola —, `debt_reopened`). Fail-safe: repo con `.mq5` y `Risk-sensitive paths` vacío en `PROJECT.md` cuenta como `sensitive_path`.
+- **Phase 4.2 → Risk classification + Simplify**: `risk_level` (bajo/estandar/alto) mecánico por evidencia (`simplify_ignore_touch`, `sensitive_path`, `large_change` — nunca sola —, `debt_reopened`). Fail-safe: repo con un fuente sin versionar y `Risk-sensitive paths` vacío en `PROJECT.md` cuenta como `sensitive_path`.
 - **Phase 4.4 modulada por riesgo**: bajo salta el pase adversarial, estándar corre 1 skeptic, alto sin cambios (3-5 skeptics).
 - **Phase 4.5 emite receipt** (`.vibe/receipts/<feature-slug>-<fecha>.json`, schema `vcp.receipt/v1`) con `risk_level`, `evidence`, `terminal_state`.
 - **LAW 8**: sin receipt `terminal_state: approved` para el HEAD actual, no hay push/merge (4.6). `escalated` requiere `override_note` + timestamp explícito del usuario para pasar a `approved`.
