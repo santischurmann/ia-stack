@@ -263,7 +263,7 @@ otro binario).
 | `verify-plan-conflicts.mjs` | Dos tareas no escriben el mismo archivo sin un orden explícito. | No reemplaza una revisión del diseño. **Compara sólo lo declarado: una escritura no declarada es invisible** — cruza los tres campos escritores de cada tarea entre sí, nunca contra lo que el código termina tocando. |
 | `verify-receipt.mjs` | El árbol Git, modos, binarios y archivos no trackeados siguen siendo los revisados. `custody <receipt.json>` informa además si el commit que lleva el recibo está firmado y con qué clave; una firma rota siempre rechaza, y no firmar rechaza sólo con `--require-signature`. | Un receipt es evidencia local, no una firma de procedencia. La custodia mejora pero no se cierra: **si el agente puede correr `git commit -S`, firma como vos** — prueba que alguien con acceso a la clave firmó, no quién. Vale hasta donde tu clave exija presencia humana. |
 | `verify-security-baseline.mjs` | El delta no contiene secretos conocidos, rutas sensibles, ejecución dinámica, patrones SQL/HTML riesgosos ni configuraciones GitHub Actions básicas peligrosas. | Es un piso nativo de patrones; no es SAST, SCA, taint analysis ni una base de CVEs. |
-| `verify-vcp-coverage.mjs` | Cada script Node inventariado mantiene 100% de líneas, ramas y funciones. Usa 1 worker por defecto para que la medición sea repetible; `VCP_TEST_CONCURRENCY=<n>` permite paralelismo explícito. | Bash y PowerShell tienen pruebas funcionales de paridad, no cobertura por instrumentación Node. El porcentaje mide ejecución, no suficiencia semántica ni ausencia de flakiness fuera de la corrida observada. |
+| `verify-vcp-coverage.mjs` | Cada script Node inventariado mantiene 100% de líneas, ramas y funciones. Corre la suite con `--test-concurrency=32`, el mismo valor que usa el protocolo; `VCP_TEST_CONCURRENCY=<n>` existe para **bajarlo** en una máquina con menos núcleos, no para esconder un rojo serializando. | Bash y PowerShell tienen pruebas funcionales de paridad, no cobertura por instrumentación Node. El porcentaje mide ejecución, no suficiencia semántica ni ausencia de flakiness fuera de la corrida observada. |
 | `verify-capability-matrix.mjs` | La matriz nativa declara roles, herramientas y superficies. Rechaza roles que escriben y aprueban la misma superficie, y roles marcados como sólo lectura que tienen `Write`/`Edit`. | Verifica la forma y las reglas declaradas, no puede impedir que una herramienta externa ignore la matriz. |
 | `verify-evidence-runner.mjs` | Ejecuta un vector argv sin shell y sólo admite un ejecutable nativo de allowlist sin ruta, con `cwd` relativo seguro. Cuando corre, registra exit code, duración, commit del `cwd` real, salida limitada a 4096 bytes y hashes; `check --require-complete` sólo acepta `passed`. `failed` y `skipped` son estados visibles, nunca verdes de cierre. Un `skipped` no ejecuta ninguna sonda y deja `git_head: null`. | La evidencia registra lo que el proceso devolvió; no demuestra que el comando fuera la elección correcta ni que un proceso autorizado no mintiera en sus propios archivos. |
 | `verify-spec-wordcap.mjs --quality` | Además del tope de palabras, exige secciones canónicas, AC únicos con gramática GIVEN/WHEN/THEN o `THE SYSTEM SHALL`, y rechaza placeholders o `[NEEDS CLARIFICATION:]`. | Comprueba forma de la spec, no que el problema, la solución o los criterios sean buenos. |
@@ -398,12 +398,21 @@ que cuatro verificadores de `research/` que el protocolo manda correr **no tiene
 es deuda escrita, no cobertura. Los scripts Bash y PowerShell se validan aparte, con
 `verify-shell-coverage.mjs` y sus fixtures.
 
+<!-- concurrencia: histórico -->
 **Sobre la concurrencia.** Durante un tiempo este bloque decía `--test-concurrency=1`. Serializar
 no arreglaba nada: tapaba una suite inestable, y de paso escondía los huecos de cobertura. El
 defecto se cerró —la medición está en `tests/spawn-budget.mjs`—, así que el valor volvió a 32.
 `VCP_TEST_CONCURRENCY` existe para una máquina con menos núcleos, no para volver a esconder un
 rojo. **Diez corridas en verde no demuestran que la suite sea determinista**: son la ausencia de
 un contraejemplo en diez intentos.
+
+Una prueba compara cada número que este archivo afirma como el default contra la constante real
+del script, porque la fila de la tabla de gates llegó a decir lo contrario que el párrafo de más
+arriba, en la misma página. El párrafo anterior cita el valor viejo a propósito, así que lleva la
+marca `<!-- concurrencia: histórico -->`, que exime el párrafo siguiente y termina en la línea en
+blanco. **La marca es una declaración, no una prueba:** puesta encima de una afirmación viva apaga
+la comprobación sin avisar. Lo que la sostiene es que es literal y buscable —
+`grep -rn "concurrencia: histórico" README.md` lista todas las excepciones del archivo.
 
 Para crear un paquete distribuible:
 

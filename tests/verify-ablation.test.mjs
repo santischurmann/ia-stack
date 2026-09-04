@@ -1421,3 +1421,56 @@ test('todo commit que el README nombra existe de verdad en el repositorio', () =
   const fantasmas = shas.filter((s) => spawnSync('git', ['cat-file', '-e', s], { cwd: repoRoot }).status !== 0);
   assert.deepEqual(fantasmas, []);
 });
+
+// --- El README ya habia mentido una vez sobre su propia concurrencia y se corrigio el parrafo de
+// "Los gates mecanicos". La fila de la tabla de gates decia LO CONTRARIO en la misma pagina: se
+// arreglo una copia y no se barrio el resto. Un documento que se contradice a si mismo no es un
+// error de redaccion, es una afirmacion falsa sostenida por la mitad del archivo que nadie releyo.
+// Esta comprobacion no juzga la redaccion: compara cada numero que el README afirma como el default
+// contra la constante real del script.
+
+const MARCA_HIST = /^<!--\s*concurrencia:\s*hist/u;
+
+// Una linea marcada CITA un valor viejo a proposito, para explicar por que cambio. Contarla como
+// afirmacion viva obligaria a borrar la explicacion para poner el documento en verde, que es justo
+// el incentivo que este proyecto no quiere. LIMITE: la marca es una declaracion de quien escribe,
+// no una prueba; puesta sobre una afirmacion viva, apaga la comprobacion en silencio.
+export function concurrenciasAfirmadas(texto) {
+  const lineas = texto.split('\n');
+  const vivas = [];
+  let citando = false;
+  for (const linea of lineas) {
+    if (MARCA_HIST.test(linea.trim())) { citando = true; continue; }
+    if (citando) { if (linea.trim() === '') citando = false; else continue; }
+    vivas.push(linea);
+  }
+  const util = vivas.join('\n');
+  return [
+    ...[...util.matchAll(/--test-concurrency=(\d+)/gu)].map((m) => m[1]),
+    ...[...util.matchAll(/(\d+)\s+workers?\s+por\s+defecto/giu)].map((m) => m[1]),
+  ];
+}
+
+test('el README no puede contradecir la concurrencia por defecto que declara el script', async () => {
+  const { DEFAULT_TEST_CONCURRENCY } = await import('../scripts/verify-vcp-coverage.mjs');
+  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const afirmados = concurrenciasAfirmadas(readme);
+  assert.ok(afirmados.length > 0, 'si el README dejo de nombrar la concurrencia, esta comprobacion no mide nada');
+  assert.deepEqual([...new Set(afirmados.filter((n) => n !== DEFAULT_TEST_CONCURRENCY))], []);
+});
+
+test('FALSIFICACIÓN · la comprobación de concurrencia detecta un número que no es el del script', () => {
+  assert.deepEqual(concurrenciasAfirmadas('Usa 1 worker por defecto y corre con `--test-concurrency=32`.'), ['32', '1']);
+});
+
+test('FALSIFICACIÓN · la marca exime el párrafo citado y NADA más', () => {
+  const cita = 'Durante un tiempo decía `--test-concurrency=1`.';
+  const marca = '<!-- concurrencia: histórico -->';
+  // La misma frase: sin marca cuenta, con marca no. Si no, la marca no estaría haciendo nada.
+  assert.deepEqual(concurrenciasAfirmadas(cita), ['1']);
+  assert.deepEqual(concurrenciasAfirmadas([marca, cita].join('\n')), []);
+  // La exención TERMINA en la línea en blanco: lo que viene después vuelve a contar.
+  assert.deepEqual(concurrenciasAfirmadas([marca, cita, '', 'Hoy usa --test-concurrency=7.'].join('\n')), ['7']);
+  // Una marca suelta no exime nada ni rompe.
+  assert.deepEqual(concurrenciasAfirmadas(marca), []);
+});

@@ -84,7 +84,11 @@ export const REQUIREMENTS = [
   ['SKILL.md', /claims --feature <feature-slug> --require-inputs --require-links/u, 'strict claim-link completeness at final close'],
   ['README.md', /`--require-links` exige además[\s\S]*packet no vacío[\s\S]*cada claim/u, 'strict claim-link completeness documented'],
   ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
-  ['README.md', /Usa 1 worker por defecto/u, 'deterministic coverage runner default'],
+  // Este ancla fijaba `Usa 1 worker por defecto`, que es FALSO: la constante del script es 32 y la
+  // variable de entorno existe para bajarla. El contrato clavaba la mentira en su lugar, y por eso
+  // una correccion anterior pudo arreglar el parrafo de arriba y no la fila de la tabla. Ahora fija
+  // el hecho -- el valor real y para que sirve el override -- en vez de una redaccion.
+  ['README.md', /--test-concurrency=32[\s\S]*?VCP_TEST_CONCURRENCY=<n>` existe para \*\*bajarlo\*\*/u, 'coverage runner default is 32 and the override only lowers it'],
   ['README.md', /VCP_BASH_PATH/u, 'explicit Windows Bash selection'],
   ['SKILL.md', /verify-evidence-runner\.mjs run/u, 'native argv evidence runner'],
   ['SKILL.md', /verify-evidence-runner\.mjs check .*--require-complete/u, 'strict evidence completion gate'],

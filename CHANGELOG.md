@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El contrato tenía clavada una afirmación falsa del README, y por eso la corrección anterior sólo
+  pudo arreglar la mitad.** El README decía en un párrafo que la cobertura corre con
+  `--test-concurrency=32` y en la fila de su propia tabla de gates que «usa 1 worker por defecto».
+  Las dos frases, en la misma página. La constante del script es `DEFAULT_TEST_CONCURRENCY = '32'` y
+  la variable de entorno existe para **bajarla**.
+  - **Por qué sobrevivió una corrección que se creyó completa:** `verify-vcp-contract.mjs` anclaba la
+    frase falsa con `/Usa 1 worker por defecto/`. **El gate exigía la mentira.** Arreglar la fila
+    habría puesto el contrato en rojo, así que el documento sólo se podía corregir a medias. Un ancla
+    que fija una redacción en vez de un hecho **convierte un error en requisito**.
+  - **El ancla ahora fija el hecho**, no la frase: el valor real y para qué sirve el override.
+  - **Prueba nueva, en rojo antes del arreglo:** cada número que el README afirma como el default se
+    compara contra la constante del script. Con su falsificación, y con una segunda que comprueba
+    que la marca de cita histórica exime **el párrafo marcado y nada más**.
+  - **Límite honesto nuevo (81):** esa marca es **una declaración, no una prueba**. Puesta encima de
+    una afirmación viva apaga la comprobación sin avisar. Lo que la sostiene es que es literal y se
+    lista con un `grep`.
+
 - **`verify-audit-chain history` dejó de estar en rojo permanente, sin que se lo debilitara.** Una
   reescritura de historia autorizada corta el crecimiento de la traza **para siempre**, y el gate lo
   rechazaba en cada corrida. Tenía razón —la traza se reescribió— pero **un gate que siempre rechaza
@@ -31,10 +48,10 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   corrigió**, porque es documentación operativa —quien la lee corre lo que dice— y una prueba nueva
   comprueba que todo commit que el README nombra exista de verdad.
 
-- **Se le pidió a GitHub que purgue los objetos huérfanos: ticket #4726900, abierto.** Antes de pedir
-  nada se comprobó si hacía falta, y hacía falta: **siete commits previos a la reescritura siguen
-  servidos**, y su contenido sigue recuperable por identificador. El force-push cambió lo que se ve
-  por defecto, **no lo que se puede pedir**.
+- **Se le pidió a GitHub que purgue los objetos huérfanos: ticket #4726900, y ya está hecho.** Antes
+  de pedir nada se comprobó si hacía falta, y hacía falta: **siete commits previos a la reescritura
+  seguían servidos**, y su contenido seguía recuperable por identificador. El force-push cambió lo
+  que se ve por defecto, **no lo que se puede pedir**.
   - No existe endpoint de API para soporte, así que el pedido va por el formulario autenticado.
   - **La propia herramienta de GitHub confirmó el diagnóstico** antes de dejar abrir el ticket:
     reescribir la historia y forzar el push **no alcanza** si los commits viejos siguen accesibles
@@ -42,8 +59,23 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   - El pedido lleva los datos que la documentación exige: **cero pull requests** afectados —así que
     no hay refs de PR reteniendo los commits viejos— y **cero objetos LFS huérfanos**, los dos
     verificados; más las puntas previa y actual, sin forks, sin releases y un solo colaborador.
-  - **Límite:** que Soporte lo ejecute no depende de este repositorio. Hasta entonces el contenido
-    sigue recuperable por identificador. Es seguible, no cerrable desde acá.
+  - **Soporte lo ejecutó el 2026-09-04**, y no se dio por bueno porque lo dijeran: se midió. Los
+    **103 commits huérfanos** que el feed público de eventos del repo todavía nombra devuelven 404;
+    **100 pedidos de contenido** por esos identificadores no recuperan nada; el CDN de crudo tampoco;
+    y la vista web del commit viejo da 404 mientras la de la punta actual da 200. La sonda lleva
+    **control positivo y negativo** —un commit vivo tiene que responder y un identificador inventado
+    tiene que dar 404— porque si no, no distingue «purgado» de «sonda rota».
+  - **Y esa precaución cobró.** Una primera pasada de la sonda escrita en shell dio ocho 404 seguidos
+    con el control en rojo: **Git Bash convertía `/repos/...` en una ruta de disco**, `gh` rechazaba
+    el endpoint y el bucle leía el error como purga. **Los 404 los fabricaba la sonda.** Misma
+    familia que el `Trailing backslash` del día anterior: el shell mastica el argumento, el error se
+    pierde, y **la ausencia de éxito se lee como prueba de ausencia**. Las sondas que valen son las
+    que llaman a `gh` sin shell de por medio.
+  - **Un dato del pedido estaba mal, y conviene decirlo:** de los ocho identificadores que llevaba,
+    `aa76bd7` no era huérfano —es ancestro de la punta actual, creado después de la reescritura—.
+    Sin consecuencia: Soporte purgó los huérfanos reales igual.
+  - **Lo que queda abierto no es del repo:** el feed público de eventos **sigue publicando los
+    identificadores viejos**, aunque ya no resuelvan. Nombres sin objeto detrás, hoy inservibles.
 
 - **El verificador de la reescritura daba verde sin haber corrido.** Al borrar el respaldo se hizo un
   último barrido y aparecieron **dos revisiones** que la reescritura no había tocado. Dos fallas

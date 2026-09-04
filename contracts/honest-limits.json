@@ -480,6 +480,12 @@
       "file": "SKILL.md",
       "phrase": "El filtro de las tres R es un juicio",
       "why": "El gate comprueba que las tres respuestas esten declaradas como si o no, que haya motivo escrito, y que archivar algo que aprobo alguna de las tres traiga un motivo mas largo -- porque hay que decir por que el juicio va en contra de la respuesta. Lo que NO hace es adjudicar el filtro: no decide si el juicio es correcto. Medido sobre una limpieza real: dos unidades aprobaban repartible y se archivaron con razon escrita, y la decision era buena. Una version anterior del gate lo mecanizaba como un AND -- si alguna decia si, bloqueaba -- y eso habria rechazado esas dos decisiones correctas."
+    },
+    {
+      "limit_id": "concurrency-historic-mark-is-trusted",
+      "file": "README.md",
+      "phrase": "La marca es una declaración, no una prueba",
+      "why": "La prueba compara cada numero que el README afirma como concurrencia por defecto contra DEFAULT_TEST_CONCURRENCY del script, y nacio porque la fila de la tabla de gates decia lo contrario que el parrafo de arriba en la misma pagina: se habia corregido una copia y no se barrio el resto. Necesita una salida, porque el README cita el valor viejo a proposito para explicar por que cambio, y contar esa cita obligaria a borrar la explicacion para poner el documento en verde. La salida es la marca, acotada al parrafo siguiente y terminada en la linea en blanco. Lo que no puede hacer es distinguir una cita historica de una afirmacion viva a la que le pusieron la marca encima: eso exige leer la intencion. La mitigacion es que la marca es literal y buscable con grep en una linea."
     }
   ]
 }
