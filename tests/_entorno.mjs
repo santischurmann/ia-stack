@@ -19,14 +19,14 @@
 // `<algo>/.vibe/vcp-runtime`. Y nada se saltea en silencio -- se saltea diciendo por que, que es la
 // diferencia entre declarar un limite y esconder un hueco.
 
-import { basename, dirname } from 'node:path';
+// La guarda NO se define aca: se reexporta la del gate, que la deriva de DEFAULT_RUNTIME_PATH.
+// Tenerla dos veces es tener dos guardas que se desincronizan, y eso ya costo un rojo en este
+// repositorio. Los scripts no pueden importar de tests/, pero tests/ si puede importar de scripts/.
+// Se importa Y se reexporta: `export … from` no deja binding local, y `saltarSiEsRuntimeInstalado`
+// de más abajo la necesita.
+import { esRuntimeInstalado } from '../scripts/verify-runtime-sync.mjs';
 
-export const RAIZ_RUNTIME = 'vcp-runtime';
-export const CARPETA_VCP = '.vibe';
-
-export function esRuntimeInstalado(root) {
-  return basename(root) === RAIZ_RUNTIME && basename(dirname(root)) === CARPETA_VCP;
-}
+export { esRuntimeInstalado };
 
 // Lo que el instalador SI deja en la raiz del runtime. Cualquier otra cosa que una prueba lea desde
 // la raiz solo existe en el checkout fuente. La lista vive aca y en `COPIED_DIRECTORIES` de

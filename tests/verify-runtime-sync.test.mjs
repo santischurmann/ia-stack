@@ -17,6 +17,7 @@ const {
   DEFAULT_RUNTIME_PATH,
   USAGE,
   compareInventories,
+  esRuntimeInstalado,
   main,
   missingSourceRoots,
   parseArguments,
@@ -536,4 +537,21 @@ test('FALSIFICACIÓN · la regla del punto fijo distingue copiado de leído-y-no
   const files = ['SKILL.md'];
   assert.deepEqual(fueraDeLaSuperficie(['scripts/x.mjs', 'SKILL.md'], dirs, files), []);
   assert.deepEqual(fueraDeLaSuperficie(['AGENTS.md', '.agents/skills/x/SKILL.md'], dirs, files), ['.agents/skills/x/SKILL.md', 'AGENTS.md']);
+});
+
+// --- La guarda de forma que varios gates usan para saber si estan corriendo adentro del runtime
+// instalado de otra persona. Vive aca, derivada de DEFAULT_RUNTIME_PATH, y no copiada en cada gate:
+// dos guardas iguales en dos archivos se desincronizan, y eso ya costo un rojo en este repositorio.
+
+test('esRuntimeInstalado reconoce un runtime por su forma, y sólo eso', () => {
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'vcp-runtime')), true);
+  assert.equal(esRuntimeInstalado(join('C:', 'a', 'b', '.vibe', 'vcp-runtime')), true, 'la profundidad no importa: importa el sufijo');
+});
+
+test('FALSIFICACIÓN · esRuntimeInstalado no confunde un checkout con una instalación', () => {
+  assert.equal(esRuntimeInstalado(join('C:', 'Users', 'x', 'ia-stack')), false);
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', 'vcp-runtime')), false, 'sin .vibe encima no es una instalación');
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'otra-cosa')), false);
+  // Una ruta más corta que el sufijo buscado: la rama que evita leer fuera del arreglo.
+  assert.equal(esRuntimeInstalado('/'), false);
 });

@@ -4,6 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { EMPTY_PREFIX, esRuntimeInstalado } from './verify-runtime-sync.mjs';
+
 export const USAGE = 'usage: verify-vcp-contract.mjs check';
 export const REQUIREMENTS = [
   ['README.md', /VCP ayuda a una IA/u, 'simple purpose statement'],
@@ -287,6 +289,13 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   // The declared limits are wired here and never inside contractViolations: that helper is called
   // with readers that answer prose for every path, so making it read the JSON contract would turn
   // its own callers into parse failures.
+  // Este contrato habla de los documentos de VCP, y el instalador no copia README.md ni INSTALL.md.
+  // Adentro del runtime instalado de otra persona no hay nada que verificar, y eso NO es un OK:
+  // es VACIO. Antes rechazaba siempre, con violaciones que hablaban del repositorio de VCP.
+  if (esRuntimeInstalado(cwd)) {
+    write(`${EMPTY_PREFIX}este contrato verifica los documentos de VCP, que el instalador no copia: adentro de un runtime instalado no hay nada que comparar`);
+    return 0;
+  }
   const read = (path) => readFileSync(join(cwd, path), 'utf8');
   const violations = contractViolations(read);
   let limits = [];

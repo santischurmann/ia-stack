@@ -28,6 +28,22 @@ export const NO_INPUTS_CODE = 'RUNTIME_SYNC_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 
+/** Si una ruta ES un runtime instalado, reconocido por su FORMA y no por una lista.
+ *
+ * Vive aca, y no en cada gate que lo necesite, porque dos guardas iguales en dos archivos se
+ * desincronizan: ya paso una vez en este repositorio y costo un rojo. Se deriva de
+ * DEFAULT_RUNTIME_PATH para que cambiar donde vive el runtime no deje esta comprobacion mintiendo.
+ *
+ * Para que sirve: varios gates hablan de los documentos de VCP -- README.md, INSTALL.md -- que el
+ * instalador NO copia. Corridos adentro del proyecto de otra persona no tienen nada que verificar,
+ * y eso no es un OK: es VACIO. */
+export function esRuntimeInstalado(root) {
+  const partes = resolve(root).split(/[\\/]/u).filter(Boolean);
+  const esperadas = DEFAULT_RUNTIME_PATH.split('/');
+  if (partes.length < esperadas.length) return false;
+  return partes.slice(-esperadas.length).join('/') === esperadas.join('/');
+}
+
 // Derived from copy_runtime() in scripts/install.sh and Copy-Runtime in scripts/install.ps1 — not
 // invented here. tests/verify-runtime-sync.test.mjs parses both installers and fails if either one
 // starts copying something this list does not name, so the surface can never drift into a guess.

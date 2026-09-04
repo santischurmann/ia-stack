@@ -466,3 +466,23 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// --- El contrato habla de los documentos de VCP: README.md, INSTALL.md, SKILL.md. El instalador
+// copia este gate al proyecto de otra persona pero NO copia README.md ni INSTALL.md, asi que alla
+// el gate rechazaba SIEMPRE, con violaciones que hablan del repositorio de VCP y no del suyo. Era
+// lastre copiado que nunca podia salir verde. Medido: 5 de los 26 fallos de una instalacion.
+//
+// Adentro de un runtime instalado no hay nada que verificar, y eso NO es un OK: es VACIO, que es la
+// palabra que este protocolo usa para "no habia con que comparar". La deteccion es por FORMA y sale
+// de una sola fuente -- `esRuntimeInstalado`, derivada de DEFAULT_RUNTIME_PATH en
+// verify-runtime-sync.mjs -- para que no existan dos guardas que se puedan desincronizar.
+
+test('adentro de un runtime instalado el contrato dice VACÍO, no rechaza', () => {
+  const salidas = [];
+  const errores = [];
+  const raiz = join('C:', 'proyecto-ajeno', '.vibe', 'vcp-runtime');
+  const codigo = main(['check'], raiz, (m) => salidas.push(m), (m) => errores.push(m));
+  assert.equal(codigo, 0, `esperaba VACÍO y salió ${codigo}: ${errores.join(' | ')}`);
+  assert.deepEqual(errores, []);
+  assert.match(salidas.join('\n'), /^VACÍO:/u);
+});
