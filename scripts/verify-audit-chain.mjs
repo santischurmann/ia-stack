@@ -227,18 +227,41 @@ export function gitVersions(rawPath, cwd, run = spawnSync) {
 // Windows: el blob y el archivo de trabajo dicen lo mismo escrito distinto. Reproducido clonando.
 const soloLF = (texto) => String(texto).split(String.fromCharCode(13) + String.fromCharCode(10)).join(String.fromCharCode(10));
 
-/** Cada versión tiene que empezar con la anterior. Nombra la primera que no. */
-export function verifyGrowth(versions, working) {
+/** La frase que una versión tiene que llevar para que su corte del crecimiento se acepte.
+ *
+ * POR QUE EXISTE. Una reescritura de historia autorizada -- sacar de la traza algo que nunca debio
+ * publicarse -- rompe el crecimiento para siempre, y dejaba a este comando en rojo permanente. Un
+ * gate que siempre rechaza se ignora, y un gate que se ignora no detecta nada. La salida no es
+ * aflojar la comprobacion: es exigir que la reescritura quede ADMITIDA dentro de la propia traza,
+ * en la misma version que corta, y seguir rechazando cualquier corte que no lo este.
+ *
+ * LIMITE HONESTO. La marca es una DECLARACION, no una prueba: quien puede reescribir la traza
+ * tambien puede escribir la frase. Lo que garantiza es que una reescritura quede admitida por
+ * escrito y sea imposible de hacer en silencio, no que fuera legitima. Quien audite tiene que leer
+ * esa linea y juzgarla; el gate solo se asegura de que exista y de que este donde corresponde. */
+export const REWRITE_DECLARATION = 'reescritura de historia AUTORIZADA';
+
+/** Cada versión tiene que empezar con la anterior. Nombra la primera que no, salvo que esa misma
+ * versión declare su reescritura. Devuelve además los cortes que sí venían declarados, para que la
+ * salida los diga en vez de que pasen callados. */
+export function verifyGrowth(versions, working, { declaration = REWRITE_DECLARATION } = {}) {
+  const rewrites = [];
   for (let i = 1; i < versions.length; i += 1) {
-    if (!soloLF(versions[i].content).startsWith(soloLF(versions[i - 1].content))) {
-      return { ok: false, commit: versions[i].commit, reason: `el commit ${versions[i].commit.slice(0, 7)} no extiende la versión anterior: la traza se recortó, se reescribió o se borró` };
+    if (soloLF(versions[i].content).startsWith(soloLF(versions[i - 1].content))) continue;
+    // La declaración vale sólo en la versión que corta. Si valiera en cualquiera anterior, una sola
+    // línea vieja seria licencia abierta para reescribir todo lo que viniera después.
+    if (soloLF(versions[i].content).includes(declaration)) {
+      rewrites.push(versions[i].commit);
+      continue;
     }
+    return { ok: false, commit: versions[i].commit, reason: `el commit ${versions[i].commit.slice(0, 7)} no extiende la versión anterior: la traza se recortó, se reescribió o se borró`, rewrites };
   }
   const ultima = versions.at(-1);
   if (ultima !== undefined && working !== null && !soloLF(working).startsWith(soloLF(ultima.content))) {
-    return { ok: false, commit: null, reason: `el archivo sin commitear no extiende la última versión registrada (${ultima.commit.slice(0, 7)})` };
+    if (soloLF(working).includes(declaration)) rewrites.push(null);
+    else return { ok: false, commit: null, reason: `el archivo sin commitear no extiende la última versión registrada (${ultima.commit.slice(0, 7)})`, rewrites };
   }
-  return { ok: true, commit: null, reason: null };
+  return { ok: true, commit: null, reason: null, rewrites };
 }
 
 export function historyCommand(args, options, write, writeError) {
@@ -273,7 +296,11 @@ export function historyCommand(args, options, write, writeError) {
     writeError(`REJECTED: ${HISTORY_CODE}: ${result.reason}`);
     return 1;
   }
-  write(`OK: ${path} sólo creció a lo largo de ${versions.length} versión(es) commiteada(s); recortarla o reescribirla exigiría reescribir la historia de git.`);
+  const declarados = result.rewrites.length;
+  const nota = declarados === 0
+    ? ''
+    : ` ${declarados} corte(s) declarado(s) dentro de la propia traza: la comprobación de crecimiento vale DESDE ahí, y quien audite tiene que leer esa línea y juzgarla — la marca dice que hubo una reescritura, no que fuera legítima.`;
+  write(`OK: ${path} sólo creció a lo largo de ${versions.length} versión(es) commiteada(s); recortarla o reescribirla exigiría reescribir la historia de git.${nota}`);
   return 0;
 }
 export function main(args = process.argv.slice(2), options = {}, write = console.log, writeError = console.error) {

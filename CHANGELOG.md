@@ -7,6 +7,23 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **`verify-audit-chain history` dejó de estar en rojo permanente, sin que se lo debilitara.** Una
+  reescritura de historia autorizada corta el crecimiento de la traza **para siempre**, y el gate lo
+  rechazaba en cada corrida. Tenía razón —la traza se reescribió— pero **un gate que siempre rechaza
+  se ignora, y un gate que se ignora no detecta nada**: el rojo permanente no era rigor, era una
+  alarma rota.
+  - Ahora un corte se acepta **sólo si la versión que corta lo declara dentro de la propia traza**.
+    Declararlo en una versión anterior no sirve: sería una licencia abierta para reescribir todo lo
+    que viniera después, y hay una falsificación que lo comprueba.
+  - **La salida lo dice en voz alta:** cuántos cortes declarados hay y que la comprobación de
+    crecimiento vale desde ahí.
+  - **Límite honesto nuevo (80):** la marca es una **declaración, no una prueba**. Quien puede
+    reescribir la traza también puede escribir la frase. Lo único que garantiza es que una
+    reescritura sea **imposible de hacer en silencio**; si fue legítima lo juzga quien audite,
+    leyendo esa línea.
+- **El README describía ese rojo como si fuera permanente y correcto.** Reescrito: ahora explica el
+  mecanismo real y su límite.
+
 - **Los identificadores de commit anteriores a la reescritura ya no resuelven.** Este registro nombra
   commits con el identificador que tenían cuando se escribió cada entrada, y la reescritura de
   historia se los cambió a todos. Son **doce** referencias en este archivo y en `SKILL.md`. No se

@@ -20,6 +20,7 @@ const {
   legacyPrefixLength,
   gitVersions,
   verifyGrowth,
+  REWRITE_DECLARATION,
   historyCommand,
   main,
 } = await import(pathToFileURL(script).href);
@@ -685,9 +686,9 @@ test('gitVersions tolera que git no escriba nada en stdout, en el log y en el sh
 });
 
 test('verifyGrowth acepta el árbol de trabajo ausente y la lista vacía', () => {
-  assert.deepEqual(verifyGrowth([], null), { ok: true, commit: null, reason: null });
-  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], null), { ok: true, commit: null, reason: null });
-  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], 'xy'), { ok: true, commit: null, reason: null });
+  assert.deepEqual(verifyGrowth([], null), { ok: true, commit: null, reason: null, rewrites: [] });
+  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], null), { ok: true, commit: null, reason: null, rewrites: [] });
+  assert.deepEqual(verifyGrowth([{ commit: 'aaa', content: 'x' }], 'xy'), { ok: true, commit: null, reason: null, rewrites: [] });
 });
 
 test('FALSIFICACIÓN · historyCommand rechaza el uso inválido, el error de git y el vacío bajo --require-inputs', () => {
@@ -838,4 +839,57 @@ test('FALSIFICACION · check informa el prefijo heredado en vez de callarlo', ()
   assert.equal(main(['check', 'AUDIT.md'], { readFile: () => conForjada }, (l) => forjada.push(l), () => {}), 0);
   assert.match(forjada.at(-1), /1 línea\(s\) heredada\(s\)/u, 'una linea forjada arriba tiene que verse en la salida');
   assert.match(forjada.at(-1), /history/u, 'y tiene que nombrar al que si la detecta');
+});
+
+// --- Una reescritura de historia AUTORIZADA dejaba a `history` en rojo para siempre. El detector
+// tenia razon -- la traza se reescribio -- pero un gate permanentemente rojo se ignora, y un gate que
+// se ignora no detecta nada. La salida no es debilitarlo: es exigir que la reescritura quede
+// DECLARADA dentro de la propia traza, y seguir rechazando cualquier corte que no lo este.
+
+test('un corte declarado en la propia traza deja de romper el crecimiento, y se informa', () => {
+  const versions = [
+    { commit: 'aaaaaaa', content: 'linea 1\n' },
+    { commit: 'bbbbbbb', content: 'linea 1\nlinea 2\n' },
+    { commit: 'ccccccc', content: `linea 1 redactada\nlinea 2\n${REWRITE_DECLARATION} y resellada\n` },
+    { commit: 'ddddddd', content: `linea 1 redactada\nlinea 2\n${REWRITE_DECLARATION} y resellada\nlinea 4\n` },
+  ];
+  const r = verifyGrowth(versions, null);
+  assert.equal(r.ok, true, r.reason ?? '');
+  assert.deepEqual(r.rewrites, ['ccccccc']);
+});
+
+test('FALSIFICACIÓN · un corte SIN declarar sigue siendo un rechazo', () => {
+  const versions = [
+    { commit: 'aaaaaaa', content: 'linea 1\nlinea 2\n' },
+    { commit: 'bbbbbbb', content: 'linea 1 cambiada\nlinea 2\n' },
+  ];
+  const r = verifyGrowth(versions, null);
+  assert.equal(r.ok, false);
+  assert.equal(r.commit, 'bbbbbbb');
+  assert.deepEqual(r.rewrites, []);
+});
+
+test('FALSIFICACIÓN · la declaración tiene que estar en la versión que corta, no en cualquier otra', () => {
+  // Declararla ANTES no explica un corte posterior: seria una licencia abierta para reescribir.
+  const versions = [
+    { commit: 'aaaaaaa', content: `linea 1\n${REWRITE_DECLARATION}\n` },
+    { commit: 'bbbbbbb', content: 'otra cosa distinta\n' },
+  ];
+  const r = verifyGrowth(versions, null);
+  assert.equal(r.ok, false);
+  assert.equal(r.commit, 'bbbbbbb');
+});
+
+test('el árbol de trabajo también puede declarar su propio corte', () => {
+  const versions = [{ commit: 'aaaaaaa', content: 'linea 1\n' }];
+  assert.equal(verifyGrowth(versions, 'otra cosa\n').ok, false);
+  assert.equal(verifyGrowth(versions, `otra cosa\n${REWRITE_DECLARATION}\n`).ok, true);
+});
+
+test('la traza real de este repositorio pasa history con su reescritura declarada', () => {
+  const salida = [];
+  const errores = [];
+  const code = historyCommand(['history', '.vibe/AUDIT.md'], { cwd: repoRoot }, (l) => salida.push(l), (l) => errores.push(l));
+  assert.deepEqual({ code, errores }, { code: 0, errores: [] });
+  assert.match(salida.join('\n'), /reescritura/iu);
 });
