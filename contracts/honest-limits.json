@@ -504,6 +504,18 @@
       "file": "skills/vibe-memory.md",
       "phrase": "El tope mira la línea que entra, nunca las que ya están",
       "why": "El tope de 4000 caracteres vive en sealLineFor y solo rechaza lineas NUEVAS. No protege nada de lo ya escrito ni podria: la traza es intocable por contrato, asi que aplicarlo hacia atras pondria history en rojo permanente. Concretamente: las 141 lineas selladas hasta el 2026-09-04 siguen validas cualquiera sea su largo -- la mas larga mide 2736 caracteres -- y una traza que hubiera recibido una linea enorme antes del tope se queda con ella para siempre. El tope evita el problema siguiente, no repara el anterior."
+    },
+    {
+      "limit_id": "feature-activa-detects-not-resolves",
+      "file": "skills/gates.md",
+      "phrase": "Detecta el desacuerdo, no lo resuelve",
+      "why": "El gate compara el slug que declaran docs/spec.md y .vibe/SESSION.md, y rechaza si difieren. Lo que NO puede es decidir cual tiene razon: eso exigiria saber en que se esta trabajando, que es justo lo que el desacuerdo pone en duda. Y compara nombres, no comprueba que el trabajo sea sobre esa feature -- dos documentos pueden coincidir en un slug que ya nadie usa. Medido el 2026-09-04 en este repositorio: los documentos daban dos respuestas distintas y ningun gate lo veia."
+    },
+    {
+      "limit_id": "feature-activa-ignores-closed-phase-plan",
+      "file": "skills/gates.md",
+      "phrase": "no mira `docs/phase-plan.json`, que es un expediente cerrado",
+      "why": "docs/phase-plan.json tambien tiene un campo feature, y a proposito queda fuera de la comparacion. Es el expediente de un ciclo de fases, y su pareja docs/phase-decisions.json guarda las decisiones selladas: un expediente terminado sigue nombrando su propia feature -- correctamente -- mientras el trabajo en curso ya es otro. Exigir que coincida obligaria a borrar el expediente cerrado o a FABRICAR decisiones de fase con menus que nunca se mostraron, y este protocolo no escribe evidencia hacia atras. El costo esta declarado: si alguien deja el expediente apuntando a una feature vieja y se olvida de abrir el nuevo, este gate no lo ve."
     }
   ]
 }

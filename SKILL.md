@@ -146,6 +146,16 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    **No verifica de dónde salió el slug pedido: el agente lo elige.** Un agente que pide el slug
    del checkpoint viejo retoma esa sesión con el gate en verde.
 
+   Y corré el gate que compara los documentos entre sí, que es la otra mitad:
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-feature-activa.mjs check
+   ```
+   `docs/spec.md` y `.vibe/SESSION.md` tienen que nombrar la **misma** feature. Con menos de dos
+   declarantes escribe `VACÍO:` y sale `0`: no hay dos nombres que comparar. **Detecta el desacuerdo,
+   no lo resuelve** — cuál de los dos tiene razón lo decidís vos. Medido en el propio repositorio de
+   VCP el 2026-09-04: los documentos daban tres respuestas distintas a «¿en qué estamos trabajando?»
+   y nada las comparaba.
+
    Salir con `0` es el **único** resultado de identidad que permite retomar. Recién ahí se
    re-detecta la fase **por evidencia**: se corren las pruebas de esa tarea (si fallan, es antes del
    GREEN; si pasan, después), y se mira el `git diff` de los archivos de prueba — si cambiaron desde

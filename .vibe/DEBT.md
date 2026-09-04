@@ -25,3 +25,20 @@ Eso era daño activo sobre cualquiera que clonara; esto es una mejora del métod
 declarándolo, no borrándolo: la spec entera se recupera con el comando de arriba.
 
 ---
+
+## [2026-09-04] Debt: `graphify update` degrada las etiquetas del grafo en cada corrida `id:dfdf42`
+
+**Location:** `graphify-out/.graphify_labels.json`
+**Severity:** low
+**Description:** Cada `graphify update .` re-clusteriza y renombra por su archivo-hub las comunidades
+que cambiaron: 25 la primera vez y 18 la segunda, el mismo día. Las etiquetas semánticas en
+castellano se rehacen a mano. El remapeo automático por mayoría de nodos SÓLO funciona si se copia
+`.graphify_labels.json` **antes** de correr el update — el backup que rota Graphify se sobrescribe
+con el estado ya degradado, y entonces no hay fuente.
+**Why deferred:** El grafo está fuera de lo versionado y es una integración **opcional**: la etapa 6
+le dio al protocolo su propio índice (`verify-vcp-index.mjs`) justamente para no depender de esta
+herramienta. Automatizarlo sería un script más que mantener, con cobertura y declaración, para una
+dependencia que el protocolo ya no necesita. Mitigación mientras tanto: copiar el archivo de
+etiquetas antes de cada update.
+
+---

@@ -149,6 +149,7 @@ export const REQUIREMENTS = [
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-sereno\.mjs/u, 'self-improvement loop wired into PHASE 9'],
   ['README.md', /\*\*como mucho cuatro\*\*/u, 'the cap of four proposals, which is the feature'],
   ['skills/vibe-memory.md', /4000 caracteres/u, 'the forward-only cap on a new audit line'],
+  ['SKILL.md', /verify-feature-activa\.mjs/u, 'the gate that compares who declares the active feature'],
 ];
 
 // Narrow, phrase-level bans — never a bare word ban — so legitimate uses of "genuine" elsewhere
