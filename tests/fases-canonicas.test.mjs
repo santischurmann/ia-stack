@@ -145,3 +145,31 @@ test('FALSIFICACIÓN · el lector de la tabla del README no confunde una fila cu
     { numero: '1.5', nombre: 'Intake' },
   ]);
 });
+
+// --- Números que envejecen -----------------------------------------------------------------------
+//
+// El README decía «los 36 chequeos» y eran 42. Nadie lo notó porque ningún gate mira ese número: es
+// prosa. La misma clase de defecto que tenía la descripción del repositorio en GitHub, que hablaba
+// de garantías vencidas — con el agravante de que ahí ningún gate del proyecto puede llegar.
+//
+// La regla no exige que el número esté bien: exige que NO HAYA número. Un conteo que hay que
+// mantener a mano se desactualiza; la tabla de `skills/gates.md` ya es la fuente, y hay una prueba
+// que la obliga a nombrar todos los gates que existen.
+
+export function conteosDeChequeos(texto) {
+  const encontrados = [];
+  for (const m of texto.matchAll(/\b(\d+)\s+(chequeos|gates|checks|verificaciones|pruebas)\b/giu)) {
+    encontrados.push(m[0]);
+  }
+  return encontrados;
+}
+
+test('el README no afirma cuántos chequeos hay: ese número se desactualiza solo', SOLO_FUENTE, () => {
+  assert.deepEqual(conteosDeChequeos(readFileSync(join(repoRoot, 'README.md'), 'utf8')), []);
+});
+
+test('FALSIFICACIÓN · la regla ve el conteo y no confunde una cifra cualquiera', () => {
+  assert.deepEqual(conteosDeChequeos('Los 36 chequeos que trae'), ['36 chequeos']);
+  assert.deepEqual(conteosDeChequeos('42 gates declarados'), ['42 gates']);
+  assert.deepEqual(conteosDeChequeos('once fases, 7 días, 100 % de cobertura'), []);
+});

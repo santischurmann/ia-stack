@@ -184,7 +184,7 @@ sea la decisión correcta, ni que la persona la haya entendido.
 | Documento | Qué tiene |
 |---|---|
 | **[`SKILL.md`](SKILL.md)** | El protocolo completo, fase por fase. Es lo que lee el agente. |
-| **[`skills/gates.md`](skills/gates.md)** | Los 36 chequeos, qué comprueba cada uno y qué no puede comprobar. |
+| **[`skills/gates.md`](skills/gates.md)** | Todos los chequeos, qué comprueba cada uno y qué **no** puede comprobar. |
 | **[`skills/research.md`](skills/research.md)** | **Research: investigar antes de especificar** — la pasada de Discovery. |
 | **[`skills/verificar-vcp.md`](skills/verificar-vcp.md)** | Cómo verificar el propio repositorio de VCP. |
 | **[`SECURITY.md`](SECURITY.md)** | **Modelo de seguridad y límites**. |
