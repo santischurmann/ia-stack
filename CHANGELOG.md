@@ -7,6 +7,26 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **🔴 DEFECTO CONOCIDO, medido y todavía sin arreglar: el repositorio está verde y toda instalación
+  nace en rojo.** Reproducido de punta a punta contra un proyecto ficticio de un tercero: instalar el
+  runtime y correr la suite da **42 fallos sobre 1090**. Causa: `install.sh` copia `tests/` entero
+  pero **no** copia `README.md`, `INSTALL.md`, `CHANGELOG.md`, `examples/` ni `docs/`, y decenas de
+  pruebas los leen desde la raíz del runtime. Es la misma familia que el primer defecto que este
+  proyecto documentó —el repositorio verde y los instaladores rojos— multiplicada por cuarenta y dos.
+  - **Queda declarado antes de arreglarlo a propósito.** Es lo primero que ve quien instala esto, y
+    callarlo mientras se promociona el repositorio sería exactamente el verde falso que el protocolo
+    dice combatir.
+
+- **Una prueba que escribí ayer leía el `git remote` del repositorio de quien instala.** El self-check
+  «el README nombra el repositorio en el que vive» también corría dentro del runtime instalado, donde
+  preguntaba por el remote de un tercero y después exigía un README que el instalador ni copia.
+  **Verificado ejecutando** contra un proyecto ficticio con remote ajeno: leyó ese remote.
+  - **Arreglo:** se reconoce un runtime instalado **por su forma** —siempre vive en
+    `<proyecto>/.vibe/vcp-runtime`—, no por una lista de rutas conocidas. El self-check **se salta
+    diciendo por qué**, nunca en silencio. Dos falsificaciones lo sostienen: una comprueba que el
+    checkout fuente no puede confundirse con una instalación, y la otra que la guarda corta **antes**
+    de preguntar nada, con un espía que falla si el remote llega a leerse.
+
 - **El repositorio pasó a llamarse `ia-stack` y el protocolo siguió llamándose VibeCodeProtocols.**
   La distinción es deliberada: la invocación `/VibeCodeProtocols` y el `SKILL_NAME` del instalador
   están escritos dentro de cada proyecto que ya lo instaló, así que renombrarlos habría roto esas

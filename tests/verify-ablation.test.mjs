@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
@@ -1498,7 +1498,13 @@ export function repoRemoto(ejecutar = execFileSync, cwd = repoRoot) {
   return { duenio: m[1], nombre: m[2] };
 }
 
-test('el README nombra el repositorio en el que vive', () => {
+test('el README nombra el repositorio en el que vive', (t) => {
+  // Self-check del repositorio de VCP. Dentro del runtime instalado de otra persona no aplica, y
+  // preguntarlo ahi seria leer el remote de esa persona. Se salta DICIENDO por que, no en silencio.
+  if (esRuntimeInstalado(repoRoot)) {
+    t.skip('runtime instalado: este self-check es del repositorio de VCP, no del proyecto de quien instala');
+    return;
+  }
   const { nombre } = repoRemoto();
   const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
   assert.ok(readme.includes(nombre), `el README no nombra a \`${nombre}\`, que es el repositorio donde esta`);
@@ -1511,4 +1517,35 @@ test('FALSIFICACIÓN · leer el repo del remote distingue url, y sin remote no d
   // Sin remote tiene que DOLER, no pasar en silencio.
   assert.throws(() => repoRemoto(() => { throw new Error('no origin'); }), /NO SE PUDO VERIFICAR/u);
   assert.throws(() => repoRemoto(fake('basura')), /NO SE PUDO VERIFICAR/u);
+});
+
+// --- La prueba de arriba corria tambien dentro del runtime YA INSTALADO en el proyecto de otra
+// persona, porque el instalador copia tests/ entero. Ahi hacia dos cosas que no le corresponden:
+// leia `git remote get-url origin` DEL REPOSITORIO DE ESA PERSONA, y despues exigia que un README
+// que el instalador ni siquiera copia nombrara ese remote. Verificado ejecutando contra un proyecto
+// ficticio con remote de un tercero: la prueba leyo ese remote. Un self-check de VCP no tiene
+// nada que preguntarle al repositorio de quien lo instala.
+//
+// La deteccion es por FORMA, no por una lista de rutas conocidas: un runtime instalado siempre vive
+// en `<proyecto>/.vibe/vcp-runtime`. Y no se salta en silencio -- se salta DICIENDO por que.
+
+export function esRuntimeInstalado(root) {
+  return basename(root) === 'vcp-runtime' && basename(dirname(root)) === '.vibe';
+}
+
+test('FALSIFICACIÓN · se reconoce un runtime instalado por su forma, y sólo eso', () => {
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'vcp-runtime')), true);
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', 'vcp-runtime')), false, 'sin .vibe encima no es un runtime instalado');
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'otra-cosa')), false);
+  assert.equal(esRuntimeInstalado(join('C:', 'Users', 'x', 'ia-stack')), false, 'el checkout fuente NO puede confundirse con una instalación');
+});
+
+test('los self-checks del repositorio no corren dentro del runtime instalado de otra persona', () => {
+  // Falsificación de la fuga concreta: si esto se ejecutara en un proyecto ajeno, `repoRemoto`
+  // leería el remote de esa persona. La guarda tiene que cortar ANTES de preguntar nada.
+  const raizInstalada = join('C:', 'proyecto-ajeno', '.vibe', 'vcp-runtime');
+  let pregunto = false;
+  const espia = () => { pregunto = true; return 'https://github.com/otra-persona/su-proyecto.git'; };
+  if (!esRuntimeInstalado(raizInstalada)) repoRemoto(espia, raizInstalada);
+  assert.equal(pregunto, false, 'la guarda dejó que el self-check leyera el remote de un tercero');
 });
