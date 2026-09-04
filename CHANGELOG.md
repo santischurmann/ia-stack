@@ -7,6 +7,40 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Se sacó del repositorio lo que pertenecía a otro proyecto del autor.** El registro de la ablación
+  publicaba, en cinco campos, el enunciado de dos tareas reales que nombraban dónde vive una pieza
+  sensible de ese producto.
+  - **Se redactó, no se reinventó.** Cada campo lleva un marcador que **dice que fue redactado y por
+    qué**, y conserva el veredicto y los números del experimento. Poner una tarea sintética en su
+    lugar habría hecho que el registro afirme una tarea que nunca se corrió — peor que redactar.
+  - **El propio gate atajó un error de la redacción:** los dos marcadores quedaron idénticos y
+    rechazó con «seis copias de una prueba no son seis pruebas». Cada marca lleva ahora su
+    identificador.
+  - **`SKILL.md` nombraba una subcarpeta del vault personal del autor** como destino de backup, y ese
+    archivo se instala en tres lugares de la máquina de quien lo usa. Ahora el paso no supone
+    ninguna carpeta: dónde vive la bitácora lo decide cada proyecto.
+  - **Cuatro archivos distribuidos imponían el stack del autor** —plantilla de proyecto, skill de
+    memoria, contrato de alcance y el propio `SKILL.md`— hablando de un tipo de archivo concreto como
+    si fuera universal. La regla es buena y se conserva; el ejemplo era ajeno y se generalizó a
+    «fuentes que el repositorio no versiona».
+
+- **🔴 Un barrido que se intentó y NO se pudo hacer, escrito para que nadie lo reintente a ciegas.**
+  La guarda contra citas a árboles ajenos hoy mira **un** archivo. Se intentó extenderla a todo lo
+  versionado y no se puede por forma. Dos afinados, los dos con más excepciones que hallazgos:
+  marcar toda cita a un archivo inexistente señalaba ejemplos didácticos del propio README; exigir
+  además que la cita traiga ruta señalaba un spec de ejemplo con rutas ficticias y un informe de
+  investigación que cita repositorios **públicos** de terceros porque ése es su trabajo.
+  - **El hallazgo:** citar el árbol privado de otro proyecto **no tiene forma distinta** de citar un
+    repositorio público ajeno ni de inventar una ruta para un ejemplo. Las tres son
+    `ruta/archivo.ext:número`. Separarlas exige saber **de quién** es el árbol, y la cita no lo dice.
+  - **No se publicó el barrido.** Un guarda cuya única salida son sus propias excepciones se ignora,
+    y uno que se ignora no detecta nada — la misma lección que costó el comando que rechazaba siempre.
+
+- **Una decisión que queda pendiente y no se toma sin el usuario:** `contracts/ablation-scope.json`
+  declara intocables dos extensiones del otro producto. Eso **es** la regla dura que impide borrarlos.
+  Sacarlas para limpiar contaminación **debilitaría una protección de seguridad**, así que se dejan y
+  se declara el conflicto en vez de resolverlo por cuenta propia.
+
 - **🔴 DEFECTO CONOCIDO, medido y todavía sin arreglar: el repositorio está verde y toda instalación
   nace en rojo.** Reproducido de punta a punta contra un proyecto ficticio de un tercero: instalar el
   runtime y correr la suite da **42 fallos sobre 1090**. Causa: `install.sh` copia `tests/` entero

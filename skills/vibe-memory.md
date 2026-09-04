@@ -304,7 +304,7 @@ externo ni sustituye juicio de producto.
 
 ## ENGRAM GUARDRAIL (si el MCP de Engram está presente)
 
-NUNCA pegar código `.mq5`, lógica de licencia, tokens o passwords dentro de un `content` de
+NUNCA pegar fuentes que el repositorio no versiona, lógica de licencia, tokens o passwords dentro de un `content` de
 `mem_save` — la DB de Engram (`~/.engram/engram.db`) es SQLite local sin cifrado confirmado, y
 `engram sync` no filtra por scope (`personal` también se exporta). Describí el comportamiento o
 la decisión en prosa; nunca el código fuente ni la lógica de licencia.

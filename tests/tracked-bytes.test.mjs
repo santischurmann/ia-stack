@@ -126,3 +126,31 @@ test('FALSIFICACIÓN · el barrido de NUL distingue el byte crudo de su forma es
   assert.equal(rawNulBytes(Buffer.from('String.fromCharCode(0)', 'utf8')), 0);
   assert.equal(rawNulBytes(Buffer.from('sin nada raro', 'utf8')), 0);
 });
+
+// --- LO QUE SE INTENTO Y NO SE PUDO, escrito para que nadie lo vuelva a intentar a ciegas.
+//
+// El repositorio publico una vez, sin querer, una referencia archivo:linea a codigo de otro
+// proyecto del autor. La guarda que existe hoy mira UN archivo -- docs/ablation.json, en
+// tests/verify-ablation.test.mjs -- y ahi funciona: ese registro no tiene ninguna razon legitima
+// para citar un arbol ajeno.
+//
+// Se intento extender ese barrido a TODO lo versionado. No se puede por forma, y conviene decir
+// exactamente por que. Se probaron dos afinados y los dos dejaron mas excepciones que hallazgos:
+//
+//   1. Cita a un archivo que no existe en este repositorio -> marcaba `auth.js:12`, un ejemplo
+//      didactico del propio README que no apunta a ningun arbol.
+//   2. Idem, pero exigiendo que la cita traiga ruta y no solo nombre -> marcaba
+//      `examples/example-feature/spec.md`, que describe una feature ficticia con rutas ficticias,
+//      y `research/external-sources-2026-08-28.md`, que cita repositorios PUBLICOS de terceros
+//      porque ese es su trabajo, con su propio gate comprobando que esas citas resuelvan.
+//
+// EL HALLAZGO: citar el arbol privado de otro proyecto del autor NO tiene forma distinta de citar
+// un repositorio publico de un tercero, ni de inventar una ruta para un ejemplo. Las tres son
+// `ruta/archivo.ext:numero`. Separarlas exige saber DE QUIEN es el arbol, que es informacion que la
+// cita no lleva.
+//
+// Se decidio no publicar el barrido. Un guarda cuya unica salida son sus propias excepciones se
+// ignora, y uno que se ignora no detecta nada -- la misma leccion que este repositorio ya pago con
+// el comando `history` que rechazaba siempre. Lo que cubre esta clase hoy: la guarda acotada de
+// ablation, y una auditoria con lentes ciegas, que es lo que encontro la fuga original cuando la
+// guarda hecha con la misma lista que la redaccion no la vio.

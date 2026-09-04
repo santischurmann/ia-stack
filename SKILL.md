@@ -1187,7 +1187,7 @@ risk_reasons:
 - simplify_ignore_touch — alguna línea cambiada cae dentro de un bloque `simplify-ignore`
   existente (grep del marcador, comparar el rango contra `git diff -U0`)
 - sensitive_path        — el diff toca un path listado en `.vibe/PROJECT.md` § Risk-sensitive
-  paths. Si el repo contiene algún `.mq5` y esa sección está VACÍA → tratar como
+  paths. Si el repo contiene fuentes que NO versiona y esa sección está VACÍA → tratar como
   `sensitive_path` igual (fail-safe: vacío no es "sin riesgo", es "sin configurar")
 - large_change          — >400 líneas cambiadas. NUNCA promueve a `alto` por sí sola —
   solo cuenta si coincide con otra reason (evita penalizar un refactor mecánico grande
@@ -1343,7 +1343,8 @@ Límite, impreso en cada corrida: **si el agente puede correr `git commit -S`, f
 custodia vale hasta donde tu clave exija presencia humana.
 
 **8.2 Backups**:
-- Obsidian: si existe `Obsidian/07_Backups_Log/`, se deja una nota con ruta, sha256 y tamaño (el formato está en el log de cualquier proyecto).
+- Bitácora de respaldos (opcional): si tu proyecto lleva una, se deja una nota con ruta, sha256 y
+  tamaño. Dónde vive esa bitácora lo decide cada proyecto — este paso no supone ninguna carpeta.
 - Graphify y Obsidian: después del commit se corre `graphify update .` y `graphify export obsidian --dir graphify-out/obsidian`.
   Después se corre `node .vibe/vcp-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian`.
   Ese gate verifica que el destino de la exportación esté dentro del proyecto, que sea un árbol
@@ -1487,7 +1488,7 @@ pasos, y sin él la fase no cierra. Plantilla del registro: `templates/ablation.
 **Acá no existe `rm`.** Nada se borra. Todo se **mueve** a `.claude-archive/<fecha>/` conservando la
 ruta, y la vuelta atrás es un solo comando. Si en algún momento parece que la única salida es
 borrar, se para y se pregunta. Los patrones intocables viven en `contracts/ablation-scope.json` —
-entre ellos los `.mq5`, que no están en git y cuya pérdida sería irreversible.
+entre ellos los fuentes que el repositorio no versiona, cuya pérdida sería irreversible.
 
 **El archivo puede ser git, y muchas veces conviene que lo sea.** Si la configuración está bajo
 git —y el primer paso de la limpieza es justamente `git init` + commit si no lo está—, sacar un

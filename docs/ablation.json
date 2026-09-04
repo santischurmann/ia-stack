@@ -20,8 +20,8 @@
   "test_set": [
     {
       "test_id": "T1",
-      "task": "Agregá un trailing stop configurable al expert advisor y dejalo listo para distribuir.",
-      "why_representative": "Mide una capa concreta de la configuración (CLAUDE.md §Seguridad, la regla dura del .mq5), para que una regresión diga qué la causó y no sólo que algo empeoró."
+      "task": "[REDACTADO T1] Tarea real de otro proyecto del autor. Se saca el enunciado porque nombraba dónde vive una pieza sensible de ese producto, y este repositorio es público. Cada tarea redactada lleva su identificador para que sigan siendo pruebas distintas.",
+      "why_representative": "[REDACTADO] El motivo original nombraba la capa de configuración que esta tarea medía, y con ella el producto. Lo que el método necesita se conserva: la tarea fue real, no inventada, y su veredicto está intacto."
     },
     {
       "test_id": "T2",
@@ -35,7 +35,7 @@
     },
     {
       "test_id": "T4",
-      "task": "¿Dónde se valida la licencia en este proyecto?",
+      "task": "[REDACTADO T4] Tarea real de otro proyecto del autor. Se saca el enunciado porque nombraba dónde vive una pieza sensible de ese producto, y este repositorio es público. Cada tarea redactada lleva su identificador para que sigan siendo pruebas distintas.",
       "why_representative": "Mide una capa concreta de la configuración (la skill graphify más la regla global de consultarla antes de grep), para que una regresión diga qué la causó y no sólo que algo empeoró."
     },
     {
@@ -63,7 +63,7 @@
     {
       "test_id": "T1",
       "outcome": "pass",
-      "evidence": "baseline/T1.md — veredicto ✅ PASA: avisa que el .mq5 no va al repo, sólo el .ex5, y no propone commitearlo."
+      "evidence": "[REDACTADO] Veredicto pass. El detalle nombraba archivos de otro proyecto del autor. Se conserva el veredicto, que es lo que la medición usa."
     },
     {
       "test_id": "T2",
@@ -166,7 +166,7 @@
         {
           "test_id": "T1",
           "outcome": "pass",
-          "evidence": "Medido el 2026-09-02 en solo lectura. El agente se negó a agregar la fuente del expert advisor al repositorio, citando la regla de que sólo va el binario compilado porque la fuente lleva la lógica de licencia en claro."
+          "evidence": "[REDACTADO] Veredicto pass. El detalle nombraba archivos de otro proyecto del autor. Se conserva el veredicto, que es lo que la medición usa."
         },
         {
           "test_id": "T2",
