@@ -24,16 +24,16 @@ export const REQUIREMENTS = [
   ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
   ['README.md', /Research: investigar antes de especificar/u, 'research-first user workflow'],
-  ['README.md', /verify-product-diagnostics\.mjs/u, 'six product-discovery diagnostics gate'],
+  ['skills/gates.md', /verify-product-diagnostics\.mjs/u, 'six product-discovery diagnostics gate'],
   ['SKILL.md', /verify-product-diagnostics\.mjs check/u, 'six product-discovery diagnostics gate'],
-  ['README.md', /Los diagnósticos comprueban forma e invariantes, nunca verdad semántica\./u, 'diagnostics honest semantic limit'],
-  ['README.md', /build-complete-review-index\.mjs/u, 'complete static research review index'],
-  ['README.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
+  ['skills/research.md', /Los diagnósticos comprueban forma e invariantes, nunca verdad semántica\./u, 'diagnostics honest semantic limit'],
+  ['skills/research.md', /build-complete-review-index\.mjs/u, 'complete static research review index'],
+  ['skills/research.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
   ['SKILL.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
   ['README.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
-  ['README.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
+  ['skills/gates.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
   ['SKILL.md', /verify-receipt\.mjs commit/u, 'validate-and-write in one run'],
   // Los dos cierres de esta noche: quien firmo, y cuanto tardo la persona en elegir. Fijados como
@@ -57,7 +57,7 @@ export const REQUIREMENTS = [
   ['SKILL.md', /Contexto acotado por agente/u, 'bounded per-agent context'],
   ['SKILL.md', /Cuándo una fase está terminada/u, 'explicit phase-completion rule'],
   ['SKILL.md', /Redacción reutilizable/u, 'reuse canonical wording'],
-  ['README.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
+  ['skills/gates.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
   // Running the gate from inside .vibe/vcp-runtime/ compares the installed copy with itself: it is
   // always green and proves nothing. The promise that it runs from the source checkout is the whole
   // gate, so it is pinned as text and not left to whoever edits the phase later.
@@ -74,9 +74,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
   ['SKILL.md', /verify-spec-wordcap\.mjs check docs\/spec\.md --quality/u, 'strict spec quality-shape gate'],
-  ['README.md', /verify-spec-wordcap\.mjs --quality/u, 'strict spec quality-shape gate'],
+  ['skills/gates.md', /verify-spec-wordcap\.mjs --quality/u, 'strict spec quality-shape gate'],
   ['SKILL.md', /verify-capability-matrix\.mjs check \.vibe\/vcp-runtime\/contracts\/capability-matrix\.json/u, 'mechanical capability-separation gate'],
-  ['README.md', /verify-capability-matrix\.mjs/u, 'capability matrix gate'],
+  ['skills/gates.md', /verify-capability-matrix\.mjs/u, 'capability matrix gate'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   // The two halves are pinned separately on purpose: `criteria` closes Phase 6 and `claims` closes
@@ -86,17 +86,17 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-evidence-trace\.mjs criteria/u, 'mechanical criterion-to-test trace gate'],
   ['SKILL.md', /verify-evidence-trace\.mjs claims/u, 'mechanical claim-to-spec reference gate'],
   ['SKILL.md', /claims --feature <feature-slug> --require-inputs --require-links/u, 'strict claim-link completeness at final close'],
-  ['README.md', /`--require-links` exige además[\s\S]*packet no vacío[\s\S]*cada claim/u, 'strict claim-link completeness documented'],
-  ['README.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
+  ['skills/gates.md', /`--require-links` exige además[\s\S]*packet no vacío[\s\S]*cada claim/u, 'strict claim-link completeness documented'],
+  ['skills/gates.md', /verify-evidence-trace\.mjs/u, 'mechanical evidence-trace gate'],
   // Este ancla fijaba `Usa 1 worker por defecto`, que es FALSO: la constante del script es 32 y la
   // variable de entorno existe para bajarla. El contrato clavaba la mentira en su lugar, y por eso
   // una correccion anterior pudo arreglar el parrafo de arriba y no la fila de la tabla. Ahora fija
   // el hecho -- el valor real y para que sirve el override -- en vez de una redaccion.
-  ['README.md', /--test-concurrency=32[\s\S]*?VCP_TEST_CONCURRENCY=<n>` existe para \*\*bajarlo\*\*/u, 'coverage runner default is 32 and the override only lowers it'],
-  ['README.md', /VCP_BASH_PATH/u, 'explicit Windows Bash selection'],
+  ['skills/gates.md', /--test-concurrency=32[\s\S]*?VCP_TEST_CONCURRENCY=<n>` existe para \*\*bajarlo\*\*/u, 'coverage runner default is 32 and the override only lowers it'],
+  ['skills/gates.md', /VCP_BASH_PATH/u, 'explicit Windows Bash selection'],
   ['SKILL.md', /verify-evidence-runner\.mjs run/u, 'native argv evidence runner'],
   ['SKILL.md', /verify-evidence-runner\.mjs check .*--require-complete/u, 'strict evidence completion gate'],
-  ['README.md', /verify-evidence-runner\.mjs/u, 'native evidence runner'],
+  ['skills/gates.md', /verify-evidence-runner\.mjs/u, 'native evidence runner'],
   // Phase 6 runs `criteria` where the spec must already exist, so dropping the flag would turn a
   // deleted spec back into a green. The flag is pinned separately from the command for that reason.
   ['SKILL.md', /criteria --spec docs\/spec\.md --tests tests --require-inputs/u, 'Phase 6 criteria run rejects a missing spec instead of passing empty'],
@@ -105,28 +105,28 @@ export const REQUIREMENTS = [
   // written even if somebody moves, renames or deletes the gate that detects it.
   ['SKILL.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
   ['SKILL.md', /tercer intento fallido sobre el mismo problema/u, 'three-attempt stop-and-ask rule'],
-  ['README.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
+  ['skills/gates.md', /verify-session-state\.mjs check/u, 'mechanical resumable-session-state gate'],
   // Las dos mitades se fijan aparte a propósito: el gate detecta la regla, pero la regla —ninguna
   // fase cierra sin una elección registrada— es del protocolo y tiene que seguir escrita aunque
   // alguien mueva, renombre o borre el gate que la detecta.
   ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json/u, 'mechanical phase-decision gate'],
   ['SKILL.md', /verify-phase-decisions\.mjs check docs\/phase-decisions\.json[\s\S]*--require-complete/u, 'complete phase-decision gate at final close'],
   ['SKILL.md', /Ninguna fase cierra sin una elección registrada/u, 'no phase closes without a recorded human choice'],
-  ['README.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
+  ['skills/gates.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
   ['SKILL.md', /verify-phase-menu\.mjs check docs\/phase-decisions\.json --plan docs\/phase-plan\.json/u, 'canonical phase-plan integration gate'],
-  ['README.md', /verify-phase-menu\.mjs check/u, 'canonical phase-plan integration gate'],
+  ['skills/gates.md', /verify-phase-menu\.mjs check/u, 'canonical phase-plan integration gate'],
   ['templates/diagnostics/caio.json', /vcp\.caio\/1/u, 'CAIO diagnostic template schema'],
   ['templates/phase-plan.json', /vcp\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
   // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
   ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],
   ['SKILL.md', /un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar/iu, 'a new gate must declare its no-input behaviour'],
-  ['README.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],
+  ['skills/gates.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],
   // El gate y su limite: el numero sin la advertencia de que son lineas y no ramas se lee como
   // "el 72% del comportamiento esta probado", que es exactamente lo que no dice.
   ['SKILL.md', /verify-shell-coverage\.mjs check contracts\/shell-coverage\.json/u, 'mechanical shell line-coverage gate'],
   ['SKILL.md', /Mide líneas ejecutadas, no ramas/u, 'shell coverage counts executed lines, never branches'],
-  ['README.md', /verify-shell-coverage\.mjs check/u, 'mechanical shell line-coverage gate'],
+  ['skills/gates.md', /verify-shell-coverage\.mjs check/u, 'mechanical shell line-coverage gate'],
   // El diccionario es la promesa de que este README se puede leer sin saber la jerga. Fijado como
   // texto: si alguien lo borra al reorganizar, el contrato lo dice en vez de quedar en silencio.
   ['README.md', /## Diccionario: qué significa cada palabra rara/u, 'plain-language dictionary for every technical term'],

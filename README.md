@@ -1,42 +1,36 @@
 # VibeCodeProtocols (VCP)
 
-VCP ayuda a una IA a cambiar código sin inventar que revisó, probó o entendió algo.
+**VCP ayuda a una IA a cambiar código sin inventar que revisó, probó o entendió algo.**
 
-En una frase:
+No es un linter ni un framework. Es un protocolo: once fases, cada una con un chequeo que se
+ejecuta y frena si algo no está. La idea de fondo cabe en una línea:
 
 ```text
 entender -> decidir -> test rojo -> cambio chico -> casos borde -> revisión -> evidencia -> release
 ```
 
-Es un protocolo autocontenido: instala un runtime local con documentación, templates y gates
-ejecutables. No necesita descargar otros skills ni conectar servicios externos para aplicar su
-flujo base.
-
 > **El repositorio se llama `ia-stack`; el protocolo que vive adentro se llama VibeCodeProtocols.**
-> No es un descuido. El repositorio se renombró y la skill **no**, porque la invocación
-> `/VibeCodeProtocols` y el `SKILL_NAME` del instalador están escritos en cada proyecto que ya lo
-> instaló: renombrarlos habría roto esas instalaciones por un cambio que era sólo de URL. El nombre
-> anterior del repositorio ya no redirige acá. Una prueba comprueba que este README siga nombrando
-> al repositorio donde vive, para que los dos nombres no vuelvan a separarse en silencio.
+> El repositorio se renombró y la skill **no**, porque la invocación `/VibeCodeProtocols` está
+> escrita en cada proyecto que ya lo instaló. Una prueba comprueba que este README siga nombrando al
+> repositorio donde vive.
 
-## Para qué sirve
+---
 
-VCP organiza el trabajo de Claude Code, Codex u otro agente que pueda leer Markdown y ejecutar
-Git, Node, Bash o PowerShell. Sirve para:
+## El problema que resuelve
 
-- evitar el patrón "código primero, tests después";
-- separar planificación, implementación, revisión y publicación;
-- retomar una feature sin confundirla con una sesión anterior;
-- registrar decisiones, deuda, lecciones y handoffs en `.vibe/`;
-- frenar un release cuando cambió el árbol, el plan se pisa, falta evidencia o aparece un riesgo
-  básico de seguridad.
+Una IA que programa puede decirte «lo probé y anda» sin haber corrido nada. No miente a propósito:
+no tiene forma de distinguir lo que ejecutó de lo que supone.
 
-VCP no promete que un test verde vuelva bueno al producto. Obliga a distinguir lo que se ejecutó
-de lo que todavía requiere revisión humana.
+VCP le saca esa ambigüedad. Cada afirmación importante tiene detrás **un comando que la respalda**,
+y si el comando no corrió, el protocolo lo dice en vez de seguir.
 
-## Instalación
+La regla dura, la que ordena todo lo demás:
 
-Desde el clone de VCP, elegí el proyecto donde querés trabajar:
+> **Sin un test que falle a la vista, no se escribe código.**
+
+---
+
+## Cómo se instala
 
 ```bash
 ./scripts/install.sh --project /ruta/a/mi-proyecto
@@ -48,47 +42,32 @@ En Windows PowerShell:
 .\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto
 ```
 
-La instalación deja el runtime completo dentro del proyecto:
+Queda un runtime completo adentro de tu proyecto, en `.vibe/vcp-runtime/`. Reiniciá tu agente,
+abrí el proyecto y usá `/VibeCodeProtocols`. Desde ahí los comandos salen de
+`.vibe/vcp-runtime/scripts/`, nunca del clone original.
 
-```text
-<proyecto>/.vibe/vcp-runtime/
+---
+
+## Las once fases
+
+```mermaid
+flowchart TD
+    A["1 · Bootstrap · ¿dónde estoy?"] --> B["1.5 · Intake · ¿alcanza con poco?"]
+    B -->|cambio chico| K
+    B -->|cambio real| C["2 · Research · ¿qué dicen las fuentes?"]
+    C --> D["3 · Spec · ¿qué NO hacemos?"]
+    D --> E["4 · Plan · ¿en qué orden?"]
+    E --> F["5 · Build · TEST ROJO PRIMERO"]
+    F --> G["5.5 · Triangulate · ¿pasa por la razón correcta?"]
+    G -->|falta un caso| F
+    G --> H["6 · Test · ¿verde de verdad?"]
+    H --> I["7 · Simplify · ¿qué sobra?"]
+    I --> J["8 · Deploy · evidencia igual a release"]
+    J --> K["9 · Limpieza · cada 7 días"]
+    K -.-> A
 ```
 
-Reiniciá tu agente, abrí ese proyecto y usá `/VibeCodeProtocols`. Desde entonces ejecutá los
-comandos desde `.vibe/vcp-runtime/scripts/`, no desde el clone original de VCP.
-
-
-## Diccionario: qué significa cada palabra rara
-
-Este documento usa unos pocos términos técnicos. Acá está qué quiere decir cada uno, en
-castellano común. Si alguno aparece más abajo sin explicación, es un error de este README.
-
-| Palabra | Qué significa acá |
-|---|---|
-| **gate** | Un chequeo automático que deja pasar o frena. Es un programa que responde sí o no, no una opinión. Si frena, dice exactamente qué encontró. |
-| **verde / rojo** | Verde = el chequeo pasó. Rojo = frenó. Vienen de los colores de los tableros de pruebas. |
-| **verde vacío** | Un chequeo que pasó **sin haber comparado nada** — porque el archivo que tenía que mirar no existía. No es lo mismo que "revisé y está bien". Por eso VCP lo escribe distinto: `VACÍO:` en vez de `OK:`. |
-| **hash** | Una huella del contenido de un archivo: un número largo que cambia si cambia un solo carácter. Sirve para detectar que algo se tocó. |
-| **cadena de hashes** | Cada línea guarda la huella de la anterior. Editar una línea vieja rompe todas las que siguen, así que la edición se nota. |
-| **receipt** (recibo) | El archivo donde queda escrito qué se verificó, con qué comando y qué dio. Es evidencia para que otro la revise, no una prueba criptográfica. |
-| **runtime** | La copia de VCP que se instala **dentro** de tu proyecto, en `.vibe/vcp-runtime/`. Es la herramienta, no tu código. |
-| **baseline** (línea base) | La lista de hallazgos de seguridad que ya se revisaron y se aceptaron a propósito, para que el chequeo no vuelva a frenar por ellos. |
-| **manifest** (inventario) | Una lista que dice qué archivos entran y cuáles quedan afuera, **con el motivo escrito** de cada exclusión. |
-| **scope** (alcance) | Qué archivos declaró una tarea que iba a tocar. Después se compara contra lo que realmente tocó. |
-| **slug** | El nombre corto de una feature, en minúsculas y con guiones: `integridad-verificable`. Sirve como nombre de carpeta. |
-| **packet** | El paquete de evidencia que junta la investigación previa: de dónde salió cada dato y qué respalda. |
-| **RED / GREEN** | RED = escribir la prueba primero y verla fallar de verdad. GREEN = recién ahí escribir el código que la hace pasar. Si nunca se vio fallar, la prueba puede no estar probando nada. |
-| **cobertura** | Qué porcentaje del código ejecutaron las pruebas. 100 % no significa "sin errores": significa que ninguna línea quedó sin correr ni una sola vez. |
-| **límite honesto** | Una frase escrita a propósito que dice **qué NO detecta** un chequeo. VCP las guarda como datos revisables en `contracts/honest-limits.json`, para que nadie las borre sin que se note. |
-| **idempotente** | Que se puede correr muchas veces y el resultado es el mismo que correrlo una. El instalador lo es: no duplica nada. |
-
-Una aclaración que vale para todo VCP: **los chequeos prueban forma, cadena y estado, nunca
-verdad.** Pueden decirte que una decisión quedó registrada de forma coherente; no pueden decirte
-que sea la decisión correcta, ni que la persona la haya entendido.
-## El flujo, simple
-
-Son **once**, y son las mismas que `SKILL.md`. Una prueba lo comprueba: si los dos documentos se
-separan, la suite se pone roja.
+Qué responde cada una, en una línea:
 
 | Fase | Pregunta que responde | Resultado necesario |
 |---|---|---|
@@ -104,351 +83,89 @@ separan, la suite se pone roja.
 | 8. Deploy | ¿La evidencia coincide con lo que se libera? | Receipt, seguridad y respaldo |
 | 9. Limpieza | ¿Qué se acumuló y ya no sirve? | Archivado, nunca borrado, y reversible |
 
-Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El
-agente recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
+Son las mismas que declara `SKILL.md`. Una prueba lo comprueba: si los dos documentos se separan,
+la suite se pone roja.
 
-## Research: investigar antes de especificar
+Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El agente
+recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
 
-Para un cambio que no sea claramente trivial, VCP no empieza escribiendo código ni una spec a
-ciegas. Primero hace una pasada de **Discovery**. Su salida es la evidencia que alimenta la spec;
-no es un reporte decorativo al final.
+---
 
-1. **Research trazable:** fuentes, versión/fecha, límites de lectura y claims que sí o no sostienen
-   una decisión.
-2. **Diagnóstico CAIO:** doce dimensiones —proceso roto, información perdida, trabajo repetido,
-   bucles abiertos, decisiones sin dueño, estados no medidos, handoffs defectuosos, errores que
-   se repiten, ausencia de aprendizaje, costos ocultos, riesgos de seguridad y dependencia de
-   memoria conversacional—, cada hallazgo clasificado como observado, hipótesis, inferencia o
-   dato faltante. **Un observado sin evidencia se rechaza**, y una dimensión sin hallazgos tiene
-   que decir si se miró y no había nada o si no se miró: el silencio no pasa por diagnóstico.
-   Límite: **el gate no abre el locator de una evidencia**, así que un observado con una cita
-   inventada pasa igual. Comprueba que la etiqueta cargue lo que su nombre exige, no que sea cierta.
-3. **Mapa de bucle:** trece campos por flujo —entrada, transformación, actor, decisión, quién
-   decide, acción, métrica, control, evidencia, aprendizaje, siguiente iteración, condición de
-   salida y condición de bloqueo— más un `delta` entre el flujo de hoy y el objetivo.
-   **El delta se verifica contra el documento**: declarar un cambio en un campo que quedó
-   idéntico rechaza, y omitir uno que sí cambió también. Los otros doce campos son prosa que el
-   gate no puede juzgar. El primer bucle declara rollback y señales de fallo.
-4. **PRD y planes:** veintiuna secciones —incluidas seguridad, privacidad, observabilidad, datos,
-   arquitectura, métricas, rollout y rollback como campos propios— y criterios de aceptación de
-   seis partes: evento, precondición, acción, resultado observable, test y evidencia esperada.
-   **Un criterio en prosa no alcanza**, porque no deja ver cuál de las seis partes falta.
-5. **Adopción y recurrencia:** quién sostiene el cambio y quién lo ejecuta todos los días son
-   dos personas distintas, y las dos se declaran. La adopción trae checklist y una métrica con
-   línea de base, no sólo una señal. La recurrencia declara cuándo se promueve una mejora y
-   **cuándo se retira**: sin criterio de retiro, una mejora que dejó de servir se sostiene por
-   inercia.
+## La memoria entre sesiones
 
-Cada decisión se guarda como JSON inmutable bajo
-`docs/discovery/<feature>/runs/run-NNN/{decisions,packets}/`. Un packet completed conserva su
-snapshot de research y hash; la validación nunca relee un ledger mutable para reinterpretar la
-historia. Las vistas Markdown bajo `docs/discovery/<feature>/views/` son derivadas, no fuente de
-verdad: se regeneran y se comparan byte a byte.
+Una IA arranca cada sesión sin recordar la anterior. VCP no intenta arreglar eso con más contexto:
+lo escribe en disco, en `.vibe/`, y lo vuelve a leer al arrancar.
 
-El corpus externo puede auditarse con `research/build-complete-review-index.mjs`: abre y hashea
-cada entrada materializada, y registra señales estructurales sin confundirlas con comprensión
-semántica. El ledger profundo mantiene separado lo que fue leído funcionalmente de lo que sólo fue
-revisado estáticamente; VCP nunca presenta un barrido automático como lectura humana.
-
-Los lotes de lectura profunda se validan con `research/verify-semantic-deep-evidence.mjs`: cada fila
-debe conservar el commit, SHA-256 y cantidad de líneas del manifest, y sus citas deben apuntar a
-líneas reales del archivo pineado. Este gate valida la evidencia; no promociona por sí solo una fila
-del ledger estricto a `READ`.
-
-Para comprobar que no quedó ninguna entrada sin abrir, ejecutá `node research/build-full-evidence-pass.mjs`
-y luego `node research/verify-full-evidence-pass.mjs`. El resultado cubre cada pendiente por hash y
-bytes, pero conserva un estado asistido: una lectura física completa no reemplaza una interpretación
-semántica funcional.
-
-### Diagnóstico antes de construir
-
-Después de entender qué quiere construir la persona, pero antes de escribir la Spec, VCP guarda
-seis piezas de Discovery en `docs/discovery/<feature>/diagnostics/`: CAIO (proceso roto), mapa de
-bucle (hoy y objetivo), PRD, plan de implementación, plan de adopción y plan de recurrencia. Son
-la entrada de la Spec: obligan a declarar quién decide, qué se mide, qué se construye, cómo se
-adopta y cuál es el siguiente bucle de mejora. El gate nativo comprueba campos, IDs, dependencias,
-evidencia y referencias:
-
-```bash
-node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
+```mermaid
+flowchart LR
+    S["sesión de hoy"] --> V[".vibe/"]
+    V --> D["DECISIONS.md · qué se eligió y por qué"]
+    V --> L["LESSONS.md · errores que no se repiten"]
+    V --> A["AUDIT.md · traza sellada por hash"]
+    V --> E["SESSION.md · dónde quedó todo"]
+    D --> M["sesión de mañana"]
+    L --> M
+    A --> M
+    E --> M
 ```
 
-**Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.** Una fila puede tener
-fuente y locator válidos y aun así interpretar mal el negocio; eso sigue siendo revisión humana.
+Lo que hace a esa memoria distinta de un archivo de notas: **`AUDIT.md` encadena cada línea con la
+huella de la anterior**. Editar algo viejo rompe todo lo que sigue, así que la edición se nota. Y el
+chequeo compara esa traza contra la historia de git, que es un ancla que el archivo no controla.
 
-El cierre funcional reproducible de esas entradas usa el ledger nativo:
+---
 
-```bash
-node research/build-semantic-functional-ledger.mjs
-node research/verify-semantic-functional-ledger.mjs research/semantic-functional-evidence-2026-09-01.ndjson.gz
-node research/build-semantic-functional-synthesis.mjs
-```
+## Qué garantiza, y qué no
 
-Cada fila queda `FUNCTIONAL_SCAN` si se recorrió todo el texto con interfaces, señales y citas de
-línea, o `STATIC_REVIEWED` si es un artefacto binario/opaco con locator de bytes. No quedan
-pendientes ilegibles, pero esto no convierte señales lexicales en aprobación: `FUNCTIONAL_SCAN`
-es observación determinista (`semantic_claim: false`), no comprensión humana; la síntesis es una
-cola de candidatos y cada adopción vuelve a pasar por el ciclo completo y un menú
-🔵. El loop de aprendizaje y deduplicación se describe en
-`skills/vibe-memory.md` (§ RESEARCH SELF-IMPROVEMENT LOOP).
+Cada chequeo declara **qué NO puede detectar**, y esas frases están guardadas como datos revisables
+en `contracts/honest-limits.json`. No son letra chica: si alguien borra una, el contrato lo rechaza.
 
-Los `.ndjson` y `.gz` son salidas generadas e ignoradas por Git por su tamaño; el resumen, la
-síntesis y los builders/verificadores sí viajan con la skill y permiten regenerarlos en un checkout
-que tenga el corpus materializado.
+La aclaración que vale para todo VCP: **los chequeos prueban forma, cadena y estado, nunca
+verdad.** Pueden decirte que una decisión quedó registrada de forma coherente; no pueden decirte que
+sea la decisión correcta, ni que la persona la haya entendido.
 
-```bash
-# Verifica la cadena inmutable de decisiones y snapshots.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
+---
 
-# Resuelve cada fuente citada contra el árbol: el archivo existe y su huella sigue siendo la declarada.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs sources --feature <feature-slug>
+## Diccionario: qué significa cada palabra rara
 
-# Ancla externa: el expediente solo crecio a lo largo de la historia de git.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs history --feature <feature-slug>
+| Palabra | Qué significa acá |
+|---|---|
+| **gate** | Un chequeo automático que deja pasar o frena. Un programa que responde sí o no, no una opinión. |
+| **verde / rojo** | Verde = pasó. Rojo = frenó. |
+| **verde vacío** | Un chequeo que pasó **sin haber comparado nada**, porque el archivo que tenía que mirar no existía. VCP lo escribe distinto: `VACÍO:` en vez de `OK:`. |
+| **hash** | Una huella del contenido: un número largo que cambia si cambia un solo carácter. |
+| **cadena de hashes** | Cada línea guarda la huella de la anterior. Editar una vieja rompe las que siguen. |
+| **receipt** | Dónde queda escrito qué se verificó, con qué comando y qué dio. Evidencia para revisar, no prueba criptográfica. |
+| **runtime** | La copia de VCP que vive **dentro** de tu proyecto. Es la herramienta, no tu código. |
+| **RED / GREEN** | RED = escribir la prueba primero y **verla fallar**. GREEN = recién ahí, el código que la hace pasar. |
+| **límite honesto** | Una frase que dice qué **no** detecta un chequeo, guardada como dato para que nadie la borre sin que se note. |
+| **slug** | El nombre corto de una feature: `integridad-verificable`. |
 
-# Genera y luego comprueba vistas reproducibles (sin timestamps ni paths del entorno).
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
-```
+---
 
-Discovery puede terminar en `completed`, `skipped` u `overridden`, siempre con evidencia y motivo.
-No prueba que una fuente sea suficiente semánticamente ni sustituye a quien decide el producto:
-hace visible qué evidencia se usó, qué quedó fuera y qué decisión humana falta antes de pasar a
-Spec.
+## Para leer más
 
-## Uso diario
+| Documento | Qué tiene |
+|---|---|
+| **[`SKILL.md`](SKILL.md)** | El protocolo completo, fase por fase. Es lo que lee el agente. |
+| **[`skills/gates.md`](skills/gates.md)** | Los 36 chequeos, qué comprueba cada uno y qué no puede comprobar. |
+| **[`skills/research.md`](skills/research.md)** | **Research: investigar antes de especificar** — la pasada de Discovery. |
+| **[`skills/verificar-vcp.md`](skills/verificar-vcp.md)** | Cómo verificar el propio repositorio de VCP. |
+| **[`SECURITY.md`](SECURITY.md)** | **Modelo de seguridad y límites**. |
+| **[`INSTALL.md`](INSTALL.md)** | Instalación y desinstalación en detalle. |
 
-1. Elegí una sola feature y completá su spec.
-2. Aprobá un plan con tareas chicas y archivos escritores declarados.
-3. Para cada tarea: reproducí RED, implementá GREEN, buscá un caso borde y recién después
-   refactorizá.
-4. Cerrá con los gates de release y un backup posterior al commit.
-
-Ejemplo mínimo desde un proyecto ya instalado:
+Tres comandos que vas a usar seguido, y que viven en el runtime instalado:
 
 ```bash
-# Antes de construir: evita que dos tareas escriban lo mismo sin dependencia declarada.
-node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
-
-# Después de GREEN: el diff real debe coincidir con los writers de la tarea.
-# Elegí una base explícita (por ejemplo origin/main) y declarà sólo artefactos operativos
-# que no son parte del cambio, uno por --ignore.
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
-  --tasks docs/tasks.json --task T01 --base origin/main \
-  --ignore docs/tasks.json
-
-# RED estricto para un test Node nativo.
-.vibe/vcp-runtime/scripts/verify-red.sh test/auth.test.mjs "node --test"
-
-# Antes de publicar: escanea el delta real contra la base elegida.
-node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base origin/main
-
-# Después del commit: genera y registra el backup local revisado.
-graphify update .
-graphify export obsidian --dir graphify-out/obsidian
-node .vibe/vcp-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian
-node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
-  --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
-  --manifest graphify-out/backup-state.json
-node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check
 node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
+node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check
 ```
 
-Antes del primer receipt, reemplazá el placeholder de feature en `.vibe/SESSION.md` por el slug
-real. VCP no lo inventa porque una feature falsa vuelve inútil la trazabilidad.
+Y el export del grafo, si usás esa integración:
+`verify-obsidian-export.mjs check graphify-out/obsidian`.
 
-`verify-scope-diff.mjs` compara los tres campos escritores de la tarea (`files_to_create`,
-`files_to_modify`, `test_files`) con los paths trackeados y untracked que Git observa desde la
-base elegida. Exit `1` si falta un writer, aparece un archivo extra o el plan es inseguro.
-`--ignore` es obligatorio y explícito para cada artefacto operativo que deba quedar fuera; no hay
-una exclusión global de `.vibe/`. Corré este gate después de GREEN y otra vez antes del receipt si
-el working tree cambió.
+---
 
-## Los gates mecánicos
-
-La medición de cobertura Node corre la suite con `--test-concurrency=32`, el mismo valor que usa
-el protocolo. `VCP_TEST_CONCURRENCY=<n>` existe para **bajarlo** en una máquina con menos
-núcleos, no para volver a esconder un rojo serializando. La cobertura de shell prefiere Git Bash
-en Windows para no confundir el shim de WSL con un Bash funcional (`VCP_BASH_PATH` permite indicar
-otro binario).
-
-| Gate | Qué comprueba | Límite importante |
-|---|---|---|
-| `verify-red-node.mjs` | Un `node:test` produjo evidencia TAP de fallo con forma de assertion. | Sólo cubre Node nativo y no demuestra intención ni calidad del test. |
-| `verify-plan-conflicts.mjs` | Dos tareas no escriben el mismo archivo sin un orden explícito. | No reemplaza una revisión del diseño. **Compara sólo lo declarado: una escritura no declarada es invisible** — cruza los tres campos escritores de cada tarea entre sí, nunca contra lo que el código termina tocando. |
-| `verify-receipt.mjs` | El árbol Git, modos, binarios y archivos no trackeados siguen siendo los revisados. `custody <receipt.json>` informa además si el commit que lleva el recibo está firmado y con qué clave; una firma rota siempre rechaza, y no firmar rechaza sólo con `--require-signature`. | Un receipt es evidencia local, no una firma de procedencia. La custodia mejora pero no se cierra: **si el agente puede correr `git commit -S`, firma como vos** — prueba que alguien con acceso a la clave firmó, no quién. Vale hasta donde tu clave exija presencia humana. |
-| `verify-security-baseline.mjs` | El delta no contiene secretos conocidos, rutas sensibles, ejecución dinámica, patrones SQL/HTML riesgosos ni configuraciones GitHub Actions básicas peligrosas. | Es un piso nativo de patrones; no es SAST, SCA, taint analysis ni una base de CVEs. |
-| `verify-vcp-coverage.mjs` | Cada script Node inventariado mantiene 100% de líneas, ramas y funciones. Corre la suite con `--test-concurrency=32`, el mismo valor que usa el protocolo; `VCP_TEST_CONCURRENCY=<n>` existe para **bajarlo** en una máquina con menos núcleos, no para esconder un rojo serializando. | Bash y PowerShell tienen pruebas funcionales de paridad, no cobertura por instrumentación Node. El porcentaje mide ejecución, no suficiencia semántica ni ausencia de flakiness fuera de la corrida observada. |
-| `verify-capability-matrix.mjs` | La matriz nativa declara roles, herramientas y superficies. Rechaza roles que escriben y aprueban la misma superficie, y roles marcados como sólo lectura que tienen `Write`/`Edit`. | Verifica la forma y las reglas declaradas, no puede impedir que una herramienta externa ignore la matriz. |
-| `verify-evidence-runner.mjs` | Ejecuta un vector argv sin shell y sólo admite un ejecutable nativo de allowlist sin ruta, con `cwd` relativo seguro. Cuando corre, registra exit code, duración, commit del `cwd` real, salida limitada a 4096 bytes y hashes; `check --require-complete` sólo acepta `passed`. `failed` y `skipped` son estados visibles, nunca verdes de cierre. Un `skipped` no ejecuta ninguna sonda y deja `git_head: null`. | La evidencia registra lo que el proceso devolvió; no demuestra que el comando fuera la elección correcta ni que un proceso autorizado no mintiera en sus propios archivos. |
-| `verify-spec-wordcap.mjs --quality` | Además del tope de palabras, exige secciones canónicas, AC únicos con gramática GIVEN/WHEN/THEN o `THE SYSTEM SHALL`, y rechaza placeholders o `[NEEDS CLARIFICATION:]`. | Comprueba forma de la spec, no que el problema, la solución o los criterios sean buenos. |
-| `verify-backup-state.mjs` | El reporte Graphify y el grafo siguen byte a byte como se registraron, y el HEAD sobre el que se los registró sigue siendo el HEAD actual. `record` sella el HEAD real (`git rev-parse`), no el commit que el reporte declara: Graphify sólo reescribe `GRAPH_REPORT.md` cuando cambia la topología del código, así que un commit de sólo documentación dejaba ese sello atrasado para siempre. El orden es commit → graphify → record → check. | Prueba integridad desde el registro, no que el grafo se haya construido en ese commit ni que lo describa. Que el grafo cubra los archivos del commit actual lo prueba `verify-graphify-manifest.mjs` contra `git ls-files`; acá un grafo de otro proyecto se registra igual de verde. |
-| `verify-graphify-manifest.mjs` | Cada archivo rastreado está indexado o excluido con razón declarada, y el manifest no conserva entradas que Git ya no rastrea. | Prueba contabilidad, no comprensión: un archivo indexado puede haber producido cero nodos. |
-| `verify-obsidian-export.mjs` | Comprueba que el destino exportado sea una carpeta relativa al proyecto, sin symlinks ni entradas no regulares, con `graph.canvas` JSON válido (`nodes`/`edges`) y al menos una nota Markdown. | Verifica destino y forma básica del export, no la semántica de las notas ni que Graphify haya interpretado correctamente su contenido. |
-| `verify-vcp-contract.mjs` (límites honestos) | Cada frase declarada en `contracts/honest-limits.json` sigue textual en su archivo. Cada límite lleva un `why` que dice qué garantía se pierde si desaparece, y el rechazo lo imprime. | Verifica que la frase esté, no que el párrafo que la rodea siga siendo cierto. Un límite que nadie declaró en el contrato tampoco se protege. |
-| `verify-receipt.mjs commit` | Valida el receipt, commitea y confirma después que el árbol commiteado es el índice validado. Nunca reescribe historial por su cuenta ni saltea los hooks del operador. | La ventana entre validar y escribir pasa de minutos a milisegundos, no desaparece. La confirmación prueba que el commit contiene el índice revisado; no prueba que no hubo una escritura concurrente. |
-| `verify-security-baseline.mjs --baseline` | Distingue deuda ya revisada de un hallazgo nuevo: lo aceptado no bloquea, lo nuevo sí, y una entrada que ya no corresponde a ningún hallazgo real también bloquea. Cada entrada lleva motivo, responsable y fecha. | Aceptar un hallazgo de secreto cubre el archivo y la categoría, no un valor concreto: si se reemplaza por otro secreto en el mismo archivo, sigue aceptado. Una entrada cuyo archivo quedó fuera del delta no se puede juzgar y no caduca. |
-| `verify-audit-chain.mjs` | Cada línea de `.vibe/AUDIT.md` lleva el hash de la anterior: editar una línea vieja rompe la cadena y el gate nombra la línea exacta. `append` sella y se niega a escribir sobre una traza ya rota. | **Modelo de amenaza, explícito:** `check` detecta la edición y el borrado **parcial** dentro del archivo. Recortar las últimas líneas o recalcular la cadena entera sobre contenido falso sí pasan `check` — y los agarra `history`, que compara contra **la propia historia de git**: una traza sólo crece, así que cada versión commiteada tiene que empezar con la anterior. Ese es el ancla externa, y no pide infraestructura ninguna. Lo que queda afuera: quien **reescriba la historia publicada** puede fabricar una secuencia coherente; eso ya no es editar un archivo, cambia el identificador de cada commit y lo ve cualquiera con un clon previo. **Una reescritura de historia autorizada corta el crecimiento para siempre**, y dejaba este comando en rojo permanente. Un gate que siempre rechaza se ignora, y un gate que se ignora no detecta nada. Ahora un corte se acepta **sólo si la versión que corta lo declara dentro de la propia traza**, y la salida lo dice: cuántos cortes declarados hay y que la comprobación vale desde ahí. **La marca es una declaración, no una prueba:** quien puede reescribir la traza también puede escribir la frase. Lo que garantiza es que una reescritura sea imposible de hacer en silencio, no que fuera legítima — eso lo juzga quien audite, leyendo esa línea. |
-| `verify-runtime-sync.mjs check` | El runtime instalado en `.vibe/vcp-runtime/` es, byte a byte, la superficie que copia el instalador desde este checkout: nombra los archivos que difieren, los que faltan y los que sobran (un gate borrado arriba que el proyecto sigue ejecutando). Sin runtime instalado sale `0`: un checkout fuente limpio es normal. | Detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea: dos copias idénticas de un gate roto pasan igual. Compara contenido, no permisos —el `+x` que el instalador pone sobre `scripts/*.sh` no se verifica— y sólo puede hablar donde el checkout fuente y el runtime conviven en la misma máquina. |
-| `verify-session-state.mjs check` | `.vibe/SESSION.md` sigue siendo retomable: ningún problema acumula tres intentos fallidos sin una decisión humana registrada, una interrupción declarada dice dónde retomar (`Fase`, `Tarea`, `Falta`), y toda comprobación que no se pudo hacer figura en `## No verificado` con la marca literal y su motivo. Las tres secciones son opcionales; sin ellas sale `0`. Sin `SESSION.md` escribe `VACÍO:` en vez de `OK:`, y con `--require-inputs` ese vacío pasa a rechazo. | Verifica que lo declarado sea coherente, no que sea verdad: una sesión que miente en su propio archivo pasa el gate. Tampoco mide cuota ni ejecuta red —no hay presupuestos ni topes por fase, a propósito— y sólo ve las tres secciones: un éxito afirmado en la prosa del resto del archivo le es invisible. |
-| `verify-phase-decisions.mjs check` | Ninguna fase cierra sin una elección registrada: una decisión por fase en `docs/phase-decisions.json`, en el orden que declara el propio `phase_order` del archivo (sin saltos hacia atrás y sin fases omitidas antes de una que ya cerró), con el menú completo que se mostró, una recomendación, una opción elegida **que estaba en ese menú**, su justificación, y una cadena de hashes con el mismo criterio que `verify-audit-chain.mjs`. Agregar una opción al menú después de elegir rompe el hash de esa decisión y la cadena hacia adelante. Una decisión reemplazada se marca `superseded` y no se borra. Sin archivo escribe `VACÍO:` en vez de `OK:` y sale `0`; con `--require-inputs` ese vacío pasa a rechazo. En el cierre final, `--require-complete` exige además una decisión vigente para **cada** fase declarada en `phase_order` (implica `--require-inputs`). | Demuestra que la decisión quedó registrada de forma coherente. No demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus consecuencias — sí detecta el caso concreto de un agente que fabrica el menú y la elección en el mismo aliento, exigiendo un piso de dos segundos entre `shown_at` y `timestamp`. **Un agente que espera igual pasa: detecta lo imposible, no lo mentiroso**: un agente puede registrar decisiones que nadie tomó y el gate las acepta. Hereda los límites de la cadena de auditoría —recortar las últimas decisiones, reescribir la última (que es la cabeza de la cadena) o recalcular la cadena entera sobre contenido falso pasan en verde—, y `phase_order` no está encadenado: agregar una fase futura al final es indetectable. |
-| `verify-phase-menu.mjs check` | Compara `docs/phase-decisions.json` con el plan canónico `docs/phase-plan.json`; exige el mismo orden exacto y una decisión vigente, con menú y elección, para cada fase. Usalo en el cierre, después del gate de decisiones. | Verifica el contrato y el orden registrados, no que el plan sea correcto ni que la elección haya ocurrido. |
-| `verify-empty-probe.mjs check` | Corre cada gate en una carpeta vacía y compara lo que dice contra lo que declara `contracts/empty-probe.json`. Un gate que escribe `OK:` ahí está afirmando haber verificado algo cuando no había nada que verificar. Cinco comportamientos posibles: `reject`, `usage`, `empty` (sale 0 y escribe `VACÍO:`), `self` (mira el propio checkout de VCP, no el proyecto) y `skip`; los dos últimos exigen motivo escrito. Un script `.mjs` de `scripts/` que no figure en el contrato es rechazo: agregar un gate obliga a declarar su comportamiento sin entradas. | Prueba **una sola** invocación por gate, la que declara el contrato: un subcomando distinto puede tener su propio verde vacío y la sonda no lo ve. Sólo prueba el caso extremo de la carpeta vacía, no un proyecto a medio llenar. Y `self` es una declaración humana, no una comprobación: escrita sobre un gate que sí mira el proyecto, el verde vacío vuelve a pasar. |
-| `verify-shell-coverage.mjs check` | Cuánto de cada script de shell llegan a ejecutar los escenarios declarados en `contracts/shell-coverage.json`. Se mide con el instrumento que trae el propio bash: `PS4` con `$LINENO` más `set -x`, sin dependencias. Rechaza si un script cae por debajo del piso declarado, y nombra las líneas que no se ejecutaron. Un script sin escenarios exige motivo escrito y se cuenta en la salida. | **Mide líneas ejecutadas, no ramas**: una línea `if` cuenta como cubierta apenas se evalúa, aunque su `else` no se haya probado nunca. Mide los escenarios declarados, así que un camino que nadie escribió no aparece: el número dice cuánto ejercitan esos escenarios, nunca cuánto del script es correcto. No mide PowerShell: `Set-PSDebug -Trace` no da número de línea de forma portable, así que ese lenguaje queda **declarado sin medición**, no medido en cero. |
-| `verify-evidence-trace.mjs` | `criteria`: cada `AC<n>` de `docs/spec.md` está nombrado por al menos una prueba real —el id como segmento separado por `·` de una llamada `test()`/`it()`, la misma convención que ya fija `verify-test-bindings.mjs`—. `claims`: cada `linked_requirement_id` y `linked_ac_id` del packet de la decisión Discovery vigente resuelve contra un identificador que la spec declara. En el cierre, `--require-links` exige además un packet no vacío y que cada claim tenga al menos uno de esos vínculos. | Para un criterio verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe: es trazabilidad, no suficiencia. Un id en un comentario no cuenta, pero un título que lo nombra y no lo prueba sí. Sin spec, sin criterios declarados o sin Discovery escribe `VACÍO:` en vez de `OK:` y sale `0`; con `--require-inputs` ese vacío pasa a rechazo. `--require-links` implica ese modo estricto y evita el verde de claims sin vínculo, pero no juzga su suficiencia semántica. |
-| `verify-research-citations.mjs check` | Cada cita `archivo:línea` del informe de research externo figura en `contracts/research-citations.json` con el resultado de haberla resuelto contra su commit pineado, y al revés: un registro que ya no corresponde a ninguna cita del informe también frena. Una cita resuelta trae repo, ruta y el sha256 del contenido citado; una que no resolvió trae su motivo escrito. Si el contrato declara el barrido mecánico, cada sonda muestra el patrón con que buscó —que tiene que compilar—, la hipótesis que pone a prueba y conteos posibles. Agregar una cita al informe sin revalidarla rechaza. | **Compara el informe contra el registro de la revalidación, no contra los repositorios**: los clones pesan más de un giga, no están en el árbol y el gate no sale a la red, así que un contrato escrito a mano con huellas inventadas pasa igual —el ancla contra eso es que el contrato se commitea y la cadena de auditoría lo cubre—. Y **una cita resuelta dice que el archivo y la línea existen, no que digan lo que el informe afirma sobre ellos**: juzgar eso es leer, no comparar. Sobre el barrido, lo mismo en otra forma: **barrer no es leer**, cada sonda es una expresión regular y un cero significa que el patrón no encontró nada, no que no esté. |
-| `verify-research-candidates.mjs check` | El puente entre una señal lexical y una capacidad adoptada. Cada candidato declara catorce campos: fuente y commit —que tienen que ser de las 14 pineadas y coincidir con el commit del contrato—, archivo, línea, función, problema que resuelve, evidencia con `archivo:línea` y cita textual, **contraejemplo**, costo, riesgo, compatibilidad, decisión y test necesario. Un `adopt` sin test declarado rechaza; un contraejemplo que repite la evidencia, también. | **Verifica forma y procedencia, nunca que la línea citada diga lo que el candidato afirma**: no abre el archivo ni sale a la red, así que una cita textual inventada pasa igual. No juzga si el contraejemplo es bueno, si el costo es realista ni si la decisión es sensata. Y no adopta nada: la decisión sigue siendo humana. |
-| `verify-design-tokens.mjs check` | Cada superficie visual declarada en `contracts/design-tokens.json` mantiene su sistema de tokens entero: todo token declarado existe en el bloque claro, ninguno vive **sólo** en un bloque oscuro, los dos bloques oscuros —el de preferencia del sistema y el estampado— coinciden token por token, cada superficie trae su color de texto emparejado (`X` con `X-foreground`, la convención de shadcn/ui), ningún color literal queda fuera del sistema, el `body` fija su fondo desde un token, todo `font-size` sale de una rampa declarada y todo espaciado de un ritmo declarado, y no aparece ninguna de las firmas de diseño genérico que el contrato lista. | **Verifica forma y coherencia, nunca contraste ni legibilidad**: dos tokens que cumplen todas las reglas pueden ser gris sobre gris. Lee el CSS con expresiones regulares, no con un parser, así que un token dentro de una at-rule que no conoce o un archivo minificado le son invisibles —falla cerrado: lo invisible se reporta faltante, nunca presente—. Y sólo ve colores en hexadecimal o notación funcional: un `red` escrito con su nombre pasa, porque distinguirlo de `inherit` sin un parser da falsos positivos. Sobre lo genérico es más modesto todavía: **detecta la firma declarada, no juzga si un diseño es bueno.** Un diseño feo y original pasa; uno excelente que use una cara de la lista, no. |
-| `verify-intake.mjs check` | Lo primero que el protocolo pregunta: qué se quiere construir, para quién, qué problema resuelve, qué resultado operativo se espera, qué restricciones hay, qué fuentes aporta el usuario, si hace falta un artefacto visual y si se pide diagnóstico o implementación. Las ocho tienen que estar y ser respuestas, no una palabra. Los supuestos, los riesgos y las preguntas abiertas viven en listas propias con id único, separados de las respuestas. Una pregunta declarada `bloqueante` **frena el ciclo**: una decisión obligatoria pendiente no se pasa por alto por descuido. Sin ningún intake escribe `VACÍO:` y sale `0`. | **Verifica forma, nunca verdad**: no sabe si una respuesta es correcta, ni si es suficiente, ni si alguien la contestó de verdad — un intake coherente e inventado pasa igual. Y **no puede ver un supuesto escondido adentro del texto de una respuesta** en vez de declarado aparte, que es la manera más fácil de esquivarlo. El mínimo de largo descarta el vacío y la palabra suelta; no distingue una respuesta real de relleno del mismo largo. |
-| `verify-triangulate.mjs check` | Los 26 vectores de `contracts/triangulate-vectors.json` declarados uno por uno antes de refactorizar: casos borde, entradas vacías, nulos, división por cero, promesas rechazadas, procesos muertos, interrupciones, timeout, reintento, doble ejecución, concurrencia, index y árbol, modo, symlinks, rutas externas, JSON corrupto, finales de línea, BOM, binarios, renombrados, formato de hash de git, los dos shells, instalación limpia, datos inventados y evidencia insuficiente. `covered` nombra la prueba; `not_applicable` y `pending` traen motivo. Sin bandera informa los pendientes y sale `0`; con `--require-complete` un pendiente frena el cierre. | **Verifica que cada vector esté declarado, nunca que la prueba nombrada lo ejercite**: un `covered` que apunta a un archivo cualquiera pasa igual. No juzga si el motivo de un `not_applicable` es bueno, y **no descubre vectores nuevos** — la lista es fija y su completitud es una decisión humana, no un resultado del gate. |
-| Resolución de ruta de los gates que leen un expediente | `verify-intake.mjs`, `verify-triangulate.mjs` y `verify-research-candidates.mjs` resuelven la ruta con `safeProjectFile` de `ratchet.mjs` **antes** de abrirla: una ruta que escapa del proyecto, un enlace simbólico o un archivo que no es regular se rechazan sin leerse, y un archivo que no existe sigue siendo `VACÍO` y no un rechazo. La lectura no se reimplementa: el criterio es el mismo que ya usan `ratchet` y `verify-session-state`. | **Es una comprobación, no es un sandbox.** Queda una ventana entre comprobar y leer —el archivo puede cambiar en el medio— y el gate corre con los permisos de quien lo invoca: cualquier proceso con acceso al mismo filesystem hace lo que quiera sin pasar por acá. |
-| `verify-discovery-core.mjs` | La cadena inmutable de decisiones de la investigación: cada una en orden, con su paquete de evidencia congelado y su hash, y cada locator con forma válida —https sin credenciales, o ruta relativa que no escapa del proyecto—. | **Nunca abre la fuente citada ni comprueba que el locator exista.** Valida la forma del string, no lo que hay del otro lado: no resuelve la URL, no lee el archivo, no comprueba que la línea exista, y el sha256 de `content_identity` no se compara nunca contra contenido real. Un run entero de fuentes inventadas pasa en verde. Para eso está el subcomando aparte `sources`, que sí las resuelve contra el árbol —ver la fila siguiente—. Y sus hashes se calculan sobre archivos del mismo árbol, así que **`check` detecta una edición parcial, no una reescritura completa del run**: para eso está `history`, que compara contra la historia de git. |
-| `verify-discovery-core.mjs sources` | Resuelve contra el árbol real cada fuente que los claims vigentes citan: el archivo existe, la línea citada cae dentro de él, y su sha256 sigue siendo el declarado. Un claim que cita un archivo inexistente **frena**. Una fuente que existe pero cambió desde la captura se informa como derivada y no bloquea, porque envejecer no es mentir; con `--require-current` también frena. **La deriva dice que la fuente se movió, no si el claim sigue siendo cierto.** | **No sale a la red: una fuente web se cuenta como no verificable, nunca como verificada.** Y comprueba el contenido de hoy, no el del día de la captura: no puede probar que la huella fuera correcta cuando se registró, sólo que el archivo actual la cumple o no. |
-| `verify-discovery-core.mjs history` | El expediente **sólo creció**: ninguna decisión ni packet ya commiteado fue modificado o borrado en ninguna versión posterior. Es el ancla externa que le faltaba a la cadena — los hashes internos se calculan sobre archivos del mismo árbol que protegen, así que quien reescriba el run entero los recalcula y `check` sale verde; git no. Las vistas quedan afuera a propósito: son derivadas y cambiar es su trabajo. | **Quien reescriba la historia publicada puede fabricar una secuencia coherente**, igual que en la cadena de auditoría. Pero eso ya no es editar un archivo: cambia el identificador de cada commit y lo ve cualquiera con un clon previo. Y si el expediente nunca se commiteó, no hay ancla: eso se reporta como rechazo, no como verde. |
-| `verify-scope-diff.mjs` | Los tres campos escritores de la tarea contra el delta real de Git desde una base explícita, incluidos los archivos sin versionar. | **No ve los archivos que Git ignora: escribir ahí pasa en verde.** Enumera con `--exclude-standard`, así que todo lo que cubra el `.gitignore` queda fuera del alcance verificado. |
-| `verify-test-bindings.mjs` | Cada requisito activo tiene una prueba real: archivo local del proyecto, corrida en aislamiento, resultado leído del formato de salida exacto. | **No compara la prueba con la regla: un cuerpo vacío pasa verde.** Prueba que existe una prueba con ese título, que corre sola y que sale ok; nada obliga a que verifique lo que el requisito dice. |
-| `verify-handoff-report.mjs` | Cada entrega entre roles declara explícitamente qué NO revisó su autor, para que una revisión acotada no se lea como completa. | **No bloquea placeholders en castellano: `ninguno` y `nada` pasan igual.** La lista de rellenos prohibidos son literales en inglés (`n/a`, `unknown`, `nothing`), así que el equivalente en castellano satisface el gate sin declarar nada. |
-| `verify-menu-shape.mjs` | Que cada decisión del protocolo esté escrita como lista de opciones con recomendación explícita y línea de espera. La plantilla anterior las escribía dentro de un bloque de código, que colapsa a un solo párrafo: el protocolo prescribía por escrito el único formato que garantiza que un menú no se vea como menú. | **Verifica las plantillas, no la conversación.** No puede saber qué mensaje escribió el agente ni cómo lo pintó la terminal, y nada verifica eso de forma portable. Tampoco juzga si las opciones son buenas. |
-| `verify-ablation.mjs` | El registro de la limpieza de PHASE 9: set de 6 a 8 tareas acordado antes de mover nada, línea base, tandas de a cinco, re-medición, filtro de las tres R sin contradecirse, respaldo previo en graphify y Obsidian, y la regla de oro comprobada contra el disco — lo archivado está en el archivo y ya no en su origen. `due` calcula si pasaron los 7 días. | **Verifica el registro, no la ablación.** No corre las pruebas del set, no juzga si son representativas y no sabe si un resultado que dice «igual» era igual: un registro coherente e inventado pasa en verde. |
-| `verify-discovery-requirements.mjs` | El inventario de requisitos de Discovery: ciclo de vida, reemplazos y cierre de fase. Corre los selftests anidados que cada fase declara. | Un selftest que **no llegó a terminar** ya no se reporta como fallado: lanza `DISCOVERY_SELFTEST_UNFINISHED` con el techo que cruzó. El techo se sube con `VCP_SELFTEST_TIMEOUT_MS`. |
-| `verify-discovery-views.mjs` | Las vistas Markdown de un run de Discovery son derivadas y reproducibles: mismo run, mismo byte. | Prueba determinismo y forma, no que la vista describa bien el run. |
-| `verify-empty-probe.mjs` | Cada gate se comporta sobre un directorio vacío como declara `contracts/empty-probe.json`: el que no puede verificar dice `VACÍO`, no `OK`. | Prueba **una** invocación por gate, la que declara el contrato. Un gate con varios subcomandos puede tener un camino vacío en otro que la sonda no ve. |
-| `verify-intake.mjs` | El intake de Phase 1.5: que las preguntas obligatorias estén respondidas y con la forma declarada. | Comprueba **forma, nunca verdad**. No sabe si una respuesta es correcta ni si alguien la contestó de verdad: un intake coherente e inventado pasa igual. |
-| `verify-phase-decisions.mjs` | El registro de decisiones por fase, encadenado por hash: menú, recomendación, opción elegida y justificación. | Demuestra que la decisión quedó **registrada de forma coherente**, no que la persona la haya querido ni entendido sus consecuencias. |
-| `verify-phase-menu.mjs` | El menú de una fase contra su plan: que las opciones ofrecidas sean las del plan y en el orden declarado. | Prueba forma, orden y hashes; no que una persona haya elegido realmente, ni que el plan sea el producto correcto. |
-| `verify-research-candidates.mjs` | Los candidatos de Research: forma y procedencia de cada uno, con su contraejemplo, costo y condición de adopción. | No abre el archivo citado ni comprueba que la línea diga lo que el candidato afirma. Tampoco juzga si el contraejemplo es bueno. |
-| `verify-research-citations.mjs` | Cada cita del informe está registrada contra una fuente pineada por commit. | Comprueba el registro, no el contenido: que la cita exista en el índice no prueba que el texto citado diga eso. |
-| `verify-triangulate.mjs` | Los 26 vectores de triangulación declarados, cada uno cubierto o con un motivo escrito de por qué no aplica. | Comprueba **forma**. No abre la prueba que un vector dice tener ni verifica que ejercite ese vector: un `covered` que nombra un archivo cualquiera pasa igual. |
-| `verify-lessons.mjs` | El formato de `LESSONS.md`: los seis campos de cada lección, identificadores únicos y marcas de dedup que resuelven. | Verifica forma y referencias. **No** verifica que la causa raíz declarada sea la real, ni que la señal de detección detecte algo. |
-| `verify-session-state.mjs` | Que `SESSION.md` sea retomable: problemas con intentos declarados y sin interrupciones sin registrar. | Comprueba que el estado esté escrito, no que sea verdadero: una sesión puede declararse retomable y no serlo. |
-| `verify-resume-state.mjs` | La identidad al retomar: que la sesión que continúa sea la que dice ser. | Compara lo declarado contra el árbol; no puede saber quién está del otro lado del teclado. |
-| `verify-runtime-sync.mjs` | Que el runtime instalado en `.vibe/vcp-runtime` sea byte a byte el de este checkout, archivo por archivo. | Compara contenido. No prueba que el runtime instalado sea el que el agente efectivamente cargó en su contexto. |
-| `verify-spec-wordcap.mjs` | El tope de palabras del spec, excluyendo tablas y bloques de código. | Cuenta palabras. Un spec corto no es un spec bueno, y el gate no distingue. |
-| `verify-design-tokens.mjs` | Que cada superficie declarada tenga sus tokens completos en los tres estados de tema. | Comprueba completitud de tokens, no que el resultado se vea bien ni que contraste lo suficiente. |
-| `verify-product-diagnostics.mjs` | El paquete de diagnóstico de producto de una feature: que las dimensiones declaradas estén respondidas. | Forma otra vez: un diagnóstico completo y equivocado pasa igual. |
-| `verify-shell-coverage.mjs` | La cobertura de los scripts Bash y PowerShell contra los escenarios que declara su contrato. | Mide **líneas ejecutadas, no ramas**: un `if` cuenta como cubierto apenas se evalúa, sin importar si el `else` se probó alguna vez. |
-
-El hook opcional `pretooluse-red.mjs` agrega fricción a `Write` y `Edit`: exige receipts
-consistentes, tests reales hasheados y TTL válido. No es un sandbox ni un límite de confianza:
-Bash, PowerShell y cualquier proceso que pueda escribir en el mismo filesystem pueden eludirlo.
-VCP documenta ese límite para que la revisión humana no confunda fricción con una garantía.
-
-## La limpieza semanal (PHASE 9)
-
-Cada skill, regla y hook se le carga al modelo **antes** de que escribas la primera letra. Lo que ya
-no sirve no es neutral: ocupa lugar y compite con lo que sí importa. PHASE 9 corre al abrir sesión
-si pasaron 7 días y **nunca mueve un archivo sin tu click**.
-
-El orden es fijo: **actualizar** el grafo → **compactar** la memoria → **limpiar** → **respaldar** en
-graphify y Obsidian. Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya
-está en dos lugares y se puede consultar sin restaurarlo.
-
-**Regla de oro, y es mecánica, no una promesa:** acá no existe `rm`. Nada se borra; todo se mueve a
-`.claude-archive/<fecha>/` conservando la ruta, y la vuelta atrás es un solo comando —que el gate
-rechaza si contiene `rm`, `del` o `Remove-Item`—. `contracts/ablation-scope.json` declara qué es
-intocable y qué entra en alcance; los patrones se comparan sin distinguir mayúsculas y contra cada
-sufijo de la ruta, así que protegen de más y nunca de menos.
-
-Archivar sin medir es borrar con buena letra: el gate exige entre 6 y 8 tareas tuyas acordadas antes
-de mover nada, tandas de a cinco como máximo y volver a medir después de cada una. Si algo empeora,
-se devuelven las líneas mínimas y se mide de nuevo hasta que dé igual o mejor.
-
-```bash
-node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
-```
-
-Plantilla del registro: `templates/ablation.json`.
-
-## Seguridad nativa y límites
-
-VCP trata todo texto generado por IA, los archivos del repositorio y la salida de herramientas
-como datos no confiables. Sus gates fallan cerrados cuando no pueden inspeccionar con seguridad un
-path, un link o una entrada crítica.
-
-No instala dependencias de seguridad, no envía el código a servicios externos y no afirma detectar
-todas las vulnerabilidades. Para una amenaza real, combiná este piso con revisión humana y los
-controles que correspondan a tu proyecto.
-
-Leé el [Modelo de seguridad y límites](SECURITY.md) antes de usar VCP en un entorno sensible.
-
-## Memoria durable
-
-`.vibe/` no es un log gigante. Cada archivo tiene un trabajo concreto:
-
-```text
-PROJECT.md    contexto estable del proyecto
-SESSION.md    punto exacto para retomar la feature activa
-DECISIONS.md  decisiones y motivos
-PATTERNS.md   prácticas que funcionaron
-DEBT.md       deuda aceptada explícitamente
-LESSONS.md    aprendizajes confirmados
-AUDIT.md      trail de gates y decisiones
-handoffs/     qué revisó cada rol y qué no revisó
-receipts/     evidencia local de release
-vcp-runtime/  scripts, templates y skills instalados
-```
-
-## Verificar el propio VCP
-
-Antes de publicar cambios en este repositorio corré:
-
-```bash
-node --test --test-concurrency=32
-node scripts/verify-vcp-coverage.mjs
-node scripts/verify-vcp-contract.mjs check
-node scripts/verify-security-baseline.mjs check --base origin/main
-git diff --check
-```
-
-El segundo comando no informa un porcentaje: exige que **algún proceso de la suite haya ejecutado
-cada función y cada rama** de los scripts que mide, y si falta alguna la nombra con archivo y
-línea. Mide ejecución, no aserción: una rama que corrió dentro de una prueba que no afirma nada
-cuenta igual que una verificada.
-
-**Qué mide y qué no.** Mide `scripts/`. No mide `tests/` (son el instrumento) ni `research/`
-(herramientas de un solo uso que leen un corpus que no está en git). El recorte está escrito en
-`contracts/coverage-scope.json` con su motivo, y `tests/coverage-scope.test.mjs` rechaza que
-aparezca un directorio con código Node que el contrato no mencione. Ahí también queda declarado
-que cuatro verificadores de `research/` que el protocolo manda correr **no tienen prueba propia**:
-es deuda escrita, no cobertura. Los scripts Bash y PowerShell se validan aparte, con
-`verify-shell-coverage.mjs` y sus fixtures.
-
-<!-- concurrencia: histórico -->
-**Sobre la concurrencia.** Durante un tiempo este bloque decía `--test-concurrency=1`. Serializar
-no arreglaba nada: tapaba una suite inestable, y de paso escondía los huecos de cobertura. El
-defecto se cerró —la medición está en `tests/spawn-budget.mjs`—, así que el valor volvió a 32.
-`VCP_TEST_CONCURRENCY` existe para una máquina con menos núcleos, no para volver a esconder un
-rojo. **Diez corridas en verde no demuestran que la suite sea determinista**: son la ausencia de
-un contraejemplo en diez intentos.
-
-Una prueba compara cada número que este archivo afirma como el default contra la constante real
-del script, porque la fila de la tabla de gates llegó a decir lo contrario que el párrafo de más
-arriba, en la misma página. El párrafo anterior cita el valor viejo a propósito, así que lleva la
-marca `<!-- concurrencia: histórico -->`, que exime el párrafo siguiente y termina en la línea en
-blanco. **La marca es una declaración, no una prueba:** puesta encima de una afirmación viva apaga
-la comprobación sin avisar. Lo que la sostiene es que es literal y buscable —
-`grep -rn "concurrencia: histórico" README.md` lista todas las excepciones del archivo.
-
-Para crear un paquete distribuible:
-
-```bash
-./scripts/build-zip.sh
-```
-
-El empaquetador arma el paquete desde `git ls-files`, **archivo por archivo**, acotado a la
-allowlist de distribución: lo que no está versionado no viaja, ni siquiera si está adentro de un
-directorio incluido. Si el árbol no es un repositorio **falla cerrado**, porque publicar sin
-poder distinguir lo versionado de lo local es peor que no publicar. Rechaza paths inseguros y
-genera el SHA-256 del ZIP.
-
-## Documentación
-
-- [Instalación](INSTALL.md)
-- [Contrato completo del agente](SKILL.md)
-- [Templates de spec y plan](skills/spec-plan-templates.md)
-- [Memoria y lecciones](skills/vibe-memory.md)
-- [Gate nativo de seguridad](skills/security-baseline.md)
-- [Modelo de seguridad y límites](SECURITY.md)
-- [Research y decisiones](research/)
-
-VCP busca que el agente haga menos teatro y deje más evidencia útil.
+Licencia MIT. Las contribuciones pasan por el mismo protocolo que el código: sin test rojo visible,
+no hay implementación.

@@ -27,25 +27,25 @@
     },
     {
       "limit_id": "red-node-evidence-is-not-test-quality",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no demuestra intención ni calidad del test",
       "why": "verify-red-node.mjs sólo confirma que un node:test produjo evidencia TAP de fallo con forma de assertion. Sin el límite, un rojo trivial o accidental cuenta como prueba de que el test describe el comportamiento pedido."
     },
     {
       "limit_id": "receipt-is-local-evidence-not-provenance",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Un receipt es evidencia local, no una firma de procedencia",
       "why": "El receipt lo escribe la misma sesión que hizo el trabajo y nadie lo firma. Sin el límite se lee como cadena de custodia, y un tercero terminaría confiando en evidencia que no tiene forma de verificar por su cuenta."
     },
     {
       "limit_id": "security-baseline-is-not-sast-sca-or-cve",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no es SAST, SCA, taint analysis ni una base de CVEs",
       "why": "Es un piso nativo de patrones. Sin esta frase, el proyecto queda con la impresión de tener cubierto el análisis estático y el de dependencias, que es exactamente lo que este gate no hace, y nadie suma la herramienta que falta."
     },
     {
       "limit_id": "backup-state-is-freshness-not-graph-semantics",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no que el grafo se haya construido en ese commit",
       "why": "El receipt sella el HEAD que lee el protocolo y los hashes de los archivos registrados: prueba que nada cambió desde el registro. Desde el 2026-08-28 ya no prueba que Graphify haya construido el grafo en ese commit —el reporte no se regenera sin cambios de topología, así que exigirlo rechazaba backups sanos—; que el grafo cubra los archivos del commit actual lo prueba verify-graphify-manifest.mjs contra git ls-files. Sin el límite, un check en verde se lee como \"el grafo corresponde a este commit\" y esa mitad no la verifica nadie."
     },
@@ -57,13 +57,13 @@
     },
     {
       "limit_id": "graphify-manifest-proves-bookkeeping",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Prueba contabilidad, no comprensión",
       "why": "El manifest sólo verifica que cada archivo rastreado esté indexado o excluido con razón declarada. Un archivo indexado puede haber producido cero nodos: sin el límite, \"cubierto\" se lee como \"entendido\"."
     },
     {
       "limit_id": "obsidian-export-gate-proves-shape-not-semantics",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no la semántica de las notas ni que Graphify haya interpretado correctamente su contenido",
       "why": "El gate sólo valida destino, tipos de entrada, JSON de graph.canvas y presencia de Markdown. Sin este límite, un export estructuralmente válido se leería como una revisión del contenido y nadie volvería a comprobar si las notas representan correctamente el proyecto."
     },
@@ -75,7 +75,7 @@
     },
     {
       "limit_id": "pretooluse-hook-is-not-a-sandbox",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No es un sandbox ni un límite de confianza",
       "why": "Es el límite del hook dicho donde el usuario lo lee primero. Sin esta frase, la fricción sobre Write y Edit se presenta en el README como aislamiento garantizado, cuando Bash y PowerShell la eluden en el mismo filesystem."
     },
@@ -111,7 +111,7 @@
     },
     {
       "limit_id": "runtime-sync-detects-drift-not-correctness",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea",
       "why": "verify-runtime-sync.mjs compara hashes entre el checkout fuente y la copia instalada: prueba igualdad, no corrección. Sin el límite, un runtime en verde se lee como \"los gates de este proyecto están bien\", cuando dos copias idénticas de un gate roto dan exactamente el mismo verde."
     },
@@ -135,7 +135,7 @@
     },
     {
       "limit_id": "evidence-trace-proves-mention-not-sufficiency",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "verifica que exista una prueba que lo nombre, no que esa prueba lo compruebe",
       "why": "El gate resuelve el id del criterio contra el titulo de una llamada test() real: prueba que el vinculo existe, no que la prueba comprueba el criterio. Sin el limite, un AC nombrado por una prueba que verifica otra cosa se lee como AC cubierto, y la unica senal que quedaba de que faltaba probarlo se apaga."
     },
@@ -147,7 +147,7 @@
     },
     {
       "limit_id": "session-state-checks-declaration-not-truth",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Verifica que lo declarado sea coherente, no que sea verdad",
       "why": "El gate lee lo que la sesión escribió sobre sí misma: no ejecuta red, no mide cuota y no puede saber si un intento existió. Sin el límite, un verde se lee como \"la sesión hizo lo que dice\", cuando lo único probado es que lo declarado no se contradice."
     },
@@ -159,7 +159,7 @@
     },
     {
       "limit_id": "phase-decisions-prove-the-record-not-the-choice",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No demuestra que la persona realmente haya querido esa opción",
       "why": "verify-phase-decisions.mjs sella la forma del registro —menú, recomendación, elección dentro del menú, justificación y cadena de hashes—, nunca el acto de decidir. Sin esta frase, un gate en verde se lee como \"la persona decidió esto\", que es exactamente lo único que el gate no puede comprobar, y la revisión humana que sí lo comprobaría no la pide nadie."
     },
@@ -177,55 +177,55 @@
     },
     {
       "limit_id": "empty-probe-tests-one-invocation-per-gate",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Prueba **una sola** invocación por gate, la que declara el contrato",
       "why": "La sonda corre el comando que el contrato declara y nada mas. Un gate con varios subcomandos puede tener un verde vacio en otro subcomando y la sonda lo deja pasar. Sin el limite, un OK de la sonda se lee como \"ningun gate tiene verdes vacios\", cuando lo unico probado es la invocacion declarada."
     },
     {
       "limit_id": "empty-probe-self-is-a-human-claim",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "`self` es una declaración humana, no una comprobación",
       "why": "La sonda acepta que un gate salga OK sobre un directorio vacio si el contrato dice que ese gate mira el propio checkout de VCP. No verifica que sea cierto. Escrita sobre un gate que si mira el proyecto, esa etiqueta devuelve el verde vacio al lugar donde estaba, y encima con apariencia de estar justificado."
     },
     {
       "limit_id": "audit-chain-anchor-is-git-history-not-a-notary",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "quien **reescriba la historia publicada** puede fabricar una secuencia coherente",
       "why": "El ancla externa del gate es la historia de git, que es real y portable: recortar o refabricar la traza rompe la relacion de crecimiento contra versiones que no viven dentro del archivo atacado. Pero git es local. Quien reescribe la historia y fuerza el push puede construir una secuencia que pase. Sin el limite, \"hay ancla externa\" se lee como \"es imposible falsificarlo\", cuando lo que cambio es que falsificarlo dejo de ser invisible: ahora exige tocar identificadores que otros ya tienen."
     },
     {
       "limit_id": "receipt-custody-signs-with-whatever-key-is-reachable",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "si el agente puede correr `git commit -S`, firma como vos",
       "why": "El gate informa el estado de firma del commit que lleva el recibo, que es real y portable: git ya lo trae. Pero VCP no custodia claves. Si la clave esta al alcance del proceso que escribe el recibo, la firma prueba que alguien con acceso firmo, no quien. Vale exactamente hasta donde la clave exija presencia humana: una passphrase que no este en el disco, una llave de hardware que haya que tocar."
     },
     {
       "limit_id": "phase-decision-deliberation-detects-impossible-not-dishonest",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Un agente que espera igual pasa: detecta lo imposible, no lo mentiroso",
       "why": "El piso de deliberacion agarra el modo de falla concreto -menu y eleccion fabricados en el mismo instante- porque nadie lee un menu en milisegundos. No agarra a un agente que espera dos segundos antes de inventar la decision. Sin el limite, \"hay chequeo de consentimiento\" se lee como \"la decision la tomo una persona\", cuando lo unico probado es que paso tiempo suficiente para que alguien la pudiera haber leido."
     },
     {
       "limit_id": "shell-coverage-measures-lines-not-branches",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "**Mide líneas ejecutadas, no ramas**",
       "why": "bash escribe que linea ejecuto, no que rama tomo. Una linea `if` cuenta como cubierta apenas se evalua, sin importar si su `else` se probo alguna vez. Sin el limite, un 72% se lee como \"el 72% del comportamiento esta probado\", cuando lo unico medido es que el 72% de las lineas se toco al menos una vez."
     },
     {
       "limit_id": "shell-coverage-does-not-measure-powershell",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "ese lenguaje queda **declarado sin medición**, no medido en cero",
       "why": "install.ps1 existe y se corre, pero Set-PSDebug -Trace no da numero de linea de forma portable, asi que no hay como calcular el denominador. Decir \"0%\" seria mentir en la otra direccion: sugiere que se midio y dio cero. Queda declarado como no medido, que es lo unico cierto."
     },
     {
       "limit_id": "design-tokens-is-not-a-contrast-check",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Verifica forma y coherencia, nunca contraste ni legibilidad",
       "why": "El gate comprueba que los tokens existan en los tres estados de tema, que los dos bloques oscuros coincidan y que cada superficie traiga su color de texto. Nada de eso mide si un color se lee sobre otro. Sin esta frase, un verde del gate se toma por una revision de diseno aprobada, y dos tokens que cumplen todas las reglas pueden ser gris sobre gris."
     },
     {
       "limit_id": "locator-never-opened-nor-hashed-against-source",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Nunca abre la fuente citada ni comprueba que el locator exista",
       "why": "verify-discovery-core.mjs sólo valida la FORMA del string del locator (https sin credenciales, o path relativo que no escapa del proyecto). Nunca resuelve la URL, nunca abre el archivo citado, nunca comprueba que la línea exista, y el sha256 de content_identity no se compara jamás contra contenido real: el único hash que verifica es el del propio packet. Sin esta frase, la cadena inmutable de decisiones y los packets sellados se leen como prueba de que la evidencia existe y dice lo que el claim afirma. Lo que se pierde es saber que un run entero de fuentes inventadas pasa en verde, y que la existencia y el contenido de cada fuente sigue siendo trabajo de revisión humana, no del gate."
     },
@@ -243,13 +243,13 @@
     },
     {
       "limit_id": "handoff-placeholder-blocklist-is-english-literals",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No bloquea placeholders en castellano: `ninguno` y `nada` pasan igual",
       "why": "La única protección real del gate es una lista literal de cuatro cadenas en inglés (n/a, unknown, nothing y el none pelado). Cualquier otro texto pasa: ninguno, nada, n/c, un guion o una sola letra. Sin esta frase, el verde del gate se lee como que el handoff declaró de verdad qué quedó sin revisar, cuando el protocolo se escribe en castellano y el placeholder que un agente escribiría naturalmente es justo el que el gate no ve. La revisión humana que sí juzgaría la sustancia de la declaración deja de pedirse."
     },
     {
       "limit_id": "plan-conflicts-compares-declarations-not-real-writes",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Compara sólo lo declarado: una escritura no declarada es invisible",
       "why": "El gate lee únicamente tasks.json y cruza strings de rutas entre tareas; nunca abre el repositorio ni compara contra los archivos que las tareas realmente tocan. Su verde es lo que autoriza despachar tareas en paralelo (SKILL.md, Fase 5: sólo se despachan simultáneamente las que el preflight dejó sin conflicto), así que sin esta frase el OK se lee como no van a chocar al escribir, cuando lo único probado es que las tres listas declaradas no se pisan. Una tarea que escribe un archivo que no listó, o que declara un directorio padre en vez del archivo, colisiona en paralelo con el gate en verde y nadie se entera hasta que el trabajo de una pisa el de la otra."
     },
@@ -261,7 +261,7 @@
     },
     {
       "limit_id": "scope-diff-blind-to-gitignored-paths",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No ve los archivos que Git ignora: escribir ahí pasa en verde.",
       "why": "El delta observado se arma con git diff (sólo archivos trackeados) más git ls-files --others --exclude-standard, y ese flag descarta todo lo que .gitignore excluye. Si la tarea tocó sus writers declarados, escribir además en dist/, _backups/, graphify-out/, .ua/ o research/.fetch/ es invisible y el gate escribe OK igual. Pesa porque verify-security-baseline.mjs arma su delta con el mismo --exclude-standard: un .env con un secreto no lo mira ningún gate del protocolo. El runtime instalado en .vibe/vcp-runtime/ también es ignorado, pero ése sí lo cubre verify-runtime-sync.mjs, así que no es el ejemplo del hueco. Sin esta frase, el verde se lee como \"nadie escribió fuera de los writers declarados de la tarea\", que es justo lo que este gate no puede afirmar."
     },
@@ -273,13 +273,13 @@
     },
     {
       "limit_id": "test-body-never-compared-to-rule",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No compara la prueba con la regla: un cuerpo vacío pasa verde.",
       "why": "El gate prueba que exista una llamada test() con ese título exacto, que el archivo corra aislado y que esa línea TAP salga ok una sola vez. El campo rule del inventario nunca se lee: nada compara lo que el test verifica contra lo que el requisito dice. Sin esta frase, el OK con N ataduras Discovery se lee como N requisitos verificados, cuando un test de cuerpo vacío con el título correcto da el mismo verde, y la revisión que sí miraría si el test comprueba la regla no la pide nadie."
     },
     {
       "limit_id": "undeclared-honest-limits-are-not-protected",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Un límite que nadie declaró en el contrato tampoco se protege.",
       "why": "El gate sólo revisa las frases que alguien ya escribió a mano en contracts/honest-limits.json: recorre esa lista y nada más. Un gate cuyo límite nadie declaró queda sin protección y no produce ninguna señal, ni siquiera una advertencia. Sin esta frase, la salida OK con su conteo de límites verificados se lee como si los límites honestos del protocolo estuvieran completos, cuando lo único probado es que las frases de esa lista siguen textuales. Reproducido: el propio verify-vcp-contract.mjs pasó en verde durante meses sin tener ningún límite declarado sobre sí mismo."
     },
@@ -291,7 +291,7 @@
     },
     {
       "limit_id": "discovery-chain-misses-a-wholesale-run-rewrite",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "`check` detecta una edición parcial, no una reescritura completa del run",
       "why": "Los hashes internos -predecessor_hash y packet_sha256- se calculan sobre archivos del mismo arbol que protegen, asi que quien reescriba el run entero los recalcula y check sale verde. Sin esta frase, la palabra inmutable que este proyecto usa para la cadena de Discovery se lee como garantia contra falsificacion, cuando check solo detecta manipulacion descuidada. Lo que si lo detecta es el subcomando history, que compara contra la historia de git: un ancla que no vive dentro del archivo atacado. La frase nombra a check a proposito, para que nadie lea el verde de check como si cubriera lo que cubre history."
     },
@@ -303,19 +303,19 @@
     },
     {
       "limit_id": "discovery-sources-never-leaves-the-disk",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "No sale a la red: una fuente web se cuenta como no verificable, nunca como verificada.",
       "why": "El subcomando sources cierra el agujero de las fuentes inventadas para los locators de repo -si el archivo no existe, frena-, pero no puede hacer nada con una URL: este proyecto no hace peticiones de red por diseno. Sin esta frase, un OK de sources se lee como que todas las fuentes del expediente fueron comprobadas, cuando las web quedaron sin mirar y solo estan contadas. El numero de web sin verificar se imprime en cada corrida justamente para que no desaparezca detras del OK."
     },
     {
       "limit_id": "discovery-history-cannot-outlive-a-rewritten-remote",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Quien reescriba la historia publicada puede fabricar una secuencia coherente",
       "why": "El ancla es git, no un notario: si alguien reescribe la historia ya publicada, puede construir un expediente falso que crezca de forma perfectamente coherente. Lo que cambia es que falsificar dejo de ser invisible: exige tocar el identificador de cada commit, y eso lo ve cualquiera que tenga un clon previo o el remoto. Sin esta frase, history se lee como prueba de autenticidad en vez de como lo que es: encarecer la falsificacion hasta volverla ruidosa."
     },
     {
       "limit_id": "source-drift-does-not-judge-the-claim",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "La deriva dice que la fuente se movió, no si el claim sigue siendo cierto.",
       "why": "Un packet es una foto congelada del momento en que se investigo. Que su fuente haya cambiado puede significar dos cosas opuestas: que el claim quedo obsoleto, o que el problema que el claim describia se resolvio y por eso el archivo cambio. El gate no puede distinguirlas y no lo intenta. En este mismo repositorio los 4 claims del unico expediente figuran como derivados, y tres derivaron porque la feature que motivaron los arreglo: ahi la deriva es evidencia de exito, no de obsolescencia. Sin esta frase, un lector toma la deriva por una alarma y recapturar las huellas parece el arreglo, cuando recapturar atestiguaria que esos claims describen el arbol de hoy y no lo hacen."
     },
@@ -327,91 +327,91 @@
     },
     {
       "limit_id": "research-citations-checks-the-record-not-the-repos",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "Compara el informe contra el registro de la revalidación, no contra los repositorios",
       "why": "La revalidacion real clono 15581 archivos y resolvio 145 citas; los clones no pueden vivir en el repositorio, asi que el gate compara el informe contra el registro escrito de esa corrida. Sin esta frase, un verde se lee como \"las catorce fuentes fueron verificadas ahora\", cuando lo que se verifico es que nadie agrego ni borro una cita desde que se revalidaron. Un contrato escrito a mano con huellas inventadas pasa igual."
     },
     {
       "limit_id": "research-citation-resolved-is-not-interpreted",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "una cita resuelta dice que el archivo y la línea existen, no que digan lo que el informe afirma sobre ellos",
       "why": "De las 145 citas, 142 resuelven a un archivo y una linea que existen en el commit pineado, y solo cuatro se leyeron a mano para comprobar que la linea sostiene la afirmacion del informe. Sin el limite, \"142 resueltas\" se lee como \"142 verificadas en su contenido\" y la lectura que falta nunca se hace."
     },
     {
       "limit_id": "research-sweep-is-not-reading",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "barrer no es leer",
       "why": "El barrido toco el 100% de los 14421 archivos legibles con seis expresiones regulares, contra el 2,05% que leyo un agente. Es una mejora enorme de denominador y una clase de evidencia distinta: un cero significa que el patron no encontro nada, no que la idea no este en el corpus. Sin esta frase, \"100% barrido\" se confunde con \"100% leido\", que es exactamente el error de contabilidad que este informe ya cometio una vez."
     },
     {
       "limit_id": "coverage-measures-execution-not-assertion",
-      "file": "README.md",
+      "file": "skills/verificar-vcp.md",
       "phrase": "Mide ejecución, no aserción",
       "why": "El gate comprueba que algún proceso haya ejecutado cada función y cada rama, no que alguna prueba afirme algo sobre ellas. Sin la frase, un verde de cobertura se lee como \"esto está verificado\", cuando lo único probado es que el código corrió: una rama recorrida por una prueba que no la examina cuenta igual que una verificada."
     },
     {
       "limit_id": "research-verifiers-are-declared-debt",
-      "file": "README.md",
+      "file": "skills/verificar-vcp.md",
       "phrase": "es deuda escrita, no cobertura",
       "why": "Cuatro verificadores de research/ que el protocolo manda correr en su fase de verificación no tienen prueba propia. El contrato de alcance los excluye de la medición con su motivo, y eso podría leerse como que están cubiertos de otro modo. No lo están: la exclusión declara una deuda, no una garantía."
     },
     {
       "limit_id": "ten-green-runs-are-not-determinism",
-      "file": "README.md",
+      "file": "skills/verificar-vcp.md",
       "phrase": "no demuestran que la suite sea determinista",
       "why": "El defecto que hacía fallar la suite 2 de cada 5 corridas se cerró y se comprobó con diez corridas seguidas en verde. Diez corridas son la ausencia de un contraejemplo en diez intentos, no una demostración. Sin la frase, el número se lee como prueba y nadie vuelve a mirar si reaparece la intermitencia."
     },
     {
       "limit_id": "intake-verifies-form-not-truth",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no puede ver un supuesto escondido adentro del texto de una respuesta",
       "why": "El gate exige que los supuestos vivan en su lista propia, con id, separados de las respuestas. Eso hace visible al que se declara, no al que no. Quien escriba \"asumimos que hay Node\" adentro de la respuesta de restricciones pasa el gate igual, y esa es la manera mas facil de esquivarlo. Sin la frase, el verde se lee como \"los supuestos estan declarados\", cuando lo unico probado es que la lista existe y tiene forma."
     },
     {
       "limit_id": "product-diagnostics-verify-shape-not-truth",
-      "file": "README.md",
+      "file": "skills/research.md",
       "phrase": "Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.",
       "why": "El gate puede verificar que CAIO, mapa de bucle, PRD y planes tengan campos, relaciones y evidencia con forma válida. No puede saber si el proceso descrito es realmente el negocio, si el resultado se conseguirá o si una fuente sostiene toda la conclusión."
     },
     {
       "limit_id": "caio-does-not-open-the-locator",
-      "file": "README.md",
+      "file": "skills/research.md",
       "phrase": "el gate no abre el locator de una evidencia",
       "why": "La regla central del CAIO es que un observed sin evidencia se rechaza, y eso puede leerse como que la evidencia esta comprobada. No lo esta: el gate exige que la lista exista y que cada entrada declare source, locator y observation, pero nunca resuelve el locator contra el arbol ni contra la red. Un hallazgo observado con una cita inventada pasa en verde. Quien resuelve locators contra el arbol es verify-discovery-core.mjs sources, que es otro gate y otro momento."
     },
     {
       "limit_id": "loop-map-delta-is-the-only-checkable-part",
-      "file": "README.md",
+      "file": "skills/research.md",
       "phrase": "El delta se verifica contra el documento",
       "why": "De los trece campos del bucle, doce son prosa que el gate no puede juzgar: no sabe si la metrica declarada se mide de verdad ni si el control frena algo. Lo unico que puede comprobar es la coherencia interna del delta contra current y target. Sin la frase, el verde del gate se lee como si el mapa entero estuviera verificado, cuando lo verificado es una sola relacion entre tres campos del propio archivo."
     },
     {
       "limit_id": "prd-test-field-is-written-not-resolved",
-      "file": "README.md",
+      "file": "skills/research.md",
       "phrase": "Un criterio en prosa no alcanza",
       "why": "El criterio ahora exige seis partes y una de ellas es el test que lo comprueba. Eso puede leerse como que el gate verifica la prueba. No la verifica: exige que el campo este escrito, nunca abre el archivo ni comprueba que esa prueba nombre al criterio. Quien lo hace es verify-evidence-trace.mjs criteria, otro gate y otro momento. Sin esta frase, un PRD con seis campos llenos y un test inventado se lee como trazabilidad probada."
     },
     {
       "limit_id": "triangulate-does-not-open-the-named-test",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "nunca que la prueba nombrada lo ejercite",
       "why": "La regla central es que un vector cubierto nombre la prueba que lo cubre, y eso puede leerse como que la cobertura esta comprobada. No lo esta: el gate exige el campo escrito y nunca abre el archivo. Un covered que apunta a cualquier ruta pasa en verde. Sin la frase, veintiseis vectores en covered se leen como veintiseis vectores probados."
     },
     {
       "limit_id": "adoption-declares-people-not-availability",
-      "file": "README.md",
+      "file": "skills/research.md",
       "phrase": "cuándo se retira",
       "why": "El gate exige que el criterio de retiro este escrito, nunca que alguien lo aplique. Una mejora puede cumplir su criterio de retiro durante meses y seguir viva, y el gate no lo va a notar porque no mide el mundo: mide el archivo. Sin esta frase, tener el campo lleno se lee como tener el proceso."
     },
     {
       "limit_id": "candidates-do-not-open-the-cited-line",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "una cita textual inventada pasa igual",
       "why": "El gate exige que la evidencia traiga la cita textual de la linea, y eso puede leerse como que la cita esta comprobada. No lo esta: el gate compara la FORMA del locator contra el archivo declarado y nunca abre el archivo. Comprobar el texto exige reclonar los 15581 archivos del corpus pineado, que no estan en el repositorio. Sin esta frase, catorce campos llenos se leen como catorce campos verificados."
     },
     {
       "limit_id": "safe-path-is-a-check-not-a-sandbox",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "no es un sandbox",
       "why": "Los gates que leen una ruta la resuelven con safeProjectFile antes de abrirla: nada fuera del proyecto, ningun symlink, ningun archivo que no sea regular. Eso puede leerse como aislamiento y no lo es. Queda una ventana entre la comprobacion y la lectura -- el archivo puede cambiar en el medio, que es TOCTOU-- y el gate corre con los permisos de quien lo invoca: cualquier proceso con acceso al mismo filesystem hace lo que quiera sin pasar por aca."
     },
@@ -435,7 +435,7 @@
     },
     {
       "limit_id": "rewrite-declaration-is-admission-not-proof",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "La marca es una declaración, no una prueba",
       "why": "verify-audit-chain history exige que la traza solo crezca, y una reescritura de historia autorizada corta ese crecimiento para siempre. Antes eso dejaba el comando en rojo permanente, que es peor que no tenerlo: un gate que siempre rechaza se ignora, y un gate que se ignora no detecta nada. Ahora un corte se acepta solo si la version que corta lleva la frase de declaracion DENTRO de la propia traza, en esa misma version -- declararla antes seria una licencia abierta para reescribir todo lo que viniera despues --, y la salida informa cuantos cortes declarados hay. Lo que la marca NO puede hacer: quien tiene permiso de escritura sobre la traza tambien puede escribir la frase, asi que no distingue una reescritura legitima de una tapada con la frase encima. Lo unico que garantiza es que una reescritura quede admitida por escrito y sea imposible de hacer en silencio. Juzgar si fue legitima es trabajo de quien audita, leyendo esa linea."
     },
@@ -483,7 +483,7 @@
     },
     {
       "limit_id": "concurrency-historic-mark-is-trusted",
-      "file": "README.md",
+      "file": "skills/gates.md",
       "phrase": "La marca es una declaración, no una prueba",
       "why": "La prueba compara cada numero que el README afirma como concurrencia por defecto contra DEFAULT_TEST_CONCURRENCY del script, y nacio porque la fila de la tabla de gates decia lo contrario que el parrafo de arriba en la misma pagina: se habia corregido una copia y no se barrio el resto. Necesita una salida, porque el README cita el valor viejo a proposito para explicar por que cambio, y contar esa cita obligaria a borrar la explicacion para poner el documento en verde. La salida es la marca, acotada al parrafo siguiente y terminada en la linea en blanco. Lo que no puede hacer es distinguir una cita historica de una afirmacion viva a la que le pusieron la marca encima: eso exige leer la intencion. La mitigacion es que la marca es literal y buscable con grep en una linea."
     }

@@ -1403,15 +1403,15 @@ test('FALSIFICACIÓN · la regla ampliada no se traga los resumenes que SI se ve
 // listaba 19 de 36. Un mapa incompleto no miente en lo que dice, pero omite en silencio, y nadie se
 // entera de que existe un gate que nadie describio. La tabla se compara contra el disco.
 
-test('la tabla de gates del README nombra todos los gates que existen', SOLO_FUENTE, () => {
-  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+test('la tabla de gates nombra todos los gates que existen', SOLO_FUENTE, () => {
+  const readme = readFileSync(join(repoRoot, 'skills', 'gates.md'), 'utf8');
   const enTabla = new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]));
   const enDisco = readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f));
   assert.deepEqual(enDisco.filter((g) => !enTabla.has(g)).sort(), []);
 });
 
 test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe', SOLO_FUENTE, () => {
-  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const readme = readFileSync(join(repoRoot, 'skills', 'gates.md'), 'utf8');
   const enTabla = [...new Set([...readme.matchAll(/^\|\s*`(verify-[a-z0-9-]+\.mjs)`/gmu)].map((m) => m[1]))];
   const enDisco = new Set(readdirSync(join(repoRoot, 'scripts')).filter((f) => /^verify-.*\.mjs$/u.test(f)));
   assert.ok(enTabla.length > 0, 'la tabla no puede venir vacia');
@@ -1460,9 +1460,12 @@ export function concurrenciasAfirmadas(texto) {
   ];
 }
 
-test('el README no puede contradecir la concurrencia por defecto que declara el script', SOLO_FUENTE, async () => {
+test('la documentación no puede contradecir la concurrencia por defecto que declara el script', SOLO_FUENTE, async () => {
   const { DEFAULT_TEST_CONCURRENCY } = await import('../scripts/verify-vcp-coverage.mjs');
-  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  // La afirmación se mudó a skills/gates.md cuando la tabla salió del README. La comprobación sigue
+  // al ancla, no al archivo que la tenía antes: lo que importa es que el número no se separe del
+  // código, no en qué documento está escrito.
+  const readme = readFileSync(join(repoRoot, 'skills', 'gates.md'), 'utf8');
   const afirmados = concurrenciasAfirmadas(readme);
   assert.ok(afirmados.length > 0, 'si el README dejo de nombrar la concurrencia, esta comprobacion no mide nada');
   assert.deepEqual([...new Set(afirmados.filter((n) => n !== DEFAULT_TEST_CONCURRENCY))], []);

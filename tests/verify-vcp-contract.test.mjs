@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import test from 'node:test';
@@ -88,10 +88,12 @@ test('FALSIFICACIÓN · contract rejects the evidence-trace gate dropped from ei
     : completeRead(path));
   assert.equal(missingClaims.some((item) => /SKILL\.md: missing mechanical claim-to-spec reference gate/u.test(item)), true);
 
-  const missingReadme = contractViolations((path) => path === 'README.md'
+  // El ancla se mudo a skills/gates.md cuando la tabla salio del README: la falsificacion sigue
+  // al ancla, no al archivo que la tenia antes.
+  const missingReadme = contractViolations((path) => path === 'skills/gates.md'
     ? completeRead(path).replaceAll('verify-evidence-trace.mjs', 'trazabilidad omitida')
     : completeRead(path));
-  assert.equal(missingReadme.some((item) => /README\.md: missing mechanical evidence-trace gate/u.test(item)), true);
+  assert.equal(missingReadme.some((item) => /skills\/gates\.md: missing mechanical evidence-trace gate/u.test(item)), true);
 });
 
 test('FALSIFICACIÓN · contract rejects the session-state gate, the retry rule or the documented sections dropped from their file', () => {
@@ -186,10 +188,10 @@ test('FALSIFICACIÓN · contract rejects docs that drop the runtime-sync gate or
     : completeRead(path));
   assert.equal(missingSkill.some((item) => /SKILL\.md: missing mechanical runtime-sync gate/u.test(item)), true);
 
-  const missingReadme = contractViolations((path) => path === 'README.md'
+  const missingReadme = contractViolations((path) => path === 'skills/gates.md'
     ? completeRead(path).replace('verify-runtime-sync.mjs check', 'runtime sync omitido')
     : completeRead(path));
-  assert.equal(missingReadme.some((item) => /README\.md: missing mechanical runtime-sync gate/u.test(item)), true);
+  assert.equal(missingReadme.some((item) => /skills\/gates\.md: missing mechanical runtime-sync gate/u.test(item)), true);
 
   // Sin esta frase el gate se puede terminar corriendo desde .vibe/vcp-runtime/, comparando la
   // copia instalada consigo misma: verde siempre, evidencia cero.
@@ -427,15 +429,21 @@ test('FALSIFICACIÓN · AC10 · debilitar una frase de límite honesto en README
   ]);
 });
 
-test('el contrato real de límites honestos del repositorio verifica en verde contra README.md, SKILL.md y SECURITY.md', SOLO_FUENTE, () => {
+test('el contrato real de límites honestos del repositorio verifica en verde, y cada archivo que nombra existe', SOLO_FUENTE, () => {
   const readRepositoryFile = (path) => readFileSync(join(repoRoot, path), 'utf8');
   const limits = readHonestLimits(readRepositoryFile);
   assert.deepEqual(honestLimitViolations(readRepositoryFile, limits), []);
+  // Antes esta prueba fijaba los tres archivos por nombre. Dejó de valer cuando el README se acortó
+  // y 46 de sus límites se MUDARON a `skills/`: la prueba se ponía roja por un cambio correcto, y
+  // arreglarla agregando los nombres nuevos habría vuelto a clavar una lista que envejece igual.
+  // Lo que de verdad importa no es DÓNDE vive cada límite, sino que el archivo exista y la frase
+  // siga adentro —eso ya lo comprueba `honestLimitViolations`— y que la cuenta no se desplome sin
+  // que nadie lo note.
   const guarded = [...new Set(limits.map((limit) => limit.file))].sort();
-  assert.deepEqual(
-    guarded.filter((file) => file === 'README.md' || file === 'SECURITY.md' || file === 'SKILL.md'),
-    ['README.md', 'SECURITY.md', 'SKILL.md'],
-  );
+  assert.ok(guarded.length >= 3, `sólo ${guarded.length} archivo(s) guardan límites honestos`);
+  const ausentes = guarded.filter((file) => !existsSync(join(repoRoot, file)));
+  assert.deepEqual(ausentes, [], 'un límite honesto que apunta a un archivo inexistente no protege nada');
+  assert.ok(limits.length >= 80, `el contrato declara ${limits.length} límites: una caída así se mira`);
 });
 
 test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUIREMENTS y falla si el contrato falta, no parsea o la frase se debilitó', () => {
