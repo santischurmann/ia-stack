@@ -93,13 +93,31 @@ test('FALSIFICACIÓN · la guarda de entorno reconoce una instalación y no un c
 // `repoRoot` a un gate o corrian `git` con `cwd: repoRoot`, y el instalador gitignora el runtime,
 // asi que git devuelve cero para todo.
 //
-// Esas diez se marcaron A MANO. Intente la regla de forma dos veces y las dos sobre-disparo:
-// primero marcando toda prueba que pasa `repoRoot` a cualquier funcion -- legitimo cuando lee un
-// archivo copiado --, y despues acotandola a git con una ventana de contexto, que agarra `git` y
-// `repoRoot` en partes del archivo que no tienen que ver entre si. Marcar pruebas correctas para
-// que mi regla quede verde habria sido peor que no tener regla: un guarda que grita en falso se
-// ignora, y uno que se ignora no detecta nada.
+// Esas diez se marcaron A MANO. Se intentaron TRES reglas de forma y las tres fallaron con numeros:
 //
-// Entonces queda dicho: el marcado de esa clase es MANUAL y puede volver a romperse. Lo que lo
-// cubre hoy no es una regla, es la medicion de punta a punta -- instalar en un proyecto limpio y
-// correr la suite, que hoy da cero fallos.
+//   1. Marcar toda prueba que pasa `repoRoot` a cualquier funcion. Sobre-disparo: es legitimo
+//      cuando lee un archivo que el instalador SI copia.
+//   2. Acotarla a git con una VENTANA DE LINEAS. Sobre-disparo: agarra `git` y `repoRoot` en
+//      partes del archivo que no tienen nada que ver entre si.
+//   3. Estructural, medida el 2026-09-04 sobre los 90 archivos: marcar la llamada cuyo PRIMER
+//      argumento es el literal 'git' y cuya MISMA lista lleva `cwd: repoRoot` o `'-C', repoRoot`.
+//      No sobre-dispara, y por eso es la que mas duele: marca 5 archivos y los 5 YA TIENEN GUARDA.
+//      Cero hallazgos nuevos, hoy y desde el dia que se escriba. Y es ciega a las tres formas que
+//      este repositorio usa todo el tiempo -- el `cwd` por shorthand (`{ cwd, ... }`, 10 sitios),
+//      la raiz que llega como parametro de un helper (16 de 35 call-sites de git) y la raiz que se
+//      llama `root` en vez de `repoRoot` (29 archivos contra 49). La peor de las tres es la que
+//      importa: `repoRemoto` en tests/verify-ablation.test.mjs:1499 corre `git remote get-url
+//      origin` con la raiz en el DEFAULT DEL PARAMETRO y el `cwd` por shorthand, que es
+//      exactamente la fuga historica que motivo la guarda, y ninguna version de la regla la ve.
+//      Ensancharla a `root` cuesta ~14 falsos positivos sobre directorios temporales, con 0
+//      hallazgos reales.
+//
+// Marcar pruebas correctas para que mi regla quede verde habria sido peor que no tener regla: un
+// guarda que grita en falso se ignora, y uno que se ignora no detecta nada. Pagar ~140 lineas de
+// lexer por cero hallazgos tampoco es un gate: es superficie de mantenimiento con etiqueta de
+// seguridad.
+//
+// Entonces queda dicho, y es dato en el contrato, no un comentario que se pueda borrar en silencio:
+// **La regla de forma mira qué archivos lee una prueba, nunca a quién le pregunta.** Lo que cubre
+// esa otra mitad no es una regla, es la medicion de punta a punta -- instalar en un proyecto limpio
+// y correr la suite -- que hoy da cero fallos.

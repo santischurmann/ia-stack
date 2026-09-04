@@ -16,7 +16,7 @@
       "por_que": "Diez pruebas se marcaron a mano porque la regla de forma sobre-disparo dos veces. Pueden volver a romperse sin que nada salte: lo unico que las cubre hoy es la medicion de punta a punta, no una regla.",
       "cita": {
         "archivo": "tests/self-checks.test.mjs",
-        "texto_literal": "el marcado de esa clase es MANUAL y puede volver a romperse"
+        "texto_literal": "Esas diez se marcaron A MANO. Se intentaron TRES reglas de forma y las tres fallaron"
       }
     },
     {
@@ -35,5 +35,8 @@
         "texto_literal": "el gate de seguridad del repositorio detecta"
       }
     }
-  ]
+  ],
+  "cerradas": {
+    "2026-09-04": "Las cuatro propuestas se atendieron el mismo dia que se escribieron. 1 y 3 se IMPLEMENTARON: la marca de reescritura de la traza pasa a valer por acto y no por archivo, y los dos enumeradores de scripts/ bajan a subdirectorios. 2 y 4 se investigaron con 15 agentes y tres lentes adversariales por diseno, y NINGUN diseno sobrevivio -- el mejor candidato de la 2 marcaba 5 archivos que ya tenian guarda (cero hallazgos nuevos) y los cinco de la 4 dieron 43/26/6/5/3 hallazgos, todos falsos positivos, sin un verdadero positivo en 210 archivos ni en 191 commits. Se declararon como limites honestos en vez de shipear un gate que grita en falso. La cita de la propuesta 2 se actualizo porque el texto que citaba se reescribio al cerrarla: el hallazgo es el mismo, la linea cambio."
+  }
 }

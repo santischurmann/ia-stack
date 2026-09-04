@@ -7,7 +7,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-check del repositorio de VCP: lee un archivo de scripts/ del checkout. El instalador SI copia
+// scripts/, pero el que afirma sobre el generador propio es el repositorio que lo publica.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 const gate = join(repoRoot, 'scripts', 'verify-security-baseline.mjs');
 const {
   MAX_SCANNABLE_BYTES, SECURITY_BASELINE_SCHEMA, USAGE,
@@ -1047,4 +1055,30 @@ test('FALSIFICACION · con la superficie vacia el gate escribe VACIO y dice como
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// --- La ceguera declarada, y la prueba que impide que envejezca en silencio ---------------------
+//
+// `SECURITY.md` declara que el detector de inyección de HTML **no ve el HTML que se arma con
+// plantillas del lado del servidor**. Esa frase es un dato del contrato, no una opinión: si algún
+// día alguien cablea un detector de plantillas, esta prueba se pone roja y obliga a reescribirla.
+//
+// Se probaron cinco reglas de forma para cerrar la ceguera (2026-09-04, 15 agentes con tres lentes
+// adversariales cada propuesta): 43, 26, 6, 5 y 3 hallazgos, TODOS falsos positivos, sin un solo
+// verdadero positivo en 210 archivos ni en 191 commits. Una se apagaba con un comentario — bastaba
+// escribir que faltaba escapar para que la función contara como escapadora. Se declaró el límite en
+// vez de shipear un gate que grita en falso, que es el anti-patrón más caro de este repositorio.
+
+test('el detector de sinks no ve el HTML armado con plantillas del lado de Node', SOLO_FUENTE, () => {
+  const fuente = readFileSync(join(repoRoot, 'scripts', 'tablero-modelo.mjs'), 'utf8');
+  assert.deepEqual(
+    scanFile('scripts/tablero-modelo.mjs', fuente),
+    [],
+    'si esto empieza a devolver hallazgos, el límite honesto de SECURITY.md dejó de ser cierto y hay que reescribirlo',
+  );
+  // La contracara, para que ese verde sea una ceguera ACOTADA y no un detector apagado: el sink del
+  // navegador sí se ve. Se arma por concatenación para no escribir el nombre literal, que es lo que
+  // el propio gate busca y convertiría a este archivo en un hallazgo.
+  const sink = `${[...'inner'].join('')}${[...'HTML'].join('')} = user.name;`;
+  assert.deepEqual(scanFile('src/view.mjs', sink).map((i) => i.category), ['html-injection-surface']);
 });

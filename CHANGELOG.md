@@ -7,6 +7,25 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Las dos propuestas que quedaban abiertas se cerraron declarando el límite, no fingiendo el gate.**
+  Quince agentes con tres lentes adversariales por diseño (scope, verificabilidad, falsos positivos)
+  midieron cinco reglas candidatas. **Ninguna sobrevivió**, y los números son la razón:
+  - **A quién le pregunta una prueba.** El mejor candidato —estructural, sin falsos positivos—
+    marcaba 5 archivos y **los 5 ya tenían guarda**: cero hallazgos nuevos, hoy y siempre. Y era
+    ciego al caso que motivó la guarda: `git remote get-url origin` con la raíz en el *default del
+    parámetro* y el `cwd` por atajo. Pagar ~140 líneas de analizador por cero hallazgos no es un
+    gate, es superficie de mantenimiento con etiqueta de seguridad.
+  - **El HTML armado del lado de Node.** Los cinco candidatos dieron 43, 26, 6, 5 y 3 hallazgos:
+    **todos falsos positivos**, sin un solo verdadero en 210 archivos ni en 191 commits. Uno se
+    apagaba con un comentario — escribir que faltaba escapar bastaba para que la función contara
+    como escapadora. Otro gritaba sobre números y callaba sobre el único valor controlable.
+  - Los dos quedan como **límites honestos con doble ancla** (contrato + fila de requisito), y el de
+    HTML tiene además una prueba que corre el gate real sobre el generador del repositorio: si algún
+    día empieza a ver plantillas de servidor, se pone roja y obliga a reescribir la frase. Un límite
+    que puede envejecer en silencio no es un límite.
+  - **El sintetizador corrigió cinco afirmaciones falsas de los propios agentes**, entre ellas un
+    conteo de scripts y un «esa opción no existe» sobre una bandera que sí existe y está documentada.
+
 - **Los cuatro defectos sueltos que el plan había listado aparte, cerrados.** Ninguno justificaba su
   propia etapa y por eso ninguno había entrado.
   - **`docs/spec.md` mandaba a un commit que no existe.** Decía «se recupera con

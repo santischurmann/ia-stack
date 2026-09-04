@@ -56,7 +56,7 @@ verify-phase-decisions.mjs check docs/phase-decisions.json\nNinguna fase cierra 
 
 // Keep the synthetic reader aligned with the live documentation contract.
 function completeRead(path) {
-  const content = `${completeReadBase(path)}\nclaims --feature <feature-slug> --require-inputs --require-links\n\`--require-links\` exige además un packet no vacío y que cada claim tenga al menos uno\n--test-concurrency=32 y \`VCP_TEST_CONCURRENCY=<n>\` existe para **bajarlo**\nVCP_BASH_PATH\nverify-spec-wordcap.mjs check docs/spec.md --quality\nverify-spec-wordcap.mjs --quality\nverify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json\nverify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json\nverify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete\nbuild-complete-review-index.mjs\nsin confundirlas con comprensión semántica\nverify-product-diagnostics.mjs check\nLos diagnósticos comprueban forma e invariantes, nunca verdad semántica.\nverify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json\nvcp.caio/1\nvcp.phase-plan/1\nverify-sereno.mjs due\nverify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json\n.vibe/vcp-runtime/scripts/verify-sereno.mjs\n**como mucho cuatro**\n4000 caracteres\nverify-feature-activa.mjs`;
+  const content = `${completeReadBase(path)}\nclaims --feature <feature-slug> --require-inputs --require-links\n\`--require-links\` exige además un packet no vacío y que cada claim tenga al menos uno\n--test-concurrency=32 y \`VCP_TEST_CONCURRENCY=<n>\` existe para **bajarlo**\nVCP_BASH_PATH\nverify-spec-wordcap.mjs check docs/spec.md --quality\nverify-spec-wordcap.mjs --quality\nverify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json\nverify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json\nverify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete\nbuild-complete-review-index.mjs\nsin confundirlas con comprensión semántica\nverify-product-diagnostics.mjs check\nLos diagnósticos comprueban forma e invariantes, nunca verdad semántica.\nverify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json\nvcp.caio/1\nvcp.phase-plan/1\nverify-sereno.mjs due\nverify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json\n.vibe/vcp-runtime/scripts/verify-sereno.mjs\n**como mucho cuatro**\n4000 caracteres\nverify-feature-activa.mjs\nnunca a quién le pregunta\nno ve el HTML que se arma con plantillas del lado del servidor`;
   return path === 'SKILL.md' ? `${content}\n--require-complete` : content;
 }
 
@@ -538,4 +538,25 @@ test('FALSIFICACIÓN · desde un checkout de VCP el gate sigue verificando de ve
   const code = main(['check'], repoRoot, (l) => salidas.push(l), () => {}, join(repoRoot, 'scripts'));
   assert.equal(code, 0);
   assert.doesNotMatch(salidas.join('\n'), /^VACÍO: /u);
+});
+
+// --- Los dos límites que se declaran porque la regla NO se pudo construir ------------------------
+//
+// Son distintos de los demás: no describen lo que un gate no alcanza a ver por diseño, sino una
+// regla que se intentó y se midió que no servía. Si alguien borra la frase del documento, el
+// contrato tiene que rechazar — porque sin ella, un verde se lee como cobertura que no existe.
+
+test('FALSIFICACIÓN · borrar el límite del alcance de los self-checks o el del HTML de servidor rechaza', () => {
+  // replaceAll y no replace: `completeReadBase` vuelve a inyectar la frase al final, porque agrega
+  // el `source` del propio regex de esa fila. Con un solo reemplazo la prueba pasaba por el motivo
+  // equivocado.
+  const sin = (archivo, frase) => contractViolations((path) => (path === archivo
+    ? completeRead(path).replaceAll(frase, 'algo distinto')
+    : completeRead(path)));
+
+  const sinSelfChecks = sin('tests/self-checks.test.mjs', 'nunca a quién le pregunta');
+  assert.equal(sinSelfChecks.some((i) => /self-check rule scope honest limit/u.test(i)), true);
+
+  const sinHtml = sin('SECURITY.md', 'no ve el HTML que se arma con plantillas del lado del servidor');
+  assert.equal(sinHtml.some((i) => /server-side HTML template honest limit/u.test(i)), true);
 });

@@ -150,6 +150,11 @@ export const REQUIREMENTS = [
   ['README.md', /\*\*como mucho cuatro\*\*/u, 'the cap of four proposals, which is the feature'],
   ['skills/vibe-memory.md', /4000 caracteres/u, 'the forward-only cap on a new audit line'],
   ['SKILL.md', /verify-feature-activa\.mjs/u, 'the gate that compares who declares the active feature'],
+  // Dos limites que se declaran porque la regla NO se pudo construir, no porque no se intentara.
+  // Cada uno lleva su fila aca ademas de su entrada en honest-limits.json: doble capa, igual que los
+  // limites de SECURITY.md. Borrar la frase del documento rompe las dos.
+  ['tests/self-checks.test.mjs', /nunca a quién le pregunta/u, 'self-check rule scope honest limit'],
+  ['SECURITY.md', /no ve el HTML que se arma con plantillas del lado del servidor/u, 'server-side HTML template honest limit'],
 ];
 
 // Narrow, phrase-level bans — never a bare word ban — so legitimate uses of "genuine" elsewhere

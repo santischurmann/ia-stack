@@ -516,6 +516,18 @@
       "file": "skills/gates.md",
       "phrase": "no mira `docs/phase-plan.json`, que es un expediente cerrado",
       "why": "docs/phase-plan.json tambien tiene un campo feature, y a proposito queda fuera de la comparacion. Es el expediente de un ciclo de fases, y su pareja docs/phase-decisions.json guarda las decisiones selladas: un expediente terminado sigue nombrando su propia feature -- correctamente -- mientras el trabajo en curso ya es otro. Exigir que coincida obligaria a borrar el expediente cerrado o a FABRICAR decisiones de fase con menus que nunca se mostraron, y este protocolo no escribe evidencia hacia atras. El costo esta declarado: si alguien deja el expediente apuntando a una feature vieja y se olvida de abrir el nuevo, este gate no lo ve."
+    },
+    {
+      "limit_id": "self-check-rule-sees-files-read-not-callees",
+      "file": "tests/self-checks.test.mjs",
+      "phrase": "nunca a quién le pregunta",
+      "why": "La regla detecta que una prueba LEA un archivo de la raiz del checkout que el instalador no copia. No detecta la otra mitad: que una prueba le entregue el checkout a git o a un gate y afirme un veredicto. Se intentaron TRES reglas de forma para esa mitad y las tres fallaron con numeros medidos el 2026-09-04 sobre los 90 archivos de tests/: dos sobre-dispararon sobre pruebas correctas, y la tercera -- estructural, sin falsos positivos -- marca 5 archivos que YA tienen guarda, o sea cero hallazgos nuevos, mientras deja pasar `git remote get-url origin` de tests/verify-ablation.test.mjs:1499, que es la fuga historica que motivo la guarda. Sin este limite declarado, un verde de self-checks se lee como 'ninguna prueba toca el repositorio ajeno' y el marcado manual que de verdad cubre esa mitad deja de revisarse. Lo que la cubre hoy no es una regla: es la medicion de punta a punta."
+    },
+    {
+      "limit_id": "html-sink-detector-is-blind-to-server-side-templates",
+      "file": "SECURITY.md",
+      "phrase": "no ve el HTML que se arma con plantillas del lado del servidor",
+      "why": "El detector busca sinks del navegador -- innerHTML, outerHTML, dangerouslySetInnerHTML -- asi que un generador en Node que arma HTML con template literals no dispara nada. Verificado corriendo el gate real sobre scripts/tablero-modelo.mjs y scripts/tablero.mjs: cero hallazgos, escapen o no. Se probaron cinco reglas de forma para cubrirlo y las cinco terminaron en falsos positivos sobre codigo correcto -- 43, 26, 6, 5 y 3 hallazgos, todos falsos, sin un solo verdadero positivo en 210 archivos ni en 191 commits de historia. Una de ellas se apagaba con un comentario: escribir que falta escapar bastaba para marcar la funcion como escapadora. El escape de un generador propio se prueba aparte, con su propia prueba de inyeccion, y eso no es sustituto del gate: es lo unico que hay."
     }
   ]
 }

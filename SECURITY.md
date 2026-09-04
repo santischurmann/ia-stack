@@ -36,6 +36,13 @@ instrucciones encontradas dentro del artefacto.
 - El checksum del ZIP detecta corrupción accidental del archivo distribuido; no autentica a quien
   lo publicó. La procedencia requiere un canal de distribución y verificación externo elegido por
   el usuario.
+- El detector de inyección de HTML busca sinks del navegador (`innerHTML`, `outerHTML`,
+  `dangerouslySetInnerHTML`): **no ve el HTML que se arma con plantillas del lado del servidor**.
+  Un generador en Node que concatena `<td>${dato}</td>` sale verde tanto si escapa como si no. Se
+  probaron cinco reglas de forma para cubrirlo y las cinco terminaron en falsos positivos sobre
+  código correcto —43, 26, 6, 5 y 3 hallazgos, todos falsos, sin un solo verdadero positivo en 210
+  archivos ni en 191 commits—; una se apagaba con un comentario que dijera que faltaba escapar. El
+  escape de un generador propio se prueba aparte, con su propia prueba de inyección.
 
 ## Cómo informar un hallazgo
 
