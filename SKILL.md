@@ -1452,6 +1452,33 @@ Tres cosas que el tablero hace a propósito, y que conviene no "arreglar":
 **Sin tabla de precios no muestra dinero**, y dice por qué. Escribí la tuya en `precios.json`, dentro
 de esa misma carpeta, si querés la columna.
 
+**9.0.1 El bucle de auto-mejora** (mismo período de 7 días, misma lógica de `due`):
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
+```
+
+Si toca, el agente mira lo que se hizo y escribe **como mucho cuatro** propuestas en
+`docs/mejoras/AAAA-MM-DD.json`, copiando la forma de `templates/mejoras.json`. Después:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json
+```
+
+Las cuatro reglas, y por qué cada una:
+
+- **Tope de cuatro.** Una lista de veinte no se lee, se archiva. El tope es la feature, no un límite
+  técnico.
+- **Cada propuesta cita archivo y texto exacto**, y el gate busca ese texto en ese archivo. Una
+  propuesta sin origen verificable es una opinión con formato de hallazgo.
+- **Ningún campo ejecutable.** El bucle sugiere, nunca corre. Un registro con un comando adentro
+  invita a correrlo sin leerlo.
+- **El agente escribe, la persona decide.** El gate no aplica ninguna mejora; aplicar, saltear o
+  copiar es click humano.
+
+**Lo que este gate NO puede hacer:** comprueba que la propuesta tenga origen, no que valga la pena. Y
+que el texto citado esté ahí, no que signifique lo que la propuesta dice que significa.
+
 
 **Qué es, en una línea.** Cada skill, cada regla y cada hook que tenés configurado se le carga al
 modelo **antes** de que escribas la primera letra. Lo que ya no sirve no es neutral: ocupa lugar y

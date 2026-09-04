@@ -34,6 +34,21 @@ export const APPEND_USAGE = 'usage: verify-audit-chain.mjs append <audit.md> "<l
 // rewrite its history, which is the one thing an audit trail must never be asked to do.
 export const LEGACY_PREFIX_ALLOWED = true;
 
+/** Tope de largo para una linea NUEVA. La traza no se puede rotar ni recortar -- ablation-scope.json
+ * la declara intocable -- asi que una linea enorme (un diff, un stack trace, un archivo volcado de un
+ * tiron) se queda ahi para siempre y no hay forma de sacarla sin romper la cadena.
+ *
+ * POR QUE 4000 Y NO 1200, que es lo que decia el plan: 1200 se escribio sin medir. Medido el
+ * 2026-09-04 sobre las 141 lineas ya selladas: mediana 291, p90 1935, MAXIMO 2736. Un tope de 1200
+ * habria rechazado el estilo con el que este mismo proyecto viene sellando, y un gate que rechaza lo
+ * normal se desactiva el primer dia -- el anti-patron de la alarma rota, que este repositorio ya
+ * aprendio dos veces. 4000 deja 46% de margen sobre lo mas largo escrito y sigue frenando de lejos
+ * el volcado, que empieza ordenes de magnitud mas arriba.
+ *
+ * VA SOLO HACIA ADELANTE. `verifyChain` no mira el largo de ninguna linea: solo el sufijo `chain:` y
+ * el hash. Por eso el tope vive dentro del sellador y no invalida ni un byte de lo ya escrito. */
+export const MAX_LINE_CHARS = 4000;
+
 // Only an exact 64-lowercase-hex tail counts as a declaration; digest('hex') emits nothing else.
 const CHAIN_SUFFIX = / \| chain:([0-9a-f]{64})$/u;
 // A tail that tries to declare a seal and fails is the third state, and it is a rejection. Reading
@@ -48,6 +63,7 @@ const BROKEN_SEAL = 'this line ends in a | chain: suffix that is not 64 lowercas
 const EMPTY_TEXT = 'the line text is blank — sealing an empty entry writes a line nobody can ever remove and nobody can read';
 const MULTILINE_TEXT = 'the line text spans more than one line — one seal covers exactly one line, so the extra lines would land unsealed and break the chain on the next check';
 const PRESEALED_TEXT = 'the line text already ends in a | chain: suffix — seals are computed here, never supplied by the caller';
+const TOO_LONG_TEXT = `the line text is longer than ${MAX_LINE_CHARS} characters — the trace can never be rotated or trimmed, so an oversized line stays there forever`;
 const BROKEN_TRACE = 'the existing trace is already broken, so a fresh seal on top would only certify tampered history';
 
 export function chainHashFor(previousChain, lineWithoutChain) {
@@ -120,6 +136,7 @@ export function sealLineFor(content, text) {
   // Deliberately the same grammar the parser uses to spot a seal attempt, so "carries a seal" means
   // one thing in this module: a hand-written tail can never be mistaken for a computed one.
   if (BROKEN_SEAL_SUFFIX.test(text)) return refuse(PRESEALED_TEXT);
+  if (text.length > MAX_LINE_CHARS) return refuse(TOO_LONG_TEXT);
   const existing = verifyChain(content);
   if (!existing.ok) return refuse(`${BROKEN_TRACE} (line ${existing.brokenLine}: ${existing.reason})`);
   // verifyChain passing means sealed lines form a contiguous tail, so the last non-blank entry holds

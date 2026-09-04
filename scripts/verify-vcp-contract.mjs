@@ -141,6 +141,13 @@ export const REQUIREMENTS = [
   ['templates/plan.md', /## Write-conflict preflight/u, 'canonical plan preflight section'],
   ['templates/plan.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],
   ['skills/spec-plan-templates.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'embedded plan gate command'],
+  // El bucle de auto-mejora. Las dos mitades se fijan por separado a proposito: `due` sin `check` es
+  // un recordatorio que no verifica nada, y `check` sin `due` es un gate que nadie sabe cuando correr.
+  ['README.md', /verify-sereno\.mjs due/u, 'self-improvement loop: how to know a round is due'],
+  ['README.md', /verify-sereno\.mjs check/u, 'self-improvement loop: how to verify the round it wrote'],
+  ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-sereno\.mjs/u, 'self-improvement loop wired into PHASE 9'],
+  ['README.md', /\*\*como mucho cuatro\*\*/u, 'the cap of four proposals, which is the feature'],
+  ['skills/vibe-memory.md', /4000 caracteres/u, 'the forward-only cap on a new audit line'],
 ];
 
 // Narrow, phrase-level bans — never a bare word ban — so legitimate uses of "genuine" elsewhere

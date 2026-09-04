@@ -22,6 +22,7 @@ const {
   USAGE,
   APPEND_USAGE,
   LEGACY_PREFIX_ALLOWED,
+  MAX_LINE_CHARS,
   chainHashFor,
   parseAuditLines,
   sealLineFor,
@@ -901,4 +902,34 @@ test('la traza real de este repositorio pasa history con su reescritura declarad
   const code = historyCommand(['history', '.vibe/AUDIT.md'], { cwd: repoRoot }, (l) => salida.push(l), (l) => errores.push(l));
   assert.deepEqual({ code, errores }, { code: 0, errores: [] });
   assert.match(salida.join('\n'), /reescritura/iu);
+});
+
+// --- El tope de largo, y por que va SOLO hacia adelante ------------------------------------------
+//
+// `.vibe/AUDIT.md` no se puede rotar ni recortar: `contracts/ablation-scope.json` lo declara
+// intocable y `history` compara version contra version. Una linea de doscientos kilobytes -- un
+// diff, un stack trace, un archivo entero volcado de un tiron -- queda ahi para siempre.
+//
+// Por eso el tope vive DENTRO del sellador, la mitad pura de `append`, y no en `verifyChain`:
+// `verifyChain` no mira el largo de ninguna linea, solo el sufijo y el hash. Un tope nuevo no
+// invalida ni un byte de lo ya sellado.
+
+test('sellar una línea más larga que el tope se rechaza, con el motivo escrito', () => {
+  const r = sealLineFor('', 'x'.repeat(MAX_LINE_CHARS + 1));
+  assert.equal(r.ok, false);
+  assert.equal(r.append, null);
+  assert.match(r.reason, new RegExp(`longer than ${MAX_LINE_CHARS}`, 'u'));
+  // Justo en el tope sella: un tope que se pasa por uno no es un tope, es un error de borde.
+  assert.equal(sealLineFor('', 'x'.repeat(MAX_LINE_CHARS)).ok, true);
+});
+
+test('FALSIFICACIÓN · el tope no toca hacia atrás: la traza real sigue verificando entera', SOLO_FUENTE, () => {
+  // La prueba que protege el ancla. El tope se eligio POR ENCIMA de lo ya escrito -- maximo medido
+  // 2736 caracteres el 2026-09-04 -- justamente para que esto no dependa de suerte. Si se pone
+  // roja, el tope se aplico hacia atras y el diseño esta muerto.
+  const contenido = readFileSync(join(repoRoot, '.vibe', 'AUDIT.md'), 'utf8');
+  assert.equal(verifyChain(contenido).ok, true);
+  const largos = contenido.split('\n').filter((l) => l.trim() !== '').map((l) => l.length);
+  assert.ok(largos.some((n) => n > 1200), 'la traza tiene líneas largas: si no, esta prueba no prueba nada');
+  assert.ok(Math.max(...largos) <= MAX_LINE_CHARS, `el tope ${MAX_LINE_CHARS} quedó por debajo del máximo ya sellado (${Math.max(...largos)}): sería una alarma rota el día uno`);
 });

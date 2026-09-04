@@ -486,6 +486,24 @@
       "file": "skills/gates.md",
       "phrase": "La marca es una declaración, no una prueba",
       "why": "La prueba compara cada numero que el README afirma como concurrencia por defecto contra DEFAULT_TEST_CONCURRENCY del script, y nacio porque la fila de la tabla de gates decia lo contrario que el parrafo de arriba en la misma pagina: se habia corregido una copia y no se barrio el resto. Necesita una salida, porque el README cita el valor viejo a proposito para explicar por que cambio, y contar esa cita obligaria a borrar la explicacion para poner el documento en verde. La salida es la marca, acotada al parrafo siguiente y terminada en la linea en blanco. Lo que no puede hacer es distinguir una cita historica de una afirmacion viva a la que le pusieron la marca encima: eso exige leer la intencion. La mitigacion es que la marca es literal y buscable con grep en una linea."
+    },
+    {
+      "limit_id": "sereno-checks-origin-not-worth",
+      "file": "README.md",
+      "phrase": "comprueba que la propuesta tenga origen, no que valga la pena",
+      "why": "El gate del bucle de auto-mejora resuelve cada cita contra el archivo que dice citar: si el texto literal no esta ahi, rechaza. Eso descarta la propuesta inventada, que es el modo de falla que importa -- una opinion con formato de hallazgo. Lo que NO hace es juzgar la mejora: una propuesta trivial con una cita perfecta pasa igual que una critica. Medido en la primera ronda real, el 2026-09-04: el gate rechazo la primera cita que escribio el propio agente, porque apuntaba al CHANGELOG y el texto estaba en .vibe/AUDIT.md. Atrapo el error de procedencia; no habria atrapado una propuesta inutil."
+    },
+    {
+      "limit_id": "sereno-literal-quote-is-not-meaning",
+      "file": "SKILL.md",
+      "phrase": "que el texto citado esté ahí, no que signifique lo que la propuesta dice que significa",
+      "why": "La cita se busca con includes literal sobre el contenido del archivo. Que la frase exista prueba procedencia, no interpretacion: alguien puede citar una linea real y describirla mal, y el gate sale verde igual. No hay forma de cerrar eso con una regla de forma -- exigiria entender el texto, que es exactamente lo que este protocolo se niega a afirmar que hace."
+    },
+    {
+      "limit_id": "audit-line-cap-is-forward-only",
+      "file": "skills/vibe-memory.md",
+      "phrase": "El tope mira la línea que entra, nunca las que ya están",
+      "why": "El tope de 4000 caracteres vive en sealLineFor y solo rechaza lineas NUEVAS. No protege nada de lo ya escrito ni podria: la traza es intocable por contrato, asi que aplicarlo hacia atras pondria history en rojo permanente. Concretamente: las 141 lineas selladas hasta el 2026-09-04 siguen validas cualquiera sea su largo -- la mas larga mide 2736 caracteres -- y una traza que hubiera recibido una linea enorme antes del tope se queda con ella para siempre. El tope evita el problema siguiente, no repara el anterior."
     }
   ]
 }

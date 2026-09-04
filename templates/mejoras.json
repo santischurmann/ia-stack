@@ -1,0 +1,15 @@
+{
+  "schema": "vcp.mejoras/1",
+  "run_id": "AAAA-MM-DD",
+  "why": "Plantilla del bucle de auto-mejora. Cada 7 dias, al abrir sesion, el protocolo mira lo que se hizo y propone COMO MUCHO CUATRO mejoras. No las aplica: las escribe, con la cita de donde salio cada una. La persona aplica, saltea o copia.",
+  "propuestas": [
+    {
+      "titulo": "Titulo corto de la mejora",
+      "por_que": "Que problema resuelve y que se gana. Al menos treinta caracteres, porque una linea de tres palabras no es un motivo.",
+      "cita": {
+        "archivo": "ruta/relativa/del/archivo/donde/se/vio.md",
+        "texto_literal": "El fragmento exacto que respalda esta propuesta. El gate lo busca literal en ese archivo: si no esta, rechaza."
+      }
+    }
+  ]
+}

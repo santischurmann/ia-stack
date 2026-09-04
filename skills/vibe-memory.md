@@ -202,6 +202,22 @@ borrar los sufijos enteros de toda la traza, recortar sus últimas líneas, o re
 completa sobre contenido falso. Los tres exigen un ancla fuera del archivo; están declarados, no
 resueltos.
 
+### El tope de largo, y por qué va sólo hacia adelante
+
+La traza **no se rota ni se recorta**: `contracts/ablation-scope.json` la declara intocable y
+`history` compara versión contra versión. Una línea enorme — un diff, un stack trace, un archivo
+volcado de un tirón — se queda ahí para siempre y no hay forma de sacarla sin romper la cadena.
+
+Por eso el sellador rechaza una línea nueva de más de **4000 caracteres**. El tope vive dentro de
+`sealLineFor`, la mitad pura de `append`, y **no** dentro de `verifyChain`.
+El tope mira la línea que entra, nunca las que ya están: el verificador sólo compara el sufijo
+`chain:` contra el hash, así que ni un byte de lo ya sellado se invalida.
+
+El número salió de medir, no de elegir: sobre las 141 líneas ya selladas de este repositorio, la
+mediana es 291, el percentil 90 es 1935 y el máximo 2736. Un tope por debajo de eso habría rechazado
+el estilo con el que el propio protocolo viene escribiendo, y **un gate que rechaza lo normal se
+desactiva el primer día**.
+
 ## LESSONS PROTOCOL — confirm-gated, deduped, never silently deleted
 
 Source of the "learn from own errors across projects" goal. Runs at Phase 8.3 (Reflect) and on

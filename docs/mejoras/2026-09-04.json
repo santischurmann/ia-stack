@@ -1,0 +1,39 @@
+{
+  "schema": "vcp.mejoras/1",
+  "run_id": "2026-09-04",
+  "why": "Primera ronda del bucle de auto-mejora, escrita durante la sesion que lo construyo. Las cuatro propuestas salen de defectos que aparecieron ESTA sesion y que quedaron sin cerrar; cada una cita la linea donde se escribio el hallazgo.",
+  "propuestas": [
+    {
+      "titulo": "La marca de reescritura de la traza debe ser por version, no por archivo",
+      "por_que": "Una vez escrita la frase por primera vez, verifyGrowth acepta TODA reescritura posterior de la traza en silencio, porque busca la declaracion en cualquier lugar del contenido. La declaracion dejo de ser por acto. Se uso asi esta misma sesion sin que nada lo pidiera.",
+      "cita": {
+        "archivo": ".vibe/AUDIT.md",
+        "texto_literal": "la marca de reescritura autorizada es de ARCHIVO, no de version"
+      }
+    },
+    {
+      "titulo": "El marcado de self-checks que interrogan a git sigue siendo manual",
+      "por_que": "Diez pruebas se marcaron a mano porque la regla de forma sobre-disparo dos veces. Pueden volver a romperse sin que nada salte: lo unico que las cubre hoy es la medicion de punta a punta, no una regla.",
+      "cita": {
+        "archivo": "tests/self-checks.test.mjs",
+        "texto_literal": "el marcado de esa clase es MANUAL y puede volver a romperse"
+      }
+    },
+    {
+      "titulo": "Los dos gates que enumeran scripts/ no bajan a subdirectorios",
+      "por_que": "Un archivo en scripts/subcarpeta/ escapa a la medicion de cobertura Y a la obligacion de declararse en el contrato de sondas. Se comprobo creando uno: empty-probe dio OK sin exigir nada. Hoy se evita por convencion -- todo plano -- y no por regla.",
+      "cita": {
+        "archivo": "scripts/verify-vcp-coverage.mjs",
+        "texto_literal": "entry.isFile() && entry.name.endsWith('.mjs')"
+      }
+    },
+    {
+      "titulo": "El baseline de seguridad no ve el HTML que se arma del lado de Node",
+      "por_que": "Detecta sinks por innerHTML y sus parientes, asi que un generador que arma HTML con plantillas no dispara nada: el gate esta verde sin haber mirado un solo escape. El tablero tiene su prueba de inyeccion propia justo por eso, pero el hueco del gate sigue abierto para el proximo que genere HTML.",
+      "cita": {
+        "archivo": "scripts/tablero-modelo.mjs",
+        "texto_literal": "el gate de seguridad del repositorio detecta"
+      }
+    }
+  ]
+}

@@ -113,6 +113,42 @@ Lo que hace a esa memoria distinta de un archivo de notas: **`AUDIT.md` encadena
 huella de la anterior**. Editar algo viejo rompe todo lo que sigue, así que la edición se nota. Y el
 chequeo compara esa traza contra la historia de git, que es un ancla que el archivo no controla.
 
+Esa traza **no se rota ni se recorta**: una línea sellada se queda para siempre. Por eso el sellador
+tiene un tope de largo hacia adelante — rechaza una línea nueva enorme, y no toca ni un byte de lo ya
+escrito.
+
+---
+
+## El bucle de auto-mejora
+
+Cada 7 días, al abrir sesión, el protocolo mira lo que se hizo y propone **como mucho cuatro**
+mejoras. El tope es la feature: una lista de veinte no se lee, se archiva.
+
+```mermaid
+flowchart LR
+    A["¿pasaron 7 días?"] -->|no| Z["seguir trabajando"]
+    A -->|sí| B["leer lo hecho"]
+    B --> C["escribir ≤4 propuestas<br/>cada una con su cita"]
+    C --> G["gate: ¿la cita resuelve<br/>contra el archivo?"]
+    G -->|no| C
+    G -->|sí| H["vos aplicás, salteás<br/>o copiás"]
+```
+
+**No ejecuta nada.** Escribe un archivo en `docs/mejoras/` y ahí termina; el gate rechaza cualquier
+registro que traiga un comando adentro, porque un comando en un archivo de propuestas invita a
+correrlo sin leerlo.
+
+Cada propuesta tiene que citar el archivo y el texto exacto de donde salió, y el gate **busca ese
+texto en ese archivo**. Sin eso, una propuesta es una opinión con formato de hallazgo.
+
+```bash
+node scripts/verify-sereno.mjs due              # ¿toca una ronda?
+node scripts/verify-sereno.mjs check docs/mejoras/2026-09-04.json
+```
+
+**Lo que no puede hacer:** comprueba que la propuesta tenga origen, no que valga la pena. Y que el
+texto citado esté ahí, no que signifique lo que la propuesta dice.
+
 ---
 
 ## Qué garantiza, y qué no

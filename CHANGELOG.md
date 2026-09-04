@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El protocolo ahora se propone mejoras a sí mismo, y no puede aplicarlas.** Cada 7 días, al abrir
+  sesión, `verify-sereno.mjs due` avisa si toca una ronda; el agente escribe **como mucho cuatro**
+  propuestas en `docs/mejoras/AAAA-MM-DD.json` y `check` las verifica.
+  - **El tope de cuatro es la feature**, no un límite técnico: una lista de veinte no se lee, se
+    archiva.
+  - **Cada propuesta cita archivo y texto exacto, y el gate busca ese texto en ese archivo.** Una
+    propuesta sin origen verificable es una opinión con formato de hallazgo.
+  - **Ningún campo ejecutable.** El gate rechaza `command`, `run`, `script`, `exec` y `cmd`: un
+    comando dentro de un archivo de propuestas invita a correrlo sin leerlo.
+  - **El gate rechazó la primera cita que escribió el propio agente**, porque apuntaba al CHANGELOG y
+    el texto estaba en `.vibe/AUDIT.md`. Se corrigió la cita, no el gate.
+  - **Lo que no puede hacer, declarado:** comprueba que la propuesta tenga origen, no que valga la
+    pena; y que el texto citado esté ahí, no que signifique lo que la propuesta dice.
+
+- **La traza de auditoría ya no puede recibir una línea gigante.** El sellador rechaza una línea
+  nueva de más de **4000 caracteres**. La traza no se rota ni se recorta —está declarada intocable—,
+  así que una línea enorme se quedaría ahí para siempre.
+  - **El tope va sólo hacia adelante.** Vive dentro de `sealLineFor`, nunca en `verifyChain`: el
+    verificador no compara largos, así que **ni un byte de lo ya sellado se invalida**.
+  - **El número salió de medir, no de elegir.** El plan pedía 1200; sobre las 141 líneas ya selladas
+    la mediana es 291, el percentil 90 es 1935 y el máximo **2736**. Un tope de 1200 habría rechazado
+    el estilo con el que el propio protocolo viene escribiendo, y un gate que rechaza lo normal se
+    desactiva el primer día.
+
 - **Se sacó del repositorio lo que pertenecía a otro proyecto del autor.** El registro de la ablación
   publicaba, en cinco campos, el enunciado de dos tareas reales que nombraban dónde vive una pieza
   sensible de ese producto.
