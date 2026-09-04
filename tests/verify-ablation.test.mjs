@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -1341,4 +1342,21 @@ test('FALSIFICACIÓN · la comprobación agarra la referencia que la redacción 
   assert.deepEqual(mismaForma.match(REFERENCIA), ['modulo.py:66']);
   // Y no acusa una ruta del propio repo citada como el registro las cita: sin numero de linea.
   assert.equal('archived_to: .claude-archive/2026-09-02/.claude/skills/cyber-neo/SKILL.md'.match(REFERENCIA), null);
+});
+
+// --- La configuracion local de Claude estaba protegida SOLO por ignores de esta maquina: el
+// ~/.config/git/ignore del usuario y .git/info/exclude. Ninguno de los dos viaja con el repositorio,
+// asi que en un clon de otra persona -- o en esta misma si se pierde .git/info/exclude -- un
+// `git add -A` estadea allowlists de permisos, rutas locales y configuracion de MCP.
+
+test('el propio .gitignore del repo protege .claude/, sin depender de la maquina', () => {
+  const preguntar = (ruta) => spawnSync('git', ['check-ignore', '-v', ruta], { cwd: repoRoot, encoding: 'utf8' });
+  const desprotegidos = [];
+  for (const ruta of ['.claude/settings.local.json', '.claude/worktrees/x', '.claude/otro.json']) {
+    const r = preguntar(ruta);
+    // La fuente va antes del primer `:`; tiene que ser el .gitignore versionado, no un archivo local.
+    const fuente = String(r.stdout || '').split(':')[0];
+    if (r.status !== 0 || fuente !== '.gitignore') desprotegidos.push(`${ruta} -> ${fuente || 'nadie'}`);
+  }
+  assert.deepEqual(desprotegidos, []);
 });

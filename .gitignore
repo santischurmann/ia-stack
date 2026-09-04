@@ -43,3 +43,9 @@ research/semantic-functional-index-2026-09-01.json.gz
 # VibeCodeProtocols PHASE 9: lo que la limpieza archiva. No es codigo del proyecto, y puede
 # contener configuracion con datos propios: no se commitea nunca.
 .claude-archive/
+
+# La configuracion local de Claude Code: allowlists de permisos, rutas de esta maquina y config de
+# MCP. Estaba cubierta solo por ~/.config/git/ignore y .git/info/exclude, que NO viajan con el
+# repositorio: en un clon de otra persona un `git add -A` la publicaba. La regla vive aca para que
+# la proteccion sea del proyecto y no de la maquina.
+.claude/

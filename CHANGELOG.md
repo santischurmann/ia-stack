@@ -7,6 +7,32 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tres tags publicados seguían sirviendo el mapa que la redacción decía haber quitado.** Un
+  crítico de completitud —cuya única pregunta era «qué quedó sin mirar»— encontró que las cinco
+  lentes habían barrido **el contenido de los archivos en la punta**, y eso deja afuera todo lo que
+  git publica sin ser un archivo del árbol actual.
+  - `v1.2.0`, `v1.3.0` y `v1.4.0` servían `templates/vibe/PROJECT.md` con las rutas de licencia,
+    generación de licencias, pagos y guard de riesgo de otro proyecto. **Un tag es una referencia
+    independiente: arreglar la punta no lo toca, y reescribir la historia de `main` tampoco.**
+    GitHub los ofrecía como `.zip` descargable.
+  - **Borrados de `origin` y del repositorio local**, con autorización explícita. Verificado contra
+    la API: quedan `v1.0.0` y `v1.1.0`, los dos limpios. Los commits a los que apuntaban siguen
+    alcanzables desde `main`: se quitó la referencia, no el contenido.
+- **La configuración local de Claude estaba protegida sólo por ignores de esta máquina.**
+  `.claude/settings.local.json` —allowlists de permisos, rutas locales, configuración de MCP— caía
+  bajo `~/.config/git/ignore`, y `.claude/worktrees/` bajo `.git/info/exclude`. **Ninguno de los
+  dos viaja con el repositorio:** en un clon de otra persona, o acá mismo si se pierde ese archivo,
+  un `git add -A` la publicaba. La regla ahora vive en el `.gitignore` versionado, con una prueba
+  que comprueba **quién** ignora cada ruta, no sólo que esté ignorada — falsificada quitando la
+  regla y viéndola caer.
+- **Lo que queda expuesto, dicho y no tapado.** La historia de git conserva el registro sin redactar,
+  y el cuerpo del commit de la redacción reconstruye la fuga y nombra el commit donde buscarla. La
+  línea 123 de `.vibe/AUDIT.md` describe la clase de vulnerabilidad, el mecanismo y la coordenada.
+  Las tres se arreglan sólo reescribiendo la historia, que **rompe la cadena de auditoría** —sus
+  líneas están encadenadas por hash, y reescribirlas destruye justo la garantía que existe para
+  dar—. Es una decisión aparte y sigue abierta. Hoy el repositorio tiene **0 forks y 0 releases**,
+  así que es lo más barato que va a ser.
+
 - **La redacción se dejó una referencia adentro, y la guarda que escribí para verificarla no la
   vio.** Después de redactar el registro se comprobó el resultado con una guarda construida a partir
   de **la misma lista de nombres** que la redacción. Por construcción sólo podía encontrar lo que la
