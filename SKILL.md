@@ -1345,42 +1345,17 @@ custodia vale hasta donde tu clave exija presencia humana.
 **8.2 Backups**:
 - Bitácora de respaldos (opcional): si tu proyecto lleva una, se deja una nota con ruta, sha256 y
   tamaño. Dónde vive esa bitácora lo decide cada proyecto — este paso no supone ninguna carpeta.
-- Graphify y Obsidian: después del commit se corre `graphify update .` y `graphify export obsidian --dir graphify-out/obsidian`.
-  Después se corre `node .vibe/vcp-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian`.
-  Ese gate verifica que el destino de la exportación esté dentro del proyecto, que sea un árbol
-  regular y sin symlinks, y que contenga un `graph.canvas` JSON válido con `nodes` y `edges` más al
-  menos una nota Markdown;
-  No juzga la semántica de las notas ni si Graphify interpretó correctamente cada nota.
-  El manifiesto va a `graphify-out/`, que está ignorado por git **a propósito**: si se commiteara,
-  el propio commit del sello movería HEAD y lo dejaría viejo al instante. Por eso el sello es lo
-  último de la fase, después del último commit.
-  Ese respaldo generado se ata al árbol commiteado: queda viejo si HEAD, el informe o el grafo
-  changes. El orden es **commit → graphify → record → check**, y no es cosmético: `record` sella el
-  HEAD real leyéndolo con `git rev-parse`, así que registrar antes de commitear ata el receipt al
-  commit anterior y `check` lo rechaza.
+- **El índice del proyecto.** Después del commit se regenera y se comprueba el inventario propio:
+
   ```bash
-  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
-    --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
-    --manifest graphify-out/backup-state.json
-  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
+  node .vibe/vcp-runtime/scripts/verify-vcp-index.mjs record
+  node .vibe/vcp-runtime/scripts/verify-vcp-index.mjs check
   ```
-  **El sello lo registra el protocolo, no Graphify.** El gate no lee el `- Built from commit:` del
-  `GRAPH_REPORT.md`, y la razón es concreta: Graphify sólo reescribe ese reporte cuando cambia la
-  **topología** del código, así que un commit de sólo documentación deja ese sello apuntando a un
-  ancestro para siempre aunque el contenido del grafo esté al día, y no hay forma de regenerarlo
-  (`GRAPHIFY_FORCE=1` no alcanza sin cambios de topología y `graphify label` pide una API key). Lo
-  que el receipt prueba es que el reporte y el grafo registrados no cambiaron desde que se
-  registraron sobre ese HEAD; **no prueba que el grafo se haya construido en ese commit**. Esa otra
-  mitad —que el grafo cubra los archivos del commit actual— la prueba `verify-graphify-manifest.mjs`
-  contra `git ls-files`, acá abajo.
-  Después del reindexado, probá que la cobertura declarada del grafo sea honesta:
-  ```bash
-  node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
-  ```
-  Cada archivo rastreado debe estar en `graphify-out/manifest.json` o llevar una exclusión con
-  razón en `contracts/graphify-exclusions.json`; una entrada del manifest que Git ya no rastrea es
-  un fantasma y se rechaza. El gate prueba contabilidad, no comprensión: un archivo indexado
-  todavía puede haber producido cero nodos, así que "cubierto" nunca significa "entendido".
+
+  Dice qué archivos cubre el repositorio y cuáles quedan afuera con motivo escrito. No necesita
+  ninguna herramienta que el protocolo no traiga: es Node y git, nada más.
+  **Límite:** dice que están inventariados, no que sean correctos.
+
 - `.vibe/SESSION.md` se archiva en `.vibe/sessions/AAAA-MM-DD-<tema>.md` y queda limpio para la sesión siguiente.
 - Artefacto distribuible opcional (dist.zip + checksums): `skills/deploy-zip.md`, sólo si el proyecto entrega uno.
 

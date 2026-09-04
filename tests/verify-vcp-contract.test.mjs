@@ -115,17 +115,21 @@ test('FALSIFICACIÓN · contract rejects the session-state gate, the retry rule 
   assert.equal(missingTemplate.some((item) => /missing documented failed-attempt section/u.test(item)), false);
 });
 
-test('FALSIFICACIÓN · contract rejects the backup seal ownership or its recording order dropped from SKILL.md', () => {
-  const missingOwnership = contractViolations((path) => path === 'SKILL.md'
+test('FALSIFICACIÓN · contract rejects the backup seal ownership or its recording order dropped from its file', () => {
+  // Las dos anclas se mudaron a `skills/integracion-graphify.md` cuando la integración con el grafo
+  // dejó de ser parte del camino obligatorio. La falsificación sigue al ancla, no al archivo que la
+  // tenía antes: lo que se prueba es que borrarla duela, no dónde está escrita.
+  const DOC = 'skills/integracion-graphify.md';
+  const missingOwnership = contractViolations((path) => path === DOC
     ? completeRead(path).replace('El sello lo registra el protocolo, no Graphify', 'el sello lo escribe Graphify')
     : completeRead(path));
-  assert.equal(missingOwnership.some((item) => /SKILL\.md: missing the backup seal is recorded by the protocol/u.test(item)), true);
+  assert.equal(missingOwnership.some((item) => /missing the backup seal is recorded by the protocol/u.test(item)), true);
   assert.equal(missingOwnership.some((item) => /missing documented backup ordering/u.test(item)), false);
 
-  const missingOrder = contractViolations((path) => path === 'SKILL.md'
+  const missingOrder = contractViolations((path) => path === DOC
     ? completeRead(path).replace('commit → graphify → record → check', 'en cualquier orden')
     : completeRead(path));
-  assert.equal(missingOrder.some((item) => /SKILL\.md: missing documented backup ordering/u.test(item)), true);
+  assert.equal(missingOrder.some((item) => /missing documented backup ordering/u.test(item)), true);
 });
 
 test('FALSIFICACIÓN · contract rejects unreadable, missing and stale-policy documentation', () => {

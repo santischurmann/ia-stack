@@ -51,7 +51,7 @@
     },
     {
       "limit_id": "backup-seal-is-protocol-owned-not-graphify-owned",
-      "file": "SKILL.md",
+      "file": "skills/integracion-graphify.md",
       "phrase": "El sello lo registra el protocolo, no Graphify",
       "why": "Es el mismo límite en el lugar operativo donde el agente corre el gate en Phase 8.2, y la razón por la que el orden commit → graphify → record → check importa. Sin esta frase, la próxima sesión que vea el sello atrasado en GRAPH_REPORT.md vuelve a cablear el gate contra esa línea y reintroduce el rechazo de un backup cuyo contenido estaba al día."
     },
@@ -69,7 +69,7 @@
     },
     {
       "limit_id": "obsidian-export-gate-skill-limit",
-      "file": "SKILL.md",
+      "file": "skills/integracion-graphify.md",
       "phrase": "No juzga la semántica de las notas ni si Graphify interpretó correctamente cada nota",
       "why": "La instrucción operativa debe conservar la misma frontera honesta que el README: destino y forma no prueban significado. Sin esta frase, una sesión puede cerrar el backup al ver un canvas válido aunque sus notas estén incompletas o mal interpretadas."
     },
@@ -81,7 +81,7 @@
     },
     {
       "limit_id": "graphify-gate-proves-bookkeeping",
-      "file": "SKILL.md",
+      "file": "skills/integracion-graphify.md",
       "phrase": "El gate prueba contabilidad, no comprensión",
       "why": "Es el mismo límite en el lugar operativo que lee quien corre el gate. Sin esta frase el agente reporta cobertura del grafo como si fuera entendimiento del código, y los archivos que dieron cero nodos no los revisa nadie."
     },

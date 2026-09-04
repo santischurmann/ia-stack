@@ -14,14 +14,14 @@ export const REQUIREMENTS = [
   ['INSTALL.md', /-ProjectDir\b/u, 'explicit PowerShell project installation'],
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'runtime plan gate'],
   ['SKILL.md', /verify-security-baseline\.mjs/u, 'mechanical security baseline'],
-  ['SKILL.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
+  ['skills/integracion-graphify.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
   ['README.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
   // Two halves of one promise, pinned apart because each fails on its own. Who owns the seal is
   // what stops somebody from wiring the gate back to the report's `Built from commit:` line — the
   // line Graphify leaves behind on a docs-only commit. The order is what makes the seal true:
   // recording before the commit binds the receipt to the previous HEAD.
-  ['SKILL.md', /El sello lo registra el protocolo, no Graphify/u, 'the backup seal is recorded by the protocol, never read from the Graphify report'],
-  ['SKILL.md', /commit → graphify → record → check/u, 'documented backup ordering'],
+  ['skills/integracion-graphify.md', /El sello lo registra el protocolo, no Graphify/u, 'the backup seal is recorded by the protocol, never read from the Graphify report'],
+  ['skills/integracion-graphify.md', /commit → graphify → record → check/u, 'documented backup ordering'],
   ['README.md', /Modelo de seguridad y límites/u, 'native security-model link'],
   ['README.md', /Research: investigar antes de especificar/u, 'research-first user workflow'],
   ['skills/gates.md', /verify-product-diagnostics\.mjs/u, 'six product-discovery diagnostics gate'],
@@ -31,7 +31,7 @@ export const REQUIREMENTS = [
   ['skills/research.md', /sin confundirlas con comprensión\s+semántica/u, 'research static-pass honesty boundary'],
   ['README.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
   ['README.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
-  ['SKILL.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
+  ['skills/integracion-graphify.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
   ['README.md', /verify-obsidian-export\.mjs check graphify-out\/obsidian/u, 'project-local Obsidian export gate'],
   ['skills/gates.md', /verify-audit-chain\.mjs/u, 'mechanical audit-chain gate'],
   ['SKILL.md', /--baseline <archivo>/u, 'security baseline for reviewed debt'],
@@ -62,8 +62,8 @@ export const REQUIREMENTS = [
   // always green and proves nothing. The promise that it runs from the source checkout is the whole
   // gate, so it is pinned as text and not left to whoever edits the phase later.
   ['SKILL.md', /nunca desde el runtime/u, 'runtime-sync gate runs from the source checkout, never against itself'],
-  ['SKILL.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
-  ['SKILL.md', /El gate prueba contabilidad, no comprensión/u, 'Graphify coverage honest limit'],
+  ['skills/integracion-graphify.md', /verify-graphify-manifest\.mjs check/u, 'mechanical Graphify coverage gate'],
+  ['skills/integracion-graphify.md', /El gate prueba contabilidad, no comprensión/u, 'Graphify coverage honest limit'],
   ['SECURITY.md', /dato no confiable/u, 'external-artifact trust boundary'],
   ['SECURITY.md', /no hace taint analysis/u, 'honest native-security limit'],
   ['SECURITY.md', /configuraciones peligrosas de GitHub Actions/u, 'documented GitHub Actions detection scope'],

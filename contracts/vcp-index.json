@@ -1,0 +1,1195 @@
+{
+  "schema": "vcp.index/1",
+  "why": "Que archivos cubre este repositorio y cuales quedan afuera con motivo escrito. Reemplaza la parte del grafo que el protocolo de verdad usaba, sin depender de ninguna herramienta externa.",
+  "entries": [
+    {
+      "path": ".agents/skills/vibecodeprotocols/SKILL.md",
+      "class": "documento"
+    },
+    {
+      "path": ".gitattributes",
+      "class": "otro"
+    },
+    {
+      "path": ".gitignore",
+      "class": "otro"
+    },
+    {
+      "path": ".vibe/AUDIT.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/COMPANY.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/DEBT.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/DECISIONS.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/LESSONS.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/PATTERNS.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/PROJECT.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/RETRO.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/SESSION.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/counters.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/handoffs/2026-08-29-sesion-gates-y-diseno.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/adopcion-y-recurrencia-completas-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/bloque-a-suite-clon-y-cobertura-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/caio-doce-dimensiones-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/candidatos-de-research-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/discovery-ancla-externa-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/discovery-sources-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/flake-cobertura-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/gates-comparan-rutas-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/intake-de-producto-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/mapa-de-bucle-completo-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/prd-completo-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/research-correccion-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/research-revalidacion-2026-08-30.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/sistema-diseno-verificable-2026-08-29.json",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/receipts/triangulate-como-fase-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "AGENTS.md",
+      "class": "documento"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "class": "documento"
+    },
+    {
+      "path": "INSTALL.md",
+      "class": "documento"
+    },
+    {
+      "path": "LICENSE",
+      "class": "otro"
+    },
+    {
+      "path": "README.md",
+      "class": "documento"
+    },
+    {
+      "path": "SECURITY.md",
+      "class": "documento"
+    },
+    {
+      "path": "SKILL.md",
+      "class": "documento"
+    },
+    {
+      "path": "contracts/ablation-scope.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/capability-matrix.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/coverage-scope.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/design-tokens.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/discovery-phase-plan.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/discovery-requirements.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/empty-probe.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/graphify-exclusions.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/honest-limits.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/research-citations.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/shell-coverage.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/triangulate-vectors.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/vcp-index.json",
+      "class": "contrato"
+    },
+    {
+      "path": "docs/ablation.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/discovery-packet.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/decisions/d001.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/decisions/d002.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/decisions/d003.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/decisions/d004.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d002.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d003.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d004.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/spec.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/views/run-001.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/mapa-del-protocolo.html",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/phase-decisions.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/phase-plan.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/plan.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/spec-ia-stack.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/spec.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/tasks.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/triangulate/triangulate-como-fase.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "examples/example-feature/plan.md",
+      "class": "documento"
+    },
+    {
+      "path": "examples/example-feature/spec.md",
+      "class": "documento"
+    },
+    {
+      "path": "examples/example-feature/tasks.json",
+      "class": "otro"
+    },
+    {
+      "path": "research/adversarial-productivity-audit-2026-08-23.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-complete-review-index.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-full-evidence-pass.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-functional-inventory.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-semantic-functional-ledger.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-semantic-functional-synthesis.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/build-semantic-ledger.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/codex-research-synthesis-2026-08-31.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/consolidate-semantic-review.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/corpus-structural-scan-2026-08-31.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/design-systems-2026-08-29.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/external-sources-2026-08-28.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/historical-inventory-2026-08-28.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/pin-revalidation-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/protocol-e2e-2026-08-14.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/require-artifact.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/research-completion-audit-2026-08-31.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-deep-evidence-2026-08-31.ndjson",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-full-evidence-summary-2026-08-31.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-functional-ledger-summary-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-functional-synthesis-2026-09-01.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-functional-synthesis-2026-09-01.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/semantic-review-consolidation-2026-08-31.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/source-matrix.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/_agent_reach_manifest.txt",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/agency-agents.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/agent-reach.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/airllm.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/aprende-skill.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/book-to-skill.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/caveman.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/claude-anatomy.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/claude-seo-ai.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/cyber-neo.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/engram.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/gentle-ai.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/gstack.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/i-have-adhd.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/jcode.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/mattpocock-skills.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/modo-tdah.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/multi-repo-2026-08-21.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/omniroute.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/paperclip.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/protocolo-muralla.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/reverse-skill.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/superpowers.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/the-architect.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/video-6ChZMEMJ8hA.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/vcp-canonical-spec-implementation-spec.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/vcp-implementation-spec.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/vcp-improvement-proposal.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/verify-full-evidence-pass.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/verify-semantic-deep-evidence.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/verify-semantic-functional-ledger.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/verify-semantic-review-index.mjs",
+      "class": "evidencia"
+    },
+    {
+      "path": "scripts/build-zip.sh",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/install.ps1",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/install.sh",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/pretooluse-red.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/ratchet.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-ablation.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-audit-chain.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-backup-state.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-capability-matrix.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-design-tokens.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-discovery-core.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-discovery-requirements.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-discovery-views.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-empty-probe.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-evidence-runner.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-evidence-trace.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-graphify-manifest.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-handoff-report.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-intake.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-lessons.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-menu-shape.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-obsidian-export.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-phase-decisions.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-phase-menu.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-plan-conflicts.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-product-diagnostics.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-receipt.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red-node.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red.ps1",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red.sh",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-research-candidates.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-research-citations.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-resume-state.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-runtime-sync.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-scope-diff.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-security-baseline.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-session-state.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-shell-coverage.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-spec-wordcap.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-test-bindings.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-triangulate.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-vcp-contract.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-vcp-coverage.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-vcp-index.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/vibe-memory.sh",
+      "class": "gate"
+    },
+    {
+      "path": "skills/caveman-tdd.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/deploy-zip.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/gates.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/integracion-graphify.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/orchestrator-opus.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/research.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/security-baseline.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/spec-plan-templates.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-chore.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-docs.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-green.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-red.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-refactor.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/subagent-triangulate.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/verificar-vcp.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/vibe-memory.md",
+      "class": "skill"
+    },
+    {
+      "path": "templates/ablation.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/adr.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/adoption.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/caio.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/implementation.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/loop-map.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/prd.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/recurrence.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/intake.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/phase-decisions.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/phase-plan.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/plan.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/research-candidates.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/spec.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/tasks.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/COMPANY.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/DEBT.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/DECISIONS.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/LESSONS.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/PATTERNS.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/PROJECT.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/RETRO.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/SESSION.md",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/vibe/counters.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "tests/_entorno.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/build-zip-script.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/coverage-scope.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/example-feature.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/fases-canonicas.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/home-intacto.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/install-runtime.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/pretooluse-red-bootstrap-emit.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/pretooluse-red-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/pretooluse-red-bootstrap-hook.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/pretooluse-red.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/protocolo-e2e.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/ratchet.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/require-artifact.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/self-checks.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/sin-dependencias-externas.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/spawn-budget.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/spawn-budget.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tracked-bytes.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ablation.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-audit-chain.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-backup-state.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-capability-matrix.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-design-tokens-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-design-tokens-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-design-tokens.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-bindings-contract.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-core-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-core-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-core.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-history.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-requirements-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-requirements-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-requirements-selftest.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-requirements.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-sources.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-views-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-views-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-discovery-views.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-empty-probe.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-evidence-runner.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-evidence-trace-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-evidence-trace-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-evidence-trace.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-graphify-manifest.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-handoff-report.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-intake.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-lessons.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-menu-shape.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-obsidian-export.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-phase-decisions-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-phase-decisions-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-phase-decisions.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-phase-menu.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-plan-conflicts.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-product-diagnostics.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-receipt-gate.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-gate.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-node-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-node-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-node.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-research-candidates.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-research-citations.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-resume-state.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-runtime-sync.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-scope-diff.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-security-baseline.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-session-state-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-session-state-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-session-state.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-shell-coverage.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-spec-wordcap.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-test-bindings-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-test-bindings-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-test-bindings.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-triangulate.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-contract.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-coverage-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-coverage-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-coverage-e2e.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-coverage.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-index-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-index-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-vcp-index.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/vibe-memory-archive.test.mjs",
+      "class": "prueba"
+    }
+  ],
+  "excluded": []
+}

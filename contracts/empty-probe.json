@@ -26,6 +26,15 @@
       "why": "Es una biblioteca de rutas seguras con un CLI minimo; sin subcomando valido sale 2. Lo que hace de verdad -confinar rutas al proyecto- lo prueban los gates que la importan, no esta sonda."
     },
     {
+      "script": "verify-ablation.mjs",
+      "args": [
+        "check",
+        "docs/ablation.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay ninguna corrida de limpieza que revisar, y eso no es un incumplimiento: es un proyecto que todavia no limpio nada. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por medida una ablacion que nunca ocurrio."
+    },
+    {
       "script": "verify-audit-chain.mjs",
       "args": [
         "check",
@@ -134,6 +143,24 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay ningun intake, y eso no es un incumplimiento: es un proyecto que todavia no arranco. El gate escribe VACIO y sale 0, con la frase que dice que no verifico nada. Escribir OK ahi seria vender por verificado un archivo que no existe."
+    },
+    {
+      "script": "verify-lessons.mjs",
+      "args": [
+        "check",
+        ".vibe/LESSONS.md"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay archivo de lecciones, y eso no es un incumplimiento: es un proyecto que todavia no registro ninguna. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por verificada una memoria de errores que no existe."
+    },
+    {
+      "script": "verify-menu-shape.mjs",
+      "args": [
+        "check",
+        "SKILL.md"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo VCP. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
     },
     {
       "script": "verify-obsidian-export.mjs",
@@ -310,31 +337,12 @@
       "why": "Correrlo ejecuta la suite entera con instrumentacion de cobertura: cuesta minutos y su resultado depende de la suite, no del directorio de trabajo. Excluido por costo, no porque se lo considere seguro: su comportamiento sin entradas NO esta probado por esta sonda."
     },
     {
-      "script": "verify-lessons.mjs",
+      "script": "verify-vcp-index.mjs",
       "args": [
-        "check",
-        ".vibe/LESSONS.md"
+        "check"
       ],
-      "expect": "empty",
-      "why": "Sobre un directorio vacio no hay archivo de lecciones, y eso no es un incumplimiento: es un proyecto que todavia no registro ninguna. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por verificada una memoria de errores que no existe."
-    },
-    {
-      "script": "verify-menu-shape.mjs",
-      "args": [
-        "check",
-        "SKILL.md"
-      ],
-      "expect": "empty",
-      "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo VCP. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
-    },
-    {
-      "script": "verify-ablation.mjs",
-      "args": [
-        "check",
-        "docs/ablation.json"
-      ],
-      "expect": "empty",
-      "why": "Sobre un directorio vacio no hay ninguna corrida de limpieza que revisar, y eso no es un incumplimiento: es un proyecto que todavia no limpio nada. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por medida una ablacion que nunca ocurrio."
+      "expect": "reject",
+      "why": "En un directorio vacio no hay repositorio git, asi que git ls-files falla y el gate rechaza diciendo que no pudo preguntar. No es un verde ni un vacio: es no haber podido medir, y eso se reporta."
     }
   ]
 }
