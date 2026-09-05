@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tres defectos que sólo aparecieron al abrir el tablero en un navegador.** La suite estaba verde
+  y la página estaba rota: es la clase de error que se ve mirando el producto, no corriendo sus
+  pruebas.
+  - **El HTML usaba cinco clases CSS y ninguna estaba definida.** Ni el archivo que escribe `build`
+    ni lo que sirve `serve` traían una sola regla de estilo: la primera vez que se abrió era una
+    tabla desnuda, con texto casi negro sobre fondo negro. Ahora los estilos van **embebidos**, con
+    paleta para tema claro y oscuro. La página **sigue sin pedir nada a la red** —sin scripts, sin
+    fuentes, sin hojas externas—: un tablero con datos de todos tus proyectos que llamara a un
+    servidor ajeno le contaría a ese servidor cuándo lo abrís. Hay una prueba que verifica que toda
+    clase usada esté definida, y otra que no haya una sola referencia externa.
+  - **Decía «Generado el (sin fecha)»** arriba de datos frescos, que es peor que no poner nada. La
+    fecha se calcula **en cada pedido**, no al arrancar: un servidor que queda abierto de un día para
+    el otro seguiría sellando la página con la fecha en que se levantó.
+  - **Un `<div>` sin cerrar.** El contenedor de scroll se abría en las dos tablas y se cerraba en
+    una. Ahora una prueba cuenta aperturas y cierres de cada etiqueta.
+
 - **El tablero se sirve en localhost, y muestra lo que faltaba del pedido original.** La versión
   anterior generaba un archivo y mostraba proyectos, sesiones, turnos, tokens y una banda de horas
   por proyecto. Faltaban cuatro cosas que se habían pedido y no estaban.

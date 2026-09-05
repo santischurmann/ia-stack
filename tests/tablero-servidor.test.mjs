@@ -166,3 +166,18 @@ test('sin modelo inyectado lo construye de la raíz de proyectos, igual que buil
   assert.equal(escrito.estado, 200);
   assert.match(escrito.cuerpo, /0 proyecto\(s\)|sobre 0/u, 'una raíz inexistente da un tablero vacío, no un error');
 });
+
+test('la página servida dice cuándo se armó, no «(sin fecha)»', () => {
+  // El servidor no le pasaba `hoy` al modelo, así que la página salía con el marcador de ausencia
+  // aunque se acabara de generar. Se vio abriéndola, no corriendo la suite: el sello decía «(sin
+  // fecha)» arriba de datos frescos, que es peor que no poner nada.
+  const { estado, crear } = servidorFalso();
+  main(['serve'], () => {}, () => {}, {
+    crear,
+    raizProyectos: join(tmpdir(), 'vcp-no-existe-jamas'),
+  });
+  const escrito = { cuerpo: '' };
+  estado.manejador({ url: '/', method: 'GET' }, { writeHead() {}, end(c) { escrito.cuerpo = c; } });
+  assert.match(escrito.cuerpo, /\d{4}-\d{2}-\d{2}/u, 'tiene que poner una fecha de verdad');
+  assert.doesNotMatch(escrito.cuerpo, /\(sin fecha\)/u);
+});

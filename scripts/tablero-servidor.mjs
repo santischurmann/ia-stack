@@ -76,7 +76,10 @@ export function main(args = process.argv.slice(2), write = console.log, writeErr
   // La MISMA raiz que usa `build`: las transcripciones del agente. Sin esto el servidor leia el
   // directorio de trabajo y devolvia un tablero vacio que parecia correcto.
   const raiz = io.raizProyectos ?? join(io.casa ?? homedir(), '.claude', 'projects');
-  const { crear = createServer, obtenerModelo = () => construirModelo(raiz, io) } = io;
+  // La fecha se calcula EN CADA PEDIDO, no al arrancar: un servidor que queda abierto de un dia
+  // para el otro seguiria sellando la pagina con la fecha en que se levanto. Sin esto salia
+  // '(sin fecha)' arriba de datos frescos, que es peor que no poner nada.
+  const { crear = createServer, obtenerModelo = () => construirModelo(raiz, { ...io, hoy: io.hoy ?? new Date().toISOString().slice(0, 10) }) } = io;
   const servidor = crear((req, res) => manejar(req, res, obtenerModelo));
   servidor.on('error', (error) => {
     writeError(error.code === 'EADDRINUSE'

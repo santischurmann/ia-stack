@@ -203,6 +203,35 @@ export function hayPrecios(precios) {
 
 // Constante para el salto de linea: escribirlo literal adentro de un template lo convierte en un
 // salto real al pasar por una herramienta que reescribe el archivo, y eso ya rompio este modulo.
+/** Los estilos, EMBEBIDOS. La pagina es autocontenida y no pide nada a la red -- misma razon por la
+ * que no tiene scripts ni fuentes externas: un tablero con datos de todos tus proyectos que llamara
+ * a un servidor ajeno le contaria a ese servidor cuando lo abris.
+ *
+ * Los colores se declaran para los dos temas. Sin esto la pagina hereda el del navegador y queda
+ * texto negro sobre fondo negro, que es exactamente como se vio la primera vez que se abrio. */
+const ESTILOS = `<style>
+:root { --fondo: #fbfbfa; --texto: #1a1a19; --suave: #6b6b68; --linea: #e3e3e0; --acento: #b45309; }
+@media (prefers-color-scheme: dark) {
+  :root { --fondo: #1a1a19; --texto: #ededea; --suave: #9a9a96; --linea: #33332f; --acento: #f0a868; }
+}
+body { background: var(--fondo); color: var(--texto); margin: 0; padding: 2rem 1.5rem; line-height: 1.5;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+h1 { font-size: 1.6rem; margin: 0 0 .25rem; letter-spacing: -.02em; }
+h2 { font-size: 1.1rem; margin: 2.5rem 0 .5rem; }
+p { max-width: 70ch; }
+.sello, .total { color: var(--suave); font-size: .875rem; }
+.sin { color: var(--suave); font-style: italic; }
+.aviso { border-left: 3px solid var(--acento); padding: .6rem .9rem; background: color-mix(in srgb, var(--acento) 8%, transparent); border-radius: 0 4px 4px 0; }
+table { border-collapse: collapse; width: 100%; font-size: .875rem; }
+.tabla { overflow-x: auto; margin: 1rem 0; }
+th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--linea); vertical-align: top; }
+th { font-weight: 600; color: var(--suave); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:hover { background: color-mix(in srgb, var(--texto) 4%, transparent); }
+ul { max-width: 70ch; }
+li { margin: .4rem 0; }
+</style>`;
+
 const SALTO = String.fromCharCode(10);
 const numero = (n) => new Intl.NumberFormat('es-AR').format(Math.round(n));
 
@@ -240,10 +269,10 @@ export function diasHtml(proyectos) {
   return [
     '<h2>Horas por día</h2>',
     '<p>La misma banda que arriba, partida por día. El piso es lo que tiene evidencia; el techo, lo más que se puede sostener.</p>',
-    '<table>',
+    '<div class="tabla"><table>',
     '<thead><tr><th>Día</th><th>Proyecto</th><th>Horas (banda)</th><th>Huecos</th></tr></thead>',
     `<tbody>${SALTO}${filas.join(SALTO)}${SALTO}</tbody>`,
-    '</table>',
+    '</table></div>',
   ].join(SALTO);
 }
 
@@ -277,12 +306,13 @@ export function renderizar(modelo) {
     : '';
 
   return [
+    ESTILOS,
     '<h1>Tablero de ia-stack</h1>',
     `<p class="sello">Generado el ${escapar(generadoEn)}. Muestra el estado de ese momento, no el de ahora.</p>`,
-    '<table>',
+    '<div class="tabla"><table>',
     '<thead><tr><th>Proyecto</th><th>Sesiones</th><th>Turnos</th><th>Tokens de salida</th><th>Horas (banda)</th><th>Costo</th><th>Fases</th><th>Mejoras</th><th>Sesión</th></tr></thead>',
     `<tbody>\n${filas}\n</tbody>`,
-    '</table>',
+    '</table></div>',
     `<p class="total">${numero(totalTokens)} tokens en total, sobre ${proyectos.length} proyecto(s).</p>`,
     diasHtml(proyectos),
     avisoDinero,

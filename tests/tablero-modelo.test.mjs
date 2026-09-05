@@ -329,3 +329,65 @@ test('estadoDeFases con phase_order pero ninguna decisión no dice que haya una 
   assert.equal(e.ultima, null);
   assert.deepEqual(e.faltan, ['1', '2']);
 });
+
+// --- La página tiene que verse ------------------------------------------------------------------
+//
+// El render usaba cinco clases —`n`, `sello`, `total`, `aviso`, `sin`— y NINGUNA estaba definida:
+// ni el archivo que escribe `build` ni lo que sirve `serve` traían una sola regla de estilo. Nadie
+// lo vio hasta que se abrió el tablero en un navegador. Es el defecto que sólo aparece cuando mirás
+// el producto en vez de correr su suite.
+//
+// Los estilos van EMBEBIDOS: la página es autocontenida y no pide nada a la red, que es la misma
+// razón por la que no tiene scripts ni fuentes externas.
+
+test('la página trae sus estilos, y define todas las clases que usa', () => {
+  const html = renderizar({ generadoEn: '2026-09-05', proyectos: [] });
+  assert.match(html, /<style>/u, 'sin hoja de estilos la tabla se ve como texto plano');
+  const usadas = [...new Set([...html.matchAll(/class="([a-z]+)"/gu)].map((m) => m[1]))];
+  const definidas = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+  for (const clase of usadas) {
+    // `String.raw`: en un template común, `\b` es el carácter backspace y no el límite de palabra
+    // del regex, así que el patrón buscaba algo que ningún CSS contiene. Error ya cometido antes.
+    assert.match(definidas, new RegExp(String.raw`\.${clase}\b`, 'u'), `la clase "${clase}" se usa y no está definida`);
+  }
+});
+
+test('la página no pide nada a la red: sin scripts, sin fuentes ni hojas externas', () => {
+  // Un tablero con datos de todos tus proyectos que llame a un servidor ajeno le contaría a ese
+  // servidor cuándo lo abrís. Autocontenido no es una preferencia estética.
+  const html = renderizar({ generadoEn: '2026-09-05', proyectos: [] });
+  assert.doesNotMatch(html, /<script/u);
+  assert.doesNotMatch(html, /https?:\/\//u);
+  assert.doesNotMatch(html, /<link/u);
+  assert.doesNotMatch(html, /@import/u);
+});
+
+test('la tabla puede desbordar sin romper la página', () => {
+  // Con nueve columnas, en una ventana angosta el ancho se va. Que la tabla scrollee sola es lo que
+  // evita que las últimas columnas queden invisibles, que es como se vio la primera vez.
+  const html = renderizar({ generadoEn: '2026-09-05', proyectos: [] });
+  assert.match(html, /overflow-x:\s*auto/u);
+});
+
+test('FALSIFICACIÓN · el HTML cierra todos los contenedores que abre', () => {
+  // Un `<div>` sin cerrar deja el resto de la página adentro de un contenedor con scroll, y en
+  // pantalla aparece como un hueco vacío de una pantalla entera. Se vio abriéndolo, no en la suite:
+  // el HTML era "válido" para cualquier parser tolerante y la página estaba rota igual.
+  const html = renderizar({
+    generadoEn: '2026-09-05',
+    proyectos: [{
+      nombre: 'x', sesiones: 1, turnos: 1, lineasRepetidas: 0,
+      tokens: { entrada: 1, salida: 1, cacheLeido: 0, cacheEscrito: 0 }, modelos: [],
+      horas: { piso: 1, techo: 2, descartado: 0, umbralMinutos: 5, corteMinutos: 120, huecos: 1 },
+      dias: [{ dia: '2026-09-05', piso: 1, techo: 2, descartado: 0, umbralMinutos: 5, corteMinutos: 120, huecos: 1 }],
+      fases: { ultima: null, faltan: [], completo: false, cerradas: [] },
+      mejoras: { total: 0, abiertas: 0, propuestas: 0, sinCerrar: [] },
+      sesion: { feature: null, estado: null },
+    }],
+  });
+  for (const etiqueta of ['div', 'table', 'tbody', 'thead', 'ul']) {
+    const abre = (html.match(new RegExp(String.raw`<${etiqueta}[\s>]`, 'gu')) ?? []).length;
+    const cierra = (html.match(new RegExp(`</${etiqueta}>`, 'gu')) ?? []).length;
+    assert.equal(abre, cierra, `<${etiqueta}>: ${abre} abiertos y ${cierra} cerrados`);
+  }
+});
