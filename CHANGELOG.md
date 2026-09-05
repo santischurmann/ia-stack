@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Lo que se hace «cada 7 días, al abrir sesión» ahora se pregunta donde la sesión abre.** Los tres
+  chequeos de período —tablero, bucle de auto-mejora y limpieza— vivían **sólo en la fase 9**, que es
+  la última, y su propia prosa decía correrse al arrancar. Un agente que hace una tarea normal
+  —Bootstrap, Intake, Build, Test, Deploy— nunca llega a la fase 9, así que **el período no se
+  cumplía nunca**: el recordatorio estaba escrito en el cierre. Bootstrap los corre ahora, y una
+  regla por forma lo fija: si mañana se agrega un cuarto chequeo de período y no se nombra ahí, la
+  suite se pone roja.
+
 - **Tercera ronda, y el propio ejercicio destapó el límite que la bloqueaba.** Correr el bucle dos
   veces el mismo día no era posible: el nombre del registro **es** la fecha, así que la segunda
   ronda sobrescribía la primera o se metía en su archivo pasando el tope de cuatro. Se admite un

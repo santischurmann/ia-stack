@@ -173,3 +173,48 @@ test('FALSIFICACIÓN · la regla ve el conteo y no confunde una cifra cualquiera
   assert.deepEqual(conteosDeChequeos('42 gates declarados'), ['42 gates']);
   assert.deepEqual(conteosDeChequeos('once fases, 7 días, 100 % de cobertura'), []);
 });
+
+// --- Lo que se hace «al abrir sesión» tiene que estar donde la sesión abre ----------------------
+//
+// Tres cosas del protocolo se corren cada 7 días —el tablero, el bucle de auto-mejora y la
+// limpieza— y cada una trae su comando `due` que dice si toca. Las tres viven en la **fase 9**, que
+// es la última, y su propia prosa dice «cada 7 días, al abrir sesión».
+//
+// Medido el 2026-09-05: Bootstrap (fase 1) no nombraba ninguna. Un agente que hace una tarea normal
+// —Bootstrap, Intake, Build, Test, Deploy— nunca llega a la fase 9, así que nunca corre los `due` y
+// el período no se cumple nunca. La instrucción decía «al abrir sesión» y vivía en el cierre.
+//
+// La regla es por forma: se buscan los comandos `due` que el documento publica y se exige que la
+// fase 1 los nombre. Si mañana se agrega un cuarto, entra solo.
+
+export function comandosDeParaSiToca(texto) {
+  return [...new Set([...texto.matchAll(/scripts\/([\w-]+\.mjs) due\b/gu)].map((m) => m[1]))].sort();
+}
+
+export function cuerpoDeFase(texto, numero) {
+  const inicio = texto.search(new RegExp(`^## PHASE ${numero.replace('.', '\.')} `, 'mu'));
+  if (inicio === -1) return null;
+  const resto = texto.slice(inicio);
+  const siguiente = resto.slice(1).search(/^## PHASE /mu);
+  return siguiente === -1 ? resto : resto.slice(0, siguiente + 1);
+}
+
+test('los chequeos de período que dicen «al abrir sesión» están nombrados en Bootstrap', SOLO_FUENTE, () => {
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const periodicos = comandosDeParaSiToca(skill);
+  assert.ok(periodicos.length >= 3, `tiene que haber comandos de período, o esta prueba no mira nada (${periodicos.length})`);
+  const bootstrap = cuerpoDeFase(skill, '1');
+  assert.ok(bootstrap, 'no se encontró la fase 1');
+  const ausentes = periodicos.filter((c) => !bootstrap.includes(c));
+  assert.deepEqual(ausentes, [], 'un chequeo que dice correrse al abrir sesión y sólo vive en la última fase no se corre nunca');
+});
+
+test('FALSIFICACIÓN · el barrido lee los comandos de período y recorta la fase pedida', () => {
+  assert.deepEqual(comandosDeParaSiToca('node x/scripts/verify-a.mjs due\ny scripts/verify-b.mjs due --today x'), ['verify-a.mjs', 'verify-b.mjs']);
+  assert.deepEqual(comandosDeParaSiToca('scripts/verify-c.mjs check'), []);
+  const doc = '## PHASE 1 — BOOTSTRAP\nuno\n## PHASE 1.5 — INTAKE\ndos\n## PHASE 2 — RESEARCH\ntres';
+  assert.match(cuerpoDeFase(doc, '1'), /uno/u);
+  assert.doesNotMatch(cuerpoDeFase(doc, '1'), /dos/u);
+  assert.match(cuerpoDeFase(doc, '1.5'), /dos/u);
+  assert.equal(cuerpoDeFase(doc, '7'), null);
+});

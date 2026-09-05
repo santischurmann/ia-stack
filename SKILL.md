@@ -133,6 +133,21 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    pudo correr y la frescura del runtime queda sin verificar — no lo reportes como verde.
    El gate detecta que la copia difiere, no que la copia sea correcta ni que el fuente lo sea: dos
    copias idénticas de un gate roto pasan igual. Compara contenido, no permisos.
+1c. **Lo que se hace cada 7 días — se pregunta ACÁ, que es donde la sesión abre.** Tres cosas del
+   protocolo tienen período propio, y cada una sabe sola si le toca. Los tres comandos son de
+   lectura, no escriben nada, y salen `0` incluso cuando no toca:
+   ```bash
+   node .vibe/vcp-runtime/scripts/tablero.mjs due
+   node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
+   node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
+   ```
+   El que diga `TOCA:` se atiende en su fase —el tablero y el bucle en la 9.0 y 9.0.1, la limpieza
+   en el resto de la fase 9— y el que diga `OK:` o `VACÍO:` se deja pasar sin más. **Preguntar acá
+   es la única forma de que el período se cumpla:** hasta el 2026-09-05 los tres vivían sólo en la
+   fase 9, que es la última, y un agente que hace una tarea normal nunca llega ahí. La instrucción
+   decía «al abrir sesión» y estaba escrita en el cierre. Una prueba lo fija: si mañana se agrega un
+   cuarto chequeo de período y no se nombra acá, la suite se pone roja.
+
 2. Detect stack: `ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null`.
 3. Leer `.vibe/PROJECT.md`, `SESSION.md`, `DECISIONS.md`, `RETRO.md` (últimas 2 entradas) y `LESSONS.md` (entradas `status: active`), si existen. El protocolo completo de lecciones —confirmación, dedup, retiro, decaimiento y recall al tocar— está en `skills/vibe-memory.md` § LESSONS PROTOCOL.
 4. **Engram recall (opcional, best-effort, nunca bloqueante)** — buscá `mem_context`/`mem_search` en tu tool list (directas o diferidas). Si aparecen: `ToolSearch` para cargarlas, `mem_context` con el proyecto actual, ojeá 1-2 hits de `mem_search("vcp/<project>/<feature-slug>/gate-state")`. Si no aparecen: seguir sin más, sin reintento — pero SÍ mencionarlo en el paso 7. Esto es color adicional, **nunca** reemplaza el re-detect por evidencia del paso 5.
