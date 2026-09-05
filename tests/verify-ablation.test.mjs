@@ -1603,3 +1603,33 @@ test('FALSIFICACIÓN · la regla ve el sha del comando y deja pasar el de la pro
   assert.deepEqual(shasEnComando('el commit `f23c832` quedó fuera de la historia'), []);
   assert.deepEqual(shasCitados('el commit `f23c832` quedó fuera'), ['f23c832']);
 });
+
+// --- La versión que SKILL.md afirma tener etiquetada --------------------------------------------
+//
+// `SKILL.md:8` decía «Versión 1.4.0 · etiquetada como `v1.4.0` en git» y las únicas etiquetas del
+// repositorio eran `v1.0.0` y `v1.1.0`. Una promesa visible al usuario, falsa, en la primera página
+// del documento que vende la honestidad del protocolo.
+//
+// Una fila en el contrato NO sirve acá: ese mecanismo comprueba que la frase esté escrita, no que
+// sea cierta — es justo el modo de falla que este hallazgo ejemplifica. Hay que preguntarle a git.
+
+export function versionEtiquetada(texto) {
+  const m = texto.match(/\*\*Versi[oó]n:\*\*\s*([\d.]+)[^\n]*etiquetada como `v([\d.]+)`/u);
+  return m === null ? null : { declarada: m[1], etiqueta: m[2] };
+}
+
+test('la etiqueta de git que SKILL.md dice tener existe de verdad', SOLO_FUENTE, (t) => {
+  const v = versionEtiquetada(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  // Si el documento NO afirma llevar una etiqueta, no hay nada que verificar: la regla castiga la
+  // afirmación falsa, nunca el silencio. Obligar a afirmar una sería empujar a inventarla.
+  if (v === null) return t.skip('SKILL.md no afirma llevar ninguna etiqueta de git: no hay promesa que comprobar');
+  assert.equal(v.declarada, v.etiqueta, 'la versión declarada y la etiqueta que dice llevar tienen que ser la misma');
+  const r = spawnSync('git', ['rev-parse', '--verify', `v${v.etiqueta}`], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(r.status, 0, `SKILL.md afirma la etiqueta v${v.etiqueta} y git no la tiene: ${(r.stderr || '').trim()}`);
+});
+
+test('FALSIFICACIÓN · la regla lee la versión de la prosa y no se traga otra cosa', () => {
+  assert.deepEqual(versionEtiquetada('**Versión:** 1.4.0 · etiquetada como `v1.4.0` en git.'), { declarada: '1.4.0', etiqueta: '1.4.0' });
+  assert.deepEqual(versionEtiquetada('**Versión:** 2.0.0 · etiquetada como `v1.9.9` en git.'), { declarada: '2.0.0', etiqueta: '1.9.9' });
+  assert.equal(versionEtiquetada('sin versión'), null);
+});

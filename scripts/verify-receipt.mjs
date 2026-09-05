@@ -377,6 +377,10 @@ export function validateAcceptanceCriteria(acceptanceCriteria, cwd, options, dec
  * honest when it's paired with why nothing was measured, never a silent default. */
 export function validateMeasurements(measurements) {
   if (!Array.isArray(measurements)) return { ok: false, reason: 'measurements must be an array' };
+  // Un recibo sin una sola medicion no es un recibo: es una afirmacion sin numero. `evidence` ya se
+  // exigia no vacio y `measurements` no, aunque los dos estaban en la lista de requeridos. Medido
+  // sobre el corpus el 2026-09-04: 15 recibos, 107 mediciones, ninguno con el array vacio.
+  if (measurements.length === 0) return { ok: false, reason: 'measurements requires al menos una medición: un recibo sin números no mide nada' };
   for (const m of measurements) {
     if (!m || typeof m !== 'object' || Array.isArray(m) || !nonEmptyString(m.metric)) {
       return { ok: false, reason: 'measurement entry missing a non-empty metric name' };
@@ -385,6 +389,13 @@ export function validateMeasurements(measurements) {
     if (m.measured) {
       if (typeof m.before !== 'number' || typeof m.after !== 'number') {
         return { ok: false, reason: `${m.metric}: measured=true requires numeric before/after` };
+      }
+      // -1 es el centinela de "no lo medi", y SKILL.md lo promete por escrito desde antes que el
+      // codigo lo hiciera: solo vale junto a measured:false y un motivo. Declararlo como MEDIDO es
+      // la forma exacta de vender una ausencia de medicion como medicion, y pasaba en verde --
+      // dos veces en recibos reales de este repositorio, encontradas el 2026-09-04.
+      if (m.before === -1 || m.after === -1) {
+        return { ok: false, reason: `${m.metric}: measured=true no admite el centinela -1; si no lo mediste, declaralo con measured=false y su motivo` };
       }
     } else {
       if (m.before !== -1 || m.after !== -1) return { ok: false, reason: `${m.metric}: measured=false requires before and after to both be -1` };

@@ -119,6 +119,10 @@
       "class": "evidencia"
     },
     {
+      "path": ".vibe/sessions/2026-09-04-lanzamiento-ia-stack.md",
+      "class": "evidencia"
+    },
+    {
       "path": "AGENTS.md",
       "class": "documento"
     },
@@ -920,6 +924,10 @@
     },
     {
       "path": "tests/ratchet.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/readme-comandos.test.mjs",
       "class": "prueba"
     },
     {

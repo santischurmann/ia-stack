@@ -190,13 +190,23 @@ sea la decisión correcta, ni que la persona la haya entendido.
 | **[`SECURITY.md`](SECURITY.md)** | **Modelo de seguridad y límites**. |
 | **[`INSTALL.md`](INSTALL.md)** | Instalación y desinstalación en detalle. |
 
-Tres comandos que vas a usar seguido, y que viven en el runtime instalado:
+Comandos que vas a usar seguido, y que viven en el runtime instalado:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check
+node .vibe/vcp-runtime/scripts/verify-feature-activa.mjs check
 node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
-node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check
+node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
 ```
+
+Dos que necesitan que les digas sobre qué mirar, con sus argumentos completos:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task T01 --base HEAD
+node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check .vibe/backup.json
+```
+
+Una prueba corre los comandos de este archivo y falla si alguno muere con `usage:`. Hasta el
+2026-09-04 dos de los tres publicados no corrían: les faltaban argumentos obligatorios.
 
 Y el export del grafo, si usás esa integración:
 `verify-obsidian-export.mjs check graphify-out/obsidian`.

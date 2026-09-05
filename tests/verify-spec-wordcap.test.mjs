@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
@@ -9,6 +9,14 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-spec-wordcap.mjs');
 const { QUALITY_FLAG, USAGE, WORD_CAP, checkSpecQuality, countSpecWords, main } = await import(pathToFileURL(script).href);
+
+import { esRuntimeInstalado } from './_entorno.mjs';
+
+// Self-check: mide las plantillas de ESTE checkout. El instalador las copia, pero quien las verifica
+// es el repositorio que las publica.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 
 const VALID_SPEC = `# Spec: billing\n\n## Problem / Problema\nEl cobro falla.\n\n## Discovery / Investigación previa\nSe revisó la evidencia.\n\n## Target Users / Usuarios\nOperadores.\n\n## Acceptance Criteria / Criterios de aceptación\n- [ ] **AC1:** GIVEN un pago pendiente, WHEN se reintenta, THEN se registra un resultado.\n- [ ] **AC2:** THE SYSTEM SHALL conservar el recibo.\n\n## Constraints / Restricciones\n- No dependencias nuevas.\n\n## Non-Goals / No-Goals\n- No se cambia la facturación.\n\n## Stack & Dependencies\n- Node nativo.\n\n## Definition of Done (DoD)\n- [ ] tests verdes\n`;
 
@@ -121,4 +129,42 @@ test('FALSIFICACIÓN · con --quality, una spec bajo el tope pero mal formada se
   const salida = [];
   assert.equal(main(['check', 'docs/spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, write: (l) => salida.push(l), writeError: (l) => errors.push(l) }), 0, errors.join(' || '));
   assert.ok(salida.at(-1).includes('quality shape valid'));
+});
+
+// --- Las plantillas de spec que el protocolo distribuye ------------------------------------------
+//
+// `SKILL.md:469` manda generar `docs/spec.md` con la plantilla de `skills/spec-plan-templates.md`, y
+// esa plantilla era rechazada por este mismo gate en **7 de sus 8 secciones**: tenía encabezados en
+// inglés sin la mitad castellana, y no tenía sección Discovery en absoluto. Medido el 2026-09-04.
+//
+// Había DOS plantillas de spec divergentes: `templates/spec.md` con las ocho correctas —la que el
+// contrato ancla como canónica— y la embebida, vieja, que es la que el protocolo nombraba. Quien
+// siguiera la instrucción al pie de la letra escribía una spec que su propio gate rechazaba.
+//
+// La regla mira las DOS, y por forma: cualquier plantilla de spec que el repositorio publique tiene
+// que llevar los encabezados que este gate exige. Sólo se comprueban las secciones — el resto de las
+// violaciones (placeholders sin llenar, gramática de los criterios) son esperables en una plantilla
+// vacía y marcarlas sería exigirle a un molde que esté lleno.
+
+const FALTA_SECCION = /^missing required section:/u;
+
+export function seccionesFaltantes(texto) {
+  return checkSpecQuality(texto).filter((v) => FALTA_SECCION.test(v));
+}
+
+test('las dos plantillas de spec que el protocolo publica llevan las secciones que el gate exige', SOLO_FUENTE, () => {
+  const canonica = readFileSync(join(repoRoot, 'templates', 'spec.md'), 'utf8');
+  assert.deepEqual(seccionesFaltantes(canonica), [], 'templates/spec.md es la plantilla canónica');
+
+  const skill = readFileSync(join(repoRoot, 'skills', 'spec-plan-templates.md'), 'utf8');
+  const bloque = skill.match(/## TEMPLATE: docs\/spec\.md[\s\S]*?```markdown\n([\s\S]*?)```/u);
+  assert.ok(bloque, 'no se encontró la plantilla embebida: si se movió, esta prueba dejó de mirar lo que dice mirar');
+  assert.deepEqual(seccionesFaltantes(bloque[1]), [], 'la plantilla que SKILL.md manda usar tiene que pasar el gate de spec');
+});
+
+test('FALSIFICACIÓN · sacarle una sección a la plantilla la pone roja', () => {
+  const completa = readFileSync(join(repoRoot, 'templates', 'spec.md'), 'utf8');
+  const sinDiscovery = completa.replace('## Discovery / Investigación previa', '## Otra cosa');
+  assert.equal(seccionesFaltantes(sinDiscovery).length, 1);
+  assert.match(seccionesFaltantes(sinDiscovery)[0], /Discovery/u);
 });

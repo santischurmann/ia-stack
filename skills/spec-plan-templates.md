@@ -19,13 +19,17 @@ Use verbatim. Replace `<placeholders>`. Config menu (Phase 3 SPEC / Phase 4 PLAN
 
 **Date:** <YYYY-MM-DD> | **Status:** Draft | Approved
 
-## Problem
+## Problem / Problema
 <1-3 sentences.>
 
-## Target Users
+## Discovery / Investigación previa
+<Qué se leyó y midió antes de especificar, con la fuente. Si no hubo Discovery, decilo: «sin
+Discovery» es una declaración, no un hueco.>
+
+## Target Users / Usuarios
 <Who, role, context, frequency.>
 
-## Acceptance Criteria
+## Acceptance Criteria / Criterios de aceptación
 Each criterion must be testable and use one of these forms:
 - Event/flow: `GIVEN <state>, WHEN <action>, THEN <observable result>`
 - Invariant: `THE SYSTEM SHALL <observable invariant>`
@@ -37,16 +41,16 @@ Draft-only ambiguity marker: `[NEEDS CLARIFICATION: <specific question>]`. A mar
 spec gate: resolve it with the user or remove its affected scope before Status becomes Approved;
 Plan and Build never proceed with one present.
 
-## Constraints
+## Constraints / Restricciones
 - <library/API constraint, perf budget, security constraint>
 
-## Non-Goals
+## Non-Goals / No-Goals
 <skip if CONFIG=minimal> — explicit exclusions.
 
 ## Stack & Dependencies
 - Runtime: <detected> · Test runner: <vitest|pytest|go test|...> · New deps: <none|pkg@ver — why>
 
-## Definition of Done
+## Definition of Done (DoD)
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
 - [ ] Coverage 100% for every metric the runner measures (lines/branches/functions), lint 0, typecheck 0

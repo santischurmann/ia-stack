@@ -20,7 +20,14 @@ const SENSITIVE_ARTIFACT = /(?:^|\/)(?:\.env(?:\.|$)|id_rsa|[^/]+\.(?:pem|key))$
 // literal (with or without `${}` interpolation mixed into literal text) is just as much a
 // hardcoded secret as one in a plain string — found evading this exact detector during the
 // 2026-08-24 adversarial audit (research/adversarial-productivity-audit-2026-08-23.md).
-const SECRET_ASSIGNMENT = /(?:api[_-]?key|secret|password|token|private[_-]?key)\s*[:=]\s*(['"`])(?=.{8,})/iu;
+// La comilla opcional antes del separador es lo que hace visible el caso JSON: `{ "api_key": "..." }`
+// tenia una comilla de cierre entre el nombre y los dos puntos, y el detector exigia que estuvieran
+// pegados. La MISMA credencial en .js, .env y .yaml si disparaba, asi que el archivo se escaneaba y
+// el patron fallaba. Medido el 2026-09-04 sobre los 210 archivos rastreados de codigo y manifiesto:
+// el parche no agrega un solo hallazgo nuevo -- cero falsos positivos sobre el arbol real -- y cierra
+// el hueco. Los benignos siguen callados: valor vacio, referencia a process.env, nulo, y por debajo
+// del largo minimo.
+const SECRET_ASSIGNMENT = /(?:api[_-]?key|secret|password|token|private[_-]?key)["']?\s*[:=]\s*(['"`])(?=.{8,})/iu;
 // Sin comillas: la forma de un archivo .env, que es donde mas viven las credenciales de verdad.
 // Un `.env.production` con `DATABASE_PASSWORD=supersecreto` pasaba en verde porque el detector de
 // arriba exige una comilla despues del `=`. Reproducido el 2026-08-28 atacando este mismo gate.

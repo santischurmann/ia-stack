@@ -7,6 +7,34 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Ocho defectos propios, encontrados leyendo un repositorio ajeno.** Se estudió
+  [system-design-101](https://github.com/ByteByteGoHq/system-design-101) entero —91.093 palabras,
+  13 lectores, ~40 propuestas, tres lentes adversariales cada una— y **ninguna propuesta sobrevivió**:
+  el motivo es de categoría, ese material es arquitectura de *runtime* y esto es un protocolo de
+  proceso sobre un árbol de git. Nada se copió: su licencia es CC BY-NC-ND. Lo que salió fueron ocho
+  defectos **de ia-stack**, destapados al auditar el repositorio para poder refutar:
+  - 🔴 **Una credencial dentro de un `.json` no se detectaba.** El patrón exigía el nombre de la
+    clave pegado al separador y en JSON hay una comilla en el medio; la misma credencial en `.js`,
+    `.env` y `.yaml` sí disparaba. Arreglo de un carácter, con **cero falsos positivos** sobre los
+    210 archivos rastreados.
+  - 🔴 **El código contradecía a `SKILL.md` por escrito.** El documento promete que `-1` sólo vale
+    junto a `measured: false`; el validador aceptaba `measured: true, before: -1` — «no lo medí»
+    disfrazado de medición, con **dos casos reales** en recibos del propio repositorio. Y un recibo
+    con cero mediciones pasaba, cuando `evidence` sí se exigía no vacío.
+  - **El README publicaba tres comandos y dos no corrían**: les faltaban argumentos obligatorios.
+    Ahora una prueba corre los comandos que el README publica y falla si alguno muere con `usage:`.
+  - **La plantilla de spec que `SKILL.md` manda usar era rechazada por su propio gate** en 7 de sus
+    8 secciones, y no tenía sección Discovery. Había dos plantillas divergentes y el protocolo
+    nombraba la vieja.
+  - **`SKILL.md` afirmaba una etiqueta de git que no existe.** Ahora el documento dice la verdad, y
+    una regla comprueba contra git cualquier etiqueta que afirme llevar — la afirmación falsa se
+    castiga, el silencio no.
+  - **El archivado de sesión nunca había corrido:** `.vibe/sessions/` no existía y `SESSION.md`
+    pesaba 38.320 bytes que Bootstrap leía enteros en cada arranque. Archivado y reemplazado por un
+    estado que pasa su propio gate.
+  - Un enlace que se apuntaba a sí mismo y resolvía a 404, y `templates/adr.md`, que ningún documento
+    ni fase nombra: engancharlo o retirarlo queda como decisión humana.
+
 - **Las dos propuestas que quedaban abiertas se cerraron declarando el límite, no fingiendo el gate.**
   Quince agentes con tres lentes adversariales por diseño (scope, verificabilidad, falsos positivos)
   midieron cinco reglas candidatas. **Ninguna sobrevivió**, y los números son la razón:

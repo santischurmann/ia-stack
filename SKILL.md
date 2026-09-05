@@ -5,7 +5,8 @@ description: "TDD methodology for Claude Code: the orchestrator runs VCP's inter
 
 # VibeCodeProtocols — caveman edition
 
-**Versión:** 1.4.0 · etiquetada como `v1.4.0` en git.
+**Versión:** 1.4.0 · las etiquetas de git publicadas son `v1.0.0` y `v1.1.0`; esta versión todavía
+no tiene la suya.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 

@@ -95,7 +95,7 @@ function writeReceipt(root, overrides = {}) {
     acceptanceCriteria = defaultAcceptanceCriteria(),
     reproduction = 'node --test test/fixture.test.mjs',
     notReviewed = 'none — reviewed the full declared scope',
-    measurements = [],
+    measurements = [{ metric: 'tests_verdes', measured: true, before: 0, after: 1 }],
     reviewFourR = defaultReview4r(),
     scope = { declared_paths: [TEST_FILE_RELATIVE] },
     task = 'T01',
@@ -369,7 +369,7 @@ test('FALSIFICACIÓN · a repository with zero commits fails closed with a contr
         ac_id: 'AC-1', scenario: 'x', verdict: 'COMPLIANT', test_file: 'test/x.test.mjs',
         test_hash_sha256: TEST_FILE_SHA256, command: 'node --test', result: '1 pass',
       }],
-      review_4r: defaultReview4r(), measurements: [], reproduction: 'node --test',
+      review_4r: defaultReview4r(), measurements: [{ metric: 'tests_verdes', measured: true, before: 0, after: 1 }], reproduction: 'node --test',
       not_reviewed: 'none — reviewed everything', evidence: ['x'],
       git_head: 'deadbeef', tree_fingerprint: 'x', terminal_state: 'approved',
     }));
@@ -646,7 +646,9 @@ test('validateAcceptanceCriterion/validateMeasurements/validateNotReviewedField/
     assert.equal(validateMeasurements([{ metric: 'x', measured: 'yes' }]).ok, false);
     assert.equal(validateMeasurements([{ metric: 'x', measured: true, before: 'n/a', after: 1 }]).ok, false);
     assert.equal(validateMeasurements([{ metric: 'x', measured: true, before: 1, after: 2 }]).ok, true);
-    assert.equal(validateMeasurements([]).ok, true);
+    // El array vacio paso a ser invalido: un recibo sin una sola medicion no mide nada. La
+    // falsificacion que lo fija esta al final de este archivo.
+    assert.equal(validateMeasurements([]).ok, false);
 
     assert.equal(validateNotReviewedField(42).ok, false);
     assert.equal(validateNotReviewedField('N/A').ok, false);
@@ -671,7 +673,7 @@ test('validateAcceptanceCriterion/validateMeasurements/validateNotReviewedField/
     const base = {
       feature: 'x', task: 'T01', scope: { declared_paths: [TEST_FILE_RELATIVE] },
       acceptance_criteria: defaultAcceptanceCriteria(), review_4r: defaultReview4r(),
-      measurements: [], reproduction: 'x', not_reviewed: 'none — x', evidence: ['x'],
+      measurements: [{ metric: 'x', measured: true, before: 0, after: 1 }], reproduction: 'x', not_reviewed: 'none — x', evidence: ['x'],
       git_head: 'x', tree_fingerprint: 'x', terminal_state: 'approved',
     };
     assert.equal(validateReceiptV2({ ...base, feature: '' }, root).ok, false, 'empty feature must reject');
@@ -685,6 +687,7 @@ test('validateAcceptanceCriterion/validateMeasurements/validateNotReviewedField/
     assert.equal(validateReceiptV2({ ...base, acceptance_criteria: [] }, root).ok, false, 'invalid AC list must reject via validateReceiptV2');
     assert.equal(validateReceiptV2({ ...base, review_4r: null }, root).ok, false, 'invalid review_4r must reject via validateReceiptV2');
     assert.equal(validateReceiptV2({ ...base, measurements: 'not-an-array' }, root).ok, false, 'invalid measurements must reject via validateReceiptV2');
+    assert.equal(validateReceiptV2({ ...base, measurements: [] }, root).ok, false, 'un recibo sin ninguna medición no mide nada y tiene que rechazar');
     assert.equal(validateReceiptV2({ ...base, not_reviewed: 'n/a' }, root).ok, false, 'invalid not_reviewed must reject via validateReceiptV2');
     assert.equal(validateReceiptV2(base, root).ok, true, 'a fully valid v2 object passes shape validation');
   });
@@ -1089,4 +1092,34 @@ test('FALSIFICACION · judgeSignature nombra la custodia cuando git no devuelve 
   assert.equal(sinClaveParaVerificar.ok, true);
   assert.doesNotMatch(sinClaveParaVerificar.mensaje, / por /u, 'no se puede decir "por X" sobre una firma que no se pudo verificar');
   assert.equal(judgeSignature({ commit: 'abc1234def', estado: 'E', firmante: 'X', clave: '' }, true).ok, false, 'con --require-signature, no poder verificar es rechazo');
+});
+
+// --- Los dos huecos de `measurements`, uno de los cuales contradice a SKILL.md por escrito -------
+//
+// `SKILL.md:1125` promete: «`-1` sólo es válido junto con `measured: false` y un motivo no vacío —
+// un `-1` sin `measured: false` explícito, o sin `reason`, es rechazado». El código no lo hacía: la
+// rama `measured === true` sólo pedía que `before`/`after` fueran números, y `-1` es un número.
+// Medido el 2026-09-04: dos mediciones reales de `.vibe/receipts/` pasaban en verde declarando
+// `measured: true` con `before: -1`, que es la forma exacta de «no lo medí» disfrazada de medición.
+//
+// El segundo hueco: `measurements` figuraba entre los campos requeridos, pero sólo se comprobaba
+// que la clave existiera y fuera un array. Un recibo con `measurements: []` pasaba — a diferencia de
+// `evidence`, que sí se exige no vacío. Medido sobre el corpus: 15 recibos, 107 mediciones, ninguno
+// con el array vacío, así que exigirlo no rompe un solo recibo real.
+
+test('FALSIFICACIÓN · un -1 declarado como medido se rechaza: es «no lo medí» disfrazado de medición', () => {
+  const r = validateMeasurements([{ metric: 'citas rotas', measured: true, before: -1, after: 0 }]);
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /-1/u);
+  // Y la forma honesta de decir lo mismo sigue pasando.
+  assert.equal(validateMeasurements([{ metric: 'citas rotas', measured: false, before: -1, after: -1, reason: 'no había línea de base' }]).ok, true);
+  // Una medición de verdad con un cero no se confunde con el centinela.
+  assert.equal(validateMeasurements([{ metric: 'x', measured: true, before: 0, after: 42 }]).ok, true);
+  // El centinela en cualquiera de los dos extremos.
+  assert.equal(validateMeasurements([{ metric: 'x', measured: true, before: 3, after: -1 }]).ok, false);
+});
+
+test('FALSIFICACIÓN · un recibo sin ninguna medición se rechaza, igual que uno sin evidencia', () => {
+  assert.equal(validateMeasurements([]).ok, false);
+  assert.match(validateMeasurements([]).reason, /al menos una|at least one/iu);
 });

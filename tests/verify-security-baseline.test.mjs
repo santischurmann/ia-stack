@@ -1082,3 +1082,41 @@ test('el detector de sinks no ve el HTML armado con plantillas del lado de Node'
   const sink = `${[...'inner'].join('')}${[...'HTML'].join('')} = user.name;`;
   assert.deepEqual(scanFile('src/view.mjs', sink).map((i) => i.category), ['html-injection-surface']);
 });
+
+// --- Un secreto adentro de un JSON no se veía ---------------------------------------------------
+//
+// `SECRET_ASSIGNMENT` exigía el nombre de la clave pegado al separador, y en JSON hay una comilla
+// de cierre en el medio: una clave `api` guion bajo `key` entrecomillada pasaba en verde. Medido
+// el 2026-09-04 sobre el gate
+// real, mientras la MISMA credencial en `.js`, `.env` y `.yaml` sí disparaba. No era un problema de
+// alcance —`.json` está en la lista de archivos que se escanean— sino del patrón.
+//
+// Los términos se parten en dos literales por la convención que este archivo ya usa: el gate se
+// escanea a sí mismo, y escribir el par clave/valor entero lo convertiría en un hallazgo propio.
+
+test('FALSIFICACIÓN · un secreto en una clave JSON entrecomillada se detecta como en cualquier otro formato', () => {
+  const valor = 'abcdefghijklmnop';
+  const clave = (n) => `{ "${n}": "${valor}" }`;
+  for (const nombre of ['api' + '_key', 'pass' + 'word', 'to' + 'ken', 'sec' + 'ret']) {
+    const hallazgos = scanFile('config.json', clave(nombre));
+    assert.deepEqual(
+      hallazgos.map((h) => `${h.severity}/${h.category}`),
+      ['critical/hardcoded-secret'],
+      `un ${nombre} entrecomillado en JSON tiene que disparar igual que en un .js`,
+    );
+  }
+});
+
+test('FALSIFICACIÓN · la comilla opcional no afloja el detector: lo benigno sigue sin disparar', () => {
+  // El riesgo de admitir una comilla antes del separador es empezar a gritar sobre lo que no es un
+  // secreto. Estos tres son los casos benignos que tienen que seguir callados.
+  const k = 'api' + '_key';
+  assert.deepEqual(scanFile('config.json', `{ "${k}": "" }`), [], 'un valor vacío no es un secreto');
+  assert.deepEqual(scanFile('a.js', `const ${k} = process.env.API_KEY;`), [], 'leer del entorno es lo correcto, no un hallazgo');
+  assert.deepEqual(scanFile('config.json', `{ "${k}": null }`), [], 'un nulo no es un secreto');
+  // El largo minimo NO se afirma sobre el valor: el lookahead cuenta 8 caracteres despues de la
+  // comilla de apertura, y ahi entra lo que sigue en la linea. Comprobado que es PREEXISTENTE --
+  // una asignacion de esa clave con un valor corto seguido de un comentario ya disparaba antes de
+  // este parche, en .js. Se deja dicho
+  // en vez de afirmar una precision que el detector no tiene.
+});

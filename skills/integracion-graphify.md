@@ -9,7 +9,7 @@ y el documento no se lo decía. Eso era una dependencia no declarada presentada 
 
 Si tenés la herramienta y la querés usar, los pasos son estos.
 - **Integración opcional con un grafo externo.** Si usás una herramienta de grafo, su paso está en
-  [`skills/integracion-graphify.md`](skills/integracion-graphify.md). **No es parte del camino
+  `skills/integracion-graphify.md` (este archivo). **No es parte del camino
   obligatorio**: el protocolo cierra la fase 8 sin ella.
   Ese gate verifica que el destino de la exportación esté dentro del proyecto, que sea un árbol
   regular y sin symlinks, y que contenga un `graph.canvas` JSON válido con `nodes` y `edges` más al
