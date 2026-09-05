@@ -7,6 +7,26 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Cuarta ronda: dos propuestas, no cuatro.** Se midieron cuatro candidatos y **dos no
+  resistieron** — otro HTML del repositorio tenía todas sus clases CSS definidas, y la concentración
+  de 70 requisitos en 3 archivos de prueba resultó ser que los 70 tienen **nombres distintos**. El
+  tope es un máximo, no una cuota.
+  - **El tope de tiempo del gate de vínculos estaba por debajo del archivo de prueba más lento del
+    propio repositorio.** Medido: `verify-receipt-gate.test.mjs` tarda 35-40 s contra un tope de
+    30 s, y `protocolo-e2e` 28,8 s. Ninguno está hoy en el inventario, así que no estaba roto — era
+    una bomba con la mecha medida, y bajo instrumentación de cobertura ya había explotado una vez.
+    Pasa a 120 s: **el tope existe para atrapar una prueba colgada, no para juzgar si una de punta a
+    punta es lenta**, y esa distinción es la que el número viejo perdía. La prueba nueva no fija un
+    número: fija la relación contra la duración real.
+  - **Hallazgo colateral:** la prueba de ese requisito clavaba el valor `30_000` cuando lo que dice
+    verificar es «usa timeout explícito». Afirmaba el número, no la propiedad — así que ajustar el
+    tope con una medición ponía en rojo una prueba que mide otra cosa.
+  - **La regla de etiquetas balanceadas pasó a barrer todo `.html` versionado**, descubriéndolos con
+    `git ls-files` en vez de mirar sólo el tablero.
+  - **Y la regla de la ronda anterior se ganó el sueldo:** cerrar la primera propuesta rompió su
+    propia cita, y esta vez **lo detectó la suite sola** — cuarta vez que pasa el patrón, primera que
+    no hizo falta correr el gate a mano.
+
 - **Tres defectos que sólo aparecieron al abrir el tablero en un navegador.** La suite estaba verde
   y la página estaba rota: es la clase de error que se ve mirando el producto, no corriendo sus
   pruebas.

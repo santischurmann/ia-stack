@@ -11,7 +11,19 @@ import { fileURLToPath } from 'node:url';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
-export const TAP_TIMEOUT_MS = 30_000;
+/** Tope de tiempo para cada `test_ref`. MEDIDO, no elegido: el 30_000 original salio de la
+ * intuicion, y quedo POR DEBAJO del archivo de prueba mas lento del propio repositorio.
+ *
+ * Los datos, tomados el 2026-09-05 sin instrumentacion: verify-receipt-gate.test.mjs tarda entre 35
+ * y 40 s, y protocolo-e2e.test.mjs 28,8 s. Con el tope viejo, vincular un requisito a cualquiera de
+ * esos dos lo marcaba TIMEOUT -- y el fallo no habria hablado del test sino de su duracion. Bajo la
+ * instrumentacion de cobertura, que multiplica los tiempos, eso ya paso una vez ese mismo dia.
+ *
+ * 120 s deja mas del triple de margen sobre el mas lento medido. El tope existe para atrapar una
+ * prueba COLGADA -- un bucle infinito, una espera que nunca llega --, no para juzgar si una prueba
+ * de punta a punta es lenta: esa distincion es la que el numero viejo perdia. Una prueba de la suite
+ * compara el tope contra la duracion real y se pone roja si el margen se come. */
+export const TAP_TIMEOUT_MS = 120_000;
 export const USAGE = 'usage: verify-test-bindings.mjs check';
 
 function failed(code, message = code) {

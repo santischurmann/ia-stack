@@ -1,0 +1,26 @@
+{
+  "schema": "vcp.mejoras/1",
+  "run_id": "2026-09-05",
+  "why": "Tercera ronda del mismo dia, corrida a pedido. El gate dijo que no tocaba -- 0 dias de 7 -- y se corrio igual. Salen DOS propuestas y no cuatro: se midieron cuatro candidatos y dos no resistieron. El tope es un maximo, no una cuota, y llenarlo habria sido inventar.",
+  "propuestas": [
+    {
+      "titulo": "El timeout del gate de vinculos esta por debajo del archivo de prueba mas lento del repositorio",
+      "por_que": "El gate corre cada test_ref con un tope de 30 s. Medido hoy sin instrumentacion: verify-receipt-gate.test.mjs tarda 39,7 s y protocolo-e2e.test.mjs 28,8 s, a 1,2 s del limite. Ninguno de los dos esta hoy en el inventario, asi que no esta roto -- es una bomba con la mecha medida: el dia que alguien vincule un requisito a uno de esos archivos, el gate lo marca TIMEOUT y el fallo no habla del test sino de su duracion. Y ya exploto una vez hoy bajo la instrumentacion de cobertura, que multiplica los tiempos. El numero se eligio sin medir, igual que el tope de linea de la traza y el minimo por seccion del ADR.",
+      "cita": {
+        "archivo": "scripts/verify-test-bindings.mjs",
+        "texto_literal": "quedo POR DEBAJO del archivo de prueba mas lento del propio repositorio"
+      }
+    },
+    {
+      "titulo": "La regla de etiquetas balanceadas mira un solo HTML de los dos que el repositorio publica",
+      "por_que": "Se escribio al encontrar un div sin cerrar en el tablero, y vive en las pruebas de ese modulo. El repositorio versiona otro HTML, docs/mapa-del-protocolo.html, con 77 divs y 5 secciones, y nadie comprueba que cierre lo que abre. Hoy esta balanceado -- lo medi -- asi que es prevencion y no reparacion, pero el tablero tambien lo estuvo hasta que dejo de estarlo, y el sintoma fue una pantalla vacia que la suite en verde no vio. Es la misma clase que la regla de comandos publicados, que cubria el archivo chico y dejaba el grande.",
+      "cita": {
+        "archivo": "tests/tablero-modelo.test.mjs",
+        "texto_literal": "el HTML cierra todos los contenedores que abre"
+      }
+    }
+  ],
+  "cerradas": {
+    "2026-09-05": "Las dos cerradas el mismo dia. (1) El tope del gate de vinculos paso de 30 s a 120 s, MEDIDO: verify-receipt-gate.test.mjs tarda entre 35 y 40 s y protocolo-e2e 28,8 s, asi que el numero viejo estaba por debajo del archivo mas lento del propio repositorio. El tope existe para atrapar una prueba COLGADA, no para juzgar si una de punta a punta es lenta, y esa distincion es la que el numero viejo perdia. La prueba nueva no fija un numero: fija la relacion contra la duracion real. Hallazgo colateral: la prueba REQ-I08 clavaba assert.equal(TAP_TIMEOUT_MS, 30_000) cuando el requisito que dice verificar es 'usa timeout explicito' -- afirmaba el valor y no la propiedad, asi que ajustar el tope con una medicion ponia en rojo una prueba que mide otra cosa. (2) La regla de etiquetas balanceadas paso de mirar el tablero a barrer TODO .html versionado, descubriendolos con git ls-files: docs/mapa-del-protocolo.html tiene 77 divs y 5 secciones y nadie comprobaba que cerraran. Hoy esta balanceado, asi que es prevencion; el tablero tambien lo estuvo hasta que dejo de estarlo. La cita de la propuesta 1 se actualizo porque cerrarla reescribio la linea que citaba -- cuarta vez que pasa, y PRIMERA que lo detecta la suite sola en vez de una corrida a mano: es exactamente lo que la ronda anterior arreglo."
+  }
+}

@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+import { esRuntimeInstalado } from './_entorno.mjs';
+
+// Self-check: mide la duracion de una prueba de ESTE checkout contra el tope del gate.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 const script = join(repoRoot, 'scripts', 'verify-test-bindings.mjs');
 const {
   TAP_TIMEOUT_MS, checkActiveBindings, checkTestBinding, createCachedBindingCheck, hasLiteralTestDeclaration, main, parseTapResults, validateTestReference,
@@ -204,4 +212,35 @@ test('binding CLI reads the real inventory by default and catches unreadable inj
   const errors = [];
   assert.equal(main(['check'], repoRoot, { readInventory: () => { throw new Error('broken JSON'); } }, () => {}, (line) => errors.push(line)), 1);
   assert.match(errors.at(-1), /broken JSON/u);
+});
+
+// --- El tope de tiempo, contra la medición ------------------------------------------------------
+//
+// El gate corre cada `test_ref` con un tope, y ese número estaba por DEBAJO del archivo de prueba
+// más lento del repositorio. Medido el 2026-09-05, sin instrumentación:
+// `verify-receipt-gate.test.mjs` 39,7 s y `protocolo-e2e.test.mjs` 28,8 s, contra un tope de 30 s.
+//
+// Ninguno de los dos está hoy en el inventario, así que no estaba roto — era una bomba con la mecha
+// medida: el día que alguien vincule un requisito a uno de esos archivos, el gate lo marca TIMEOUT
+// y el fallo no habla del test sino de su duración. Bajo la instrumentación de cobertura, que
+// multiplica los tiempos, ya explotó una vez ese mismo día.
+//
+// Esta prueba no fija un número: fija la RELACIÓN. Si mañana una prueba legítima se vuelve más lenta
+// que el tope, se pone roja y obliga a mirar cuál de las dos cosas hay que cambiar.
+
+test('el tope de tiempo del gate deja margen sobre la prueba más lenta que el propio repositorio corre', SOLO_FUENTE, () => {
+  const archivos = readdirSync(join(repoRoot, 'tests')).filter((n) => n.endsWith('.test.mjs'));
+  assert.ok(archivos.length > 50, 'el barrido tiene que ver la suite entera');
+  // No se corren los 90 archivos —eso duplicaría la suite—: se mide el que la medición del
+  // 2026-09-05 señaló como el más lento, que es el que define el margen.
+  const masLento = 'verify-receipt-gate.test.mjs';
+  assert.ok(archivos.includes(masLento), `${masLento} tiene que existir, o esta prueba mide otra cosa`);
+  const inicio = Date.now();
+  const r = spawnSync(process.execPath, ['--test', join('tests', masLento)], {
+    cwd: repoRoot, encoding: 'utf8', timeout: TAP_TIMEOUT_MS * 3,
+    env: { ...process.env, NODE_TEST_CONTEXT: undefined },
+  });
+  const tardo = Date.now() - inicio;
+  assert.equal(r.status, 0, `${masLento} tiene que pasar, o lo que se mide no es su duración`);
+  assert.ok(tardo < TAP_TIMEOUT_MS, `${masLento} tarda ${Math.round(tardo / 1000)} s y el tope es ${TAP_TIMEOUT_MS / 1000} s: vincular un requisito a ese archivo lo marcaría TIMEOUT por lento, no por roto`);
 });

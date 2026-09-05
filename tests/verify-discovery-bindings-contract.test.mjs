@@ -57,7 +57,11 @@ test('REQ-I07 · TAP informa exactamente un resultado por test_name', () => fixt
 
 test('REQ-I08 · El binding usa timeout explícito', () => fixture((root) => {
   const ref = writeGreen(root, 'REQ-I08 · timeout');
-  assert.equal(TAP_TIMEOUT_MS, 30_000);
+  // El requisito es que HAYA un tope explícito, no cuánto vale. Clavar el número acá hacía que
+  // ajustarlo con una medición pusiera en rojo una prueba que dice verificar otra cosa — y el valor
+  // viejo, 30 s, estaba por debajo del archivo de prueba más lento del repositorio.
+  assert.equal(typeof TAP_TIMEOUT_MS, 'number');
+  assert.ok(TAP_TIMEOUT_MS > 0, 'sin tope, una prueba colgada cuelga el gate');
   const result = checkTestBinding(row({ req_id: 'REQ-I08', test_ref: ref, test_name: 'REQ-I08 · timeout' }), root, {
     spawn: () => ({ status: null, error: { code: 'ETIMEDOUT' }, stdout: '' }),
   });

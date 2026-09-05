@@ -4,7 +4,13 @@
 // transcripción en la máquina, y ninguna toca `~/.claude`.
 
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+
+import { esRuntimeInstalado } from './_entorno.mjs';
 
 import {
   CORTE_SESION_MINUTOS,
@@ -26,6 +32,12 @@ import {
   renderizar,
   tokensDe,
 } from '../scripts/tablero-modelo.mjs';
+
+const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+// Self-check: barre los HTML versionados de ESTE checkout.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  : {};
 
 const turno = (id, salida, ts, extra = {}) => ({
   type: 'assistant',
@@ -390,4 +402,24 @@ test('FALSIFICACIÓN · el HTML cierra todos los contenedores que abre', () => {
     const cierra = (html.match(new RegExp(`</${etiqueta}>`, 'gu')) ?? []).length;
     assert.equal(abre, cierra, `<${etiqueta}>: ${abre} abiertos y ${cierra} cerrados`);
   }
+});
+
+test('todo HTML que el repositorio publica cierra lo que abre', SOLO_FUENTE, () => {
+  // La regla nació mirando el tablero, donde un `<div>` sin cerrar dejó el resto de la página
+  // adentro de un contenedor con scroll y en pantalla apareció como un hueco vacío. El repositorio
+  // versiona otro HTML —`docs/mapa-del-protocolo.html`, con 77 divs y 5 secciones— y nadie
+  // comprobaba que cerrara nada. Se busca por forma: cualquier `.html` versionado entra solo.
+  const publicados = execFileSync('git', ['ls-files', '*.html'], { cwd: repoRoot, encoding: 'utf8' })
+    .split('\n').map((l) => l.trim()).filter(Boolean);
+  assert.ok(publicados.length > 0, 'el barrido tiene que encontrar HTML, o no prueba nada');
+  const rotos = [];
+  for (const ruta of publicados) {
+    const html = readFileSync(join(repoRoot, ruta), 'utf8');
+    for (const etiqueta of ['div', 'table', 'tbody', 'thead', 'ul', 'section', 'main']) {
+      const abre = (html.match(new RegExp(String.raw`<${etiqueta}[\s>]`, 'gu')) ?? []).length;
+      const cierra = (html.match(new RegExp(`</${etiqueta}>`, 'gu')) ?? []).length;
+      if (abre !== cierra) rotos.push(`${ruta} · <${etiqueta}>: ${abre} abiertos y ${cierra} cerrados`);
+    }
+  }
+  assert.deepEqual(rotos, [], 'un contenedor sin cerrar deja el resto de la página adentro de él');
 });
