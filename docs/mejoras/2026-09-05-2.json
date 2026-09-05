@@ -1,0 +1,34 @@
+{
+  "schema": "vcp.mejoras/1",
+  "run_id": "2026-09-05",
+  "why": "Segunda ronda del mismo dia, corrida a pedido. El gate dijo que no tocaba -- 0 dias de 7 -- y se corrio igual. Este archivo lleva sufijo porque el nombre ES la fecha y la primera ronda de hoy ya ocupaba el suyo: ese limite lo destapo este mismo ejercicio y se cerro antes de escribir esto.",
+  "propuestas": [
+    {
+      "titulo": "La suite verifica una sola ronda, con el nombre escrito a mano",
+      "por_que": "El self-check que resuelve las citas contra el disco apunta a docs/mejoras/2026-09-04.json, hardcodeado. La ronda de hoy, y toda ronda futura, no la mira nadie: si una cita se rompe, la suite sigue verde. No es hipotetico -- las citas ya se rompieron DOS veces en dos rondas, las dos porque cerrar una propuesta reescribio la linea que citaba. El gate existe y sabe detectarlo; lo que falta es que la suite lo corra sobre todas.",
+      "cita": {
+        "archivo": "tests/verify-sereno.test.mjs",
+        "texto_literal": "Antes esta prueba apuntaba sólo a"
+      }
+    },
+    {
+      "titulo": "El README no menciona el tablero, que es una feature entera del producto",
+      "por_que": "SKILL.md lo nombra cuatro veces y el README ninguna. El tablero muestra proyectos, sesiones, turnos, tokens deduplicados y horas como banda, se genera con un comando y se abre con doble clic. Quien lee la puerta de entrada del repositorio no se entera de que existe. Fue una etapa entera de trabajo y es invisible para el lector.",
+      "cita": {
+        "archivo": "SKILL.md",
+        "texto_literal": "9.0 El tablero"
+      }
+    },
+    {
+      "titulo": "due mira la fecha del ultimo registro, no si esa ronda se atendio",
+      "por_que": "El comando compara la fecha del archivo mas reciente contra hoy, y nada mas. Una ronda escrita y nunca cerrada hace que due diga 'no toca' durante siete dias, con sus cuatro propuestas abiertas. El campo cerradas existe desde hoy y due lo ignora: el bucle puede quedarse callado justo cuando hay trabajo pendiente.",
+      "cita": {
+        "archivo": "scripts/verify-sereno.mjs",
+        "texto_literal": "const dias = diasEntre(fechaDeRegistro(ultimo), fecha);"
+      }
+    }
+  ],
+  "cerradas": {
+    "2026-09-05": "Las tres cerradas el mismo dia. (1) El self-check dejo de apuntar a un nombre escrito a mano y recorre la carpeta: verifica TODAS las rondas, y apenas se escribio detecto que cerrar esta misma propuesta habia roto su cita -- tercera vez que pasa, primera que lo agarra una regla en vez de una corrida a mano. (2) El README gano su seccion del tablero, con las tres cosas que hace a proposito y el motivo de que no muestre dinero. (3) due avisa si la ultima ronda quedo sin cerrar, aunque no toque por fecha; sigue saliendo 0 porque es un aviso y no un gate, y un registro ilegible tampoco lo convierte en rechazo. Ademas, antes de escribir esta ronda hubo que cerrar el limite que la bloqueaba: dos rondas del mismo dia no tenian donde ir, porque el nombre ES la fecha. Ahora se admite un sufijo, y el orden entre rondas del mismo dia lo da ese sufijo -- ordenar el nombre crudo fallaba porque el guion viene antes que el punto."
+  }
+}

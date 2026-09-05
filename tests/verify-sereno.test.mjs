@@ -6,7 +6,7 @@
 // propio trabajo.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -18,6 +18,7 @@ import {
   SCHEMA,
   USAGE,
   diasEntre,
+  fechaDeRegistro,
   main,
   parseArguments,
   ultimoRegistro,
@@ -152,11 +153,23 @@ test('check acepta un registro válido y rechaza uno ilegible', () => {
   assert.match(invalido.errores.join(' '), /debe declarar schema/u);
 });
 
-test('la ronda real de este repositorio resuelve todas sus citas contra el disco', SOLO_FUENTE, () => {
-  // No alcanza con que el gate funcione sobre fixtures: la ronda que este repositorio escribió tiene
-  // que resolver de verdad, o sus propuestas son opiniones con formato de hallazgo.
-  const r = correr(['check', 'docs/mejoras/2026-09-04.json'], { hoy: '2026-09-04' });
-  assert.equal(r.codigo, 0, r.errores.join(' | '));
+test('TODAS las rondas de este repositorio resuelven sus citas contra el disco', SOLO_FUENTE, () => {
+  // No alcanza con que el gate funcione sobre fixtures: las rondas que este repositorio escribió
+  // tienen que resolver de verdad, o sus propuestas son opiniones con formato de hallazgo.
+  //
+  // Se recorre la CARPETA, no un nombre escrito a mano. Antes esta prueba apuntaba sólo a
+  // `2026-09-04.json`, así que toda ronda posterior quedaba sin verificar por la suite. Y no es
+  // hipotético: las citas se rompieron DOS veces en dos rondas, las dos porque cerrar una propuesta
+  // reescribió la línea que citaba. El gate sabía detectarlo; nadie lo corría sobre las demás.
+  const carpeta = join(repoRoot, 'docs', 'mejoras');
+  const rondas = readdirSync(carpeta).filter((n) => /^\d{4}-\d{2}-\d{2}(?:-\d+)?\.json$/u.test(n));
+  assert.ok(rondas.length > 0, 'tiene que haber al menos una ronda, o esta prueba no mira nada');
+  const rotas = [];
+  for (const nombre of rondas) {
+    const r = correr(['check', `docs/mejoras/${nombre}`], { hoy: new Date().toISOString().slice(0, 10) });
+    if (r.codigo !== 0) rotas.push(`${nombre}: ${r.errores.join(' | ')}`);
+  }
+  assert.deepEqual(rotas, [], 'una cita que dejó de resolver es una propuesta que perdió su origen');
 });
 
 // --- El campo que registra el cierre de una ronda -----------------------------------------------
@@ -197,4 +210,74 @@ test('la plantilla del bucle pasa su propio gate cuando se le llenan los huecos'
   molde.propuestas[0].cita.texto_literal = 'Plantilla del bucle de auto-mejora';
   const leerDisco = (ruta) => readFileSync(join(repoRoot, ruta), 'utf8');
   assert.deepEqual(violaciones(molde, leerDisco, '2026-09-05'), []);
+});
+
+// --- Dos rondas el mismo día -------------------------------------------------------------------
+//
+// El nombre del registro ES la fecha, así que una segunda ronda en el mismo día no tenía dónde ir:
+// o sobrescribía la primera, o se metía en su archivo pasando el tope de cuatro. Se encontró
+// corriendo el bucle dos veces el 2026-09-05, a pedido.
+//
+// Se admite un sufijo `-<n>`. La fecha sigue mandando para el período —lo que cuenta es cuándo se
+// escribió, no cuántas veces— y el orden entre rondas del mismo día lo da el sufijo.
+
+test('un registro puede llevar sufijo para una segunda ronda del mismo día', () => {
+  assert.equal(ultimoRegistro(['2026-09-05.json', '2026-09-05-2.json']), '2026-09-05-2.json');
+  assert.equal(ultimoRegistro(['2026-09-04.json', '2026-09-05.json']), '2026-09-05.json');
+  // El sufijo no altera qué día es: una ronda del 5 con sufijo sigue siendo del 5.
+  assert.equal(fechaDeRegistro('2026-09-05-2.json'), '2026-09-05');
+  assert.equal(fechaDeRegistro('2026-09-05.json'), '2026-09-05');
+  assert.equal(fechaDeRegistro('notas.md'), null);
+});
+
+test('FALSIFICACIÓN · el sufijo no abre la puerta a un nombre cualquiera', () => {
+  assert.equal(fechaDeRegistro('2026-09-05-.json'), null);
+  assert.equal(fechaDeRegistro('2026-09-05-abc.json'), null);
+  assert.equal(fechaDeRegistro('05-09-2026.json'), null);
+  assert.deepEqual(ultimoRegistro(['2026-09-05-abc.json']), null);
+});
+
+test('due cuenta desde la FECHA de la última ronda, tenga sufijo o no', () => {
+  const con = (nombres, hoy) => {
+    const salidas = [];
+    main(['due', '--today', hoy], '.', (m) => salidas.push(m), () => {}, { hay: () => true, listar: () => nombres });
+    return salidas.join(' ');
+  };
+  assert.match(con(['2026-09-05-2.json'], '2026-09-06'), /^OK:/u, 'un día después de una ronda con sufijo no toca');
+  assert.match(con(['2026-09-05-2.json'], '2026-09-20'), /^TOCA:/u, 'quince días después sí');
+});
+
+// --- `due` miraba la fecha, no si la ronda se atendió --------------------------------------------
+//
+// Comparaba la fecha del último registro contra hoy y nada más. Una ronda escrita y nunca cerrada
+// hacía que `due` dijera «no toca» durante siete días, con sus propuestas abiertas: el bucle se
+// quedaba callado justo cuando había trabajo pendiente. El campo `cerradas` existía y lo ignoraba.
+//
+// No se convierte en rechazo: `due` es un aviso y sigue saliendo `0`. Lo que cambia es que lo diga.
+
+test('due avisa cuando la última ronda quedó sin cerrar, aunque no toque por fecha', () => {
+  const con = (contenido) => {
+    const salidas = [];
+    main(['due', '--today', '2026-09-06'], '.', (m) => salidas.push(m), () => {}, {
+      hay: () => true, listar: () => ['2026-09-05.json'], leer: () => JSON.stringify(contenido),
+    });
+    return salidas.join(' ');
+  };
+  const abierta = con({ schema: SCHEMA, run_id: '2026-09-05', propuestas: [propuesta()] });
+  assert.match(abierta, /sin cerrar|sin atender/iu);
+
+  const cerrada = con({ schema: SCHEMA, run_id: '2026-09-05', propuestas: [propuesta()], cerradas: { '2026-09-05': 'Se implementaron las cuatro el mismo día.' } });
+  assert.doesNotMatch(cerrada, /sin cerrar|sin atender/iu);
+  assert.match(cerrada, /^OK:/u);
+});
+
+test('FALSIFICACIÓN · un registro ilegible no convierte el aviso en un rechazo', () => {
+  // `due` es un aviso, no un gate: si no puede leer el registro, lo dice y sale 0. Reventar acá
+  // pondría en rojo el arranque de sesión de alguien por un archivo que ni siquiera se le pidió.
+  const salidas = [];
+  const codigo = main(['due', '--today', '2026-09-06'], '.', (m) => salidas.push(m), () => {}, {
+    hay: () => true, listar: () => ['2026-09-05.json'], leer: () => { throw new Error('EACCES'); },
+  });
+  assert.equal(codigo, 0);
+  assert.match(salidas.join(' '), /^OK:|^VACÍO:/u);
 });

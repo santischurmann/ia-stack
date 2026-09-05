@@ -115,9 +115,37 @@ export function parseArguments(args) {
   return null;
 }
 
-/** El registro mas reciente de la carpeta, por nombre: los nombres son fechas, asi que ordenan. */
+/** La fecha de un registro, o null si el nombre no la lleva.
+ *
+ * Se admite un sufijo `-<n>` porque el nombre ES la fecha y una segunda ronda del mismo dia no tenia
+ * donde ir: o sobrescribia la primera, o se metia en su archivo pasando el tope de cuatro. Encontrado
+ * corriendo el bucle dos veces el 2026-09-05. El sufijo NO altera que dia es: para el periodo cuenta
+ * cuando se escribio, no cuantas veces. */
+export function fechaDeRegistro(nombre) {
+  const m = nombre.replace(/\.json$/u, '').match(/^(\d{4}-\d{2}-\d{2})(?:-\d+)?$/u);
+  return m === null ? null : m[1];
+}
+
+/** El registro mas reciente: primero por fecha, y entre las del mismo dia por su sufijo.
+ *
+ * NO alcanza con ordenar el nombre crudo: `-` viene antes que `.` en la tabla de caracteres, asi que
+ * `2026-09-05-2.json` quedaba ANTES de `2026-09-05.json` y la ultima ronda salia mal. Lo agarro la
+ * prueba, no el diseno. */
 export function ultimoRegistro(nombres) {
-  return nombres.filter((n) => FECHA.test(n.replace(/\.json$/u, ''))).sort().at(-1) ?? null;
+  // El sufijo se lee con el MISMO anclaje que la fecha. Un `-(\d+)$` suelto mordia el dia:
+  // en `2026-09-05` capturaba `-05` y lo trataba como sufijo 5, asi que una ronda sin sufijo
+  // ordenaba despues de la segunda del mismo dia. Lo agarro la prueba.
+  const orden = (n) => {
+    const m = n.replace(/\.json$/u, '').match(/^(\d{4}-\d{2}-\d{2})(?:-(\d+))?$/u);
+    return [m[1], Number(m[2] ?? 0)];
+  };
+  const validos = nombres.filter((n) => fechaDeRegistro(n) !== null);
+  if (validos.length === 0) return null;
+  return validos.sort((a, b) => {
+    const [fa, sa] = orden(a);
+    const [fb, sb] = orden(b);
+    return fa === fb ? sa - sb : (fa < fb ? -1 : 1);
+  }).at(-1);
 }
 
 export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, io = {}) {
@@ -131,10 +159,21 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     if (!hay(carpeta)) { write(`${EMPTY_PREFIX}todavía no hay ninguna ronda de mejoras en ${parsed.dir}`); return 0; }
     const ultimo = ultimoRegistro(listar(carpeta));
     if (ultimo === null) { write(`${EMPTY_PREFIX}la carpeta ${parsed.dir} no tiene ningún registro con nombre de fecha`); return 0; }
-    const dias = diasEntre(ultimo.replace(/\.json$/u, ''), fecha);
+    const dias = diasEntre(fechaDeRegistro(ultimo), fecha);
+    // Si la ultima ronda quedo SIN CERRAR, decirlo aunque no toque por fecha: el periodo mide cuando
+    // se escribio, no si se atendio, y una ronda con sus propuestas abiertas dejaba al bucle callado
+    // siete dias justo cuando habia trabajo pendiente. Sigue saliendo 0: `due` es un aviso, no un
+    // gate. Un registro ilegible tampoco lo convierte en rechazo -- reventar aca pondria en rojo el
+    // arranque de sesion de alguien por un archivo que ni se le pidio.
+    let sinCerrar = false;
+    try {
+      const previo = JSON.parse(leer(join(parsed.dir, ultimo)));
+      sinCerrar = previo !== null && typeof previo === 'object' && previo.cerradas === undefined;
+    } catch { sinCerrar = false; }
+    const pendiente = sinCerrar ? ` La ronda ${ultimo} está SIN CERRAR: no dice qué pasó con sus propuestas.` : '';
     write(dias !== null && dias >= PERIODO_DIAS
-      ? `TOCA: pasaron ${dias} día(s) desde la última ronda (${ultimo}); el período es ${PERIODO_DIAS}.`
-      : `OK: la última ronda es ${ultimo}, hace ${dias} día(s). No toca todavía.`);
+      ? `TOCA: pasaron ${dias} día(s) desde la última ronda (${ultimo}); el período es ${PERIODO_DIAS}.${pendiente}`
+      : `OK: la última ronda es ${ultimo}, hace ${dias} día(s). No toca todavía.${pendiente}`);
     return 0;
   }
 

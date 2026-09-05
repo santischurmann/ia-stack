@@ -7,6 +7,22 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tercera ronda, y el propio ejercicio destapó el límite que la bloqueaba.** Correr el bucle dos
+  veces el mismo día no era posible: el nombre del registro **es** la fecha, así que la segunda
+  ronda sobrescribía la primera o se metía en su archivo pasando el tope de cuatro. Se admite un
+  sufijo, y el orden entre rondas del mismo día lo da ese sufijo — ordenar el nombre crudo fallaba,
+  porque el guion viene antes que el punto en la tabla de caracteres.
+  - **La suite verificaba una sola ronda, con el nombre escrito a mano.** Toda ronda posterior
+    quedaba sin mirar. No era hipotético: las citas se rompieron **tres veces** en tres rondas,
+    siempre porque cerrar una propuesta reescribe la línea que citaba. Ahora recorre la carpeta — y
+    apenas se escribió, detectó sola la tercera.
+  - **El README no mencionaba el tablero**, que es una etapa entera de trabajo: `SKILL.md` lo nombra
+    cuatro veces y la puerta de entrada, ninguna. Ya tiene su sección.
+  - **`due` miraba la fecha, no si la ronda se había atendido.** Una ronda escrita y nunca cerrada
+    dejaba al bucle callado siete días con sus propuestas abiertas. Ahora lo dice — y sigue saliendo
+    `0`, porque es un aviso y no un gate; un registro ilegible tampoco lo convierte en rechazo.
+  - Salieron **tres** propuestas, no cuatro: el tope es un máximo, no una cuota.
+
 - **Segunda ronda del bucle de auto-mejora, corrida a pedido y cerrada el mismo día.** Las cuatro
   propuestas salieron de **medir** el repositorio, no de repasar la sesión de memoria:
   - **La regla de comandos publicados cubría el archivo chico.** Verificaba los 6 del README y no

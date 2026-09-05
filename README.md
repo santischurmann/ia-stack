@@ -150,6 +150,29 @@ texto citado esté ahí, no que signifique lo que la propuesta dice.
 
 ---
 
+## El tablero
+
+Un comando genera una página local con lo que pasó: proyectos, sesiones, turnos, tokens y horas.
+Se abre con doble clic. Sin servidor, sin puerto, sin nada que quede corriendo.
+
+```bash
+node .vibe/vcp-runtime/scripts/tablero.mjs build
+```
+
+Tres cosas que hace a propósito, y que conviene no "arreglar":
+
+- **Escribe fuera del repositorio** y **se niega** a escribir adentro de uno. Junta datos de todos
+  tus proyectos: ahí adentro los publicaría el próximo commit.
+- **Deduplica los tokens por identificador de mensaje.** Sumar líneas los infla hasta 2,67×, medido:
+  una respuesta ocupa varias líneas y el objeto de uso es idéntico en todas.
+- **Las horas son una banda, no un número**, con el umbral a la vista. No hay valle en la
+  distribución que justifique uno: elegirlo mueve el resultado más que cualquier error de medición.
+
+**Sin tabla de precios no muestra dinero**, y dice por qué: las transcripciones traen tokens y el
+nombre del modelo, nunca una tarifa. Traer una de internet sería afirmar un número que nadie midió.
+
+---
+
 ## Qué garantiza, y qué no
 
 Cada chequeo declara **qué NO puede detectar**, y esas frases están guardadas como datos revisables
