@@ -5,8 +5,7 @@ description: "TDD methodology for Claude Code: the orchestrator runs VCP's inter
 
 # VibeCodeProtocols — caveman edition
 
-**Versión:** 1.4.0 · las etiquetas de git publicadas son `v1.0.0` y `v1.1.0`; esta versión todavía
-no tiene la suya.
+**Versión:** 1.4.0 · etiquetada como `v1.4.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
@@ -524,6 +523,25 @@ Esperando tu respuesta antes de continuar.
 Esperando tu respuesta antes de continuar.
 
 Generate `docs/plan.md` + `docs/tasks.json` — template: `skills/spec-plan-templates.md`. Status lifecycle per task: `pending→red→green→triangulate→refactor→done`.
+
+**Decisiones estructurales: un ADR, y sólo cuando corresponde.** Si el plan ata al proyecto a algo
+que costaría meses deshacer —un motor de base de datos, un formato de archivo que otros van a leer,
+una dependencia nueva, un límite de compatibilidad— escribí un registro en
+`docs/adr/<NNNN>-<titulo>.md`, copiando `templates/adr.md`. Si el plan no toma ninguna decisión de
+esas, **no escribas ninguno**: un ADR por tarea rutinaria vacía el artefacto de significado.
+
+Lo que un ADR pide y ningún otro documento del protocolo exige: **las opciones que descartaste** y
+**qué se vuelve más difícil**. `.vibe/DECISIONS.md` es la bitácora corrida de la sesión; el ADR es
+el registro de una decisión que va a sobrevivir a la sesión.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-adr.mjs check
+```
+
+Sin carpeta escribe `VACÍO:` y sale `0` — un proyecto que no tomó decisiones estructurales no
+incumple nada. **Lo que el gate NO puede hacer:** comprueba la forma, no la decisión; y no sabe si
+un ADR hacía falta, así que un proyecto que toma diez decisiones estructurales y no escribe ninguna
+sale igual de verde que uno que no tomó ninguna.
 
 **Preflight de conflictos (gate mecánico, antes de pedir aprobación):**
 ```bash

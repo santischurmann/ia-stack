@@ -7,6 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **`v1.4.0` existe, y ahora la afirmación se comprueba contra git.** `SKILL.md` decía llevar esa
+  etiqueta y el repositorio sólo tenía `v1.0.0` y `v1.1.0`. Se creó y publicó la etiqueta, y una
+  regla verifica **contra git** cualquier etiqueta que el documento afirme llevar: la afirmación
+  falsa se pone roja, el silencio no. Una fila en el contrato no servía — ese mecanismo comprueba
+  que la frase esté escrita, no que sea cierta, que es justo el modo de falla del hallazgo.
+- **El registro de decisión de arquitectura dejó de ser un artefacto huérfano.** `templates/adr.md`
+  existía desde hacía meses y **ninguna fase lo invocaba**. Ahora la fase 4 lo pide **sólo cuando
+  corresponde**: una decisión que costaría meses deshacer. Si el plan no toma ninguna, no se escribe
+  ninguno — un ADR por tarea rutinaria vacía el artefacto.
+  - Lo que un ADR exige y ningún otro documento del protocolo pide: **las opciones descartadas** y
+    **qué se vuelve más difícil**.
+  - Va con gate propio (`verify-adr.mjs`, el 44.º) porque engancharlo sin verificación es prosa que
+    nadie cumple — exactamente lo que le pasaba a la plantilla de spec. Rechaza secciones ausentes o
+    vacías, estados inventados, huecos de plantilla sin llenar y toda opción elegida sin su motivo.
+  - **Su límite va declarado:** no sabe si un ADR hacía falta. Un proyecto que ata su arquitectura y
+    no lo registra sale igual de verde que uno que no decidió nada.
+- **El README bajó a 210 líneas** fundiendo los dos bloques de comandos y la nota del renombre. No
+  llega a las 150 del criterio original, y se dice por qué: bajar de ahí exige sacar los diagramas
+  de las once fases, la memoria y el bucle —pedidos después de fijar ese número— o el diccionario,
+  que el contrato ancla.
+
 - **Ocho defectos propios, encontrados leyendo un repositorio ajeno.** Se estudió
   [system-design-101](https://github.com/ByteByteGoHq/system-design-101) entero —91.093 palabras,
   13 lectores, ~40 propuestas, tres lentes adversariales cada una— y **ninguna propuesta sobrevivió**:

@@ -40,11 +40,18 @@ cada arranque.
 - intento 1: leer las 91.093 palabras enteras con 13 agentes y proponer → ~40 propuestas, ninguna sobrevive tres lentes adversariales
 - decisión humana: se pidió estudiarlo y ver qué era implementable. La respuesta medida es que nada lo era, y el motivo es de categoría, no de calidad: ese material es arquitectura de runtime y esto es un protocolo de proceso sobre un árbol de git. Lo que sí salió fueron ocho defectos propios, encontrados al auditar el repositorio para poder refutar, y ésos se implementaron.
 
-## Pendientes: medidos, esperando una decisión
+## Pendientes: cerrados el 2026-09-05
 
-- **El README no baja de 150 líneas**, que era el criterio original de su etapa. Quedó en 207 porque
-  después se pidió explicar memoria y bucle de auto-mejora con diagramas. Se declara, no se esconde.
-- **`templates/adr.md` está huérfano**: ninguna fase lo invoca y ni SKILL.md ni el README lo nombran.
-  Engancharlo a una fase o retirarlo es decisión humana, pendiente.
-- **La versión 1.4.0 no tiene etiqueta de git.** El documento ya no afirma tenerla; crearla es una
-  decisión de publicación.
+- **`templates/adr.md` dejó de ser huérfano.** Enganchado a la fase 4 (PLAN), y **sólo cuando
+  corresponde**: una decisión que ate al proyecto por meses. Un ADR por tarea rutinaria vacía el
+  artefacto. Va con gate propio (`verify-adr.mjs`, 44.º) porque engancharlo sin verificación es
+  prosa que nadie cumple — el defecto que tenía la plantilla de spec.
+- **La etiqueta `v1.4.0` existe y está publicada.** `SKILL.md` vuelve a afirmarla, y ahora una regla
+  lo comprueba **contra git**, no contra el texto: si el documento afirma una etiqueta que no existe,
+  la suite se pone roja. Antes esa afirmación era falsa y nada la miraba.
+- **El README quedó en 210 líneas, no en las 150 del criterio original.** Se comprimió lo que se
+  podía sin romper anclas —la nota del renombre y los dos bloques de comandos fundidos en uno— pero
+  bajar de ahí exige sacar los diagramas de las once fases, de la memoria y del bucle, que se
+  pidieron explícitamente después de fijar ese número, o el diccionario, que el contrato ancla.
+  **Se declara, no se esconde:** el criterio quedó superado por un pedido posterior, y cumplirlo
+  al pie habría sido cumplir la métrica rompiendo el producto.

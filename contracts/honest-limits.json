@@ -528,6 +528,12 @@
       "file": "SECURITY.md",
       "phrase": "no ve el HTML que se arma con plantillas del lado del servidor",
       "why": "El detector busca sinks del navegador -- innerHTML, outerHTML, dangerouslySetInnerHTML -- asi que un generador en Node que arma HTML con template literals no dispara nada. Verificado corriendo el gate real sobre scripts/tablero-modelo.mjs y scripts/tablero.mjs: cero hallazgos, escapen o no. Se probaron cinco reglas de forma para cubrirlo y las cinco terminaron en falsos positivos sobre codigo correcto -- 43, 26, 6, 5 y 3 hallazgos, todos falsos, sin un solo verdadero positivo en 210 archivos ni en 191 commits de historia. Una de ellas se apagaba con un comentario: escribir que falta escapar bastaba para marcar la funcion como escapadora. El escape de un generador propio se prueba aparte, con su propia prueba de inyeccion, y eso no es sustituto del gate: es lo unico que hay."
+    },
+    {
+      "limit_id": "adr-gate-cannot-know-one-was-needed",
+      "file": "skills/gates.md",
+      "phrase": "no sabe si un ADR hacía falta",
+      "why": "El gate verifica la FORMA de los registros que existan: cuatro secciones con texto, estado valido, sin huecos de plantilla, y toda opcion elegida con su motivo. Lo que no puede es saber si faltaba escribir uno. Un proyecto que ata su arquitectura a un motor de base de datos y no lo registra sale igual de verde que uno que no tomo ninguna decision estructural, porque sin carpeta escribe VACIO. Decidir cuando corresponde un ADR es humano y esta descrito en la fase 4; el gate solo puede juzgar lo que ya se escribio. Tampoco juzga la decision: que esten las opciones descartadas no prueba que se hayan evaluado."
     }
   ]
 }

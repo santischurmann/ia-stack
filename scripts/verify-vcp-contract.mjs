@@ -155,6 +155,8 @@ export const REQUIREMENTS = [
   // limites de SECURITY.md. Borrar la frase del documento rompe las dos.
   ['tests/self-checks.test.mjs', /nunca a quién le pregunta/u, 'self-check rule scope honest limit'],
   ['SECURITY.md', /no ve el HTML que se arma con plantillas del lado del servidor/u, 'server-side HTML template honest limit'],
+  ['SKILL.md', /verify-adr\.mjs/u, 'the architecture decision record wired into PHASE 4'],
+  ['skills/gates.md', /no sabe si un ADR hacía falta/u, 'ADR gate cannot know one was needed'],
 ];
 
 // Narrow, phrase-level bans — never a bare word ban — so legitimate uses of "genuine" elsewhere

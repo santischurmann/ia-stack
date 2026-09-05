@@ -547,6 +547,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-adr.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-audit-chain.mjs",
       "class": "gate"
     },
@@ -964,6 +968,18 @@
     },
     {
       "path": "tests/verify-ablation.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-adr-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-adr-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-adr.test.mjs",
       "class": "prueba"
     },
     {
