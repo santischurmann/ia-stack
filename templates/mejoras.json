@@ -11,5 +11,8 @@
         "texto_literal": "El fragmento exacto que respalda esta propuesta. El gate lo busca literal en ese archivo: si no esta, rechaza."
       }
     }
-  ]
+  ],
+  "cerradas": {
+    "AAAA-MM-DD": "Se escribe DESPUES, cuando la ronda se atendio: que paso con cada propuesta -- cual se implemento, cual se declaro como limite honesto porque ninguna regla sobrevivio, cual se salteo y por que. Al menos treinta caracteres. Opcional: una ronda recien escrita todavia no tiene cierre."
+  }
 }

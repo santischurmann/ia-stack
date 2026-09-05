@@ -6,7 +6,8 @@
 // propio trabajo.
 
 import assert from 'node:assert/strict';
-import { dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
@@ -156,4 +157,44 @@ test('la ronda real de este repositorio resuelve todas sus citas contra el disco
   // que resolver de verdad, o sus propuestas son opiniones con formato de hallazgo.
   const r = correr(['check', 'docs/mejoras/2026-09-04.json'], { hoy: '2026-09-04' });
   assert.equal(r.codigo, 0, r.errores.join(' | '));
+});
+
+// --- El campo que registra el cierre de una ronda -----------------------------------------------
+//
+// `cerradas` nació inventado sobre la marcha al cerrar la ronda del 2026-09-04: se agregó al
+// registro para anotar qué pasó con cada propuesta, y ni el gate lo validaba ni la plantilla lo
+// enseñaba. Un campo que nadie comprueba es un campo que cada uno escribe distinto, y el próximo
+// que abra una ronda no sabía que existía.
+//
+// Es OPCIONAL a propósito: una ronda recién escrita todavía no tiene cierre, y exigirlo obligaría a
+// declarar el resultado antes de trabajar.
+
+test('cerradas es opcional, y cuando está tiene que decir qué pasó', () => {
+  assert.deepEqual(violaciones(registro(), leer, '2026-09-10'), [], 'sin cerradas sigue siendo válido');
+
+  const conCierre = registro({ cerradas: { '2026-09-04': 'Dos se implementaron y dos se declararon como límite honesto porque ninguna regla sobrevivió.' } });
+  assert.deepEqual(violaciones(conCierre, leer, '2026-09-10'), []);
+});
+
+test('FALSIFICACIÓN · un cierre mal formado, con fecha inventada o sin contenido, se rechaza', () => {
+  const con = (v) => violaciones(registro({ cerradas: v }), leer, '2026-09-10').join(' ');
+  assert.match(con('un texto suelto'), /objeto de fecha a texto/u);
+  assert.match(con(['una lista']), /objeto de fecha a texto/u);
+  assert.match(con(null), /objeto de fecha a texto/u);
+  assert.match(con({ ayer: 'un texto suficientemente largo para pasar el mínimo' }), /no es una fecha/u);
+  assert.match(con({ '2026-09-04': 'corto' }), /al menos 30/u);
+  assert.match(con({ '2026-09-04': 42 }), /al menos 30/u);
+});
+
+test('la plantilla del bucle pasa su propio gate cuando se le llenan los huecos', SOLO_FUENTE, () => {
+  // Mismo criterio que las plantillas de spec y de ADR: un molde que su propio gate rechaza le hace
+  // perder el día a quien lo copie. Los huecos se llenan con valores mínimos; lo que se comprueba es
+  // la FORMA, no que el molde venga lleno.
+  const texto = readFileSync(join(repoRoot, 'templates', 'mejoras.json'), 'utf8')
+    .replaceAll('AAAA-MM-DD', '2026-09-05')
+    .replace('ruta/relativa/del/archivo/donde/se/vio.md', 'templates/mejoras.json');
+  const molde = JSON.parse(texto);
+  molde.propuestas[0].cita.texto_literal = 'Plantilla del bucle de auto-mejora';
+  const leerDisco = (ruta) => readFileSync(join(repoRoot, ruta), 'utf8');
+  assert.deepEqual(violaciones(molde, leerDisco, '2026-09-05'), []);
 });

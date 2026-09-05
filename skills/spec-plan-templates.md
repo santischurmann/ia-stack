@@ -93,6 +93,16 @@ task is not a conflict with itself.
 After each task reaches GREEN, verify that the declaration matches the real checkout, including
 untracked files:
 
+
+## Risk Notes
+
+- <Risk: T02 touches shared module — run full suite after>
+- <Risk: T03 needs external API — mock unit, real integration>
+
+## Subagent assignments
+
+Each task runs: RED → GREEN → TRIANGULATE → REFACTOR → (DOCS if needed)
+CHORE runs once after all tasks: lint + typecheck + coverage + build
 ```bash
 node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
   --tasks docs/tasks.json --task <task-id> --base <git-ref>

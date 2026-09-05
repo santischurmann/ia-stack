@@ -37,7 +37,18 @@ export const SECCIONES = Object.freeze(['Context', 'Decision', 'Options Consider
 export const ESTADOS = Object.freeze(['Proposed', 'Accepted', 'Deprecated', 'Superseded']);
 
 const HUECO = /<[^>\n]{2,}>/u;
-const MINIMO_POR_SECCION = 15;
+/** Minimo de caracteres por seccion. MEDIDO, no elegido a ojo -- el 15 original salio de la
+ * intuicion, que es el mismo defecto que ya se pago con el tope de linea de la traza, donde el plan
+ * pedia 1200 y el maximo real resulto 2736.
+ *
+ * Los datos, tomados el 2026-09-05: la seccion mas corta de los dos moldes de ADR trae 28
+ * caracteres de guia, y las 19 secciones escritas de verdad en docs/ miden 162 como minimo, con
+ * mediana 445. Entonces 30 queda justo por encima de la guia mas corta -- si lo que hay escrito no
+ * supera lo que el molde ya traia, es que se borro la guia y no se escribio nada -- y muy por
+ * debajo de cualquier seccion real, para no rechazar un ADR legitimamente conciso. Subirlo a 162
+ * seria calibrar con secciones de spec y de plan, que son otro artefacto y mas largos por
+ * naturaleza: una alarma que grita sobre un ADR corto y correcto se termina ignorando. */
+const MINIMO_POR_SECCION = 30;
 
 /** El cuerpo de una sección: lo que hay entre su encabezado y el siguiente. */
 export function cuerpoDeSeccion(texto, nombre) {

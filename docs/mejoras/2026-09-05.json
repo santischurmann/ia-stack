@@ -1,0 +1,42 @@
+{
+  "schema": "vcp.mejoras/1",
+  "run_id": "2026-09-05",
+  "why": "Ronda corrida a pedido, no por calendario: la anterior fue hace 1 dia y el periodo es 7. Las cuatro propuestas salen de medir el repositorio despues de cerrar los pendientes, no de repasar la sesion de memoria. Cada una cita la linea que la respalda.",
+  "propuestas": [
+    {
+      "titulo": "La regla de comandos publicados cubre el archivo chico y deja el grande",
+      "por_que": "La prueba corre los comandos del README, que publica 6, y no mira SKILL.md, que publica 47 en bloques bash y es el documento que el agente lee entero. Medido hoy: ninguno de los 33 de solo lectura esta roto, asi que esto es prevencion y no reparacion -- pero el README tenia 2 de 3 rotos justamente porque nadie los miraba. Extenderla exige distinguir un placeholder legitimo (<feature-slug>) de un comando ejecutable, y manejar la continuacion de linea con barra invertida: sin eso da 6 falsos positivos, medidos.",
+      "cita": {
+        "archivo": "tests/readme-comandos.test.mjs",
+        "texto_literal": "La regla nació mirando sólo el README"
+      }
+    },
+    {
+      "titulo": "Hay tres pares de plantillas duplicadas y ningun gate compara los pares entre si",
+      "por_que": "Cada artefacto -- spec, plan y adr -- tiene una plantilla en templates/ y otra embebida en skills/spec-plan-templates.md, que es la que SKILL.md manda usar. Ya divergieron dos veces: la de spec fallaba 7 de 8 secciones de su propio gate, y la de plan pierde hoy Risk Notes y Subagent assignments, que si estan en la canonica. Los gates verifican cada plantilla por separado contra su forma; ninguno comprueba que el par diga lo mismo. Es la tercera aparicion de la misma clase en dos dias.",
+      "cita": {
+        "archivo": "skills/spec-plan-templates.md",
+        "texto_literal": "## TEMPLATE: docs/plan.md"
+      }
+    },
+    {
+      "titulo": "El minimo por seccion del gate de ADR se eligio sin medir",
+      "por_que": "MINIMO_POR_SECCION vale 15 caracteres y ese numero salio de la intuicion, no de los datos. Medido sobre la plantilla canonica: sus secciones tienen 38, 63, 140 y 74 caracteres de guia. Un tope elegido a ojo es el mismo defecto que ya se pago con el tope de linea de la traza, donde el plan pedia 1200 y la medicion dio que el maximo real era 2736. Si 15 queda corto, una seccion con tres palabras pasa como escrita.",
+      "cita": {
+        "archivo": "scripts/verify-adr.mjs",
+        "texto_literal": "MEDIDO, no elegido a ojo -- el 15 original salio de la"
+      }
+    },
+    {
+      "titulo": "El campo que registra el cierre de una ronda no existe en el schema ni en la plantilla",
+      "por_que": "Al cerrar la ronda anterior se agrego un campo 'cerradas' al registro para anotar que paso con cada propuesta. El gate no lo valida, la plantilla no lo ensena y ningun documento lo menciona: es un campo inventado sobre la marcha que el proximo que abra una ronda no va a saber que existe. O se declara en el schema y en la plantilla, o se saca y el cierre se registra en otro lado.",
+      "cita": {
+        "archivo": "templates/mejoras.json",
+        "texto_literal": "Plantilla del bucle de auto-mejora"
+      }
+    }
+  ],
+  "cerradas": {
+    "2026-09-05": "Las cuatro se cerraron el mismo dia. (1) La regla de comandos publicados se extendio a SKILL.md: ahora cubre los dos documentos, apartando los placeholders y uniendo la continuacion de linea, que eran los 6 falsos positivos medidos. (2) Se arreglo la divergencia activa -- la plantilla de plan embebida recupero Risk Notes y Subagent assignments -- y se agrego la regla que compara los tres pares entre si, descubriendolos por forma. (3) El minimo por seccion del gate de ADR paso de 15 a 30, medido: la guia mas corta de los moldes trae 28 caracteres y las secciones escritas de verdad miden 162 como minimo. (4) El campo cerradas -- este mismo -- se declaro en el schema del gate y en la plantilla, con su forma validada. La cita de la propuesta 1 se actualizo porque la linea que citaba se reescribio al cerrarla -- el hallazgo es el mismo, la linea cambio. Es la segunda vez que el gate del sereno atrapa esto en dos rondas."
+  }
+}

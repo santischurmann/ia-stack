@@ -255,6 +255,10 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/mejoras/2026-09-05.json",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/phase-decisions.json",
       "class": "evidencia"
     },
@@ -904,6 +908,10 @@
     },
     {
       "path": "tests/install-runtime.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/plantillas-pareadas.test.mjs",
       "class": "prueba"
     },
     {

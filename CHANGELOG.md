@@ -7,6 +7,25 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Segunda ronda del bucle de auto-mejora, corrida a pedido y cerrada el mismo día.** Las cuatro
+  propuestas salieron de **medir** el repositorio, no de repasar la sesión de memoria:
+  - **La regla de comandos publicados cubría el archivo chico.** Verificaba los 6 del README y no
+    los 47 de `SKILL.md`, que es el documento que el agente lee entero. Extenderla exigía distinguir
+    un placeholder legítimo (`<feature-slug>`) de un comando ejecutable y unir las continuaciones de
+    línea: sin eso daba 6 falsos positivos, y ninguno era un defecto.
+  - **Tres pares de plantillas duplicadas y ningún gate comparaba los pares.** Cada artefacto —spec,
+    plan, adr— tiene una copia canónica y otra embebida, que es la que el protocolo manda usar. Ya
+    habían divergido dos veces, y hoy se encontró la tercera: la de plan había perdido `Risk Notes`
+    y `Subagent assignments`. Arreglada, y con una regla que descubre los pares por forma.
+  - **El mínimo por sección del gate de ADR estaba elegido a ojo.** Pasó de 15 a 30 con la medición
+    delante: la guía más corta de los moldes trae 28 caracteres y una sección escrita de verdad mide
+    162 como mínimo. No se subió a 162 porque eso calibraría con secciones de spec, que son otro
+    artefacto: una alarma que grita sobre un ADR corto y correcto se termina ignorando.
+  - **El campo que registra el cierre de una ronda no existía en ningún lado.** Se había inventado
+    sobre la marcha al cerrar la ronda anterior. Ahora está en el schema, validado, y en la plantilla.
+  - **El gate del sereno volvió a atrapar al agente**: cerrar dos propuestas reescribió las líneas
+    que ellas citaban, y rechazó. Segunda vez en dos rondas.
+
 - **`v1.4.0` existe, y ahora la afirmación se comprueba contra git.** `SKILL.md` decía llevar esa
   etiqueta y el repositorio sólo tenía `v1.0.0` y `v1.1.0`. Se creó y publicó la etiqueta, y una
   regla verifica **contra git** cualquier etiqueta que el documento afirme llevar: la afirmación

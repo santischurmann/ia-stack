@@ -55,6 +55,20 @@ export function violaciones(registro, leer, hoy) {
   } else if (hoy !== undefined && diasEntre(registro.run_id, hoy) < 0) {
     malas.push(`el run_id ${registro.run_id} está en el futuro: un registro no puede adelantarse a la sesión que lo produjo`);
   }
+  // `cerradas` es opcional y se escribe DESPUES, cuando la ronda se atendio: un texto por fecha que
+  // cuenta que paso con cada propuesta. Se valida su forma porque un campo que nadie comprueba es un
+  // campo que cada uno escribe distinto -- nacio inventado sobre la marcha en la ronda del
+  // 2026-09-04, sin schema ni plantilla que lo enseñara.
+  if (registro.cerradas !== undefined) {
+    if (registro.cerradas === null || typeof registro.cerradas !== 'object' || Array.isArray(registro.cerradas)) {
+      malas.push('cerradas tiene que ser un objeto de fecha a texto: qué pasó con las propuestas de esa ronda');
+    } else {
+      for (const [fecha, texto] of Object.entries(registro.cerradas)) {
+        if (!FECHA.test(fecha)) malas.push(`cerradas: "${fecha}" no es una fecha AAAA-MM-DD`);
+        if (typeof texto !== 'string' || texto.trim().length < 30) malas.push(`cerradas[${fecha}]: decí qué pasó, con al menos 30 caracteres`);
+      }
+    }
+  }
   if (!Array.isArray(registro.propuestas)) return [...malas, 'el registro no declara una lista de propuestas'];
   if (registro.propuestas.length > MAX_PROPUESTAS) {
     malas.push(`${registro.propuestas.length} propuestas: el tope es ${MAX_PROPUESTAS}. Una lista más larga no se lee, se archiva, y el tope es la feature.`);
