@@ -108,6 +108,67 @@ export function bandaDeHoras(marcas, umbralMinutos = UMBRAL_MINUTOS, corteMinuto
   return { piso: h(piso), techo: h(techo), descartado: h(descartado), umbralMinutos, corteMinutos, huecos: orden.length - 1 };
 }
 
+/** La banda de horas de cada dia, no una sola del proyecto entero.
+ *
+ * Se parte por dia UTC, igual que todo el resto del modelo: mezclar husos daria horas que no suman
+ * con las del proyecto. Cada dia se mide con la MISMA funcion que el total -- si el criterio del
+ * umbral cambia, cambia en los dos lados a la vez. */
+export function bandaPorDia(marcas, umbralMinutos = UMBRAL_MINUTOS, corteMinutos = CORTE_SESION_MINUTOS) {
+  const porDia = new Map();
+  for (const ms of marcas) {
+    const dia = new Date(ms).toISOString().slice(0, 10);
+    if (!porDia.has(dia)) porDia.set(dia, []);
+    porDia.get(dia).push(ms);
+  }
+  return [...porDia.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([dia, suyas]) => ({ dia, ...bandaDeHoras(suyas, umbralMinutos, corteMinutos) }));
+}
+
+/** En que fase quedo un proyecto, segun las decisiones que registro.
+ *
+ * `superseded` NO cuenta como cerrada: significa que esa decision se reemplazo, y contarla diria que
+ * la fase esta resuelta cuando lo que hay es una decision retirada. Un registro ausente o sin forma
+ * no es un error: es un proyecto que todavia no registro ninguna fase. */
+export function estadoDeFases(decisiones) {
+  const vacio = { ultima: null, faltan: [], completo: false, cerradas: [] };
+  if (decisiones === null || typeof decisiones !== 'object' || Array.isArray(decisiones)) return vacio;
+  const orden = Array.isArray(decisiones.phase_order) ? decisiones.phase_order : null;
+  const lista = Array.isArray(decisiones.decisions) ? decisiones.decisions : [];
+  if (orden === null || orden.length === 0) return vacio;
+  const cerradas = orden.filter((f) => lista.some((d) => d?.phase_id === f && d?.status !== 'superseded'));
+  const faltan = orden.filter((f) => !cerradas.includes(f));
+  return { ultima: cerradas.at(-1) ?? null, faltan, completo: faltan.length === 0, cerradas };
+}
+
+/** Cuantas rondas de mejoras hay y cuales quedaron sin cerrar. Una ronda sin `cerradas` es una ronda
+ * cuyas propuestas nadie atendio: es lo que el tablero tiene que hacer visible. */
+export function rondasDeMejoras(rondas) {
+  const sinCerrar = rondas.filter((r) => r.registro?.cerradas === undefined).map((r) => r.nombre);
+  return {
+    total: rondas.length,
+    abiertas: sinCerrar.length,
+    propuestas: rondas.reduce((a, r) => a + (Array.isArray(r.registro?.propuestas) ? r.registro.propuestas.length : 0), 0),
+    sinCerrar,
+  };
+}
+
+const PLACEHOLDER = /^\(/u;
+
+/** El titular de SESSION.md: que feature y en que estado. Nada mas -- el resto del archivo es prosa
+ * que este tablero no interpreta. */
+export function estadoDeSesion(texto) {
+  const leer = (etiqueta) => {
+    // El patron se arma con `String.raw` para que las barras invertidas lleguen enteras al regex:
+    // escritas dentro de un template comun, `\*` se colapsa a `*` y da "Nothing to repeat".
+    const m = String(texto).match(new RegExp(String.raw`\*\*${etiqueta}:\*\*\s*(.+)`, 'u'));
+    if (m === null) return null;
+    const valor = m[1].trim();
+    return valor === '' || PLACEHOLDER.test(valor) ? null : valor;
+  };
+  return { feature: leer('Feature slug'), estado: leer('Status') };
+}
+
 /** Convierte tokens a dinero SOLO si hay una tabla de precios. Sin tabla no estima: devuelve null,
  * y el tablero dice por que. Nunca se trae una tarifa de ningun lado. */
 export function costoDe(tokens, precios) {
@@ -140,7 +201,51 @@ export function hayPrecios(precios) {
   return Object.keys(precios).length > 0;
 }
 
+// Constante para el salto de linea: escribirlo literal adentro de un template lo convierte en un
+// salto real al pasar por una herramienta que reescribe el archivo, y eso ya rompio este modulo.
+const SALTO = String.fromCharCode(10);
 const numero = (n) => new Intl.NumberFormat('es-AR').format(Math.round(n));
+
+/** En que fase quedo, y cuales faltan. Un proyecto que no declara fases dice que no declara, en vez
+ * de aparentar estar completo: el vacio y el exito no se escriben igual. */
+export function estadoDeFasesHtml(fases) {
+  if (fases === undefined || fases === null || fases.ultima === null) return '<span class="sin">sin fases declaradas</span>';
+  if (fases.completo) return `<b>completo</b> (${fases.cerradas.length})`;
+  return `hasta la <b>${escapar(fases.ultima)}</b>, faltan ${escapar(fases.faltan.join(', '))}`;
+}
+
+/** Las rondas de mejoras, y sobre todo cuantas quedaron SIN cerrar: una ronda escrita y no atendida
+ * es trabajo pendiente que nadie ve. */
+export function mejorasHtml(mejoras) {
+  if (mejoras === undefined || mejoras === null || mejoras.total === 0) return '<span class="sin">ninguna</span>';
+  const abiertas = mejoras.abiertas > 0 ? ` · <b>${mejoras.abiertas} sin cerrar</b>` : '';
+  return `${numero(mejoras.total)} ronda(s), ${numero(mejoras.propuestas)} propuesta(s)${abiertas}`;
+}
+
+export function sesionHtml(sesion) {
+  if (sesion === undefined || sesion === null || sesion.feature === null) return '<span class="sin">sin sesión declarada</span>';
+  return `${escapar(sesion.feature)}${sesion.estado === null ? '' : ` · ${escapar(sesion.estado)}`}`;
+}
+
+/** Las horas de cada dia, que es lo que se pidio: una banda por dia y no una sola del proyecto. */
+export function diasHtml(proyectos) {
+  const filas = [];
+  for (const p of proyectos) {
+    for (const d of p.dias ?? []) {
+      filas.push(`<tr><td>${escapar(d.dia)}</td><td>${escapar(p.nombre)}</td><td class="n">${d.piso}–${d.techo} h</td><td class="n">${numero(d.huecos)}</td></tr>`);
+    }
+  }
+  if (filas.length === 0) return '';
+  filas.sort();
+  return [
+    '<h2>Horas por día</h2>',
+    '<p>La misma banda que arriba, partida por día. El piso es lo que tiene evidencia; el techo, lo más que se puede sostener.</p>',
+    '<table>',
+    '<thead><tr><th>Día</th><th>Proyecto</th><th>Horas (banda)</th><th>Huecos</th></tr></thead>',
+    `<tbody>${SALTO}${filas.join(SALTO)}${SALTO}</tbody>`,
+    '</table>',
+  ].join(SALTO);
+}
 
 /** El HTML entero, autocontenido: sin red, sin fuentes externas, sin scripts. */
 export function renderizar(modelo) {
@@ -157,6 +262,9 @@ export function renderizar(modelo) {
       `<td class="n">${numero(p.tokens.salida)}</td>`,
       `<td class="n">${b.piso}–${b.techo} h</td>`,
       `<td class="n">${costo === null ? '—' : `$${costo.total}`}</td>`,
+      `<td>${estadoDeFasesHtml(p.fases)}</td>`,
+      `<td>${mejorasHtml(p.mejoras)}</td>`,
+      `<td>${sesionHtml(p.sesion)}</td>`,
       '</tr>',
     ].join('');
   }).join('\n');
@@ -172,10 +280,11 @@ export function renderizar(modelo) {
     '<h1>Tablero de ia-stack</h1>',
     `<p class="sello">Generado el ${escapar(generadoEn)}. Muestra el estado de ese momento, no el de ahora.</p>`,
     '<table>',
-    '<thead><tr><th>Proyecto</th><th>Sesiones</th><th>Turnos</th><th>Tokens de salida</th><th>Horas (banda)</th><th>Costo</th></tr></thead>',
+    '<thead><tr><th>Proyecto</th><th>Sesiones</th><th>Turnos</th><th>Tokens de salida</th><th>Horas (banda)</th><th>Costo</th><th>Fases</th><th>Mejoras</th><th>Sesión</th></tr></thead>',
     `<tbody>\n${filas}\n</tbody>`,
     '</table>',
     `<p class="total">${numero(totalTokens)} tokens en total, sobre ${proyectos.length} proyecto(s).</p>`,
+    diasHtml(proyectos),
     avisoDinero,
     '<h2>Lo que este tablero no puede decirte</h2>',
     '<ul>',

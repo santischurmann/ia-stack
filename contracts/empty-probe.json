@@ -34,6 +34,12 @@
       "why": "No es un gate de linea de comandos: es la mitad pura del tablero, que existe para poder probar las cuentas sin tocar el disco. Ejecutado solo no tiene nada que hacer y sale 2. Su comportamiento real se prueba en tests/tablero-modelo.test.mjs."
     },
     {
+      "script": "tablero-servidor.mjs",
+      "args": [],
+      "expect": "usage",
+      "why": "Sin argumentos imprime el uso y sale 2, como todo comando de este protocolo. NO se sonda con 'serve': eso abriria un puerto y dejaria un proceso vivo dentro de la sonda, que corre sobre un directorio temporal y termina. Un gate que levanta servidores para probarse deja procesos colgados, y este repositorio ya pago una tarea colgada tres horas."
+    },
+    {
       "script": "tablero.mjs",
       "args": [
         "due"

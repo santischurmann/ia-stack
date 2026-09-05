@@ -1478,6 +1478,7 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 ```bash
 node .vibe/vcp-runtime/scripts/tablero.mjs due
 node .vibe/vcp-runtime/scripts/tablero.mjs build
+node .vibe/vcp-runtime/scripts/tablero-servidor.mjs serve
 ```
 
 Genera una página local con proyectos, sesiones, turnos, tokens y una **banda** de horas. Se abre

@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
-import { PERIODO_DIAS, agregar, bandaDeHoras, renderizar } from './tablero-modelo.mjs';
+import { PERIODO_DIAS, agregar, bandaDeHoras, bandaPorDia, estadoDeFases, estadoDeSesion, renderizar, rondasDeMejoras } from './tablero-modelo.mjs';
 
 export const USAGE = 'usage: tablero.mjs build [--out <carpeta>] | tablero.mjs due [--today AAAA-MM-DD]';
 export const CARPETA = 'ia-stack';
@@ -79,6 +79,47 @@ export function leerRegistros(texto) {
   return registros;
 }
 
+/** Del slug de la carpeta a la ruta real del proyecto, COMPROBADA contra el disco.
+ *
+ * El agente nombra cada carpeta con el `cwd` y los separadores cambiados por guiones, y esa
+ * codificacion es AMBIGUA: un proyecto llamado `ia-stack` produce el mismo slug que uno que viviera
+ * en `ia/stack`. No se adivina. Se prueba la interpretacion directa y, si esa carpeta no existe en
+ * el disco, se devuelve null.
+ *
+ * Un proyecto sin ruta resuelta aparece igual en el tablero con sus tokens y sus horas -- que salen
+ * de la transcripcion y no dependen de esto -- pero sin estado de fases. Mostrar el estado de OTRO
+ * proyecto seria el unico error que de verdad importaria. */
+export function rutaDeProyecto(slug, hay = existsSync) {
+  const m = String(slug).match(/^([A-Za-z])--(.*)$/u);
+  if (m === null) return null;
+  const ruta = `${m[1]}:/${m[2].split('-').join('/')}`;
+  return hay(ruta) ? ruta : null;
+}
+
+/** Lo que el proyecto declara de si mismo: en que fase quedo, que rondas de mejoras tiene y en que
+ * anda la sesion. Todo opcional -- un proyecto que no usa el protocolo no declara nada, y eso no es
+ * un incumplimiento sino un proyecto que no lo usa. */
+export function estadoDelProyecto(ruta, { hay = existsSync, listar = readdirSync, leer = readFileSync } = {}) {
+  const vacio = { fases: estadoDeFases(null), mejoras: rondasDeMejoras([]), sesion: { feature: null, estado: null } };
+  if (ruta === null) return vacio;
+  const leerJson = (relativo) => {
+    try { return JSON.parse(leer(join(ruta, relativo), 'utf8')); } catch { return null; }
+  };
+  const carpetaMejoras = join(ruta, 'docs', 'mejoras');
+  const rondas = [];
+  if (hay(carpetaMejoras)) {
+    let nombres = [];
+    try { nombres = listar(carpetaMejoras); } catch { nombres = []; }
+    for (const nombre of nombres.filter((n) => n.endsWith('.json'))) {
+      const registro = leerJson(join('docs', 'mejoras', nombre));
+      if (registro !== null) rondas.push({ nombre, registro });
+    }
+  }
+  let sesion = { feature: null, estado: null };
+  try { sesion = estadoDeSesion(leer(join(ruta, '.vibe', 'SESSION.md'), 'utf8')); } catch { /* sin sesion declarada */ }
+  return { fases: estadoDeFases(leerJson(join('docs', 'phase-decisions.json'))), mejoras: rondasDeMejoras(rondas), sesion };
+}
+
 export function construirModelo(raizProyectos, io = {}) {
   const { hay = existsSync, listar = readdirSync, leer = readFileSync, hoy = '(sin fecha)' } = io;
   const proyectos = [];
@@ -91,7 +132,12 @@ export function construirModelo(raizProyectos, io = {}) {
     }
     const a = agregar(registros);
     if (a.turnos === 0) continue;
-    proyectos.push({ nombre, sesiones: sesiones.length, turnos: a.turnos, lineasRepetidas: a.lineasRepetidas, tokens: a.tokens, modelos: a.modelos, horas: bandaDeHoras(a.marcas) });
+    const ruta = rutaDeProyecto(nombre, hay);
+    proyectos.push({
+      nombre, sesiones: sesiones.length, turnos: a.turnos, lineasRepetidas: a.lineasRepetidas,
+      tokens: a.tokens, modelos: a.modelos, horas: bandaDeHoras(a.marcas), dias: bandaPorDia(a.marcas),
+      ...estadoDelProyecto(ruta, { hay, listar, leer }),
+    });
   }
   proyectos.sort((x, y) => y.tokens.salida - x.tokens.salida);
   return { generadoEn: hoy, proyectos };

@@ -156,8 +156,18 @@ Un comando genera una página local con lo que pasó: proyectos, sesiones, turno
 Se abre con doble clic. Sin servidor, sin puerto, sin nada que quede corriendo.
 
 ```bash
-node .vibe/vcp-runtime/scripts/tablero.mjs build
+node .vibe/vcp-runtime/scripts/tablero.mjs build      # escribe el archivo
+node .vibe/vcp-runtime/scripts/tablero-servidor.mjs serve   # o lo servís en localhost
 ```
+
+Muestra, por proyecto: sesiones, turnos, tokens, horas **por día**, en qué fase quedó cada uno
+—marcando los que quedaron a medias—, cuántas rondas de mejoras hay y cuáles siguen abiertas, y en
+qué anda la sesión. Un proyecto que no usa el protocolo dice «sin fases declaradas» en vez de
+aparentar estar completo.
+
+El servidor **escucha sólo en `127.0.0.1`**, sirve una sola página armada en memoria y no lee
+archivos del disco. **No autentica a nadie:** cualquier proceso de tu máquina puede leerlo mientras
+corre.
 
 Tres cosas que hace a propósito, y que conviene no "arreglar":
 

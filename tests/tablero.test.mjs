@@ -24,6 +24,8 @@ import {
   leerRegistros,
   main,
   parseArguments,
+  estadoDelProyecto,
+  rutaDeProyecto,
   proyectosEn,
   repositorioQueContiene,
   sesionesDe,
@@ -279,4 +281,69 @@ test('NINGÚN DATO DE SESIÓN ENTRA AL REPOSITORIO', SOLO_FUENTE, () => {
     for (const h of HUELLAS) if (texto.includes(h)) culpables.push(`${ruta}: ${h}`);
   }
   assert.deepEqual(culpables, [], 'entró al repositorio algo con forma de dato de sesión');
+});
+
+// --- Del slug de la carpeta a la ruta real del proyecto -----------------------------------------
+//
+// El agente guarda cada proyecto en una carpeta cuyo nombre es el `cwd` con los separadores
+// reemplazados por guiones. Para mostrar en qué fase quedó cada uno hay que volver del slug a la
+// ruta — y ahí hay una ambigüedad que NO se puede resolver adivinando: un proyecto llamado
+// `ia-stack` produce el mismo slug que uno que viviera en `ia/stack`.
+//
+// Por eso la reconstrucción se VERIFICA contra el disco: se prueba la interpretación directa y, si
+// esa carpeta no existe, se devuelve null. Un proyecto sin ruta resuelta aparece en el tablero con
+// sus tokens y sus horas —que salen de la transcripción y no dependen de esto— pero sin estado de
+// fases. Nunca con el estado de OTRO proyecto, que es el único error que importaría.
+
+test('rutaDeProyecto reconstruye la ruta y la comprueba contra el disco', () => {
+  const existentes = new Set(['C:/Users/Santi/Desktop/Claude/VibeCodeProtocols']);
+  const hay = (r) => existentes.has(String(r).split(String.fromCharCode(92)).join('/'));
+  assert.equal(rutaDeProyecto('C--Users-Santi-Desktop-Claude-VibeCodeProtocols', hay), 'C:/Users/Santi/Desktop/Claude/VibeCodeProtocols');
+});
+
+test('FALSIFICACIÓN · un slug ambiguo devuelve null en vez de la carpeta equivocada', () => {
+  // `mi-proyecto` y `mi/proyecto` colapsan al mismo slug. Si la interpretación directa no existe en
+  // el disco, no se inventa: null. Mostrar el estado de otro proyecto sería peor que no mostrar nada.
+  assert.equal(rutaDeProyecto('C--Users-Santi-ia-stack', () => false), null);
+  assert.equal(rutaDeProyecto('no-empieza-con-unidad', () => true), null);
+  assert.equal(rutaDeProyecto('', () => true), null);
+});
+
+test('estadoDelProyecto lee lo que el proyecto declara, y tolera que no declare nada', () => {
+  // Sin ruta resuelta no se afirma nada: ni fases, ni mejoras, ni sesión. Es el caso de un proyecto
+  // cuyo slug es ambiguo, y decir "sin datos" es lo correcto frente a mostrar los de otro.
+  const sinRuta = estadoDelProyecto(null);
+  assert.equal(sinRuta.fases.completo, false);
+  assert.equal(sinRuta.mejoras.total, 0);
+  assert.deepEqual(sinRuta.sesion, { feature: null, estado: null });
+
+  const archivos = {
+    'docs/phase-decisions.json': JSON.stringify({ phase_order: ['1', '2'], decisions: [{ phase_id: '1', status: 'decided' }] }),
+    'docs/mejoras/2026-09-05.json': JSON.stringify({ propuestas: [1, 2, 3] }),
+    'docs/mejoras/roto.json': 'no es json',
+    '.vibe/SESSION.md': '**Feature slug:** una-feature\n**Status:** en progreso\n',
+  };
+  const norm = (r) => String(r).split(String.fromCharCode(92)).join('/').replace('/proy/', '');
+  const io = {
+    hay: (r) => norm(r).endsWith('docs/mejoras'),
+    listar: () => ['2026-09-05.json', 'roto.json', 'notas.md'],
+    leer: (r) => { const k = norm(r); if (k in archivos) return archivos[k]; throw new Error('ENOENT'); },
+  };
+  const e = estadoDelProyecto('/proy', io);
+  assert.equal(e.fases.ultima, '1');
+  assert.deepEqual(e.fases.faltan, ['2']);
+  // El JSON roto se descarta sin tumbar la lectura; `notas.md` ni siquiera se mira.
+  assert.equal(e.mejoras.total, 1);
+  assert.equal(e.mejoras.propuestas, 3);
+  assert.deepEqual(e.sesion, { feature: 'una-feature', estado: 'en progreso' });
+});
+
+test('estadoDelProyecto sigue de largo si la carpeta de mejoras no se puede listar', () => {
+  const io = {
+    hay: () => true,
+    listar: () => { throw new Error('EACCES'); },
+    leer: () => { throw new Error('ENOENT'); },
+  };
+  const e = estadoDelProyecto('/proy', io);
+  assert.equal(e.mejoras.total, 0, 'un permiso raro no es una ronda de mejoras');
 });

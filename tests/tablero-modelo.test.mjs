@@ -12,6 +12,13 @@ import {
   USAGE,
   agregar,
   bandaDeHoras,
+  bandaPorDia,
+  estadoDeFases,
+  estadoDeFasesHtml,
+  mejorasHtml,
+  sesionHtml,
+  estadoDeSesion,
+  rondasDeMejoras,
   costoDe,
   escapar,
   esTurnoDeAsistente,
@@ -197,4 +204,128 @@ test('hayPrecios trata igual a la nula, la ausente y la vacía', () => {
   assert.equal(hayPrecios({}), false);
   assert.equal(hayPrecios('no es tabla'), false);
   assert.equal(hayPrecios({ salida: 15 }), true);
+});
+
+// --- Lo que faltaba del pedido original ---------------------------------------------------------
+//
+// El tablero mostraba proyectos, sesiones, turnos, tokens y una banda de horas por proyecto. El
+// pedido incluía cuatro cosas más que no estaban: horas POR DÍA, el estado de cada fase del plan,
+// un escaneo de protocolos que quedaron a medias, y qué mejoras se hicieron.
+//
+// Todo lo de acá es PURO: recibe contenido y devuelve datos. Leer el disco es del CLI.
+
+test('bandaPorDia parte las marcas por día y da una banda de cada uno', () => {
+  const d = (iso) => Date.parse(iso);
+  const marcas = [
+    d('2026-09-01T10:00:00Z'), d('2026-09-01T10:02:00Z'), d('2026-09-01T10:03:00Z'),
+    d('2026-09-03T14:00:00Z'), d('2026-09-03T14:01:00Z'),
+  ];
+  const dias = bandaPorDia(marcas);
+  assert.deepEqual(dias.map((x) => x.dia), ['2026-09-01', '2026-09-03']);
+  assert.ok(dias[0].piso > 0, 'tres marcas seguidas dan piso mayor que cero');
+  assert.equal(dias.every((x) => x.piso <= x.techo), true, 'el piso nunca puede pasar al techo');
+  // El corte es por día UTC, igual que todo el resto del modelo: mezclar husos daría horas que no
+  // suman con las del proyecto.
+  assert.deepEqual(bandaPorDia([]), []);
+  assert.deepEqual(bandaPorDia([d('2026-09-01T10:00:00Z')]).map((x) => x.dia), ['2026-09-01']);
+});
+
+test('estadoDeFases lee las decisiones registradas y dice cuál fue la última', () => {
+  const decisiones = { schema: 'x', phase_order: ['1', '2', '3'], decisions: [
+    { phase_id: '1', phase_name: 'BOOTSTRAP', status: 'decided' },
+    { phase_id: '2', phase_name: 'RESEARCH', status: 'decided' },
+  ] };
+  const e = estadoDeFases(decisiones);
+  assert.equal(e.ultima, '2');
+  assert.deepEqual(e.faltan, ['3']);
+  assert.equal(e.completo, false);
+
+  const cerrado = estadoDeFases({ phase_order: ['1'], decisions: [{ phase_id: '1', status: 'decided' }] });
+  assert.equal(cerrado.completo, true);
+  assert.deepEqual(cerrado.faltan, []);
+});
+
+test('FALSIFICACIÓN · una decisión reemplazada no cuenta como fase cerrada', () => {
+  // `superseded` significa que esa decisión se reemplazó: contarla como cerrada diría que la fase
+  // está resuelta cuando lo que hay es una decisión retirada.
+  const e = estadoDeFases({ phase_order: ['1', '2'], decisions: [
+    { phase_id: '1', status: 'decided' },
+    { phase_id: '2', status: 'superseded' },
+  ] });
+  assert.deepEqual(e.faltan, ['2']);
+  assert.equal(e.completo, false);
+});
+
+test('estadoDeFases tolera un registro ausente o sin forma', () => {
+  for (const malo of [null, undefined, 'texto', [], {}, { phase_order: 'no es lista' }]) {
+    const e = estadoDeFases(malo);
+    assert.equal(e.completo, false);
+    assert.equal(e.ultima, null);
+    assert.deepEqual(e.faltan, []);
+  }
+});
+
+test('rondasDeMejoras separa las cerradas de las abiertas', () => {
+  const r = rondasDeMejoras([
+    { nombre: '2026-09-04.json', registro: { propuestas: [1, 2], cerradas: { '2026-09-04': 'se hizo' } } },
+    { nombre: '2026-09-05.json', registro: { propuestas: [1] } },
+  ]);
+  assert.equal(r.total, 2);
+  assert.equal(r.abiertas, 1);
+  assert.equal(r.propuestas, 3);
+  assert.deepEqual(r.sinCerrar, ['2026-09-05.json']);
+  assert.deepEqual(rondasDeMejoras([]), { total: 0, abiertas: 0, propuestas: 0, sinCerrar: [] });
+});
+
+test('estadoDeSesion saca el titular de SESSION.md sin inventar', () => {
+  const s = estadoDeSesion('# Session — 2026-09-05\n\n**Feature slug:** mi-feature\n**Status:** en progreso\n\ntexto');
+  assert.deepEqual(s, { feature: 'mi-feature', estado: 'en progreso' });
+  assert.deepEqual(estadoDeSesion('sin nada'), { feature: null, estado: null });
+  assert.deepEqual(estadoDeSesion(''), { feature: null, estado: null });
+  // El placeholder de la plantilla no es una feature declarada.
+  assert.equal(estadoDeSesion('**Feature slug:** (set before first gate)').feature, null);
+});
+
+test('el HTML de cada columna distingue lo vacío de lo completo, y lo dice distinto', () => {
+  // Las tres columnas nuevas tienen un caso "no hay nada" que NO se escribe como éxito: un proyecto
+  // que no usa el protocolo no puede parecer uno que lo completó.
+  assert.match(estadoDeFasesHtml(undefined), /sin fases/u);
+  assert.match(estadoDeFasesHtml(null), /sin fases/u);
+  assert.match(estadoDeFasesHtml({ ultima: null, faltan: [], completo: false, cerradas: [] }), /sin fases/u);
+  assert.match(estadoDeFasesHtml({ ultima: '3', faltan: [], completo: true, cerradas: ['1', '2', '3'] }), /completo.*3/su);
+  assert.match(estadoDeFasesHtml({ ultima: '2', faltan: ['3'], completo: false, cerradas: ['1', '2'] }), /hasta la.*faltan 3/su);
+
+  assert.match(mejorasHtml(undefined), /ninguna/u);
+  assert.match(mejorasHtml({ total: 0, abiertas: 0, propuestas: 0, sinCerrar: [] }), /ninguna/u);
+  assert.match(mejorasHtml({ total: 2, abiertas: 0, propuestas: 7, sinCerrar: [] }), /2 ronda\(s\), 7 propuesta/u);
+  assert.doesNotMatch(mejorasHtml({ total: 2, abiertas: 0, propuestas: 7, sinCerrar: [] }), /sin cerrar/u);
+  assert.match(mejorasHtml({ total: 2, abiertas: 1, propuestas: 7, sinCerrar: ['x'] }), /1 sin cerrar/u);
+
+  assert.match(sesionHtml(undefined), /sin sesión/u);
+  assert.match(sesionHtml({ feature: null, estado: null }), /sin sesión/u);
+  assert.equal(sesionHtml({ feature: 'mi-feature', estado: null }), 'mi-feature');
+  assert.match(sesionHtml({ feature: 'mi-feature', estado: 'en progreso' }), /mi-feature · en progreso/u);
+  // Y escapa: el nombre de una feature entra al HTML sin que nadie lo revise.
+  assert.match(sesionHtml({ feature: '<script>', estado: null }), /&lt;script&gt;/u);
+});
+
+test('bandaPorDia ordena los días de más viejo a más nuevo', () => {
+  const d = (iso) => Date.parse(iso);
+  // Se pasan desordenados a propósito: el orden lo tiene que poner la función, no la entrada.
+  const dias = bandaPorDia([d('2026-09-03T10:00:00Z'), d('2026-09-01T10:00:00Z'), d('2026-09-02T10:00:00Z')]);
+  assert.deepEqual(dias.map((x) => x.dia), ['2026-09-01', '2026-09-02', '2026-09-03']);
+});
+
+test('rondasDeMejoras tolera una ronda sin lista de propuestas', () => {
+  // Un registro que se escribió a medias no puede tumbar el tablero entero.
+  const r = rondasDeMejoras([{ nombre: 'x.json', registro: { cerradas: { '2026-09-05': 'ok' } } }]);
+  assert.equal(r.propuestas, 0);
+  assert.equal(r.total, 1);
+  assert.equal(r.abiertas, 0);
+});
+
+test('estadoDeFases con phase_order pero ninguna decisión no dice que haya una última', () => {
+  const e = estadoDeFases({ phase_order: ['1', '2'], decisions: [] });
+  assert.equal(e.ultima, null);
+  assert.deepEqual(e.faltan, ['1', '2']);
 });

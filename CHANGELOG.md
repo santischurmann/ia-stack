@@ -7,6 +7,28 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El tablero se sirve en localhost, y muestra lo que faltaba del pedido original.** La versión
+  anterior generaba un archivo y mostraba proyectos, sesiones, turnos, tokens y una banda de horas
+  por proyecto. Faltaban cuatro cosas que se habían pedido y no estaban.
+  - **Servidor en `127.0.0.1`** (`tablero-servidor.mjs serve`). El bind es a loopback explícito,
+    nunca `0.0.0.0`: este tablero agrega datos de **todos** los proyectos de la máquina, y en la red
+    de una oficina `0.0.0.0` se los publica a cualquiera del wifi. Hay una prueba que afirma la
+    constante para que cambiarla ponga la suite en rojo.
+  - **No lee archivos del disco.** Una sola ruta, sólo `GET`, HTML armado en memoria. No es un filtro
+    que haya que mantener: es una capacidad que no existe, así que no hay recorrido de rutas posible.
+  - **El puerto ocupado es un error con nombre**, no un salto silencioso a otro — saltar dejaría el
+    tablero escuchando donde nadie sabe.
+  - **Horas por día**, no una sola banda por proyecto. **En qué fase quedó cada proyecto**, marcando
+    los que quedaron a medias. **Cuántas rondas de mejoras hay y cuáles siguen abiertas.** **En qué
+    anda la sesión.** Un proyecto que no usa el protocolo dice «sin fases declaradas» en vez de
+    aparentar estar completo.
+  - **La ruta de cada proyecto se comprueba contra el disco, no se adivina.** El slug de la carpeta
+    es ambiguo —`ia-stack` colapsa con `ia/stack`— así que si la interpretación directa no existe, el
+    proyecto aparece con sus tokens y sus horas pero **sin** estado de fases. Mostrar el estado de
+    otro proyecto sería el único error que de verdad importaría.
+  - **Su límite va declarado:** no autentica a nadie. Cualquier proceso de esa máquina puede leerlo
+    mientras corre; loopback no es una frontera de confianza entre usuarios de la misma computadora.
+
 - **Lo que se hace «cada 7 días, al abrir sesión» ahora se pregunta donde la sesión abre.** Los tres
   chequeos de período —tablero, bucle de auto-mejora y limpieza— vivían **sólo en la fase 9**, que es
   la última, y su propia prosa decía correrse al arrancar. Un agente que hace una tarea normal

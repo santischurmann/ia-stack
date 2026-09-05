@@ -547,6 +547,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/tablero-servidor.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/tablero.mjs",
       "class": "gate"
     },
@@ -968,6 +972,18 @@
     },
     {
       "path": "tests/tablero-modelo.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tablero-servidor-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tablero-servidor-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/tablero-servidor.test.mjs",
       "class": "prueba"
     },
     {
