@@ -152,12 +152,12 @@ function recurrence() {
     next_process: 'siguiente proceso', trigger: 'señal por debajo del umbral' };
 }
 
-function allDocs() { return { caio: caio(), 'loop-map': loopMap(), prd: prd(), implementation: implementation(), adoption: adoption(), recurrence: recurrence() }; }
+function allDocs() { return { caio: caio(), 'loop-map': loopMap(), prd: prd(), implementation: implementation(), adoption: adoption(), recurrence: recurrence(), threat: threat() }; }
 
-test('validates the six complete product-discovery artefacts', () => {
+test('validates the seven complete product-discovery artefacts', () => {
   const result = validateDiagnostics(allDocs());
   assert.equal(result.ok, true);
-  assert.match(result.summary, /6\/6/);
+  assert.match(result.summary, /7\/7/);
   assert.deepEqual(validateArtifact('caio', caio()), []);
   assert.deepEqual(validateArtifact('loop-map', loopMap()), []);
   assert.deepEqual(validateArtifact('prd', prd()), []);
@@ -236,7 +236,7 @@ test('CLI reports empty, missing, malformed, partial and valid directories', () 
     writeFileSync(join(dir, 'caio.json'), '{bad');
     assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
     for (const kind of ARTIFACTS) writeFileSync(join(dir, `${kind}.json`), JSON.stringify(allDocs()[kind]));
-    assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 0); assert.match(out.at(-1), /6\/6/);
+    assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 0); assert.match(out.at(-1), /7\/7/);
     rmSync(join(dir, 'caio.json')); assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
     const invalidDir = join(root, 'docs', 'discovery', 'other', 'diagnostics'); mkdirSync(join(root, 'docs', 'discovery', 'other'), { recursive: true }); writeFileSync(invalidDir, 'file'); assert.equal(main(['check', 'other'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -629,4 +629,115 @@ test('FALSIFICACIÓN · observability rechaza lo que no es objeto y un campo que
   const extra = prd();
   extra.observability.tracing = 'un campo que nadie pidió';
   assert.ok(validatePrd(extra).some((v) => v.includes('tracing')), 'aceptó un campo de más');
+});
+
+// --- El septimo artefacto: la superficie de ataque -----------------------------------------------
+//
+// LA HERIDA: toda la seguridad de VCP era POSTERIOR al codigo. La fase 6.2 escanea un delta ya
+// escrito y la lente Riesgo revisa un diff ya escrito; nada declaraba QUE HAY QUE PROTEGER antes de
+// construir. Y el propio escaner declara textualmente que los huecos de authz NO estan cubiertos,
+// que fue exactamente lo peor que aparecio en la corrida real.
+//
+// Los campos son el COMPLEMENTO de lo que el escaner declara no cubrir, para que el artefacto sea
+// defendible en vez de arbitrario.
+
+function threat() {
+  return {
+    schema: 'vcp.threat-model/1',
+    feature: 'demo',
+    date: '2026-09-08',
+    assets: [{ id: 'A1', what: 'el listado de usuarios y sus roles', why_it_matters: 'expone quien puede hacer que en toda la aplicacion' }],
+    actors: [
+      { id: 'AC1', role: 'auditor autenticado', authenticated: true, trusted: false },
+      { id: 'AC2', role: 'visitante anonimo', authenticated: false, trusted: false },
+    ],
+    entrypoints: [{ id: 'E1', kind: 'http', actor_ids: ['AC1', 'AC2'], reaches_asset_ids: ['A1'] }],
+    controls: [{ id: 'C1', entrypoint_id: 'E1', asset_id: 'A1', kind: 'authz', ac_id: 'AC7' }],
+    accepted: [],
+    coverage: {
+      authn: { state: 'examined_clean', reason: 'la autenticacion la resuelve el proxy y esta fuera de este cambio' },
+      validation: { state: 'not_examined', reason: 'no se miro: el endpoint no recibe cuerpo, solo un id en la ruta' },
+      ratelimit: { state: 'not_examined', reason: 'no se miro: es una herramienta interna sin exposicion publica' },
+      escaping: { state: 'examined_clean', reason: 'la respuesta es JSON y ningun dato llega a una plantilla HTML' },
+      isolation: { state: 'examined_clean', reason: 'el proceso no lanza subprocesos ni lee rutas del usuario' },
+    },
+  };
+}
+
+test('un modelo de amenaza bien formado pasa', () => {
+  assert.deepEqual(validateArtifact('threat', threat()), []);
+});
+
+test('threat es el septimo artefacto y entra al paquete', () => {
+  assert.ok(ARTIFACTS.includes('threat'), 'threat tiene que ser uno de los artefactos');
+  assert.equal(ARTIFACTS.length, 7);
+});
+
+test('FALSIFICACIÓN · una referencia que no resuelve es una referencia rota, no evidencia', () => {
+  const actorFantasma = threat();
+  actorFantasma.entrypoints[0].actor_ids = ['AC9'];
+  assert.ok(validateArtifact('threat', actorFantasma).some((v) => v.includes('AC9')));
+
+  const activoFantasma = threat();
+  activoFantasma.entrypoints[0].reaches_asset_ids = ['A9'];
+  assert.ok(validateArtifact('threat', activoFantasma).some((v) => v.includes('A9')));
+
+  const entradaFantasma = threat();
+  entradaFantasma.controls[0].entrypoint_id = 'E9';
+  assert.ok(validateArtifact('threat', entradaFantasma).some((v) => v.includes('E9')));
+
+  const controlSinActivo = threat();
+  controlSinActivo.controls[0].asset_id = 'A9';
+  assert.ok(validateArtifact('threat', controlSinActivo).some((v) => v.includes('A9')));
+});
+
+test('LA INVARIANTE QUE IMPORTA · una entrada que toca un activo sin ningun control rechaza', () => {
+  const sinControl = threat();
+  sinControl.controls = [];
+  const violaciones = validateArtifact('threat', sinControl);
+  assert.ok(violaciones.some((v) => v.includes('E1')), 'una superficie sin nada que la guarde tiene que rechazar');
+});
+
+test('una entrada sin control pasa SOLO si alguien la acepta a proposito, con motivo y dueño', () => {
+  const aceptada = threat();
+  aceptada.controls = [];
+  aceptada.accepted = [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no devuelve ningun dato del activo', owner: 'santi' }];
+  aceptada.coverage.authz = { state: 'examined_clean', reason: 'no hay control de authz y esta aceptado a proposito' };
+  assert.deepEqual(validateArtifact('threat', aceptada), []);
+});
+
+test('FALSIFICACIÓN · un tipo de control sin entradas exige motivo escrito: ocho silencios no son ocho superficies sanas', () => {
+  const sinCobertura = threat();
+  delete sinCobertura.coverage.ratelimit;
+  assert.ok(validateArtifact('threat', sinCobertura).some((v) => v.includes('ratelimit')));
+
+  const sinMotivo = threat();
+  sinMotivo.coverage.ratelimit = { state: 'not_examined', reason: '' };
+  assert.ok(validateArtifact('threat', sinMotivo).some((v) => v.includes('ratelimit')));
+});
+
+test('FALSIFICACIÓN · los tipos de entrada y de control son cerrados, no texto libre', () => {
+  const entradaRara = threat();
+  entradaRara.entrypoints[0].kind = 'telepatia';
+  assert.ok(validateArtifact('threat', entradaRara).some((v) => v.includes('kind')));
+
+  const controlRaro = threat();
+  controlRaro.controls[0].kind = 'buena onda';
+  assert.ok(validateArtifact('threat', controlRaro).some((v) => v.includes('kind')));
+});
+
+test('FALSIFICACIÓN · authenticated y trusted son booleanos: «mas o menos» no es un estado', () => {
+  const raro = threat();
+  raro.actors[0].authenticated = 'si';
+  assert.ok(validateArtifact('threat', raro).some((v) => v.includes('authenticated')));
+});
+
+test('FALSIFICACIÓN · un control sin ac_id no se puede probar, y un id repetido no identifica nada', () => {
+  const sinAc = threat();
+  delete sinAc.controls[0].ac_id;
+  assert.ok(validateArtifact('threat', sinAc).length > 0);
+
+  const repetido = threat();
+  repetido.assets.push({ ...repetido.assets[0] });
+  assert.ok(validateArtifact('threat', repetido).some((v) => v.includes('repite')));
 });

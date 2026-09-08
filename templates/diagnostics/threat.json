@@ -1,0 +1,27 @@
+{
+  "schema": "vcp.threat-model/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "assets": [
+    { "id": "A1", "what": "Qué hay acá adentro que valga la pena proteger.", "why_it_matters": "Qué pasa si alguien lo lee, lo cambia o lo borra." }
+  ],
+  "actors": [
+    { "id": "AC1", "role": "Quién puede hablarle a esto.", "authenticated": false, "trusted": false }
+  ],
+  "entrypoints": [
+    { "id": "E1", "kind": "http", "actor_ids": ["AC1"], "reaches_asset_ids": ["A1"] }
+  ],
+  "controls": [
+    { "id": "C1", "entrypoint_id": "E1", "asset_id": "A1", "kind": "authz", "ac_id": "AC1" }
+  ],
+  "accepted": [
+    { "id": "X1", "entrypoint_id": "E1", "why": "Por qué está bien que esta entrada no tenga control.", "owner": "Quién se hace cargo de esa decisión." }
+  ],
+  "coverage": {
+    "authn": { "state": "not_examined", "reason": "Reemplazá esto por el motivo real: o se examinó y no hacía falta (examined_clean), o no se examinó y acá va por qué." },
+    "validation": { "state": "not_examined", "reason": "Reemplazá esto por el motivo real." },
+    "ratelimit": { "state": "not_examined", "reason": "Reemplazá esto por el motivo real." },
+    "escaping": { "state": "not_examined", "reason": "Reemplazá esto por el motivo real." },
+    "isolation": { "state": "not_examined", "reason": "Reemplazá esto por el motivo real." }
+  }
+}

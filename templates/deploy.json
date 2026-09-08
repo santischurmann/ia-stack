@@ -1,0 +1,25 @@
+{
+  "schema": "vcp.deploy/1",
+  "feature": "nombre-en-kebab-case",
+  "date": "2026-01-01",
+  "dependencies": {
+    "manifest": "El archivo que declara las dependencias, o «ninguno — <motivo>».",
+    "lockfile_sha256": "La huella del lockfile, o «ninguno — <motivo>».",
+    "count": 0,
+    "audited_by": "Qué herramienta las auditó, o «ninguno — <motivo>». VCP no trae SCA: que nadie haya auditado es una respuesta válida, el silencio no."
+  },
+  "ignored_sensitive": [
+    { "path": ".env", "why": "Por qué está bien que este archivo ignorado por Git exista acá. Se nombra, no se lee." }
+  ],
+  "service": {
+    "declared": false,
+    "start_command": [],
+    "base_url": "",
+    "health": []
+  },
+  "rollback_command": "El comando exacto que vuelve atrás. No puede contener rm, del, Remove-Item ni git clean.",
+  "rollback_tested": {
+    "when": "2026-01-01",
+    "evidence": "Qué se corrió para probar que la vuelta atrás funciona, y qué dio."
+  }
+}

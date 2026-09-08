@@ -7,6 +7,69 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+---
+
+## [2.0.0] — 2026-09-08
+
+**Salto mayor por una razón concreta, no por acumulación: un receipt del schema anterior ya no
+aprueba un commit.** Los viejos no se borran ni se reescriben —se leen con `inspect-legacy` y
+`check` los rechaza sin excepción, igual que ya pasaba con los `v1`—, pero cualquier proyecto con
+trabajo en vuelo tiene que regenerar el suyo. Además LAW 6 gana un término obligatorio,
+`threat.json` pasa a ser el séptimo artefacto obligatorio de Discovery y `prd.observability`
+cambia de forma: cuatro rupturas de contrato hacia afuera.
+
+Todo salió de correr el protocolo dos días sobre un proyecto real. **Dos de los cinco hallazgos que
+motivaron la ronda ya estaban cubiertos y se corrigieron antes de proponer nada**: la fase 6.2 ES
+una fase de seguridad con rol propio declarado en la matriz de capacidades, y el Refutador ya
+existía con ese nombre —sólo que vivía en 6.3 y no cubría 6.2—.
+
+### La superficie de ataque se declara antes de construir
+
+Toda la seguridad de VCP era **posterior al código**: 6.2 escanea un delta ya escrito y la lente
+Riesgo revisa un diff ya escrito. Nada declaraba qué hay que proteger. Y `security-baseline.md`
+dice textualmente que los huecos de **authz no están cubiertos** por el escáner — que fue lo peor
+que apareció en la corrida real.
+
+- **`threat.json`, séptimo artefacto de Discovery y obligatorio para todo proyecto.** Declara
+  activos, actores, entradas, controles, riesgo aceptado y cobertura. Su volumen escala con la
+  superficie: una página estática declara cero entradas y seis líneas de `coverage` con motivo.
+  Lo que no se admite es el silencio.
+- **La invariante que importa:** una entrada que alcanza un activo tiene que tener un control **o**
+  una aceptación escrita con motivo y dueño. Una superficie que toca algo valioso, sin nada que la
+  guarde y sin nadie que lo diga, es el agujero que el artefacto existe para hacer visible.
+- **El puente que no necesitó ningún mecanismo nuevo:** cada control declara un `ac_id`. De ahí lo
+  arrastra el aparato que ya existía — RED escribe la prueba, `verify-evidence-trace criteria`
+  exige que exista, y el receipt exige ese AC `COMPLIANT`. **Un control de authz declarado y no
+  probado bloquea el push con los gates que ya estaban.**
+- **6.2 pasa a tener dos mitades.** El escáner mira patrones en un delta; el modelo mira superficie
+  declarada. Son ortogonales y hasta ahora corría una sola, que es por qué una superficie sin
+  control pasaba en verde mientras no hubiera un patrón conocido.
+- La spec gana `## Security surface`, exigida **sólo si el proyecto declaró algún modelo** — y esa
+  exigencia se deriva del árbol, no de una bandera que alguien tenga que acordarse de pasar.
+
+### La fase 8 comprueba que la cosa arranque
+
+«Deploy» significaba commitear, pushear, etiquetar y armar un zip. En las 1857 líneas del maestro
+**no existía ningún concepto de host, runtime, preview, health check ni endpoint**.
+
+- **8.0 audita el estado que se va a commitear.** El escáner de secretos corría en 6.2, antes de
+  6.3, de 6.4 y de toda la fase 7: un secreto que entraba en un fix de revisión o en el refactor
+  **no lo miraba nadie**.
+- **Dependencias: se declara el inventario, no se auditan.** VCP no trae SCA y ese límite está
+  pineado; proponer uno sería romper la promesa o mentir. Se exige que quede escrito **quién
+  auditó**, y «ninguno — motivo» es una respuesta válida mientras el silencio no lo sea.
+- **Lo que Git ignora y parece sensible se nombra.** Era un agujero declarado con estas palabras:
+  «un .env con un secreto no lo mira ningún gate del protocolo».
+- **8.0.1 comprueba por HTTP, sólo contra esta máquina.** El host se resuelve **antes** de abrir la
+  conexión y si no da loopback rechaza: no es una promesa en un comentario, es un rechazo. Tres
+  resultados mecánicos calcados del gate de lint/typecheck, y **declarado-y-no-arranca BLOQUEA**.
+- **Vuelta atrás escrita, con la prohibición que la fase 9 ya tenía**: nada de `rm`, `del`,
+  `Remove-Item` ni `git clean`, más la evidencia de haberla corrido una vez.
+- **Nada de esto se escribe de cero**: sale de `implementation.rollback`,
+  `implementation.release_gate`, `prd.rollout` y `prd.rollback`, cuatro campos que se escribían en
+  la fase 2 y **no los leía ningún gate**.
+
+
 - **`vcp.receipt/v3`: un límite y una regresión dejaron de ser lo mismo, y el DoD dejó de terminar
   en «adversarial pass».** Un constructor puso un permiso correcto, midió que eso dejaba a un rol
   sin una pantalla, lo escribió con precisión en el docstring —archivo, rango y permiso— y entregó

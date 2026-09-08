@@ -72,14 +72,14 @@ Qué responde cada una, en una línea:
 |---|---|---|
 | 1. Bootstrap | ¿Qué proyecto y qué feature son ésta? | Contexto, estado y feature activa claros |
 | 1.5. Intake | ¿Alcanza con un cambio chico o hace falta el ciclo entero? | Triage escrito, con su motivo |
-| 2. Research | ¿Qué está roto de verdad, y qué dicen las fuentes? | Fuentes citadas y verificables, no recordadas |
+| 2. Research | ¿Qué está roto de verdad, qué dicen las fuentes, y qué hay que proteger? | Fuentes citadas y verificables, y la superficie de ataque declarada |
 | 3. Spec | ¿Qué problema resolvemos y qué **no**? | Criterios de aceptación y límites |
 | 4. Plan | ¿Qué se toca y en qué orden? | Tareas sin dos que escriban lo mismo |
 | 5. Build | ¿La conducta está probada **antes** de cambiarla? | Un test rojo visible por cada cambio |
 | 5.5. Triangulate | ¿El test pasa por la razón correcta? | Casos borde que lo harían fallar |
 | 6. Test | ¿Está todo verde de verdad, o sólo lo que miré? | Suite, cobertura y gates, corridos |
 | 7. Simplify | ¿Qué sobra ahora que funciona? | Lo que se saca, con su motivo |
-| 8. Deploy | ¿La evidencia coincide con lo que se libera? | Receipt, seguridad y respaldo |
+| 8. Deploy | ¿La evidencia coincide con lo que se libera, y la cosa arranca? | Receipt, auditoría, salud comprobada y vuelta atrás escrita |
 | 9. Limpieza | ¿Qué se acumuló y ya no sirve? | Archivado, nunca borrado, y reversible |
 
 Son las mismas que declara `SKILL.md`. Una prueba lo comprueba: si los dos documentos se separan,
@@ -87,6 +87,35 @@ la suite se pone roja.
 
 Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El agente
 recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
+
+---
+
+## Qué cambió en la 2.0.0
+
+Es un salto **mayor** por una razón concreta y no por acumulación: **un receipt del schema anterior
+ya no aprueba un commit**. Los viejos no se borran ni se reescriben — se leen con `inspect-legacy` y
+`check` los rechaza sin excepción, igual que ya pasaba con los de la primera versión.
+
+Cuatro cambios, los cuatro salidos de correr el protocolo dos días sobre un proyecto real:
+
+- **La superficie de ataque se declara antes de construir.** Toda la seguridad de VCP era posterior
+  al código: el escáner mira un diff ya escrito. Ahora Discovery declara qué hay que proteger, por
+  dónde entra dato ajeno y **qué criterio de aceptación prueba cada control** — y de ahí lo arrastra
+  el aparato que ya existía. Un control de autorización declarado y no probado frena la publicación.
+- **Un límite y una regresión dejaron de leerse igual.** Lo que el cambio no hace a propósito va en
+  una lista; lo que **antes andaba y ahora no** va en otra, con su resolución. El discriminador no es
+  criterio, es forma: si hay un estado anterior, es una regresión.
+- **El DoD pregunta por el soporte.** Si alguien dice que no le anda, ¿con qué se lo diagnostica?
+  Cuatro campos, cada uno declarado o «ninguno — por qué». Convivía con 100 % de cobertura porque la
+  cobertura mide ejecución del código y esto mide observabilidad del producto.
+- **La fase 8 comprueba que arranque.** Auditoría del estado que se va a commitear, salud por HTTP
+  **sólo contra esta máquina** —el host se resuelve antes de conectar—, y vuelta atrás escrita con la
+  misma prohibición que la limpieza ya tenía: nunca borra.
+
+Y una regla nueva con detector, que es la única de su lista que lo tiene: **toda aserción sobre el
+contenido de una respuesta va precedida por una sobre su estado**. Un test que afirma que ningún
+campo prohibido sale por un endpoint pasa en verde cuando el endpoint devuelve 404, porque el cuerpo
+de un 404 tampoco los tiene.
 
 ---
 

@@ -50,6 +50,12 @@ Plan and Build never proceed with one present.
 ## Stack & Dependencies
 - Runtime: <detected> · Test runner: <vitest|pytest|go test|...> · New deps: <none|pkg@ver — why>
 
+## Security surface / Superficie de ataque
+
+Sólo si esta feature declaró un modelo de amenaza (docs/discovery/<slug>/diagnostics/threat.json).
+Qué entradas alcanzan qué activos, qué control las guarda, y qué criterio de aceptación lo prueba.
+El detalle vive en el modelo; acá va el resumen que hace que alguien lo abra.
+
 ## Definition of Done (DoD)
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)

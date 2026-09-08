@@ -97,6 +97,16 @@
       "expect": "reject"
     },
     {
+      "script": "verify-deploy.mjs",
+      "args": [
+        "check",
+        "--feature",
+        "demo"
+      ],
+      "expect": "empty",
+      "why": "En un directorio vacio no hay docs/deploy/demo.json, y un proyecto que todavia no declaro como se publica no incumple nada en este punto: el gate escribe VACIO y sale 0. Con --require-inputs ese vacio pasa a rechazo, que es como lo corre la fase 8.0."
+    },
+    {
       "script": "verify-design-tokens.mjs",
       "args": [
         "check",
@@ -367,6 +377,16 @@
       ],
       "expect": "self",
       "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de VCP siguen apuntando a pruebas que existen."
+    },
+    {
+      "script": "verify-threat-model.mjs",
+      "args": [
+        "check",
+        "--feature",
+        "demo"
+      ],
+      "expect": "empty",
+      "why": "En un directorio vacio no hay docs/discovery/demo/diagnostics/threat.json, y no haber declarado todavia la superficie de ataque NO es un incumplimiento en este punto: el gate escribe VACIO y sale 0. Con --require-inputs ese vacio pasa a rechazo, que es como lo corre la fase 6.2."
     },
     {
       "script": "verify-triangulate.mjs",

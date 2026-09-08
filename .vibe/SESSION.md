@@ -143,3 +143,26 @@ funciones y ramas.** Contrato 124 promesas, 92 límites honestos. `empty-probe` 
 **Un noveno lugar de registro que ninguna lista nombraba:** el manifiesto de Graphify. Es artefacto
 local e ignorado por git, pero su gate está en la suite, así que agregar un archivo rastreado la
 pone en rojo hasta correr `graphify update .`. Pasó en las dos etapas.
+
+## Etapas 3 y 4 del endurecimiento — cerradas el 2026-09-08, versión 2.0.0
+
+**Feature slug:** superficie-de-ataque-y-despliegue
+
+**Etapa 3 — la superficie de ataque se declara antes de construir.** `threat.json`, séptimo
+artefacto de Discovery, obligatorio para todo proyecto (decisión del usuario, tomada con la contra a
+la vista). Los campos son el **complemento exacto** de lo que `security-baseline.md` declara
+textualmente no cubrir, así que la lista es defendible y no una elección de gusto.
+`verify-threat-model.mjs` cruza cada control contra un criterio de la spec y, con `--receipt`, exige
+que esté `COMPLIANT`.
+
+**Etapa 4 — la fase 8 comprueba que la cosa arranque.** `verify-deploy.mjs` más 8.0, 8.0.1 y 8.0.2.
+El host se resuelve **antes** de abrir la conexión: «nunca internet» dejó de ser una promesa en un
+comentario y pasó a ser un rechazo.
+
+**Versión 2.0.0**, mayor por ruptura de contrato hacia afuera: un receipt del schema anterior ya no
+aprueba un commit, LAW 6 gana un término obligatorio, `threat.json` pasa a obligatorio y
+`prd.observability` cambia de forma.
+
+**Una rama se sacó en vez de fingirle cobertura:** `probeService` repetía el chequeo de loopback que
+`validateDeploy` ya hace antes en todos los caminos. Era inalcanzable, y una rama inalcanzable es
+justo lo que el gate de cobertura de este repositorio no deja pasar.

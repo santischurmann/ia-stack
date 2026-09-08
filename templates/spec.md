@@ -75,6 +75,12 @@ This spec does NOT cover:
 
 ---
 
+## Security surface / Superficie de ataque
+
+Sólo si esta feature declaró un modelo de amenaza (docs/discovery/<slug>/diagnostics/threat.json).
+Qué entradas alcanzan qué activos, qué control las guarda, y qué criterio de aceptación lo prueba.
+El detalle vive en el modelo; acá va el resumen que hace que alguien lo abra.
+
 ## Definition of Done (DoD)
 
 - [ ] Forcing Questions: 6/6 respondidas, o "skipped(N)" (ambos son estados válidos)

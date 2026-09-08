@@ -583,6 +583,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-deploy.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-design-tokens.mjs",
       "class": "gate"
     },
@@ -715,6 +719,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-threat-model.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-triangulate.mjs",
       "class": "gate"
     },
@@ -807,6 +815,10 @@
       "class": "plantilla"
     },
     {
+      "path": "templates/deploy.json",
+      "class": "plantilla"
+    },
+    {
       "path": "templates/diagnostics/adoption.json",
       "class": "plantilla"
     },
@@ -828,6 +840,10 @@
     },
     {
       "path": "templates/diagnostics/recurrence.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/diagnostics/threat.json",
       "class": "plantilla"
     },
     {
@@ -1040,6 +1056,18 @@
     },
     {
       "path": "tests/verify-capability-matrix.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-deploy-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-deploy-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-deploy.test.mjs",
       "class": "prueba"
     },
     {
@@ -1276,6 +1304,18 @@
     },
     {
       "path": "tests/verify-test-bindings.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-threat-model-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-threat-model-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-threat-model.test.mjs",
       "class": "prueba"
     },
     {

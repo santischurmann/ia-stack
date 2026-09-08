@@ -552,6 +552,24 @@
       "file": "skills/gates.md",
       "phrase": "Un `support` inventado pasa en verde",
       "why": "El bloque de soporte hace que el DoD pregunte con qué se diagnostica una queja, y eso es lo que faltaba. Pero el gate comprueba que los cuatro campos digan algo, nunca que el identificador de petición exista ni que el comando de diagnóstico corra. Sin esta frase, un receipt en verde se lee como producto diagnosticable."
+    },
+    {
+      "limit_id": "threat-model-does-not-discover-surfaces",
+      "file": "skills/gates.md",
+      "phrase": "no descubre superficies: sólo mira las que alguien declaró",
+      "why": "El modelo de amenaza cierra el hueco de authz que el escaner de patrones declara no cubrir, pero solo sobre lo que alguien escribio. Una entrada que nadie declaro le es invisible, y sin esta frase un verde se lee como «no hay superficie sin control» en vez de «ninguna de las declaradas quedo sin control»."
+    },
+    {
+      "limit_id": "deploy-does-not-audit-dependencies",
+      "file": "skills/gates.md",
+      "phrase": "No audita dependencias",
+      "why": "VCP no trae SCA y ese limite ya estaba declarado. El expediente de despliegue exige DECLARAR quien audito, y ninguno con motivo es una respuesta valida. Sin esta frase un verde se lee como dependencias auditadas, que es exactamente la promesa que el protocolo no puede cumplir."
+    },
+    {
+      "limit_id": "deploy-health-is-local-never-remote",
+      "file": "skills/gates.md",
+      "phrase": "nunca que un despliegue remoto esté sano",
+      "why": "La comprobacion por HTTP se hace contra loopback y el gate rechaza cualquier otro host antes de conectar. Sin esta frase, un verde de salud se lee como que lo publicado en un host ajeno responde, y este gate no puede saber eso."
     }
   ]
 }

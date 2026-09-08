@@ -5,7 +5,7 @@ description: "TDD methodology for Claude Code: the orchestrator runs VCP's inter
 
 # VibeCodeProtocols — caveman edition
 
-**Versión:** 1.4.0 · etiquetada como `v1.4.0` en git.
+**Versión:** 2.0.0 · etiquetada como `v2.0.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
@@ -378,9 +378,43 @@ antes de comprometer tareas de implementación.
    una mejora que dejó de servir se sostiene por inercia: nadie tiene con qué argumentar que hay
    que sacarla, y el costo de mantenerla no aparece en ningún lado.
 
-Los seis resultados durables de esta fase viven en
+6. **Superficie de ataque:** el artefacto que faltaba, y el único momento en que se puede escribir.
+   Toda la seguridad de VCP era **posterior al código** —6.2 escanea un delta ya escrito, la lente
+   Riesgo revisa un diff ya escrito—, así que nada declaraba **qué hay que proteger** antes de
+   construir. Y `skills/security-baseline.md` dice textualmente que los huecos de **authz no están
+   cubiertos** por el escáner: fue lo peor que apareció en la corrida real que motivó esto.
+
+   El modelo declara `assets` (qué vale la pena proteger), `actors` (quién le puede hablar),
+   `entrypoints` (por dónde entra dato ajeno, con el tipo y a qué activos llega), `controls` (qué
+   lo guarda, de qué clase, **y con qué criterio de aceptación se prueba**), `accepted` (riesgo
+   aceptado a propósito, con motivo y dueño) y `coverage` (cada clase de control sin entradas
+   declara si se examinó y no hacía falta, o si no se examinó y por qué).
+
+   **La invariante que importa, y es la única de fondo que un gate puede comprobar acá:** una
+   entrada que alcanza un activo tiene que tener un control **o** una aceptación escrita. Una
+   superficie que toca algo que vale la pena proteger, sin nada que la guarde y sin nadie que lo
+   diga, es exactamente el agujero que este artefacto existe para hacer visible.
+
+   **Es obligatorio para todo proyecto**, y su volumen escala con la superficie: una página estática
+   declara cero `entrypoints` y seis líneas de `coverage` con motivo. Seis líneas, no seis
+   secciones. Lo que no se admite es el silencio.
+
+   **El puente con el resto del protocolo, y por eso no hace falta ningún mecanismo nuevo:** cada
+   `control` declara un `ac_id`. De ahí lo arrastra el aparato que ya existe — RED escribe su prueba
+   (LAW 1), `verify-evidence-trace.mjs criteria` exige que exista una prueba que lo nombre, y el
+   receipt exige ese AC `COMPLIANT` con hash vigente. **Un control de authz declarado y no probado
+   bloquea el push con los gates que ya estaban.**
+
+   Va en Discovery y no en la spec porque la spec tiene tope de 650 palabras y secciones canónicas
+   fijas; un modelo de amenaza adentro la rompe. Lo que sí pasa a la spec es la sección
+   **`## Security surface / Superficie de ataque`**, que `verify-spec-wordcap --quality` exige
+   **sólo si el proyecto declaró algún modelo** — y esa exigencia se deriva del árbol, no de una
+   bandera que alguien tenga que acordarse de pasar.
+
+Los siete resultados durables de esta fase viven en
 `docs/discovery/<feature-slug>/diagnostics/`: `caio.json`, `loop-map.json`, `prd.json`,
-`implementation.json`, `adoption.json` y `recurrence.json`. Se validan juntos antes de abrir Spec:
+`implementation.json`, `adoption.json`, `recurrence.json` y `threat.json`. Se validan juntos antes
+de abrir Spec:
 
 ```bash
 node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
@@ -927,6 +961,22 @@ aceptar un secreto cubre archivo y categoría, no un valor — reemplazarlo por 
 mismo archivo sigue aceptado; y una entrada cuyo archivo quedó fuera del delta no se puede juzgar
 y por lo tanto no caduca.
 
+**6.2 tiene dos mitades, y hasta ahora corría una sola.** El escáner mira **patrones en un delta ya
+escrito**; el modelo de amenaza mira **superficie declarada**. Son ortogonales, así que una
+superficie sin control pasaba en verde mientras el escáner no encontrara un patrón conocido — que
+es justo lo que pasa con authz, que el escáner declara no cubrir. La segunda mitad:
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-threat-model.mjs check --feature <feature-slug> \
+  --spec docs/spec.md --receipt .vibe/receipts/<feature-slug>-<fecha>.json --require-inputs
+```
+
+**Un `entrypoint` cuyo control no tiene un AC `COMPLIANT` bloquea, aunque el escáner esté limpio.**
+Sin `--receipt` sólo resuelve contra la spec, que sirve mientras se trabaja: que el criterio esté
+escrito no es que esté probado. **Límite:** comprueba que el criterio exista y esté `COMPLIANT`,
+nunca que el control exista en el código ni que sirva; y **no descubre superficies, sólo mira las
+que alguien declaró**.
+
 **Refutar antes de arreglar, también acá.** Hasta ahora un hallazgo del escáner iba derecho a
 «se arregla antes de seguir», y el Refutador (6.3, más abajo) sólo miraba los hallazgos de la
 revisión 4R. **Todo hallazgo Critical/High de este escáner pasa primero por el Refutador**: un
@@ -1377,6 +1427,64 @@ se reporta qué se rompió y se arregla antes de tocar la Fase 8.
 Publicar es una fase con sus propios chequeos, no el último renglón de otra. Tenerlo escondido
 adentro del cierre es lo que hizo que el hallazgo 55 —el sello del backup atado al commit
 equivocado— tardara en aparecer.
+
+**8.0 Auditoría de despliegue** — antes del commit, no después. El receipt certifica que el árbol
+commiteado es el revisado; **no certifica que la cosa arranque**, y hasta acá el protocolo no tenía
+nada que lo hiciera.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-u-origin/main>
+node .vibe/vcp-runtime/scripts/verify-deploy.mjs check --feature <feature-slug> --require-inputs
+```
+
+**El escáner se vuelve a correr acá, y no es ceremonia:** 6.2 corre antes de 6.3, de 6.4 y de toda
+la fase 7, así que un secreto que entra en un fix de revisión o en el refactor **no lo mira nadie**.
+Este es el único momento en que se escanea el estado que efectivamente se va a commitear.
+
+El expediente `docs/deploy/<feature-slug>.json` (plantilla: `templates/deploy.json`) declara tres
+cosas que no estaban en ningún lado:
+
+- **Dependencias: se declara el inventario, no se auditan.** VCP no tiene SCA y ese límite está
+  pineado en `contracts/honest-limits.json`; proponer uno acá sería romper la promesa o mentir. Lo
+  que se exige es que quede escrito **quién auditó** — y `"ninguno — <motivo>"` es una respuesta
+  válida, mientras el silencio no lo sea. Misma doctrina que `VACÍO:` ≠ `OK:`.
+- **Lo que Git ignora y parece sensible se nombra, sin leerlo.** Hoy eso es un agujero **declarado**:
+  `verify-scope-diff` enumera con `--exclude-standard`, y el límite dice textualmente que «un .env
+  con un secreto no lo mira ningún gate del protocolo». Acá se mira, y se declara con su motivo.
+- **La reversión, con la misma prohibición que la fase 9 ya tiene**: `rollback_command` no puede
+  contener `rm`, `del`, `Remove-Item` ni `git clean` —la vuelta atrás mueve de vuelta, nunca
+  elimina— y `rollback_tested` trae la evidencia de haberlo corrido una vez.
+
+**Nada de esto se escribe de cero.** Sale de lo que Research ya declaró y nadie volvía a leer:
+`implementation.rollback` → `deploy.rollback_command`; `implementation.release_gate` → los gates que
+corre este paso; `prd.rollout` → el orden de promoción; `prd.rollback` → el plazo. Cuatro campos que
+se escribían en la fase 2 y **no los leía ningún gate**.
+
+**8.0.1 Comprobación por HTTP, sólo en esta máquina.**
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-deploy.mjs health --feature <feature-slug>
+```
+
+Tres resultados mecánicos, **calcados del gate de lint/typecheck** de 6.1, que es un patrón que este
+protocolo ya tiene resuelto y probado:
+
+- **Declarado y arranca** → gate de verdad: se piden las rutas de `service.health` y cada una tiene
+  que dar el estado esperado. Exit ≠ 0 bloquea.
+- **Declarado y no arranca** → **BLOQUEA**. Esto nunca es «no aplica».
+- **`service.declared: false`** → no aplica, y se registra con la evidencia de la detección.
+
+**Acá se aplica la regla que nació en la fase 5: el estado precede al contenido.** El registro
+guarda `status_matched` y `body_matched` como campos separados, y **un `body_matched: true` con el
+estado equivocado es rechazo**. Un 404 tiene cuerpo, y ese cuerpo tampoco trae los campos que la
+comprobación dice no encontrar.
+
+**«Nunca internet» es un chequeo, no una promesa**: el host se resuelve **antes** de abrir la
+conexión y, si no da loopback, el gate rechaza. Límite propio, declarado: comprueba que el servicio
+responde **en esta máquina**, nunca que un despliegue remoto esté sano.
+
+**8.0.2 Promoción** — el 🔵 de publicar (8.1, abajo) no se ofrece hasta que 8.0 y 8.0.1 estén en
+verde. Un cambio que no sabe cómo volver atrás no se promueve.
 
 **8.1 Commit/push/merge** — gate previo, mecánico, no de lectura:
 Antes de preparar el commit, cerrá el registro de elecciones de todas las fases declaradas:

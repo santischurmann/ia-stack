@@ -168,3 +168,54 @@ test('FALSIFICACIÓN · sacarle una sección a la plantilla la pone roja', () =>
   assert.equal(seccionesFaltantes(sinDiscovery).length, 1);
   assert.match(seccionesFaltantes(sinDiscovery)[0], /Discovery/u);
 });
+
+// --- La spec nombra su superficie de ataque cuando el proyecto declaró una ---------------------
+//
+// El modelo de amenaza vive en Discovery porque la spec tiene tope de 650 palabras. Pero si el
+// proyecto declaró una superficie, la spec tiene que NOMBRARLA: una spec que no menciona qué se
+// protege deja el modelo de amenaza como un expediente que nadie lee desde el trabajo real.
+//
+// La exigencia se DERIVA DEL ARBOL, no de una bandera que alguien tiene que acordarse de pasar:
+// si hay algún `threat.json` bajo docs/discovery/, la sección se exige.
+
+test('sin modelo de amenaza declarado, la sección de seguridad no se exige', () => {
+  assert.deepEqual(checkSpecQuality(VALID_SPEC, { requireSecuritySurface: false }), []);
+});
+
+test('con modelo de amenaza declarado, una spec sin la sección se rechaza nombrándola', () => {
+  const violaciones = checkSpecQuality(VALID_SPEC, { requireSecuritySurface: true });
+  assert.ok(violaciones.some((v) => /Security surface/u.test(v)), `no la nombró: ${violaciones.join(' | ')}`);
+});
+
+test('con la sección presente, la spec pasa aunque el modelo exista', () => {
+  const conSeccion = `${VALID_SPEC}\n\n## Security surface / Superficie de ataque\nLa entrada E1 alcanza el activo A1 y la guarda el control C1 (authz), probado por AC1.\n`;
+  assert.deepEqual(checkSpecQuality(conSeccion, { requireSecuritySurface: true }), []);
+});
+
+test('hasThreatModel le pregunta al árbol: sin carpeta es false, con un threat.json es true', async () => {
+  const { hasThreatModel } = await import(pathToFileURL(script).href);
+  assert.equal(hasThreatModel('docs/discovery', { exists: () => false, list: () => [] }), false);
+  assert.equal(hasThreatModel('docs/discovery', { exists: () => true, list: () => ['una-feature'] }), true);
+  assert.equal(hasThreatModel('docs/discovery', {
+    exists: (ruta) => !String(ruta).includes('threat.json'),
+    list: () => ['una-feature'],
+  }), false);
+  // Sin inyección, mira el árbol real de este repositorio y no lanza.
+  assert.equal(typeof hasThreatModel(), 'boolean');
+});
+
+test('el CLI deriva la exigencia del árbol, no de una bandera', () => {
+  const errores = [];
+  const salida = main(['check', 'spec.md', QUALITY_FLAG], {
+    write: () => {}, writeError: (m) => errores.push(m),
+    readFile: () => VALID_SPEC, hasThreatModel: () => true,
+  });
+  assert.equal(salida, 1);
+  assert.ok(errores.some((e) => /Security surface/u.test(e)));
+
+  const dichos = [];
+  assert.equal(main(['check', 'spec.md', QUALITY_FLAG], {
+    write: (m) => dichos.push(m), writeError: () => {},
+    readFile: () => VALID_SPEC, hasThreatModel: () => false,
+  }), 0, dichos.join('\n'));
+});

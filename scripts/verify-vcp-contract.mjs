@@ -123,6 +123,18 @@ export const REQUIREMENTS = [
   // vcp.receipt/v3: el DoD dejo de terminar en "adversarial pass". Las cuatro anclas son la regla,
   // no el gate -- un receipt sin soporte declarado o con una regresion disfrazada de limite tiene
   // que seguir siendo un rechazo aunque alguien renombre el script que lo detecta.
+  // La fase 8 dejo de ser commit+push+zip. Las anclas son la regla, no el gate: un despliegue sin
+  // vuelta atras escrita, o un verde de salud que un 404 pudo comprar, tienen que seguir siendo un
+  // rechazo aunque alguien renombre el script.
+  ['SKILL.md', /verify-deploy\.mjs check --feature/u, 'the deploy audit wired into 8.0'],
+  ['SKILL.md', /verify-deploy\.mjs health --feature/u, 'the loopback health check wired into 8.0.1'],
+  ['SKILL.md', /el estado precede al contenido/u, 'a 404 never buys a green health check'],
+  ['skills/gates.md', /verify-deploy\.mjs/u, 'the deploy gate is in the gate table'],
+  // La superficie de ataque: el unico artefacto que se escribe ANTES de construir, y el puente que
+  // convierte un control declarado en un criterio que el receipt tiene que probar.
+  ['SKILL.md', /verify-threat-model\.mjs check --feature/u, 'the attack-surface gate wired into 6.2'],
+  ['SKILL.md', /Superficie de ataque/u, 'the attack surface is declared before building'],
+  ['skills/gates.md', /verify-threat-model\.mjs/u, 'the attack-surface gate is in the gate table'],
   ['SKILL.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   ['SKILL.md', /soporte declarado/u, 'DoD asks what a user complaint is diagnosed with'],
   ['SKILL.md', /El discriminador es mecánico, no de criterio: el campo/u, 'limit vs regression is decided by shape, never by judgement'],

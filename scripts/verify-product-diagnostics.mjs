@@ -26,7 +26,18 @@ export const SCHEMAS = Object.freeze({
   implementation: 'vcp.implementation-plan/1',
   adoption: 'vcp.adoption/1',
   recurrence: 'vcp.recurrence/1',
+  threat: 'vcp.threat-model/1',
 });
+
+/** Las superficies por las que entra dato ajeno, y las clases de control que las guardan. Las dos
+ * listas son CERRADAS a proposito: un `kind` de texto libre convierte el modelo en prosa, y lo que
+ * este artefacto tiene que dar es algo que un gate pueda cruzar contra los criterios de la spec. */
+export const ENTRYPOINT_KINDS = Object.freeze(['http', 'cli', 'file', 'env', 'ipc', 'queue']);
+/** El COMPLEMENTO de lo que `skills/security-baseline.md` declara textualmente NO cubrir --
+ * "auth/authz gaps ... are not mechanically covered and must not be claimed as covered" --. Por eso
+ * la lista es defendible y no una eleccion de gusto: cubre exactamente el hueco que el escaner de
+ * patrones deja abierto, y que fue lo peor que aparecio en la corrida real. */
+export const CONTROL_KINDS = Object.freeze(['authn', 'authz', 'validation', 'ratelimit', 'escaping', 'isolation']);
 export const ARTIFACTS = Object.freeze(Object.keys(SCHEMAS));
 export const USAGE = 'usage: verify-product-diagnostics.mjs check <feature-slug> [--require-inputs]';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
@@ -488,6 +499,122 @@ export function validateRecurrence(document) {
   keys.slice(3).forEach((key) => requireText(document[key], key, violations));
   return violations;
 }
+/** Ids unicos dentro de una lista, y la forma exacta de cada entrada. Devuelve el conjunto de ids
+ * para que las referencias cruzadas se resuelvan contra el, en vez de contra una lista escrita a
+ * mano que se desincroniza. */
+function collectIds(value, at, keys, violations, checkEntry) {
+  const ids = new Set();
+  if (!Array.isArray(value)) { add(violations, `${at} debe ser una lista`); return ids; }
+  value.forEach((item, index) => {
+    const itemAt = `${at}[${index}]`;
+    if (!exactKeys(item, keys)) { add(violations, `${itemAt} debe declarar exactamente ${keys.join(', ')}`); return; }
+    if (!isId(item.id)) { add(violations, `${itemAt}.id no es válido`); return; }
+    if (ids.has(item.id)) { add(violations, `${at} repite el id ${item.id}`); return; }
+    ids.add(item.id);
+    checkEntry(item, itemAt, violations);
+  });
+  return ids;
+}
+
+function requireReference(id, known, at, violations) {
+  if (!known.has(id)) add(violations, `${at} apunta a ${JSON.stringify(id)}, que este modelo no declara`);
+}
+
+/**
+ * LA SUPERFICIE DE ATAQUE, y por que vive en Discovery y no en la spec.
+ *
+ * Toda la seguridad de VCP era POSTERIOR al codigo: la fase 6.2 escanea un delta ya escrito y la
+ * lente Riesgo revisa un diff ya escrito. Nada declaraba QUE HAY QUE PROTEGER antes de construir, y
+ * el propio escaner dice textualmente que los huecos de authz no estan cubiertos -- que fue lo peor
+ * que aparecio en la corrida real que motivo esto.
+ *
+ * En la spec no entra: tiene tope de 650 palabras y secciones canonicas fijas. Discovery ya es donde
+ * viven los expedientes largos y ya tiene gate.
+ *
+ * LA INVARIANTE QUE IMPORTA, y es la unica de fondo que un gate puede comprobar de este artefacto:
+ * una entrada que alcanza un activo tiene que tener un control, o estar aceptada a proposito con
+ * motivo y dueno. Una superficie que toca algo que vale la pena proteger, sin nada que la guarde y
+ * sin nadie que lo diga, es exactamente el agujero que este artefacto existe para hacer visible.
+ *
+ * LIMITE: comprueba forma y referencias, NUNCA que el control exista en el codigo ni que sirva. Un
+ * modelo entero inventado pasa en verde, igual que el resto de este gate. Que el control este
+ * probado de verdad lo cruza `verify-threat-model.mjs` contra los criterios de la spec, que es otro
+ * gate y otro momento.
+ */
+export function validateThreat(document) {
+  const violations = [];
+  const keys = ['schema', 'feature', 'date', 'assets', 'actors', 'entrypoints', 'controls', 'accepted', 'coverage'];
+  if (!exactKeys(document, keys)) return [`threat debe declarar exactamente ${keys.join(', ')}`];
+  validateHeader(document, 'threat', violations);
+
+  const assets = collectIds(document.assets, 'assets', ['id', 'what', 'why_it_matters'], violations, (item, at, v) => {
+    requireText(item.what, `${at}.what`, v);
+    requireText(item.why_it_matters, `${at}.why_it_matters`, v);
+  });
+  const actors = collectIds(document.actors, 'actors', ['id', 'role', 'authenticated', 'trusted'], violations, (item, at, v) => {
+    requireText(item.role, `${at}.role`, v);
+    // Booleanos y no texto: «mas o menos autenticado» no es un estado, y en prosa se lee como si
+    // alguien lo hubiera pensado.
+    if (typeof item.authenticated !== 'boolean') add(v, `${at}.authenticated debe ser booleano`);
+    if (typeof item.trusted !== 'boolean') add(v, `${at}.trusted debe ser booleano`);
+  });
+  const entrypoints = collectIds(document.entrypoints, 'entrypoints', ['id', 'kind', 'actor_ids', 'reaches_asset_ids'], violations, (item, at, v) => {
+    if (!ENTRYPOINT_KINDS.includes(item.kind)) add(v, `${at}.kind debe ser uno de ${ENTRYPOINT_KINDS.join(', ')}`);
+    requireStringArray(item.actor_ids, `${at}.actor_ids`, v, { nonEmptyList: true });
+    requireStringArray(item.reaches_asset_ids, `${at}.reaches_asset_ids`, v);
+  });
+
+  const guarded = new Set();
+  collectIds(document.controls, 'controls', ['id', 'entrypoint_id', 'asset_id', 'kind', 'ac_id'], violations, (item, at, v) => {
+    if (!CONTROL_KINDS.includes(item.kind)) add(v, `${at}.kind debe ser uno de ${CONTROL_KINDS.join(', ')}`);
+    requireReference(item.entrypoint_id, entrypoints, `${at}.entrypoint_id`, v);
+    requireReference(item.asset_id, assets, `${at}.asset_id`, v);
+    // Sin criterio de aceptacion el control no puede generar un test rojo, y sin test rojo LAW 1
+    // dice que no se construye: un control declarado y no probado no existe.
+    requireText(item.ac_id, `${at}.ac_id`, v);
+    guarded.add(item.entrypoint_id);
+  });
+  collectIds(document.accepted, 'accepted', ['id', 'entrypoint_id', 'why', 'owner'], violations, (item, at, v) => {
+    requireReference(item.entrypoint_id, entrypoints, `${at}.entrypoint_id`, v);
+    requireText(item.why, `${at}.why`, v);
+    requireText(item.owner, `${at}.owner`, v);
+    guarded.add(item.entrypoint_id);
+  });
+
+  if (Array.isArray(document.entrypoints)) {
+    document.entrypoints.forEach((item) => {
+      if (!isObject(item) || !isId(item.id)) return;
+      if (Array.isArray(item.actor_ids)) {
+        item.actor_ids.forEach((actorId, index) => requireReference(actorId, actors, `entrypoints[${item.id}].actor_ids[${index}]`, violations));
+      }
+      if (!Array.isArray(item.reaches_asset_ids) || item.reaches_asset_ids.length === 0) return;
+      item.reaches_asset_ids.forEach((assetId, index) => requireReference(assetId, assets, `entrypoints[${item.id}].reaches_asset_ids[${index}]`, violations));
+      if (!guarded.has(item.id)) {
+        add(violations, `la entrada ${item.id} alcanza un activo y no tiene ningún control ni una aceptación escrita: una superficie sin nada que la guarde y sin nadie que lo diga es el agujero que este artefacto existe para hacer visible`);
+      }
+    });
+  }
+
+  // Un tipo de control sin ningun control declarado no se deja en blanco: se dice si se examino y no
+  // hacia falta, o si no se examino y por que. Sin esto, seis silencios se leen igual que seis
+  // superficies sanas -- la misma herida que ya tenia `caio.coverage`.
+  const declarados = new Set(Array.isArray(document.controls) ? document.controls.filter(isObject).map((c) => c.kind) : []);
+  if (!isObject(document.coverage)) {
+    add(violations, 'coverage debe declarar cada tipo de control sin entradas');
+    return violations;
+  }
+  CONTROL_KINDS.filter((kind) => !declarados.has(kind)).forEach((kind) => {
+    const entry = document.coverage[kind];
+    if (!exactKeys(entry, ['state', 'reason'])) { add(violations, `coverage debe declarar ${kind}: no tiene ningún control, y un silencio sin motivo se lee igual que una superficie sana`); return; }
+    if (!['examined_clean', 'not_examined'].includes(entry.state)) add(violations, `coverage.${kind}.state debe ser examined_clean o not_examined`);
+    requireText(entry.reason, `coverage.${kind}.reason`, violations);
+  });
+  Object.keys(document.coverage).forEach((kind) => {
+    if (!CONTROL_KINDS.includes(kind)) add(violations, `coverage declara ${kind}, que no es un tipo de control`);
+  });
+  return violations;
+}
+
 export function validateArtifact(kind, document) {
   if (!ARTIFACTS.includes(kind)) return [`artefacto desconocido: ${kind}`];
   if (!isObject(document)) return [`${kind} debe ser un objeto JSON`];
@@ -498,6 +625,7 @@ export function validateArtifact(kind, document) {
     case 'implementation': return validateImplementation(document);
     case 'adoption': return validateAdoption(document);
     case 'recurrence': return validateRecurrence(document);
+    case 'threat': return validateThreat(document);
   }
 }
 
@@ -507,7 +635,7 @@ export function validateDiagnostics(documents) {
     const result = validateArtifact(kind, documents[kind]);
     result.forEach((message) => violations.push(`${kind}: ${message}`));
   }
-  return { ok: violations.length === 0, violations, summary: `${ARTIFACTS.length}/${ARTIFACTS.length} artefactos CAIO, loop-map, PRD, implementation, adoption y recurrence válidos` };
+  return { ok: violations.length === 0, violations, summary: `${ARTIFACTS.length}/${ARTIFACTS.length} artefactos CAIO, loop-map, PRD, implementation, adoption, recurrence y threat válidos` };
 }
 
 function parseArgs(args) {

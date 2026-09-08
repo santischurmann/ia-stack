@@ -67,6 +67,11 @@ Registered users who need to authenticate to access protected routes.
 
 ---
 
+## Security surface / Superficie de ataque
+
+El bucle corre en proceso propio y no expone ninguna entrada de red: `docs/discovery/`
+no declara ningun modelo de amenaza para esta feature, asi que no hay superficie que resumir.
+
 ## Definition of Done (DoD)
 
 - [ ] All 6 ACs: unit + integration + e2e tests
