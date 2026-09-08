@@ -23,6 +23,18 @@ motivaron la ronda ya estaban cubiertos y se corrigieron antes de proponer nada*
 una fase de seguridad con rol propio declarado en la matriz de capacidades, y el Refutador ya
 existía con ese nombre —sólo que vivía en 6.3 y no cubría 6.2—.
 
+### El escáner marcó código propio, y se refutó antes de tocarlo
+
+Al verificar la ronda, `verify-security-baseline` levantó un HIGH de `injection-surface` sobre el
+gate nuevo. **Se refutó primero, que es la regla que esta misma versión agrega a la fase 6.2**: la
+línea era `RegExp.prototype.exec` sobre un string, y el escáner es léxico —no puede distinguirla de
+la ejecución de un proceso, y su propio límite lo dice—. Refutado.
+
+Se reescribió igual con `matchAll`, porque sale más simple y evita meterle una excepción al
+escáner: **una excepción de menos es una cosa menos que alguien tiene que revisar después**. Y el
+hallazgo estaba ahí desde la primera etapa sin que nadie lo viera, porque ese gate no se corrió en
+las tandas intermedias — un error de proceso, no del protocolo, anotado acá para que se vea.
+
 ### La superficie de ataque se declara antes de construir
 
 Toda la seguridad de VCP era **posterior al código**: 6.2 escanea un delta ya escrito y la lente

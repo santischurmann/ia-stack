@@ -96,16 +96,25 @@ límites honestos. `empty-probe` 46 gates; `vcp-index` 328 archivos; Graphify 32
   un tope de 120 s, y **pasó en verde corrida aislada**. Mide reloj de pared adentro de una suite que
   compite consigo misma. No se tocó: es un defecto del repositorio, ajeno a esta etapa.
 
-## Fallo preexistente, declarado y no escondido
+## El único rojo que quedaba: resuelto moviendo, no borrando
 
-`tests/verify-ablation.test.mjs:279` está en rojo porque `~/.claude/skills/cyber-neo/SKILL.md`
-volvió a existir después de la limpieza del 2026-09-02 que lo archivó. El gate lee el disco y tiene
-razón. **Decisión humana registrada:** dejarlo rojo y declararlo, en vez de deshacer una instalación
-hecha a propósito o editar un registro cerrado.
+`tests/verify-ablation.test.mjs` rechazaba porque `cyber-neo/SKILL.md` había vuelto a
+`~/.claude` después de la limpieza del 2026-09-02 que lo archivó. El gate leía el disco y tenía
+razón.
 
-Destapa un hueco del propio gate, que **no distingue «nunca se archivó» de «se archivó y después se
-restauró queriendo»**. Un registro de ablación queda en rojo permanente en cuanto alguien reinstala
-a propósito algo que archivó. Candidato a propuesta del bucle de auto-mejora.
+**Antes de tocar nada apareció un dato que cambiaba la decisión:** la copia instalada hoy **no era
+la misma que se archivó** —los 14 archivos del commit difieren—, así que resolver el rojo no era
+restaurar un estado anterior sino sacar de la configuración una versión **más nueva** que la
+archivada. Con ese dato a la vista, decisión humana registrada: moverla igual.
+
+Se movió, no se borró: `~/.claude/skills/cyber-neo` (17 archivos) a
+`~/.claude-archive/2026-09-08/skills/cyber-neo`, conservando la ruta. La vuelta atrás es un solo
+`mv` y quedó impresa.
+
+**El hueco que esto destapó sigue abierto y no se tocó:** `verify-ablation` **no distingue «nunca
+se archivó» de «se archivó y después se restauró queriendo»**, así que un registro de limpieza queda
+en rojo permanente en cuanto alguien reinstala a propósito algo que archivó. Candidato del bucle de
+auto-mejora, no de esta ronda.
 
 ## La cobertura global dejó de estar pendiente
 
@@ -113,6 +122,15 @@ En la etapa 1 quedó sin medir porque `verify-vcp-coverage.mjs` corre la suite y
 preexistente. En la etapa 2 se midió: **46/46 scripts ejecutaron todas sus funciones y todas sus
 ramas**, con `listMjsScripts`, `collectScriptCoverage` y `evaluateCoverage` **del propio gate**
 sobre una corrida instrumentada de la suite entera — misma lógica, sin el aborto.
+
+## Estado del respaldo al cerrar la 2.0.0
+
+- **Grafo:** reindexado despues del commit y sellado contra el HEAD real, en el orden que manda el
+  protocolo (commit, graphify, record, check). Verde.
+- **Vault de Obsidian:** no verificado — quedo VIEJO. Su graph.canvas es del 2026-09-04 y no
+  refleja los cuatro gates nuevos. El CLI de graphify no lo regenera: ese export es un paso
+  agentico del skill, y no se corrio. El gate que lo mira comprueba destino y forma, nunca
+  frescura, asi que sale verde igual — es su limite declarado, y por eso hace falta decirlo aca.
 
 ## Etapa 2 del endurecimiento — cerrada el 2026-09-08
 

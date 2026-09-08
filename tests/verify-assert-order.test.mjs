@@ -320,3 +320,14 @@ test('un comentario de bloque multilínea conserva sus saltos: si no, toda líne
   assert.equal(limpio.split('\n').length, 3);
   assert.match(limpio.split('\n')[2], /c = 3;/u);
 });
+
+test('un test anidado adentro de otro no se recorta dos veces', () => {
+  const texto = [
+    '',
+    "test('el de afuera', () => {",
+    "  test('el de adentro', () => { assert.ok(1); });",
+    '});',
+    '',
+  ].join('\n');
+  assert.deepEqual(bloquesDePrueba(texto).map((b) => b.titulo), ['el de afuera']);
+});

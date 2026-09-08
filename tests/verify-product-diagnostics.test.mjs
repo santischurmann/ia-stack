@@ -741,3 +741,77 @@ test('FALSIFICACIÓN · un control sin ac_id no se puede probar, y un id repetid
   repetido.assets.push({ ...repetido.assets[0] });
   assert.ok(validateArtifact('threat', repetido).some((v) => v.includes('repite')));
 });
+
+// --- Bordes del modelo de amenaza: basura por la puerta, ninguna rama sin ejercitar ------------
+
+test('FALSIFICACIÓN · al modelo le falta una clave de tope y el rechazo lo dice de una', () => {
+  const sinClave = threat();
+  delete sinClave.accepted;
+  const violaciones = validateArtifact('threat', sinClave);
+  assert.equal(violaciones.length, 1);
+  assert.match(violaciones[0], /exactamente/u);
+});
+
+test('FALSIFICACIÓN · cada lista tiene que ser una lista, y cada entrada tiene su forma exacta', () => {
+  for (const lista of ['assets', 'actors', 'entrypoints', 'controls', 'accepted']) {
+    const roto = threat();
+    roto[lista] = 'no es una lista';
+    assert.ok(validateArtifact('threat', roto).some((v) => v.includes(lista)), `aceptó ${lista} sin ser lista`);
+  }
+  const formaRara = threat();
+  formaRara.assets = [{ id: 'A1', what: 'x' }];
+  assert.ok(validateArtifact('threat', formaRara).some((v) => /exactamente/u.test(v)));
+});
+
+test('FALSIFICACIÓN · trusted también es booleano, no sólo authenticated', () => {
+  const raro = threat();
+  raro.actors[0].trusted = 'a medias';
+  assert.ok(validateArtifact('threat', raro).some((v) => v.includes('trusted')));
+});
+
+test('FALSIFICACIÓN · una entrada sin actores declarados y sin activos alcanzados no inventa referencias', () => {
+  const sinActores = threat();
+  sinActores.entrypoints[0].actor_ids = 'no es lista';
+  assert.ok(validateArtifact('threat', sinActores).some((v) => v.includes('actor_ids')));
+
+  // Una entrada que no alcanza ningún activo no necesita control: no hay nada que proteger detrás.
+  const sinActivos = threat();
+  sinActivos.entrypoints[0].reaches_asset_ids = [];
+  sinActivos.controls = [];
+  sinActivos.coverage.authz = { state: 'examined_clean', reason: 'la única entrada no alcanza ningún activo, así que no hay nada que autorizar' };
+  assert.deepEqual(validateArtifact('threat', sinActivos), []);
+});
+
+test('FALSIFICACIÓN · coverage tiene que ser un objeto, con estados válidos y sin tipos inventados', () => {
+  const noObjeto = threat();
+  noObjeto.coverage = 'ninguno';
+  assert.ok(validateArtifact('threat', noObjeto).some((v) => v.includes('coverage')));
+
+  const estadoRaro = threat();
+  estadoRaro.coverage.ratelimit = { state: 'mas o menos', reason: 'un motivo cualquiera que es largo' };
+  assert.ok(validateArtifact('threat', estadoRaro).some((v) => /state debe ser/u.test(v)));
+
+  const tipoInventado = threat();
+  tipoInventado.coverage.telepatia = { state: 'examined_clean', reason: 'un tipo de control que no existe' };
+  assert.ok(validateArtifact('threat', tipoInventado).some((v) => v.includes('telepatia')));
+});
+
+test('FALSIFICACIÓN · con controls que no es lista, coverage exige los seis tipos', () => {
+  const sinControles = threat();
+  sinControles.controls = 'no es lista';
+  const violaciones = validateArtifact('threat', sinControles);
+  assert.ok(violaciones.some((v) => v.includes('controls')));
+  assert.ok(violaciones.some((v) => v.includes('authz')), 'con controls roto, authz queda sin declarar en coverage');
+});
+
+test('FALSIFICACIÓN · un id inválido o una entrada que no es objeto no rompen el barrido', () => {
+  const idRaro = threat();
+  idRaro.assets = [{ id: '1 no es id', what: 'x', why_it_matters: 'y' }];
+  assert.ok(validateArtifact('threat', idRaro).some((v) => /id no es válido/u.test(v)));
+
+  const entradaNula = threat();
+  entradaNula.entrypoints = [null];
+  const violaciones = validateArtifact('threat', entradaNula);
+  assert.ok(violaciones.length > 0);
+  assert.ok(violaciones.every((v) => typeof v === 'string'), 'ninguna violación puede venir rota');
+});
