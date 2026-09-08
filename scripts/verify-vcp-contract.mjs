@@ -120,6 +120,11 @@ export const REQUIREMENTS = [
   ['templates/phase-plan.json', /vcp\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
   // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
+  // El gate y la regla se fijan aparte a proposito: el gate detecta la regla, pero la regla es del
+  // protocolo y tiene que seguir escrita aunque alguien mueva, renombre o borre el gate que la
+  // detecta. La sexta forma de asercion prohibida es la unica de esa lista que trae detector.
+  ['SKILL.md', /Un test que afirma que ningún campo prohibido sale por un endpoint pasa cuando el endpoint/u, 'the sixth forbidden assertion form: content asserted without status'],
+  ['SKILL.md', /verify-assert-order\.mjs check tests/u, 'detector for the sixth forbidden assertion form'],
   ['SKILL.md', /verify-empty-probe\.mjs check contracts\/empty-probe\.json/u, 'mechanical empty-directory probe gate'],
   ['SKILL.md', /un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar/iu, 'a new gate must declare its no-input behaviour'],
   ['skills/gates.md', /verify-empty-probe\.mjs check/u, 'mechanical empty-directory probe gate'],

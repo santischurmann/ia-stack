@@ -567,6 +567,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-assert-order.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-audit-chain.mjs",
       "class": "gate"
     },
@@ -1012,6 +1016,18 @@
     },
     {
       "path": "tests/verify-adr.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-assert-order-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-assert-order-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-assert-order.test.mjs",
       "class": "prueba"
     },
     {

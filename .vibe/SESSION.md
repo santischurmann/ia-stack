@@ -55,3 +55,58 @@ cada arranque.
   pidieron explícitamente después de fijar ese número, o el diccionario, que el contrato ancla.
   **Se declara, no se esconde:** el criterio quedó superado por un pedido posterior, y cumplirlo
   al pie habría sido cumplir la métrica rompiendo el producto.
+
+## Etapa 1 del endurecimiento — cerrada el 2026-09-08
+
+**Feature slug:** asercion-estado-antes-que-contenido
+
+Primera de cuatro etapas de un plan que sale de aplicar VCP dos días sobre un proyecto real. Antes
+de proponer nada se leyó el protocolo entero y **dos de los cinco huecos del pedido resultaron ya
+estar cubiertos**: la fase 6.2 es una fase de seguridad con rol propio (`security-officer` en
+`contracts/capability-matrix.json`), y el Refutador ya existe con ese nombre en `SKILL.md:957-961`
+—sesgado a refutar, ciego a la conclusión del revisor—, sólo que vive en 6.3 y no cubre 6.2.
+
+**Decidido: no se agrega una fase de seguridad.** LAW 7 obliga a un 🔵 por fase y
+`verify-phase-decisions --require-complete` exige una decisión por cada fase declarada, así que una
+fase nueva le cobraría un menú a cada cambio de tres archivos, en cada corrida, para siempre. Van
+tres inserciones en fases existentes, y el puente es que el artefacto de seguridad produzca
+criterios de aceptación: de ahí el aparato que ya existe lo arrastra solo.
+
+- **Gate 46, `verify-assert-order.mjs`**: el sexto ítem de «formas de aserción prohibidas», y el
+  primero de esa lista con detector. La lista tenía cinco y el propio documento admitía que ninguno
+  fallaba mecánicamente.
+- **Nace en modo aviso, con criterio de promoción escrito de antemano** (cero falsos positivos
+  medidos). El motivo está medido en este repo: cinco detectores de seguridad dieron 43, 26, 6, 5 y
+  3 hallazgos, **todos falsos** (`docs/mejoras/2026-09-04.json`).
+- **La prueba destapó un defecto real del detector.** La primera versión sólo veía nombres de
+  variable en inglés, y el caso real que motivó todo usaba una variable en castellano: no lo
+  agarraba. Ahora rastrea la variable que sale de la respuesta.
+- **Un octavo lugar de registro que la lista del plan no nombraba**: el fixture sintético de
+  `tests/verify-vcp-contract.test.mjs`. Agregar una fila a `REQUIREMENTS` sin tocarlo pone la suite
+  en rojo.
+
+**Medido:** suite 1325 pruebas, 1323 en verde, 1 salteada. Cobertura del gate nuevo: 100% de
+funciones y ramas con la lógica del propio `verify-vcp-coverage.mjs`. Contrato: 119 promesas, 90
+límites honestos. `empty-probe` 46 gates; `vcp-index` 328 archivos; Graphify 324 cubiertos.
+
+## No verificado
+
+- **Cobertura global del repositorio:** no verificado — `verify-vcp-coverage.mjs` corre la suite y aborta con su
+  rojo, así que no pudo emitir veredicto global. El veredicto sobre el gate nuevo se obtuvo llamando
+  a `collectScriptCoverage` y `evaluateCoverage` del propio gate. La cobertura de los otros 45
+  scripts **no se midió en esta etapa**.
+- **Estabilidad de `verify-test-bindings.mjs` bajo carga:** no verificado — su prueba de tope de tiempo midió 178 s
+  para `verify-receipt-gate.test.mjs` en una corrida de la suite completa a concurrencia 32, contra
+  un tope de 120 s, y **pasó en verde corrida aislada**. Mide reloj de pared adentro de una suite que
+  compite consigo misma. No se tocó: es un defecto del repositorio, ajeno a esta etapa.
+
+## Fallo preexistente, declarado y no escondido
+
+`tests/verify-ablation.test.mjs:279` está en rojo porque `~/.claude/skills/cyber-neo/SKILL.md`
+volvió a existir después de la limpieza del 2026-09-02 que lo archivó. El gate lee el disco y tiene
+razón. **Decisión humana registrada:** dejarlo rojo y declararlo, en vez de deshacer una instalación
+hecha a propósito o editar un registro cerrado.
+
+Destapa un hueco del propio gate, que **no distingue «nunca se archivó» de «se archivó y después se
+restauró queriendo»**. Un registro de ablación queda en rojo permanente en cuanto alguien reinstala
+a propósito algo que archivó. Candidato a propuesta del bucle de auto-mejora.

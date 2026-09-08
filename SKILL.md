@@ -653,9 +653,30 @@ gate sólo prueba que el RED es real, **no que la prueba sea buena**:
   haber probado nada.
 - "renderiza sin explotar" o "no lanza" como prueba entera.
 - Aserciones sobre clases CSS u otros detalles de implementación en vez de sobre la conducta.
+- Una aserción sobre el **contenido** de una respuesta sin una aserción previa sobre su **estado**.
+  Un test que afirma que ningún campo prohibido sale por un endpoint pasa cuando el endpoint
+  devuelve 404, porque el cuerpo de un 404 tampoco los tiene. **Toda aserción sobre el contenido
+  de una respuesta va precedida por una sobre su estado**, en el mismo bloque de prueba.
 
-Ninguna de estas falla mecánicamente en `verify-red.sh`/`.ps1`. El Test-Engineer las evita por
-regla, y TRIANGULATE y la revisión 4R las marcan si se cuelan.
+Las cinco primeras no fallan mecánicamente en `verify-red.sh`/`.ps1`. El Test-Engineer las evita
+por regla, y TRIANGULATE y la revisión 4R las marcan si se cuelan.
+
+La sexta sí tiene detector —es la única de la lista que lo tiene, y toda regla nueva de este
+protocolo tiene que traer el suyo—:
+```bash
+node .vibe/vcp-runtime/scripts/verify-assert-order.mjs check tests
+```
+**Sale 0 siempre: es un aviso, todavía no un gate.** Nace así por una medición propia — cinco
+diseños de detectores de seguridad de este repositorio dieron 43, 26, 6, 5 y 3 hallazgos, **todos
+falsos, sin un solo verdadero positivo en 210 archivos ni en 191 commits**, y se declaró el límite
+en vez de publicar un gate que grita en falso (`docs/mejoras/2026-09-04.json`). Un gate que grita
+en falso se ignora, y un gate ignorado no detecta nada. **Criterio de promoción, escrito de
+antemano**: pasa a rechazar sólo cuando una corrida sobre un corpus real dé cero falsos positivos y
+ese número quede registrado.
+
+**Barrer no es leer.** Es un barrido léxico, no un análisis de flujo: una petición hecha a través
+de una función auxiliar no muestra ninguna de las señales que busca y pasa sin que nadie la mire.
+Tampoco juzga si la aserción de estado que encontró comprueba el estado correcto.
 
 **Cuántos mocks son demasiados** (punto #6): hasta 3 en una prueba es sano. Entre 4 y 6, conviene
 extraer una función pura. **7 o más: pará, estás probando en la capa equivocada** — necesitar esa

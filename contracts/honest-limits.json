@@ -534,6 +534,12 @@
       "file": "skills/gates.md",
       "phrase": "no sabe si un ADR hacía falta",
       "why": "El gate verifica la FORMA de los registros que existan: cuatro secciones con texto, estado valido, sin huecos de plantilla, y toda opcion elegida con su motivo. Lo que no puede es saber si faltaba escribir uno. Un proyecto que ata su arquitectura a un motor de base de datos y no lo registra sale igual de verde que uno que no tomo ninguna decision estructural, porque sin carpeta escribe VACIO. Decidir cuando corresponde un ADR es humano y esta descrito en la fase 4; el gate solo puede juzgar lo que ya se escribio. Tampoco juzga la decision: que esten las opciones descartadas no prueba que se hayan evaluado."
+    },
+    {
+      "limit_id": "assert-order-is-a-warning-not-a-gate",
+      "file": "skills/gates.md",
+      "phrase": "Es un aviso, todavía no un gate",
+      "why": "El detector de aserciones que pasan vacías sale 0 siempre y su criterio de promoción está escrito de antemano: cero falsos positivos medidos sobre un corpus real. Sin esta frase alguien lee la fila como un gate que bloquea y da por cubierto un modo de falla que sigue pasando en verde, que es exactamente lo que este detector existe para atrapar."
     }
   ]
 }

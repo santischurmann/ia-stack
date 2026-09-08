@@ -7,6 +7,36 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **La sexta forma de aserción prohibida, y la primera de esa lista con detector.** Un test que
+  afirmaba que ningún campo prohibido salía por un endpoint pasaba en verde **porque el endpoint
+  devolvía 404**: el cuerpo de un 404 tampoco trae esos campos. No es un defecto nuevo — es la misma
+  familia que «una aserción adentro de un bucle que puede dar cero vueltas», que ya estaba en la
+  lista. Lo que cambia es que la lista entera era honor system y el propio documento lo decía:
+  «ninguna de estas falla mecánicamente en `verify-red.sh`/`.ps1`». Ahora la sexta trae detector,
+  que es lo que este protocolo exige de toda regla nueva.
+  - **Nace en modo aviso y sale 0 siempre**, con el criterio de promoción escrito de antemano: pasa
+    a rechazar sólo cuando una corrida sobre un corpus real dé cero falsos positivos y ese número
+    quede registrado. El motivo no es timidez, está medido en este repositorio — cinco diseños de
+    detectores de seguridad dieron 43, 26, 6, 5 y 3 hallazgos, **todos falsos, sin un solo verdadero
+    positivo en 210 archivos ni en 191 commits**, y se declaró el límite en vez de publicar un gate
+    que grita en falso. Un gate que grita en falso se ignora, y un gate ignorado no detecta nada.
+  - **La prueba destapó un defecto real del detector.** La primera versión buscaba una lista de
+    nombres en inglés —`body`, `json`, `data`— y **el caso real que motivó todo usaba una variable
+    en castellano**, así que no lo agarraba. Ahora rastrea la variable que sale de la respuesta: una
+    lista sólo encuentra lo que ya pensó quien la escribió, que es el mismo defecto que este
+    repositorio ya tenía escrito para la redacción de la ablación.
+  - **Sólo mira bloques con una petición a la vista.** Sin esa guarda, cualquier test de una función
+    pura que use una variable llamada `data` entraría al informe, y el ruido cuesta más que el
+    defecto que atrapa.
+  - **Un octavo lugar de registro que la lista escrita no nombraba:** el fixture sintético de
+    `tests/verify-vcp-contract.test.mjs`. Agregar una fila a `REQUIREMENTS` sin tocarlo pone la
+    suite en rojo, y eso no estaba dicho en ningún lado.
+  - **Un fallo preexistente queda declarado, no escondido:** `verify-ablation` rechaza porque
+    `cyber-neo/SKILL.md` volvió a `~/.claude` después de la limpieza que lo archivó. Destapa un
+    hueco del propio gate, que **no distingue «nunca se archivó» de «se archivó y después se
+    restauró queriendo»** — un registro de ablación queda en rojo permanente en cuanto alguien
+    reinstala a propósito algo que archivó.
+
 - **Cuarta ronda: dos propuestas, no cuatro.** Se midieron cuatro candidatos y **dos no
   resistieron** — otro HTML del repositorio tenía todas sus clases CSS definidas, y la concentración
   de 70 requisitos en 3 archivos de prueba resultó ser que los 70 tienen **nombres distintos**. El
