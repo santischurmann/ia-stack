@@ -127,11 +127,10 @@ sobre una corrida instrumentada de la suite entera — misma lógica, sin el abo
 
 - **Grafo:** reindexado despues del commit y sellado contra el HEAD real, en el orden que manda el
   protocolo (commit, graphify, record, check). Verde.
-- **Vault de Obsidian:** no verificado — quedo VIEJO. Su graph.canvas es del 2026-09-04 y no
-  refleja los cuatro gates nuevos. El CLI de graphify no lo regenera: ese export es un paso
-  agentico del skill, y no se corrio. El gate que lo mira comprueba destino y forma, nunca
-  frescura, asi que sale verde igual — es su limite declarado, y por eso hace falta decirlo aca.
-
+- **Vault de Obsidian:** regenerado con `graphify export obsidian` sobre el grafo del commit,
+  3448 notas y su `graph.canvas` al dia. El gate que lo mira comprueba destino y forma, nunca
+  frescura: que salga verde no dice que refleje el arbol de hoy, y por eso la fecha del canvas es
+  lo que hay que mirar.
 ## Etapa 2 del endurecimiento — cerrada el 2026-09-08
 
 **Feature slug:** receipt-v3-limite-regresion-soporte
