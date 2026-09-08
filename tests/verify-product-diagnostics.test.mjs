@@ -110,7 +110,12 @@ function prd() {
     non_functional_requirements: [{ id: 'NFR1', description: 'el gate cierra en menos de un segundo sobre un feature', measure: 'tiempo de pared medido en la suite' }],
     security: 'no lee rutas fuera del proyecto ni sale a la red',
     privacy: 'no registra datos de personas: el expediente es sobre el proceso',
-    observability: 'cada rechazo nombra el artefacto y el campo que lo causo',
+    observability: {
+      correlation: 'cada corrida del gate lleva el slug de la feature en toda linea de salida',
+      actor_on_writes: 'ninguno — el gate no escribe: es de solo lectura sobre el expediente',
+      failure_visible: 'el codigo de salida y el prefijo REJECTED con el campo que lo causo',
+      diagnostic_command: 'node scripts/verify-product-diagnostics.mjs check <slug> --require-inputs',
+    },
     integrations: ['ninguna: Node nativo'],
     data: 'seis archivos JSON por feature, versionados con el repositorio',
     architecture: 'un verificador puro por artefacto y un CLI que los orquesta',
@@ -578,4 +583,50 @@ test('FALSIFICACIÓN · la recurrencia declara cuándo se promueve una mejora y 
     delete sin[campo];
     assert.ok(validateRecurrence(sin).length > 0, `aceptó una recurrencia sin ${campo}`);
   }
+});
+
+// --- Soporte: el DoD dejo de terminar en «adversarial pass» -------------------------------------
+//
+// LA HERIDA (proyecto real, septiembre de 2026): el hueco mas grande resulto ser que nadie podia
+// diagnosticar una queja -- sin identificador de peticion, sin autor en las operaciones -- y NINGUN
+// gate lo veia, porque la cobertura estaba en 100%. La cobertura mide ejecucion del codigo; el
+// soporte mide observabilidad del producto. Son ejes distintos, y el DoD solo tenia uno.
+
+test('observability declara los cuatro campos del soporte, no una frase suelta', () => {
+  assert.deepEqual(validatePrd(prd()), []);
+});
+
+test('FALSIFICACIÓN · falta un campo de soporte y el rechazo lo nombra', () => {
+  for (const campo of ['correlation', 'actor_on_writes', 'failure_visible', 'diagnostic_command']) {
+    const documento = prd();
+    delete documento.observability[campo];
+    assert.ok(validatePrd(documento).some((v) => v.includes(campo)), `aceptó observability sin ${campo}`);
+  }
+});
+
+test('FALSIFICACIÓN · «ninguno» pelado rechaza; «ninguno — motivo» pasa', () => {
+  const pelado = prd();
+  pelado.observability.correlation = 'ninguno';
+  assert.ok(validatePrd(pelado).length > 0, 'aceptó un «ninguno» sin motivo');
+
+  const conMotivo = prd();
+  conMotivo.observability.correlation = 'ninguno — es un CLI de una sola corrida, no hay peticiones que correlacionar';
+  assert.deepEqual(validatePrd(conMotivo), []);
+});
+
+test('FALSIFICACIÓN · observability como frase suelta ya no alcanza', () => {
+  const viejo = prd();
+  viejo.observability = 'cada rechazo nombra el artefacto y el campo que lo causo';
+  assert.ok(validatePrd(viejo).some((v) => v.includes('observability')), 'aceptó la forma anterior');
+});
+
+test('FALSIFICACIÓN · observability rechaza lo que no es objeto y un campo que el protocolo no pide', () => {
+  for (const basura of [null, 'una frase', [], 7]) {
+    const documento = prd();
+    documento.observability = basura;
+    assert.ok(validatePrd(documento).some((v) => v.includes('observability')), `aceptó ${JSON.stringify(basura)}`);
+  }
+  const extra = prd();
+  extra.observability.tracing = 'un campo que nadie pidió';
+  assert.ok(validatePrd(extra).some((v) => v.includes('tracing')), 'aceptó un campo de más');
 });

@@ -1191,6 +1191,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-receipt-v3.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-red-gate.test.mjs",
       "class": "prueba"
     },

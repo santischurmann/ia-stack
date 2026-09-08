@@ -91,10 +91,6 @@ límites honestos. `empty-probe` 46 gates; `vcp-index` 328 archivos; Graphify 32
 
 ## No verificado
 
-- **Cobertura global del repositorio:** no verificado — `verify-vcp-coverage.mjs` corre la suite y aborta con su
-  rojo, así que no pudo emitir veredicto global. El veredicto sobre el gate nuevo se obtuvo llamando
-  a `collectScriptCoverage` y `evaluateCoverage` del propio gate. La cobertura de los otros 45
-  scripts **no se midió en esta etapa**.
 - **Estabilidad de `verify-test-bindings.mjs` bajo carga:** no verificado — su prueba de tope de tiempo midió 178 s
   para `verify-receipt-gate.test.mjs` en una corrida de la suite completa a concurrencia 32, contra
   un tope de 120 s, y **pasó en verde corrida aislada**. Mide reloj de pared adentro de una suite que
@@ -110,3 +106,40 @@ hecha a propósito o editar un registro cerrado.
 Destapa un hueco del propio gate, que **no distingue «nunca se archivó» de «se archivó y después se
 restauró queriendo»**. Un registro de ablación queda en rojo permanente en cuanto alguien reinstala
 a propósito algo que archivó. Candidato a propuesta del bucle de auto-mejora.
+
+## La cobertura global dejó de estar pendiente
+
+En la etapa 1 quedó sin medir porque `verify-vcp-coverage.mjs` corre la suite y aborta con el rojo
+preexistente. En la etapa 2 se midió: **46/46 scripts ejecutaron todas sus funciones y todas sus
+ramas**, con `listMjsScripts`, `collectScriptCoverage` y `evaluateCoverage` **del propio gate**
+sobre una corrida instrumentada de la suite entera — misma lógica, sin el aborto.
+
+## Etapa 2 del endurecimiento — cerrada el 2026-09-08
+
+**Feature slug:** receipt-v3-limite-regresion-soporte
+
+Un solo bump de schema, y el corte no fue arbitrario: tres de los cinco cambios del plan agregaban
+campos **requeridos** al receipt, y hacerlos por separado obligaba a tres bumps en fila.
+
+- **`limits[]` vs `regressions[]`**, con el campo **`before`** como discriminador **mecánico, no de
+  criterio**. El caso que motivó la regla —permiso correcto, un rol pierde una pantalla, docstring
+  con archivo, rango y permiso— cae en `regressions` por forma. Escribirlo bien dejó de alcanzar.
+- **`accepted_by_user` resuelve afuera del receipt**: `user_decision_ref` contra el `current_hash`
+  de una decisión `decided`. Mismo modelo que LAW 8 usa para `escalated`.
+- **LAW 6 gana `soporte declarado`**, y `prd.observability` dejó de ser una frase suelta. Rechaza
+  «ninguno» pelado **en los dos idiomas**: el gate del handoff sólo conoce los rellenos en inglés y
+  tiene ese hueco declarado; repetirlo acá habría dejado la puerta abierta justo para quien escribe
+  estos campos en castellano.
+- **El Refutador cubre 6.2 y su piso subió a `estandar`**, donde antes era el propio revisor vía su
+  campo `verdict` — auto-certificación, contra la regla de que quien encuentra nunca parchea.
+- **Los 15 receipts v2 pasan a archivo**, por el camino que ya tenían los v1.
+- **Colateral:** el DoD de `orchestrator-opus.md` numeraba `4.1`..`4.8` lo que son las fases 6, 7 y
+  8 — un quinto vocabulario de fases, en el único checklist que el orquestador lee para cerrar.
+
+**Medido:** suite 1361 pruebas, 1359 en verde, 1 salteada. **Cobertura 46/46 scripts al 100% de
+funciones y ramas.** Contrato 124 promesas, 92 límites honestos. `empty-probe` 45 gates corridos;
+`vcp-index` 329 archivos; Graphify 325 cubiertos.
+
+**Un noveno lugar de registro que ninguna lista nombraba:** el manifiesto de Graphify. Es artefacto
+local e ignorado por git, pero su gate está en la suite, así que agregar un archivo rastreado la
+pone en rojo hasta correr `graphify update .`. Pasó en las dos etapas.

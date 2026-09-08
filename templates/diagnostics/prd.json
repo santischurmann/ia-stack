@@ -38,7 +38,12 @@
   ],
   "security": "Qué superficie toca, qué no puede leer ni escribir, y qué pasa si falla.",
   "privacy": "Qué datos de personas toca. Si no toca ninguno, decirlo así.",
-  "observability": "Cómo se ve desde afuera que funcionó o falló, y dónde queda registrado.",
+  "observability": {
+    "correlation": "Cómo se ata una petición del usuario a lo que quedó registrado. Si no hay, «ninguno — <por qué>».",
+    "actor_on_writes": "Cómo se sabe quién hizo cada operación que cambia estado. Si no hay, «ninguno — <por qué>».",
+    "failure_visible": "Cómo se ve desde afuera que falló, y dónde queda registrado.",
+    "diagnostic_command": "El comando o la consulta que se corre cuando alguien dice que no le anda."
+  },
   "integrations": [
     "Con qué se integra. Si con nada, escribir \"ninguna\" y por qué."
   ],

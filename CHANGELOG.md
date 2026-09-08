@@ -7,6 +7,45 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **`vcp.receipt/v3`: un límite y una regresión dejaron de ser lo mismo, y el DoD dejó de terminar
+  en «adversarial pass».** Un constructor puso un permiso correcto, midió que eso dejaba a un rol
+  sin una pantalla, lo escribió con precisión en el docstring —archivo, rango y permiso— y entregó
+  la tarea como hecha. La declaración era honesta y detallada, **y eso es justamente lo que la hace
+  fácil de aceptar sin mirarla**. `not_reviewed` no los separaba: es un solo string que dice qué
+  superficie no se miró, no qué le pasó al producto.
+  - **El discriminador es mecánico, no de criterio: el campo `before`.** Un límite no lo tiene
+    porque nunca anduvo; una regresión sí, porque había un estado anterior medible. El caso de
+    arriba tiene `before` = «el rol veía la pantalla», así que cae en `regressions` **por forma**, y
+    ahí necesita `fixed`, `reverted` o `accepted_by_user`. Escribirlo bien en el docstring dejó de
+    alcanzar.
+  - **Aceptar una regresión ya no es un campo adentro del propio receipt.** `accepted_by_user` exige
+    `user_decision_ref` con el `current_hash` de una decisión `decided` de
+    `docs/phase-decisions.json` — el mismo modelo que LAW 8 usa para `escalated`. Editar esa
+    decisión para que diga otra cosa rompe el hash y con él la referencia.
+  - **LAW 6 gana un octavo término: `soporte declarado`.** Cuatro campos que responden una sola
+    pregunta —si alguien dice que no le anda, ¿con qué se lo diagnostica?—. Ya existían en
+    `observability` del PRD como una frase suelta que **nadie volvía a mirar**; ahora son campos
+    propios y entran al receipt. **Por qué el hueco convivía con 100% de cobertura:** la cobertura
+    mide ejecución del código, el soporte mide observabilidad del producto. Ejes ortogonales, y el
+    DoD tenía uno solo.
+  - **Rechaza «ninguno» pelado en los dos idiomas.** El gate del handoff sólo conoce los rellenos en
+    inglés y tiene ese hueco declarado como límite honesto; repetirlo acá habría sido dejar la
+    puerta abierta justo para quien escribe estos campos en castellano.
+  - **El Refutador cubre 6.2 y su piso subió a `estandar`.** Un hallazgo del escáner de seguridad
+    iba derecho a arreglarse sin pasar por ninguna refutación — medido: seis lentes propusieron 60
+    hallazgos y sobrevivieron 18, o sea **70% de ruido**. Y en `estandar` el refutador era el propio
+    revisor vía su campo `verdict`, que es auto-certificación y contradecía de frente la regla de
+    que quien encuentra nunca es quien parchea. Los conteos van al receipt: refutar es un hecho
+    contable, no una impresión.
+  - **Los 15 receipts `v2` pasan a archivo**, por el mismo camino que ya tenían los `v1`:
+    `inspect-legacy` los lee y `check` los rechaza sin excepción. Ninguno se borra ni se reescribe.
+  - **De paso, un quinto vocabulario de fases.** El DoD de `skills/orchestrator-opus.md` numeraba
+    `4.1`..`4.8` lo que en el protocolo son las fases 6, 7 y 8 — el mismo defecto que
+    `tests/fases-canonicas.test.mjs` ya fija para los documentos de prosa, en el único checklist que
+    el orquestador lee para cerrar.
+  - **Medido:** suite 1361 pruebas, 1359 en verde, 1 salteada; **cobertura 46/46 scripts al 100% de
+    funciones y ramas**; 124 promesas de contrato, 92 límites honestos.
+
 - **La sexta forma de aserción prohibida, y la primera de esa lista con detector.** Un test que
   afirmaba que ningún campo prohibido salía por un endpoint pasaba en verde **porque el endpoint
   devolvía 404**: el cuerpo de un 404 tampoco trae esos campos. No es un defecto nuevo — es la misma

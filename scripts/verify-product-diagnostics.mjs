@@ -14,6 +14,11 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+// La regla de «declarado, o "ninguno — <motivo>"» ya existe y se REUSA CITANDOLA, que es lo que
+// manda la regla de redaccion reutilizable del protocolo: dos redacciones distintas de la misma
+// garantia divergen con el tiempo y nadie sabe cual es la vigente.
+import { SUPPORT_FIELDS, validateDeclaredField } from './verify-receipt.mjs';
+
 export const SCHEMAS = Object.freeze({
   caio: 'vcp.caio/1',
   'loop-map': 'vcp.loop-map/1',
@@ -368,12 +373,37 @@ function validateRisks(value, violations) {
  * al pie de la tecnologia: una seccion que no existe no se puede dejar sin contestar por olvido.
  * La adopcion y la recurrencia NO estan aca a proposito: tienen artefacto propio en el mismo gate.
  */
+/**
+ * OBSERVABILIDAD = SOPORTE, y por eso dejo de ser una frase suelta. La herida, medida sobre un
+ * proyecto real: el hueco mas grande resulto ser que nadie podia diagnosticar una queja -- sin
+ * identificador de peticion, sin autor en las operaciones -- y NINGUN gate lo veia, porque la
+ * cobertura estaba en 100%. La cobertura mide ejecucion del codigo; esto mide observabilidad del
+ * producto. Un campo puede decir honestamente que no hay, pero tiene que decir POR QUE.
+ *
+ * LIMITE: comprueba que los cuatro campos digan algo, nunca que lo que dicen sea cierto ni que el
+ * comando de diagnostico exista. Un soporte inventado pasa en verde, igual que el resto del gate.
+ */
+export function validateObservability(value, violations) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    add(violations, `observability debe declarar los cuatro campos del soporte: ${SUPPORT_FIELDS.join(', ')}`);
+    return;
+  }
+  SUPPORT_FIELDS.forEach((campo) => {
+    const resultado = validateDeclaredField(value[campo], `observability.${campo}`);
+    if (!resultado.ok) add(violations, resultado.reason);
+  });
+  Object.keys(value).forEach((extra) => {
+    if (!SUPPORT_FIELDS.includes(extra)) add(violations, `observability declara un campo que el protocolo no pide: ${extra}`);
+  });
+}
+
 export function validatePrd(document) {
   const violations = [];
   const keys = ['schema', 'feature', 'date', 'problem', 'users', 'jobs_to_be_done', 'outcome', 'non_goals', 'in_scope', 'out_scope', 'capabilities', 'non_functional_requirements', 'security', 'privacy', 'observability', 'integrations', 'data', 'architecture', 'technology', 'acceptance_criteria', 'metrics', 'risks', 'rollout', 'rollback'];
   if (!exactKeys(document, keys)) return [`prd debe declarar exactamente ${keys.join(", ")}`];
   validateHeader(document, 'prd', violations);
-  ['problem', 'outcome', 'security', 'privacy', 'observability', 'data', 'architecture', 'rollout', 'rollback'].forEach((key) => requireText(document[key], key, violations));
+  ['problem', 'outcome', 'security', 'privacy', 'data', 'architecture', 'rollout', 'rollback'].forEach((key) => requireText(document[key], key, violations));
+  validateObservability(document.observability, violations);
   ['jobs_to_be_done', 'non_goals', 'in_scope', 'out_scope', 'integrations'].forEach((key) => requireStringArray(document[key], key, violations, { nonEmptyList: true }));
   validateUsers(document.users, violations);
   validateCapabilities(document.capabilities, violations);

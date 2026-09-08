@@ -39,7 +39,18 @@ activo:
 4. El orquestador no escribe ninguna funcionalidad: sólo spec, plan, verificación, simplificación,
    seguridad y publicación.
 5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail, escrita con `verify-audit-chain.mjs append`, nunca a mano — el sello encadena cada línea con la anterior y `check` detecta una edición posterior; ver `skills/vibe-memory.md`). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
-6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
+6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass + **soporte declarado**. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
+
+   **Soporte declarado** responde una sola pregunta: *si un usuario dice que no le anda, ¿con qué se
+   lo diagnostica?* Son cuatro campos —`correlation`, `actor_on_writes`, `failure_visible`,
+   `diagnostic_command`— que ya vivían en `observability` del PRD (Phase 2) como una frase suelta que
+   nadie volvía a mirar; ahora son campos propios y entran al receipt. Cada uno admite
+   **`"ninguno — <motivo>"`**, nunca `ninguno` a secas: un producto puede no tener correlación de
+   peticiones y ser honesto, pero callarlo no.
+   **Por qué esto convive con 100% de cobertura, que es lo que lo hacía invisible:** la cobertura
+   mide **ejecución de tu código**; el soporte mide **observabilidad de tu producto**. Son ejes
+   ortogonales, y el DoD tenía uno solo. Medido en una corrida real: sin identificador de petición y
+   sin autor en las operaciones, con la cobertura en 100% y todos los gates en verde.
 7. Menús de configuración (modelo, esfuerzo, detalle) al empezar cada fase. Menús de contenido (aprobar, modificar) en cada decisión. Los dos esperan respuesta. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (8.1). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
 
@@ -916,7 +927,20 @@ aceptar un secreto cubre archivo y categoría, no un valor — reemplazarlo por 
 mismo archivo sigue aceptado; y una entrada cuyo archivo quedó fuera del delta no se puede juzgar
 y por lo tanto no caduca.
 
-Un hallazgo **crítico o alto** se arregla antes de seguir, y después se vuelve a escanear. Un
+**Refutar antes de arreglar, también acá.** Hasta ahora un hallazgo del escáner iba derecho a
+«se arregla antes de seguir», y el Refutador (6.3, más abajo) sólo miraba los hallazgos de la
+revisión 4R. **Todo hallazgo Critical/High de este escáner pasa primero por el Refutador**: un
+agente ciego a la conclusión del escáner, sesgado a refutar, que devuelve `corroborado`, `refutado`
+o `no concluyente`. **Sólo se arregla lo corroborado.**
+
+El motivo está medido dos veces. En una corrida real sobre un proyecto ajeno, seis lentes
+propusieron 60 hallazgos de seguridad y sobrevivieron 18: **el 70% era ruido**, y un informe de
+seguridad con hallazgos falsos hace que nadie lea el siguiente. Y en este mismo repositorio, cinco
+diseños de detectores dieron 43, 26, 6, 5 y 3 hallazgos, **todos falsos, sin un solo verdadero
+positivo en 210 archivos ni en 191 commits** (`docs/mejoras/2026-09-04.json`). Un escáner de
+patrones sin refutación produce trabajo, no seguridad.
+
+Un hallazgo **crítico o alto** corroborado se arregla antes de seguir, y después se vuelve a escanear. Un
 crítico ya arreglado sube retroactivamente el `risk_level` a `critico` para el paso 6.3 si no lo
 estaba: eso sale de la evidencia, no es opcional. Los medios y bajos se anotan en `.vibe/DEBT.md` y
 la severidad la decide la persona.
@@ -975,11 +999,27 @@ código. El papel que puede vetar —bloquear un hallazgo como no resuelto— nu
 arreglarlo: si el mismo agente encuentra y parchea, el parche se queda **sin ninguna revisión
 adversarial encima**.
 
-**Refutador** (punto #12) — en los niveles `alto` y `critico`, el paso de reproducción de arriba
-**es** el refutador: un agente ciego a la conclusión del revisor original, sesgado a refutar, que
-deriva la reproducción por su cuenta y devuelve `corroborado`, `refutado` o `no concluyente`. Sólo
-se arregla lo `corroborado`. En `bajo` y `estandar` ese papel está implícito en el campo `verdict`
-del propio revisor: no hay agente aparte, los niveles baratos no cargan con la pasada extra.
+**Refutador** (punto #12) — en los niveles `estandar`, `alto` y `critico`, el paso de reproducción
+de arriba **es** el refutador: un agente ciego a la conclusión del revisor original, sesgado a
+refutar, que deriva la reproducción por su cuenta y devuelve `corroborado`, `refutado` o
+`no concluyente`. Sólo se arregla lo `corroborado`. Cubre además los hallazgos Critical/High de 6.2,
+no sólo los de la rúbrica 4R.
+
+**El piso subió de `alto` a `estandar`, y por qué.** En `estandar` el refutador era el propio
+revisor, vía su campo `verdict`. Eso es auto-certificación y contradice de frente la regla de dos
+párrafos más arriba —«el papel que puede vetar nunca es el mismo que puede arreglarlo»—: un agente
+que encuentra y se corrobora a sí mismo no pasó por ninguna refutación. En `bajo` sigue implícito:
+la rigurosidad se paga, y sólo se paga cuando hay algo que perder (Phase 1, paso 7b).
+
+**Los conteos se registran, no se narran.** Cuántos hallazgos se propusieron, cuántos sobrevivieron,
+cuántos se refutaron y cuántos quedaron sin concluir van al bloque `refutation` del receipt, y tienen
+que cerrar contra `proposed`. Sin ese número, nadie puede saber después si el refutador corrió.
+
+**Esto NO es TRIANGULATE, y conviene decirlo porque la confusión es fácil.** TRIANGULATE (5.3) toma
+una **implementación** y produce **pruebas nuevas**; su gate (5.5) sólo verifica que los 26 vectores
+estén *declarados* y nunca abre la prueba que un vector dice tener. El Refutador toma un **hallazgo
+ya escrito por otro agente** y produce un **veredicto**. Uno fabrica evidencia, el otro destruye
+afirmaciones. Se cruzan en cero.
 
 **Identificador de hallazgo** (punto #15) — cada hallazgo del informe 4R lleva un id corto, con la
 misma convención `id:<hash6>` que `.vibe/DEBT.md` (ver `skills/vibe-memory.md`). Así se puede
@@ -1116,14 +1156,14 @@ declarado lo acepta sin chistar.
 Después, escribí el receipt (el propio orchestrator lo lee/
 escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
 
-**Schema `vcp.receipt/v2` — el único que `verify-receipt.mjs check` puede aprobar** (schema
-`vcp.receipt/v1` es archivístico: cualquier receipt v1 existente se lee con `inspect-legacy`,
-nunca con `check` — ver más abajo):
+**Schema `vcp.receipt/v3` — el único que `verify-receipt.mjs check` puede aprobar** (los schemas
+`vcp.receipt/v1` y `vcp.receipt/v2` son archivísticos: cualquier receipt viejo se lee con
+`inspect-legacy`, nunca con `check` — ver más abajo):
 
 ```
 .vibe/receipts/<feature-slug>-<fecha>.json
 {
-  "schema": "vcp.receipt/v2",
+  "schema": "vcp.receipt/v3",
   "feature": "<de docs/spec.md>",
   "task": "<id de tasks.json, ej. T02>",
   "scope": { "declared_paths": ["<paths tocados, autodeclarados>"] },
@@ -1150,6 +1190,21 @@ nunca con `check` — ver más abajo):
   ],
   "reproduction": "<comando(s) exacto(s) para reproducir el estado verificado>",
   "not_reviewed": "<'none — <base concreta>' o los límites reales de esta revisión>",
+  "limits": [
+    { "id": "L1", "what": "<qué NO hace este cambio, a propósito>", "why_acceptable": "<por qué está bien que no lo haga>", "owner": "<quién>" }
+  ],
+  "regressions": [
+    { "id": "R1", "what": "<qué dejó de andar>", "before": "<cómo andaba antes>", "after": "<cómo anda ahora>",
+      "evidence": "<comando y salida>", "resolution": "fixed|reverted|accepted_by_user",
+      "user_decision_ref": "<sólo con accepted_by_user: el current_hash de la decisión en docs/phase-decisions.json>" }
+  ],
+  "support": {
+    "correlation": "<cómo se ata una petición a lo que quedó registrado, o 'ninguno — <motivo>'>",
+    "actor_on_writes": "<cómo se sabe quién hizo cada operación que cambia estado, o 'ninguno — <motivo>'>",
+    "failure_visible": "<cómo se ve desde afuera que falló>",
+    "diagnostic_command": "<el comando que se corre cuando alguien reporta una falla>"
+  },
+  "refutation": { "proposed": 0, "survived": 0, "refuted": 0, "inconclusive": 0, "by_lens": {} },
   "evidence": ["<comando real corrido en 6.3/6.4, ej. 'pytest -q -> 47 passed'>"],
   "git_head": "<git rev-parse HEAD>",
   "tree_fingerprint": "<sha256 sobre HEAD + bytes-en-disco de cada path tracked cambiado (staged+unstaged) + path/contenido de cada untracked no ignorado, ver scripts/verify-receipt.mjs>",
@@ -1185,6 +1240,38 @@ midió" quede declarado, no inferido de un número mágico.
 `"none"` sin base) — debe decir `"none — <base concreta de por qué se cubrió todo>"` o listar los
 límites reales de la revisión. Mismo mecanismo que `verify-handoff-report.mjs` ya exige para
 handoffs de fase, ahora también sobre el campo del receipt.
+
+**Un límite y una regresión no son lo mismo, y `not_reviewed` no los separaba.** `not_reviewed`
+dice qué superficie **no se miró**; es el alcance de la revisión. Lo otro es qué **pasó con el
+producto**, y son dos listas con reglas opuestas:
+
+- **`limits[]`** — comportamiento **intencional** que este cambio no cubre. **No bloquea.** Es
+  "esto no lo hace, a propósito".
+- **`regressions[]`** — comportamiento que **antes andaba y ahora no**. Se arregla (`fixed`), se
+  revierte (`reverted`), o **la acepta una persona** (`accepted_by_user`).
+
+**La regla dura**: `accepted_by_user` exige `user_decision_ref` con el `current_hash` de una
+decisión `decided` de `docs/phase-decisions.json`. Si no resuelve, `terminal_state` **no puede ser
+`approved`** — el mismo modelo que LAW 8 ya usa para `escalated`: la salida nunca es un campo
+adentro del propio receipt, es una decisión humana registrada afuera y sellada por hash. Editar esa
+decisión para que diga otra cosa rompe el hash y con él la referencia.
+
+**El discriminador es mecánico, no de criterio: el campo `before`.** Un límite no lo tiene, porque
+nunca anduvo; una regresión sí, porque había un estado anterior medible. Una entrada con `before`
+en `limits[]` se rechaza y el mensaje dice a dónde va.
+
+**De dónde sale esta regla** (regla meta: el comentario de un gate cuenta la herida). Un constructor
+puso un permiso correcto, midió que eso dejaba a un rol sin una pantalla, lo escribió con precisión
+en el docstring —archivo, rango y permiso— y entregó la tarea como hecha. La declaración era honesta
+y detallada, **y eso es justamente lo que la hace fácil de aceptar sin mirarla**. Ese caso tiene
+`before` = «el rol veía la pantalla», así que cae en `regressions` **por forma, no por criterio**, y
+ahí necesita una resolución. Escribirlo bien en el docstring dejó de alcanzar.
+
+**`refutation` cuenta la ronda adversarial**: cuántos hallazgos se propusieron y cuántos
+sobrevivieron al Refutador (6.3). Los cuatro conteos tienen que cerrar contra `proposed` —refutar es
+un hecho contable, no una impresión—. Sin este bloque nadie puede saber después si el refutador
+corrió o fue teatro: en la corrida que motivó la regla, de **60 hallazgos propuestos sobrevivieron
+18**, y un informe de seguridad con 70% de ruido hace que nadie lea el siguiente.
 
 **LIFECYCLE DEL RECEIPT — orden exacto, no ambiguo:**
 
@@ -1324,24 +1411,27 @@ que resuelve.
 puede escribir en ese instante. La confirmación posterior demuestra que el commit contiene el
 índice revisado; no demuestra que no hubo una escritura concurrente.
 
-Exit 0 **únicamente** si `schema: vcp.receipt/v2` Y `terminal_state: approved` Y **todos** los
+Exit 0 **únicamente** si `schema: vcp.receipt/v3` Y `terminal_state: approved` Y **todos** los
 `acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
-estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed` pasan su validación de forma →
-proceder. Exit 1 en cualquier otro caso — receipt ausente, stale, `schema: vcp.receipt/v1`
-(archivístico, nunca pasable por `check` — ver abajo), cualquier AC no-`COMPLIANT`, hash de test
-desactualizado, medición `-1` sin motivo, `not_reviewed` placeholder, o `terminal_state:
-escalated` (**siempre**, tenga o no `override_note`) → frenar acá, reportar al usuario, no
-commitear (LAW 8). El script imprime la razón exacta del rechazo.
+estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed`/`limits`/`regressions`/`support`/
+`refutation` pasan su validación de forma → proceder. Exit 1 en cualquier otro caso — receipt
+ausente, stale, `schema: vcp.receipt/v1` o `vcp.receipt/v2` (archivísticos, nunca pasables por
+`check` — ver abajo), cualquier AC no-`COMPLIANT`, hash de test desactualizado, medición `-1` sin
+motivo, `not_reviewed` placeholder, una regresión `accepted_by_user` cuyo `user_decision_ref` no
+resuelve, un campo de `support` sin declarar, un conteo de `refutation` que no cierra, o
+`terminal_state: escalated` (**siempre**, tenga o no `override_note`) → frenar acá, reportar al
+usuario, no commitear (LAW 8). El script imprime la razón exacta del rechazo.
 
-**Receipts `vcp.receipt/v1` son archivo, no evidencia viva.** Un proyecto con receipts v1 de
-antes de este schema los conserva sin migración automática — nadie los borra ni los reescribe.
-Para leerlos sin intentar aprobarlos:
+**Los receipts `vcp.receipt/v1` y `vcp.receipt/v2` son archivo, no evidencia viva.** Un proyecto con
+receipts de antes de este schema los conserva sin migración automática — nadie los borra ni los
+reescribe. Un receipt no se parchea nunca: si hace falta uno vigente, se genera uno nuevo sobre el
+estado real. Para leer los viejos sin intentar aprobarlos:
 ```bash
 node .vibe/vcp-runtime/scripts/verify-receipt.mjs inspect-legacy .vibe/receipts/<archivo-viejo>.json
 ```
 Comando de solo lectura: informa que es evidencia archivística de un schema anterior, no
 modifica nada, y **nunca** habilita un commit/publish — `check` sigue siendo la única puerta, y
-`check` rechaza todo receipt `v1` sin excepción.
+`check` rechaza todo receipt `v1` y `v2` sin excepción.
 
 **Qué NO se declara cerrado** (source: `research/sources/protocolo-muralla.md` point #45) —
 ninguno de estos permite un 🔵 de cierre, aunque el receipt mecánico pase:

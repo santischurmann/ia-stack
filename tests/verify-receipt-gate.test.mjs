@@ -89,7 +89,7 @@ function fixture({ sha256 = false } = {}) {
 
 function writeReceipt(root, overrides = {}) {
   const {
-    schema = 'vcp.receipt/v2',
+    schema = 'vcp.receipt/v3',
     evidence = ['node --test: 1 pass'],
     terminalState = 'approved',
     acceptanceCriteria = defaultAcceptanceCriteria(),
@@ -100,6 +100,15 @@ function writeReceipt(root, overrides = {}) {
     scope = { declared_paths: [TEST_FILE_RELATIVE] },
     task = 'T01',
     feature = 'receipt-fixture',
+    limits = [],
+    regressions = [],
+    support = {
+      correlation: 'cada peticion lleva X-Request-Id y sale en toda linea de log',
+      actor_on_writes: 'toda escritura graba el actor_id del token verificado',
+      failure_visible: 'el endpoint /health y el contador de 5xx',
+      diagnostic_command: 'grep <request-id> logs/app.log | head -50',
+    },
+    refutation = { proposed: 0, survived: 0, refuted: 0, inconclusive: 0, by_lens: {} },
   } = overrides;
   const relative = '.vibe/receipts/fixture.json';
   const absolute = join(root, ...relative.split('/'));
@@ -116,6 +125,7 @@ function writeReceipt(root, overrides = {}) {
     : {
       schema, feature, task, scope, acceptance_criteria: acceptanceCriteria, review_4r: reviewFourR,
       measurements, reproduction, not_reviewed: notReviewed, evidence, terminal_state: terminalState,
+      limits, regressions, support, refutation,
       git_head, tree_fingerprint,
     };
   writeFileSync(absolute, `${JSON.stringify(receipt, null, 2)}\n`);
@@ -222,7 +232,7 @@ test('FALSIFICACIÓN · check rejects malformed input before touching Git state'
   });
 });
 
-test('FALSIFICACIÓN · check rejects a v2 receipt missing a required field and an unrecognized schema', () => {
+test('FALSIFICACIÓN · check rejects a v3 receipt missing a required field and an unrecognized schema', () => {
   withFixture((root) => {
     const receipt = writeReceipt(root);
     const absolute = join(root, ...receipt.split('/'));
@@ -237,11 +247,11 @@ test('FALSIFICACIÓN · check rejects a v2 receipt missing a required field and 
     const receipt = writeReceipt(root);
     const absolute = join(root, ...receipt.split('/'));
     const parsed = JSON.parse(readFileSync(absolute, 'utf8'));
-    parsed.schema = 'vcp.receipt/v3';
+    parsed.schema = 'vcp.receipt/v9';
     writeFileSync(absolute, `${JSON.stringify(parsed, null, 2)}\n`);
     const result = gate(root, 'check', receipt);
     assert.equal(result.status, 1, 'unrecognized schema must reject');
-    assert.match(result.output, /unknown schema: vcp\.receipt\/v3/);
+    assert.match(result.output, /unknown schema: vcp\.receipt\/v9/);
   });
 });
 
@@ -357,13 +367,19 @@ test('FALSIFICACIÓN · a repository with zero commits fails closed with a contr
     const fingerprint = gate(root, 'fingerprint');
     assert.equal(fingerprint.status, 1);
     assert.match(fingerprint.output, /REJECTED: unable to evaluate the current repository state/);
-    // A shape-valid v2 receipt (real test file, real hash, all required fields) so the check
+    // A shape-valid v3 receipt (real test file, real hash, all required fields) so the check
     // actually reaches the fingerprint comparison this test targets, instead of failing earlier
     // on schema/shape — that path is covered by its own dedicated tests elsewhere in this file.
     mkdirSync(join(root, 'test'), { recursive: true });
     writeFileSync(join(root, 'test', 'x.test.mjs'), TEST_FILE_CONTENT);
     writeFileSync(join(root, 'receipt.json'), JSON.stringify({
-      schema: 'vcp.receipt/v2', feature: 'x', task: 'T01',
+      schema: 'vcp.receipt/v3', feature: 'x', task: 'T01',
+      limits: [], regressions: [],
+      support: {
+        correlation: 'cada peticion lleva X-Request-Id', actor_on_writes: 'toda escritura graba actor_id',
+        failure_visible: 'el endpoint /health', diagnostic_command: 'grep <request-id> logs/app.log',
+      },
+      refutation: { proposed: 0, survived: 0, refuted: 0, inconclusive: 0, by_lens: {} },
       scope: { declared_paths: ['test/x.test.mjs'] },
       acceptance_criteria: [{
         ac_id: 'AC-1', scenario: 'x', verdict: 'COMPLIANT', test_file: 'test/x.test.mjs',
@@ -464,10 +480,10 @@ test('FALSIFICACIÓN · receipt file hashing accepts only regular files physical
 });
 
 // -------------------------------------------------------------------------------------------
-// vcp.receipt/v2 — invariants, 9 required scenarios plus pure-function unit coverage.
+// vcp.receipt/v3 (y las invariantes de v2 que compone) — invariants, 9 required scenarios plus pure-function unit coverage.
 // -------------------------------------------------------------------------------------------
 
-test('FALSIFICACIÓN · v2 approved with any AC UNTESTED/PARTIAL/FAILING is rejected by check', () => {
+test('FALSIFICACIÓN · v3 approved with any AC UNTESTED/PARTIAL/FAILING is rejected by check', () => {
   withFixture((root) => {
     for (const verdict of ['UNTESTED', 'PARTIAL', 'FAILING']) {
       const ac = { ...defaultAcceptanceCriteria()[0], verdict };
@@ -483,7 +499,7 @@ test('FALSIFICACIÓN · v2 approved with any AC UNTESTED/PARTIAL/FAILING is reje
   });
 });
 
-test('FALSIFICACIÓN · v2 rejects duplicate AC ids, an AC test outside declared scope, and blank evidence entries', () => {
+test('FALSIFICACIÓN · v3 rejects duplicate AC ids, an AC test outside declared scope, and blank evidence entries', () => {
   withFixture((root) => {
     const duplicate = writeReceipt(root, {
       acceptanceCriteria: [
@@ -507,7 +523,7 @@ test('FALSIFICACIÓN · v2 rejects duplicate AC ids, an AC test outside declared
   });
 });
 
-test('FALSIFICACIÓN · v2 approved with an AC test_hash_sha256 that does not match the real file is rejected', () => {
+test('FALSIFICACIÓN · v3 approved with an AC test_hash_sha256 that does not match the real file is rejected', () => {
   withFixture((root) => {
     const ac = { ...defaultAcceptanceCriteria()[0], test_hash_sha256: '0'.repeat(64) };
     const receipt = writeReceipt(root, { acceptanceCriteria: [ac] });
@@ -517,7 +533,7 @@ test('FALSIFICACIÓN · v2 approved with an AC test_hash_sha256 that does not ma
   });
 });
 
-test('FALSIFICACIÓN · v2 approved with an AC test_file outside the checkout or through a symlink is rejected', () => {
+test('FALSIFICACIÓN · v3 approved with an AC test_file outside the checkout or through a symlink is rejected', () => {
   const root = fixture();
   const outside = fixture();
   assert.notEqual(root, null);
@@ -580,7 +596,7 @@ test('FALSIFICACIÓN · a vcp.receipt/v1 receipt always fails check, regardless 
   });
 });
 
-test('v1 inspect-legacy reports archival status read-only and never modifies the receipt or the repository', () => {
+test('inspect-legacy reports archival status for v1 and v2 read-only and never modifies the receipt or the repository', () => {
   withFixture((root) => {
     const receipt = writeReceipt(root, { schema: 'vcp.receipt/v1' });
     const absolute = join(root, ...receipt.split('/'));
@@ -593,15 +609,21 @@ test('v1 inspect-legacy reports archival status read-only and never modifies the
     assert.equal(readFileSync(absolute, 'utf8'), before, 'inspect-legacy must not modify the receipt file');
     assert.equal(gitOk(root, 'status', '--porcelain'), statusBefore, 'inspect-legacy must not change repository state');
 
-    // inspect-legacy is v1-only — a v2 receipt must be rejected, pointed at `check` instead.
-    const v2 = writeReceipt(root);
-    const v2Result = gate(root, 'inspect-legacy', v2);
-    assert.equal(v2Result.status, 1);
-    assert.match(v2Result.output, /inspect-legacy is for schema vcp\.receipt\/v1 only/);
+    // v2 tambien es archivistico desde el bump a v3: se lee, nunca aprueba.
+    const archivoV2 = writeReceipt(root, { schema: 'vcp.receipt/v2' });
+    const v2Result = gate(root, 'inspect-legacy', archivoV2);
+    assert.equal(v2Result.status, 0, v2Result.output);
+    assert.match(v2Result.output, /ARCHIVAL: vcp\.receipt\/v2/);
+
+    // Y el schema VIGENTE nunca pasa por aca: para eso esta `check`.
+    const vigente = writeReceipt(root);
+    const vigenteResult = gate(root, 'inspect-legacy', vigente);
+    assert.equal(vigenteResult.status, 1);
+    assert.match(vigenteResult.output, /use check for vcp\.receipt\/v3/);
   });
 });
 
-test('a fully consistent v2 receipt (real AC, real 4R, real measurements, real not_reviewed) passes check', () => {
+test('a fully consistent v3 receipt (real AC, real 4R, real measurements, real not_reviewed) passes check', () => {
   withFixture((root) => {
     const receipt = writeReceipt(root, {
       measurements: [
@@ -1122,4 +1144,97 @@ test('FALSIFICACIÓN · un -1 declarado como medido se rechaza: es «no lo medí
 test('FALSIFICACIÓN · un recibo sin ninguna medición se rechaza, igual que uno sin evidencia', () => {
   assert.equal(validateMeasurements([]).ok, false);
   assert.match(validateMeasurements([]).reason, /al menos una|at least one/iu);
+});
+
+// --- vcp.receipt/v3: los cuatro campos que el DoD paso a exigir ---------------------------------
+
+test('FALSIFICACIÓN · v3 rechaza un limite con `before`, que es una regresion disfrazada', () => {
+  withFixture((root) => {
+    const receipt = writeReceipt(root, {
+      limits: [{ id: 'L1', what: 'el rol auditor ya no ve reportes', why_acceptable: 'esta documentado en el docstring', owner: 'santi', before: 'el rol auditor veia la pantalla' }],
+    });
+    const result = gate(root, 'check', receipt);
+    assert.equal(result.status, 1, 'un limite con estado anterior tiene que rechazar');
+    assert.match(result.output, /regressions\[\]/);
+  });
+});
+
+test('FALSIFICACIÓN · v3 rechaza una regresion aceptada cuya decision humana no existe', () => {
+  withFixture((root) => {
+    const base = { id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing' };
+    const sinRef = writeReceipt(root, { regressions: [{ ...base, resolution: 'accepted_by_user' }] });
+    const primero = gate(root, 'check', sinRef);
+    assert.equal(primero.status, 1);
+    assert.match(primero.output, /user_decision_ref/);
+  });
+  withFixture((root) => {
+    const base = { id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing' };
+    const inventada = writeReceipt(root, { regressions: [{ ...base, resolution: 'accepted_by_user', user_decision_ref: 'c'.repeat(64) }] });
+    const segundo = gate(root, 'check', inventada);
+    assert.equal(segundo.status, 1);
+    assert.match(segundo.output, /phase-decisions/);
+  });
+});
+
+test('v3 acepta una regresion cuando la decision humana existe y esta vigente', () => {
+  withFixture((root) => {
+    const sello = 'd'.repeat(64);
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    writeFileSync(join(root, 'docs', 'phase-decisions.json'), `${JSON.stringify({
+      schema: 'vcp.phase-decisions/1', phase_order: ['6'],
+      decisions: [{ phase_id: '6', status: 'decided', current_hash: sello }],
+    }, null, 2)}\n`);
+    gitOk(root, 'add', '-A');
+    const receipt = writeReceipt(root, {
+      regressions: [{ id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing', resolution: 'accepted_by_user', user_decision_ref: sello }],
+    });
+    const result = gate(root, 'check', receipt);
+    assert.equal(result.status, 0, result.output);
+  });
+});
+
+test('FALSIFICACIÓN · un registro de decisiones ilegible frena en vez de resolver contra la nada', () => {
+  withFixture((root) => {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    writeFileSync(join(root, 'docs', 'phase-decisions.json'), '{ roto');
+    gitOk(root, 'add', '-A');
+    const receipt = writeReceipt(root, {
+      regressions: [{ id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'cmd', resolution: 'fixed' }],
+    });
+    const result = gate(root, 'check', receipt);
+    assert.equal(result.status, 1);
+    assert.match(result.output, /phase-decisions\.json is unreadable/);
+  });
+});
+
+test('FALSIFICACIÓN · v3 rechaza un soporte incompleto y una refutacion que no cierra', () => {
+  withFixture((root) => {
+    const sinCampo = writeReceipt(root, {
+      support: { correlation: 'X-Request-Id en toda linea', actor_on_writes: 'actor_id del token', failure_visible: '/health' },
+    });
+    const primero = gate(root, 'check', sinCampo);
+    assert.equal(primero.status, 1);
+    assert.match(primero.output, /diagnostic_command/);
+  });
+  withFixture((root) => {
+    const noCierra = writeReceipt(root, { refutation: { proposed: 60, survived: 18, refuted: 39, inconclusive: 2, by_lens: {} } });
+    const segundo = gate(root, 'check', noCierra);
+    assert.equal(segundo.status, 1);
+    assert.match(segundo.output, /refutation does not add up/);
+  });
+});
+
+test('FALSIFICACIÓN · v3 rechaza si falta cualquiera de los cuatro campos nuevos', () => {
+  for (const campo of ['limits', 'regressions', 'support', 'refutation']) {
+    withFixture((root) => {
+      const receipt = writeReceipt(root);
+      const absolute = join(root, ...receipt.split('/'));
+      const parsed = JSON.parse(readFileSync(absolute, 'utf8'));
+      delete parsed[campo];
+      writeFileSync(absolute, `${JSON.stringify(parsed, null, 2)}\n`);
+      const result = gate(root, 'check', receipt);
+      assert.equal(result.status, 1, `faltando ${campo} tiene que rechazar`);
+      assert.match(result.output, new RegExp(`missing required field: ${campo}`));
+    });
+  }
 });

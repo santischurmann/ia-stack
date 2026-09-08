@@ -120,6 +120,14 @@ export const REQUIREMENTS = [
   ['templates/phase-plan.json', /vcp\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
   // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
+  // vcp.receipt/v3: el DoD dejo de terminar en "adversarial pass". Las cuatro anclas son la regla,
+  // no el gate -- un receipt sin soporte declarado o con una regresion disfrazada de limite tiene
+  // que seguir siendo un rechazo aunque alguien renombre el script que lo detecta.
+  ['SKILL.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
+  ['SKILL.md', /soporte declarado/u, 'DoD asks what a user complaint is diagnosed with'],
+  ['SKILL.md', /El discriminador es mecánico, no de criterio: el campo/u, 'limit vs regression is decided by shape, never by judgement'],
+  ['SKILL.md', /refutar es\nun hecho contable, no una impresión|refutar es un hecho contable/u, 'the adversarial round is counted, not narrated'],
+  ['skills/gates.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   // El gate y la regla se fijan aparte a proposito: el gate detecta la regla, pero la regla es del
   // protocolo y tiene que seguir escrita aunque alguien mueva, renombre o borre el gate que la
   // detecta. La sexta forma de asercion prohibida es la unica de esa lista que trae detector.

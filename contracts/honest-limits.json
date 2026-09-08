@@ -540,6 +540,18 @@
       "file": "skills/gates.md",
       "phrase": "Es un aviso, todavía no un gate",
       "why": "El detector de aserciones que pasan vacías sale 0 siempre y su criterio de promoción está escrito de antemano: cero falsos positivos medidos sobre un corpus real. Sin esta frase alguien lee la fila como un gate que bloquea y da por cubierto un modo de falla que sigue pasando en verde, que es exactamente lo que este detector existe para atrapar."
+    },
+    {
+      "limit_id": "receipt-regression-must-be-declared-to-be-seen",
+      "file": "skills/gates.md",
+      "phrase": "una regresión que nadie declaró le es invisible",
+      "why": "El campo before separa un límite de una regresión por forma y no por criterio, pero sólo entre lo que alguien escribió en el receipt. Sin esta frase el par limits/regressions se lee como un detector de regresiones, y no lo es: es una declaración estructurada que se puede revisar."
+    },
+    {
+      "limit_id": "support-block-is-a-declaration-not-a-measurement",
+      "file": "skills/gates.md",
+      "phrase": "Un `support` inventado pasa en verde",
+      "why": "El bloque de soporte hace que el DoD pregunte con qué se diagnostica una queja, y eso es lo que faltaba. Pero el gate comprueba que los cuatro campos digan algo, nunca que el identificador de petición exista ni que el comando de diagnóstico corra. Sin esta frase, un receipt en verde se lee como producto diagnosticable."
     }
   ]
 }

@@ -247,14 +247,22 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 - [ ] No regressions full suite
 
 ### Phases 6-8 CLOSE-OUT:
-- [ ] 4.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
-- [ ] 4.2 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify
-- [ ] 4.3 native `security-baseline.md` clean (no open Critical/High)
-- [ ] 4.4 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 4.4.1 replanning threshold got 🔵 confirm before continuing
-- [ ] 4.5 full suite green (post-fix) + receipt written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)
-- [ ] 4.6 `verify-receipt.mjs check` exit 0 (terminal_state approved, fingerprint matches, evidence non-empty) BEFORE committing; push/merge only after user 🔵 confirm
-- [ ] 4.7 Obsidian note (if applicable) + graphify updated (if applicable) + SESSION.md archived
-- [ ] 4.8 RETRO.md entry written (always runs, not a gate); LESSONS.md confirm-gated proposal
+
+Las fases se numeran como las numera `SKILL.md`. Hasta el 2026-09-08 esta lista decía `4.1`..`4.8`
+para las fases 6, 7 y 8: un quinto vocabulario de fases, del mismo tipo que
+`tests/fases-canonicas.test.mjs` ya fija para los documentos de prosa. Una instrucción que dice
+«volvé al 4.4» no significa nada si ninguna fase se llama así.
+
+- [ ] 6.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
+- [ ] 6.2 native `security-baseline.md` clean (no open Critical/High). Every Critical/High finding went through the Refutador BEFORE anyone touched it — only `corroborado` gets fixed
+- [ ] 6.3 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 6.3.1 replanning threshold got 🔵 confirm before continuing. From `estandar` up the Refutador is a separate agent, never the reviewer's own `verdict`
+- [ ] 6.4 full suite green (post-fix) + receipt `vcp.receipt/v3` written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)
+- [ ] 6.4b **soporte declarado**: the receipt's `support` block answers "if someone says it does not work, what do you diagnose it with?" — `correlation`, `actor_on_writes`, `failure_visible`, `diagnostic_command`, each either stated or `"ninguno — <motivo>"`. 100% coverage does not cover this: coverage measures code execution, support measures product observability
+- [ ] 6.4c **límite vs regresión**: anything the change does not do on purpose is in `limits[]`; anything that used to work and no longer does is in `regressions[]` with a resolution. A `before` field decides which list it belongs to — it is not a judgement call. An `accepted_by_user` regression resolves against a `decided` entry of `docs/phase-decisions.json` or the receipt cannot be approved
+- [ ] 7.1 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify
+- [ ] 8.1 `verify-receipt.mjs check` exit 0 (terminal_state approved, fingerprint matches, evidence non-empty) BEFORE committing; push/merge only after user 🔵 confirm
+- [ ] 8.2 Obsidian note (if applicable) + graphify updated (if applicable) + SESSION.md archived
+- [ ] 8.3 RETRO.md entry written (always runs, not a gate); LESSONS.md confirm-gated proposal
 
 ---
 

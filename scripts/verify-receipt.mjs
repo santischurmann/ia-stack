@@ -294,7 +294,7 @@ function fail(reason) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// vcp.receipt/v2 — strict schema for gates that authorize a commit/publish decision.
+// vcp.receipt/v2 — la base que v3 compone; ningún schema anterior autoriza por sí solo un commit for gates that authorize a commit/publish decision.
 //
 // HONEST SCOPE (do not oversell): `command`, `result`, `measurements` and `reproduction` are
 // structured, human-reviewable evidence — a record of what an author claims ran and what it
@@ -337,7 +337,7 @@ export function validateAcceptanceCriterion(ac, cwd, { readFile = readFileSync }
   const label = ac.ac_id;
   if (!nonEmptyString(ac.scenario)) return { ok: false, reason: `${label}: scenario must be a non-empty string` };
   if (!AC_VERDICTS.has(ac.verdict)) return { ok: false, reason: `${label}: verdict must be one of ${[...AC_VERDICTS].join('|')}` };
-  if (ac.verdict !== 'COMPLIANT') return { ok: false, reason: `${label}: verdict is ${ac.verdict}, not COMPLIANT — an approved v2 receipt requires every AC to be COMPLIANT` };
+  if (ac.verdict !== 'COMPLIANT') return { ok: false, reason: `${label}: verdict is ${ac.verdict}, not COMPLIANT — an approved receipt requires every AC to be COMPLIANT` };
   if (!nonEmptyString(ac.test_file)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty test_file` };
   if (!SHA256_HEX.test(ac.test_hash_sha256 ?? '')) return { ok: false, reason: `${label}: test_hash_sha256 must be a full 64-character hex sha256` };
   if (!nonEmptyString(ac.command)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty command` };
@@ -437,6 +437,136 @@ export function validateReview4r(review) {
   return { ok: true };
 }
 
+// --- vcp.receipt/v3 -----------------------------------------------------------------------------
+//
+// LA HERIDA (proyecto real, septiembre de 2026): un constructor puso un permiso correcto, midió que
+// eso dejaba a un rol sin una pantalla, lo escribió con precisión en el docstring —archivo, rango y
+// permiso— y entregó la tarea como hecha. La declaración era honesta y detallada, y ESO ES
+// JUSTAMENTE LO QUE LA HACE FACIL DE ACEPTAR SIN MIRARLA. Un límite se declara; una regresión se
+// resuelve o se revierte. `not_reviewed` no los separaba: es un solo string.
+export const V3_SCHEMA = 'vcp.receipt/v3';
+export const REGRESSION_RESOLUTIONS = new Set(['fixed', 'reverted', 'accepted_by_user']);
+export const SUPPORT_FIELDS = Object.freeze(['correlation', 'actor_on_writes', 'failure_visible', 'diagnostic_command']);
+const LIMIT_FIELDS = Object.freeze(['id', 'what', 'why_acceptable', 'owner']);
+const REGRESSION_FIELDS = Object.freeze(['id', 'what', 'before', 'after', 'evidence']);
+
+/** Rellenos en los DOS idiomas. `validateNotReviewedField` sólo conoce los ingleses y su límite
+ * está declarado así en `skills/gates.md`; acá no se puede repetir ese hueco, porque estos campos
+ * los escribe alguien que trabaja en castellano y `ninguno` es exactamente lo que va a poner. */
+const DECLARED_PLACEHOLDERS = new Set(['n/a', 'na', 'unknown', 'nothing', 'none', 'ninguno', 'ninguna', 'nada', 'tbd', 'todo', 'pendiente', '-']);
+const NONE_PREFIX = /^(?:none|ninguno|ninguna)\b/iu;
+
+/** Un campo que admite «no hay» **con motivo**, y nunca «no hay» a secas. La forma es la misma que
+ * `not_reviewed` ya exige —`none — <base concreta>`— y se reusa citándola en vez de reescribirla,
+ * que es lo que manda la regla de redacción reutilizable del protocolo. */
+export function validateDeclaredField(value, field) {
+  if (!nonEmptyString(value)) return { ok: false, reason: `${field} must be a non-empty string` };
+  const trimmed = value.trim();
+  const normalized = trimmed.toLowerCase();
+  if (DECLARED_PLACEHOLDERS.has(normalized)) {
+    return { ok: false, reason: `${field}: ${JSON.stringify(trimmed)} is filler, not an answer — declare what exists, or "ninguno — <por qué>"` };
+  }
+  if (NONE_PREFIX.test(trimmed) && !/^\S+\s*(?:—|-)\s*\S.*$/u.test(trimmed)) {
+    return { ok: false, reason: `${field}: says there is none without saying why — write "ninguno — <motivo>"` };
+  }
+  return { ok: true };
+}
+
+function plainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function nonNegativeInteger(value) {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
+/** Un LIMITE: comportamiento intencional que este cambio no cubre. No bloquea nada. */
+export function validateLimits(limits) {
+  if (!Array.isArray(limits)) return { ok: false, reason: 'limits must be an array (empty is fine: not every change leaves a limit)' };
+  for (const entry of limits) {
+    if (!plainObject(entry)) return { ok: false, reason: 'limits entry must be an object' };
+    // EL DISCRIMINADOR, y es mecánico y no de criterio: un límite nunca anduvo, así que no tiene
+    // estado anterior. Si hay `before`, hubo algo que medir antes, y eso es una regresión.
+    if ('before' in entry) {
+      return { ok: false, reason: `limits entry ${JSON.stringify(entry.id ?? '(sin id)')} declares "before": something that used to work is a regression, not a limit — move it to regressions[] and give it a resolution` };
+    }
+    for (const field of LIMIT_FIELDS) {
+      if (!nonEmptyString(entry[field])) return { ok: false, reason: `limits entry ${JSON.stringify(entry.id ?? '(sin id)')}: ${field} must be a non-empty string` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Una REGRESION: comportamiento que antes andaba y ahora no. Se resuelve, se revierte, o la
+ * acepta una persona — y esa aceptación tiene que existir fuera del receipt. */
+export function validateRegressions(regressions, decisionSeals) {
+  if (!Array.isArray(regressions)) return { ok: false, reason: 'regressions must be an array (empty is fine)' };
+  for (const entry of regressions) {
+    if (!plainObject(entry)) return { ok: false, reason: 'regressions entry must be an object' };
+    for (const field of REGRESSION_FIELDS) {
+      if (!nonEmptyString(entry[field])) {
+        return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id ?? '(sin id)')}: ${field} must be a non-empty string — without "before" there is no previous state to compare against, and it is not a regression` };
+      }
+    }
+    if (!REGRESSION_RESOLUTIONS.has(entry.resolution)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: resolution must be one of ${[...REGRESSION_RESOLUTIONS].join('|')}, got ${JSON.stringify(entry.resolution ?? null)}` };
+    }
+    if (entry.resolution !== 'accepted_by_user') continue;
+    // Mismo modelo que LAW 8 usa para `escalated`: la salida no es un campo adentro del propio
+    // receipt, es una decisión humana registrada afuera y sellada por hash.
+    if (!nonEmptyString(entry.user_decision_ref)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: resolution accepted_by_user requires user_decision_ref — the seal of the decision that accepted it` };
+    }
+    if (!decisionSeals.has(entry.user_decision_ref)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: user_decision_ref does not resolve to a decided entry in docs/phase-decisions.json — an acceptance nobody recorded is not an acceptance` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Los sellos de las decisiones VIGENTES. Una `superseded` ya no autoriza nada: fue reemplazada. */
+export function readDecisionSeals(document) {
+  const seals = new Set();
+  if (!plainObject(document) || !Array.isArray(document.decisions)) return seals;
+  for (const decision of document.decisions) {
+    if (plainObject(decision) && decision.status === 'decided' && nonEmptyString(decision.current_hash)) {
+      seals.add(decision.current_hash);
+    }
+  }
+  return seals;
+}
+
+/** SOPORTE: si alguien dice que no le anda, ¿con qué se lo diagnostica? La cobertura mide ejecución
+ * del código; esto mide observabilidad del producto, y son ejes distintos — en el proyecto real
+ * convivieron 100% de cobertura y cero forma de diagnosticar una queja. */
+export function validateSupport(support) {
+  if (!plainObject(support)) return { ok: false, reason: 'support must be an object with the four declared fields' };
+  for (const field of SUPPORT_FIELDS) {
+    const result = validateDeclaredField(support[field], `support.${field}`);
+    if (!result.ok) return result;
+  }
+  return { ok: true };
+}
+
+/** Cuántos hallazgos se propusieron y cuántos sobrevivieron al Refutador. Sin este conteo nadie
+ * puede saber después si el refutador corrió o fue teatro: en el proyecto real, de 60 hallazgos
+ * propuestos sobrevivieron 18. */
+export function validateRefutation(refutation) {
+  if (!plainObject(refutation)) return { ok: false, reason: 'refutation must be an object' };
+  for (const field of ['proposed', 'survived', 'refuted', 'inconclusive']) {
+    if (!nonNegativeInteger(refutation[field])) return { ok: false, reason: `refutation.${field} must be a non-negative integer, got ${JSON.stringify(refutation[field] ?? null)}` };
+  }
+  if (!plainObject(refutation.by_lens)) return { ok: false, reason: 'refutation.by_lens must be an object' };
+  for (const [lens, count] of Object.entries(refutation.by_lens)) {
+    if (!nonNegativeInteger(count)) return { ok: false, reason: `refutation.by_lens.${lens} must be a non-negative integer` };
+  }
+  const total = refutation.survived + refutation.refuted + refutation.inconclusive;
+  if (total !== refutation.proposed) {
+    return { ok: false, reason: `refutation does not add up: ${refutation.proposed} propuestos vs ${total} clasificados (survived+refuted+inconclusive) — refutar es un hecho contable, no una impresión` };
+  }
+  return { ok: true };
+}
+
 /** Full vcp.receipt/v2 validation, everything the module header's honest-scope note applies to.
  * Does NOT check git_head/tree_fingerprint — the caller compares those against a live
  * fingerprint the same way it already does for v1. */
@@ -470,6 +600,23 @@ export function validateReceiptV2(receipt, cwd, options) {
   return { ok: true };
 }
 
+/** `vcp.receipt/v3` = todo lo de v2 más los cuatro campos que el DoD pasó a exigir. Se compone en
+ * vez de duplicarse: si mañana cambia una regla de v2, cambia en un solo lugar. */
+export function validateReceiptV3(receipt, cwd, options = {}) {
+  const base = validateReceiptV2(receipt, cwd, options);
+  if (!base.ok) return base;
+  for (const field of ['limits', 'regressions', 'support', 'refutation']) {
+    if (!(field in receipt)) return { ok: false, reason: `missing required field: ${field}` };
+  }
+  const limits = validateLimits(receipt.limits);
+  if (!limits.ok) return limits;
+  const regressions = validateRegressions(receipt.regressions, options.decisionSeals ?? new Set());
+  if (!regressions.ok) return regressions;
+  const support = validateSupport(receipt.support);
+  if (!support.ok) return support;
+  return validateRefutation(receipt.refutation);
+}
+
 // CLI entry point — guarded so tests can `import` this module's functions (parseRawDiff, etc.)
 // without triggering process.exit() as a side effect of the import.
 if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
@@ -483,6 +630,20 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
       return currentFingerprint(exclude);
     } catch (error) {
       fail(`unable to evaluate the current repository state: ${error.message}`);
+    }
+  }
+
+  /** Los sellos de las decisiones vigentes. Sin el archivo devuelve el conjunto vacío en vez de
+   * fallar: un receipt sin ninguna regresión aceptada no tiene por qué exigir que exista un
+   * registro de fases. Lo que NO puede pasar es que una regresión aceptada resuelva contra la
+   * nada — de eso se encarga `validateRegressions`, que rechaza si el sello no está. */
+  function loadDecisionSeals() {
+    const path = 'docs/phase-decisions.json';
+    if (!existsSync(path)) return new Set();
+    try {
+      return readDecisionSeals(JSON.parse(readFileSync(path, 'utf8')));
+    } catch (error) {
+      fail(`docs/phase-decisions.json is unreadable, so an accepted regression cannot be resolved against it: ${error.message}`);
     }
   }
 
@@ -518,12 +679,12 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
     // regardless of its content. Point the caller at the read-only inspector instead of leaving
     // it looking like a transient rejection.
-    if (receipt.schema === V1_SCHEMA) {
-      fail(`schema vcp.receipt/v1 is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${path}`);
+    if (receipt.schema === V1_SCHEMA || receipt.schema === V2_SCHEMA) {
+      fail(`schema ${receipt.schema} is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${path}`);
     }
-    if (receipt.schema !== V2_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
+    if (receipt.schema !== V3_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
 
-    const shape = validateReceiptV2(receipt, realpathSync('.'));
+    const shape = validateReceiptV3(receipt, realpathSync('.'), { decisionSeals: loadDecisionSeals() });
     if (!shape.ok) fail(shape.reason);
 
     // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
@@ -592,13 +753,13 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
   if (cmd === 'inspect-legacy') {
     if (!arg) fail('usage: verify-receipt.mjs inspect-legacy <receipt.json>');
     const receipt = readReceiptSafely(arg);
-    if (receipt.schema !== V1_SCHEMA) {
-      fail(`inspect-legacy is for schema vcp.receipt/v1 only, got: ${receipt.schema} — use check for vcp.receipt/v2`);
+    if (receipt.schema !== V1_SCHEMA && receipt.schema !== V2_SCHEMA) {
+      fail(`inspect-legacy is for archival schemas (vcp.receipt/v1, vcp.receipt/v2), got: ${receipt.schema} — use check for vcp.receipt/v3`);
     }
     // Read-only report — no fingerprint recomputation, no exit-1 path past this point, no write
     // of any kind. This is archival evidence: it never authorizes a commit/publish decision.
-    console.log(`ARCHIVAL: vcp.receipt/v1 receipt for feature="${receipt.feature ?? '(missing)'}", terminal_state="${receipt.terminal_state ?? '(missing)'}".`);
-    console.log('This receipt predates the vcp.receipt/v2 schema. It is archival evidence only —');
+    console.log(`ARCHIVAL: ${receipt.schema} receipt for feature="${receipt.feature ?? '(missing)'}", terminal_state="${receipt.terminal_state ?? '(missing)'}".`);
+    console.log('This receipt predates the vcp.receipt/v3 schema. It is archival evidence only —');
     console.log('it cannot pass `check` and does not authorize any commit, publish, or gate decision.');
     process.exit(0);
   }
