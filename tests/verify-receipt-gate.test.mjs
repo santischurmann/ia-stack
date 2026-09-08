@@ -1147,94 +1147,79 @@ test('FALSIFICACIÓN · un recibo sin ninguna medición se rechaza, igual que un
 });
 
 // --- vcp.receipt/v3: los cuatro campos que el DoD paso a exigir ---------------------------------
+//
+// DOS fixtures para todos los casos, no once. La primera version abria un repositorio de git por
+// caso y este archivo -- que ya era el mas lento de la suite y el que define el margen del tope de
+// tiempo de verify-test-bindings -- paso de 40 s a 70 s. El fingerprint excluye el path del propio
+// receipt, asi que reescribirlo en su lugar sobre un mismo arbol es valido y cuesta cero.
 
-test('FALSIFICACIÓN · v3 rechaza un limite con `before`, que es una regresion disfrazada', () => {
+test('FALSIFICACIÓN · v3 rechaza cada campo nuevo mal formado, sobre un solo arbol', () => {
   withFixture((root) => {
-    const receipt = writeReceipt(root, {
-      limits: [{ id: 'L1', what: 'el rol auditor ya no ve reportes', why_acceptable: 'esta documentado en el docstring', owner: 'santi', before: 'el rol auditor veia la pantalla' }],
+    const receipt = writeReceipt(root);
+    const absolute = join(root, ...receipt.split('/'));
+    const base = JSON.parse(readFileSync(absolute, 'utf8'));
+    const escribir = (cambio) => {
+      const copia = JSON.parse(JSON.stringify(base));
+      cambio(copia);
+      writeFileSync(absolute, `${JSON.stringify(copia, null, 2)}\n`);
+      return gate(root, 'check', receipt);
+    };
+
+    const conBefore = escribir((r) => {
+      r.limits = [{ id: 'L1', what: 'el rol auditor ya no ve reportes', why_acceptable: 'esta documentado en el docstring', owner: 'santi', before: 'el rol auditor veia la pantalla' }];
     });
-    const result = gate(root, 'check', receipt);
-    assert.equal(result.status, 1, 'un limite con estado anterior tiene que rechazar');
-    assert.match(result.output, /regressions\[\]/);
+    assert.equal(conBefore.status, 1, 'un limite con estado anterior tiene que rechazar');
+    assert.match(conBefore.output, /regressions\[\]/);
+
+    const aceptada = { id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing', resolution: 'accepted_by_user' };
+
+    const sinRef = escribir((r) => { r.regressions = [aceptada]; });
+    assert.equal(sinRef.status, 1);
+    assert.match(sinRef.output, /user_decision_ref/);
+
+    const refInventada = escribir((r) => { r.regressions = [{ ...aceptada, user_decision_ref: 'c'.repeat(64) }]; });
+    assert.equal(refInventada.status, 1);
+    assert.match(refInventada.output, /phase-decisions/);
+
+    const sinCampo = escribir((r) => { delete r.support.diagnostic_command; });
+    assert.equal(sinCampo.status, 1);
+    assert.match(sinCampo.output, /diagnostic_command/);
+
+    const noCierra = escribir((r) => { r.refutation = { proposed: 60, survived: 18, refuted: 39, inconclusive: 2, by_lens: {} }; });
+    assert.equal(noCierra.status, 1);
+    assert.match(noCierra.output, /refutation does not add up/);
+
+    for (const campo of ['limits', 'regressions', 'support', 'refutation']) {
+      const falta = escribir((r) => { delete r[campo]; });
+      assert.equal(falta.status, 1, `faltando ${campo} tiene que rechazar`);
+      assert.match(falta.output, new RegExp(`missing required field: ${campo}`));
+    }
   });
 });
 
-test('FALSIFICACIÓN · v3 rechaza una regresion aceptada cuya decision humana no existe', () => {
-  withFixture((root) => {
-    const base = { id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing' };
-    const sinRef = writeReceipt(root, { regressions: [{ ...base, resolution: 'accepted_by_user' }] });
-    const primero = gate(root, 'check', sinRef);
-    assert.equal(primero.status, 1);
-    assert.match(primero.output, /user_decision_ref/);
-  });
-  withFixture((root) => {
-    const base = { id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing' };
-    const inventada = writeReceipt(root, { regressions: [{ ...base, resolution: 'accepted_by_user', user_decision_ref: 'c'.repeat(64) }] });
-    const segundo = gate(root, 'check', inventada);
-    assert.equal(segundo.status, 1);
-    assert.match(segundo.output, /phase-decisions/);
-  });
-});
-
-test('v3 acepta una regresion cuando la decision humana existe y esta vigente', () => {
+test('v3 acepta una regresion cuando la decision humana existe, y frena si el registro es ilegible', () => {
   withFixture((root) => {
     const sello = 'd'.repeat(64);
     mkdirSync(join(root, 'docs'), { recursive: true });
-    writeFileSync(join(root, 'docs', 'phase-decisions.json'), `${JSON.stringify({
-      schema: 'vcp.phase-decisions/1', phase_order: ['6'],
-      decisions: [{ phase_id: '6', status: 'decided', current_hash: sello }],
-    }, null, 2)}\n`);
+    const decisiones = join(root, 'docs', 'phase-decisions.json');
+    const registro = { schema: 'vcp.phase-decisions/1', phase_order: ['6'], decisions: [{ phase_id: '6', status: 'decided', current_hash: sello }] };
+    writeFileSync(decisiones, `${JSON.stringify(registro, null, 2)}\n`);
     gitOk(root, 'add', '-A');
     const receipt = writeReceipt(root, {
       regressions: [{ id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'node --test -> 1 failing', resolution: 'accepted_by_user', user_decision_ref: sello }],
     });
-    const result = gate(root, 'check', receipt);
-    assert.equal(result.status, 0, result.output);
-  });
-});
+    assert.equal(gate(root, 'check', receipt).status, 0, 'con la decision vigente tiene que pasar');
 
-test('FALSIFICACIÓN · un registro de decisiones ilegible frena en vez de resolver contra la nada', () => {
-  withFixture((root) => {
-    mkdirSync(join(root, 'docs'), { recursive: true });
-    writeFileSync(join(root, 'docs', 'phase-decisions.json'), '{ roto');
+    // Mismo arbol, registro roto. Reescribirlo mueve el fingerprint, asi que se regenera el receipt
+    // sobre el estado nuevo: lo que se mide es el rechazo del registro, no un receipt stale.
+    writeFileSync(decisiones, '{ roto');
     gitOk(root, 'add', '-A');
-    const receipt = writeReceipt(root, {
+    const receipt2 = writeReceipt(root, {
       regressions: [{ id: 'R1', what: 'x', before: 'andaba', after: 'no anda', evidence: 'cmd', resolution: 'fixed' }],
     });
-    const result = gate(root, 'check', receipt);
-    assert.equal(result.status, 1);
-    assert.match(result.output, /phase-decisions\.json is unreadable/);
+    const roto = gate(root, 'check', receipt2);
+    assert.equal(roto.status, 1);
+    assert.match(roto.output, /phase-decisions\.json is unreadable/);
   });
 });
 
-test('FALSIFICACIÓN · v3 rechaza un soporte incompleto y una refutacion que no cierra', () => {
-  withFixture((root) => {
-    const sinCampo = writeReceipt(root, {
-      support: { correlation: 'X-Request-Id en toda linea', actor_on_writes: 'actor_id del token', failure_visible: '/health' },
-    });
-    const primero = gate(root, 'check', sinCampo);
-    assert.equal(primero.status, 1);
-    assert.match(primero.output, /diagnostic_command/);
-  });
-  withFixture((root) => {
-    const noCierra = writeReceipt(root, { refutation: { proposed: 60, survived: 18, refuted: 39, inconclusive: 2, by_lens: {} } });
-    const segundo = gate(root, 'check', noCierra);
-    assert.equal(segundo.status, 1);
-    assert.match(segundo.output, /refutation does not add up/);
-  });
-});
-
-test('FALSIFICACIÓN · v3 rechaza si falta cualquiera de los cuatro campos nuevos', () => {
-  for (const campo of ['limits', 'regressions', 'support', 'refutation']) {
-    withFixture((root) => {
-      const receipt = writeReceipt(root);
-      const absolute = join(root, ...receipt.split('/'));
-      const parsed = JSON.parse(readFileSync(absolute, 'utf8'));
-      delete parsed[campo];
-      writeFileSync(absolute, `${JSON.stringify(parsed, null, 2)}\n`);
-      const result = gate(root, 'check', receipt);
-      assert.equal(result.status, 1, `faltando ${campo} tiene que rechazar`);
-      assert.match(result.output, new RegExp(`missing required field: ${campo}`));
-    });
-  }
-});

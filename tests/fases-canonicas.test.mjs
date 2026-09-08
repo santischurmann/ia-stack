@@ -218,3 +218,34 @@ test('FALSIFICACIÓN · el barrido lee los comandos de período y recorta la fas
   assert.match(cuerpoDeFase(doc, '1.5'), /dos/u);
   assert.equal(cuerpoDeFase(doc, '7'), null);
 });
+
+// --- El mapa del protocolo también cuenta fases, y nadie lo miraba -------------------------------
+//
+// `docs/mapa-del-protocolo.html` decía «Ocho fases, en orden, sin saltos» y dibujaba ocho tarjetas
+// mientras el protocolo tenía ONCE: le faltaban Intake, Triangulate y Limpieza. El barrido de
+// conteos existía y sólo miraba `.md`, así que el documento más visual del repositorio quedó fuera.
+//
+// Es exactamente el mismo defecto que la regla de etiquetas balanceadas ya había tenido —miraba un
+// solo HTML de los dos que el repositorio publica— y se arregló de la misma forma: descubriendo los
+// archivos con `git ls-files` en vez de nombrarlos a mano.
+
+export function tarjetasDeFase(texto) {
+  return [...texto.matchAll(/<div class="phase">/gu)].length;
+}
+
+test('el mapa del protocolo dibuja tantas fases como declara el canónico', SOLO_FUENTE, () => {
+  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const htmls = spawnSync('git', ['ls-files', '*.html'], { cwd: repoRoot, encoding: 'utf8' })
+    .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+  const conTarjetas = htmls.filter((f) => tarjetasDeFase(readFileSync(join(repoRoot, f), 'utf8')) > 0);
+  assert.ok(conTarjetas.length > 0, 'ningún HTML dibuja fases: la comprobación no midió nada');
+  assert.deepEqual(
+    conTarjetas.map((f) => [f, tarjetasDeFase(readFileSync(join(repoRoot, f), 'utf8'))]),
+    conTarjetas.map((f) => [f, canonicas.length]),
+  );
+});
+
+test('FALSIFICACIÓN · el contador de tarjetas ve las que hay y no confunde otro div', () => {
+  assert.equal(tarjetasDeFase('<div class="phase">a</div><div class="phase">b</div>'), 2);
+  assert.equal(tarjetasDeFase('<div class="phases"><div class="phasey">x</div></div>'), 0);
+});

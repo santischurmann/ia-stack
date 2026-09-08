@@ -376,12 +376,12 @@
 <div class="wrap">
 
   <header>
-    <div class="label">VibeCodeProtocols · 28 de agosto de 2026 · <code>8560363</code></div>
+    <div class="label">VibeCodeProtocols 2.0.0 · 8 de septiembre de 2026 · <code>f60cde1</code></div>
     <h1>Qué prueba VCP<br>y qué no</h1>
     <p class="thesis">
       VCP es un protocolo de trabajo con chequeos automáticos. Cada regla tiene un programa que la
-      detecta: <strong>una regla sin detector es decoración</strong>. Este mapa muestra las ocho
-      fases, los veintitrés chequeos, y —con el mismo espacio— lo que cada uno
+      detecta: <strong>una regla sin detector es decoración</strong>. Este mapa muestra las once
+      fases, los cuarenta y ocho chequeos, y —con el mismo espacio— lo que cada uno
       <strong>deliberadamente no puede probar</strong>.
     </p>
 
@@ -404,7 +404,7 @@
 
   <section>
     <h2>El recorrido</h2>
-    <p class="h2sub">Ocho fases, en orden, sin saltos</p>
+    <p class="h2sub">Once fases, en orden, sin saltos</p>
     <p class="lede">
       El orden importa: cada fase produce lo que la siguiente necesita para poder verificar algo.
       Ninguna cierra sin una decisión registrada de la persona.
@@ -416,6 +416,13 @@
         <div>
           <h3>Bootstrap</h3>
           <p>Detectar el terreno: qué lenguaje, qué pruebas, qué había antes. Se lee la memoria del proyecto y la retro de las últimas sesiones.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">1.5</div>
+        <div>
+          <h3>Intake</h3>
+          <p>Lo primero que hay que preguntar: qué se quiere construir, para quién y qué pasa hoy sin esto. Antes el ciclo arrancaba sobre lo que el agente supuso, y el supuesto no quedaba escrito.</p>
         </div>
       </div>
       <div class="phase">
@@ -447,6 +454,13 @@
         </div>
       </div>
       <div class="phase">
+        <div class="num">5.5</div>
+        <div>
+          <h3>Triangulate</h3>
+          <p>Veintiséis vectores declarados uno por uno antes de refactorizar: entradas vacías, nulos, concurrencia, symlinks, finales de línea. Sin una lista fija se revisa lo que uno ya sabe buscar, que es justo lo que no encuentra nada nuevo.</p>
+        </div>
+      </div>
+      <div class="phase">
         <div class="num">06</div>
         <div>
           <h3>Test</h3>
@@ -465,6 +479,13 @@
         <div>
           <h3>Deploy</h3>
           <p>Publicar es una fase con sus propios chequeos: commit sellado, grafo del código regenerado y respaldo atado al commit que lo registra. Esconderlo adentro de otra fase es lo que hizo que un sello quedara apuntando al commit equivocado.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="num">09</div>
+        <div>
+          <h3>Limpieza</h3>
+          <p>Cada siete días se mide qué de la configuración sigue sirviendo. Acá no existe borrar: todo se mueve a un archivo conservando la ruta, y la vuelta atrás es un solo comando que el gate rechaza si contiene un verbo destructivo.</p>
         </div>
       </div>
     </div>
@@ -709,7 +730,7 @@
     está declarado <b>parcial</b> fuente por fuente: 320 archivos leídos de 15.581, y ese porcentaje
     está inflado porque varias lecturas parciales se cuentan como archivo entero.
         <br><br>
-    Publicado en <code>origin/main</code>, commit <code>8560363</code>. La cobertura de shell se mide con el instrumento que trae bash, y dice líneas ejecutadas, nunca
+    Publicado en <code>origin/main</code>, commit <code>f60cde1</code>, etiqueta <code>v2.0.0</code>. La cobertura de shell se mide con el instrumento que trae bash, y dice líneas ejecutadas, nunca
     ramas. Las cuarenta y una propuestas del ataque se verificaron reproduciendo cada una: lo que no
     se pudo reproducir figura como refutado, y lo que se reprodujo y no se arregló figura con el
     motivo escrito. Las cifras de arriba salieron de
