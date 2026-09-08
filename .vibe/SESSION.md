@@ -183,3 +183,25 @@ aprueba un commit, LAW 6 gana un término obligatorio, `threat.json` pasa a obli
 **Una rama se sacó en vez de fingirle cobertura:** `probeService` repetía el chequeo de loopback que
 `validateDeploy` ya hace antes en todos los caminos. Era inalcanzable, y una rama inalcanzable es
 justo lo que el gate de cobertura de este repositorio no deja pasar.
+
+## Ronda adversarial sobre los límites declarados — 2026-09-08
+
+**Feature slug:** cerrar-limites-declarados
+
+Se atacaron siete límites con 22 agentes: proponer un detector, y dos escépticos por propuesta
+sesgados a refutar. **Las siete cayeron 2-0.** Los siete límites se quedan, y ahora están guardados
+como dato en `contracts/honest-limits.json` en vez de vivir sueltos en la cabecera de un script.
+
+**El valor estuvo en lo que las refutaciones destaparon**, no en las propuestas: cuatro defectos
+reales en gates ya publicados, uno de ellos un **falso positivo bloqueante** —el escáner de vínculos
+ciego a los literales de regex, con doce declaraciones reales invisibles—.
+
+Dos huecos se cerraron contra el árbol (sondas de ablación, inversión del manifest) y el
+distribuible se destrabó declarando un segundo archivador.
+
+**Medido:** 1480 pruebas, 1479 verdes, 1 salteada, cero fallos. Cobertura 48/48 al 100% de funciones
+y ramas. 131 promesas de contrato, 105 límites honestos. Seguridad limpia.
+
+**Dos veces la prueba encontró el defecto antes que yo**, y las dos merecen quedar escritas: el
+detector del 404 no veía variables en castellano, y el descarte de renombrado de la sonda de
+historia estaba mal porque con `pathspec` git muestra un `git mv` como borrado.

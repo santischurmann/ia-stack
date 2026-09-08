@@ -48,12 +48,31 @@ for path in "${INCLUDE[@]}"; do
     exit 1
   fi
 done
-for tool in zip sha256sum git; do
+for tool in sha256sum git; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "REJECTED: required packaging command is unavailable: $tool" >&2
     exit 1
   fi
 done
+
+# DOS archivadores DECLARADOS, y la regla intacta: si faltan LOS DOS, bloquea. Declarar un segundo
+# no es sustituir en silencio -- que es lo que el protocolo prohibe --, es ensanchar a proposito la
+# lista de herramientas aceptadas, y queda escrito aca y probado en tests/build-zip-script.test.mjs.
+# bsdtar (libarchive) viene con Windows 10+, macOS y la mayoria de las distribuciones, y escribe
+# zip estandar; Info-ZIP sigue siendo el preferido donde este.
+ARCHIVER=""
+if command -v zip >/dev/null 2>&1; then
+  ARCHIVER="zip"
+elif command -v bsdtar >/dev/null 2>&1; then
+  ARCHIVER="bsdtar"
+elif [ -x "/c/Windows/System32/tar.exe" ] && "/c/Windows/System32/tar.exe" --version 2>&1 | grep -q bsdtar; then
+  ARCHIVER="/c/Windows/System32/tar.exe"
+fi
+if [ -z "$ARCHIVER" ]; then
+  echo "REJECTED: required packaging command is unavailable: zip (ni bsdtar como alternativa declarada)" >&2
+  exit 1
+fi
+echo "Archiver: $ARCHIVER"
 
 # La lista blanca de arriba acota el nivel superior y nada mas: `zip -r` sobre un directorio se
 # lleva TODO lo que haya adentro, versionado o no. Que hoy esos seis directorios esten limpios es
@@ -77,7 +96,11 @@ fi
 rm -f "$OUTPUT_ARCHIVE" "$CHECKSUM_FILE"
 
 # Create zip — archivos versionados, uno por uno, nunca un directorio suelto.
-zip -r "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
+if [ "$ARCHIVER" = "zip" ]; then
+  zip -r "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
+else
+  "$ARCHIVER" -a -c -f "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
+fi
 
 # Generate checksums
 sha256sum "$OUTPUT_ARCHIVE" > "$CHECKSUM_FILE"

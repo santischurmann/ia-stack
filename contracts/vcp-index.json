@@ -1019,6 +1019,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/tracked-modes.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-ablation.test.mjs",
       "class": "prueba"
     },

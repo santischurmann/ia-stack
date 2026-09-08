@@ -1758,6 +1758,33 @@ node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
 Si nunca se limpió, dice que toca. VCP te lo ofrece con un menú y **nunca mueve un archivo sin tu
 click**.
 
+**Cuando lo archivado volvió a su lugar, el gate lo distingue — y cómo.** Hasta el 2026-09-08 un
+archivo que reaparecía en su origen era un rechazo fijo, sin importar por qué: el gate leía el disco
+y tenía razón sobre el disco, y estaba equivocado sobre lo que había pasado. Pasó de verdad con una
+skill reinstalada a propósito y dejó este repositorio con **un rojo ajeno durante dos etapas
+enteras**. Un rojo correcto y engañoso a la vez es lo peor que le puede pasar a un chequeo: quien lo
+lee concluye que la limpieza no se hizo.
+
+Ahora, en esa celda, **dos sondas le preguntan al árbol y nunca al registro**:
+
+- **La huella.** El objeto que quedó archivado en ese commit contra la huella que git le daría hoy
+  al archivo que está en el origen. Si difieren, lo que volvió **no es** lo que se archivó.
+- **La historia.** ¿Hay un commit que borró esa ruta entre el archivado y HEAD? Un renombrado se
+  descarta: un `git mv` se lee como borrado sobre la ruta vieja, y sin ese acote una reorganización
+  de carpetas encendería la sonda sola.
+
+Cualquiera de las dos que conteste convierte el rechazo en un **aviso** con la evidencia impresa, y
+el chequeo sigue en verde. **Las dos calladas dejan el rechazo exactamente como estaba**: una sonda
+que falla —commit inalcanzable, archivo ilegible, repositorio ausente— es *sin evidencia*, nunca una
+prueba. Ninguna sonda puede inventar un verde.
+
+**Lo que sigue sin poder probar**, y hay que decirlo. Primero:
+**una restauración byte a byte idéntica y sin rastro en la historia sigue en rojo**,
+porque en el disco es indistinguible de un archivado que nunca ocurrió. Segundo, el aviso
+**dice que esto no es un archivado que no ocurrió, nunca por qué el archivo volvió**,
+y eso lo sabe una persona y no un chequeo. Y tercero, **fecha el archivado, no el regreso**: la
+historia guarda cuándo el archivo salió del árbol, no cuándo alguien lo puso de vuelta.
+
 **El orden importa y es siempre el mismo:**
 
 1. **Actualizar** — el grafo de conocimiento se pone al día con lo que se hizo.

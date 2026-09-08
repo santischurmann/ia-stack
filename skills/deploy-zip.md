@@ -47,6 +47,12 @@ cargo build --release 2>&1 && cp target/release/<bin> dist/   # Rust
 
 ## STEP 3 — dist.zip + checksums
 
+**Dos archivadores declarados, y la regla intacta.** `zip` de Info-ZIP es el preferido; donde no
+esté, vale `bsdtar` (libarchive), que viene con Windows 10+, macOS y la mayoría de las
+distribuciones. Declarar un segundo **no es sustituir en silencio** —que es lo que el protocolo
+prohíbe en el gate de lint y typecheck—: es ensanchar a propósito la lista de herramientas
+aceptadas, escrito acá y probado en `tests/build-zip-script.test.mjs`. Y **si faltan los dos, bloquea**: la regla de herramienta declarada y ausente sigue exactamente donde estaba.
+
 ```bash
 VERSION=$(grep -m1 "^version" pyproject.toml 2>/dev/null | cut -d'"' -f2 || node -e "console.log(require('./package.json').version)")
 ZIP_NAME="dist-${VERSION:-$(date +%Y%m%d)}.zip"

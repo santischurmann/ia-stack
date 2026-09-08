@@ -774,12 +774,22 @@ test('FALSIFICACIÓN · una entrada sin actores declarados y sin activos alcanza
   sinActores.entrypoints[0].actor_ids = 'no es lista';
   assert.ok(validateArtifact('threat', sinActores).some((v) => v.includes('actor_ids')));
 
-  // Una entrada que no alcanza ningún activo no necesita control: no hay nada que proteger detrás.
+  // TODA entrada declarada rinde cuenta, alcance activos o no. Antes, poner `reaches_asset_ids: []`
+  // apagaba la entrada gratis: el gate hacía un return temprano y la entrada nunca llegaba al
+  // chequeo de guardas, así que se podían pegar entradas sin un solo control, sin dueño y sin
+  // motivo, y el artefacto salía verde. El precio de callar pasa de cero a un dueño con nombre.
   const sinActivos = threat();
   sinActivos.entrypoints[0].reaches_asset_ids = [];
   sinActivos.controls = [];
   sinActivos.coverage.authz = { state: 'examined_clean', reason: 'la única entrada no alcanza ningún activo, así que no hay nada que autorizar' };
-  assert.deepEqual(validateArtifact('threat', sinActivos), []);
+  assert.ok(
+    validateArtifact('threat', sinActivos).some((v) => v.includes('E1')),
+    'una entrada sin activos alcanzados sigue teniendo que rendir cuenta',
+  );
+
+  // Y con la aceptación escrita, pasa: declarar que no hace falta control cuesta un dueño.
+  const aceptada = { ...sinActivos, accepted: [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no toca ningún activo', owner: 'santi' }] };
+  assert.deepEqual(validateArtifact('threat', aceptada), []);
 });
 
 test('FALSIFICACIÓN · coverage tiene que ser un objeto, con estados válidos y sin tipos inventados', () => {

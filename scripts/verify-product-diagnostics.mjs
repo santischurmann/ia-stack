@@ -587,10 +587,15 @@ export function validateThreat(document) {
       if (Array.isArray(item.actor_ids)) {
         item.actor_ids.forEach((actorId, index) => requireReference(actorId, actors, `entrypoints[${item.id}].actor_ids[${index}]`, violations));
       }
-      if (!Array.isArray(item.reaches_asset_ids) || item.reaches_asset_ids.length === 0) return;
-      item.reaches_asset_ids.forEach((assetId, index) => requireReference(assetId, assets, `entrypoints[${item.id}].reaches_asset_ids[${index}]`, violations));
+      // TODA entrada declarada rinde cuenta, alcance activos o no. La version anterior hacia un
+      // return temprano cuando `reaches_asset_ids` venia vacio, y eso APAGABA LA ENTRADA GRATIS:
+      // se podian pegar entradas sin un solo control, sin dueno y sin motivo, y el artefacto salia
+      // verde. El precio de callar pasa de cero a un dueno con nombre.
+      if (Array.isArray(item.reaches_asset_ids)) {
+        item.reaches_asset_ids.forEach((assetId, index) => requireReference(assetId, assets, `entrypoints[${item.id}].reaches_asset_ids[${index}]`, violations));
+      }
       if (!guarded.has(item.id)) {
-        add(violations, `la entrada ${item.id} alcanza un activo y no tiene ningún control ni una aceptación escrita: una superficie sin nada que la guarde y sin nadie que lo diga es el agujero que este artefacto existe para hacer visible`);
+        add(violations, `la entrada ${item.id} no tiene ningún control ni una aceptación escrita: una superficie sin nada que la guarde y sin nadie que lo diga es el agujero que este artefacto existe para hacer visible`);
       }
     });
   }

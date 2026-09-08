@@ -15,6 +15,8 @@ export const STATUSES = new Set(['passed', 'failed', 'skipped']);
 export const MAX_TAIL = 4096;
 const ALLOWED_EXECUTABLES = new Set(['node', 'npm', 'pnpm', 'yarn', 'bun', 'python', 'python3', 'pytest', 'go', 'cargo', 'make', 'cmake', 'bazel', 'bash', 'pwsh', 'powershell']);
 const REQUEST_KEYS = new Set(['schema', 'command', 'cwd', 'timeout_ms', 'skip_reason']);
+/** Los tres que Node no puede lanzar sin shell en Windows: son .cmd y PATHEXT no se resuelve. */
+export const WINDOWS_SHIMS = new Set(['npm', 'pnpm', 'yarn']);
 const RECORD_KEYS = new Set(['schema', 'status', 'command', 'command_sha256', 'cwd', 'git_head', 'exit_code', 'signal', 'timed_out', 'duration_ms', 'stdout_tail', 'stderr_tail', 'stdout_tail_sha256', 'stderr_tail_sha256', 'started_at', 'finished_at', 'skip_reason']);
 
 function exactKeys(value, allowed) {
@@ -163,12 +165,23 @@ export function runEvidence(request, { cwd = process.cwd(), run = spawnSync, now
   const stdout = tail(result.stdout);
   const stderr = tail(result.stderr);
   const timedOut = Boolean(result.error?.code === 'ETIMEDOUT' || result.signal === 'SIGTERM' && result.status === null);
+  // Los tres shims de Windows son LEGALES DE DECLARAR e IMPOSIBLES DE LANZAR acá: `npm`, `pnpm` y
+  // `yarn` son `.cmd`, y este runner corre `shell: false` A PROPOSITO. Sin este diagnóstico el
+  // registro sale `failed` hablando del comando cuando el que falló fue el lanzador, y quien lo lee
+  // busca el defecto donde no está. NO se resuelve el shim: hacerlo obliga a buscar el `.cmd` en el
+  // PATH o a pasar por `cmd /c`, y eso abre la vía de inyección de argumentos de Windows en el
+  // único gate del repositorio que lanza procesos.
+  const ejecutable = executableName(request.command);
+  const esShim = WINDOWS_SHIMS.has(ejecutable) && result.error?.code === 'ENOENT';
+  const stderrFinal = esShim
+    ? tail(`${stderr}${stderr ? '\n' : ''}${ejecutable}: ENOENT. En Windows ${ejecutable} es un shim .cmd y este runner corre sin shell a propósito, así que no se puede lanzar aunque esté instalado. Declaralo como: node <ruta al script>`)
+    : stderr;
   const record = {
     schema: SCHEMA, status: result.status === 0 && !timedOut ? 'passed' : 'failed', command: request.command,
     command_sha256: hash(canonicalCommand(request.command)), cwd: request.cwd, git_head: gitHead(projectCwd, run),
     exit_code: Number.isInteger(result.status) ? result.status : null, signal: result.signal ?? null, timed_out: timedOut,
-    duration_ms: Math.max(0, finishedMs - startedMs), stdout_tail: stdout, stderr_tail: stderr,
-    stdout_tail_sha256: hash(stdout), stderr_tail_sha256: hash(stderr), started_at: startedAt, finished_at: iso(), skip_reason: null,
+    duration_ms: Math.max(0, finishedMs - startedMs), stdout_tail: stdout, stderr_tail: stderrFinal,
+    stdout_tail_sha256: hash(stdout), stderr_tail_sha256: hash(stderrFinal), started_at: startedAt, finished_at: iso(), skip_reason: null,
   };
   return { record, violations: [] };
 }

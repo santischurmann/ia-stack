@@ -7,6 +7,49 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Se atacaron siete límites declarados con una ronda adversarial de 22 agentes. Las siete
+  propuestas cayeron 2-0, y eso fue el resultado útil.** Los siete límites **se quedan** — ahora
+  guardados como dato en `contracts/honest-limits.json`, no sueltos en la cabecera de un script,
+  donde cualquiera podía borrarlos sin que ningún chequeo se enterara. El valor no estuvo en las
+  propuestas sino en **cuatro defectos reales que las refutaciones destaparon en gates ya
+  publicados**.
+
+  - **El escáner de vínculos estaba ciego a los literales de expresión regular.** Una comilla
+    adentro de un regex lo metía en modo cadena y se tragaba todo hasta la siguiente comilla suelta:
+    **doce declaraciones `test()` reales invisibles** en siete archivos, el tramo mayor de 3.702
+    bytes, y sobre `scripts/` hasta 15.643. No era cosmético — era un **falso positivo bloqueante ya
+    publicado**: vincular un requisito a cualquiera de esas doce daba un rechazo sobre una prueba
+    que está a la vista y pasa en verde. La prueba que lo fija usa un **segundo implementador** —un
+    regex anclado a línea, sin estado— porque un lexer no puede ser su propio detector.
+  - **Los scripts de shell viajaban sin bit de ejecución**, y `./scripts/install.sh` se publica como
+    **el primer comando del README**: en Linux, quien clonaba recibía `permission denied` antes de
+    haber hecho nada. La regla que lo fija **deriva la lista** grepeando qué scripts invoca la
+    documentación por ruta, y compara contra el **índice** de git y nunca contra el disco, porque en
+    Windows el filesystem no sabe nada de ese bit.
+  - **Una entrada del modelo de amenaza sin activos alcanzados se apagaba gratis.** Un `return`
+    temprano la sacaba del chequeo de guardas, así que se podían pegar entradas sin control, sin
+    dueño y sin motivo, y el artefacto salía verde. Cerrado con ventana de migración cero.
+  - **`npm`, `pnpm` y `yarn` estaban en la allowlist del runner y son imposibles de lanzar en
+    Windows**: son shims `.cmd` y el runner corre sin shell a propósito. No se resuelven —hacerlo
+    abriría la vía de inyección de argumentos de `cmd` en el único gate que lanza procesos—: lo que
+    se arregló es que el registro **diga la causa** en vez de culpar al comando.
+
+  - **La ablación distingue «nunca se archivó» de «se archivó y se restauró».** Dos sondas contra
+    git: la huella del objeto archivado contra la del archivo que volvió, y la historia del borrado.
+    **Verificadas contra el incidente real que las motivó** — la de historia encuentra el commit
+    exacto del 2026-09-02, la de huella muestra que la copia reinstalada no era la archivada. El
+    descarte del renombrado **estaba mal en la primera versión y lo agarró la prueba**: con
+    `pathspec` puesto, git muestra un `git mv` como borrado y esconde la otra mitad.
+  - **La declaración «no hay manifest» ahora se le pregunta a git**, acotada a la raíz con falso
+    positivo medido en cero, y la huella del lockfile se compara contra los bytes en disco.
+  - **El distribuible se destrabó sin tocar la regla**: se declara un **segundo archivador**
+    (`bsdtar`, que viene con Windows 10+ y macOS). No es sustitución silenciosa —es ensanchar la
+    lista a propósito— y **con los dos ausentes bloquea igual**. Armado: 908 K, 230 entradas, con
+    checksum.
+
+  - **Medido:** suite 1480 pruebas, 1479 en verde, 1 salteada, cero fallos. Cobertura **48/48
+    scripts al 100% de funciones y ramas**. 131 promesas de contrato, **105 límites honestos**.
+
 ---
 
 ## [2.0.0] — 2026-09-08

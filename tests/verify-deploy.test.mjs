@@ -168,7 +168,7 @@ test('sin expediente escribe VACÍO y sale 0; con --require-inputs pasa a rechaz
 test('con el expediente completo sale 0 y dice su límite', () => {
   const dichos = [];
   assert.equal(main(['check', '--feature', 'demo'], (m) => dichos.push(m), () => {}, io(expediente())), 0);
-  assert.ok(dichos[0].startsWith('OK: '));
+  assert.ok(dichos.some((d) => d.startsWith('OK: ')), dichos.join(' | '));
   assert.ok(dichos.some((d) => /no audita dependencias/iu.test(d)));
 });
 
@@ -332,7 +332,7 @@ test('check con un servicio declarado nombra cuántas comprobaciones de salud ti
   const dichos = [];
   const conServicio = expediente({ service: { declared: true, start_command: ['node', 'x.mjs'], base_url: 'http://127.0.0.1:3000', health: [{ path: '/health', expect_status: 200, expect_body: null }] } });
   assert.equal(main(['check', '--feature', 'demo'], (m) => dichos.push(m), () => {}, io(conServicio)), 0, dichos.join('\n'));
-  assert.match(dichos[0], /1 comprobación\(es\) de salud en loopback/u);
+  assert.match(dichos.join('\n'), /1 comprobación\(es\) de salud en loopback/u);
 });
 
 test('un servidor que no contesta nunca corta por timeout en vez de colgar la fase', async () => {
@@ -349,4 +349,147 @@ test('un servidor que no contesta nunca corta por timeout en vez de colgar la fa
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+// --- La declaracion de ausencia se invierte contra el arbol ------------------------------------
+//
+// declaredOrNone acepta «ninguno — motivo» y no compara ese «ninguno» contra nada. Un proyecto con
+// package.json a la raiz podia declarar «ninguno — no usamos dependencias» y salir en verde.
+// Se invierte: si alguien declara que NO hay manifest, el gate le pregunta AL ARBOL.
+//
+// Acotado a la RAIZ a proposito: un manifest a nivel raiz nunca es un fixture, y el falso positivo
+// medido sobre los 339 archivos versionados de este repositorio es CERO. Bajar a subdirectorios
+// encontraria fixtures de prueba y gritaria en falso, que es como muere un gate.
+
+test('INVERSION · declarar que no hay manifest con uno a la raíz rechaza, y lo nombra', () => {
+  const sinManifest = expediente();
+  sinManifest.dependencies.manifest = 'ninguno — no usamos dependencias';
+  const violaciones = validateDeploy(sinManifest, { versionados: ['package.json', 'src/app.mjs'] });
+  assert.ok(violaciones.some((v) => v.includes('package.json')), `no lo nombró: ${violaciones.join(' | ')}`);
+});
+
+test('FALSIFICACIÓN · un manifest en un subdirectorio NO dispara la inversión', () => {
+  const sinManifest = expediente();
+  sinManifest.dependencies.manifest = 'ninguno — es Node nativo sin dependencias';
+  // Un fixture de prueba con su propio package.json es el caso legítimo que un barrido recursivo
+  // marcaría mal. Acá no lo marca.
+  assert.deepEqual(validateDeploy(sinManifest, { versionados: ['tests/fixtures/demo/package.json'] }), []);
+});
+
+test('sin lista de versionados la inversión no corre, y no inventa un verde ni un rojo', () => {
+  const sinManifest = expediente();
+  sinManifest.dependencies.manifest = 'ninguno — es Node nativo sin dependencias';
+  assert.deepEqual(validateDeploy(sinManifest), []);
+});
+
+// --- La huella del lockfile contra el disco, en MODO AVISO --------------------------------------
+
+test('AVISO · la huella declarada que no coincide con el disco se avisa, no bloquea', () => {
+  const doc = expediente();
+  doc.dependencies.manifest = 'package.json';
+  doc.dependencies.lockfile_sha256 = 'f'.repeat(64);
+  const avisos = [];
+  const salida = main(['check', '--feature', 'demo'], () => {}, (m) => avisos.push(m), {
+    ...io(doc),
+    versionados: ['package.json', 'package-lock.json'],
+    huella: () => 'a'.repeat(64),
+  });
+  assert.equal(salida, 0, 'la huella que no coincide avisa, no frena: es modo aviso');
+  assert.match(avisos.join('\n'), /AVISO/u);
+  assert.match(avisos.join('\n'), /a{64}/u, 'tiene que imprimir la huella que calculó');
+});
+
+test('con la huella correcta no se avisa nada', () => {
+  const doc = expediente();
+  doc.dependencies.manifest = 'package.json';
+  doc.dependencies.lockfile_sha256 = 'a'.repeat(64);
+  const avisos = [];
+  assert.equal(main(['check', '--feature', 'demo'], () => {}, (m) => avisos.push(m), {
+    ...io(doc), versionados: ['package.json', 'package-lock.json'], huella: () => 'a'.repeat(64),
+  }), 0);
+  assert.deepEqual(avisos, []);
+});
+
+test('cuando el manifest no es una ruta limpia, la huella NO compara y lo dice', () => {
+  const doc = expediente();
+  doc.dependencies.manifest = 'package.json y pyproject.toml — repo políglota';
+  const dichos = [];
+  assert.equal(main(['check', '--feature', 'demo'], (m) => dichos.push(m), () => {}, {
+    ...io(doc), versionados: ['package.json'], huella: () => 'a'.repeat(64),
+  }), 0);
+  assert.match(dichos.join('\n'), /no se comparó/iu, 'un no-comparé nunca es un verde silencioso');
+});
+
+test('la huella cubre sus caminos: sin lockfile al lado, ilegible, y con «ninguno» declarado', () => {
+  const conManifest = (extra = {}) => {
+    const d = expediente();
+    d.dependencies.manifest = 'package.json';
+    Object.assign(d.dependencies, extra);
+    return d;
+  };
+
+  // Manifest versionado pero sin ningún lockfile al lado: no se compara, y se dice.
+  const sinLock = [];
+  assert.equal(main(['check', '--feature', 'demo'], (m) => sinLock.push(m), () => {}, {
+    ...io(conManifest()), versionados: ['package.json'], huella: () => 'a'.repeat(64),
+  }), 0);
+  assert.match(sinLock.join('\n'), /no tiene ningún lockfile versionado/u);
+
+  // El lockfile existe en el índice y no se puede leer del disco: tampoco se compara en silencio.
+  const ilegible = [];
+  assert.equal(main(['check', '--feature', 'demo'], (m) => ilegible.push(m), () => {}, {
+    ...io(conManifest()), versionados: ['package.json', 'package-lock.json'], huella: () => null,
+  }), 0);
+  assert.match(ilegible.join('\n'), /no se pudo leer/u);
+
+  // Con «ninguno — motivo» en el manifest, la huella no tiene nada que comparar y calla.
+  const declaradoNinguno = expediente();
+  declaradoNinguno.dependencies.manifest = 'ninguno — es Node nativo sin dependencias';
+  const callado = [];
+  assert.equal(main(['check', '--feature', 'demo'], (m) => callado.push(m), () => {}, {
+    ...io(declaradoNinguno), versionados: ['src/app.mjs'], huella: () => 'a'.repeat(64),
+  }), 0);
+  assert.doesNotMatch(callado.join('\n'), /huella del lockfile/u);
+});
+
+test('sin `versionados` ni `huella` inyectados usa git y el disco reales, y no lanza', () => {
+  const dichos = [];
+  const doc = expediente();
+  doc.dependencies.manifest = 'README.md';
+  doc.dependencies.lockfile_sha256 = 'b'.repeat(64);
+  assert.equal(main(['check', '--feature', 'demo'], (m) => dichos.push(m), () => {}, { hay: () => true, leer: () => JSON.stringify(doc) }), 0);
+  assert.match(dichos.join('\n'), /huella del lockfile no se comparó/u, 'README.md no tiene lockfile derivable');
+});
+
+test('FALSIFICACIÓN · la huella distingue un final de línea de un contenido distinto', () => {
+  const doc = expediente();
+  doc.dependencies.manifest = 'package.json';
+  doc.dependencies.lockfile_sha256 = 'C'.repeat(64);
+  const avisos = [];
+  main(['check', '--feature', 'demo'], () => {}, (m) => avisos.push(m), {
+    ...io(doc), versionados: ['package.json', 'package-lock.json'], huella: () => 'c'.repeat(64),
+  });
+  assert.deepEqual(avisos, [], 'la comparación es en minúsculas: una huella en mayúsculas es la misma huella');
+});
+
+test('los dos ayudantes de disco y de git no lanzan nunca, y su fallo es «sin dato»', async () => {
+  const { listarVersionados, huellaDeArchivo } = await import('../scripts/verify-deploy.mjs');
+
+  assert.deepEqual(listarVersionados(() => 'a.md\n\n b.md \n'), ['a.md', 'b.md']);
+  assert.equal(listarVersionados(() => { throw new Error('no es un repo'); }), null,
+    'sin git no se inventa ni un verde ni un rojo: la inversión no corre');
+
+  assert.equal(huellaDeArchivo('x', () => Buffer.from('hola')),
+    'b221d9dbb083a7f33428d7c2a3c3198ae925614d70210e28716ccaa7cd4ddb79');
+  assert.equal(huellaDeArchivo('x', () => { throw new Error('ENOENT'); }), null);
+});
+
+test('un manifest que no es ruta limpia y uno que no está versionado se tratan igual: no se compara', () => {
+  const noVersionado = expediente();
+  noVersionado.dependencies.manifest = 'package.json';
+  const dichos = [];
+  assert.equal(main(['check', '--feature', 'demo'], (m) => dichos.push(m), () => {}, {
+    ...io(noVersionado), versionados: ['otra/cosa.md'], huella: () => 'a'.repeat(64),
+  }), 0);
+  assert.match(dichos.join('\n'), /no es una ruta versionada/u);
 });

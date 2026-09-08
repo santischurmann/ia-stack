@@ -34,11 +34,27 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
-// The static declaration check deliberately ignores comments and quoted strings. It is not a JS
-// parser; it only proves the narrow convention VCP relies on: a literal test()/it() call with the
-// exact declared title, not a REQ-ID pasted in a comment or in unrelated prose.
+/** Lo que puede venir ANTES de un `/` para que ese `/` abra un literal de expresión regular y no
+ * sea una división. Es la heurística estándar: después de un operador, una apertura o una palabra
+ * clave hay un valor, y ahí `/` abre regex; después de un identificador, un cierre o un número hay
+ * un operando, y ahí `/` divide. */
+const ANTES_DE_REGEX = /(?:[({[,;:!?&|+\-*%^~=<>]|\b(?:return|typeof|instanceof|in|of|new|delete|void|case|do|else|yield|await))\s*$/u;
+
+// The static declaration check deliberately ignores comments, quoted strings and regular-expression
+// literals. It is not a JS parser; it only proves the narrow convention VCP relies on: a literal
+// test()/it() call with the exact declared title, not a REQ-ID pasted in a comment or in prose.
+//
+// LA HERIDA (medida el 2026-09-08): no conocía el literal de expresión regular, así que una comilla
+// adentro de un regex —`/[data-theme="dark"]/`— lo metía en modo cadena y se tragaba todo hasta la
+// siguiente comilla suelta. Doce declaraciones `test()` REALES quedaban invisibles en siete
+// archivos de `tests/`, el tramo mayor de 3.702 bytes; sobre `scripts/` llegaba a 15.643. No era
+// cosmético: vincular un requisito a cualquiera de esas doce daba
+// DISCOVERY_TEST_BINDING_STATIC_INVALID sobre una prueba que está a la vista y pasa en verde.
 export function hasLiteralTestDeclaration(source, testName) {
-  const expected = new RegExp(`^(?:test|it)(?:\\.(?:skip|todo))?\\s*\\(\\s*(['\"])${escapeRegex(testName)}\\1`, 'u');
+  // La backtick entra acá, y no entraba: cuatro declaraciones del propio repositorio la usan. Un
+  // nombre INTERPOLADO no tiene forma literal y por eso no se puede casar — eso es un límite
+  // declarado, no un descuido.
+  const expected = new RegExp(`^(?:test|it)(?:\\.(?:skip|todo))?\\s*\\(\\s*(['\"\`])${escapeRegex(testName)}\\1`, 'u');
   let i = 0;
   while (i < source.length) {
     if (source.startsWith('//', i)) {
@@ -52,6 +68,18 @@ export function hasLiteralTestDeclaration(source, testName) {
       while (i < source.length) {
         if (source[i] === '\\') i += 2;
         else if (source[i++] === quote) break;
+      }
+    } else if (source[i] === '/' && ANTES_DE_REGEX.test(source.slice(0, i))) {
+      // Literal de regex: se consume entero. Adentro, una clase `[...]` puede contener una barra
+      // sin cerrarlo, y un escape se salta de a dos.
+      i += 1;
+      let enClase = false;
+      while (i < source.length && source[i] !== '\n') {
+        if (source[i] === '\\') { i += 2; continue; }
+        if (source[i] === '[') enClase = true;
+        else if (source[i] === ']') enClase = false;
+        else if (source[i] === '/' && !enClase) { i += 1; break; }
+        i += 1;
       }
     } else {
       const candidate = source.slice(i);

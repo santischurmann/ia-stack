@@ -570,6 +570,66 @@
       "file": "skills/gates.md",
       "phrase": "nunca que un despliegue remoto esté sano",
       "why": "La comprobacion por HTTP se hace contra loopback y el gate rechaza cualquier otro host antes de conectar. Sin esta frase, un verde de salud se lee como que lo publicado en un host ajeno responde, y este gate no puede saber eso."
+    },
+    {
+      "limit_id": "threat-model-does-not-prove-the-control-exists",
+      "file": "skills/gates.md",
+      "phrase": "nunca que el control exista en el código ni que sirva",
+      "why": "El modelo de amenaza cruza cada control contra un criterio de la spec y contra el receipt, pero nada abre el codigo para ver si el control esta escrito. Un modelo inventado con criterios reales pasa en verde. La frase vivia solo en la cabecera del script: cualquiera podia borrarla y ningun gate se enteraba."
+    },
+    {
+      "limit_id": "ablation-probe-is-blind-to-an-identical-restore",
+      "file": "SKILL.md",
+      "phrase": "una restauración byte a byte idéntica y sin rastro en la historia sigue en rojo",
+      "why": "Las dos sondas distinguen el archivado que ocurrio del que no, por huella y por historia. Lo que ninguna puede ver es una restauracion identica que ademas no dejo rastro en la historia: en el disco es indistinguible de un archivado que nunca ocurrio. Sin la frase, el verde de las sondas se lee como que todo regreso queda detectado."
+    },
+    {
+      "limit_id": "dist-zip-blocks-when-no-archiver-is-present",
+      "file": "skills/deploy-zip.md",
+      "phrase": "si faltan los dos, bloquea",
+      "why": "El empaquetador acepta dos archivadores declarados, zip de Info-ZIP y bsdtar. Declarar un segundo NO es sustituir en silencio, que es lo que el protocolo prohibe: es ensanchar a proposito la lista, y la regla de herramienta ausente sigue intacta porque con los dos ausentes frena. Sin la frase, el fallback se lee como una degradacion silenciosa."
+    },
+    {
+      "limit_id": "test-binding-scanner-is-lexical-not-a-parser",
+      "file": "skills/gates.md",
+      "phrase": "un nombre de prueba construido por interpolación no se puede casar literalmente",
+      "why": "El escaner ya distingue comentario, cadena y literal de expresion regular, pero no ejecuta el modulo ni resuelve constantes. Un test con nombre interpolado no tiene forma literal, asi que no se puede vincular a un requisito. Sin la frase, ese rechazo se lee como que la prueba no existe."
+    },
+    {
+      "limit_id": "threat-entrypoint-guard-is-declared-not-located",
+      "file": "skills/gates.md",
+      "phrase": "toda entrada declarada rinde cuenta, pero el gate no sabe si esa entrada existe en el código",
+      "why": "Cerrar la lista vacia obliga a un control o a una aceptacion con dueno para cada entrada escrita. No dice que la entrada exista, ni que el control este en el arbol, ni que no falte una entrada que nadie escribio. Sin la frase, «todas las entradas guardadas» se lee como «no hay superficie sin control»."
+    },
+    {
+      "limit_id": "evidence-runner-cannot-launch-windows-shims",
+      "file": "skills/gates.md",
+      "phrase": "en Windows los ejecutables que son shims .cmd no se pueden lanzar sin shell",
+      "why": "npm, pnpm y yarn estan en la allowlist nativa y dan ENOENT en Windows aunque esten instalados, medido el 2026-09-08. El runner no los va a resolver: hacerlo abriria la via de inyeccion de argumentos de cmd en el unico gate que lanza procesos. Sin la frase, un vector legitimo se lee como comando roto."
+    },
+    {
+      "limit_id": "deploy-lockfile-hash-is-identity-not-trust",
+      "file": "skills/gates.md",
+      "phrase": "La huella prueba que el archivo en disco es el declarado, no que su contenido sea confiable",
+      "why": "La comparacion de sha256 del lockfile contra el disco cierra el hueco de la declaracion inventada, y nada mas: un lockfile con dependencias comprometidas tiene una huella perfectamente valida. Sin la frase, el aviso en verde se lee como dependencias auditadas."
+    },
+    {
+      "limit_id": "deploy-tree-is-not-what-is-installed",
+      "file": "skills/gates.md",
+      "phrase": "compara la declaración contra el árbol, nunca el árbol contra lo que efectivamente corre",
+      "why": "La inversion del ninguno le pregunta a git si hay un manifest a la raiz. Eso no dice que lo instalado en la maquina de destino sea lo que el arbol declara. Sin la frase, un verde se lee como que lo que corre es lo que esta versionado."
+    },
+    {
+      "limit_id": "ablation-probe-does-not-read-intention",
+      "file": "SKILL.md",
+      "phrase": "dice que esto no es un archivado que no ocurrió, nunca por qué el archivo volvió",
+      "why": "Las sondas prueban que el archivado ocurrio. No dicen si el regreso fue deliberado, un accidente de un instalador o una restauracion de emergencia. Sin la frase, un aviso en verde se lee como que alguien reviso y aprobo el regreso, y nadie lo reviso."
+    },
+    {
+      "limit_id": "ablation-probe-dates-the-archive-not-the-return",
+      "file": "SKILL.md",
+      "phrase": "fecha el archivado, no el regreso",
+      "why": "La historia de git guarda cuando el archivo salio del arbol. Cuando alguien lo puso de vuelta no queda registrado en ningun lado que este gate pueda leer. Sin la frase, la fecha del aviso se lee como la fecha del incidente."
     }
   ]
 }

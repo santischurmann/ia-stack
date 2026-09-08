@@ -250,6 +250,42 @@ function checkMeasurement(rows, ids, donde, violations) {
   if (faltan.length > 0) violations.push(`${donde}: no midió ${faltan.join(', ')}, así que la comparación contra la línea base no cierra`);
 }
 
+/** Una sonda que lanza es «sin evidencia», nunca una prueba. Ninguna puede inventar un verde. */
+function sonda(fn, ...args) {
+  if (typeof fn !== 'function') return null;
+  try {
+    return fn(...args) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ¿Hay evidencia, EN EL ARBOL, de que el archivado ocurrió aunque el origen esté hoy presente?
+ * Devuelve la frase que lo dice, o `null` si ninguna sonda contestó.
+ *
+ * A — HUELLA: el objeto que quedó archivado en ese commit contra la huella del archivo que hoy está
+ * en el origen. Si difieren, lo que volvió no es lo que se archivó, así que hubo un archivado y
+ * después una restauración con OTRO contenido. Se compara con la huella de git y no con un sha256
+ * crudo justamente porque aplica los mismos filtros del árbol: un final de línea distinto no es un
+ * contenido distinto.
+ *
+ * B — HISTORIA: ¿hay un commit que borró esa ruta entre el archivado y HEAD? Si lo hay, el
+ * archivado quedó registrado en la historia, que es un ancla que el registro no controla.
+ */
+function evidenciaDeArchivado(entry, io) {
+  const archivada = sonda(io.huellaArchivada, entry.repo, entry.commit, entry.archived_to);
+  const enOrigen = sonda(io.huellaEnOrigen, entry.repo, entry.archived_to, entry.path);
+  if (archivada !== null && enOrigen !== null && archivada !== enOrigen) {
+    return `lo que está hoy en el origen no es lo que se archivó (archivado ${String(archivada).slice(0, 8)}, en el origen ${String(enOrigen).slice(0, 8)})`;
+  }
+  const borrado = sonda(io.borradoEnHistoria, entry.repo, entry.commit, entry.archived_to);
+  if (borrado !== null && typeof borrado === 'object' && typeof borrado.commit === 'string') {
+    return `la historia de ${entry.repo} tiene el borrado en ${borrado.commit.slice(0, 8)} (${borrado.fecha})`;
+  }
+  return null;
+}
+
 function checkArchived(entry, batchNo, record, scope, io, violations) {
   const donde = `tanda ${batchNo}`;
   const porLineas = isObject(entry) && entry.mode === 'lines';
@@ -311,7 +347,22 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
       violations.push(`${donde}: ${entry.archived_to} no está en el commit ${entry.commit.slice(0, 8)} de ${entry.repo}: eso no es un archivado, es un borrado`);
     }
     if (io.exists(entry.path)) {
-      violations.push(`${donde}: ${entry.path} sigue en su lugar, así que no se movió nada y el registro dice lo contrario`);
+      // LA CELDA QUE ERA UN ROJO FIJO, y el dolor está medido: el 2026-09-08 este rechazo dejó al
+      // repositorio con un rojo AJENO durante dos etapas enteras, porque alguien había reinstalado
+      // a propósito algo que la limpieza archivó. El gate leía el disco y tenía razón sobre el
+      // disco, y estaba equivocado sobre lo que había pasado. Un rojo correcto y engañoso a la vez
+      // es lo peor que le puede pasar a un gate: quien lo lee concluye que la limpieza no se hizo.
+      //
+      // Dos sondas le preguntan AL ARBOL, nunca al registro. Cualquiera que conteste degrada el
+      // rechazo a un aviso; las dos calladas lo dejan exactamente como estaba. Ninguna inventa un
+      // verde: una sonda que falla —commit inalcanzable, archivo ilegible, repositorio ausente— es
+      // «sin evidencia», que es el rojo de hoy.
+      const evidencia = evidenciaDeArchivado(entry, io);
+      if (evidencia === null) {
+        violations.push(`${donde}: ${entry.path} sigue en su lugar, así que no se movió nada y el registro dice lo contrario`);
+      } else if (typeof io.aviso === 'function') {
+        io.aviso(`${donde}: ${entry.path} volvió a su lugar DESPUÉS del archivado — ${evidencia}. El archivado ocurrió; alguien lo restauró.`);
+      }
     }
     return;
   }
@@ -489,6 +540,67 @@ function makeExists(root) {
   return (path) => existsSync(conHome(root, path));
 }
 
+/** SONDA A, primera mitad: la huella del objeto tal como quedó archivado en ese commit. */
+function makeHuellaArchivada() {
+  return (repo, commit, ruta) => {
+    const salida = spawnSync('git', ['-C', conHome('.', repo), 'rev-parse', `${commit}:${ruta}`], { encoding: 'utf8' });
+    return salida.status === 0 ? salida.stdout.trim() : null;
+  };
+}
+
+/** SONDA A, segunda mitad: la huella que git le daría HOY al archivo que está en el origen.
+ * `hash-object --path` y no un sha256 crudo: aplica los mismos filtros del árbol, así que un final
+ * de línea distinto no se lee como un contenido distinto. */
+function makeHuellaEnOrigen(root) {
+  return (repo, archivedTo, path) => {
+    const salida = spawnSync('git', ['-C', conHome('.', repo), 'hash-object', '--path', archivedTo, '--', conHome(root, path)], { encoding: 'utf8' });
+    return salida.status === 0 ? salida.stdout.trim() : null;
+  };
+}
+
+/**
+ * SONDA B: ¿hay un commit que BORRO esa ruta entre el archivado y HEAD?
+ *
+ * Con el acote que la refutación midió: un `git mv` produce un registro `R` que bajo pathspec se
+ * lee como `D` sobre la ruta vieja. Sin descartarlo, una reorganización posterior de la carpeta
+ * enciende la sonda sola y el gate empieza a perdonar rojos legítimos. Por eso cada candidato se
+ * vuelve a mirar con detección de renombrado y se descarta si el estado es `R`.
+ */
+/**
+ * ¿Ese commit RENOMBRO esa ruta, en vez de borrarla?
+ *
+ * Se lee la salida de `git show --name-status -M` del commit ENTERO, **sin pathspec**, y eso no es
+ * un detalle: con el filtro de ruta puesto, git muestra el renombrado como `D` sobre la ruta vieja
+ * y esconde la otra mitad, así que el descarte no vería nada. Medido construyendo un `git mv` de
+ * verdad, que es como se encontró.
+ */
+export function esRenombrado(salida, ruta) {
+  return String(salida).split('\n').some((linea) => {
+    const partes = linea.split('\t');
+    return /^R\d*$/u.test(partes[0]) && partes[1] === ruta;
+  });
+}
+
+function makeBorradoEnHistoria(run = spawnSync) {
+  return (repo, commit, ruta) => {
+    const carpeta = conHome('.', repo);
+    const log = run('git', ['-C', carpeta, 'log', '--diff-filter=D', '--format=%H|%cI', `${commit}..HEAD`, '--', ruta], { encoding: 'utf8' });
+    if (log.status !== 0) return null;
+    for (const linea of log.stdout.split('\n').map((l) => l.trim()).filter(Boolean)) {
+      const [sha, fecha] = linea.split('|');
+      const estado = run('git', ['-C', carpeta, 'show', '--name-status', '-M', '--format=', sha], { encoding: 'utf8' });
+      // Si no se puede saber si fue un renombrado, NO se concluye que fue un borrado: sin ese dato
+      // la sonda no tiene evidencia, y sin evidencia el rechazo de hoy se queda. Fail-closed.
+      if (estado.status !== 0) return null;
+      if (esRenombrado(estado.stdout, ruta)) continue;
+      return { commit: sha, fecha };
+    }
+    return null;
+  };
+}
+
+export { makeBorradoEnHistoria };
+
 /** Dias entre dos fechas AAAA-MM-DD, sin husos ni relojes: la resta en UTC alcanza. */
 export function daysBetween(from, to) {
   const dia = 86_400_000;
@@ -571,8 +683,20 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 0;
   }
 
-  const io = { exists: options.exists ?? makeExists(root), gitHas: options.gitHas ?? makeGitHas() };
+  const avisos = [];
+  const io = {
+    exists: options.exists ?? makeExists(root),
+    gitHas: options.gitHas ?? makeGitHas(),
+    huellaArchivada: options.huellaArchivada ?? makeHuellaArchivada(),
+    huellaEnOrigen: options.huellaEnOrigen ?? makeHuellaEnOrigen(root),
+    borradoEnHistoria: options.borradoEnHistoria ?? makeBorradoEnHistoria(),
+    aviso: (mensaje) => avisos.push(mensaje),
+  };
   const violations = validateAblation(record, scope, io);
+  // Un aviso no es un rechazo: sale por stderr para que se vea, y el gate sigue en 0. Lo que dice
+  // es que el archivado SI ocurrió y alguien restauró el archivo después — que es exactamente lo
+  // que el rechazo de antes hacía imposible de distinguir.
+  for (const mensaje of avisos) writeError(`AVISO: ${path}: ${mensaje}`);
   if (violations.length > 0) {
     for (const violation of violations) writeError(`REJECTED: ${path}: ${violation}`);
     writeError(LIMITS_TEXT);

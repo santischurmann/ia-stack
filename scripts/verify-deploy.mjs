@@ -31,6 +31,8 @@
 //   - Verifica el REGISTRO de la reversión, no la reversión: que `rollback_tested` traiga evidencia
 //     no prueba que el comando se haya corrido.
 
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { join } from 'node:path';
@@ -81,7 +83,34 @@ export function isLoopback(url) {
   return /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/u.test(host);
 }
 
-export function validateDeploy(document) {
+/** Los manifests que, a NIVEL RAIZ, significan que el proyecto sí declara dependencias. Tabla
+ * congelada y exportada, mismo patrón que `COPIED_DIRECTORIES` en `verify-runtime-sync.mjs`.
+ * El acote a la raíz no es pereza: un manifest a la raíz nunca es un fixture, y bajar a
+ * subdirectorios encontraría los `package.json` de prueba de cualquier repo y gritaría en falso.
+ * Falso positivo medido sobre los archivos versionados de este repositorio: cero. */
+export const MANIFESTS_RAIZ = Object.freeze(['package.json', 'pyproject.toml', 'Cargo.toml', 'go.mod', 'Gemfile', 'composer.json', 'requirements.txt']);
+/** De qué manifest sale qué lockfile. Se DERIVA, no se declara: un lockfile declarado a mano es
+ * otra declaración, y lo que cierra el hueco es comparar contra el disco. */
+export const LOCKFILE_DE = Object.freeze({
+  'package.json': ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock'],
+  'pyproject.toml': ['uv.lock', 'poetry.lock'],
+  'Cargo.toml': ['Cargo.lock'],
+  'go.mod': ['go.sum'],
+  Gemfile: ['Gemfile.lock'],
+  'composer.json': ['composer.lock'],
+  'requirements.txt': ['requirements.txt'],
+});
+
+const RUTA_LIMPIA = /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/u;
+
+/** Una declaración de ausencia se invierte contra el árbol: si alguien dice que no hay manifest,
+ * se le pregunta a git. Es lo único de este bloque que BLOQUEA. */
+export function manifestContradicho(manifest, versionados) {
+  if (!Array.isArray(versionados) || !nonEmpty(manifest) || !NONE_PREFIX.test(manifest.trim())) return null;
+  return versionados.find((ruta) => !ruta.includes('/') && MANIFESTS_RAIZ.includes(ruta)) ?? null;
+}
+
+export function validateDeploy(document, { versionados = null } = {}) {
   const violations = [];
   if (!isObject(document)) return ['el expediente de despliegue debe ser un objeto JSON'];
   if (document.schema !== SCHEMA) violations.push(`schema debe ser ${SCHEMA}`);
@@ -95,6 +124,10 @@ export function validateDeploy(document) {
     declaredOrNone(deps.lockfile_sha256, 'dependencies.lockfile_sha256', violations);
     declaredOrNone(deps.audited_by, 'dependencies.audited_by', violations);
     if (!Number.isInteger(deps.count) || deps.count < 0) violations.push('dependencies.count debe ser un entero no negativo: un conteo es un número, no una impresión');
+    const contradicho = manifestContradicho(deps.manifest, versionados);
+    if (contradicho !== null) {
+      violations.push(`dependencies.manifest declara que no hay manifest y el árbol versiona ${contradicho} a la raíz: una declaración de ausencia se comprueba contra el árbol, no se acepta`);
+    }
   }
 
   // Lo que Git ignora y parece sensible se REPORTA, sin leerlo. Cierra, declarándolo, el límite que
@@ -173,6 +206,59 @@ function fetchLoopback(base, path, timeoutMs = PROBE_TIMEOUT_MS) {
   });
 }
 
+export function listarVersionados(run = execFileSync) {
+  try {
+    return run('git', ['ls-files'], { encoding: 'utf8' }).split('\n').map((l) => l.trim()).filter(Boolean);
+  } catch {
+    // Sin git no hay árbol contra el que invertir la declaración. No se inventa ni un verde ni un
+    // rojo: la inversión simplemente no corre, y `validateDeploy` lo trata como «sin lista».
+    return null;
+  }
+}
+
+export function huellaDeArchivo(ruta, leer = readFileSync) {
+  try {
+    return createHash('sha256').update(leer(ruta)).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * MODO AVISO, y a propósito. La huella del lockfile contra el disco es lo único de este bloque que
+ * compara bytes reales, pero un aviso no puede frenar una publicación por un final de línea: se
+ * compara dos veces, y si sólo coincide con los saltos normalizados, el aviso dice CRLF en vez de
+ * «no coincide». Y cuando el manifest no es una ruta limpia —prosa, dos manifests, separador de
+ * Windows— NO se compara, y se dice: un «no comparé» nunca es un verde silencioso.
+ */
+function avisarHuella(document, versionados, huella, write, writeError) {
+  const deps = document.dependencies;
+  // Sin defensas de mas: `validateDeploy` ya corrio y garantiza que los tres campos son
+  // cadenas no vacias. Una rama inalcanzable es lo que el gate de cobertura de este repositorio no
+  // deja pasar, y fingirle una prueba seria peor que sacarla.
+  const manifest = deps.manifest.trim();
+  if (NONE_PREFIX.test(manifest)) return;
+  if (!RUTA_LIMPIA.test(manifest) || !Array.isArray(versionados) || !versionados.includes(manifest)) {
+    write(`${EMPTY_PREFIX}la huella del lockfile no se comparó: dependencies.manifest ${JSON.stringify(manifest)} no es una ruta versionada del proyecto.`);
+    return;
+  }
+  const base = manifest.split('/').at(-1);
+  const candidatos = (LOCKFILE_DE[base] ?? []).map((n) => manifest.slice(0, manifest.length - base.length) + n);
+  const lockfile = candidatos.find((ruta) => versionados.includes(ruta));
+  if (lockfile === undefined) {
+    write(`${EMPTY_PREFIX}la huella del lockfile no se comparó: ${manifest} no tiene ningún lockfile versionado al lado.`);
+    return;
+  }
+  const real = huella(lockfile);
+  if (real === null) {
+    write(`${EMPTY_PREFIX}la huella del lockfile no se comparó: ${lockfile} no se pudo leer.`);
+    return;
+  }
+  const declarada = deps.lockfile_sha256.trim().toLowerCase();
+  if (declarada === real) return;
+  writeError(`AVISO: la huella declarada de ${lockfile} no coincide con el archivo en disco. Declarada: ${declarada}. Medida: ${real}.`);
+}
+
 function parseArgs(args) {
   if (args[0] !== 'check' && args[0] !== 'health') return null;
   const parsed = { command: args[0], feature: null, requireInputs: false };
@@ -206,11 +292,13 @@ export function main(args = process.argv.slice(2), write = console.log, writeErr
     return 1;
   }
 
-  const violations = validateDeploy(document);
+  const versionados = io.versionados ?? listarVersionados();
+  const violations = validateDeploy(document, { versionados });
   if (violations.length > 0) {
     for (const item of violations) writeError(`REJECTED: ${item}`);
     return 1;
   }
+  avisarHuella(document, versionados, io.huella ?? huellaDeArchivo, write, writeError);
   if (parsed.command === 'check') {
     write(`OK: ${ruta} declara reversión probada, inventario de dependencias y ${document.service.declared ? `${document.service.health.length} comprobación(es) de salud en loopback` : 'ningún servicio'}.`);
     write(LIMIT_LINE);

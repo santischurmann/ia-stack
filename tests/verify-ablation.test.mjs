@@ -1633,3 +1633,388 @@ test('FALSIFICACIÓN · la regla lee la versión de la prosa y no se traga otra 
   assert.deepEqual(versionEtiquetada('**Versión:** 2.0.0 · etiquetada como `v1.9.9` en git.'), { declarada: '2.0.0', etiqueta: '1.9.9' });
   assert.equal(versionEtiquetada('sin versión'), null);
 });
+
+// --- Las dos sondas: distinguir «nunca se archivó» de «se archivó y se restauró» ----------------
+//
+// LA HERIDA, con dolor medido en produccion. El 2026-09-08 este gate dejo al repositorio con un
+// rojo AJENO durante dos etapas enteras: el registro del 2026-09-02 decia que cyber-neo/SKILL.md se
+// habia archivado, y el archivo estaba de vuelta porque alguien lo reinstalo A PROPOSITO. El gate
+// leia el disco y tenia razon SOBRE EL DISCO, y estaba completamente equivocado sobre lo que habia
+// pasado. Un rojo correcto y enganoso a la vez es lo peor que le puede pasar a un gate: quien lo lee
+// concluye «la limpieza no se hizo».
+//
+// LAS DOS SONDAS LE PREGUNTAN AL ARBOL, NUNCA AL REGISTRO:
+//   A, huella: el objeto archivado en ese commit contra la huella del archivo que hoy esta en el
+//     origen. Distintos ⇒ lo que volvio NO es lo que se archivo ⇒ el archivado ocurrio.
+//   B, historia: ¿hay un commit que BORRO esa ruta entre el archivado y HEAD?
+//
+// Cualquiera que conteste degrada el rechazo. Las dos calladas dejan el rojo EXACTAMENTE como esta.
+// Verificado contra el arbol real: en el incidente que las motivo, las dos habrian contestado.
+
+function enGitConOrigenPresente() {
+  const r = registro();
+  r.batches[0].archived = [{
+    path: '~/.claude/skills/cyber/SKILL.md',
+    archived_to: 'skills/cyber/SKILL.md',
+    mode: 'git',
+    repo: '~/.claude',
+    commit: 'a'.repeat(40),
+    repetible: false,
+    requisito: false,
+    repartible: false,
+    verdict: 'ARCHIVAR',
+    reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+  }];
+  r.inventory = [{ path: '~/.claude/skills/cyber/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+  r.survivors = [];
+  return r;
+}
+
+const SIGUE_EN_SU_LUGAR = /sigue en su lugar/u;
+
+test('C1 · sin ninguna sonda, el origen presente sigue siendo el rechazo de hoy', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, { exists: () => true, gitHas: () => true });
+  assert.ok(violaciones.some((v) => SIGUE_EN_SU_LUGAR.test(v)), 'el rechazo de hoy no se toca cuando no hay evidencia');
+});
+
+test('C1 · SONDA A · la huella distinta prueba que lo que volvió NO es lo que se archivó', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'b'.repeat(40), borradoEnHistoria: () => null,
+  });
+  assert.deepEqual(violaciones, [], 'con evidencia de archivado, el rechazo se degrada');
+});
+
+test('C1 · SONDA A · la huella IDÉNTICA no prueba nada, y el rechazo se queda', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'a'.repeat(40), borradoEnHistoria: () => null,
+  });
+  assert.ok(violaciones.some((v) => SIGUE_EN_SU_LUGAR.test(v)), 'una restauración byte a byte idéntica es indistinguible de un archivado que nunca ocurrió');
+});
+
+test('C1 · SONDA B · un borrado en la historia prueba que el archivado ocurrió', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'a'.repeat(40),
+    borradoEnHistoria: () => ({ commit: 'd'.repeat(40), fecha: '2026-09-02T10:28:48-03:00' }),
+  });
+  assert.deepEqual(violaciones, []);
+});
+
+test('C1 · NINGUNA SONDA INVENTA NADA · una que falla es «sin evidencia», nunca una prueba', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => { throw new Error('commit inalcanzable'); },
+    huellaEnOrigen: () => { throw new Error('archivo ilegible'); },
+    borradoEnHistoria: () => { throw new Error('repo inexistente'); },
+  });
+  assert.ok(violaciones.some((v) => SIGUE_EN_SU_LUGAR.test(v)), 'una sonda rota deja el rojo de hoy, nunca lo levanta');
+});
+
+test('C1 · FALSIFICACIÓN · una huella nula de cualquier lado no cuenta como diferencia', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const violaciones = validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => null, huellaEnOrigen: () => 'b'.repeat(40), borradoEnHistoria: () => null,
+  });
+  assert.ok(violaciones.some((v) => SIGUE_EN_SU_LUGAR.test(v)), 'sin las dos huellas no hay comparación, y sin comparación no hay evidencia');
+});
+
+test('C1 · el aviso dice QUÉ encontró, no sólo que degradó', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const avisos = [];
+  validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'b'.repeat(40), borradoEnHistoria: () => null,
+    aviso: (m) => avisos.push(m),
+  });
+  assert.equal(avisos.length, 1);
+  assert.match(avisos[0], /cyber\/SKILL\.md/u);
+  assert.match(avisos[0], /a{8}/u, 'tiene que imprimir la huella archivada');
+  assert.match(avisos[0], /b{8}/u, 'y la del archivo que volvió');
+});
+
+test('C1 · el aviso de la sonda B nombra el commit y la fecha del borrado', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const avisos = [];
+  validateAblation(enGitConOrigenPresente(), contrato, {
+    exists: () => true, gitHas: () => true,
+    huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'a'.repeat(40),
+    borradoEnHistoria: () => ({ commit: 'd'.repeat(40), fecha: '2026-09-02T10:28:48-03:00' }),
+    aviso: (m) => avisos.push(m),
+  });
+  assert.equal(avisos.length, 1);
+  assert.match(avisos[0], /d{8}/u);
+  assert.match(avisos[0], /2026-09-02/u);
+});
+
+test('C1 · las tres sondas reales le preguntan a git y su fallo es «sin dato», nunca una prueba', () => {
+  // Se ejercitan a traves del CLI con un registro que llega a la celda, contra un repositorio que
+  // NO existe: las tres sondas fallan, y el resultado tiene que ser el rojo de hoy. Es la garantia
+  // que importa -- una sonda rota jamas levanta un rechazo -- y se mide sin fingir git.
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-ablacion-sondas-'));
+  try {
+    const r = registro();
+    r.batches[0].archived = [{
+      path: '~/.claude/skills/cyber/SKILL.md',
+      archived_to: 'skills/cyber/SKILL.md',
+      mode: 'git',
+      repo: '~/.claude-repositorio-que-no-existe',
+      commit: 'a'.repeat(40),
+      repetible: false, requisito: false, repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    r.inventory = [{ path: '~/.claude/skills/cyber/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+    mkdirSync(join(raiz, 'docs'), { recursive: true });
+    mkdirSync(join(raiz, 'contracts'), { recursive: true });
+    writeFileSync(join(raiz, 'docs', 'ablation.json'), JSON.stringify(r));
+    writeFileSync(join(raiz, 'contracts', 'ablation-scope.json'), readScope());
+    const errores = [];
+    // `exists` se inyecta en true para llegar a la celda; las sondas NO se inyectan, así que corren
+    // las reales contra un repositorio inexistente y las tres devuelven null.
+    const code = main(['check', 'docs/ablation.json'], { root: raiz, write: () => {}, writeError: (l) => errores.push(l), exists: () => true, gitHas: () => true });
+    assert.equal(code, 1, 'sin evidencia de ninguna sonda, el rechazo de hoy se queda');
+    assert.ok(errores.some((e) => /sigue en su lugar/u.test(e)));
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('C1 · el aviso sale por stderr y el gate sigue en 0', () => {
+  const raiz = mkdtempSync(join(tmpdir(), 'vcp-ablacion-aviso-'));
+  try {
+    const r = registro();
+    r.batches[0].archived = [{
+      path: '~/.claude/skills/cyber/SKILL.md',
+      archived_to: 'skills/cyber/SKILL.md',
+      mode: 'git', repo: '~/.claude', commit: 'a'.repeat(40),
+      repetible: false, requisito: false, repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    r.inventory = [{ path: '~/.claude/skills/cyber/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+    mkdirSync(join(raiz, 'docs'), { recursive: true });
+    mkdirSync(join(raiz, 'contracts'), { recursive: true });
+    writeFileSync(join(raiz, 'docs', 'ablation.json'), JSON.stringify(r));
+    writeFileSync(join(raiz, 'contracts', 'ablation-scope.json'), readScope());
+    const errores = [];
+    const code = main(['check', 'docs/ablation.json'], {
+      root: raiz, write: () => {}, writeError: (l) => errores.push(l),
+      exists: () => true, gitHas: () => true,
+      huellaArchivada: () => 'a'.repeat(40), huellaEnOrigen: () => 'b'.repeat(40), borradoEnHistoria: () => null,
+    });
+    assert.equal(code, 0, 'con evidencia, el gate pasa');
+    assert.ok(errores.some((e) => e.startsWith('AVISO:')), 'el aviso se ve, no se traga');
+    assert.ok(errores.some((e) => /volvió a su lugar DESPUÉS del archivado/u.test(e)));
+  } finally {
+    rmSync(raiz, { recursive: true, force: true });
+  }
+});
+
+test('C1 · las tres sondas contra un repositorio de git REAL, con un borrado real en la historia', () => {
+  // No se finge git: se arma un repositorio, se commitea el archivo, se lo borra en un segundo
+  // commit y se lo vuelve a poner con OTRO contenido. Es exactamente la forma del incidente que
+  // motivó las sondas -- archivado, y despues restaurado con una version distinta.
+  const repo = mkdtempSync(join(tmpdir(), 'vcp-sondas-git-'));
+  const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  try {
+    if (git('init', '-q').status !== 0) return; // sin git no hay nada que medir
+    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.name', 'VCP');
+    mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
+    const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
+    writeFileSync(archivo, 'la version que se archivo\n');
+    git('add', '-A');
+    git('commit', '-qm', 'antes de archivar');
+    const commit = git('rev-parse', 'HEAD').stdout.trim();
+
+    rmSync(archivo);
+    git('add', '-A');
+    git('commit', '-qm', 'archivado: sale del arbol');
+
+    // Y alguien lo reinstala, con otro contenido.
+    writeFileSync(archivo, 'la version nueva que alguien reinstalo\n');
+
+    const r = registro();
+    r.batches[0].archived = [{
+      path: archivo,
+      archived_to: 'skills/cyber/SKILL.md',
+      mode: 'git', repo, commit,
+      repetible: false, requisito: false, repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    r.inventory = [{ path: archivo, words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+
+    const raiz = mkdtempSync(join(tmpdir(), 'vcp-sondas-raiz-'));
+    try {
+      mkdirSync(join(raiz, 'docs'), { recursive: true });
+      mkdirSync(join(raiz, 'contracts'), { recursive: true });
+      writeFileSync(join(raiz, 'docs', 'ablation.json'), JSON.stringify(r));
+      // El contrato de alcance real no cubre una ruta temporal, así que se declara una a medida:
+      // lo que se mide acá son las sondas, no el alcance.
+      const scope = JSON.parse(readScope());
+      scope.in_scope = [{ path: repo, why: 'el repositorio temporal donde esta prueba mide las sondas contra git de verdad' }];
+      writeFileSync(join(raiz, 'contracts', 'ablation-scope.json'), JSON.stringify(scope));
+      const errores = [];
+      const code = main(['check', 'docs/ablation.json'], { root: raiz, write: () => {}, writeError: (l) => errores.push(l) });
+      assert.equal(code, 0, `las sondas reales tenían que contestar:\n${errores.join('\n')}`);
+      assert.ok(errores.some((e) => e.startsWith('AVISO:')), 'y el aviso tiene que decir qué encontraron');
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('C1 · SONDA B corre cuando la huella es idéntica, y descarta un renombrado', () => {
+  // Restauracion BYTE A BYTE identica: la sonda A calla, asi que la B tiene que contestar sola
+  // desde la historia. Y un `git mv` posterior produce un registro R que bajo pathspec se lee como
+  // D sobre la ruta vieja: sin descartarlo, cualquier reorganizacion encenderia la sonda y el gate
+  // empezaria a perdonar rojos legitimos.
+  const repo = mkdtempSync(join(tmpdir(), 'vcp-sondaB-'));
+  const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  try {
+    if (git('init', '-q').status !== 0) return;
+    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.name', 'VCP');
+    mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
+    const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
+    const contenido = 'exactamente el mismo contenido, byte a byte\n';
+    writeFileSync(archivo, contenido);
+    git('add', '-A');
+    git('commit', '-qm', 'antes de archivar');
+    const commit = git('rev-parse', 'HEAD').stdout.trim();
+
+    rmSync(archivo);
+    git('add', '-A');
+    git('commit', '-qm', 'archivado: sale del arbol');
+
+    // Vuelve IDENTICO: la sonda A no puede distinguirlo, la B sí.
+    writeFileSync(archivo, contenido);
+
+    const r = registro();
+    r.batches[0].archived = [{
+      path: archivo, archived_to: 'skills/cyber/SKILL.md',
+      mode: 'git', repo, commit,
+      repetible: false, requisito: false, repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    r.inventory = [{ path: archivo, words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+
+    const raiz = mkdtempSync(join(tmpdir(), 'vcp-sondaB-raiz-'));
+    try {
+      mkdirSync(join(raiz, 'docs'), { recursive: true });
+      mkdirSync(join(raiz, 'contracts'), { recursive: true });
+      writeFileSync(join(raiz, 'docs', 'ablation.json'), JSON.stringify(r));
+      const scope = JSON.parse(readScope());
+      scope.in_scope = [{ path: repo, why: 'el repositorio temporal donde esta prueba mide la sonda de historia contra git de verdad' }];
+      writeFileSync(join(raiz, 'contracts', 'ablation-scope.json'), JSON.stringify(scope));
+      const errores = [];
+      const code = main(['check', 'docs/ablation.json'], { root: raiz, write: () => {}, writeError: (l) => errores.push(l) });
+      assert.equal(code, 0, `la sonda de historia tenía que contestar:\n${errores.join('\n')}`);
+      assert.ok(errores.some((e) => /la historia de/u.test(e)), 'y el aviso tiene que nombrar el commit del borrado');
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('C1 · FALSIFICACIÓN · un `git mv` NO enciende la sonda de historia', () => {
+  // EL ACOTE QUE LA REFUTACION EXIGIO. Un renombrado produce un registro R que, bajo pathspec sobre
+  // la ruta vieja, `--diff-filter=D` devuelve como si fuera un borrado. Sin descartarlo, cualquier
+  // reorganizacion de carpetas posterior encenderia la sonda sola y el gate empezaria a perdonar
+  // rechazos legitimos -- que es exactamente lo contrario de lo que las sondas existen para hacer.
+  const repo = mkdtempSync(join(tmpdir(), 'vcp-sonda-mv-'));
+  const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
+  try {
+    if (git('init', '-q').status !== 0) return;
+    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.name', 'VCP');
+    mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
+    const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
+    const contenido = 'contenido suficientemente largo como para que git lo detecte como renombrado y no como borrado mas alta\n'.repeat(4);
+    writeFileSync(archivo, contenido);
+    git('add', '-A');
+    git('commit', '-qm', 'antes de reorganizar');
+    const commit = git('rev-parse', 'HEAD').stdout.trim();
+
+    // Reorganizacion: el archivo se MUEVE, no se archiva. Sigue estando, en otra ruta.
+    mkdirSync(join(repo, 'skills', 'seguridad'), { recursive: true });
+    git('mv', 'skills/cyber/SKILL.md', 'skills/seguridad/SKILL.md');
+    git('commit', '-qm', 'reorganizacion de carpetas');
+
+    // Y el archivo vuelve a su ruta vieja: el origen esta presente, como en la celda que importa.
+    writeFileSync(archivo, contenido);
+
+    const r = registro();
+    r.batches[0].archived = [{
+      path: archivo, archived_to: 'skills/cyber/SKILL.md',
+      mode: 'git', repo, commit,
+      repetible: false, requisito: false, repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'dos invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    r.inventory = [{ path: archivo, words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    r.survivors = [];
+
+    const raiz = mkdtempSync(join(tmpdir(), 'vcp-sonda-mv-raiz-'));
+    try {
+      mkdirSync(join(raiz, 'docs'), { recursive: true });
+      mkdirSync(join(raiz, 'contracts'), { recursive: true });
+      writeFileSync(join(raiz, 'docs', 'ablation.json'), JSON.stringify(r));
+      const scope = JSON.parse(readScope());
+      scope.in_scope = [{ path: repo, why: 'el repositorio temporal donde esta prueba mide que un renombrado no encienda la sonda' }];
+      writeFileSync(join(raiz, 'contracts', 'ablation-scope.json'), JSON.stringify(scope));
+      const errores = [];
+      const code = main(['check', 'docs/ablation.json'], { root: raiz, write: () => {}, writeError: (l) => errores.push(l) });
+      assert.equal(code, 1, 'un renombrado no es un archivado: el rechazo se queda');
+      assert.ok(errores.some((e) => /sigue en su lugar/u.test(e)));
+    } finally {
+      rmSync(raiz, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+});
+
+test('C1 · el descarte de renombrado se lee de la salida entera, y falla cerrado', async () => {
+  const { esRenombrado, makeBorradoEnHistoria } = await import('../scripts/verify-ablation.mjs');
+
+  // La forma real de `git show --name-status -M`: R<score>, ruta vieja, ruta nueva.
+  assert.equal(esRenombrado('R100\tskills/cyber/SKILL.md\tskills/seguridad/SKILL.md', 'skills/cyber/SKILL.md'), true);
+  assert.equal(esRenombrado('R100\totra/cosa.md\totra/nueva.md', 'skills/cyber/SKILL.md'), false, 'un renombrado de OTRA ruta no descarta este borrado');
+  assert.equal(esRenombrado('D\tskills/cyber/SKILL.md', 'skills/cyber/SKILL.md'), false);
+  assert.equal(esRenombrado('', 'skills/cyber/SKILL.md'), false);
+
+  // FAIL-CLOSED: si no se puede saber si fue renombrado, no se concluye que fue borrado.
+  const sonda = makeBorradoEnHistoria((_cmd, args) => (args.includes('log')
+    ? { status: 0, stdout: 'abc123|2026-09-02T10:00:00-03:00\n' }
+    : { status: 128, stdout: '' }));
+  assert.equal(sonda('~/.claude', 'a'.repeat(40), 'skills/cyber/SKILL.md'), null,
+    'sin poder descartar el renombrado, la sonda no tiene evidencia y el rechazo se queda');
+
+  // Y con la salida disponible, el borrado se reporta con su commit y su fecha.
+  const buena = makeBorradoEnHistoria((_cmd, args) => (args.includes('log')
+    ? { status: 0, stdout: 'abc123|2026-09-02T10:00:00-03:00\n' }
+    : { status: 0, stdout: 'D\tskills/cyber/SKILL.md\n' }));
+  assert.deepEqual(buena('~/.claude', 'a'.repeat(40), 'skills/cyber/SKILL.md'), { commit: 'abc123', fecha: '2026-09-02T10:00:00-03:00' });
+
+  // Un log que falla tampoco inventa nada.
+  assert.equal(makeBorradoEnHistoria(() => ({ status: 128, stdout: '' }))('~/.claude', 'a'.repeat(40), 'x'), null);
+});

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -243,4 +243,62 @@ test('el tope de tiempo del gate deja margen sobre la prueba más lenta que el p
   const tardo = Date.now() - inicio;
   assert.equal(r.status, 0, `${masLento} tiene que pasar, o lo que se mide no es su duración`);
   assert.ok(tardo < TAP_TIMEOUT_MS, `${masLento} tarda ${Math.round(tardo / 1000)} s y el tope es ${TAP_TIMEOUT_MS / 1000} s: vincular un requisito a ese archivo lo marcaría TIMEOUT por lento, no por roto`);
+});
+
+// --- El lexer estaba ciego a los literales de expresion regular ---------------------------------
+//
+// LA HERIDA, medida el 2026-09-08 sobre tests/*.test.mjs: una comilla adentro de un regex metia al
+// escaner en modo cadena y se tragaba todo hasta la siguiente comilla suelta. Doce declaraciones
+// test() REALES quedaban invisibles en siete archivos -- el tramo mayor, 3.702 bytes en
+// tests/home-intacto.test.mjs --, y sobre scripts/ llegaba a 15.643 bytes.
+//
+// La consecuencia no era cosmetica: vincular un requisito a cualquiera de esas doce pruebas daba
+// DISCOVERY_TEST_BINDING_STATIC_INVALID sobre una prueba que esta a la vista y pasa en verde. Un
+// falso positivo BLOQUEANTE, ya publicado.
+
+test('FALSIFICACIÓN · una comilla adentro de un regex no se traga la declaración que sigue', () => {
+  const fuente = [
+    "const RE = /^:root:not\(\[data-theme=[\"']?light[\"']?\]\)$/u;",
+    "test('la declaración que viene después del regex tiene que verse', () => {});",
+  ].join('\n');
+  assert.equal(hasLiteralTestDeclaration(fuente, 'la declaración que viene después del regex tiene que verse'), true);
+});
+
+test('FALSIFICACIÓN · una división no se confunde con un regex, y un regex con llaves tampoco', () => {
+  const division = [
+    'const mitad = total / 2;',
+    "test('después de una división', () => {});",
+  ].join('\n');
+  assert.equal(hasLiteralTestDeclaration(division, 'después de una división'), true);
+
+  const claseYEscape = [
+    "const RE = /[/'\"]\\//gu;",
+    "test('después de una clase con barra y comillas', () => {});",
+  ].join('\n');
+  assert.equal(hasLiteralTestDeclaration(claseYEscape, 'después de una clase con barra y comillas'), true);
+});
+
+test('una declaración con backtick se ve, y una interpolada no se puede casar', () => {
+  assert.equal(hasLiteralTestDeclaration('test(`con backtick`, () => {});', 'con backtick'), true);
+  // Un nombre interpolado no tiene forma literal: no se adivina, se declara como límite.
+  assert.equal(hasLiteralTestDeclaration('test(`AC1 · tope ${MAX}`, () => {});', 'AC1 · tope 5'), false);
+});
+
+test('EL DETECTOR DEL DETECTOR · toda declaración real de tests/ la ve el escáner', SOLO_FUENTE, () => {
+  // El lexer no puede ser su propio detector. Se usa un segundo implementador con modo de falla
+  // distinto: un regex anclado a linea, sin estado, sobre los archivos reales del repositorio. Es
+  // el metodo con el que se encontro el defecto, y agarra la regresion cuando alguien escriba el
+  // proximo regex con comillas adentro.
+  const DECLARACION = /^\s*(?:test|it)(?:\.(?:skip|todo))?\s*\(\s*(['"`])((?:\\.|(?!\1)[\s\S])*?)\1/gmu;
+  const invisibles = [];
+  for (const archivo of readdirSync(join(repoRoot, 'tests')).filter((n) => n.endsWith('.test.mjs'))) {
+    const fuente = readFileSync(join(repoRoot, 'tests', archivo), 'utf8');
+    for (const [, comilla, nombre] of fuente.matchAll(DECLARACION)) {
+      // Un nombre interpolado no tiene forma literal: queda fuera por declaración, no por descuido.
+      if (comilla === '`' && nombre.includes('${')) continue;
+      const literal = nombre.replace(/\\(.)/gu, '$1');
+      if (!hasLiteralTestDeclaration(fuente, literal)) invisibles.push(`${archivo}: ${literal}`);
+    }
+  }
+  assert.deepEqual(invisibles, [], `${invisibles.length} declaración(es) reales que el escáner no ve`);
 });

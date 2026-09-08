@@ -235,3 +235,52 @@ test('CLI default entrypoint and direct run use controlled output', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /EVIDENCE_RECORD_INVALID/);
 });
+
+// --- Los shims de Windows: legales de declarar, imposibles de lanzar ----------------------------
+//
+// LA HERIDA, medida el 2026-09-08 en la plataforma primaria del repositorio (Win11, Node v24):
+// `npm`, `pnpm` y `yarn` estan en ALLOWED_EXECUTABLES y los tres dan ENOENT con spawnSync sin
+// shell, aunque esten instalados: son shims `.cmd` y Node no resuelve PATHEXT sin shell. O sea que
+// un vector `npm test` es LEGAL DE DECLARAR e IMPOSIBLE DE CORRER, y el registro salia `failed`
+// hablando del comando cuando el que fallo fue el lanzador.
+//
+// NO se resuelve el shim. Hacerlo significa buscar el `.cmd` en el PATH o pasar por `cmd /c`, y eso
+// abre la via de inyeccion de argumentos de Windows en el UNICO gate del repositorio que lanza
+// procesos. Lo que se arregla es el DIAGNOSTICO: que el registro diga la causa real.
+
+test('un shim de Windows que no arranca dice la causa, no culpa al comando', () => {
+  const { record } = runEvidence(
+    { schema: REQUEST_SCHEMA, command: ['npm', 'test'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null },
+    { run: () => ({ error: { code: 'ENOENT' }, status: null, stdout: '', stderr: '' }) },
+  );
+  assert.equal(record.status, 'failed', 'sigue siendo un fallo: no se disfraza de verde');
+  assert.match(record.stderr_tail, /npm/u);
+  assert.match(record.stderr_tail, /shim/iu);
+  assert.match(record.stderr_tail, /node /u, 'tiene que decir con qué reemplazarlo');
+});
+
+test('FALSIFICACIÓN · un ENOENT de un ejecutable que NO es shim no inventa el diagnóstico', () => {
+  const { record } = runEvidence(
+    { schema: REQUEST_SCHEMA, command: ['cargo', 'test'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null },
+    { run: () => ({ error: { code: 'ENOENT' }, status: null, stdout: '', stderr: '' }) },
+  );
+  assert.equal(record.status, 'failed');
+  assert.doesNotMatch(record.stderr_tail, /shim/iu);
+});
+
+test('FALSIFICACIÓN · un fallo normal del comando no se contamina con el diagnóstico del shim', () => {
+  const { record } = runEvidence(
+    { schema: REQUEST_SCHEMA, command: ['npm', 'test'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null },
+    { run: () => ({ status: 1, stdout: '', stderr: '3 failing', signal: null }) },
+  );
+  assert.equal(record.stderr_tail, '3 failing');
+});
+
+test('el diagnóstico del shim se agrega DEBAJO de lo que el proceso ya había escrito', () => {
+  const { record } = runEvidence(
+    { schema: REQUEST_SCHEMA, command: ['pnpm', 'test'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null },
+    { run: () => ({ error: { code: 'ENOENT' }, status: null, stdout: '', stderr: 'algo que el lanzador alcanzó a escribir' }) },
+  );
+  assert.match(record.stderr_tail, /^algo que el lanzador alcanzó a escribir\n/u, 'lo que ya estaba no se pisa');
+  assert.match(record.stderr_tail, /pnpm: ENOENT/u);
+});
