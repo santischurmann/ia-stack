@@ -1411,6 +1411,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-stack-matrix-mutacion.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-stack-matrix.test.mjs",
       "class": "prueba"
     },

@@ -3,7 +3,7 @@
   "why": "Que le alcanza a un proyecto del plan gratuito de cada servicio, y que evento concreto lo saca de ahi. Lo importante no es el cupo: es el disparador, porque casi ninguno es un numero que se pueda ver venir.",
   "revalidated": "2026-09-14",
   "max_age_days": 90,
-  "method": "Lectura de las paginas oficiales de precios y limites de cada proveedor el 2026-09-14. No se creo ninguna cuenta ni se aprovisiono nada. Cada numero tiene su URL en captured_from. Lo que no se pudo verificar esta declarado en research/sources/free-tiers-2026-09-14.md en vez de completado aca.",
+  "method": "Lectura de las paginas oficiales de precios y limites de cada proveedor el 2026-09-14. No se creo ninguna cuenta ni se aprovisiono nada. Cada numero tiene su URL en captured_from. Lo que no se pudo verificar esta declarado en research/sources/free-tiers-2026-09-14.md en vez de completado aca. CORRECCION del 2026-09-14 tras una ronda adversarial: se quitaron dieciseis numeros que esta ficha NO contiene -- tarifas de excedente de seis servicios y limites secundarios de otros cuatro -- y se reemplazaron por el hueco declarado. El patron era relleno hacia abajo: lo que la ficha decia estaba bien copiado, y lo que no decia se completaba igual, justo en los campos que nadie mira hasta que llega la factura. Se quito ademas la entrada de firma de codigo: no es un plan gratuito de ningun servicio, y para que entrara habia habido que escribirle un plan_name que no es un plan y un centinela numerico para un valor que no es numero. La regla la empujaba; ahora la fila que la necesitaba declara su motivo y no referencia nada.",
   "services": [
     {
       "service_id": "vercel-hobby",
@@ -11,20 +11,80 @@
       "captured_from": "https://vercel.com/docs/limits",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "fast_data_transfer", "value": 100, "unit": "GB/mes", "hard": true },
-        { "metric": "fast_origin_transfer", "value": 10, "unit": "GB/mes", "hard": true },
-        { "metric": "edge_requests", "value": 1000000, "unit": "peticiones/mes", "hard": true },
-        { "metric": "function_invocations", "value": 1000000, "unit": "invocaciones/mes", "hard": true },
-        { "metric": "active_cpu", "value": 4, "unit": "horas de CPU/mes", "hard": true },
-        { "metric": "function_duration", "value": 300, "unit": "segundos", "hard": true },
-        { "metric": "deployments", "value": 100, "unit": "por dia", "hard": true },
-        { "metric": "projects", "value": 200, "unit": "proyectos", "hard": true }
+        {
+          "metric": "fast_data_transfer",
+          "value": 100,
+          "unit": "GB/mes",
+          "hard": true
+        },
+        {
+          "metric": "fast_origin_transfer",
+          "value": 10,
+          "unit": "GB/mes",
+          "hard": true
+        },
+        {
+          "metric": "edge_requests",
+          "value": 1000000,
+          "unit": "peticiones/mes",
+          "hard": true
+        },
+        {
+          "metric": "function_invocations",
+          "value": 1000000,
+          "unit": "invocaciones/mes",
+          "hard": true
+        },
+        {
+          "metric": "active_cpu",
+          "value": 4,
+          "unit": "horas de CPU/mes",
+          "hard": true
+        },
+        {
+          "metric": "function_duration",
+          "value": 300,
+          "unit": "segundos",
+          "hard": true
+        },
+        {
+          "metric": "deployments",
+          "value": 100,
+          "unit": "por dia",
+          "hard": true
+        },
+        {
+          "metric": "projects",
+          "value": 200,
+          "unit": "proyectos",
+          "hard": true
+        },
+        {
+          "metric": "builds_por_hora",
+          "value": 100,
+          "unit": "builds/hora",
+          "hard": true
+        },
+        {
+          "metric": "build_time",
+          "value": 45,
+          "unit": "minutos por deployment",
+          "hard": true
+        }
       ],
       "upgrade_trigger": "Usar el proyecto con fin comercial. La definicion oficial incluye textualmente a un empleado o consultor pago que escribe el codigo, asi que cobrar por hacer el sitio ya saca del plan. NO ES UN NUMERO: no hay contador, ni alerta, ni barra de consumo. El segundo disparador es conectar el proyecto a un repositorio que pertenezca a una organizacion de Git. El tercero, cruzar cualquier cupo, que pausa la funcion treinta dias en vez de facturarla.",
       "paid_from": "USD 20 por mes y por asiento de developer, con USD 20 de credito mensual incluido",
       "escalation": [
-        { "when": "El proyecto pasa a ser comercial, o se conecta a un repositorio de organizacion", "to_plan": "Pro", "cost_note": "USD 20 por mes y por asiento; los asientos de solo lectura no se cobran" },
-        { "when": "Se cruza un cupo mensual dentro del plan Pro", "to_plan": "Pro con excedente", "cost_note": "USD 0.60 por millon de invocaciones, USD 0.128 por hora de CPU activa, USD 0.15 por GB de transferencia" }
+        {
+          "when": "El proyecto pasa a ser comercial, o se conecta a un repositorio de organizacion",
+          "to_plan": "Pro",
+          "cost_note": "USD 20 por mes y por asiento de developer, con USD 20 de credito mensual incluido."
+        },
+        {
+          "when": "Se cruza un cupo mensual dentro del plan Pro",
+          "to_plan": "Pro con excedente",
+          "cost_note": "Tarifas de excedente del plan Pro: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -33,18 +93,56 @@
       "captured_from": "https://neon.com/docs/introduction/plans",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "compute", "value": 100, "unit": "CU-horas por proyecto/mes", "hard": true },
-        { "metric": "storage", "value": 0.5, "unit": "GB por proyecto", "hard": true },
-        { "metric": "branches", "value": 10, "unit": "por proyecto", "hard": true },
-        { "metric": "projects", "value": 100, "unit": "por organizacion", "hard": true },
-        { "metric": "egress", "value": 5, "unit": "GB por proyecto/mes", "hard": true },
-        { "metric": "autoscaling", "value": 2, "unit": "CU maximas", "hard": true }
+        {
+          "metric": "compute",
+          "value": 100,
+          "unit": "CU-horas por proyecto/mes",
+          "hard": true
+        },
+        {
+          "metric": "storage",
+          "value": 0.5,
+          "unit": "GB por proyecto",
+          "hard": true
+        },
+        {
+          "metric": "branches",
+          "value": 10,
+          "unit": "por proyecto",
+          "hard": true
+        },
+        {
+          "metric": "projects",
+          "value": 100,
+          "unit": "por organizacion",
+          "hard": true
+        },
+        {
+          "metric": "egress",
+          "value": 5,
+          "unit": "GB por proyecto/mes",
+          "hard": true
+        },
+        {
+          "metric": "autoscaling",
+          "value": 2,
+          "unit": "CU maximas",
+          "hard": true
+        }
       ],
-      "upgrade_trigger": "Agotar las 100 horas de computo del proyecto en el mes, que suspende el computo hasta el proximo periodo. La documentacion aclara que no se borran datos. Tambien saca del plan querer cualquiera de estas cuatro cosas, que son solo de pago: desactivar el apagado automatico a los cinco minutos, pasar de 2 CU de autoescalado, tener mas de diez ramas, o guardar mas de medio gigabyte en un proyecto.",
+      "upgrade_trigger": "Agotar las 100 CU-horas de computo del proyecto en el mes, que suspende el computo hasta el proximo periodo. La documentacion aclara que no se borran datos. Tambien saca del plan querer cualquiera de estas cuatro cosas, que son solo de pago: desactivar el apagado automatico a los cinco minutos, pasar de 2 CU de autoescalado, tener mas de diez ramas, o guardar mas de medio gigabyte en un proyecto.",
       "paid_from": "Launch, sin minimo mensual: se paga por uso",
       "escalation": [
-        { "when": "Se agotan las horas de computo, o hace falta desactivar el apagado automatico", "to_plan": "Launch", "cost_note": "USD 0.106 por CU-hora y USD 0.35 por GB-mes de almacenamiento, sin cargo minimo" },
-        { "when": "Hacen falta mas de diez ramas", "to_plan": "Launch", "cost_note": "Diez ramas incluidas, USD 1.50 por rama adicional por mes" }
+        {
+          "when": "Se agotan las horas de computo, o hace falta desactivar el apagado automatico",
+          "to_plan": "Launch",
+          "cost_note": "USD 0.106 por CU-hora y USD 0.35 por GB-mes de almacenamiento, sin cargo minimo"
+        },
+        {
+          "when": "Hacen falta mas de diez ramas",
+          "to_plan": "Launch",
+          "cost_note": "Precio por rama adicional: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -53,18 +151,56 @@
       "captured_from": "https://supabase.com/pricing",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "database_size", "value": 500, "unit": "MB por proyecto", "hard": true },
-        { "metric": "egress", "value": 5, "unit": "GB/mes", "hard": true },
-        { "metric": "file_storage", "value": 1, "unit": "GB", "hard": true },
-        { "metric": "monthly_active_users", "value": 50000, "unit": "usuarios", "hard": true },
-        { "metric": "edge_function_invocations", "value": 500000, "unit": "invocaciones/mes", "hard": true },
-        { "metric": "active_projects", "value": 2, "unit": "proyectos", "hard": true }
+        {
+          "metric": "database_size",
+          "value": 500,
+          "unit": "MB por proyecto",
+          "hard": true
+        },
+        {
+          "metric": "egress",
+          "value": 5,
+          "unit": "GB/mes",
+          "hard": true
+        },
+        {
+          "metric": "file_storage",
+          "value": 1,
+          "unit": "GB",
+          "hard": true
+        },
+        {
+          "metric": "monthly_active_users",
+          "value": 50000,
+          "unit": "usuarios",
+          "hard": true
+        },
+        {
+          "metric": "edge_function_invocations",
+          "value": 500000,
+          "unit": "invocaciones/mes",
+          "hard": true
+        },
+        {
+          "metric": "active_projects",
+          "value": 2,
+          "unit": "proyectos",
+          "hard": true
+        }
       ],
       "upgrade_trigger": "Siete dias de baja actividad de base de datos pausan el proyecto. La documentacion precisa que alcanza con unas pocas peticiones diarias para evitarlo, asi que el disparador real es dejar la aplicacion sin trafico una semana, no crecer. El segundo disparador es querer un tercer proyecto activo. El plan gratuito nunca genera cargos por excedente: corta o pasa a solo lectura.",
       "paid_from": "Pro, USD 25 por mes, con USD 10 de creditos de computo incluidos",
       "escalation": [
-        { "when": "La aplicacion tiene que sobrevivir semanas sin trafico, o hace falta un tercer proyecto", "to_plan": "Pro", "cost_note": "USD 25 por mes de base, con 100 mil usuarios activos y 8 GB de disco por proyecto" },
-        { "when": "Se cruzan los cupos del plan Pro", "to_plan": "Pro con excedente", "cost_note": "USD 0.125 por GB de disco, USD 0.09 por GB de egreso, USD 0.00325 por usuario activo" }
+        {
+          "when": "La aplicacion tiene que sobrevivir semanas sin trafico, o hace falta un tercer proyecto",
+          "to_plan": "Pro",
+          "cost_note": "USD 25 por mes de base, con USD 10 mensuales de creditos de computo incluidos. Lo que el plan Pro incluye en cupos: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        },
+        {
+          "when": "Se cruzan los cupos del plan Pro",
+          "to_plan": "Pro con excedente",
+          "cost_note": "Tarifas de excedente del plan Pro: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado. Lo que la ficha SI dice es que el plan gratuito nunca genera cargos por excedente: corta o pasa a solo lectura."
+        }
       ]
     },
     {
@@ -73,17 +209,38 @@
       "captured_from": "https://developers.cloudflare.com/workers/platform/limits/",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "requests", "value": 100000, "unit": "peticiones/dia", "hard": true },
-        { "metric": "cpu_time", "value": 10, "unit": "milisegundos por invocacion", "hard": true },
-        { "metric": "memory", "value": 128, "unit": "MB por aislamiento", "hard": true },
-        { "metric": "subrequests", "value": 50, "unit": "por peticion", "hard": true },
-        { "metric": "scripts", "value": 100, "unit": "por cuenta", "hard": true }
+        {
+          "metric": "requests",
+          "value": 100000,
+          "unit": "peticiones/dia",
+          "hard": true
+        },
+        {
+          "metric": "cpu_time",
+          "value": 10,
+          "unit": "milisegundos por invocacion",
+          "hard": true
+        },
+        {
+          "metric": "memory",
+          "value": 128,
+          "unit": "MB por aislamiento",
+          "hard": true
+        }
       ],
-      "upgrade_trigger": "Una sola peticion que necesite mas de diez milisegundos de procesador. El limite que importa no es el que se mira: casi nadie llega a las cien mil peticiones diarias, pero un hash de contrasena o una transformacion de imagen mata una unica peticion. El segundo disparador es la peticion numero cien mil y uno de un dia UTC, que devuelve error el resto del dia. Es el unico plan gratuito de los revisados que no prohibe uso comercial ni pausa por inactividad.",
+      "upgrade_trigger": "Una sola peticion que necesite mas de diez milisegundos de procesador. El limite que importa no es el que se mira: casi nadie llega a las cien mil peticiones diarias, pero un hash de contrasena o una transformacion de imagen mata una unica peticion. El segundo disparador es la peticion numero cien mil y uno de un dia UTC, que devuelve error el resto del dia. La ficha lo senala como el unico de los proveedores que reviso cuyo plan gratuito no prohibe uso comercial ni pausa por inactividad.",
       "paid_from": "Workers Paid, minimo USD 5 por mes",
       "escalation": [
-        { "when": "Alguna operacion necesita mas de diez milisegundos de procesador", "to_plan": "Workers Paid", "cost_note": "USD 5 por mes minimo, con CPU hasta cinco minutos por invocacion y treinta millones de milisegundos de CPU incluidos" },
-        { "when": "Se superan los diez millones de peticiones mensuales del plan pago", "to_plan": "Workers Paid con excedente", "cost_note": "USD 0.30 por millon de peticiones y USD 0.02 por millon de milisegundos de CPU" }
+        {
+          "when": "Alguna operacion necesita mas de diez milisegundos de procesador",
+          "to_plan": "Workers Paid",
+          "cost_note": "USD 5 por mes minimo, con CPU hasta cinco minutos por invocacion y treinta millones de milisegundos de CPU incluidos"
+        },
+        {
+          "when": "Se superan los diez millones de peticiones mensuales del plan pago",
+          "to_plan": "Workers Paid con excedente",
+          "cost_note": "Tarifas de excedente sobre el plan pago: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -92,16 +249,27 @@
       "captured_from": "https://developers.cloudflare.com/pages/platform/limits/",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "builds", "value": 500, "unit": "por mes", "hard": true },
-        { "metric": "concurrent_builds", "value": 1, "unit": "build", "hard": true },
-        { "metric": "files_per_site", "value": 20000, "unit": "archivos", "hard": true },
-        { "metric": "max_file_size", "value": 25, "unit": "MiB", "hard": true },
-        { "metric": "build_timeout", "value": 20, "unit": "minutos", "hard": true }
+        {
+          "metric": "builds",
+          "value": 500,
+          "unit": "por mes",
+          "hard": true
+        },
+        {
+          "metric": "static_asset_requests",
+          "value": -1,
+          "unit": "gratis e ilimitadas, no cuentan contra ningun cupo",
+          "hard": false
+        }
       ],
-      "upgrade_trigger": "El build numero quinientos uno del mes. Las peticiones a archivos estaticos son gratis e ilimitadas y no cuentan contra ningun cupo, asi que el trafico no es el disparador: lo es la frecuencia de publicacion. Si el sitio usa funciones, esas si consumen el cupo diario de Workers.",
+      "upgrade_trigger": "El build numero quinientos uno del mes. Las peticiones a archivos estaticos son gratis e ilimitadas y no cuentan contra ningun cupo, asi que el trafico no es el disparador: lo es la frecuencia de publicacion.",
       "paid_from": "Workers Paid, minimo USD 5 por mes, que tambien cubre Pages",
       "escalation": [
-        { "when": "Se publica mas de quinientas veces por mes, o el sitio pasa a usar funciones con volumen", "to_plan": "Workers Paid", "cost_note": "USD 5 por mes minimo; los builds pasan a cinco mil mensuales" }
+        {
+          "when": "Se publica mas de quinientas veces por mes, o el sitio pasa a usar funciones con volumen",
+          "to_plan": "Workers Paid",
+          "cost_note": "Workers Paid, minimo USD 5 por mes. Cuantos builds incluye ese plan: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -110,16 +278,51 @@
       "captured_from": "https://railway.com/pricing",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "monthly_credit", "value": 1, "unit": "USD por mes, no acumulable", "hard": true },
-        { "metric": "vcpu", "value": 1, "unit": "por servicio", "hard": true },
-        { "metric": "memory", "value": 0.5, "unit": "GB por servicio", "hard": true },
-        { "metric": "replicas", "value": 1, "unit": "replica", "hard": true },
-        { "metric": "log_retention", "value": 3, "unit": "dias", "hard": true }
+        {
+          "metric": "monthly_credit",
+          "value": 1,
+          "unit": "USD por mes, no acumulable",
+          "hard": null
+        },
+        {
+          "metric": "vcpu",
+          "value": 1,
+          "unit": "por servicio",
+          "hard": true
+        },
+        {
+          "metric": "memory",
+          "value": 0.5,
+          "unit": "GB por servicio",
+          "hard": true
+        },
+        {
+          "metric": "replicas",
+          "value": 1,
+          "unit": "replica",
+          "hard": true
+        },
+        {
+          "metric": "log_retention",
+          "value": 3,
+          "unit": "dias",
+          "hard": true
+        },
+        {
+          "metric": "volume_deletion",
+          "value": 30,
+          "unit": "dias despues de expirar el credito",
+          "hard": true
+        }
       ],
-      "upgrade_trigger": "Consumir el credito de un dolar del mes, que a los precios del proveedor son horas y no un mes completo: el plan gratuito NO alcanza para un servicio encendido todo el tiempo. El segundo disparador es necesitar mas de un procesador virtual, medio gigabyte de memoria o una segunda replica.",
+      "upgrade_trigger": "Consumir el credito de un dolar del mes, que a los precios del proveedor son horas y no un mes completo: el plan gratuito NO alcanza para un servicio encendido todo el tiempo. La ficha declaro NO VERIFICADO que pasa exactamente al agotarlo, si corta o si factura, y por eso ese cupo lleva hard en null. El segundo disparador es necesitar mas de un procesador virtual, medio gigabyte de memoria o una segunda replica.",
       "paid_from": "Hobby, USD 5 por mes, que incluye USD 5 de uso",
       "escalation": [
-        { "when": "El servicio tiene que estar encendido de forma permanente", "to_plan": "Hobby", "cost_note": "USD 5 por mes con USD 5 de uso incluido, hasta 48 procesadores virtuales por servicio" }
+        {
+          "when": "El servicio tiene que estar encendido de forma permanente",
+          "to_plan": "Hobby",
+          "cost_note": "USD 5 por mes con USD 5 de uso incluido. Los topes de recursos de ese plan: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -128,19 +331,62 @@
       "captured_from": "https://render.com/docs/free",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "instance_hours", "value": 750, "unit": "horas/mes por espacio de trabajo", "hard": true },
-        { "metric": "cpu", "value": 0.1, "unit": "CPU por servicio gratuito", "hard": true },
-        { "metric": "memory", "value": 512, "unit": "MB por servicio gratuito", "hard": true },
-        { "metric": "spin_down", "value": 15, "unit": "minutos sin trafico", "hard": true },
-        { "metric": "outbound_bandwidth", "value": 5, "unit": "GB/mes", "hard": false },
-        { "metric": "build_minutes", "value": 500, "unit": "minutos/mes", "hard": false },
-        { "metric": "free_postgres_lifetime", "value": 30, "unit": "dias desde su creacion", "hard": true }
+        {
+          "metric": "instance_hours",
+          "value": 750,
+          "unit": "horas/mes por espacio de trabajo",
+          "hard": true
+        },
+        {
+          "metric": "cpu",
+          "value": 0.1,
+          "unit": "CPU por servicio gratuito",
+          "hard": true
+        },
+        {
+          "metric": "memory",
+          "value": 512,
+          "unit": "MB por servicio gratuito",
+          "hard": true
+        },
+        {
+          "metric": "spin_down",
+          "value": 15,
+          "unit": "minutos sin trafico",
+          "hard": true
+        },
+        {
+          "metric": "outbound_bandwidth",
+          "value": 5,
+          "unit": "GB/mes",
+          "hard": null
+        },
+        {
+          "metric": "build_minutes",
+          "value": 500,
+          "unit": "minutos/mes",
+          "hard": null
+        },
+        {
+          "metric": "free_postgres_lifetime",
+          "value": 30,
+          "unit": "dias desde su creacion; la base es de 1 GB",
+          "hard": true
+        }
       ],
-      "upgrade_trigger": "El dia treinta de vida de la base PostgreSQL gratuita, que EXPIRA en vez de degradarse. Es el disparador mas destructivo de los revisados. El segundo es pasar de cinco gigabytes de ancho de banda en el mes, que factura si hay medio de pago y corta todos los servicios gratuitos si no lo hay. El tercero son las setecientas cincuenta horas de instancia: un servicio encendido todo el mes son unas setecientas veinte, asi que uno entra justo y dos no.",
+      "upgrade_trigger": "El dia treinta de vida de la base PostgreSQL gratuita, que EXPIRA en vez de degradarse. Es el disparador mas destructivo de los revisados. El segundo es pasar de cinco gigabytes de ancho de banda en el mes, que factura si hay medio de pago y corta todos los servicios gratuitos si no lo hay. El tercero son las setecientas cincuenta horas de instancia: un servicio encendido todo el mes son unas setecientas veinte, asi que uno entra justo y dos no. Los dos cupos con hard en null lo llevan porque su comportamiento DEPENDE del medio de pago: la ficha dice que factura si hay uno y corta todos los servicios gratuitos si no lo hay, asi que ningun booleano los describe. Ese ancho de banda bajo de 100 GB a 5 en abril de 2026, un recorte de veinte veces y el unico recorte real a un plan gratuito en la ventana revisada.",
       "paid_from": "Instancia Starter, cuyo precio exacto no se pudo verificar; a nivel espacio de trabajo, Pro USD 25 por mes",
       "escalation": [
-        { "when": "La base de datos tiene que sobrevivir mas de treinta dias", "to_plan": "Instancia de base de datos paga", "cost_note": "Precio exacto no verificado: la pagina de precios del proveedor devolvio error al consultarla el 2026-09-14" },
-        { "when": "Se pasa de cinco gigabytes de ancho de banda mensual", "to_plan": "Hobby con excedente o Pro", "cost_note": "USD 0.15 por GB publico; Pro son USD 25 por mes con 25 GB incluidos" }
+        {
+          "when": "La base de datos tiene que sobrevivir mas de treinta dias",
+          "to_plan": "Instancia de base de datos paga",
+          "cost_note": "Precio exacto no verificado: la pagina de precios del proveedor devolvio error al consultarla el 2026-09-14"
+        },
+        {
+          "when": "Se pasa de cinco gigabytes de ancho de banda mensual",
+          "to_plan": "Hobby con excedente o Pro",
+          "cost_note": "USD 0.15 por GB publico de excedente. El plan Pro es USD 25 por mes flat; cuanto ancho de banda incluye: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
@@ -149,16 +395,38 @@
       "captured_from": "https://docs.github.com/en/billing/concepts/product-billing/github-actions",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "minutes_private_repo", "value": 2000, "unit": "minutos/mes", "hard": false },
-        { "metric": "artifact_storage", "value": 500, "unit": "MB", "hard": false },
-        { "metric": "cache_storage", "value": 10, "unit": "GB por repositorio", "hard": false },
-        { "metric": "minutes_public_repo", "value": -1, "unit": "ilimitados con ejecutores estandar", "hard": false }
+        {
+          "metric": "minutes_private_repo",
+          "value": 2000,
+          "unit": "minutos/mes",
+          "hard": null
+        },
+        {
+          "metric": "artifact_storage",
+          "value": 500,
+          "unit": "MB",
+          "hard": false
+        },
+        {
+          "metric": "minutes_public_repo",
+          "value": -1,
+          "unit": "ilimitados con ejecutores estandar",
+          "hard": false
+        }
       ],
-      "upgrade_trigger": "Cambiar el repositorio de publico a privado. El mismo flujo de trabajo que corria gratis empieza a consumir cuota desde el envio siguiente. El segundo disparador es elegir ejecutores de macOS: a su tarifa, los dos mil minutos gratuitos equivalen a unos treinta y dos minutos de esa plataforma. Sin medio de pago el uso se bloquea al agotar la cuota; con medio de pago se factura el excedente automaticamente.",
+      "upgrade_trigger": "Cambiar el repositorio de publico a privado. El mismo flujo de trabajo que corria gratis empieza a consumir cuota desde el envio siguiente. El segundo disparador es elegir ejecutores de macOS: a su tarifa, los dos mil minutos gratuitos equivalen a unos treinta y dos minutos de esa plataforma. Sin medio de pago el uso se bloquea al agotar la cuota; con medio de pago se factura el excedente automaticamente. El cupo de minutos lleva hard en null porque su comportamiento DEPENDE del medio de pago: sin uno el uso se bloquea al agotar la cuota, con uno se factura el excedente. Ningun booleano describe las dos.",
       "paid_from": "Excedente facturado por minuto sobre la cuota del plan",
       "escalation": [
-        { "when": "El repositorio pasa a privado y se agota la cuota mensual", "to_plan": "Excedente sobre el plan Free", "cost_note": "USD 0.006 por minuto en Linux de dos nucleos, USD 0.010 en Windows, USD 0.062 en macOS" },
-        { "when": "Hace falta mas cuota incluida", "to_plan": "Team o superior", "cost_note": "Team incluye tres mil minutos mensuales y 2 GB de almacenamiento de artefactos" }
+        {
+          "when": "El repositorio pasa a privado y se agota la cuota mensual",
+          "to_plan": "Excedente sobre el plan Free",
+          "cost_note": "USD 0.006 por minuto en Linux de dos nucleos, USD 0.010 en Windows, USD 0.062 en macOS"
+        },
+        {
+          "when": "Hace falta mas cuota incluida",
+          "to_plan": "Team o superior",
+          "cost_note": "Team incluye tres mil minutos mensuales y 2 GB de almacenamiento de artefactos"
+        }
       ]
     },
     {
@@ -167,33 +435,68 @@
       "captured_from": "https://fly.io/docs/about/free-trial/",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "runtime", "value": 2, "unit": "horas de maquina virtual en total", "hard": true },
-        { "metric": "trial_duration", "value": 7, "unit": "dias", "hard": true },
-        { "metric": "machines", "value": 10, "unit": "maquinas con apagado automatico", "hard": true },
-        { "metric": "volume", "value": 20, "unit": "GB", "hard": true }
+        {
+          "metric": "runtime",
+          "value": 2,
+          "unit": "horas de maquina virtual en total",
+          "hard": true
+        },
+        {
+          "metric": "trial_duration",
+          "value": 7,
+          "unit": "dias",
+          "hard": true
+        }
       ],
       "upgrade_trigger": "Consumir las dos horas de maquina virtual o cumplir los siete dias, lo que pase primero: ahi las aplicaciones dejan de correr. Agregar una tarjeta TERMINA el periodo de prueba en ese instante y arranca la facturacion. No hay plan gratuito permanente: los planes con asignaciones gratuitas se discontinuaron el 2024-10-07.",
       "paid_from": "USD 2.02 por mes la maquina mas barata",
       "escalation": [
-        { "when": "Se agota el periodo de prueba, por horas o por dias", "to_plan": "Pago por uso", "cost_note": "Desde USD 2.02 por mes una maquina compartida de 256 MB" }
+        {
+          "when": "Se agota el periodo de prueba, por horas o por dias",
+          "to_plan": "Pago por uso",
+          "cost_note": "Desde USD 2.02 por mes la maquina mas barata. Sus especificaciones: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     },
     {
-      "service_id": "firma-codigo-windows",
-      "plan_name": "Sin firma, apoyandose solo en reputacion",
-      "captured_from": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options",
+      "service_id": "cloudflare-d1",
+      "plan_name": "D1 Free",
+      "captured_from": "https://developers.cloudflare.com/d1/platform/limits/",
       "captured_at": "2026-09-14",
       "limits": [
-        { "metric": "certificate_cost", "value": 0, "unit": "USD mientras no se firme", "hard": true },
-        { "metric": "reputation_build_time", "value": -1, "unit": "varias semanas y cientos de instalaciones limpias", "hard": true },
-        { "metric": "certificate_validity", "value": 458, "unit": "dias maximos desde febrero de 2026", "hard": true }
+        {
+          "metric": "rows_read",
+          "value": 5000000,
+          "unit": "filas/dia",
+          "hard": true
+        },
+        {
+          "metric": "rows_written",
+          "value": 100000,
+          "unit": "filas/dia",
+          "hard": true
+        },
+        {
+          "metric": "database_size",
+          "value": 500,
+          "unit": "MB por base",
+          "hard": true
+        },
+        {
+          "metric": "total_storage",
+          "value": 5,
+          "unit": "GB por cuenta",
+          "hard": true
+        }
       ],
-      "upgrade_trigger": "Distribuir un ejecutable a alguien que no confie en el de antemano. En Windows 11, el control de aplicaciones bloquea la ejecucion de archivos sin firma que no tengan reputacion positiva, y aplica a todos los ejecutables y no solo a los descargados. Desde junio de 2023 la clave privada tiene que vivir en un modulo de hardware o token fisico, tanto para certificados de validacion de organizacion como para los extendidos. La opcion economica de Microsoft esta limitada a organizaciones de Estados Unidos, Canada, la Union Europea y el Reino Unido, y a desarrolladores individuales solo de Estados Unidos y Canada.",
-      "paid_from": "Certificado de validacion de organizacion con token: del orden de EUR 139 a 209, o USD 219 por ano",
+      "upgrade_trigger": "La fila 5.000.001 leida o la 100.001 escrita en un dia. La documentacion dice textualmente que al tocar el limite diario no se pueden correr consultas y la interfaz devuelve errores al cliente. Es un corte POR DIA y no por mes, asi que un pico de un solo dia deja la aplicacion sin base hasta la medianoche.",
+      "paid_from": "Incluido en Workers Paid, minimo USD 5 por mes",
       "escalation": [
-        { "when": "Hay que distribuir un instalador a terceros y se cumple la elegibilidad regional", "to_plan": "Firma administrada en la nube", "cost_note": "USD 9.99 por mes por cinco mil firmas, sin token fisico, pero no disponible fuera de las regiones nombradas" },
-        { "when": "No se cumple la elegibilidad regional, o se prefiere un certificado propio", "to_plan": "Certificado de validacion de organizacion con token fisico", "cost_note": "EUR 139 a 209 por ano segun proveedor, o USD 219 por ano. Microsoft declara un rango de USD 150 a 300" },
-        { "when": "El comprador exige validacion extendida por politica de compras", "to_plan": "Certificado de validacion extendida", "cost_note": "USD 287 a 349 por ano. Microsoft declara textualmente que pagar el sobreprecio SOLO para evitar la advertencia de reputacion ya no se justifica, porque los certificados extendidos dejaron de saltearla" }
+        {
+          "when": "Se superan las lecturas o escrituras diarias del plan gratuito",
+          "to_plan": "D1 Paid, dentro de Workers Paid",
+          "cost_note": "Tarifas por encima de lo incluido en el plan pago: La ficha pineada no registro este dato, asi que no se completa: un numero plausible es peor que un hueco declarado."
+        }
       ]
     }
   ]

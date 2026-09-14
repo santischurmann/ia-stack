@@ -337,3 +337,37 @@ test('FALSIFICACIÓN · lo que se lanza sin forma de Error tampoco se traga en s
   assert.ok(errores.some((l) => /falla sin forma de Error/u.test(l)), errores.join('\n'));
   assert.ok(!errores.some((l) => /undefined/u.test(l)), 'el motivo no puede ser undefined');
 });
+
+// LA HERIDA, con su número de veces: UNA, y la encontró la ronda adversarial sobre el dato, no
+// sobre el código. El contrato traía dieciséis números que la ficha pineada NO contiene: tarifas de
+// excedente de seis servicios, límites secundarios de otros cuatro, y un `hard: true` sobre
+// exactamente lo que la ficha había declarado como NO VERIFICADO. El gate los aprobó todos, porque
+// su límite honesto dice que nunca comprueba que el número sea cierto.
+//
+// EL PATRÓN ERA RELLENO HACIA ABAJO: lo que la ficha decía estaba bien copiado, y lo que la ficha
+// no decía se completó igual. Justo en los campos que nadie mira hasta que llega la factura.
+//
+// LO QUE EL ESQUEMA NO PODÍA EXPRESAR: `hard` era un booleano, así que no había forma de escribir
+// «la fuente no verificó si corta o factura». Quien transcribía tenía que elegir entre dos
+// afirmaciones y ninguna era cierta. Ahora `null` significa exactamente eso, y el gate exige que el
+// disparador del servicio diga por qué — un `null` mudo sería el mismo agujero con otro nombre.
+test('un cupo cuya fuente no verificó si corta o factura se declara con null, no se adivina', () => {
+  const sinVerificar = contrato({
+    services: [servicio({
+      limits: [{ metric: 'credito', value: 1, unit: 'USD/mes', hard: null }],
+      upgrade_trigger: 'Agotar el credito del mes. Ese cupo lleva hard en null porque la ficha declaro NO VERIFICADO si al agotarlo corta el servicio o factura el excedente.',
+    })],
+  });
+  assert.deepEqual(validateLimits(sinVerificar), []);
+});
+
+test('FALSIFICACIÓN · un null mudo es el mismo agujero con otro nombre', () => {
+  const mudo = contrato({
+    services: [servicio({ limits: [{ metric: 'credito', value: 1, unit: 'USD/mes', hard: null }] })],
+  });
+  const violaciones = validateLimits(mudo);
+  assert.ok(
+    violaciones.some((v) => /hard/u.test(v) && /null/u.test(v)),
+    `un cupo con hard nulo tiene que exigir que el disparador lo explique, y devolvió: ${JSON.stringify(violaciones)}`,
+  );
+});

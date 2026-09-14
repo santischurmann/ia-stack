@@ -39,6 +39,7 @@ const fila = (product_type, overrides = {}) => ({
   recommended: { stack: texto('El stack recomendado'), why: texto('Por qué ése y no otro') },
   alternatives: [],
   free_tier_refs: ['proveedor-free'],
+  no_free_tier_reason: null,
   red_adapter: texto('El adaptador que le toca, o ninguno con su motivo'),
   evidence: [texto('Lo que respalda esta fila')],
   ...overrides,
@@ -117,21 +118,30 @@ test('FALSIFICACIÓN · una fila sin recomendación o sin su motivo se rechaza',
 // servicio alojado. No era un defecto de la matriz sino de la regla, escrita desde los casos web.
 // Son DOS los tipos exentos y no uno, y por motivos distintos: H porque todavía no se sabe qué es,
 // G porque se sabe y no se opera.
-test('FALSIFICACIÓN · G y H pueden no tener referencias, y los otros seis no', () => {
-  const exentos = matriz();
-  exentos.rows[6].free_tier_refs = [];
-  exentos.rows[7].free_tier_refs = [];
-  exentos.rows[7].alternatives = [];
-  assert.deepEqual(validateMatrix(exentos, idsDisponibles), []);
+test('FALSIFICACIÓN · cualquier fila puede no tener referencias SI dice por qué, y ninguna sin decirlo', () => {
+  // LA HERIDA: la exención era una lista de tipos —`G` y `H`— y una ronda adversarial mostró que eso
+  // EMPUJABA MENTIRAS AL DATO. Para que el tipo `D` entrara hubo que escribirle a la firma de código
+  // un `plan_name` que no es un plan y un `-1` como centinela de «esto no es un número». Una regla
+  // que obliga a mentir es peor que una que se pone roja.
+  for (const indice of [0, 3, 6, 7]) {
+    const conMotivo = matriz();
+    conMotivo.rows[indice].free_tier_refs = [];
+    conMotivo.rows[indice].no_free_tier_reason = texto('Este tipo no corre en ningún servicio alojado, así que no hay plan que medir');
+    assert.deepEqual(validateMatrix(conMotivo, idsDisponibles), [], `el tipo ${conMotivo.rows[indice].product_type} con motivo escrito tiene que pasar`);
 
-  for (const indice of [0, 1, 2, 3, 4, 5]) {
-    const sinRefs = matriz();
-    sinRefs.rows[indice].free_tier_refs = [];
+    const mudo = matriz();
+    mudo.rows[indice].free_tier_refs = [];
     assert.ok(
-      validateMatrix(sinRefs, idsDisponibles).some((v) => /free_tier_refs/u.test(v)),
-      `el tipo ${sinRefs.rows[indice].product_type} recomienda un stack alojado y tiene que decir contra qué servicio`,
+      validateMatrix(mudo, idsDisponibles).some((v) => /no_free_tier_reason/u.test(v)),
+      `el tipo ${mudo.rows[indice].product_type} sin referencias y sin motivo tiene que rechazar`,
     );
   }
+});
+
+test('FALSIFICACIÓN · declarar servicios Y un motivo para no tenerlos es contradictorio', () => {
+  const ambos = matriz();
+  ambos.rows[1].no_free_tier_reason = texto('No usa ningún servicio');
+  assert.ok(validateMatrix(ambos, idsDisponibles).some((v) => /no_free_tier_reason/u.test(v)));
 });
 
 test('FALSIFICACIÓN · el esquema se mira primero y corta', () => {

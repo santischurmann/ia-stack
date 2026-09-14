@@ -29,10 +29,15 @@
           "when": "Muchas páginas de contenido con poca interactividad"
         }
       ],
-      "free_tier_refs": ["cloudflare-pages", "vercel-hobby"],
+      "free_tier_refs": [
+        "cloudflare-pages",
+        "vercel-hobby"
+      ],
+      "no_free_tier_reason": null,
       "red_adapter": "ninguno — un sitio sin lógica no tiene qué probar; si aparece lógica, deja de ser tipo A",
       "evidence": [
-        "En el plan gratuito de Cloudflare Pages las peticiones a assets estáticos son gratis e ilimitadas y no cuentan contra la cuota diaria de Workers."
+        "En el plan gratuito de Cloudflare Pages las peticiones a assets estáticos son gratis e ilimitadas y no cuentan contra la cuota diaria de Workers.",
+        "La clausula de uso comercial del plan Hobby no tiene contador ni alerta: su definicion incluye textualmente a un empleado o consultor pago que escribe el codigo, asi que hostear la landing de un cliente ya esta fuera del plan aunque el sitio no procese un solo pago."
       ]
     },
     {
@@ -40,7 +45,7 @@
       "name": "Aplicación web",
       "decision_criterion": "¿Hay sesión de usuario y datos que sobreviven a la visita? Si sí, hace falta base de datos y autenticación, y eso cambia todo el resto.",
       "recommended": {
-        "stack": "Next.js 16.3.5 con App Router · React 19.3.0 · TypeScript 6.0.3 · Tailwind 4.3.3 · Drizzle ORM 0.45.2 sobre PostgreSQL 18 en Docker local · Better Auth 1.7.4 · Vitest 4.1.11 · Playwright 1.63.0 · Node 24 LTS",
+        "stack": "Next.js 16.3.5 con App Router · React 19.3.0 · TypeScript 6.0.3 · Tailwind 4.3.3 · Drizzle ORM 0.45.2 sobre PostgreSQL 18 en Docker local · Better Auth 1.7.4 · Vitest 5.0.0 · Playwright 1.63.0 · Node 24 LTS",
         "why": "Es el camino con más documentación oficial verificable, y todas las piezas tienen versiones compatibles entre sí hoy. La base corre local en Docker: nada de cloud hasta que haya algo que mostrar."
       },
       "alternatives": [
@@ -53,11 +58,18 @@
           "when": "Cuando el proyecto es comercial. Es el único de los siete servicios revisados cuyo plan gratuito no prohíbe uso comercial ni pausa por inactividad"
         }
       ],
-      "free_tier_refs": ["vercel-hobby", "neon-free", "supabase-free", "cloudflare-workers"],
+      "free_tier_refs": [
+        "vercel-hobby",
+        "neon-free",
+        "supabase-free",
+        "cloudflare-workers",
+        "cloudflare-d1"
+      ],
+      "no_free_tier_reason": null,
       "red_adapter": "vitest — garantía menor que la del adaptador nativo, declarada",
       "evidence": [
         "typescript@latest es 7.0.2 pero typescript-eslint declara el rango >=4.8.4 <6.1.0 en su manifiesto, y llega como dependencia dura de eslint-config-next. Por eso la recomendación fija 6.0.3 y no la última.",
-        "vitest 5.0.0 salió el 2026-09-03 y su paquete de cobertura exige coincidencia exacta de versión. Se recomienda 4.1.11 hasta revisar los cambios que rompen.",
+        "vitest 5.0.0 salió el 2026-09-03 y su paquete de cobertura exige coincidencia exacta de versión, así que subir uno obliga a subir el otro. La ficha lo marca con cuidado por ser un major de once días; no recomienda una versión anterior.",
         "shadcn/ui no se versiona como paquete: los componentes son código que se copia y sólo el CLI tiene versión. El nombre viejo shadcn-ui está deprecado por su autor."
       ]
     },
@@ -75,7 +87,11 @@
           "when": "Cuando el caso de uso no justifica el modo sin conexión, que es la mayoría"
         }
       ],
-      "free_tier_refs": ["vercel-hobby", "neon-free"],
+      "free_tier_refs": [
+        "vercel-hobby",
+        "neon-free"
+      ],
+      "no_free_tier_reason": null,
       "red_adapter": "vitest — garantía menor que la del adaptador nativo, declarada",
       "evidence": [
         "Un contexto seguro es requisito para service workers, y localhost cuenta como tal sin TLS: MDN lista localhost, 127.0.0.0/8 y ::1/128 como potencialmente confiables, así que se puede desarrollar y probar en local sin certificados."
@@ -99,12 +115,15 @@
           "when": "Cuando manda el peso del instalador. Ojo: en Windows usa WebView2, que es Chromium, así que el ahorro grande de memoria es real en Linux y macOS, no necesariamente en Windows"
         }
       ],
-      "free_tier_refs": ["firma-codigo-windows"],
+      "free_tier_refs": [],
+      "no_free_tier_reason": "Una aplicacion de escritorio corre en la maquina de quien la usa, asi que no consume ningun plan gratuito alojado. Su costo de escalar no es un cupo sino la firma de codigo, que se trata aparte porque no es un plan de nada: es un certificado que se paga desde el primer dia si hay que distribuir el instalador a terceros.",
       "red_adapter": "según el lenguaje elegido: pytest o vitest, los dos con garantía menor declarada",
       "evidence": [
         "Un issue en el propio repositorio de Tauri midió en Windows 10 más memoria que Electron: 399 MB contra 318 MB en un caso y 370 contra 312 en otro.",
         "El catálogo de plugins oficiales de Tauri no cubre sockets crudos ni named pipes. Desde el frontend es imposible; desde Rust hay que escribirlo.",
-        "El sistema de eventos de Tauri no sirve para transmitir datos en vivo: la documentación dice que no está diseñado para baja latencia ni alto caudal, y que los escuchas pueden procesar eventos fuera de orden."
+        "El sistema de eventos de Tauri no sirve para transmitir datos en vivo: la documentación dice que no está diseñado para baja latencia ni alto caudal, y que los escuchas pueden procesar eventos fuera de orden.",
+        "Si hace falta renderizado determinista, el modo de version fija de WebView2 suma unos 180 MB y Tauri deja de ser mas chico que Electron, que es el motivo mismo de recomendarlo. Y Tauri 3.0.0-alpha.0 salio el 2026-09-13, un dia antes de la captura, sin calendario publico a estable.",
+        "Contraejemplo de la recomendacion de Python: si la aplicacion se distribuye como instalador firmado con actualizacion automatica y bandeja, Python es el PEOR de los tres en distribucion -- sin actualizador oficial, unos 245 MB de Qt, y la libreria de bandeja lleva tres anos sin publicar version. Ahi gana Electron, o Tauri con un proceso auxiliar de Python."
       ]
     },
     {
@@ -113,7 +132,7 @@
       "decision_criterion": "¿El cómputo es el producto, o es un medio? Si el resultado del cálculo es lo que se entrega, el stack se elige por el cuello de botella medido, no por preferencia.",
       "recommended": {
         "stack": "Python 3.14 con uv 0.12.13 · NumPy 2.5.3 · SciPy 1.18.1 · pandas 3.0.5 · PyArrow 25.0.1 · pytest · ruff · mypy. Polars 1.44.2 o DuckDB 1.5.5 sólo cuando la medición los justifique",
-        "why": "3.14 es el único punto donde todas las librerías del conjunto tienen paquetes compilados disponibles: NumPy y SciPy exigen 3.12 o más, y Numba corta por debajo de 3.15."
+        "why": "3.14 es el único punto donde todas las librerías del conjunto tienen paquetes compilados disponibles: NumPy y SciPy exigen 3.12 o más, y Numba no soporta 3.15 ni posterior."
       },
       "alternatives": [
         {
@@ -125,7 +144,10 @@
           "when": "Sólo con un perfilado que lo justifique. Numba no amortiza si el trabajo entero corre menos de un segundo, y la documentación oficial dice que empeora el rendimiento cuando el camino caliente es pandas"
         }
       ],
-      "free_tier_refs": ["github-actions"],
+      "free_tier_refs": [
+        "github-actions"
+      ],
+      "no_free_tier_reason": null,
       "red_adapter": "pytest — garantía menor que la del adaptador nativo, declarada",
       "evidence": [
         "No fijar 3.15 aunque salga el 2026-10-01: Numba, pandas, PyArrow y DuckDB no la soportan.",
@@ -147,10 +169,13 @@
           "when": "Cuando hace falta exponer HTTP con validación de esquema y documentación automática, no cuando alcanza un proceso que corre y termina"
         }
       ],
-      "free_tier_refs": ["github-actions"],
+      "free_tier_refs": [
+        "github-actions"
+      ],
+      "no_free_tier_reason": null,
       "red_adapter": "el nativo de Node si el proceso es Node — la única garantía fuerte de las tres",
       "evidence": [
-        "El propio protocolo es de este tipo: 48 comprobaciones mecánicas, cero dependencias externas, sin interfaz propia y con otro proceso o una persona en la terminal como consumidor."
+        "El propio protocolo es de este tipo: decenas de comprobaciones mecánicas, cero dependencias externas, sin interfaz propia y con otro proceso o una persona en la terminal como consumidor."
       ]
     },
     {
@@ -168,6 +193,7 @@
         }
       ],
       "free_tier_refs": [],
+      "no_free_tier_reason": "Un artefacto se entrega una vez y no se opera, asi que no corre en ningun servicio alojado: no hay plan gratuito contra el cual medir el costo de crecer, porque no hay nada que crezca.",
       "red_adapter": "ninguno — sin lógica que ejecutar no hay test rojo posible, y forzarlo sería decoración",
       "evidence": [
         "El criterio de separación con el resto es operativo y no de formato: un panel que se actualiza solo con datos en vivo se opera, así que es tipo B, no G."
@@ -183,6 +209,7 @@
       },
       "alternatives": [],
       "free_tier_refs": [],
+      "no_free_tier_reason": "Todavia no se sabe que es. Sin clasificar el caso no hay stack recomendado, y sin stack no hay servicio al cual referenciar: ese es justamente el valor de este codigo.",
       "red_adapter": "sin determinar hasta clasificar el caso",
       "evidence": [
         "Va último a propósito, para que sea la salida del caso genuinamente distinto y no la salida cómoda de la primera duda."
@@ -192,6 +219,7 @@
   "limits": [
     "Las versiones y los límites de plan gratuito valen para el 2026-09-14 y para ninguna otra fecha. Dos filas ya llevan un aviso de que la última versión no es la usable, y ese aviso es lo que caduca más rápido.",
     "El criterio de decisión de cada fila es una pregunta con respuesta observable, no una garantía de que la clasificación sea correcta. Un producto clasificado coherentemente y mal recibe la recomendación equivocada.",
-    "Los adaptadores de pytest y vitest tienen garantía menor que el nativo, y eso no es un detalle de implementación: los dos se falsificaron con cero pruebas fallando."
+    "Los adaptadores de pytest y vitest tienen garantía menor que el nativo, y eso no es un detalle de implementación: los dos se falsificaron con cero pruebas fallando.",
+    "Corregido el 2026-09-14 tras una ronda adversarial: la version de vitest de la fila B estaba inventada, la restriccion de Numba de la fila E estaba invertida, y las filas A y D omitian avisos que su ficha si da. La exencion de referencias dejo de ser una lista de tipos y paso a ser un motivo escrito por fila, porque la regla anterior empujaba mentiras al dato."
   ]
 }
