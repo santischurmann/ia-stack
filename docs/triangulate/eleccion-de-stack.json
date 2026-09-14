@@ -1,0 +1,111 @@
+{
+  "schema": "vcp.triangulate/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "vectors": {
+    "edge-cases": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix-cobertura.test.mjs"
+    },
+    "entradas-vacias": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "valores-nulos": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix-antiguedad.test.mjs"
+    },
+    "division-por-cero": {
+      "state": "not_applicable",
+      "reason": "El unico calculo del gate es una resta de milisegundos dividida por la cantidad de milisegundos de un dia, que es una constante distinta de cero. No hay ningun divisor que venga del dato ni de la entrada, asi que no existe la forma de llegar a una division por cero."
+    },
+    "promesas-rechazadas": {
+      "state": "not_applicable",
+      "reason": "Ninguna funcion del gate es asincrona ni devuelve una promesa: lee dos archivos de forma sincronica y compara objetos en memoria. No hay promesa que pueda quedar rechazada sin capturar."
+    },
+    "procesos-muertos": {
+      "state": "not_applicable",
+      "reason": "El gate no lanza ningun proceso hijo. A diferencia de los adaptadores de test rojo, que si lo hacen y por eso heredan ese vector, este lee archivos y termina."
+    },
+    "interrupciones": {
+      "state": "not_applicable",
+      "reason": "El gate no escribe nada: solo lee y devuelve un codigo de salida. Una interrupcion a mitad de camino no puede dejar estado a medias porque no hay estado que dejar."
+    },
+    "timeout": {
+      "state": "not_applicable",
+      "reason": "No hay espera de red ni de otro proceso. El tiempo total esta acotado por el tamano de dos archivos de texto, que el propio repositorio versiona y mide en decenas de kilobytes."
+    },
+    "retry": {
+      "state": "not_applicable",
+      "reason": "El gate es una funcion pura sobre los bytes que leyo: correrlo dos veces sobre el mismo arbol da el mismo veredicto. No hay operacion que reintentar ni efecto que repetir."
+    },
+    "doble-ejecucion": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "ejecucion-concurrente": {
+      "state": "not_applicable",
+      "reason": "El gate no toma bloqueos, no escribe archivos y no comparte estado entre invocaciones. Dos corridas simultaneas leen los mismos bytes y llegan al mismo veredicto sin interferirse."
+    },
+    "cambios-staged": {
+      "state": "not_applicable",
+      "reason": "El gate lee el arbol de trabajo directamente con el sistema de archivos y nunca le pregunta a git. Lo que este en el area de preparacion no cambia lo que lee ni lo que responde."
+    },
+    "cambios-unstaged": {
+      "state": "not_applicable",
+      "reason": "Mismo motivo que el vector anterior: el gate no consulta a git en ningun momento, asi que la distincion entre cambios preparados y sin preparar le es invisible por diseno."
+    },
+    "cambios-de-modo": {
+      "state": "not_applicable",
+      "reason": "El gate lee dos archivos de datos JSON y no ejecuta nada. Un cambio de permisos de ejecucion sobre ellos no altera su contenido ni la posibilidad de leerlos."
+    },
+    "symlinks": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "paths-externos": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "corrupcion-de-json": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "crlf-lf": {
+      "state": "not_applicable",
+      "reason": "El gate parsea JSON, y el analizador de JSON trata los dos finales de linea como espacio en blanco indistinto. Ninguna comparacion del gate mira bytes crudos: todas operan sobre los valores ya parseados."
+    },
+    "utf8-bom": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "archivos-binarios": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "rename-copy": {
+      "state": "not_applicable",
+      "reason": "El gate no compara contra ninguna version anterior ni sigue la historia de un archivo. Renombrar o copiar la matriz no tiene ningun significado para el: lee la ruta que le pasan y valida su contenido."
+    },
+    "git-sha1-sha256": {
+      "state": "not_applicable",
+      "reason": "El gate no calcula ningun hash ni lee identificadores de objetos de git. El unico dato temporal que maneja son fechas en formato de calendario, que no dependen del algoritmo de hash del repositorio."
+    },
+    "bash-powershell": {
+      "state": "not_applicable",
+      "reason": "El gate es un unico archivo de Node sin envoltorio de shell, invocado siempre como node seguido de la ruta del script. No hay dos implementaciones que puedan divergir entre plataformas, que es el riesgo que este vector persigue."
+    },
+    "instalacion-limpia": {
+      "state": "covered",
+      "test": "tests/self-checks.test.mjs"
+    },
+    "datos-falsos": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix.test.mjs"
+    },
+    "evidencia-insuficiente": {
+      "state": "covered",
+      "test": "tests/verify-stack-matrix-antiguedad.test.mjs"
+    }
+  }
+}

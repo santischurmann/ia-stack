@@ -140,6 +140,7 @@ test('AC5 · sin matriz ni contrato escribe VACÍO y sale 0, sin decir OK', () =
   const salida = [];
   const errores = [];
   const code = main(['check', 'docs/no-existe.json'], {
+    safePath: (_r, p) => p,
     read: () => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); },
     write: (l) => salida.push(l),
     writeError: (l) => errores.push(l),
@@ -152,14 +153,16 @@ test('AC5 · sin matriz ni contrato escribe VACÍO y sale 0, sin decir OK', () =
 test('FALSIFICACIÓN · con contrato pero sin matriz, y al revés, rechaza en vez de escribir VACÍO', () => {
   const soloContrato = [];
   assert.equal(main(['check', 'm.json'], {
-    read: (ruta) => (String(ruta).includes('free-tier') ? JSON.stringify(contrato()) : (() => { throw new Error('ENOENT'); })()),
+    safePath: (_r, p) => p,
+    read: (ruta) => (String(ruta).includes('free-tier') ? JSON.stringify(contrato()) : (() => { throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' }); })()),
     write: () => {}, writeError: (l) => soloContrato.push(l),
   }), 1);
   assert.ok(soloContrato.some((l) => /matriz/u.test(l)), soloContrato.join('\n'));
 
   const soloMatriz = [];
   assert.equal(main(['check', 'm.json'], {
-    read: (ruta) => (String(ruta).includes('free-tier') ? (() => { throw new Error('ENOENT'); })() : '{}'),
+    safePath: (_r, p) => p,
+    read: (ruta) => (String(ruta).includes('free-tier') ? (() => { throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' }); })() : '{}'),
     write: () => {}, writeError: (l) => soloMatriz.push(l),
   }), 1);
   assert.ok(soloMatriz.some((l) => /free-tier/u.test(l)), soloMatriz.join('\n'));
@@ -178,6 +181,7 @@ test('el gate real compone las tres invariantes y sale verde sobre el repositori
   const salida = [];
   const errores = [];
   const code = main(['check', 'docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => readFileSync(join(repoRoot, String(ruta)), 'utf8'),
     hoy: JSON.parse(readFileSync(join(repoRoot, 'contracts', 'free-tier-limits.json'), 'utf8')).revalidated,
     write: (l) => salida.push(l),
@@ -225,6 +229,7 @@ test('FALSIFICACIÓN · main rechaza y escribe cada violación, en vez de contar
   const roto = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'free-tier-limits.json'), 'utf8'));
   roto.services[0].upgrade_trigger = 'tbd';
   const code = main(['check', 'm.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('free-tier')
       ? JSON.stringify(roto)
       : readFileSync(join(repoRoot, 'docs', 'discovery', 'eleccion-de-stack', 'diagnostics', 'stack-matrix.json'), 'utf8')),
@@ -250,6 +255,7 @@ test('FALSIFICACIÓN · las ramas defensivas del contrato producen violación, n
 test('FALSIFICACIÓN · main tolera un contrato sin lista de servicios y una matriz sin filas', () => {
   const errores = [];
   const code = main(['check', 'm.json'], {
+    safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('free-tier')
       ? JSON.stringify({ ...contrato(), services: 'ninguna' })
       : JSON.stringify({ schema: 'vcp.stack-matrix/1' })),
@@ -259,4 +265,75 @@ test('FALSIFICACIÓN · main tolera un contrato sin lista de servicios y una mat
   });
   assert.equal(code, 1, 'un contrato sin servicios y una matriz sin filas no pueden aprobar');
   assert.ok(errores.every((l) => /^REJECTED: /u.test(l)), errores.join('\n'));
+});
+
+// LOS TRES DEFECTOS QUE ENCONTRÓ LA TRIANGULACIÓN, y por qué importan.
+//
+// La fase 5.5 declara los 26 vectores uno a uno y no deja pasar un pendiente. Tres quedaron
+// pendientes sobre este gate y los tres eran defectos reales, no casos teóricos:
+//
+//   symlinks y paths-externos — la ruta de la matriz llegaba por argumento y se abría tal cual, sin
+//   comprobar que fuera un archivo regular ni que quedara adentro del proyecto. El ayudante de rutas
+//   seguras ya fija ese criterio en este repositorio y otros gates lo usan; éste no lo usaba.
+//
+//   utf8-bom — EL PEOR DE LOS TRES. Una marca de orden de bytes al principio del archivo hace
+//   fallar el parseo, y el gate trataba CUALQUIER fallo de lectura como archivo ausente: escribía
+//   VACÍO y salía cero. Un archivo corrupto se convertía en silencio, que es exactamente la
+//   distinción que este repositorio existe para sostener. Ausente y corrupto no son lo mismo.
+test('FALSIFICACIÓN · un archivo corrupto rechaza, no escribe VACÍO', () => {
+  for (const contenido of ['\uFEFF{"schema":"x"}', '{', 'no es json', '\u0000binario']) {
+    const salida = [];
+    const errores = [];
+    const code = main(['check', 'm.json'], {
+      safePath: (_r, p) => p,
+      read: (ruta) => (String(ruta).includes('free-tier') ? JSON.stringify(contrato()) : contenido),
+      hoy: '2026-09-14',
+      write: (l) => salida.push(l),
+      writeError: (l) => errores.push(l),
+    });
+    assert.equal(code, 1, `aceptó ${JSON.stringify(contenido.slice(0, 12))} en vez de rechazarlo`);
+    assert.ok(!salida.some((l) => /^VACÍO/u.test(l)), 'un archivo corrupto no es un archivo ausente');
+    assert.ok(errores.some((l) => /ilegible|corrupt|JSON/iu.test(l)), errores.join('\n'));
+  }
+});
+
+test('FALSIFICACIÓN · sólo la ausencia real produce VACÍO, y la distingue del resto', () => {
+  const ausente = () => { throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' }); };
+  const salida = [];
+  assert.equal(main(['check', 'm.json'], { safePath: (_r, p) => p, read: ausente, write: (l) => salida.push(l), writeError: () => {} }), 0);
+  assert.ok(/^VACÍO: /u.test(salida.at(-1)), salida.join('\n'));
+
+  const denegado = () => { throw Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' }); };
+  const errores = [];
+  assert.equal(main(['check', 'm.json'], { safePath: (_r, p) => p, read: denegado, write: () => {}, writeError: (l) => errores.push(l) }), 1,
+    'un archivo que existe y no se deja leer no es un proyecto que todavía no eligió stack');
+  assert.ok(errores.some((l) => /EACCES|ilegible/iu.test(l)), errores.join('\n'));
+});
+
+test('FALSIFICACIÓN · una ruta que se escapa del proyecto o no es archivo regular se rechaza', () => {
+  const errores = [];
+  const code = main(['check', '../afuera.json'], {
+    safePath: () => { throw new Error('ratchet path escapes the project: ../afuera.json'); },
+    read: () => '{}',
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.ok(errores.some((l) => /escapes the project/u.test(l)), errores.join('\n'));
+  assert.ok(!errores.some((l) => /VACÍO/u.test(l)), 'una ruta insegura es un rechazo, no un vacío');
+});
+
+test('FALSIFICACIÓN · lo que se lanza sin forma de Error tampoco se traga en silencio', () => {
+  // Un `throw` de algo que no es un Error no tiene `.message`. Sin esa rama el gate escribiría
+  // `undefined` como motivo, que es peor que no dar ninguno.
+  const errores = [];
+  const code = main(['check', 'm.json'], {
+    safePath: (_r, p) => p,
+    read: () => { throw 'falla sin forma de Error'; },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.ok(errores.some((l) => /falla sin forma de Error/u.test(l)), errores.join('\n'));
+  assert.ok(!errores.some((l) => /undefined/u.test(l)), 'el motivo no puede ser undefined');
 });

@@ -62,14 +62,7 @@
       "entrypoint_id": "E1",
       "asset_id": "A1",
       "kind": "validation",
-      "ac_id": "AC1"
-    },
-    {
-      "id": "C2",
-      "entrypoint_id": "E1",
-      "asset_id": "A2",
-      "kind": "validation",
-      "ac_id": "AC1"
+      "ac_id": "AC3"
     }
   ],
   "accepted": [
@@ -78,6 +71,12 @@
       "entrypoint_id": "E2",
       "why": "No hay control posible que no rompa lo que pretende servir. Medido el 2026-09-14 contra pytest 9.1.1 y vitest 5.0.0: los dos ejecutan configuración del proyecto con acceso al pipeline de reporte y al código de salida, y se falsificaron los dos con cero pruebas fallando. Las opciones que cierran el vector, --noconftest en pytest y una configuración neutral en vitest, dejan a cualquier proyecto real sin sus fixtures, alias y entorno, así que no son usables como default. La brecha se acepta porque hoy un proyecto Python no puede pasar la primera ley en absoluto, y un piso declarado como menor es más que ninguno. No se acepta en silencio: el receipt registra con qué adaptador se obtuvo cada verde, para que el de un adaptador débil no se lea igual que el del nativo.",
       "owner": "Quien mantiene el protocolo, con la decisión registrada en el menú de la fase de Research de este ciclo."
+    },
+    {
+      "id": "X2",
+      "entrypoint_id": "E1",
+      "why": "El activo A2 -- lo versionado, que se publica e instala en maquinas de terceros -- no tiene control mecanico todavia. Estaba declarado como un control de validacion, y eso era falso: el gate que barre por forma las rutas absolutas de directorio personal esta especificado como AC9 de la spec pero pertenece a una vuelta posterior. Declararlo como control existente habria sido peor que declararlo ausente, porque el modelo de amenaza no prueba que un control exista en el codigo y nadie lo habria notado. Mientras tanto el riesgo se cubre a mano: un barrido corrido el 2026-09-14 encontro cuatro contaminaciones, tres se corrigieron y la cuarta quedo en la traza sellada sin poder borrarse. Esa cuarta es la evidencia de por que el control tiene que correr ANTES de sellar y no despues.",
+      "owner": "Quien mantiene el protocolo, con la decision registrada en el menu de la fase 4 que dejo el gate de repositorio limpio para la vuelta siguiente."
     }
   ],
   "coverage": {

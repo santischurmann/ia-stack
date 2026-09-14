@@ -363,6 +363,10 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/triangulate/eleccion-de-stack.json",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/triangulate/triangulate-como-fase.json",
       "class": "evidencia"
     },

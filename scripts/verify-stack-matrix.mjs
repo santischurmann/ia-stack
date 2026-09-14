@@ -20,6 +20,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { safeProjectFile } from './ratchet.mjs';
+
 export const SCHEMA = 'vcp.free-tier-limits/1';
 export const USAGE = 'usage: verify-stack-matrix.mjs check <matrix.json>';
 export const EMPTY = 'VACÍO';
@@ -260,6 +262,27 @@ export function validateFreshness(contrato, hoy) {
 const CONTRATO_PATH = join('contracts', 'free-tier-limits.json');
 
 /**
+ * Los TRES estados de una lectura, que antes eran dos y por eso un archivo corrupto se convertia en
+ * silencio. Lo encontro la triangulacion: una marca de orden de bytes hace fallar el parseo, y
+ * tratar cualquier fallo como ausencia hacia que el gate escribiera VACIO y saliera 0 sobre un
+ * archivo roto. Ausente es un proyecto que todavia no eligio stack; ilegible es un defecto.
+ */
+function leerDocumento(read, ruta) {
+  let bruto;
+  try {
+    bruto = read(ruta, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') return { estado: 'ausente' };
+    return { estado: 'ilegible', motivo: error?.message ?? String(error) };
+  }
+  try {
+    return { estado: 'ok', valor: JSON.parse(bruto) };
+  } catch (error) {
+    return { estado: 'ilegible', motivo: `no es JSON valido (una marca de orden de bytes al principio tambien rompe el parseo): ${error.message}` };
+  }
+}
+
+/**
  * `main` compone las tres invariantes y decide el veredicto. Todas las lecturas se inyectan para que
  * el comportamiento se pueda falsificar sin tocar el filesystem.
  *
@@ -278,24 +301,43 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 2;
   }
 
-  const rutaMatriz = args[1];
-  let matriz = null;
-  let contrato = null;
-  try { matriz = JSON.parse(read(rutaMatriz, 'utf8')); } catch { matriz = null; }
-  try { contrato = JSON.parse(read(CONTRATO_PATH, 'utf8')); } catch { contrato = null; }
+  // La ruta se resuelve ANTES de abrirla, con el ayudante que ya fija el criterio de este
+  // repositorio: nada de enlaces simbolicos, nada que se escape del proyecto. La lectura no se
+  // reimplementa. Lo encontro la triangulacion: la ruta llegaba por argumento y se abria tal cual.
+  const resolver = options.safePath ?? safeProjectFile;
+  let rutaMatriz;
+  try {
+    rutaMatriz = resolver(options.root ?? process.cwd(), args[1]) ?? args[1];
+  } catch (error) {
+    writeError(`REJECTED: ${error.message}`);
+    return 1;
+  }
 
-  if (matriz === null && contrato === null) {
-    write(`${EMPTY}: no hay matriz en ${rutaMatriz} ni contrato de limites en ${CONTRATO_PATH}. Esto no verifico nada: un proyecto que todavia no eligio stack no incumple nada.`);
+  const matrizLeida = leerDocumento(read, rutaMatriz);
+  const contratoLeido = leerDocumento(read, CONTRATO_PATH);
+
+  for (const [nombre, leida] of [['la matriz', matrizLeida], [CONTRATO_PATH, contratoLeido]]) {
+    if (leida.estado === 'ilegible') {
+      writeError(`REJECTED: ${nombre} existe pero es ilegible: ${leida.motivo}. Un archivo corrupto no es un archivo ausente, asi que esto rechaza en vez de escribir ${EMPTY}.`);
+      return 1;
+    }
+  }
+
+  if (matrizLeida.estado === 'ausente' && contratoLeido.estado === 'ausente') {
+    write(`${EMPTY}: no hay matriz en ${args[1]} ni contrato de limites en ${CONTRATO_PATH}. Esto no verifico nada: un proyecto que todavia no eligio stack no incumple nada.`);
     return 0;
   }
-  if (contrato === null) {
-    writeError(`REJECTED: hay matriz pero no se pudo leer ${CONTRATO_PATH}: una recomendacion sin el contrato de limites no dice que cuesta crecer`);
+  if (contratoLeido.estado === 'ausente') {
+    writeError(`REJECTED: hay matriz pero falta ${CONTRATO_PATH}: una recomendacion sin el contrato de limites no dice que cuesta crecer`);
     return 1;
   }
-  if (matriz === null) {
-    writeError(`REJECTED: hay contrato de limites pero no se pudo leer la matriz en ${rutaMatriz}`);
+  if (matrizLeida.estado === 'ausente') {
+    writeError(`REJECTED: hay contrato de limites pero falta la matriz en ${args[1]}`);
     return 1;
   }
+
+  const matriz = matrizLeida.valor;
+  const contrato = contratoLeido.valor;
 
   const violaciones = [
     ...validateLimits(contrato),
