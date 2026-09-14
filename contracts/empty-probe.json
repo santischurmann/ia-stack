@@ -371,6 +371,15 @@
       "expect": "reject"
     },
     {
+      "script": "verify-stack-matrix.mjs",
+      "args": [
+        "check",
+        "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay matriz ni contrato de limites, y eso no es un incumplimiento: es un proyecto que todavia no eligio stack. El gate escribe VACIO y sale 0. Si hubiera uno de los dos y no el otro rechazaria, porque una recomendacion sin su contrato no dice que cuesta crecer."
+    },
+    {
       "script": "verify-test-bindings.mjs",
       "args": [
         "check"

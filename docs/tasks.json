@@ -1,29 +1,163 @@
 {
-  "feature": "intake-de-producto",
+  "feature": "eleccion-de-stack",
   "spec": "docs/spec.md",
-  "created": "2026-09-01",
-  "_schema_note": "Every field below is read/written by the orchestrator with Read/Write — no external task-tracker, no server. Before plan approval, run node scripts/verify-plan-conflicts.mjs check docs/tasks.json: files_to_create + files_to_modify + test_files are the complete writer set, and a shared path needs a direct/transitive depends_on route. After GREEN, run node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>; it compares those three writer fields with every tracked/untracked path, and each operational exception needs an explicit --ignore. status lifecycle: pending->red->green->triangulate->refactor->done (or blocked). role/verifier/approval_criteria/rollback/handoff/blocked_reason are the minimal operable AI-company task model (SKILL.md rule: labels alone don't count) — see orchestrator-opus.md § MINIMAL AI-COMPANY TASK MODEL for the full protocol these fields plug into.",
+  "created": "2026-09-14",
+  "_schema_note": "Ciclo de estado por tarea: pending -> red -> green -> triangulate -> refactor -> done. Los tres campos de escritura -- files_to_create, files_to_modify y test_files -- son los que el preflight de conflictos usa para decidir que se puede despachar en paralelo.",
   "tasks": [
     {
-      "id": "B1",
-      "description": "Fase de Intake de producto: artefacto JSON con las ocho preguntas, supuestos, riesgos y preguntas abiertas separados, y gate nativo que rechaza una respuesta faltante o una pregunta bloqueante sin contestar",
+      "id": "M1",
+      "description": "Mover los limites de plan gratuito de la ficha de research al contrato de datos: ocho servicios, cada uno con su fecha de captura, sus cupos, su disparador de escalado y su primer costo pago",
       "files_to_create": [
-        "scripts/verify-intake.mjs",
-        "tests/verify-intake.test.mjs",
-        "templates/intake.json"
+        "contracts/free-tier-limits.json"
+      ],
+      "files_to_modify": [],
+      "test_files": [],
+      "test_types": [],
+      "subagents": [],
+      "depends_on": [],
+      "status": "done",
+      "goal": "El validador no tiene contra que correr sin el dato, y el dato ya existe: lo produjo el research contra documentacion oficial. Esta tarea no inventa nada, transcribe lo verificado a la forma que el contrato declara.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node -e \"JSON.parse(require('fs').readFileSync('contracts/free-tier-limits.json','utf8'))\"",
+      "approval_criteria": "Los ocho servicios de research/sources/free-tiers-2026-09-14.md presentes, cada uno con fecha de captura, disparador de escalado y primer precio pago. Ningun numero que la ficha haya marcado como no verificado entra como si lo estuviera.",
+      "evidence": [
+        "research/sources/free-tiers-2026-09-14.md: la fuente de cada numero, con URL y fecha"
+      ],
+      "not_reviewed": "Que los numeros sean ciertos. La ficha los capturo el 2026-09-14 de paginas oficiales, pero nada en este repositorio puede comprobarlo sin salir a la red.",
+      "rollback": "Borrar el archivo: todavia no lo lee ningun gate.",
+      "handoff": "M1 deja el dato en su forma final; M2 escribe el validador que lo comprueba.",
+      "blocked_reason": ""
+    },
+    {
+      "id": "M2",
+      "description": "Validador del contrato de limites: esquema declarado, claves exactas por servicio, y la invariante de fondo de que todo servicio declare su disparador de escalado y al menos una fila de escalado",
+      "files_to_create": [
+        "scripts/verify-stack-matrix.mjs",
+        "tests/verify-stack-matrix.test.mjs"
+      ],
+      "files_to_modify": [],
+      "test_files": [
+        "tests/verify-stack-matrix.test.mjs"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "refactor"
+      ],
+      "depends_on": [
+        "M1"
+      ],
+      "status": "done",
+      "goal": "Un stack recomendado cuyo plan gratuito no dice que lo rompe es exactamente el agujero que este artefacto viene a hacer visible. Sin la invariante, el contrato seria una tabla de cupos mas, y los cupos no son lo que saca a la gente del plan gratuito.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node --test tests/verify-stack-matrix.test.mjs",
+      "approval_criteria": "AC3 de docs/spec.md nombrado por una prueba; un servicio sin disparador de escalado rechaza nombrando el servicio; cobertura completa de lineas, ramas y funciones del script nuevo.",
+      "evidence": [
+        "tests/verify-stack-matrix.test.mjs: AC3 y su falsificacion"
+      ],
+      "not_reviewed": "Que el disparador declarado sea el real. El gate comprueba que este escrito y que no sea relleno, no que corresponda a lo que el proveedor hace.",
+      "rollback": "git revert: el gate es nuevo y ningun otro lo invoca.",
+      "handoff": "M2 deja el validador del contrato; M3 y M4 le agregan las dos invariantes restantes, una despues de la otra porque escriben el mismo archivo.",
+      "blocked_reason": ""
+    },
+    {
+      "id": "M3",
+      "description": "Invariante de cobertura de la matriz: los ocho tipos de producto presentes, y cada referencia a un servicio resolviendo contra un identificador real del contrato",
+      "files_to_create": [
+        "tests/verify-stack-matrix-cobertura.test.mjs"
       ],
       "files_to_modify": [
-        "contracts/empty-probe.json",
-        "contracts/honest-limits.json",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/spec.md",
-        "docs/plan.md",
-        "docs/tasks.json"
+        "scripts/verify-stack-matrix.mjs"
       ],
       "test_files": [
-        "tests/verify-intake.test.mjs"
+        "tests/verify-stack-matrix-cobertura.test.mjs"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate"
+      ],
+      "depends_on": [
+        "M2"
+      ],
+      "status": "done",
+      "goal": "Un tipo de producto sin fila deja a quien lo elija sin respuesta, y una referencia rota deja una recomendacion sin respaldo. El silencio no compra verde: es el mismo criterio que la cobertura del diagnostico CAIO ya aplica.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node --test tests/verify-stack-matrix-cobertura.test.mjs",
+      "approval_criteria": "AC2 de docs/spec.md nombrado por una prueba; un tipo faltante rechaza nombrandolo; una referencia que no resuelve rechaza nombrando el servicio.",
+      "evidence": [
+        "tests/verify-stack-matrix-cobertura.test.mjs: AC2 y su falsificacion"
+      ],
+      "not_reviewed": "Que la clasificacion de un producto sea correcta. El gate comprueba que los ocho tipos tengan fila, no que un producto concreto este bien clasificado.",
+      "rollback": "git revert de la tarea: la invariante es aditiva y su ausencia deja el gate mas permisivo, no roto.",
+      "handoff": "M3 cierra la cobertura de tipos; M5 declara el comportamiento sin entrada de todo el gate.",
+      "blocked_reason": ""
+    },
+    {
+      "id": "M4",
+      "description": "Regla de antigüedad: rechazo cuando la fecha de captura del contrato supera el periodo declarado, con el mensaje diciendo que la causa es el tiempo y no un defecto",
+      "files_to_create": [
+        "tests/verify-stack-matrix-antiguedad.test.mjs"
+      ],
+      "files_to_modify": [
+        "scripts/verify-stack-matrix.mjs"
+      ],
+      "test_files": [
+        "tests/verify-stack-matrix-antiguedad.test.mjs"
+      ],
+      "test_types": [
+        "unit"
+      ],
+      "subagents": [
+        "red",
+        "green",
+        "triangulate"
+      ],
+      "depends_on": [
+        "M3"
+      ],
+      "status": "done",
+      "goal": "Un numero de plan gratuito vencido es peor que ninguno, porque se lee como cierto. Y el modo de falla que introduce -- un repositorio que se pone rojo por el paso del tiempo -- sorprende a quien no lo espera, asi que el mensaje tiene que decir la causa con todas las letras.",
+      "owner": "Constructor",
+      "locked": false,
+      "role": "builder",
+      "verifier": "node --test tests/verify-stack-matrix-antiguedad.test.mjs",
+      "approval_criteria": "AC4 de docs/spec.md nombrado por una prueba; una captura vencida rechaza diciendo que la causa es la antigüedad; el reloj se inyecta, nunca se lee del sistema dentro de la comprobacion.",
+      "evidence": [
+        "tests/verify-stack-matrix-antiguedad.test.mjs: AC4 y su falsificacion",
+        "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md: por que el rechazo es duro y no un aviso"
+      ],
+      "not_reviewed": "Que el periodo elegido sea el correcto. Sale del research y no de una preferencia, pero hasta que se mida queda como una constante elegida, y eso esta anotado como pregunta abierta del Intake.",
+      "rollback": "git revert de la tarea: sin la regla el gate acepta capturas viejas, que es el estado anterior.",
+      "handoff": "M4 cierra la regla de vencimiento. Serializada detras de M3 porque las dos escriben el mismo validador: el preflight lo marco como conflicto cuando se declararon los escritores reales.",
+      "blocked_reason": ""
+    },
+    {
+      "id": "M5",
+      "description": "Comportamiento sin entrada: el gate escribe el prefijo de vacio y sale cero cuando no hay matriz ni contrato, declarado en el contrato de la prueba de vacio para que no se lea como aprobacion",
+      "files_to_create": [
+        "tests/verify-stack-matrix-bootstrap-cli.test.mjs",
+        "tests/verify-stack-matrix-bootstrap-falsy.test.mjs"
+      ],
+      "files_to_modify": [
+        "scripts/verify-stack-matrix.mjs",
+        "contracts/empty-probe.json"
+      ],
+      "test_files": [
+        "tests/verify-stack-matrix-bootstrap-cli.test.mjs",
+        "tests/verify-stack-matrix-bootstrap-falsy.test.mjs"
       ],
       "test_types": [
         "unit",
@@ -31,365 +165,59 @@
       ],
       "subagents": [
         "red",
-        "green",
-        "triangulate",
-        "refactor"
+        "green"
       ],
-      "depends_on": [],
+      "depends_on": [
+        "M3",
+        "M4"
+      ],
       "status": "done",
-      "goal": "El protocolo no pregunta que se quiere construir. Sin eso, un ciclo arranca sobre lo que el agente supuso y el supuesto no queda escrito, asi que nadie puede señalarlo despues.",
+      "goal": "Un gate que aprueba por ausencia de entrada miente: dice que la cobertura esta bien cuando en realidad no se miro nada. La distincion entre vacio y aprobado es la invencion propia de este repositorio y todo gate nuevo tiene que declararla.",
       "owner": "Constructor",
       "locked": false,
       "role": "builder",
-      "verifier": "node scripts/verify-intake.mjs check docs/intake/<feature>.json",
-      "approval_criteria": "AC1-AC6 de docs/spec.md, cada uno nombrado por una prueba; cobertura completa del gate; fila en empty-probe.json; limite honesto registrado; suite verde diez veces.",
+      "verifier": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "approval_criteria": "AC5 de docs/spec.md nombrado por una prueba; la entrada del script declarada en el contrato de la prueba de vacio con su comportamiento esperado y su motivo escrito.",
       "evidence": [
-        "tests/verify-intake.test.mjs: AC1-AC6 y falsificaciones de forma"
+        "contracts/empty-probe.json: la fila del script nuevo con su motivo"
       ],
-      "not_reviewed": "El gate verifica forma, no verdad: no puede saber si una respuesta es correcta ni si un supuesto quedo escondido adentro de una respuesta en vez de declarado aparte.",
-      "rollback": "git revert del commit: el gate es nuevo y nadie depende de el todavia.",
-      "handoff": "B1 implementada y verificada; B2/B3 agregan Discovery estructurado y plan canónico de fases.",
+      "not_reviewed": "Que el motivo escrito en el contrato sea el verdadero. El gate exige que haya texto, no que ese texto describa lo que el script hace.",
+      "rollback": "git revert: sin la entrada, el gate de la prueba de vacio rechaza por script no declarado, que es un rojo visible y no un verde falso.",
+      "handoff": "M5 deja el gate completo y probado; M6 lo registra en los cuatro archivos de inventario del repositorio.",
       "blocked_reason": ""
     },
     {
-      "id": "B2",
-      "description": "Diagnóstico previo de producto: CAIO, mapa de bucle, PRD, implementación, adopción y recurrencia",
-      "files_to_create": [
-        "scripts/verify-product-diagnostics.mjs",
-        "tests/verify-product-diagnostics.test.mjs",
-        "templates/diagnostics/caio.json",
-        "templates/diagnostics/loop-map.json",
-        "templates/diagnostics/prd.json",
-        "templates/diagnostics/implementation.json",
-        "templates/diagnostics/adoption.json",
-        "templates/diagnostics/recurrence.json"
-      ],
+      "id": "M6",
+      "description": "Registro del gate nuevo: fila en la referencia de gates con su limite honesto, entrada en el indice de archivos versionados, y alcance de cobertura",
+      "files_to_create": [],
       "files_to_modify": [
-        "contracts/empty-probe.json",
+        "skills/gates.md",
         "contracts/honest-limits.json",
-        "scripts/verify-vcp-contract.mjs",
-        "SKILL.md",
-        "README.md"
+        "contracts/vcp-index.json",
+        "contracts/coverage-scope.json",
+        "CHANGELOG.md"
       ],
-      "test_files": [
-        "tests/verify-product-diagnostics.test.mjs"
+      "test_files": [],
+      "test_types": [],
+      "subagents": [
+        "docs"
       ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
       "depends_on": [
-        "B1"
+        "M5"
       ],
       "status": "done",
-      "goal": "No comenzar una spec sin describir el proceso roto, el bucle operativo y cómo se implementa y adopta el resultado.",
+      "goal": "Un gate que no declara que NO puede comprobar se lee como si comprobara todo. Y uno que no esta en el indice ni en el alcance de cobertura queda fuera de las dos comprobaciones que impiden que el repositorio se degrade sin que nadie lo note.",
       "owner": "Constructor",
       "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "Seis artefactos con esquema, invariantes, evidencia y dependencias; tests focalizados verdes y comportamiento vacío declarado.",
+      "role": "docs",
+      "verifier": "node scripts/verify-vcp-contract.mjs check && node scripts/verify-vcp-index.mjs check contracts/vcp-index.json",
+      "approval_criteria": "El limite honesto del gate nuevo verificado literalmente contra la frase en su archivo; el script y sus pruebas declarados en el indice; el script dentro del alcance de cobertura y al cien por ciento.",
       "evidence": [
-        "tests/verify-product-diagnostics.test.mjs: validación de los seis artefactos y casos inválidos"
+        "contracts/honest-limits.json: la entrada del gate nuevo"
       ],
-      "not_reviewed": "El gate verifica forma e invariantes, nunca verdad semántica ni suficiencia del diagnóstico.",
-      "rollback": "git revert del commit de B2; los artefactos son aditivos y no cambian gates existentes.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B3",
-      "description": "Plan canónico de fases y verificación de que cada fase cerró con menú y elección",
-      "files_to_create": [
-        "scripts/verify-phase-menu.mjs",
-        "tests/verify-phase-menu.test.mjs",
-        "templates/phase-plan.json",
-        "docs/phase-plan.json"
-      ],
-      "files_to_modify": [
-        "contracts/empty-probe.json",
-        "scripts/verify-vcp-contract.mjs",
-        "SKILL.md",
-        "README.md"
-      ],
-      "test_files": [
-        "tests/verify-phase-menu.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2"
-      ],
-      "status": "done",
-      "goal": "Evitar que el archivo de decisiones se autoautorice cambiando su propio orden de fases.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json",
-      "approval_criteria": "Plan válido, orden idéntico al registro, todas las fases con decisión vigente, tests focalizados verdes.",
-      "evidence": [
-        "tests/verify-phase-menu.test.mjs: orden, plan inválido, incompleto y CLI"
-      ],
-      "not_reviewed": "El gate prueba consistencia del registro, no que el plan sea correcto ni que una persona haya elegido realmente.",
-      "rollback": "git revert del commit de B3; verify-phase-decisions.mjs sigue disponible para compatibilidad.",
-      "handoff": "B3 implementada; usar el wrapper en cada cierre final.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B4",
-      "description": "CAIO completo: las doce dimensiones del encargo y las cuatro clases (observed, hypothesis, inference, missing_data), con cobertura declarada para toda dimension sin hallazgos",
-      "files_to_create": [],
-      "files_to_modify": [
-        "scripts/verify-product-diagnostics.mjs",
-        "tests/verify-product-diagnostics.test.mjs",
-        "templates/diagnostics/caio.json",
-        "contracts/honest-limits.json",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-product-diagnostics.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2",
-        "B3"
-      ],
-      "status": "done",
-      "goal": "B2 cerro con 4 de las 12 dimensiones y 2 de las 4 clases que el encargo pide. Con cuatro campos las otras ocho dimensiones son invisibles: no se distingue lo mire y no habia nada de no lo mire.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "Las doce dimensiones obligatorias; las cuatro clases con los campos que cada etiqueta exige; derived_from resoluble contra los ids del propio documento; coverage declarada para exactamente las dimensiones sin hallazgos; cobertura 33/33 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "El gate no abre el locator de una evidencia: un observado con una cita inventada pasa igual. Verifica que la etiqueta cargue lo que su nombre exige, no que sea cierta.",
-      "rollback": "git revert del commit. B2 queda en su forma anterior de 4 dimensiones y 2 clases.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B5",
-      "description": "Mapa de bucle completo: los trece campos del encargo por flujo, delta exacto verificado contra current y target, y rollback mas señales de fallo en el primer bucle",
-      "files_to_create": [],
-      "files_to_modify": [
-        "scripts/verify-product-diagnostics.mjs",
-        "tests/verify-product-diagnostics.test.mjs",
-        "templates/diagnostics/loop-map.json",
-        "contracts/honest-limits.json",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-product-diagnostics.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2",
-        "B3",
-        "B4"
-      ],
-      "status": "done",
-      "goal": "El mapa declaraba seis campos de los trece que el protocolo pide, no distinguia que se decide de quien decide, y no tenia delta: la comparacion entre hoy y objetivo quedaba a cargo del lector.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "Trece campos por flujo; delta exacto que rechaza un cambio inventado, uno omitido, un from o un to que no coincide, un campo ajeno, un duplicado y un motivo vacio; rollback y failure_signals en first_loop; cobertura 33/33 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "De los trece campos, doce son prosa que el gate no puede juzgar. Lo unico verificable contra el documento es la coherencia del delta: no sabe si la metrica declarada se mide de verdad ni si el control frena algo.",
-      "rollback": "git revert del commit. El mapa vuelve a sus seis campos sin delta.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B6",
-      "description": "PRD completo: las veintiuna secciones de contenido del encargo y criterios de aceptacion de siete campos, con metricas y requisitos no funcionales que traen con que medirse",
-      "files_to_create": [],
-      "files_to_modify": [
-        "scripts/verify-product-diagnostics.mjs",
-        "tests/verify-product-diagnostics.test.mjs",
-        "templates/diagnostics/prd.json",
-        "contracts/honest-limits.json",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-product-diagnostics.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2",
-        "B3",
-        "B4",
-        "B5"
-      ],
-      "status": "done",
-      "goal": "El PRD tenia nueve secciones de contenido y sus criterios de aceptacion eran {id, statement}: un texto libre que dice que alguien penso algo, sin manera de ver que parte falta.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "Veintiuna secciones obligatorias, cada una rechazable por su nombre; criterios con evento, precondicion, accion, resultado observable, test y evidencia esperada; metricas con linea de base y objetivo; requisitos no funcionales con medida; cobertura 33/33 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "El campo test se exige escrito, nunca resuelto: el gate no abre el archivo ni comprueba que esa prueba nombre al criterio. Eso lo hace verify-evidence-trace.mjs criteria, otro gate y otro momento.",
-      "rollback": "git revert del commit. El PRD vuelve a nueve secciones y criterios de dos campos.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B7",
-      "description": "TRIANGULATE como fase propia: los 26 vectores del encargo en un contrato, un expediente por funcionalidad que declara cada uno, y --require-complete que frena el cierre con un pendiente",
-      "files_to_create": [
-        "scripts/verify-triangulate.mjs",
-        "tests/verify-triangulate.test.mjs",
-        "contracts/triangulate-vectors.json",
-        "docs/triangulate/triangulate-como-fase.json"
-      ],
-      "files_to_modify": [
-        "contracts/empty-probe.json",
-        "contracts/honest-limits.json",
-        "tests/protocolo-e2e.test.mjs",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/spec.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-triangulate.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2",
-        "B3",
-        "B4",
-        "B5",
-        "B6"
-      ],
-      "status": "done",
-      "goal": "TRIANGULATE existia como prosa adentro del bucle de Build y no dejaba rastro: quien refactorizaba decidia solo que vectores buscó. Sin lista fija se revisa lo que uno ya sabe buscar.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "AC1-AC6 de docs/spec.md, cada uno nombrado por una prueba; los 26 vectores obligatorios; covered exige prueba nombrada; not_applicable y pending exigen motivo; --require-complete frena con un pendiente; cobertura 34/34 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "El gate no abre la prueba que un vector dice tener ni comprueba que la ejercite. No descubre vectores nuevos: la lista es fija y su completitud es humana. Su propio expediente deja dos pendientes declarados: symlinks y rutas externas.",
-      "rollback": "git revert del commit. El gate es nuevo y nadie depende de el todavia.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "B8",
-      "description": "Adopcion y recurrencia completas: owner interno y responsable operativo como personas distintas, checklist y metrica de adopcion con linea de base, y criterios de promocion y de retiro",
-      "files_to_create": [],
-      "files_to_modify": [
-        "scripts/verify-product-diagnostics.mjs",
-        "tests/verify-product-diagnostics.test.mjs",
-        "templates/diagnostics/adoption.json",
-        "templates/diagnostics/recurrence.json",
-        "contracts/honest-limits.json",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-product-diagnostics.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B2",
-        "B3",
-        "B4",
-        "B5",
-        "B6",
-        "B7"
-      ],
-      "status": "done",
-      "goal": "La adopcion tenia un solo owner, una señal cualitativa y ningun checklist; la recurrencia no decia cuando promover ni cuando retirar una mejora. Sin criterio de retiro, una mejora que dejo de servir se sostiene por inercia.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "owner y operational_owner como campos distintos; adoption_checklist con ids unicos; adoption_metric con name, baseline y target; promotion_criteria y retirement_criteria obligatorios; cobertura 34/34 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "El gate exige el criterio de retiro escrito, nunca que alguien lo aplique. Una mejora puede cumplir su criterio durante meses y seguir viva: el gate mide el archivo, no el mundo.",
-      "rollback": "git revert del commit. Los dos artefactos vuelven a su forma anterior.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
-      "blocked_reason": ""
-    },
-    {
-      "id": "C1",
-      "description": "Bloque C research: repinear los 14 commits y registrar deriva y alcanzabilidad, declarar las 5 fuentes del encargo que nadie investigo, y un gate que exige contraejemplo para que un puntaje lexical no pase por evidencia",
-      "files_to_create": [
-        "scripts/verify-research-candidates.mjs",
-        "tests/verify-research-candidates.test.mjs",
-        "templates/research-candidates.json",
-        "research/pin-revalidation-2026-09-01.json"
-      ],
-      "files_to_modify": [
-        "contracts/empty-probe.json",
-        "contracts/honest-limits.json",
-        "research/source-matrix.md",
-        "SKILL.md",
-        "README.md",
-        "CHANGELOG.md",
-        "docs/spec.md",
-        "docs/tasks.json"
-      ],
-      "test_files": [
-        "tests/verify-research-candidates.test.mjs"
-      ],
-      "test_types": [
-        "unit",
-        "integration"
-      ],
-      "subagents": [],
-      "depends_on": [
-        "B8"
-      ],
-      "status": "done",
-      "goal": "La sintesis del research llama señales de adopcion a filtros lexicales que cuentan palabras. No habia ningun artefacto entre esa tabla y una capacidad adoptada, asi que el salto no dejaba rastro ni tenia donde escribir el contraejemplo.",
-      "owner": "Constructor",
-      "locked": false,
-      "role": "builder",
-      "verifier": "node scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs",
-      "approval_criteria": "AC1-AC6 de docs/spec.md nombrados por pruebas; fuente y commit cruzados contra las 14 pineadas; evidencia que cite archivo:linea del archivo declarado; contraejemplo que no repita la evidencia; adopt sin test rechaza; cobertura 35/35 y suite verde diez veces.",
-      "evidence": [],
-      "not_reviewed": "El gate no abre el archivo citado ni comprueba que la linea diga lo que el candidato afirma: una cita textual inventada pasa igual. Y no se escribio ningun candidato real, porque producir uno obliga a leer la linea en el commit pineado y el corpus no esta en el repositorio.",
-      "rollback": "git revert del commit. El gate es nuevo y nadie depende de el.",
-      "handoff": "B2 implementada y lista para ser consumida por la Spec.",
+      "not_reviewed": "Que el limite honesto declare todo lo que el gate no puede hacer. El contrato comprueba que la frase exista en su archivo, no que sea completa.",
+      "rollback": "git revert: el registro es aditivo y su ausencia deja rojos visibles en los gates de contrato e indice.",
+      "handoff": "M6 cierra el pedazo minimo. La vuelta siguiente es el gate de repositorio limpio.",
       "blocked_reason": ""
     }
   ]

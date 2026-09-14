@@ -1,60 +1,67 @@
-# Plan: intake-de-producto
+# Plan: eleccion-de-stack — pedazo mínimo
 
-**Date:** 2026-09-01
+**Date:** 2026-09-14
 **Spec:** [docs/spec.md](./spec.md)
-**Status:** completado y verificado
+**Status:** propuesto
+**ADR:** [0001 — los límites de plan gratuito vencen](./adr/0001-los-limites-de-plan-gratuito-vencen.md)
 
----
+## Qué entra en esta vuelta
 
-## Task Breakdown
+El pedazo mínimo que la spec define: **que declarar un tipo de producto devuelva un stack con su
+fuente, su fecha y su costo de escalar**. Cubre `AC2`, `AC3`, `AC4` y `AC5`.
 
-| ID | Description | Writers | Depends on | ACs |
-|----|-------------|---------|------------|-----|
-| B1 | Fase de Intake: artefacto JSON y gate nativo | `scripts/verify-intake.mjs`, `tests/verify-intake.test.mjs`, `templates/intake.json`, contratos, docs | — | AC1–AC6 |
-| B2 | Diagnóstico previo: CAIO, mapa de bucle, PRD y planes operativos | `scripts/verify-product-diagnostics.mjs`, `tests/verify-product-diagnostics.test.mjs`, `templates/diagnostics/*`, contratos, docs | B1 | seis artefactos de Discovery estructuralmente válidos |
-| B3 | Orden canónico y menú completo por fase | `scripts/verify-phase-menu.mjs`, `tests/verify-phase-menu.test.mjs`, `templates/phase-plan.json`, contratos, docs | B1 | plan y decisiones tienen el mismo orden y todas las fases cierran |
+De las cinco piezas que la spec describe, esta vuelta construye **una**: el gate de la matriz con su
+contrato de límites de plan gratuito. Las otras cuatro —despachador de test rojo, adaptadores de
+pytest y vitest, gate de repositorio limpio y cableado al menú de Intake— quedan para vueltas
+siguientes, cada una con su propio ciclo.
 
-Una sola tarea a propósito. El Intake es la primera de seis fases que el encargo pide; construirlas
-juntas produciría un diff que nadie puede revisar y seis gates que nacen sin haberse usado nunca.
-Cada una entra en su propio ciclo, y la siguiente se decide con la evidencia de la anterior.
+El criterio para cortar acá lo fijó el propio Intake: si la matriz sola no ahorra trabajo, el resto
+no la salva; y si lo ahorra, el resto es mejora sobre algo que ya sirve.
 
----
+## Tareas
 
-## Cómo se hace el RED sin un falso rojo
+| id | Qué construye | Depende de | Criterios |
+|---|---|---|---|
+| `M1` | El contrato de datos: `contracts/free-tier-limits.json` con los ocho servicios del research, fechados | — | AC3, AC4 |
+| `M2` | El validador del contrato: esquema, claves exactas, y la invariante de que todo servicio declare su disparador de escalado | `M1` | AC3 |
+| `M3` | El validador de la matriz: los ocho tipos cubiertos, y cada referencia a servicio resolviendo contra el contrato | `M2` | AC2 |
+| `M4` | La regla de antigüedad: rechazo cuando la captura supera el período declarado | `M2` | AC4 |
+| `M5` | El comportamiento sin entrada: `VACÍO:` y salida cero, declarado en el contrato de la prueba de vacío | `M3`, `M4` | AC5 |
+| `M6` | El cableado de registro: fila en la referencia de gates, límite honesto, índice y alcance de cobertura | `M5` | — |
 
-El gate no existe todavía, así que importarlo desde una prueba daría `Cannot find package`, que el
-protocolo prohíbe expresamente como rojo. El orden es otro: primero se escribe el gate como un
-esqueleto que **acepta todo** —`main` devuelve 0 sin mirar nada—, y las pruebas fallan sobre
-aserciones reales, no sobre la carga del módulo. Un rojo que dice «acepté un intake sin la mitad de
-las respuestas» prueba algo; uno que dice «no encuentro el archivo» no prueba nada.
+`M1` es el único que no escribe código: es el dato que el research ya produjo, movido de la ficha de
+fuente al contrato. Se hace primero porque `M2` no tiene contra qué correr sin él.
 
----
+## Orden y paralelismo
 
-## Orden
+`M1` abre. `M2` depende de `M1`. Desde ahí, **`M3` y `M4` son independientes entre sí** —tocan
+archivos distintos y ninguna lee la salida de la otra— así que se pueden despachar juntas. `M5`
+espera a las dos porque declara el comportamiento vacío de ambas. `M6` cierra.
 
-1. Esqueleto permisivo de `scripts/verify-intake.mjs`.
-2. `tests/verify-intake.test.mjs` — seis pruebas, una por AC, más las de falsificación. **Rojas.**
-3. Implementación hasta el verde.
-4. TRIANGULATE: JSON corrupto, esquema ajeno, arrays con forma inesperada, campos con espacios,
-   respuestas de una palabra, pregunta bloqueante sin texto, directorio ausente, ruta insegura.
-5. Fila en `contracts/empty-probe.json` y límite honesto en `contracts/honest-limits.json`.
-6. `SKILL.md` y `README.md`.
+El preflight mecánico es el que decide de verdad: dos tareas que declaren el mismo archivo sólo
+pasan si hay una ruta de dependencia entre ellas, y el gate las marca serializadas.
 
----
+## Qué NO se hace en esta vuelta
 
-## Scope gate después del GREEN
+- Los adaptadores de test rojo. Su garantía menor ya está decidida y declarada, pero construirlos
+  exige pytest y vitest corriendo, y una medición repetida en entorno virgen que todavía no se hizo.
+- El gate de repositorio limpio. Es el que más importa después de éste, y va en la vuelta siguiente.
+- El cableado de la matriz al menú de la fase de Intake. Sin eso la matriz es consultable pero no
+  automática, que es suficiente para probar si sirve.
+- La tabla navegable. Está en los Non-Goals de la spec.
+
+## Rollback
+
+Cada tarea agrega archivos y no reescribe ninguno existente salvo los cuatro de registro, que sólo
+crecen. Volver atrás es revertir el commit: nada depende todavía del gate nuevo, ningún otro gate lo
+invoca, y el contrato de datos no lo lee nadie más. No toca traza sellada ni expedientes cerrados.
+
+## Verificación de cierre
 
 ```bash
-node scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task B1 --base HEAD \
-  --ignore .vibe/SESSION.md --ignore .vibe/AUDIT.md --ignore docs/tasks.json
+node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json
+node scripts/verify-empty-probe.mjs check contracts/empty-probe.json
+node scripts/verify-vcp-contract.mjs check
+node scripts/verify-vcp-coverage.mjs
+node --test
 ```
-
----
-
-## Riesgos del plan
-
-- **El gate puede volverse burocracia.** Ocho respuestas obligatorias sobre un cambio chico es
-  fricción sin valor. Mitigación: el Intake sólo se exige donde el protocolo ya exige pipeline
-  completo; el auto-routing a Direct Build no lo pide.
-- **Un mínimo de largo por respuesta es un proxy pobre.** Veinte caracteres no distinguen una
-  respuesta real de veinte caracteres de relleno. Se declara como límite, no se vende como control.

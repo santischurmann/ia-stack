@@ -7,6 +7,79 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El protocolo dejó de sólo detectar el stack y pasó a elegirlo, con evidencia fechada.** La fase
+  de Intake tiene una novena pregunta —qué tipo de producto es, enum cerrado A-H con motivo
+  obligatorio para los ocho códigos y no sólo para el último— y hay un gate nuevo,
+  `verify-stack-matrix.mjs`, que valida una matriz de los ocho tipos contra
+  `contracts/free-tier-limits.json`. Antes de esto, las únicas dos menciones de stack en `SKILL.md`
+  eran un `ls package.json` y un menú para confirmar lo detectado: un proyecto nuevo, que no tiene
+  qué detectar, arrancaba sobre lo que el agente supuso, y ese supuesto no quedaba escrito.
+
+  - **La invariante del gate es el disparador, no el cupo.** Medido sobre ocho proveedores el
+    2026-09-14: el evento que saca a un proyecto del plan gratuito casi nunca es un número. Es una
+    cláusula de uso comercial sin contador ni alerta, una pausa tras siete días de inactividad, o
+    una base de datos que expira a los treinta días de creada. Un contrato que guardara sólo cupos
+    dejaría afuera justo lo que rompe a la gente, así que `upgrade_trigger` y `escalation` son
+    obligatorios y un cupo no.
+  - **Los límites vencen, y el gate rechaza cuando vencen.** Razonado en
+    `docs/adr/0001-los-limites-de-plan-gratuito-vencen.md`, el primer registro de decisión de
+    arquitectura del repositorio. Introduce un modo de falla que este proyecto no tenía: **un
+    repositorio que se pone rojo sin que nadie haya tocado una línea, sólo porque pasó el tiempo**.
+    Se aceptó a propósito porque la alternativa es que un número viejo se siga leyendo como cierto,
+    y el research midió que estos planes se mueven varias veces por año.
+  - **La última versión publicada no es la usable, y la matriz fija exacto por eso.**
+    `typescript@latest` es 7.0.2 y `typescript-eslint` lo excluye por rango de pares, llegando como
+    dependencia dura de `eslint-config-next`. Recomendar «la última estable» manda a un árbol que no
+    compila.
+  - **Dos tipos de producto quedan exentos de referenciar un servicio, y lo encontró el propio
+    gate.** La regla original, escrita desde los casos web, exigía referencia a todo tipo que
+    recomendara un stack y dejó en rojo al tipo `G`. `G` es artefacto: se entrega una vez y no se
+    opera, así que genuinamente no usa ningún servicio alojado. El defecto estaba en la regla, no en
+    el dato.
+
+- **Los adaptadores de test rojo para pytest y vitest se diseñaron con su garantía declarada como
+  menor, porque se falsificaron los dos.** Medido contra pytest 9.1.1 y vitest 5.0.0: los dos
+  ejecutan configuración del proyecto —`conftest.py`, `vitest.config.js`— con acceso al pipeline de
+  reporte y al código de salida, así que produjeron evidencia estructurada coherente y salida
+  distinta de cero **con cero pruebas fallando**. Es una diferencia categórica con `node --test`,
+  donde el único código del proyecto que corre es el archivo de prueba, adentro del marco TAP que
+  escapa lo que ese archivo imprime. Las opciones que cierran el vector dejan a cualquier proyecto
+  real sin fixtures, alias ni entorno, así que no sirven como default. Se construyen igual —hoy un
+  proyecto Python no puede pasar LAW 1 en absoluto— pero el receipt registra con qué adaptador se
+  obtuvo cada verde.
+
+- **Un verde falso, encontrado y declarado, donde el protocolo más confía.**
+  `verify-evidence-trace criteria` aprobó los diez criterios de una spec recién escrita contra
+  títulos de pruebas de **otra funcionalidad**: empareja por identificador literal y los
+  identificadores no llevan el slug, y como la plantilla numera desde `AC1`, el solapamiento es la
+  regla y no la excepción. Es más grave que el límite de suficiencia que ya estaba declarado, porque
+  ahí la prueba al menos hablaba del mismo criterio. Queda como límite honesto y escrito en la tabla
+  de riesgos de la propia spec.
+
+- **El gate de cobertura del grafo dejó de confundir un grafo viejo con una cobertura mentida.** La
+  misma falla se repitió **tres veces en una sesión** —archivar un expediente, archivar una sesión,
+  escribir un archivo nuevo— y en ninguna había una declaración falsa. La primera corrección,
+  exclusiones por prefijo de carpeta, tapaba sólo el caso de archivo muerto. La distinción que
+  faltaba: un archivo ausente del manifiesto es cobertura **mentida** si ya existía cuando el grafo
+  se construyó, y es sólo un grafo **viejo** si nació después. Lo segundo es el estado esperado a
+  mitad de ciclo, porque el orden documentado pone el reindexado al publicar. Ahora escribe
+  `DESACTUALIZADO:` con los nombres y sale `0`.
+
+- **Cuatro contaminaciones de datos privados en lo versionado, tres corregidas y una irreversible.**
+  Un barrido por forma encontró el nombre de usuario real del autor en tres fixtures, la subcarpeta
+  concreta de su vault personal en otra, y una ruta absoluta en la bitácora. La cuarta está en la
+  traza sellada y **no se puede borrar**: es append-only y LAW 5 lo prohíbe, así que se le agregó una
+  línea de corrección. Consecuencia de diseño: el gate que barra esto no puede ser sólo correctivo,
+  tiene que correr **antes** de sellar.
+
+- **Tres defectos propios del repositorio, cerrados.** El frontmatter del puntero de Codex decía «9
+  fases» mientras el cuerpo del mismo archivo decía «once», y ese archivo lo copia el instalador a
+  cada proyecto: ahora trae detector. Dos pruebas de `verify-spec-wordcap` inyectaban el lector de
+  archivos pero no la raíz del árbol, así que crear un `threat.json` en cualquier parte las ponía en
+  rojo por una razón que no es la que miden. Y el gate de menús acepta la marca de recomendación en
+  cualquier fila y no sobre una opción: es deliberado —hay menús cuya recomendación no puede
+  escribirse de antemano— pero nadie lo había declarado.
+
 - **Se atacaron siete límites declarados con una ronda adversarial de 22 agentes. Las siete
   propuestas cayeron 2-0, y eso fue el resultado útil.** Los siete límites **se quedan** — ahora
   guardados como dato en `contracts/honest-limits.json`, no sueltos en la cabecera de un script,

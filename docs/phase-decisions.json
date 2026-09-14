@@ -3,7 +3,8 @@
   "phase_order": [
     "1.5",
     "2",
-    "3"
+    "3",
+    "4"
   ],
   "decisions": [
     {
@@ -61,6 +62,24 @@
       "status": "decided",
       "previous_hash": "1dee7d8fb3f784dc8c8fff3fec640eaed4ac1312fd1a5b63311f43bc2dcba36f",
       "current_hash": "e52277e8f9c5918ccbd6dd7a889eb9997c6c34455708de89eb73050ac1ec5d12"
+    },
+    {
+      "phase_id": "4",
+      "phase_name": "Plan",
+      "options": [
+        "A) Aprobado — seis tareas atómicas, dos de ellas en paralelo, con el gate de la matriz y su contrato de límites como resultado",
+        "B) Sacar M6 del alcance — construir las cinco de código y dejar el registro para después",
+        "C) Hay algo que cambiar — corregir el corte de tareas o el ADR antes de sellar"
+      ],
+      "recommendation": "A) Aprobado — seis tareas atómicas, dos de ellas en paralelo, con el gate de la matriz y su contrato de límites como resultado",
+      "selected_option": "A) Aprobado — seis tareas atómicas, dos de ellas en paralelo, con el gate de la matriz y su contrato de límites como resultado",
+      "reason": "Se construye el pedazo mínimo que el propio Intake definió: la matriz con su contrato de límites, cubriendo AC2 a AC5. Sacar M6 se descartó porque este repositorio exige que todo script nuevo esté declarado en el índice, en el alcance de cobertura y con su límite honesto: sin esa tarea quedarían rojos visibles, así que no es alcance recortado sino alcance incompleto. El preflight de conflictos dio cero solapamientos sobre trece rutas de escritura declaradas, así que M3 y M4 pueden despacharse juntas. Se escribió un ADR y sólo uno: la regla de vencimiento es estructural porque introduce un modo de falla que el repositorio no tenía, un rojo por el mero paso del tiempo. PROCEDENCIA DEL MENÚ: las tres opciones se mostraron textuales. PROCEDENCIA DE LAS MARCAS DE TIEMPO: no se capturaron con reloj al mostrar el menú; timestamp es la hora real de sellado y shown_at es una cota inferior defendible dentro de la misma sesión, posterior al preflight cuya salida es la entrada de esta decisión.",
+      "shown_at": "2026-09-14T17:38:10Z",
+      "timestamp": "2026-09-14T17:42:10Z",
+      "input_hash": "b3934b8a4bae4186089e26e326a78b7e7453370f978f6d63387c6dd30b2ad7b1",
+      "status": "decided",
+      "previous_hash": "e52277e8f9c5918ccbd6dd7a889eb9997c6c34455708de89eb73050ac1ec5d12",
+      "current_hash": "0956d99708d755f48899204fe5be3f6fd8d9d1aa13d1507ef0e04b7e31d1149f"
     }
   ]
 }

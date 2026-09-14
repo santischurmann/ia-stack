@@ -648,6 +648,12 @@
       "file": "SKILL.md",
       "phrase": "fecha el archivado, no el regreso",
       "why": "La historia de git guarda cuando el archivo salio del arbol. Cuando alguien lo puso de vuelta no queda registrado en ningun lado que este gate pueda leer. Sin la frase, la fecha del aviso se lee como la fecha del incidente."
+    },
+    {
+      "limit_id": "stack-matrix-dates-the-data-not-its-truth",
+      "file": "skills/gates.md",
+      "phrase": "Verifica que el dato esté declarado, fechado y que no sea relleno; nunca que el número sea cierto ni que siga vigente hoy",
+      "why": "El gate lee contracts/free-tier-limits.json y la matriz, y comprueba forma e invariantes: que todo servicio referenciado exista, que declare que evento lo saca del plan gratuito, que traiga al menos una fila de escalado con su costo, y que su captura este dentro del periodo declarado. Lo que NO puede hacer es comprobar que los numeros sean ciertos: no sale a la red y no tiene credenciales de ningun proveedor, asi que un contrato con cifras inventadas y fecha de hoy pasa en verde. La regla de antigüedad mide la EDAD DECLARADA y no la vigencia del dato, de modo que un contrato viejo cuyos numeros no cambiaron se rechaza igual, y uno recien fechado con numeros falsos se acepta. Tampoco impide crear un recurso pago: no es un sandbox, y cualquier proceso con las mismas credenciales lo elude. El razonamiento de por que el rechazo por antigüedad es duro y no un aviso esta en docs/adr/0001-los-limites-de-plan-gratuito-vencen.md, junto con el modo de falla que introduce: un repositorio que se pone rojo sin que nadie haya tocado una linea."
     }
   ]
 }

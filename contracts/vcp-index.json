@@ -183,6 +183,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/free-tier-limits.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/graphify-exclusions.json",
       "class": "contrato"
     },
@@ -208,6 +212,10 @@
     },
     {
       "path": "docs/ablation.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md",
       "class": "evidencia"
     },
     {
@@ -795,6 +803,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-stack-matrix.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-test-bindings.mjs",
       "class": "gate"
     },
@@ -1376,6 +1388,26 @@
     },
     {
       "path": "tests/verify-spec-wordcap.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-stack-matrix-antiguedad.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-stack-matrix-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-stack-matrix-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-stack-matrix-cobertura.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-stack-matrix.test.mjs",
       "class": "prueba"
     },
     {
