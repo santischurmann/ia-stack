@@ -1,0 +1,24 @@
+{
+  "schema": "vcp.discovery-decision/3",
+  "run_id": "run-001",
+  "feature_slug": "eleccion-de-stack",
+  "decision_id": "d001",
+  "evaluated_at": "2026-09-14",
+  "status": "pending",
+  "transition_kind": "initial",
+  "supersedes": null,
+  "predecessor_hash": null,
+  "previous_status": null,
+  "activation_result": "required",
+  "triggers_observed": [
+    "protocolo-detecta-el-stack-pero-no-lo-elige",
+    "gate-de-test-rojo-acepta-un-solo-runner",
+    "limite-de-plan-gratuito-sin-registrar",
+    "ultima-version-publicada-no-es-la-usable"
+  ],
+  "correction_reason": null,
+  "skip": null,
+  "override": null,
+  "packet_ref": null,
+  "packet_sha256": null
+}

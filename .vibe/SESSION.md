@@ -4,7 +4,7 @@
 **Goal:** que el protocolo elija el stack en vez de sólo detectarlo: una novena pregunta de Intake
 con el tipo de producto (A-H), una matriz con evidencia fechada, y la regla de arrancar siempre en
 plan gratuito con su detector y su tabla de escalado
-**Status:** in progress — fases 1 y 1.5 cerradas, fase 2 (Research) abierta
+**Status:** cerrado — las tres fases del ciclo (1.5, 2 y 3) selladas. La spec está aprobada; construir es otro ciclo
 
 ## Alcance de este ciclo
 
@@ -74,6 +74,46 @@ Línea base antes de tocar el árbol: 1480 pruebas, 1479 verdes, 1 salteada, 0 f
 - **Hace falta una tabla navegable de la matriz.** Suma alcance de construcción: se hace después del
   spec y desde el mismo dato, nunca a mano.
 
+## Estado verificado — fases 2 (Research) y 3 (Spec)
+
+- Cuatro ejes de research contra documentación oficial, con cuatro fichas pineadas en
+  `research/sources/`. Cada afirmación lleva URL y fecha de consulta.
+- Los 7 diagnósticos canónicos válidos, más un octavo artefacto nuevo: la matriz de los ocho tipos
+  de producto. Es seguro agregarlo porque `verify-product-diagnostics` sólo itera su lista fija.
+- Corrida de Discovery `run-001`: dos decisiones encadenadas por hash y un packet con 12 claims de
+  tipo web. El gate de fuentes declara honestamente que esos 12 quedan sin verificar porque no sale
+  a la red.
+- `docs/spec.md` escrita: 559 de 650 palabras, forma de calidad válida, diez criterios con gramática
+  canónica, y la superficie de ataque nombrada porque el árbol declara un modelo de amenaza.
+- Las tres decisiones de fase selladas y encadenadas; el menú completo verifica contra el plan.
+- Suite al cerrar: **1494 pruebas, 1492 verdes, 2 salteadas, 0 fallos**. Cobertura 48/48 scripts.
+  Contrato: 131 promesas, **108** límites honestos (eran 105 al abrir el ciclo).
+
+### Tres hallazgos del research que cambiaron una decisión
+
+- **pytest y vitest se falsificaron empíricamente**, con cero pruebas fallando y salida distinta de
+  cero. Los dos ejecutan configuración del proyecto con acceso al reporte y al código de salida, y
+  las opciones que cierran el vector rompen cualquier proyecto real. Es una diferencia categórica
+  con el adaptador nativo, no de grado. Los adaptadores se construyen igual, porque hoy un proyecto
+  Python no puede pasar LAW 1 en absoluto, pero con la garantía declarada como menor y con el
+  receipt registrando cuál se usó.
+- **La última versión publicada no es la usable.** `typescript@latest` es 7.0.2 y
+  `typescript-eslint` lo excluye por rango de pares, llegando como dependencia dura de
+  `eslint-config-next`. La matriz fija versiones exactas, nunca «la última estable».
+- **El costo de escalar casi nunca es un número que se pueda ver venir.** La cláusula de uso
+  comercial de un proveedor no tiene contador ni alerta, y la firma de código en Windows exige token
+  físico con la opción económica limitada por región.
+
+### Un verde falso, encontrado y declarado
+
+`verify-evidence-trace criteria` aprobó los diez criterios de la spec nueva contra títulos de
+`verify-audit-chain.test.mjs`, que son criterios de otra funcionalidad. El gate empareja por
+identificador literal y los identificadores no llevan el slug; como la plantilla numera desde `AC1`,
+el solapamiento es la regla y no la excepción. Es más grave que el límite de suficiencia que el repo
+ya declaraba: ahí la prueba al menos hablaba del mismo criterio. Declarado como límite honesto 108 y
+escrito en la tabla de riesgos de la spec, con su consecuencia: ese verde **no** cuenta como
+cobertura hasta que exista la prueba nombrada en cada criterio.
+
 ## Reglas nuevas de este ciclo, cada una con su detector
 
 - **El frontmatter de una skill no puede contradecir el conteo canónico de fases.** Detector:
@@ -114,20 +154,21 @@ faltaba la distinción de fondo entre *viejo* y *deshonesto*, que es la que cerr
 
 ## Retomar acá
 
-Fase 2 RESEARCH, slug `eleccion-de-stack`. Cuatro ejes: web con límites reales de plan gratuito,
-adaptadores de test rojo, Python y cómputo pesado, escritorio e híbrido. Salida: los 7 diagnósticos
-canónicos en `docs/discovery/eleccion-de-stack/diagnostics/` más un octavo nuevo,
-`stack-matrix.json`, que es seguro de agregar porque `verify-product-diagnostics.mjs` sólo itera su
-lista fija de artefactos e ignora el resto del directorio.
+El ciclo de diseño cerró. Lo que sigue es **otro ciclo**, el de construcción, con su propio
+expediente de fases: los siete pasos están en `implementation.json` del expediente de Discovery, con
+su comando de validación y su dependencia. El primero es el gate de la matriz, con su test rojo
+primero.
 
-Antes de escribir un diagnóstico hay que pinear las fuentes: `research/sources/` y
-`contracts/research-citations.json`. Y cada candidato necesita su **contraejemplo** entre los 14
-campos, que es lo que obliga a abrir la línea citada en vez de resumir de memoria.
+Antes de construir, dos cosas que el research dejó anotadas y conviene resolver: repetir la medición
+de los adaptadores en un entorno virgen —la de este ciclo corrió con complementos de terceros
+instalados— y decidir cómo se cierra el solapamiento de identificadores de criterio.
 
 ## No verificado
 
-- que el contenido de la spec resista su gate de calidad: no verificado — `docs/spec.md` es hoy un
-  encabezado de identidad, no una spec. `verify-spec-wordcap --quality` la rechaza, y ese rechazo es
-  correcto hasta que la fase 3 la escriba con el research detrás.
+- que las diez pruebas nombradas por los criterios de la spec existan: no verificado — ninguna está
+  escrita todavía, y el gate que debería detectarlo da un verde falso por solapamiento de
+  identificadores. Se comprueba recién cuando el ciclo de construcción las escriba.
+- que los adaptadores se comporten igual en un entorno limpio: no verificado — la medición corrió
+  con complementos de terceros ya instalados en la máquina.
 - qué reportarían el tablero, el sereno y la ablación: no verificado — los tres chequeos de período
   se difirieron por decisión registrada arriba, así que no se corrieron.

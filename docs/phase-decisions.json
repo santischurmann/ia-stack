@@ -23,6 +23,44 @@
       "status": "decided",
       "previous_hash": "",
       "current_hash": "30a893d477333bdda95dfc7195d625f654b34a3d6833614ad5d7febfc5f55e58"
+    },
+    {
+      "phase_id": "2",
+      "phase_name": "Research",
+      "options": [
+        "A) Pasar a la fase 3 y escribir la spec — congela el enum de tipo de producto, la forma del contrato de plan gratuito y de la matriz, los tres adaptadores de test rojo con su garantía declarada como menor, los arreglos de vocabulario, y el gate de repositorio limpio corriendo antes de sellar",
+        "B) Ampliar el research antes — cerrar los cuatro huecos declarados: repetir la medición de los adaptadores en un entorno limpio, el precio de una instancia de Render, si Cloudflare corta o factura al pasarse, y el calendario de la próxima versión mayor de Tauri",
+        "C) Revisar los artefactos primero — leer la matriz y los diagnósticos antes de que la spec los congele como criterios de aceptación con su prueba",
+        "D) Parar acá — el trabajo queda commiteado en la rama y la bitácora dice dónde retomar"
+      ],
+      "recommendation": "A) Pasar a la fase 3 y escribir la spec — congela el enum de tipo de producto, la forma del contrato de plan gratuito y de la matriz, los tres adaptadores de test rojo con su garantía declarada como menor, los arreglos de vocabulario, y el gate de repositorio limpio corriendo antes de sellar",
+      "selected_option": "A) Pasar a la fase 3 y escribir la spec — congela el enum de tipo de producto, la forma del contrato de plan gratuito y de la matriz, los tres adaptadores de test rojo con su garantía declarada como menor, los arreglos de vocabulario, y el gate de repositorio limpio corriendo antes de sellar",
+      "reason": "Los cuatro huecos que quedaron declarados no bloquean la spec: ninguno cambia la forma de un contrato ni el criterio de una fila de la matriz, y los cuatro están escritos como límites en sus fichas de fuente, así que cerrarlos después no obliga a reescribir nada. Lo que sí cambió una decisión ya tomada fue la medición de los adaptadores: pytest y vitest se falsificaron con cero pruebas fallando, así que la garantía menor entra a la spec como dato y no como sospecha. PROCEDENCIA DEL MENÚ: las cuatro opciones se mostraron textuales. PROCEDENCIA DE LAS MARCAS DE TIEMPO: no se capturaron con reloj al mostrar el menú; timestamp es la hora real de sellado y shown_at es una cota inferior defendible dentro de la misma sesión, posterior al cierre de los cuatro gates de Discovery cuya salida es la entrada de esta decisión.",
+      "shown_at": "2026-09-14T16:58:00Z",
+      "timestamp": "2026-09-14T17:04:43Z",
+      "input_hash": "22c16e299aaf161fd52fcc8a795bd7f54869d33565b6536c4010deb7cecd96d8",
+      "status": "decided",
+      "previous_hash": "30a893d477333bdda95dfc7195d625f654b34a3d6833614ad5d7febfc5f55e58",
+      "current_hash": "1dee7d8fb3f784dc8c8fff3fec640eaed4ac1312fd1a5b63311f43bc2dcba36f"
+    },
+    {
+      "phase_id": "3",
+      "phase_name": "Spec",
+      "options": [
+        "A) Aprobada — se sella la decisión de fase 3 y el ciclo de diseño cierra; construir los gates nuevos es otro ciclo, con su test rojo primero",
+        "B) Aprobada, y seguir al plan de construcción — excede el alcance aprobado, que terminaba en la spec",
+        "C) Leer la spec completa antes de sellar — lo que se aprueba se vuelve criterio de aceptación con prueba obligatoria",
+        "D) Hay algo que cambiar — corregir la sección o el criterio que no cierra antes de sellar"
+      ],
+      "recommendation": "A) Aprobada — se sella la decisión de fase 3 y el ciclo de diseño cierra; construir los gates nuevos es otro ciclo, con su test rojo primero",
+      "selected_option": "A) Aprobada — se sella la decisión de fase 3 y el ciclo de diseño cierra; construir los gates nuevos es otro ciclo, con su test rojo primero",
+      "reason": "El alcance aprobado terminaba en la spec escrita y verde, y así quedó: 559 de 650 palabras, forma de calidad válida, diez criterios con gramática canónica, y la superficie de ataque nombrada porque el árbol declara un modelo de amenaza. Se aprueba sabiendo que el verde de evidence-trace criteria NO cuenta como cobertura de estos criterios: se descubrió durante esta fase que el gate empareja por identificador literal sin espacio de nombres, así que los diez criterios daban verde contra títulos de pruebas de otra funcionalidad. Eso quedó declarado como el límite honesto 108 y escrito en la tabla de riesgos de la propia spec, en vez de aprobarse en silencio. PROCEDENCIA DEL MENÚ: las cuatro opciones se mostraron textuales. PROCEDENCIA DE LAS MARCAS DE TIEMPO: no se capturaron con reloj al mostrar el menú; timestamp es la hora real de sellado y shown_at es una cota inferior defendible dentro de la misma sesión, posterior a que la spec pasara sus gates.",
+      "shown_at": "2026-09-14T17:11:00Z",
+      "timestamp": "2026-09-14T17:14:21Z",
+      "input_hash": "502b5066593a2d60a32a66cbcbf7c902672bf9d9eecda7bca0dd8e6f0b2710b6",
+      "status": "decided",
+      "previous_hash": "1dee7d8fb3f784dc8c8fff3fec640eaed4ac1312fd1a5b63311f43bc2dcba36f",
+      "current_hash": "e52277e8f9c5918ccbd6dd7a889eb9997c6c34455708de89eb73050ac1ec5d12"
     }
   ]
 }

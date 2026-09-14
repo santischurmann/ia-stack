@@ -251,6 +251,22 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/discovery/eleccion-de-stack/runs/run-001/decisions/d001.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/runs/run-001/decisions/d002.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/runs/run-001/packets/d002.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/views/run-001.md",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/discovery/integridad-verificable/discovery-packet.md",
       "class": "evidencia"
     },

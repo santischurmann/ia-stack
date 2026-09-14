@@ -1,0 +1,261 @@
+{
+  "schema": "vcp.discovery-packet/1",
+  "decision_id": "d002",
+  "research_snapshot": {
+    "captured_at": "2026-09-14",
+    "claims": [
+      {
+        "claim_id": "claim-typescript-peer-excluye-7",
+        "source_id": "src-npm-typescript-eslint",
+        "locator": {
+          "kind": "web",
+          "url": "https://registry.npmjs.org/typescript-eslint/latest"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "typescript-eslint@8.70.0, manifiesto publicado, consultado el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "El manifiesto declara peerDependencies.typescript con el rango mayor o igual a 4.8.4 y menor a 6.1.0, que excluye la version 7.x. Ese paquete llega como dependencia dura de eslint-config-next, asi que recomendar la ultima estable de TypeScript manda a un repositorio que no compila.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "ultima-version-publicada-no-es-la-usable"
+        ]
+      },
+      {
+        "claim_id": "claim-vitest-cobertura-exacta",
+        "source_id": "src-npm-vitest-coverage",
+        "locator": {
+          "kind": "web",
+          "url": "https://registry.npmjs.org/@vitest%2fcoverage-v8/latest"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "@vitest/coverage-v8@5.0.0, manifiesto publicado, consultado el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "El paquete de cobertura declara como par la version exacta 5.0.0 de vitest, no un rango. Subir uno obliga a subir el otro, y vitest 5.0.0 se publico once dias antes de la consulta, asi que la recomendacion prudente es quedarse en la linea anterior hasta revisar los cambios que rompen.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "ultima-version-publicada-no-es-la-usable"
+        ]
+      },
+      {
+        "claim_id": "claim-vercel-uso-comercial",
+        "source_id": "src-vercel-fair-use",
+        "locator": {
+          "kind": "web",
+          "url": "https://vercel.com/docs/limits/fair-use-guidelines"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de Vercel actualizada el 2026-07-29, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "La definicion de uso comercial incluye textualmente a un empleado o consultor pago que escribe el codigo, asi que cobrar por hacer el sitio ya saca del plan gratuito. No es un numero: no hay contador, ni alerta, ni barra de consumo. Es el unico disparador de los revisados que no se puede ver venir.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-neon-suspende-compute",
+        "source_id": "src-neon-plans",
+        "locator": {
+          "kind": "web",
+          "url": "https://neon.com/docs/introduction/plans"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de planes de Neon, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "El plan gratuito da 100 horas de computo por proyecto y por mes; al agotarlas el computo queda suspendido hasta el proximo periodo o hasta pagar, y la documentacion aclara que no se borran datos. El apagado automatico a los cinco minutos de inactividad no se puede desactivar sin pasar a un plan pago.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-supabase-pausa-siete-dias",
+        "source_id": "src-supabase-pausing",
+        "locator": {
+          "kind": "web",
+          "url": "https://supabase.com/docs/guides/platform/free-project-pausing"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de Supabase sobre pausado de proyectos, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "Un proyecto del plan gratuito se pausa tras una semana de baja actividad, y la documentacion precisa que alcanza con unas pocas peticiones diarias para evitarlo. Es la trampa de un proyecto que se deja descansar: se arma, se abandona una semana, y al volver esta pausado.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-cloudflare-diez-milisegundos",
+        "source_id": "src-cloudflare-limits",
+        "locator": {
+          "kind": "web",
+          "url": "https://developers.cloudflare.com/workers/platform/limits/"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de limites de Cloudflare Workers, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "El plan gratuito permite cien mil peticiones por dia pero limita el tiempo de procesador a diez milisegundos por invocacion. El limite que importa no es el que se mira: nadie llega a las cien mil peticiones, pero un hash de contrasena o una transformacion de imagen mata una sola peticion.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-render-postgres-expira",
+        "source_id": "src-render-free",
+        "locator": {
+          "kind": "web",
+          "url": "https://render.com/docs/free"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion del plan gratuito de Render, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "La base PostgreSQL gratuita expira treinta dias despues de creada, y no se degrada: expira. Ademas el ancho de banda incluido bajo a cinco gigabytes en abril de 2026, con migracion automatica desde agosto. Es el unico recorte real a un plan gratuito encontrado en la ventana de doce meses.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-firma-windows-token-fisico",
+        "source_id": "src-microsoft-code-signing",
+        "locator": {
+          "kind": "web",
+          "url": "https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de Microsoft actualizada el 2026-08-29, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "Desde junio de 2023 la clave privada de un certificado de firma tiene que vivir en un modulo de hardware o token fisico, y aplica tanto a los certificados de validacion de organizacion como a los extendidos. La opcion economica de Microsoft esta limitada a desarrolladores individuales de Estados Unidos y Canada, asi que fuera de esas regiones el piso real es un certificado con token, de orden de doscientos dolares por ano.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "limite-de-plan-gratuito-sin-registrar"
+        ]
+      },
+      {
+        "claim_id": "claim-pytest-configuracion-falsificable",
+        "source_id": "src-pytest-output",
+        "locator": {
+          "kind": "web",
+          "url": "https://docs.pytest.org/en/stable/how-to/output.html"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de pytest, y medicion propia contra pytest 9.1.1 el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "pytest ejecuta el archivo de configuracion del proyecto como complemento, con acceso a la ruta del reporte y al estado de salida de la sesion. Falsificado: un enganche de fin de sesion reescribe el XML despues de que el reportador lo escribio y fuerza el codigo de salida, con una unica prueba que pasa. El unico formato estructurado nativo es JUnit XML; las alternativas en JSON son complementos de terceros.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "gate-de-test-rojo-acepta-un-solo-runner"
+        ]
+      },
+      {
+        "claim_id": "claim-vitest-configuracion-falsificable",
+        "source_id": "src-vitest-reporters",
+        "locator": {
+          "kind": "web",
+          "url": "https://vitest.dev/guide/reporters.html"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Documentacion de reportadores de Vitest, y medicion propia contra vitest 5.0.0 el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "Vitest carga el archivo de configuracion del proyecto, que es codigo arbitrario. Falsificado: una preparacion global cuyo cierre corre despues del reportador reescribe el archivo de salida y fija el codigo de salida, con cero pruebas fallando. Ademas el reportador JSON dejo de escribir a la salida estandar por defecto, asi que el adaptador tiene que pasar siempre un archivo de salida.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "gate-de-test-rojo-acepta-un-solo-runner"
+        ]
+      },
+      {
+        "claim_id": "claim-python-314-es-el-piso-comun",
+        "source_id": "src-python-devguide",
+        "locator": {
+          "kind": "web",
+          "url": "https://devguide.python.org/versions/"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Guia de versiones de Python, consultada el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "La version 3.14 esta en correccion de errores hasta octubre de 2030 y es el unico punto donde todas las librerias del conjunto tienen paquetes compilados: NumPy y SciPy exigen 3.12 o superior, y Numba corta por debajo de 3.15. Fijar 3.15 cuando salga dejaria afuera a Numba, pandas, PyArrow y DuckDB.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "protocolo-detecta-el-stack-pero-no-lo-elige"
+        ]
+      },
+      {
+        "claim_id": "claim-cliente-terminal-es-python-windows",
+        "source_id": "src-mt5-pypi",
+        "locator": {
+          "kind": "web",
+          "url": "https://pypi.org/project/MetaTrader5/"
+        },
+        "retrieved_at": "2026-09-14",
+        "content_identity": {
+          "kind": "version_ref",
+          "value": "Paquete MetaTrader5 version 5.0.6180 publicado el 2026-09-05, consultado el 2026-09-14",
+          "unavailable_reason": null
+        },
+        "evidence_classification": "SUPPORTED",
+        "evidence_summary": "El cliente oficial de ese terminal de trading es un paquete de Python solo para Windows, sin distribucion de codigo fuente, que se comunica con el terminal local entre procesos. Ni un marco de escritorio en Rust ni uno en Node pueden usarlo directamente: los dos terminan lanzando un proceso auxiliar de Python, lo que significa que ese lenguaje ya esta en el stack mas una capa de plomeria que no existiria si la aplicacion fuera Python. Es el dato que decide el tipo de producto D mejor que cualquier comparacion de marcos.",
+        "linked_requirement_id": null,
+        "linked_ac_id": null,
+        "trigger_ids": [
+          "protocolo-detecta-el-stack-pero-no-lo-elige"
+        ]
+      }
+    ]
+  }
+}
