@@ -90,14 +90,54 @@
     }
   },
   "measurements": [
-    { "metric": "tipos de producto cubiertos por la matriz con stack, alternativas y criterio", "measured": true, "before": 0, "after": 8 },
-    { "metric": "servicios con su disparador de escalado y su tabla de costos en el contrato", "measured": true, "before": 0, "after": 10 },
-    { "metric": "numeros del contrato sin respaldo en la ficha pineada", "measured": true, "before": 16, "after": 0 },
-    { "metric": "scripts Node con cobertura total de funciones y ramas", "measured": true, "before": 48, "after": 49 },
-    { "metric": "pruebas de la suite completa", "measured": true, "before": 1480, "after": 1572 },
-    { "metric": "limites honestos declarados en el contrato del protocolo", "measured": true, "before": 105, "after": 109 },
-    { "metric": "vectores de triangulacion pendientes sobre el gate nuevo", "measured": true, "before": 3, "after": 0 },
-    { "metric": "rutas absolutas de directorio personal en archivos versionados", "measured": true, "before": 4, "after": 0 }
+    {
+      "metric": "tipos de producto cubiertos por la matriz con stack, alternativas y criterio",
+      "measured": true,
+      "before": 0,
+      "after": 8
+    },
+    {
+      "metric": "servicios con su disparador de escalado y su tabla de costos en el contrato",
+      "measured": true,
+      "before": 0,
+      "after": 10
+    },
+    {
+      "metric": "numeros del contrato sin respaldo en la ficha pineada",
+      "measured": true,
+      "before": 16,
+      "after": 0
+    },
+    {
+      "metric": "scripts Node con cobertura total de funciones y ramas",
+      "measured": true,
+      "before": 48,
+      "after": 49
+    },
+    {
+      "metric": "pruebas de la suite completa",
+      "measured": true,
+      "before": 1480,
+      "after": 1572
+    },
+    {
+      "metric": "limites honestos declarados en el contrato del protocolo",
+      "measured": true,
+      "before": 105,
+      "after": 109
+    },
+    {
+      "metric": "vectores de triangulacion pendientes sobre el gate nuevo",
+      "measured": true,
+      "before": 3,
+      "after": 0
+    },
+    {
+      "metric": "rutas absolutas de directorio personal en archivos versionados",
+      "measured": true,
+      "before": 4,
+      "after": 0
+    }
   ],
   "limits": [
     {
@@ -150,14 +190,14 @@
     }
   },
   "reproduction": "node --test  ·  node scripts/verify-vcp-coverage.mjs  ·  node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json  ·  node scripts/verify-triangulate.mjs check docs/triangulate/eleccion-de-stack.json --require-complete  ·  node scripts/verify-vcp-contract.mjs check  ·  node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
-  "not_reviewed": "De los 74 hallazgos que los tres atacantes propusieron, reproduje personalmente ocho: la version de vitest que ninguna ficha contiene, el precio de certificado inventado, las tarifas de excedente de Vercel ausentes, el hard true sobre lo que la ficha declaro no verificado, la restriccion de Numba invertida, la ausencia de D1 en el contrato, el regex corrompido por un heredoc, y los rechazos que el propio gate emitio al aplicar cada correccion. Los otros 26 que quedan como inconclusive los acepte sobre la reproduccion que el agente reporto, sin repetirla: es un estandar mas debil y por eso van contados aparte y no como survived. Tampoco se reviso si las recomendaciones de la matriz son buenas decisiones de ingenieria -- el gate comprueba que cada fila tenga su criterio escrito, nunca que ese criterio lleve a la eleccion correcta. Y los nueve hallazgos que quedaron sin accion estan en la ficha de cada atacante, no en este receipt.",
+  "not_reviewed": "De los 74 hallazgos que los tres atacantes propusieron, reproduje personalmente ocho: la version de vitest que ninguna ficha contiene, el precio de certificado inventado, las tarifas de excedente de Vercel ausentes, el hard true sobre lo que la ficha declaro no verificado, la restriccion de Numba invertida, la ausencia de D1 en el contrato, el regex corrompido por un heredoc, y los rechazos que el propio gate emitio al aplicar cada correccion. Los otros 26 que quedan como inconclusive los acepte sobre la reproduccion que el agente reporto, sin repetirla: es un estandar mas debil y por eso van contados aparte y no como survived. Tampoco se reviso si las recomendaciones de la matriz son buenas decisiones de ingenieria -- el gate comprueba que cada fila tenga su criterio escrito, nunca que ese criterio lleve a la eleccion correcta. Y los nueve hallazgos que quedaron sin accion estan en la ficha de cada atacante, no en este receipt. NOTA DE PROCEDENCIA DEL SELLO: el receipt se escribio primero con la huella del arbol anterior y commitearlo movio el HEAD, asi que quedo viejo contra su propio comando de comprobacion. Se resello contra el arbol vigente excluyendo el propio archivo del calculo, que es para lo que ese parametro existe. El orden correcto es preparar el indice y dejar que verify-receipt commit haga el commit, porque direcciona el arbol ANTES de crearlo; commitear a mano primero rompe esa secuencia.",
   "evidence": [
     "tests/verify-stack-matrix-mutacion.test.mjs: cada prueba mata una mutacion sobreviviente concreta, con el comentario diciendo cual",
     "docs/triangulate/eleccion-de-stack.json: los 26 vectores declarados uno a uno, 12 cubiertos y 14 no aplicables con su motivo",
     "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md: por que el rechazo por antigüedad es duro, y el modo de falla que introduce",
     ".vibe/AUDIT.md: la linea sellada de la fase 6.3 con el detalle de lo que cada atacante encontro"
   ],
-  "git_head": "166263de4f8c56ee91096832c518273133083432",
-  "tree_fingerprint": "d9258460e237a3b3f2d7b9ce5edea123a5ca1b019d8fc76ddb2ea2711fb7b967",
+  "git_head": "c59f3665f75653a3e5a970895c96da278920577c",
+  "tree_fingerprint": "9c8b010abc79a6166e63617eeb4a5521328f19e69df282c3994ff3ebaea079e0",
   "terminal_state": "approved"
 }
