@@ -240,9 +240,8 @@ node <vitest-bin> run --root <proyecto> --reporter=json --outputFile=<ruta-fuera
 
 1. **`pytest --junit-xml=-` hacia stdout.** No se probó. Cambiaría poco: el stdout de pytest tampoco
    es un canal cerrado.
-2. **Entorno no limpio.** Las mediciones corrieron con el entorno del usuario, que tiene `pytest-cov`
-   instalado. No se verificó si un plugin de terceros ya presente altera el XML. **Conviene repetir
-   las mediciones en un entorno virtual limpio antes de fijar el predicado.**
+2. ~~**Entorno no limpio.**~~ **CERRADO** — se repitió en un entorno virgen, con cero plugins. Ver
+   «Remedición en entorno virgen» al final de esta ficha: todas las afirmaciones se sostienen.
 3. **`pytest-xdist`** y los pools `browser`/`forks` de vitest: no probados. Los dos cambian el
    pipeline de reporte y podrían mover los contadores.
 4. **Exit codes de vitest más allá de 0 y 1.** Sólo se observaron esos dos, incluido el caso de
@@ -269,3 +268,99 @@ verde del fuerte.
 **Fuentes:** `docs.pytest.org/en/stable/how-to/output.html` ·
 `docs.pytest.org/en/stable/reference/exit-codes.html` · `vitest.dev/guide/reporters.html` ·
 `vitest.dev/blog/vitest-5.html` · `vitest.dev/blog/vitest-4`
+
+---
+
+## Remedición en entorno virgen — 2026-09-14
+
+La primera pasada corrió con el intérprete del sistema, que tenía **tres complementos de pytest
+instalados**: `anyio`, `hypothesis` y `pytest-cov`. Quedó declarado como no verificado, con la nota
+de que convenía repetirlo antes de fijar el predicado. Se repitió.
+
+**Entorno.** Intérprete virtual recién creado con `pytest==9.1.1` y nada más; se comprobó por conteo
+de puntos de entrada `pytest11`: **cero**. Misma versión que la medición original, así que las dos
+comparan. Para vitest, un proyecto nuevo con `vitest@5.0.0` como única dependencia y sin
+configuración previa. Los dos entornos y todos los fixtures quedaron fuera del repositorio.
+
+**Resultado: todas las afirmaciones se sostienen. Los complementos no eran la causa de nada.**
+
+### pytest, medido de nuevo
+
+| Caso | Exit | Elemento | Contadores | `classname` | Última línea del cuerpo |
+|---|---|---|---|---|---|
+| Falla un assert | 1 | `failure` | `t=1 e=0 f=1` | módulo | `test_x.py:2: AssertionError` |
+| `raise` de otra excepción | 1 | `failure` | `t=1 e=0 f=1` | módulo | `test_x.py:2: ValueError` |
+| `pytest.fail()` | 1 | `failure` | `t=1 e=0 f=1` | módulo | `test_x.py:4: Failed` |
+| Error de fixture | 1 | `error` | **`t=1 e=1 f=0`** | módulo | `conftest.py:5: RuntimeError` |
+| Error de recolección | **2** | `error` | `t=1 e=1 f=0` | **vacío** | `ModuleNotFoundError` |
+| Sintaxis rota | **2** | `error` | `t=1 e=1 f=0` | **vacío** | `SyntaxError` |
+| Cero recolectados | **5** | — | `t=0` | — | — |
+| Usage error | **4** | — | — | — | — |
+
+**Un refinamiento que la remedición aporta.** El error de fixture produce una última línea con la
+**misma forma** que un fallo de aserción: `<archivo>:<línea>: <Excepción>`. Así que el discriminador
+entre esos dos **no puede ser la última línea**: tiene que ser el par de contadores `errors` contra
+`failures`. La tabla de arriba ya lo decía estructuralmente; ahora está confirmado que apoyarse sólo
+en la línea sería ambiguo.
+
+**El assert dentro de un helper** vuelve a apuntar a la línea del helper y no a la de la prueba, así
+que la comprobación cruzada contra el fuente tiene que aceptar cualquier archivo contenido en el
+proyecto. **La sintaxis rota** es un caso nuevo, y se comporta igual que el error de recolección:
+exit 2, `<error>`, `classname` vacío.
+
+### El ataque de pytest, reproducido en virgen
+
+```
+exit code         : 1
+stdout de pytest  : .    [100%] / 1 passed in 0.04s
+XML               : tests="1" errors="0" failures="1"
+XML última línea  : test_ok.py:2: AssertionError
+```
+
+**Una prueba que pasa, y el gate ve un rojo.** Con `--noconftest`: exit 0 y `failures="0"`, o sea la
+verdad. Con `--confcutdir`: **el ataque pasa igual**, confirmando que esa opción no sirve de defensa.
+
+Las dos condiciones del comando también se confirman: **sin `-o addopts=`, un `pytest.ini` del
+proyecto con `addopts = -p no:junitxml` hace que el XML no se escriba nunca**; y `PYTEST_ADDOPTS`
+inyecta opciones — con `--co` inyectado, pytest sólo recolecta y el reporte queda en cero.
+
+### vitest, medido de nuevo
+
+| Caso | Exit | `success` | `numTotalTests` | Fallados | `assertionResults` | `message` | Prefijo |
+|---|---|---|---|---|---|---|---|
+| Falla un assert | 1 | `false` | 1 | 1 | 1 | `""` | `AssertionError: ` |
+| `throw` de otra cosa | 1 | `false` | 1 | 1 | 1 | `""` | `TypeError: ` |
+| Error de hook | 1 | `false` | 1 | 1 | 1 | `""` | `Error: hook roto` |
+| Error de import | 1 | `false` | **0** | 0 | **0** | `"Cannot find module …"` | — |
+| Archivo sin suite | 1 | `false` | **0** | 0 | **0** | `"No test suite found …"` | — |
+| Cero archivos | 1 | `false` | — | — | — | — | — |
+
+El discriminador estructural queda confirmado: **`assertionResults` vacío junto con `message` no
+vacío** separa un error de carga de un fallo de prueba. Y el error de hook sigue siendo
+indistinguible de un fallo de aserción salvo por el prefijo del string.
+
+**La falsificación por nombre de error se reprodujo**: un `new Error(...)` con `e.name` reasignado a
+`AssertionError`, lanzado desde un `test()` real, produce un prefijo idéntico al genuino.
+
+### El ataque de vitest, reproducido en virgen
+
+```
+exit code      : 1
+success        : false
+numTotalTests  : 1   numFailedTests: 1
+```
+
+con la prueba real **pasando**. Con `--config` apuntando a un archivo neutral fuera del proyecto:
+exit 0, `success=true`, cero fallados — la verdad. Y se confirma que **el reporter JSON ya no escribe
+a la salida estándar**: dice `JSON report written to <ruta>` en su lugar.
+
+### Qué cambia para el diseño del adaptador
+
+**Nada.** Los dos límites honestos redactados arriba quedan tal como están, y ahora con la medición
+hecha en el entorno que la primera pasada no podía garantizar. El hueco «no verificado #2» queda
+**cerrado**.
+
+Lo que sigue sin verificarse, y sigue declarado: `pytest-xdist`, los pools `browser` y `forks` de
+vitest, los exit codes de vitest más allá de 0 y 1, y que el `2` de pytest para errores de
+recolección sea una garantía de API — se observó otra vez, en dos casos distintos, pero la
+documentación sigue describiendo ese código como interrupción del usuario.

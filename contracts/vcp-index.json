@@ -207,6 +207,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/stack-matrix.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/triangulate-vectors.json",
       "class": "contrato"
     },
@@ -252,10 +256,6 @@
     },
     {
       "path": "docs/discovery/eleccion-de-stack/diagnostics/recurrence.json",
-      "class": "evidencia"
-    },
-    {
-      "path": "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
       "class": "evidencia"
     },
     {
@@ -875,6 +875,10 @@
       "class": "skill"
     },
     {
+      "path": "skills/stack.md",
+      "class": "skill"
+    },
+    {
       "path": "skills/subagent-chore.md",
       "class": "skill"
     },
@@ -1092,6 +1096,10 @@
     },
     {
       "path": "tests/spawn-budget.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/stack-matriz-pareada.test.mjs",
       "class": "prueba"
     },
     {

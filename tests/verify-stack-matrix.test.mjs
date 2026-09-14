@@ -150,15 +150,30 @@ test('AC5 · sin matriz ni contrato escribe VACÍO y sale 0, sin decir OK', () =
   assert.ok(!salida.some((l) => /^OK: /u.test(l)), 'un directorio sin matriz no compra un OK de cobertura');
 });
 
-test('FALSIFICACIÓN · con contrato pero sin matriz, y al revés, rechaza en vez de escribir VACÍO', () => {
-  const soloContrato = [];
-  assert.equal(main(['check', 'm.json'], {
+// LA ASIMETRÍA NO ES SIMÉTRICA, Y LA REGLA ANTERIOR SE EQUIVOCABA EN UNA MITAD.
+//
+// Cuando la matriz era un artefacto por proyecto, «hay contrato y no hay matriz» era sospechoso.
+// Desde que la matriz y el contrato VIAJAN LOS DOS con el runtime, el contrato está presente en
+// toda instalación desde el minuto cero, así que su presencia no dice absolutamente nada sobre si
+// este proyecto eligió stack. Rechazar ahí convertía el estado normal de cualquier instalación
+// nueva en un incumplimiento — lo encontró la sonda de carpeta vacía, con la batería en verde.
+//
+// La otra mitad sí se sostiene: una matriz sin su contrato de límites es una recomendación que no
+// dice qué cuesta crecer, y eso es exactamente lo que este gate existe para impedir.
+test('con contrato pero sin matriz escribe VACÍO, porque el contrato viaja con el gate', () => {
+  const salida = [];
+  const errores = [];
+  const code = main(['check', 'm.json'], {
     safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('free-tier') ? JSON.stringify(contrato()) : (() => { throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' }); })()),
-    write: () => {}, writeError: (l) => soloContrato.push(l),
-  }), 1);
-  assert.ok(soloContrato.some((l) => /matriz/u.test(l)), soloContrato.join('\n'));
+    write: (l) => salida.push(l), writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 0, errores.join('\n'));
+  assert.ok(/^VACÍO: /u.test(salida.at(-1)), salida.join('\n'));
+  assert.ok(!salida.some((l) => /^OK: /u.test(l)), 'una carpeta sin matriz no compra un OK de cobertura');
+});
 
+test('FALSIFICACIÓN · una matriz sin su contrato de límites sigue rechazando', () => {
   const soloMatriz = [];
   assert.equal(main(['check', 'm.json'], {
     safePath: (_r, p) => p,
@@ -180,7 +195,7 @@ test('el gate real compone las tres invariantes y sale verde sobre el repositori
   const { readFileSync } = await import('node:fs');
   const salida = [];
   const errores = [];
-  const code = main(['check', 'docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json'], {
+  const code = main(['check', 'contracts/stack-matrix.json'], {
     safePath: (_r, p) => p,
     read: (ruta) => readFileSync(join(repoRoot, String(ruta)), 'utf8'),
     hoy: JSON.parse(readFileSync(join(repoRoot, 'contracts', 'free-tier-limits.json'), 'utf8')).revalidated,
@@ -190,6 +205,101 @@ test('el gate real compone las tres invariantes y sale verde sobre el repositori
   assert.equal(code, 0, errores.join('\n'));
   assert.ok(salida.some((l) => /^OK: /u.test(l)), salida.join('\n'));
   assert.ok(salida.some((l) => /^LIMITE: /u.test(l)), 'el gate tiene que declarar qué NO puede comprobar');
+});
+
+// El contrato se busca DONDE VIVE EL GATE, no donde alguien paró la terminal.
+//
+// Medido el 2026-09-14 sobre una instalación real, y sólo apareció ahí: la batería estaba entera en
+// verde. En el repositorio de VCP la raíz del runtime y la del proyecto son la misma carpeta, así
+// que abrir `contracts/free-tier-limits.json` relativo al directorio de trabajo funcionaba por
+// coincidencia. Instalado en un proyecto ajeno el runtime queda en `.vibe/vcp-runtime/`, y el gate
+// salía `REJECTED: hay un archivo en <matriz> pero falta contracts/free-tier-limits.json` — o sea
+// que el paso que SKILL.md publica no corría para nadie más que para este repositorio.
+//
+// La ruta de la matriz nunca tuvo el problema porque entra por argumento. La del contrato es fija, y
+// una ruta fija relativa al directorio de trabajo es una ruta rota en cuanto el código viaja.
+test('el contrato se resuelve contra la raíz del runtime, no contra el directorio de trabajo', SOLO_FUENTE, async () => {
+  const { readFileSync } = await import('node:fs');
+  const proyecto = join('C:', 'proyecto-ajeno');
+  const runtime = join(proyecto, '.vibe', 'vcp-runtime');
+  const contratoInstalado = join(runtime, 'contracts', 'free-tier-limits.json');
+  const matrizDelProyecto = join(proyecto, 'docs', 'matriz.json');
+
+  const limitesReales = readFileSync(join(repoRoot, 'contracts', 'free-tier-limits.json'), 'utf8');
+  const matrizReal = readFileSync(join(repoRoot, 'contracts', 'stack-matrix.json'), 'utf8');
+
+  const leidos = [];
+  const errores = [];
+  const code = main(['check', 'docs/matriz.json'], {
+    root: proyecto,
+    runtimeRoot: runtime,
+    safePath: (base, p) => join(String(base), String(p)),
+    read: (r) => {
+      leidos.push(String(r));
+      if (String(r) === contratoInstalado) return limitesReales;
+      if (String(r) === matrizDelProyecto) return matrizReal;
+      const error = new Error(`no existe ${r}`);
+      error.code = 'ENOENT';
+      throw error;
+    },
+    hoy: JSON.parse(limitesReales).revalidated,
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+
+  assert.ok(leidos.includes(contratoInstalado),
+    `el gate nunca miró ${contratoInstalado}; leyó ${JSON.stringify(leidos)}`);
+  assert.equal(code, 0, errores.join('\n'));
+});
+
+test('FALSIFICACIÓN · un resolvedor que no devuelve ruta cae a la declarada, y no lee `undefined`', () => {
+  // Las DOS caídas, no una. Cada ruta se resuelve contra una raíz distinta —la matriz contra el
+  // proyecto, el contrato contra el runtime— y las dos tienen su propio `?? `. Sin esta prueba la
+  // del contrato quedaba sin ejecutar, y una caída rota ahí se lee como un archivo ausente: el gate
+  // escribiría VACÍO sobre un runtime que sí tiene su contrato.
+  const leidos = [];
+  const errores = [];
+  const code = main(['check', 'm.json'], {
+    root: join('C:', 'proyecto'),
+    runtimeRoot: join('C:', 'runtime'),
+    safePath: () => undefined,
+    read: (r) => {
+      leidos.push(String(r));
+      throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' });
+    },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+
+  assert.deepEqual(leidos, ['m.json', join('contracts', 'free-tier-limits.json')],
+    'cayó a otra cosa que las rutas declaradas');
+  assert.equal(code, 0, errores.join('\n'));
+});
+
+test('FALSIFICACIÓN · un contrato que se escapa de la raíz del RUNTIME se rechaza antes de leerlo', () => {
+  // La contención de la ronda adversarial se conserva, anclada donde corresponde. El ataque original
+  // era un enlace de directorio que redirigía `contracts/` afuera; ahora ese enlace tendría que
+  // vivir adentro del runtime, y ahí lo corta este resolvedor. Lo que NO se contiene contra la raíz
+  // del proyecto es la ubicación del runtime en sí: instalado vive en `.vibe/vcp-runtime/` y la
+  // sonda de carpeta vacía lo corre desde un directorio que no lo contiene, los dos casos legítimos.
+  const errores = [];
+  const leidos = [];
+  const code = main(['check', 'docs/matriz.json'], {
+    root: join('C:', 'proyecto-ajeno'),
+    runtimeRoot: join('C:', 'runtime-con-enlace'),
+    safePath: (base, p) => {
+      if (String(base).includes('runtime-con-enlace')) throw new Error(`ratchet path escapes the project: ${p}`);
+      return join(String(base), String(p));
+    },
+    read: (r) => { leidos.push(String(r)); return '{}'; },
+    hoy: '2026-09-14',
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+
+  assert.equal(code, 1);
+  assert.ok(errores.some((l) => /escapes the project/u.test(l)), errores.join('\n'));
+  assert.deepEqual(leidos, [], 'rechazó después de leer, y tenía que rechazar antes');
 });
 
 test('FALSIFICACIÓN · los campos de cabecera del contrato se comprueban uno por uno', () => {
@@ -232,7 +342,7 @@ test('FALSIFICACIÓN · main rechaza y escribe cada violación, en vez de contar
     safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('free-tier')
       ? JSON.stringify(roto)
-      : readFileSync(join(repoRoot, 'docs', 'discovery', 'eleccion-de-stack', 'diagnostics', 'stack-matrix.json'), 'utf8')),
+      : readFileSync(join(repoRoot, 'contracts', 'stack-matrix.json'), 'utf8')),
     hoy: roto.revalidated,
     write: () => {},
     writeError: (l) => errores.push(l),

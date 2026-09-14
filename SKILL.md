@@ -331,6 +331,39 @@ incumple nada. **El gate verifica forma, nunca verdad**: no sabe si una respuest
 si alguien la contestó de verdad, y un supuesto escondido adentro del texto de una respuesta le es
 invisible. Que las respuestas digan algo sigue siendo juicio humano.
 
+### La novena pregunta se contesta con la matriz, no de memoria
+
+Un tipo de producto declarado y nadie que lo lea es un lazo abierto: preguntar con qué se construye
+y no poder contestar es peor que no preguntar. Con el código en la mano, abrí
+`contracts/stack-matrix.json` —la matriz canónica, que viaja con el runtime porque el instalador
+copia `contracts/`— y contestá con **cuatro cosas, las cuatro o ninguna**:
+
+1. **El stack recomendado** de la fila de ese código, y sus **alternativas con su cuándo**. Nunca el
+   recomendado solo: una recomendación sin alternativa es una orden disfrazada.
+2. **De qué fuente sale y de qué fecha es** — `sources` y `captured_at` de la matriz.
+3. **Qué lo saca del plan gratuito y desde cuánto se paga**: por cada entrada de `free_tier_refs` de
+   la fila, el `upgrade_trigger`, el `paid_from` y la lista `escalation` de
+   `contracts/free-tier-limits.json`. Esto es el costo de crecer, y es obligatorio: «es gratis» sin
+   decir qué lo rompe es la recomendación que este paso existe para impedir.
+4. **Si la fila no referencia ningún plan gratuito**, su `no_free_tier_reason` dice por qué. No es un
+   hueco: es un producto que no corre en un servicio alojado.
+
+El procedimiento completo, la tabla legible por tipo y la de costo de escalar están en
+`skills/stack.md`, que es la copia para personas del mismo dato —
+`tests/stack-matriz-pareada.test.mjs` comprueba que las dos digan lo mismo. **El dato se lee del
+JSON, nunca de la memoria del modelo**: las versiones y los cupos vencen, y el modelo no sabe cuándo.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-stack-matrix.mjs check .vibe/vcp-runtime/contracts/stack-matrix.json
+```
+
+Sin matriz ni contrato el gate escribe `VACÍO:` y sale `0`: un proyecto que todavía no eligió stack
+no incumple nada. **Límite honesto**: el gate comprueba que cada campo esté escrito, fechado y que no
+sea relleno, y que la captura esté dentro del período que el propio contrato declara. **Nunca que el
+número sea cierto ni que siga vigente hoy** — no sale a la red, lee un archivo que alguien escribió.
+Y `verify-intake.mjs` no sabe si el producto es realmente de ese tipo: una clasificación coherente y
+equivocada pasa en verde, y arrastra el stack equivocado detrás.
+
 Al cerrar, presentá 🔵 con al menos dos opciones y registrá la elección: seguir a Research, volver
 a preguntar lo que quedó flojo, o parar.
 

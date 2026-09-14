@@ -374,10 +374,10 @@
       "script": "verify-stack-matrix.mjs",
       "args": [
         "check",
-        "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json"
+        "contracts/stack-matrix.json"
       ],
       "expect": "empty",
-      "why": "Sobre un directorio vacio no hay matriz ni contrato de limites, y eso no es un incumplimiento: es un proyecto que todavia no eligio stack. El gate escribe VACIO y sale 0. Si hubiera uno de los dos y no el otro rechazaria, porque una recomendacion sin su contrato no dice que cuesta crecer."
+      "why": "Sobre un directorio vacio no hay matriz, y eso no es un incumplimiento: es un proyecto que todavia no eligio stack. El gate escribe VACIO y sale 0. El contrato de limites NO entra en esa cuenta porque viaja adentro del runtime, al lado del gate, asi que esta presente en toda instalacion desde el minuto cero y su presencia no dice nada sobre este proyecto. La asimetria que si rechaza es la otra: una matriz sin su contrato es una recomendacion que no dice que cuesta crecer, y ahi el runtime esta incompleto. Esta sonda encontro el defecto: mientras el contrato se buscaba relativo al directorio de trabajo, el gate rechazaba en cualquier carpeta que no fuera la raiz del checkout."
     },
     {
       "script": "verify-test-bindings.mjs",

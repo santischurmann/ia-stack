@@ -19,7 +19,8 @@
 // sandbox, y cualquier proceso con las mismas credenciales lo elude.
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { safeProjectFile } from './ratchet.mjs';
 
@@ -342,6 +343,16 @@ export function validateFreshness(contrato, hoy) {
 const CONTRATO_PATH = join('contracts', 'free-tier-limits.json');
 
 /**
+ * La raíz del runtime: la carpeta que contiene a `scripts/`, o sea este mismo paquete. Instalada es
+ * `<proyecto>/.vibe/vcp-runtime`; en el repositorio de VCP coincide con la raíz del proyecto, y **por
+ * esa coincidencia el defecto era invisible desde acá**: el contrato se abría relativo al directorio
+ * de trabajo y funcionaba, mientras que en un proyecto ajeno el gate no encontraba su propio
+ * contrato y rechazaba. Medido sobre una instalación real el 2026-09-14, con la batería en verde.
+ * Mismo patrón que `verify-discovery-requirements.mjs`.
+ */
+const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+
+/**
  * Los TRES estados de una lectura. Antes eran dos y por eso un archivo corrupto se convertía en
  * silencio: una marca de orden de bytes hace fallar el parseo, y tratar cualquier fallo como
  * ausencia hacía que el gate escribiera VACÍO y saliera 0 sobre un archivo roto. Ausente es un
@@ -381,11 +392,23 @@ export function main(args = process.argv.slice(2), options = {}) {
   // aprobó. Una garantía que cubre la mitad es peor que ninguna, porque nadie revisa la otra mitad.
   const resolver = options.safePath ?? safeProjectFile;
   const raiz = options.root ?? process.cwd();
+  // CADA RUTA SE CONTIENE CONTRA LA RAÍZ QUE LE CORRESPONDE, y son dos raíces distintas.
+  //
+  // La matriz entra por argumento: es una ruta que provee el proyecto, así que se contiene contra la
+  // raíz del PROYECTO. El contrato de límites no lo provee nadie — viaja adentro del runtime, al
+  // lado de este mismo archivo — así que se contiene contra la raíz del RUNTIME. La ronda
+  // adversarial que motivó esta contención atacaba con un enlace de directorio que redirigía
+  // `contracts/` afuera; anclado acá ese enlace tendría que vivir adentro del runtime, y ahí lo
+  // corta igual. Lo que NO se puede exigir es que el runtime esté adentro del proyecto: instalado
+  // vive en `.vibe/vcp-runtime/` y la sonda de carpeta vacía lo corre desde un directorio que no lo
+  // contiene. Exigirlo rompía los dos casos legítimos, medido el 2026-09-14.
+  const runtimeRoot = options.runtimeRoot ?? RUNTIME_ROOT;
+  const nombreContrato = CONTRATO_PATH;
   let rutaMatriz;
   let rutaContrato;
   try {
     rutaMatriz = resolver(raiz, args[1]) ?? args[1];
-    rutaContrato = resolver(raiz, CONTRATO_PATH) ?? CONTRATO_PATH;
+    rutaContrato = resolver(runtimeRoot, nombreContrato) ?? nombreContrato;
   } catch (error) {
     writeError(`REJECTED: ${error.message}`);
     return 1;
@@ -394,25 +417,26 @@ export function main(args = process.argv.slice(2), options = {}) {
   const matrizLeida = leerDocumento(read, rutaMatriz);
   const contratoLeido = leerDocumento(read, rutaContrato);
 
-  for (const [nombre, leida] of [[args[1], matrizLeida], [CONTRATO_PATH, contratoLeido]]) {
+  for (const [nombre, leida] of [[args[1], matrizLeida], [nombreContrato, contratoLeido]]) {
     if (leida.estado === 'ilegible') {
       writeError(`REJECTED: el archivo ${nombre} existe pero es ilegible: ${leida.motivo}. Un archivo corrupto no es un archivo ausente, así que esto rechaza en vez de escribir ${EMPTY}.`);
       return 1;
     }
   }
 
-  if (matrizLeida.estado === 'ausente' && contratoLeido.estado === 'ausente') {
-    write(`${EMPTY}: no hay matriz en ${args[1]} ni contrato de límites en ${CONTRATO_PATH}. Esto no verificó nada: un proyecto que todavía no eligió stack no incumple nada.`);
+  // SIN MATRIZ NO HAY NADA QUE VERIFICAR, haya contrato o no. La versión anterior rechazaba cuando
+  // encontraba el contrato sin la matriz, y eso era correcto mientras la matriz fuera un artefacto
+  // por proyecto. Desde que el contrato viaja adentro del runtime está presente en toda instalación
+  // desde el minuto cero, así que su presencia no dice nada sobre si ESTE proyecto eligió stack:
+  // rechazar ahí convertía el estado normal de cualquier instalación nueva en un incumplimiento.
+  if (matrizLeida.estado === 'ausente') {
+    write(`${EMPTY}: no hay matriz en ${args[1]}. Esto no verificó nada: un proyecto que todavía no eligió stack no incumple nada. El contrato de límites viaja con el gate, así que que esté o no presente no dice nada de este proyecto.`);
     return 0;
   }
-  // Los mensajes dicen «hay un archivo en», no «hay contrato»: en este punto el gate todavía no miró
-  // si ese archivo es un contrato, y afirmarlo desviaba el diagnóstico hacia el archivo equivocado.
+  // El mensaje dice «hay un archivo en», no «hay una matriz»: en este punto el gate todavía no miró
+  // si ese archivo es una matriz, y afirmarlo desviaba el diagnóstico hacia el archivo equivocado.
   if (contratoLeido.estado === 'ausente') {
-    writeError(`REJECTED: hay un archivo en ${args[1]} pero falta ${CONTRATO_PATH}: una recomendación sin el contrato de límites no dice qué cuesta crecer`);
-    return 1;
-  }
-  if (matrizLeida.estado === 'ausente') {
-    writeError(`REJECTED: hay un archivo en ${CONTRATO_PATH} pero falta la matriz en ${args[1]}`);
+    writeError(`REJECTED: hay un archivo en ${args[1]} pero falta ${nombreContrato}: una recomendación sin el contrato de límites no dice qué cuesta crecer. Si el protocolo está instalado, el contrato tiene que estar en la misma carpeta que este gate — un runtime incompleto se reinstala.`);
     return 1;
   }
 

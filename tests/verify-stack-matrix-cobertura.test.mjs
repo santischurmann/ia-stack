@@ -150,7 +150,7 @@ test('FALSIFICACIÓN · el esquema se mira primero y corta', () => {
 });
 
 test('la matriz real del repositorio pasa contra el contrato real', SOLO_FUENTE, () => {
-  const real = JSON.parse(readFileSync(join(repoRoot, 'docs', 'discovery', 'eleccion-de-stack', 'diagnostics', 'stack-matrix.json'), 'utf8'));
+  const real = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'stack-matrix.json'), 'utf8'));
   const contrato = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'free-tier-limits.json'), 'utf8'));
   const ids = new Set(contrato.services.map((s) => s.service_id));
   assert.deepEqual(validateMatrix(real, ids), []);

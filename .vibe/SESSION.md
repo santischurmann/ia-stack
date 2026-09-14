@@ -176,6 +176,28 @@ valor que no es número. La exención pasó a ser un motivo escrito por fila.
 - **El frontmatter de una skill dice cuántas fases son, y el gate de menús tolera la marca de
   recomendación fuera de una opción.** Los dos límites quedaron declarados (106 y 107).
 
+### Una regla mía que el dato mostró equivocada, otra vez
+
+El gate rechazaba cuando encontraba el contrato de límites sin la matriz: «una recomendación sin su
+contrato no dice qué cuesta crecer», y al revés. Era correcto **mientras la matriz fuera un artefacto
+por proyecto**. Desde que la matriz y el contrato viajan los dos adentro del runtime, el contrato
+está presente en toda instalación desde el minuto cero, así que su presencia no dice **nada** sobre
+si este proyecto eligió stack — y rechazar ahí convertía el estado normal de cualquier instalación
+nueva en un incumplimiento. Lo encontró la sonda de carpeta vacía. La mitad que sí se sostiene es la
+otra: una matriz sin su contrato sigue rechazando.
+
+Misma forma que las dos anteriores del ciclo —`free_tier_refs` y `escalation`—: **la regla empujaba
+al dato a decir algo falso**, y el arreglo no fue parchear el dato sino replantear la regla.
+
+### La contención tenía la raíz equivocada, no sobraba
+
+Primer intento del arreglo: contener el contrato contra la raíz del proyecto, como la matriz. Lo
+rompió la sonda de carpeta vacía en el acto — el runtime vive **legítimamente** afuera del directorio
+que se sondea. La contención no sobraba: estaba anclada donde no correspondía. Ahora cada ruta se
+contiene contra su propia raíz —la matriz contra el proyecto, el contrato contra el runtime— y el
+ataque original del enlace de directorio sigue cortado. El límite que eso deja abierto quedó
+declarado: **el gate no comprueba cuál runtime está leyendo**, confía en la carpeta donde vive.
+
 ### La misma herida, tres veces en una sesión
 
 Archivar un expediente, archivar una sesión y escribir el archivo de Intake dejaron el gate de
@@ -189,6 +211,23 @@ faltaba la distinción de fondo entre *viejo* y *deshonesto*, que es la que cerr
   sobre lo versionado y sólo 3 eran afirmaciones sobre este protocolo. Las otras 9 eran subconjuntos
   legítimos, fases de otras herramientas descritas en `research/sources/`, y afirmaciones viejas
   dentro de fuentes pineadas. Ensanchar habría producido ocho rojos falsos.
+- **La medición de los adaptadores se repitió en un entorno virgen**, que era el hueco que el
+  research había declarado sin verificar: intérprete virtual con `pytest==9.1.1` y cero puntos de
+  entrada `pytest11`, y un proyecto nuevo con `vitest@5.0.0` solo. **Los tres complementos que había
+  en la máquina no eran la causa de nada**: los dos ataques se reprodujeron idénticos —prueba que
+  pasa, gate que ve un rojo— y los discriminadores estructurales se sostuvieron uno por uno. Dejó
+  un refinamiento: el error de fixture de pytest produce una última línea con la **misma forma** que
+  un fallo de aserción (`<archivo>:<línea>: <Excepción>`), así que el discriminador entre esos dos
+  tiene que ser el par `errors`/`failures`, nunca la línea sola. Queda en
+  `research/sources/adaptadores-red-2026-09-14.md`.
+- **Instalar el protocolo en un proyecto ajeno encontró un defecto que las 1580 pruebas no veían.**
+  Al cerrar el lazo del stack se simuló una instalación real y se corrió el gate desde ahí:
+  `REJECTED: ... falta contracts/free-tier-limits.json`. La causa es que el gate abría su propio
+  contrato con una ruta relativa al directorio de trabajo, y **en este repositorio la raíz del
+  runtime y la del proyecto son la misma carpeta**, así que funcionaba por coincidencia. Instalado,
+  el runtime vive en `.vibe/vcp-runtime/` y la ruta no existe. Es el caso puro de que la batería
+  verde no cierra un gate y el dato real sí: ninguna prueba unitaria podía ver una coincidencia de
+  rutas que sólo se rompe al mudar el código de máquina.
 
 ## Intentos fallidos
 
@@ -201,16 +240,24 @@ expediente de fases: los siete pasos están en `implementation.json` del expedie
 su comando de validación y su dependencia. El primero es el gate de la matriz, con su test rojo
 primero.
 
-Antes de construir, dos cosas que el research dejó anotadas y conviene resolver: repetir la medición
-de los adaptadores en un entorno virgen —la de este ciclo corrió con complementos de terceros
-instalados— y decidir cómo se cierra el solapamiento de identificadores de criterio.
+De las dos cosas que el research dejó anotadas, **una está resuelta**: la medición de los adaptadores
+se repitió en un entorno virgen y todo se sostuvo, así que el predicado se puede fijar sobre lo
+medido. Queda la otra: decidir cómo se cierra el solapamiento de identificadores de criterio.
+
+**El lazo del stack está cerrado.** La matriz se mudó de `docs/` a `contracts/stack-matrix.json` —el
+instalador copia `contracts/` y no copia `docs/`, así que desde `docs/` no llegaba a nadie—, se
+escribió `skills/stack.md` como copia legible con su prueba pareada, y la fase 1.5 de `SKILL.md`
+ahora manda leer la matriz y contestar con stack, fuente, fecha y costo de escalar. Verificado
+instalando en un proyecto limpio, no sólo con la batería.
+
+**Lo que sigue sin construir de la spec**: el despachador de test rojo y los adaptadores de pytest y
+vitest (AC6, AC7, AC8) y el gate de repositorio limpio (AC9). Seis de los diez criterios están
+construidos; los cuatro casilleros restantes siguen vacíos a propósito.
 
 ## No verificado
 
 - que las diez pruebas nombradas por los criterios de la spec existan: no verificado — ninguna está
   escrita todavía, y el gate que debería detectarlo da un verde falso por solapamiento de
   identificadores. Se comprueba recién cuando el ciclo de construcción las escriba.
-- que los adaptadores se comporten igual en un entorno limpio: no verificado — la medición corrió
-  con complementos de terceros ya instalados en la máquina.
 - qué reportarían el tablero, el sereno y la ablación: no verificado — los tres chequeos de período
   se difirieron por decisión registrada arriba, así que no se corrieron.

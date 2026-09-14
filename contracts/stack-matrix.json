@@ -9,7 +9,7 @@
     "research/sources/python-y-escritorio-2026-09-14.md",
     "research/sources/adaptadores-red-2026-09-14.md"
   ],
-  "note": "Artefacto de discovery, no contrato. Es la salida de la fase de investigación: la forma definitiva, su gate y la separación entre la matriz y el contrato de límites de plan gratuito se congelan en la spec. Ningún gate lo consume todavía.",
+  "note": "Contrato operativo: es la matriz que la fase 1.5 lee para contestar la novena pregunta, y viaja con el runtime porque el instalador copia contracts/. Nació como artefacto de discovery en docs/discovery/eleccion-de-stack/diagnostics/ y se mudo acá el 2026-09-14, cuando se midió que desde docs/ no llegaba a quien instala: el gate recibía la ruta por argumento y en el proyecto ajeno esa ruta no existía. Su copia legible para personas es skills/stack.md, y tests/stack-matriz-pareada.test.mjs comprueba que las dos digan lo mismo. La comprueba verify-stack-matrix.mjs, que verifica que el dato esté escrito y fechado, NUNCA que sea cierto.",
   "rows": [
     {
       "product_type": "A",
