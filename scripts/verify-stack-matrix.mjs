@@ -57,6 +57,20 @@ const FRASE_VACIA = /^(?:por definir|si crece|cuando crezca|a definir|sin defini
 const FECHA = /^\d{4}-\d{2}-\d{2}$/u;
 const IDENTIFICADOR = /^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/u;
 
+/** La regla del período, escrita UNA vez. Estaba duplicada entre las dos funciones que la
+ * comprueban y las dos copias no decían lo mismo: una rechazaba por encima del techo y la otra
+ * no, así que la comprobación de antigüedad llamada sola aceptaba un período de diez mil años.
+ * Dos redacciones de la misma garantía divergen con el tiempo, y ésta ya había divergido. */
+export function violacionDePeriodo(dias) {
+  if (!Number.isInteger(dias) || dias < 1) {
+    return 'max_age_days debe ser un entero positivo: sin período declarado no hay nada contra qué medir la antigüedad, y adivinar uno sería inventar la garantía';
+  }
+  if (dias > MAX_AGE_CEILING) {
+    return `max_age_days declara ${dias} y el techo es ${MAX_AGE_CEILING}: sin techo, el dato elige su propio umbral de aprobación y la regla de antigüedad se desactiva editando el archivo que valida`;
+  }
+  return null;
+}
+
 const esObjeto = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const noVacio = (v) => typeof v === 'string' && v.trim() !== '';
 
@@ -104,11 +118,8 @@ export function validateLimits(contrato) {
   if (!explicativo(contrato.why)) violaciones.push('why debe decir para qué existe este contrato');
   if (!explicativo(contrato.method)) violaciones.push('method debe decir cómo se capturaron los números');
   if (!FECHA.test(contrato.revalidated ?? '')) violaciones.push('revalidated debe ser una fecha AAAA-MM-DD');
-  if (!Number.isInteger(contrato.max_age_days) || contrato.max_age_days < 1) {
-    violaciones.push('max_age_days debe ser un entero positivo: sin período declarado no hay nada contra qué medir la antigüedad');
-  } else if (contrato.max_age_days > MAX_AGE_CEILING) {
-    violaciones.push(`max_age_days declara ${contrato.max_age_days} y el techo es ${MAX_AGE_CEILING}: sin techo, el dato elige su propio umbral de aprobación y la regla de antigüedad se desactiva editando el archivo que valida`);
-  }
+  const periodo = violacionDePeriodo(contrato.max_age_days);
+  if (periodo !== null) violaciones.push(periodo);
 
   if (!Array.isArray(contrato.services) || contrato.services.length === 0) {
     violaciones.push('services debe ser una lista con al menos un servicio');
@@ -298,8 +309,9 @@ export function validateFreshness(contrato, hoy) {
   const violaciones = [];
 
   const limite = contrato.max_age_days;
-  if (!Number.isInteger(limite) || limite < 1) {
-    violaciones.push('max_age_days debe ser un entero positivo: sin período declarado no hay contra qué medir la antigüedad, y adivinar uno sería inventar la garantía');
+  const periodo = violacionDePeriodo(limite);
+  if (periodo !== null) {
+    violaciones.push(periodo);
     return violaciones;
   }
 

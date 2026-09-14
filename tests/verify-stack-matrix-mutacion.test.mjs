@@ -379,3 +379,22 @@ test('FALSIFICACIÓN · un paid_from nulo no declara que no hay plan pago', () =
   assert.ok(violaciones.some((v) => /paid_from/u.test(v)));
   assert.ok(violaciones.some((v) => /escalation vacía/u.test(v)), 'un campo ausente no declara nada');
 });
+
+// ─── Fase 7 · lo que encontró el Boy Scout ──────────────────────────────────────────────────────
+
+test('la regla del período dice lo mismo en las dos funciones que la comprueban', () => {
+  // La regla estaba escrita dos veces y las dos copias NO coincidían: `validateLimits` rechazaba por
+  // encima del techo y `validateFreshness` no, así que llamada sola aceptaba un período de diez mil
+  // años. Dos redacciones de la misma garantía divergen, y ésta ya había divergido.
+  const eterno = contrato({ max_age_days: MAX_AGE_CEILING + 1 });
+  assert.ok(validateLimits(eterno).some((v) => /techo/u.test(v)));
+  assert.ok(
+    validateFreshness(eterno, '2026-09-14').some((v) => /techo/u.test(v)),
+    'llamada sola, la comprobación de antigüedad también tiene que rechazar un período sin sentido',
+  );
+
+  for (const malo of [0, -1, 1.5, '90', null, undefined]) {
+    assert.ok(validateFreshness(contrato({ max_age_days: malo }), '2026-09-14').some((v) => /max_age_days/u.test(v)), `aceptó ${JSON.stringify(malo)}`);
+    assert.ok(validateLimits(contrato({ max_age_days: malo })).some((v) => /max_age_days/u.test(v)), `aceptó ${JSON.stringify(malo)}`);
+  }
+});

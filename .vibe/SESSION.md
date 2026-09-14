@@ -4,7 +4,7 @@
 **Goal:** que el protocolo elija el stack en vez de sólo detectarlo: una novena pregunta de Intake
 con el tipo de producto (A-H), una matriz con evidencia fechada, y la regla de arrancar siempre en
 plan gratuito con su detector y su tabla de escalado
-**Status:** cerrado — las tres fases del ciclo (1.5, 2 y 3) selladas. La spec está aprobada; construir es otro ciclo
+**Status:** in progress — fases 1.5 a 7 cerradas. Falta el receipt, que es lo que LAW 8 exige para publicar
 
 ## Alcance de este ciclo
 
@@ -113,6 +113,48 @@ el solapamiento es la regla y no la excepción. Es más grave que el límite de 
 ya declaraba: ahí la prueba al menos hablaba del mismo criterio. Declarado como límite honesto 108 y
 escrito en la tabla de riesgos de la spec, con su consecuencia: ese verde **no** cuenta como
 cobertura hasta que exista la prueba nombrada en cada criterio.
+
+## Estado verificado — fases 5 a 7 (Build, Triangulate, Test, Simplify)
+
+Se construyó el pedazo mínimo que la spec define: el gate de la matriz con su contrato de límites de
+plan gratuito. Seis tareas atómicas, cada una con su test rojo visto primero. ADR 0001, el primero
+del repositorio.
+
+### Clasificación de riesgo de la fase 7.1, mecánica
+
+- `risk_level`: **crítico**
+- `risk_reasons`: `sensitive_path` (el diff toca cinco archivos de `contracts/`, que `PROJECT.md`
+  lista como sensibles porque un contrato corrupto hace que los gates validen contra algo falso) y
+  `large_change` (6.710 líneas, muy por encima de las 400; por sí sola nunca promueve, y acá
+  acompaña).
+- No aplican: `simplify_ignore_touch` —cero marcadores en el diff— ni `debt_reopened`, porque
+  `DEBT.md` no registra ningún `archivo:línea`.
+
+Lo que el Boy Scout encontró y sacó: **la regla del período estaba escrita dos veces y las dos copias
+no decían lo mismo.** `validateLimits` rechazaba por encima del techo y `validateFreshness` no, así
+que llamada sola aceptaba un período de diez mil años. Unificada en una sola función, con su prueba.
+
+### La ronda adversarial, que es lo que más dejó
+
+Tres atacantes en paralelo, ninguno autor del código. Lo que trajeron, verificado antes de aceptarlo:
+
+- **El dato era lo peor.** Dieciséis números del contrato no existían en la ficha pineada. El patrón
+  era *relleno hacia abajo*: lo que la ficha decía estaba bien copiado, y lo que no decía se
+  completaba igual, justo en los campos que nadie mira hasta que llega la factura. Más un `hard:
+  true` sobre exactamente lo que la ficha había declarado no verificado, una versión de vitest que
+  ninguna ficha contiene, y la restricción de Numba invertida.
+- **Las pruebas probaban menos de lo que parecía.** Noventa mutaciones, veintiséis huecos reales. La
+  peor: la prueba que decía cubrir la distinción entre archivo corrupto y archivo ausente sobrevivía
+  a que se reintrodujera la regresión exacta, porque su regex matcheaba la subcadena del nombre del
+  archivo. **La prueba se aprobaba a sí misma.**
+- **La lógica tenía un agujero real.** El contrato se abría con ruta cruda mientras el comentario
+  prometía la garantía para los dos archivos: reproducido con un enlace de directorio, el gate leyó
+  su contrato desde fuera del proyecto y aprobó.
+
+**Y un hallazgo de diseño: una regla que obliga a mentir es peor que una que se pone roja.** La
+exención de referenciar un servicio era una lista de tipos, y para que el tipo D entrara hubo que
+escribirle a la firma de código un `plan_name` que no es un plan y un centinela numérico para un
+valor que no es número. La exención pasó a ser un motivo escrito por fila.
 
 ## Reglas nuevas de este ciclo, cada una con su detector
 
