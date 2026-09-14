@@ -660,6 +660,12 @@
       "file": "skills/gates.md",
       "phrase": "Lo que este gate NO comprueba es cuál runtime está leyendo",
       "why": "El contrato de limites viaja adentro del runtime y el gate lo abre desde la carpeta que contiene a su propio archivo, resuelta por import.meta.url. Eso es lo que lo hace portable: instalado en un proyecto ajeno el runtime vive en .vibe/vcp-runtime/ y la ruta relativa al directorio de trabajo no existe. El precio es que el gate confia en el paquete donde vive: no verifica que ese runtime sea el que el proyecto quiso instalar, ni compara su contenido contra ninguna huella. Un runtime manipulado se cree a si mismo, y ningun sello de este gate lo detecta. La contencion que si aplica es contra enlaces DENTRO del runtime: un enlace de directorio en contracts/ que apunte afuera se corta. Quien quiera la garantia de que el runtime instalado es el del checkout tiene que correr verify-runtime-sync.mjs, que es otro gate y compara archivo por archivo."
+    },
+    {
+      "limit_id": "repo-clean-finds-paths-never-names",
+      "file": "skills/gates.md",
+      "phrase": "Lo que este gate NO detecta son los nombres",
+      "why": "El gate encuentra rutas con forma de directorio personal y la identidad de la maquina que lo corre, que son las dos cosas mecanicamente decidibles. Un nombre propio, el de un cliente, el de un proyecto privado o el de una carpeta personal sin forma de ruta son palabras iguales a cualquier otra: no hay predicado que las separe sin una lista, y escribir esa lista adentro del repositorio seria publicar exactamente el dato que se quiere proteger. Medido el 2026-09-14 sobre las cuatro filtraciones reales del ciclo: el gate habria detectado dos —el nombre de usuario en fixtures y la ruta absoluta en el cuaderno de sesion— y las otras dos no, porque eran una subcarpeta personal nombrada y una linea de auditoria citando proyectos privados. Esa mitad queda como revision humana y no hay forma de cerrarla con este gate."
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "schema": "vcp.repo-clean/1",
+  "why": "Las excepciones al gate de repositorio limpio se declaran una por una, con el archivo, el texto exacto que se permite y el motivo por el que ese texto es legitimo. Una lista vacia es el estado mas estricto y el que conviene defender: cada entrada que se agrega es una comprobacion que se apaga para ese archivo. El gate NO puede distinguir un marcador inventado de una tapadera, asi que el motivo escrito es toda la revision que hay, y es humana.",
+  "allowed": [
+    {
+      "path": "tests/tablero.test.mjs",
+      "pattern": "C:/Users/ejemplo/Desktop/proyectos/MiProyecto",
+      "reason": "La prueba convierte el nombre aplanado de una carpeta de sesion en la ruta del proyecto, asi que necesita una ruta que TENGA forma de ruta de usuario: es literalmente el dato bajo prueba. El nombre es inventado y no corresponde a ninguna cuenta real. Si esta linea se cambiara por una ruta de verdad, el gate no lo veria, y por eso queda anotado aca en vez de silenciar el archivo entero."
+    },
+    {
+      "path": "contracts/repo-clean.json",
+      "pattern": "C:/Users/ejemplo/",
+      "reason": "Este archivo se marca a si mismo: para declarar que un texto se permite hay que ESCRIBIR ese texto, asi que el patron de la excepcion de arriba aparece en el propio contrato. Se resuelve con una entrada explicita y no eximiendo al contrato por ser el contrato: un archivo exento por su clase seria un agujero que nadie vuelve a mirar, mientras que esta linea la lee cualquiera que abra el archivo. Una sola entrada alcanza para las dos apariciones, incluida la de esta misma."
+    }
+  ]
+}

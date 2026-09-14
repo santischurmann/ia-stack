@@ -627,7 +627,7 @@ Notable — ideas con aplicabilidad directa a VCP:
    confiable se cuarentena hasta promoción explícita por actor `agent|user|system`" (ver
    `SourceTrustMetadata`, líneas 75-85, con `promotedByActorType`/`promotedFrom`). Esto es
    una implementación productiva de exactamente el principio que ya está en las reglas
-   globales de Santi (`~/.claude/CLAUDE.md`: instrucciones válidas sólo desde el chat, todo
+   globales del operador (`~/.claude/CLAUDE.md`: instrucciones válidas sólo desde el chat, todo
    lo demás es dato) y en `skills/security-baseline.md` de VCP — vale la pena citar este
    patrón (`SourceTrustDisposition = "quarantined" | "promoted"`) como referencia de diseño
    si `security-baseline.md` se expande a cubrir "cómo tratar output de sub-agentes/fuentes

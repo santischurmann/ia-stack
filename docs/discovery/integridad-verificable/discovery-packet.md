@@ -55,7 +55,7 @@ filesystem que recalcule toda la cadena. Ningún gate prueba suficiencia semánt
 
 ## 5. Adopción y recurrencia
 
-- **Responsable interno:** operador único (Santi). Modo single-operator: no hay sponsor separado
+- **Responsable interno:** el operador único del repositorio. Modo single-operator: no hay sponsor separado
   de owner operativo, y eso queda declarado en vez de inventar una estructura de equipo.
 - **Cambio de hábito:** el paso 4.6 pasa a invocar el commit atómico en lugar de `check` seguido
   de `git commit` a mano.

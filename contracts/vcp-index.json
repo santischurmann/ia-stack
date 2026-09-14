@@ -199,6 +199,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/repo-clean.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/research-citations.json",
       "class": "contrato"
     },
@@ -768,6 +772,10 @@
     },
     {
       "path": "scripts/verify-red.sh",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-repo-clean.mjs",
       "class": "gate"
     },
     {
@@ -1348,6 +1356,18 @@
     },
     {
       "path": "tests/verify-red-node.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-repo-clean-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-repo-clean-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-repo-clean.test.mjs",
       "class": "prueba"
     },
     {

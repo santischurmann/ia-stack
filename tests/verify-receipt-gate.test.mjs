@@ -1005,8 +1005,8 @@ test('SIGNATURE_STATES cubre todos los codigos que git puede devolver', () => {
 });
 
 test('readSignature lee el commit que lleva el recibo y su estado de firma', () => {
-  const s = readSignature('receipt.json', '.', gitFirma('G', 'Santi <s@t>', 'ABC123', 'deadbee'));
-  assert.deepEqual(s, { commit: 'deadbee', estado: 'G', firmante: 'Santi <s@t>', clave: 'ABC123' });
+  const s = readSignature('receipt.json', '.', gitFirma('G', 'Firmante Inventado <f@ejemplo.invalid>', 'ABC123', 'deadbee'));
+  assert.deepEqual(s, { commit: 'deadbee', estado: 'G', firmante: 'Firmante Inventado <f@ejemplo.invalid>', clave: 'ABC123' });
 });
 
 test('readSignature devuelve null cuando el recibo todavia no esta commiteado', () => {
@@ -1043,9 +1043,9 @@ test('judgeSignature reporta sin bloquear por defecto, y bloquea con --require-s
   assert.match(judgeSignature(sinFirma, false).mensaje, /sin firma/iu);
   assert.equal(judgeSignature(sinFirma, true).ok, false, 'con el flag, no firmar es rechazo');
 
-  const buena = { commit: 'abc1234', estado: 'G', firmante: 'Santi <s@t>', clave: 'K1' };
+  const buena = { commit: 'abc1234', estado: 'G', firmante: 'Firmante Inventado <f@ejemplo.invalid>', clave: 'K1' };
   assert.equal(judgeSignature(buena, true).ok, true);
-  assert.match(judgeSignature(buena, true).mensaje, /Santi/u, 'el mensaje nombra a quien firmo');
+  assert.match(judgeSignature(buena, true).mensaje, /Firmante Inventado/u, 'el mensaje nombra a quien firmo');
 });
 
 test('FALSIFICACION · una firma MALA rechaza aunque no se pida firma', () => {
@@ -1105,7 +1105,7 @@ test('FALSIFICACION · judgeSignature nombra la custodia cuando git no devuelve 
   assert.match(anonima.mensaje, /firmante sin nombre/u);
   assert.doesNotMatch(anonima.mensaje, /clave/u, 'sin clave no se inventa un parentesis vacio');
 
-  const conClave = judgeSignature({ commit: 'abc1234def', estado: 'G', firmante: 'Santi', clave: 'K1' }, true);
+  const conClave = judgeSignature({ commit: 'abc1234def', estado: 'G', firmante: 'Firmante Inventado', clave: 'K1' }, true);
   assert.match(conClave.mensaje, /\(clave K1\)/u);
 
   // `E` es el unico estado que no rechaza y tampoco es confiable: sin pedir firma pasa, y el

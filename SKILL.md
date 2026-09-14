@@ -928,6 +928,29 @@ Al cerrar, presentá 🔵 con al menos dos opciones y registrá la elección.
 
 ## PHASE 6 — TEST (cierre orquestado)
 
+### Antes de sellar: lo versionado no lleva tu identidad
+
+Corre **antes** de escribir la línea de auditoría, no después, y el orden no es estético:
+`.vibe/AUDIT.md` es append-only y está sellada, así que **una filtración que entra ahí no se saca** —
+LAW 5 prohíbe editar una línea ya escrita, y lo único que queda es agregar una corrección debajo. Ya
+pasó una vez, y la corrección sigue ahí abajo de la línea que no se pudo borrar.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-repo-clean.mjs check
+```
+
+Busca dos cosas: rutas con forma de directorio personal, y el nombre de usuario de la máquina que lo
+corre. Lo que encuentre, sacalo del archivo; si el texto es legítimo —un fixture que necesita una
+ruta que tenga forma de ruta— declaralo en `contracts/repo-clean.json` con el archivo, el texto
+exacto y el motivo. **Ningún archivo está exento por su clase**, ni siquiera el propio contrato, que
+se marca a sí mismo y declara su excepción como cualquier otro.
+
+**Límite honesto**: detecta rutas e identidad de máquina. **NO detecta nombres** —de personas, de
+clientes, de proyectos privados, de carpetas— porque para el gate son palabras como cualquier otra.
+De las cuatro filtraciones reales que lo motivaron habría encontrado dos. Esa mitad sigue siendo
+revisión humana, y ningún gate la cierra.
+
+
 Se reafirma el contrato de orquestación (arriba del archivo): esta fase es la que más se apoya en
 abrir varios agentes en paralelo y en la verificación adversarial. **No es una pasada en solitario.**
 El contrato interno corre las tres fases de cierre completas —6, 7 y 8— con los conteos de voto

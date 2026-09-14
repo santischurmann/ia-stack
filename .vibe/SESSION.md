@@ -176,6 +176,14 @@ valor que no es número. La exención pasó a ser un motivo escrito por fila.
 - **El frontmatter de una skill dice cuántas fases son, y el gate de menús tolera la marca de
   recomendación fuera de una opción.** Los dos límites quedaron declarados (106 y 107).
 
+### El gate de cobertura encontró código muerto, no falta de pruebas
+
+Dos guardas defensivas del gate nuevo eran **inalcanzables**: la deduplicación por línea —cada clase
+de hallazgo tiene un único lugar que la anota, así que el `Set` nunca daba verdadero— y la caída del
+índice de línea, que sale del mismo `split` que los hallazgos. La respuesta correcta no era
+inventarles una prueba para tapar el rojo: era **sacarlas**. Una guarda que no se puede alcanzar es
+una afirmación falsa sobre lo que el código considera posible.
+
 ### Una regla mía que el dato mostró equivocada, otra vez
 
 El gate rechazaba cuando encontraba el contrato de límites sin la matriz: «una recomendación sin su
@@ -220,6 +228,15 @@ faltaba la distinción de fondo entre *viejo* y *deshonesto*, que es la que cerr
   un fallo de aserción (`<archivo>:<línea>: <Excepción>`), así que el discriminador entre esos dos
   tiene que ser el par `errors`/`failures`, nunca la línea sola. Queda en
   `research/sources/adaptadores-red-2026-09-14.md`.
+- **El gate de repositorio limpio encontró contaminación real en su primera corrida.** Antes de
+  escribirlo se midió qué había: el nombre de usuario del autor aparecía **siete veces en tres
+  archivos versionados y ya publicados** —un expediente de discovery, una fuente pineada y cinco
+  fixtures de firma—, más dos rutas de usuario en otro test. Ninguno de los tres estaba sellado, así
+  que los siete se limpiaron. Las dos rutas eran un marcador legítimo y quedaron declaradas. Medir
+  antes de diseñar dio además la forma de la regla: **buscar por forma y por identidad de máquina, y
+  jamás por una lista de nombres** — una lista de nombres adentro del repositorio sería publicar
+  exactamente el dato que se quiere proteger.
+
 - **Instalar el protocolo en un proyecto ajeno encontró un defecto que las 1580 pruebas no veían.**
   Al cerrar el lazo del stack se simuló una instalación real y se corrió el gate desde ahí:
   `REJECTED: ... falta contracts/free-tier-limits.json`. La causa es que el gate abría su propio
@@ -250,9 +267,18 @@ escribió `skills/stack.md` como copia legible con su prueba pareada, y la fase 
 ahora manda leer la matriz y contestar con stack, fuente, fecha y costo de escalar. Verificado
 instalando en un proyecto limpio, no sólo con la batería.
 
+**AC9 está construido.** `scripts/verify-repo-clean.mjs` busca dos cosas en lo versionado: rutas con
+forma de directorio personal, y la identidad de la máquina que lo corre, resuelta en el momento con
+`os.homedir()` para que **ninguna lista de nombres quede escrita en el repositorio**. Las excepciones
+se declaran una por una en `contracts/repo-clean.json` con archivo, texto y motivo, y ningún archivo
+está exento por su clase — el propio contrato se marca a sí mismo y declara su excepción. Corre en la
+fase 6, antes de sellar, porque una filtración que entra a `.vibe/AUDIT.md` no se saca. Su límite
+está declarado y es grande: **no detecta nombres**, y de las cuatro filtraciones reales que lo
+motivaron habría encontrado dos.
+
 **Lo que sigue sin construir de la spec**: el despachador de test rojo y los adaptadores de pytest y
-vitest (AC6, AC7, AC8) y el gate de repositorio limpio (AC9). Seis de los diez criterios están
-construidos; los cuatro casilleros restantes siguen vacíos a propósito.
+vitest, o sea AC6, AC7 y AC8. Siete de los diez criterios están construidos; los tres restantes
+siguen vacíos a propósito.
 
 ## No verificado
 

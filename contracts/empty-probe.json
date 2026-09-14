@@ -428,6 +428,14 @@
       ],
       "expect": "reject",
       "why": "En un directorio vacio no hay repositorio git, asi que git ls-files falla y el gate rechaza diciendo que no pudo preguntar. No es un verde ni un vacio: es no haber podido medir, y eso se reporta."
+    },
+    {
+      "script": "verify-repo-clean.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio git no rastrea nada, y una carpeta sin versionar no puede filtrar nada versionado: el gate escribe VACIO y sale 0. La distincion importa porque el modo de falla de este gate es el silencio. Si no encontrar archivos se leyera como OK, un repositorio donde git falla —o donde alguien corre el gate desde la carpeta equivocada— pareceria limpio, y limpio es justo lo que no se puede afirmar sin haber mirado nada."
     }
   ]
 }
