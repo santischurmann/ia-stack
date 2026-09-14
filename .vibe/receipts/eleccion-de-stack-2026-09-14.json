@@ -1,0 +1,163 @@
+{
+  "schema": "vcp.receipt/v3",
+  "feature": "eleccion-de-stack",
+  "task": "M1-M6 — el pedazo minimo: el gate de la matriz de stacks con su contrato de limites de plan gratuito, cubriendo AC2 a AC5 de docs/spec.md",
+  "date": "2026-09-14",
+  "scope": {
+    "declared_paths": [
+      ".vibe/AUDIT.md",
+      ".vibe/PROJECT.md",
+      ".vibe/SESSION.md",
+      ".vibe/receipts/eleccion-de-stack-2026-09-14.json",
+      "CHANGELOG.md",
+      "SKILL.md",
+      "contracts/empty-probe.json",
+      "contracts/free-tier-limits.json",
+      "contracts/graphify-exclusions.json",
+      "contracts/honest-limits.json",
+      "contracts/vcp-index.json",
+      "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md",
+      "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
+      "docs/discovery/eleccion-de-stack/diagnostics/threat.json",
+      "docs/plan.md",
+      "docs/spec.md",
+      "docs/tasks.json",
+      "docs/triangulate/eleccion-de-stack.json",
+      "scripts/verify-stack-matrix.mjs",
+      "skills/gates.md",
+      "tests/verify-stack-matrix-antiguedad.test.mjs",
+      "tests/verify-stack-matrix-bootstrap-cli.test.mjs",
+      "tests/verify-stack-matrix-bootstrap-falsy.test.mjs",
+      "tests/verify-stack-matrix-cobertura.test.mjs",
+      "tests/verify-stack-matrix-mutacion.test.mjs",
+      "tests/verify-stack-matrix.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC2",
+      "scenario": "GIVEN la matriz, WHEN algun tipo de producto no tiene fila, THEN el gate sale 1 y nombra el tipo faltante. Un tipo sin fila deja sin respuesta a quien lo elija, y con ocho codigos los que faltan son invisibles.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-stack-matrix-cobertura.test.mjs",
+      "test_hash_sha256": "797380cf367e05eb9a42806f6966aa98c6ea5d0a1d4a509cde67a1dacfdd91ca",
+      "command": "node --test tests/verify-stack-matrix-cobertura.test.mjs",
+      "result": "verde; ademas tests/verify-stack-matrix-mutacion.test.mjs comprueba que esta invariante llegue al veredicto de main, porque se podia borrar de la composicion sin un solo rojo"
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "GIVEN un servicio referenciado por la matriz, WHEN no declara que evento saca del plan gratuito, THEN el gate sale 1 y nombra el servicio. El research midio que ese evento casi nunca es un numero.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-stack-matrix.test.mjs",
+      "test_hash_sha256": "a2beb757ae59ad6113c990a082072050b0cf3c56512101fcf33612d74a6e2280",
+      "command": "node --test tests/verify-stack-matrix.test.mjs",
+      "result": "verde; el relleno LARGO tambien rechaza, que es el que de verdad se colaba: la comprobacion anterior era codigo inalcanzable"
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "GIVEN el contrato de limites, WHEN su fecha de captura supera el periodo declarado, THEN el gate sale 1 en vez de aceptarla. Un numero de plan gratuito vencido se lee como cierto.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-stack-matrix-antiguedad.test.mjs",
+      "test_hash_sha256": "4af60cb6f788d672b6da038cb7c77a570a7b5890ad1849947c59415019e7fa97",
+      "command": "node --test tests/verify-stack-matrix-antiguedad.test.mjs",
+      "result": "verde; el borde del periodo quedo fijado en las dos direcciones -- el dia limite entra y el siguiente no -- despues de que una pasada de mutacion mostrara que la prueba original media 89 dias creyendo medir 90"
+    },
+    {
+      "ac_id": "AC5",
+      "scenario": "GIVEN un directorio sin matriz, WHEN corre el gate, THEN escribe VACIO y sale 0, y la prueba de vacio lo acepta como tal y no como aprobacion. Un gate que aprueba por ausencia de entrada dice que la cobertura esta bien cuando no se miro nada.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-stack-matrix.test.mjs",
+      "test_hash_sha256": "a2beb757ae59ad6113c990a082072050b0cf3c56512101fcf33612d74a6e2280",
+      "command": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "result": "verde; y ausente quedo separado de ILEGIBLE, que es la distincion que la triangulacion encontro rota: una marca de orden de bytes convertia un archivo corrupto en silencio"
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "El gate valida forma y nunca verdad, y esta feature es justamente una que carga numeros del mundo real. Durante este mismo ciclo el gate aprobo en verde un contrato con dieciseis numeros que su ficha pineada no contiene: el patron era relleno hacia abajo, y los campos afectados fueron las tarifas de excedente y los limites secundarios, que son los que nadie mira hasta que llega la factura.",
+      "mitigation": "No se puede cerrar con un gate: comprobar que un numero sea cierto exige salir a la red, que es lo que este protocolo no hace. Lo que si se hizo es dar al esquema forma para decir la verdad donde antes obligaba a elegir entre dos afirmaciones falsas: hard admite null con su motivo, escalation admite lista vacia cuando no hay plan pago, y free_tier_refs admite lista vacia con su motivo escrito. Antes esas tres reglas empujaban mentiras al dato. El limite queda declarado en el encabezado del script y en la referencia de gates."
+    },
+    "readability": {
+      "finding": "Cada regla del gate lleva su herida escrita con el numero de veces que paso, y varias de esas heridas son de este mismo ciclo. Un lector que llegue nuevo entiende por que cada comprobacion existe sin tener que reconstruirlo.",
+      "mitigation": "Se sostuvo la convencion del repositorio: el comentario cuenta la herida, no lo que el codigo hace. Las reglas que nacieron de una pasada de mutacion dicen que mutacion sobrevivia."
+    },
+    "reliability": {
+      "finding": "Una pasada de noventa mutaciones sobre una copia del gate dejo veintiseis huecos reales. El peor: la prueba que decia cubrir la distincion entre archivo corrupto y archivo ausente sobrevivia a que se reintrodujera la regresion exacta, porque su regex matcheaba la subcadena del nombre del archivo. La prueba se aprobaba a si misma. Y dos de las tres invariantes se podian borrar de main sin un solo rojo.",
+      "mitigation": "Se escribio tests/verify-stack-matrix-mutacion.test.mjs, donde cada prueba mata una sobreviviente concreta y el comentario dice cual. El cableado de las tres invariantes a traves de main quedo cubierto, y las aserciones dejaron de mirar el largo de la lista de violaciones para mirar cual."
+    },
+    "resilience": {
+      "finding": "El contrato se abria con ruta cruda mientras el comentario del codigo prometia la garantia para los dos archivos. Reproducido con un enlace de directorio: el gate leyo su contrato desde afuera del proyecto y aprobo. Una garantia que cubre la mitad es peor que ninguna, porque nadie revisa la otra mitad.",
+      "mitigation": "Las dos rutas pasan por el mismo resolvedor. Queda como limite conocido del ayudante de rutas, y no de este gate, que un flujo alternativo de NTFS satisface la comprobacion de archivo regular: es una propiedad del sistema de archivos de Windows que el repositorio entero comparte."
+    }
+  },
+  "measurements": [
+    { "metric": "tipos de producto cubiertos por la matriz con stack, alternativas y criterio", "measured": true, "before": 0, "after": 8 },
+    { "metric": "servicios con su disparador de escalado y su tabla de costos en el contrato", "measured": true, "before": 0, "after": 10 },
+    { "metric": "numeros del contrato sin respaldo en la ficha pineada", "measured": true, "before": 16, "after": 0 },
+    { "metric": "scripts Node con cobertura total de funciones y ramas", "measured": true, "before": 48, "after": 49 },
+    { "metric": "pruebas de la suite completa", "measured": true, "before": 1480, "after": 1572 },
+    { "metric": "limites honestos declarados en el contrato del protocolo", "measured": true, "before": 105, "after": 109 },
+    { "metric": "vectores de triangulacion pendientes sobre el gate nuevo", "measured": true, "before": 3, "after": 0 },
+    { "metric": "rutas absolutas de directorio personal en archivos versionados", "measured": true, "before": 4, "after": 0 }
+  ],
+  "limits": [
+    {
+      "id": "L1",
+      "what": "El gate no comprueba que los numeros del contrato sean ciertos ni que sigan vigentes hoy: lee el archivo que alguien escribio y no sale a la red. Un contrato con cifras inventadas y fecha de hoy pasa en verde, y un disparador que diga no lo sabemos con veinte caracteres tambien.",
+      "why_acceptable": "Verificarlo exigiria que un gate dependa de un servicio externo para dar verde, lo que rompe dos propiedades del protocolo a la vez: cero dependencias, y ningun gate que no pueda correr sin red. La regla de antigüedad acota el dano en el tiempo, y la ficha pineada con su URL y su fecha deja el rastro para que una persona lo revise.",
+      "owner": "Quien mantiene el protocolo y revalida la matriz cuando el gate rechaza por antigüedad"
+    },
+    {
+      "id": "L2",
+      "what": "Las dos pruebas de arranque del gate, bootstrap-cli y bootstrap-falsy, tienen cuerpo vacio: existen para que el gate de cobertura vea ejecutadas las lineas del guard de ejecucion directa, y no afirman nada.",
+      "why_acceptable": "Es el patron establecido del repositorio y todos los gates lo comparten, asi que endurecer solo estas dos crearia una inconsistencia sin cerrar el hueco general. Queda anotado como candidato para una vuelta que lo arregle en los 49 gates a la vez, no en uno.",
+      "owner": "Quien mantiene el protocolo"
+    },
+    {
+      "id": "L3",
+      "what": "La clasificacion de un producto no se comprueba: el gate verifica que los ocho tipos tengan fila, nunca que un producto concreto este bien clasificado. Una clasificacion coherente y equivocada recibe la recomendacion equivocada y pasa en verde.",
+      "why_acceptable": "No hay forma mecanica de saber que tipo de producto es algo que todavia no existe. Lo que si se hizo es exigir que cada fila declare un criterio de decision con respuesta observable, para que una persona pueda discutir la clasificacion en vez de aceptarla.",
+      "owner": "Quien elige el tipo de producto al abrir un ciclo"
+    },
+    {
+      "id": "L4",
+      "what": "El reloj del gate es UTC. Quien fecha una captura con su dia local desde un huso adelantado puede recibir un rechazo que dice captura del futuro sin haberse equivocado.",
+      "why_acceptable": "La alternativa -- tolerar fechas futuras -- debilita la comprobacion para evitar un caso de borde de un dia. El mensaje de rechazo declara que el reloj es UTC, asi que quien lo reciba sabe por que.",
+      "owner": "Quien mantiene el protocolo"
+    },
+    {
+      "id": "L5",
+      "what": "Los diez criterios de la spec dan verde en verify-evidence-trace criteria contra titulos de pruebas de otra funcionalidad, porque el emparejamiento es por identificador literal y los identificadores no llevan el slug.",
+      "why_acceptable": "Es un defecto del gate de trazabilidad y no de esta feature, declarado como limite honesto 108 y escrito en la tabla de riesgos de la propia spec. Los cuatro criterios de este receipt no se apoyan en ese verde: cada uno nombra su archivo de prueba con su hash y su comando.",
+      "owner": "Quien mantiene el protocolo"
+    }
+  ],
+  "regressions": [],
+  "support": {
+    "correlation": "ninguno — no hay peticiones que correlacionar: cada gate es un proceso que corre una vez, escribe a la salida estandar y termina con su codigo de salida. El identificador equivalente es el sello encadenado de la linea de traza que el orquestador escribe al cerrar la fase.",
+    "actor_on_writes": "La traza de auditoria declara el rol que escribio cada linea y la encadena por hash contra la anterior, y solo el orquestador la escribe. El expediente de decisiones de fase agrega quien eligio cada opcion, el menu que se le mostro y cuando.",
+    "failure_visible": "El gate escribe la causa en la salida de error con el prefijo REJECTED y sale con codigo distinto de cero, nombrando el servicio o el tipo de producto concreto. Un gate que no tuvo nada que verificar escribe el prefijo VACIO y sale cero, que es distinto de aprobar, y un archivo corrupto rechaza diciendo que es ilegible en vez de tratarse como ausente.",
+    "diagnostic_command": "node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json"
+  },
+  "refutation": {
+    "proposed": 74,
+    "survived": 48,
+    "refuted": 0,
+    "inconclusive": 26,
+    "by_lens": {
+      "honestidad-del-dato": 38,
+      "mutacion-de-pruebas": 20,
+      "logica-del-gate": 16
+    }
+  },
+  "reproduction": "node --test  ·  node scripts/verify-vcp-coverage.mjs  ·  node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json  ·  node scripts/verify-triangulate.mjs check docs/triangulate/eleccion-de-stack.json --require-complete  ·  node scripts/verify-vcp-contract.mjs check  ·  node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+  "not_reviewed": "De los 74 hallazgos que los tres atacantes propusieron, reproduje personalmente ocho: la version de vitest que ninguna ficha contiene, el precio de certificado inventado, las tarifas de excedente de Vercel ausentes, el hard true sobre lo que la ficha declaro no verificado, la restriccion de Numba invertida, la ausencia de D1 en el contrato, el regex corrompido por un heredoc, y los rechazos que el propio gate emitio al aplicar cada correccion. Los otros 26 que quedan como inconclusive los acepte sobre la reproduccion que el agente reporto, sin repetirla: es un estandar mas debil y por eso van contados aparte y no como survived. Tampoco se reviso si las recomendaciones de la matriz son buenas decisiones de ingenieria -- el gate comprueba que cada fila tenga su criterio escrito, nunca que ese criterio lleve a la eleccion correcta. Y los nueve hallazgos que quedaron sin accion estan en la ficha de cada atacante, no en este receipt.",
+  "evidence": [
+    "tests/verify-stack-matrix-mutacion.test.mjs: cada prueba mata una mutacion sobreviviente concreta, con el comentario diciendo cual",
+    "docs/triangulate/eleccion-de-stack.json: los 26 vectores declarados uno a uno, 12 cubiertos y 14 no aplicables con su motivo",
+    "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md: por que el rechazo por antigüedad es duro, y el modo de falla que introduce",
+    ".vibe/AUDIT.md: la linea sellada de la fase 6.3 con el detalle de lo que cada atacante encontro"
+  ],
+  "git_head": "166263de4f8c56ee91096832c518273133083432",
+  "tree_fingerprint": "d9258460e237a3b3f2d7b9ce5edea123a5ca1b019d8fc76ddb2ea2711fb7b967",
+  "terminal_state": "approved"
+}
