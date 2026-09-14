@@ -1,0 +1,238 @@
+{
+  "schema": "vcp.caio/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "process": {
+    "name": "Elegir con qué se construye un proyecto nuevo, al arrancarlo",
+    "owner": "Quien instala el protocolo en su propio repositorio y abre un ciclo",
+    "scope": "Desde que se declara qué se quiere construir hasta que el primer test rojo corre en el runner de ese stack. No cubre la construcción del producto ni su despliegue."
+  },
+  "findings": {
+    "broken_process": [
+      {
+        "id": "BP1",
+        "status": "observed",
+        "description": "El protocolo detecta el stack que ya existe y pide confirmarlo, pero nunca lo elige. Un proyecto nuevo no tiene qué detectar, así que arranca sobre lo que el agente supuso.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "SKILL.md:162",
+            "observation": "El paso dice literalmente: Detect stack: ls package.json pyproject.toml go.mod Cargo.toml pom.xml. Es un listado de archivos preexistentes."
+          },
+          {
+            "source": "repo",
+            "locator": "SKILL.md:245",
+            "observation": "El menú de Bootstrap ofrece confirmar el stack detectado o corregirlo. No ofrece elegir uno."
+          }
+        ],
+        "reason": ""
+      },
+      {
+        "id": "BP2",
+        "status": "observed",
+        "description": "El gate de test rojo sólo acepta un runner, así que elegir cualquier stack que no sea Node deja al proyecto sin poder cumplir la primera ley del protocolo.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "scripts/verify-red-node.mjs:186",
+            "observation": "Rechaza con el motivo: unsupported runner command; only exact node --test is currently verified."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "information_loss": [
+      {
+        "id": "IL1",
+        "status": "observed",
+        "description": "El supuesto de stack no queda escrito en ningún artefacto, así que nadie puede señalarlo después ni discutir si estuvo bien elegido.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "templates/spec.md",
+            "observation": "La sección Stack & Dependencies dice Stack: <auto-detected>. Es un hueco a completar por detección, no una decisión registrada con su motivo."
+          },
+          {
+            "source": "repo",
+            "locator": "scripts/verify-intake.mjs:28",
+            "observation": "Las ocho claves de respuesta del Intake no incluían ninguna sobre tipo de producto ni sobre stack."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "repeated_work": [
+      {
+        "id": "RW1",
+        "status": "inference",
+        "description": "Cada proyecto nuevo vuelve a resolver desde cero qué versiones son compatibles entre sí y qué entra en el plan gratuito de cada servicio, porque el resultado de esa investigación no queda en ningún lado reutilizable.",
+        "evidence": [],
+        "reason": "Se deduce de IL1: si la elección no se registra, tampoco se registra el trabajo que la respaldó. No se midió cuántas veces se repitió.",
+        "derived_from": [
+          "IL1"
+        ]
+      }
+    ],
+    "open_loops": [
+      {
+        "id": "OL1",
+        "status": "observed",
+        "description": "Los dos mecanismos que la fase de Research tiene para registrar una afirmación no aceptan la misma clase de fuente, y nada dice cuál usar. El packet de Discovery admite una fuente web con su URL; el expediente de candidatos sólo admite repositorio con commit pineado. Una versión verificada contra documentación oficial entra por uno y no por el otro.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "scripts/verify-discovery-core.mjs:226",
+            "observation": "El validador de claims acepta locator.kind de web o de repo_file, y para el caso web exige exactamente las claves kind y url."
+          },
+          {
+            "source": "repo",
+            "locator": "scripts/verify-research-candidates.mjs:75",
+            "observation": "El comentario dice que la fuente tiene que ser una de las pineadas y el commit el que se fijó para ella. Los campos obligatorios de la plantilla son source, commit, file, line y function: ninguno admite una URL con fecha de consulta."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "ownerless_decisions": [],
+    "unmeasured_states": [
+      {
+        "id": "US1",
+        "status": "observed",
+        "description": "Un verde del gate de test rojo no dice con qué adaptador se obtuvo, y los adaptadores no dan la misma garantía. Sin ese dato, dos verdes con confianza muy distinta se leen igual.",
+        "evidence": [
+          {
+            "source": "research",
+            "locator": "research/sources/adaptadores-red-2026-09-14.md",
+            "observation": "Medido contra pytest 9.1.1 y vitest 5.0.0: los dos se falsificaron con cero pruebas fallando, evidencia estructurada coherente y exit code distinto de cero. El adaptador de Node no admite ese ataque porque el único código del proyecto que corre es el archivo de prueba."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "broken_handoffs": [],
+    "recurring_errors": [
+      {
+        "id": "RE1",
+        "status": "observed",
+        "description": "El gate de cobertura del grafo confundía un grafo viejo con una declaración de cobertura falsa, y por eso se ponía en rojo ante cualquier archivo nuevo, incluidas operaciones que el propio protocolo manda hacer.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": ".vibe/AUDIT.md",
+            "observation": "La misma falla se reprodujo tres veces en una sola sesión: al archivar un expediente cerrado, al archivar una sesión, y al escribir el archivo de Intake. En ninguno de los tres casos había una cobertura falsa."
+          },
+          {
+            "source": "repo",
+            "locator": "skills/integracion-graphify.md:22",
+            "observation": "El orden documentado es commit, graphify, record, check. El reindexado va al publicar, así que un manifiesto viejo a mitad de ciclo es el estado esperado."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "absent_learning": [
+      {
+        "id": "AL1",
+        "status": "missing_data",
+        "description": "No está decidido qué del aprendizaje sobre stacks vive en el repositorio publicado y qué se queda en el proyecto de cada usuario. Sin esa separación, mejorar la matriz con la experiencia de un proyecto arrastra sus datos al repositorio.",
+        "evidence": [],
+        "reason": "",
+        "what_is_missing": "La frontera concreta entre el contrato genérico que se publica y la memoria por proyecto que se queda en .vibe/ de quien instala.",
+        "how_to_get_it": "Enumerar qué campos de la matriz cambiarían por experiencia de uso y cuáles sólo por revisar documentación oficial, y ver si la separación cae limpia sobre esa línea."
+      }
+    ],
+    "hidden_costs": [
+      {
+        "id": "HC1",
+        "status": "observed",
+        "description": "El disparador que saca a un proyecto del plan gratuito casi nunca es un número que se pueda ver venir, y hoy no está escrito en ningún lado del protocolo.",
+        "evidence": [
+          {
+            "source": "research",
+            "locator": "research/sources/free-tiers-2026-09-14.md",
+            "observation": "La cláusula de uso comercial de Vercel Hobby no tiene contador ni alerta: es binaria. Su definición incluye textualmente a a paid employee or consultant writing the code, o sea que cobrar por hacer el sitio ya saca del plan."
+          },
+          {
+            "source": "research",
+            "locator": "research/sources/python-y-escritorio-2026-09-14.md",
+            "observation": "La firma de código en Windows exige clave en token físico desde junio de 2023, y la opción barata de Microsoft excluye a desarrolladores individuales fuera de Estados Unidos y Canadá."
+          }
+        ],
+        "reason": ""
+      },
+      {
+        "id": "HC2",
+        "status": "observed",
+        "description": "La versión más nueva de una dependencia puede ser la que rompe el stack, y recomendar la estable actual sin mirar los rangos de pares manda a un repositorio que no compila.",
+        "evidence": [
+          {
+            "source": "research",
+            "locator": "research/sources/stack-web-versiones-2026-09-14.md",
+            "observation": "typescript@latest es 7.0.2 y typescript-eslint declara en su manifiesto el rango >=4.8.4 <6.1.0, que lo excluye. Ese paquete llega como dependencia dura de eslint-config-next."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "security_risks": [
+      {
+        "id": "SR1",
+        "status": "observed",
+        "description": "Lo versionado arrastraba datos privados de quien escribió el protocolo, y el repositorio se publica e instala en proyectos de terceros.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": "tests/tablero.test.mjs",
+            "observation": "Tres fixtures traían el nombre de usuario real de una persona dentro de una ruta absoluta de Windows."
+          },
+          {
+            "source": "repo",
+            "locator": "tests/verify-ablation.test.mjs",
+            "observation": "Una fixture nombraba la subcarpeta concreta del vault personal de quien escribió el protocolo."
+          },
+          {
+            "source": "repo",
+            "locator": "docs/spec-ia-stack.md",
+            "observation": "El mismo defecto ya estaba declarado en rojo en un spec anterior: el repositorio publicaba cómo está estructurado el licenciamiento de otro producto del autor."
+          }
+        ],
+        "reason": ""
+      },
+      {
+        "id": "SR2",
+        "status": "observed",
+        "description": "Sobre la traza sellada no hay corrección posible, así que un dato privado escrito ahí queda publicado para siempre. Un detector correctivo llega tarde por diseño.",
+        "evidence": [
+          {
+            "source": "repo",
+            "locator": ".vibe/AUDIT.md",
+            "observation": "El archivo es append-only con encadenado por hash y la quinta ley del protocolo prohíbe editarlo. Una línea escrita durante este mismo ciclo nombró dos proyectos privados y no se pudo borrar: sólo se le pudo agregar una corrección."
+          }
+        ],
+        "reason": ""
+      }
+    ],
+    "conversational_memory_dependency": [
+      {
+        "id": "CM1",
+        "status": "inference",
+        "description": "Sin la elección de stack escrita en un artefacto, lo único que sostiene por qué se eligió una tecnología es la conversación donde se decidió, que no sobrevive a la sesión.",
+        "evidence": [],
+        "reason": "Se deduce de IL1: el protocolo ya declara que un supuesto que no queda escrito no se puede señalar después. No se midió cuántas decisiones se perdieron así.",
+        "derived_from": [
+          "IL1"
+        ]
+      }
+    ]
+  },
+  "coverage": {
+    "ownerless_decisions": {
+      "state": "examined_clean",
+      "reason": "Se revisó el expediente de decisiones por fase y el de sesión: toda decisión de protocolo tiene una persona que la eligió y queda sellada con su motivo. La elección de stack no era una excepción porque no existía; ahora que existe, entra por el mismo camino."
+    },
+    "broken_handoffs": {
+      "state": "not_examined",
+      "reason": "Este ciclo no delegó construcción a subagentes de build, así que no hubo entregas entre roles que observar. Los cuatro agentes de research entregaron informes al orquestador, que es el único traspaso que hubo, y no forma parte del proceso que este diagnóstico examina."
+    }
+  }
+}

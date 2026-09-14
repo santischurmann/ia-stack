@@ -1,6 +1,6 @@
 ---
 name: vibecodeprotocols
-description: Protocolo de 9 fases con gates mecánicos para investigar, diseñar, construir, verificar y publicar software con agentes. Sin test rojo visible no hay implementación. Cada decisión se presenta como menú de opciones con recomendación explícita.
+description: Protocolo de once fases con gates mecánicos para investigar, diseñar, construir, verificar y publicar software con agentes. Sin test rojo visible no hay implementación. Cada decisión se presenta como menú de opciones con recomendación explícita.
 ---
 
 # VibeCodeProtocols

@@ -1,0 +1,109 @@
+{
+  "schema": "vcp.threat-model/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "assets": [
+    {
+      "id": "A1",
+      "what": "El contrato de límites de plan gratuito y la matriz de stacks, que entran al repositorio como datos y de ahí viajan a cada proyecto que instala el protocolo.",
+      "why_it_matters": "Si alguien los cambia, todo proyecto que instale el protocolo recibe una recomendación falsa presentada como verificada contra documentación oficial. El daño no es técnico: es que una persona elija un servicio creyendo que su plan gratuito le alcanza cuando no, o fije una versión que no compila."
+    },
+    {
+      "id": "A2",
+      "what": "Lo versionado del repositorio, que se publica y se instala en máquinas de terceros.",
+      "why_it_matters": "Un dato privado de quien escribió el protocolo que entre acá queda publicado. Sobre la traza sellada, además, queda para siempre: es append-only y la quinta ley prohíbe editarla."
+    },
+    {
+      "id": "A3",
+      "what": "El veredicto del gate de test rojo, que es la puerta de la primera ley del protocolo.",
+      "why_it_matters": "Un verde falso deja pasar código sin una prueba que lo respalde, que es exactamente lo que la primera ley existe para impedir."
+    }
+  ],
+  "actors": [
+    {
+      "id": "AC1",
+      "role": "Quien escribe en el repositorio: la persona que lo mantiene, o un agente actuando en su nombre.",
+      "authenticated": false,
+      "trusted": true
+    },
+    {
+      "id": "AC2",
+      "role": "El proyecto bajo prueba, cuyo código de configuración el runner de pruebas ejecuta: conftest.py en pytest, vitest.config.js en vitest.",
+      "authenticated": false,
+      "trusted": false
+    }
+  ],
+  "entrypoints": [
+    {
+      "id": "E1",
+      "kind": "file",
+      "actor_ids": [
+        "AC1"
+      ],
+      "reaches_asset_ids": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "E2",
+      "kind": "ipc",
+      "actor_ids": [
+        "AC2"
+      ],
+      "reaches_asset_ids": [
+        "A3"
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "id": "C1",
+      "entrypoint_id": "E1",
+      "asset_id": "A1",
+      "kind": "validation",
+      "ac_id": "AC1"
+    },
+    {
+      "id": "C2",
+      "entrypoint_id": "E1",
+      "asset_id": "A2",
+      "kind": "validation",
+      "ac_id": "AC1"
+    }
+  ],
+  "accepted": [
+    {
+      "id": "X1",
+      "entrypoint_id": "E2",
+      "why": "No hay control posible que no rompa lo que pretende servir. Medido el 2026-09-14 contra pytest 9.1.1 y vitest 5.0.0: los dos ejecutan configuración del proyecto con acceso al pipeline de reporte y al código de salida, y se falsificaron los dos con cero pruebas fallando. Las opciones que cierran el vector, --noconftest en pytest y una configuración neutral en vitest, dejan a cualquier proyecto real sin sus fixtures, alias y entorno, así que no son usables como default. La brecha se acepta porque hoy un proyecto Python no puede pasar la primera ley en absoluto, y un piso declarado como menor es más que ninguno. No se acepta en silencio: el receipt registra con qué adaptador se obtuvo cada verde, para que el de un adaptador débil no se lea igual que el del nativo.",
+      "owner": "Quien mantiene el protocolo, con la decisión registrada en el menú de la fase de Research de este ciclo."
+    }
+  ],
+  "coverage": {
+    "authn": {
+      "state": "examined_clean",
+      "reason": "No hay autenticación que examinar: todo corre localmente, con los permisos de quien ejecuta el comando, y ningún gate abre un puerto ni acepta una conexión. El protocolo no tiene usuarios ni sesiones."
+    },
+    "authz": {
+      "state": "examined_clean",
+      "reason": "No hay autorizacion que examinar porque no hay roles ni permisos: todo corre localmente con los permisos del sistema operativo de quien ejecuta el comando. El unico privilegio en juego es escribir en el repositorio, y eso lo resuelve el control de acceso de git y del sistema de archivos, fuera del alcance del protocolo."
+    },
+    "validation": {
+      "state": "examined_clean",
+      "reason": "Es el único control que aplica y está cubierto por C1 y C2. Los dos archivos de datos se validan contra su esquema antes de consumirse, con claves exactas y rechazo de claves extra, que es el mismo patrón que los otros gates del repositorio ya usan."
+    },
+    "ratelimit": {
+      "state": "examined_clean",
+      "reason": "No hay nada que limitar: ningún gate atiende peticiones ni sale a la red. La investigación de límites de plan gratuito se hace leyendo documentación, no consultando APIs, así que tampoco hay cuota externa que agotar."
+    },
+    "escaping": {
+      "state": "not_examined",
+      "reason": "La tabla navegable de la matriz va a renderizar datos del contrato dentro de HTML, y ahí sí hace falta examinar el escapado. No se examinó todavía porque esa página se construye después de la spec, desde el mismo dato, y no existe en este ciclo. Queda anotado como entrada obligatoria del ciclo que la construya."
+    },
+    "isolation": {
+      "state": "examined_clean",
+      "reason": "Los adaptadores de test rojo lanzan procesos del proyecto y ya se examinó qué alcanzan: el veredicto del propio gate, que es el activo A3, y eso está declarado en X1. Lo que no alcanzan es el resto del repositorio, porque el reporte se escribe fuera del proyecto y la ruta de prueba se comprueba contenida antes de abrirla."
+    }
+  }
+}

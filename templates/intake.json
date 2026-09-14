@@ -12,6 +12,10 @@
     "artefacto_visual": "Si hace falta un diagrama, una vista o una maqueta, y para quién.",
     "alcance": "Si se pide diagnóstico solamente, o también implementación."
   },
+  "tipo_de_producto": {
+    "codigo": "B",
+    "motivo": "Por qué es de ese tipo y no de otro. Obligatorio para los ocho códigos: uno sin motivo es un clic, no una clasificación. A sitio o landing · B aplicación web · C PWA · D escritorio o híbrida · E sistema Python · F integración, API o proceso interno · G artefacto que se entrega una vez · H otro, y entonces hay que decir por qué ninguno de los siete alcanza."
+  },
   "supuestos": [
     { "id": "S1", "texto": "Lo que se está dando por cierto sin haberlo comprobado todavía." }
   ],

@@ -1,0 +1,58 @@
+{
+  "schema": "vcp.implementation-plan/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "order": [
+    {
+      "id": "STEP1",
+      "action": "Escribir la spec: congelar el enum de tipo de producto, la forma del contrato de límites de plan gratuito y de la matriz, los tres adaptadores de test rojo con su garantía declarada, y el gate de repositorio limpio",
+      "depends_on": [],
+      "validation": "node scripts/verify-spec-wordcap.mjs check docs/spec.md && node scripts/verify-spec-wordcap.mjs check docs/spec.md --quality",
+      "access_needed": ["ninguno: sólo lectura y escritura en el checkout"]
+    },
+    {
+      "id": "STEP2",
+      "action": "Construir el gate de la matriz y su contrato de límites de plan gratuito, con su test rojo primero",
+      "depends_on": ["STEP1"],
+      "validation": "node --test tests/verify-stack-matrix.test.mjs && node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
+      "access_needed": ["ninguno: el gate lee archivos locales y nunca sale a la red"]
+    },
+    {
+      "id": "STEP3",
+      "action": "Construir el despachador de adaptadores de test rojo, con lista blanca de runners y rechazo por nombre",
+      "depends_on": ["STEP1"],
+      "validation": "node --test tests/verify-red-dispatch.test.mjs",
+      "access_needed": ["ninguno"]
+    },
+    {
+      "id": "STEP4",
+      "action": "Construir los adaptadores de pytest y de vitest, cada uno con su prueba de falsificación y su garantía declarada como menor que la del adaptador nativo",
+      "depends_on": ["STEP3"],
+      "validation": "node --test tests/verify-red-pytest.test.mjs tests/verify-red-vitest.test.mjs",
+      "access_needed": ["pytest y vitest instalados en la máquina donde corren esas pruebas; el protocolo no los instala"]
+    },
+    {
+      "id": "STEP5",
+      "action": "Construir el gate de repositorio limpio, que barre por forma las rutas absolutas de directorio personal en lo versionado y corre antes de sellar la traza",
+      "depends_on": ["STEP1"],
+      "validation": "node --test tests/verify-repo-limpio.test.mjs && node scripts/verify-repo-limpio.mjs check",
+      "access_needed": ["ninguno"]
+    },
+    {
+      "id": "STEP6",
+      "action": "Cablear la matriz al menú de tipo de producto de la fase de Intake, para que la recomendación salga del dato y no de la prosa",
+      "depends_on": ["STEP2"],
+      "validation": "node scripts/verify-menu-shape.mjs check SKILL.md && node scripts/verify-vcp-contract.mjs check",
+      "access_needed": ["ninguno"]
+    },
+    {
+      "id": "STEP7",
+      "action": "Generar la tabla navegable de la matriz desde el mismo archivo de datos, nunca escrita a mano",
+      "depends_on": ["STEP2", "STEP6"],
+      "validation": "node scripts/verify-design-tokens.mjs check && node --test tests/fases-canonicas.test.mjs",
+      "access_needed": ["ninguno: la página se escribe fuera del repositorio, como el tablero"]
+    }
+  ],
+  "rollback": "Cada paso agrega archivos nuevos y no reescribe ninguno existente, así que volver atrás es sacar los archivos agregados y revertir las dos líneas de enganche: la novena pregunta del menú de Intake y la clave del enum en el validador. Nada de esto toca traza sellada ni expedientes cerrados, así que no hay estado a medias posible: o el archivo está declarado en el índice y en la prueba de vacío, o el gate correspondiente lo dice. Los datos del usuario no se tocan en ningún paso.",
+  "release_gate": "La suite completa sin fallos, cobertura de cada función y cada rama en los scripts nuevos, el gate de contrato con todos sus límites honestos verificados incluidos los de los adaptadores nuevos, el barrido de repositorio limpio en cero, la decisión de cada fase sellada y encadenada, y un receipt con estado aprobado que declare con qué adaptador de test rojo se obtuvo cada verde."
+}

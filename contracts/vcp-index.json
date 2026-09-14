@@ -123,6 +123,10 @@
       "class": "evidencia"
     },
     {
+      "path": ".vibe/sessions/2026-09-14-lanzamiento-ia-stack-cierre.md",
+      "class": "evidencia"
+    },
+    {
       "path": "AGENTS.md",
       "class": "documento"
     },
@@ -207,6 +211,46 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/cycles/research-cycle-2026-08-29/phase-decisions.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/cycles/research-cycle-2026-08-29/phase-plan.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/adoption.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/caio.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/implementation.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/loop-map.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/prd.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/recurrence.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/eleccion-de-stack/diagnostics/threat.json",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/discovery/integridad-verificable/discovery-packet.md",
       "class": "evidencia"
     },
@@ -244,6 +288,10 @@
     },
     {
       "path": "docs/discovery/integridad-verificable/views/run-001.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/intake/eleccion-de-stack.json",
       "class": "evidencia"
     },
     {
@@ -403,6 +451,10 @@
       "class": "evidencia"
     },
     {
+      "path": "research/sources/adaptadores-red-2026-09-14.md",
+      "class": "evidencia"
+    },
+    {
       "path": "research/sources/agency-agents.md",
       "class": "evidencia"
     },
@@ -440,6 +492,10 @@
     },
     {
       "path": "research/sources/engram.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/free-tiers-2026-09-14.md",
       "class": "evidencia"
     },
     {
@@ -483,7 +539,15 @@
       "class": "evidencia"
     },
     {
+      "path": "research/sources/python-y-escritorio-2026-09-14.md",
+      "class": "evidencia"
+    },
+    {
       "path": "research/sources/reverse-skill.md",
+      "class": "evidencia"
+    },
+    {
+      "path": "research/sources/stack-web-versiones-2026-09-14.md",
       "class": "evidencia"
     },
     {

@@ -1,0 +1,197 @@
+{
+  "schema": "vcp.stack-matrix/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "captured_at": "2026-09-14",
+  "sources": [
+    "research/sources/stack-web-versiones-2026-09-14.md",
+    "research/sources/free-tiers-2026-09-14.md",
+    "research/sources/python-y-escritorio-2026-09-14.md",
+    "research/sources/adaptadores-red-2026-09-14.md"
+  ],
+  "note": "Artefacto de discovery, no contrato. Es la salida de la fase de investigación: la forma definitiva, su gate y la separación entre la matriz y el contrato de límites de plan gratuito se congelan en la spec. Ningún gate lo consume todavía.",
+  "rows": [
+    {
+      "product_type": "A",
+      "name": "Sitio web o landing",
+      "decision_criterion": "¿El contenido cambia sin volver a publicar? Si la respuesta es no, no hace falta base de datos ni servidor propio.",
+      "recommended": {
+        "stack": "HTML y CSS servidos como archivos estáticos, con un generador sólo si hay más de una docena de páginas",
+        "why": "Una landing sin datos propios no necesita ejecución en servidor. Los assets estáticos no consumen cuota en varios planes gratuitos y no hay nada que se pueda caer."
+      },
+      "alternatives": [
+        {
+          "stack": "Next.js 16.3.5 en modo estático",
+          "when": "Cuando ya se sabe que la landing va a crecer a aplicación, y no querés migrar después"
+        },
+        {
+          "stack": "Astro u otro generador de sitios",
+          "when": "Muchas páginas de contenido con poca interactividad"
+        }
+      ],
+      "free_tier_refs": ["cloudflare-pages", "vercel-hobby"],
+      "red_adapter": "ninguno — un sitio sin lógica no tiene qué probar; si aparece lógica, deja de ser tipo A",
+      "evidence": [
+        "En el plan gratuito de Cloudflare Pages las peticiones a assets estáticos son gratis e ilimitadas y no cuentan contra la cuota diaria de Workers."
+      ]
+    },
+    {
+      "product_type": "B",
+      "name": "Aplicación web",
+      "decision_criterion": "¿Hay sesión de usuario y datos que sobreviven a la visita? Si sí, hace falta base de datos y autenticación, y eso cambia todo el resto.",
+      "recommended": {
+        "stack": "Next.js 16.3.5 con App Router · React 19.3.0 · TypeScript 6.0.3 · Tailwind 4.3.3 · Drizzle ORM 0.45.2 sobre PostgreSQL 18 en Docker local · Better Auth 1.7.4 · Vitest 4.1.11 · Playwright 1.63.0 · Node 24 LTS",
+        "why": "Es el camino con más documentación oficial verificable, y todas las piezas tienen versiones compatibles entre sí hoy. La base corre local en Docker: nada de cloud hasta que haya algo que mostrar."
+      },
+      "alternatives": [
+        {
+          "stack": "El mismo frontend con Supabase como base y autenticación",
+          "when": "Cuando querés autenticación llave en mano y la aplicación va a tener tráfico diario real; su plan gratuito pausa el proyecto tras siete días de baja actividad"
+        },
+        {
+          "stack": "Cloudflare Workers con D1",
+          "when": "Cuando el proyecto es comercial. Es el único de los siete servicios revisados cuyo plan gratuito no prohíbe uso comercial ni pausa por inactividad"
+        }
+      ],
+      "free_tier_refs": ["vercel-hobby", "neon-free", "supabase-free", "cloudflare-workers"],
+      "red_adapter": "vitest — garantía menor que la del adaptador nativo, declarada",
+      "evidence": [
+        "typescript@latest es 7.0.2 pero typescript-eslint declara el rango >=4.8.4 <6.1.0 en su manifiesto, y llega como dependencia dura de eslint-config-next. Por eso la recomendación fija 6.0.3 y no la última.",
+        "vitest 5.0.0 salió el 2026-09-03 y su paquete de cobertura exige coincidencia exacta de versión. Se recomienda 4.1.11 hasta revisar los cambios que rompen.",
+        "shadcn/ui no se versiona como paquete: los componentes son código que se copia y sólo el CLI tiene versión. El nombre viejo shadcn-ui está deprecado por su autor."
+      ]
+    },
+    {
+      "product_type": "C",
+      "name": "Progressive Web App",
+      "decision_criterion": "¿Tiene que funcionar sin conexión, o instalarse en la pantalla de inicio? Si ninguna de las dos, es tipo B y no hace falta el costo de la PWA.",
+      "recommended": {
+        "stack": "El stack de tipo B más manifest, service worker y una estrategia de caché explícita",
+        "why": "La PWA es una capa sobre una aplicación web, no un stack distinto. Agregarla sin necesidad suma un service worker que hay que versionar y que puede servir contenido viejo."
+      },
+      "alternatives": [
+        {
+          "stack": "Aplicación web común con diseño adaptable",
+          "when": "Cuando el caso de uso no justifica el modo sin conexión, que es la mayoría"
+        }
+      ],
+      "free_tier_refs": ["vercel-hobby", "neon-free"],
+      "red_adapter": "vitest — garantía menor que la del adaptador nativo, declarada",
+      "evidence": [
+        "Un contexto seguro es requisito para service workers, y localhost cuenta como tal sin TLS: MDN lista localhost, 127.0.0.0/8 y ::1/128 como potencialmente confiables, así que se puede desarrollar y probar en local sin certificados."
+      ]
+    },
+    {
+      "product_type": "D",
+      "name": "Aplicación de escritorio o híbrida",
+      "decision_criterion": "¿Necesita hablar con un proceso local de terceros, o alcanza con el sistema de archivos? Si habla con otro proceso, revisá primero si ese proceso tiene cliente en algún lenguaje: eso decide el stack más que cualquier comparación de frameworks.",
+      "recommended": {
+        "stack": "Depende de la respuesta al criterio. Si el proceso local tiene cliente en Python: Python con interfaz web local y ventana nativa. Si no hay proceso local que integrar: Tauri 2.11.5",
+        "why": "Cuando el cliente del proceso local es un paquete de Python, tanto Tauri como Electron terminan lanzando un proceso auxiliar de Python igual, o sea que ya tenés Python en el stack más una capa de plumbing que no existiría si la aplicación fuera Python."
+      },
+      "alternatives": [
+        {
+          "stack": "Electron 44.3.0",
+          "when": "Cuando hace falta hablar por socket o named pipe desde el código de la aplicación: el módulo de red de Node lo soporta nativo y Tauri no tiene plugin oficial para eso. Costo: soporta sólo las tres últimas versiones mayores, con cadencia de ocho semanas, o sea ~6 subidas por año"
+        },
+        {
+          "stack": "Tauri 2.11.5",
+          "when": "Cuando manda el peso del instalador. Ojo: en Windows usa WebView2, que es Chromium, así que el ahorro grande de memoria es real en Linux y macOS, no necesariamente en Windows"
+        }
+      ],
+      "free_tier_refs": ["firma-codigo-windows"],
+      "red_adapter": "según el lenguaje elegido: pytest o vitest, los dos con garantía menor declarada",
+      "evidence": [
+        "Un issue en el propio repositorio de Tauri midió en Windows 10 más memoria que Electron: 399 MB contra 318 MB en un caso y 370 contra 312 en otro.",
+        "El catálogo de plugins oficiales de Tauri no cubre sockets crudos ni named pipes. Desde el frontend es imposible; desde Rust hay que escribirlo.",
+        "El sistema de eventos de Tauri no sirve para transmitir datos en vivo: la documentación dice que no está diseñado para baja latencia ni alto caudal, y que los escuchas pueden procesar eventos fuera de orden."
+      ]
+    },
+    {
+      "product_type": "E",
+      "name": "Sistema Python: datos, automatización, research o IA",
+      "decision_criterion": "¿El cómputo es el producto, o es un medio? Si el resultado del cálculo es lo que se entrega, el stack se elige por el cuello de botella medido, no por preferencia.",
+      "recommended": {
+        "stack": "Python 3.14 con uv 0.12.13 · NumPy 2.5.3 · SciPy 1.18.1 · pandas 3.0.5 · PyArrow 25.0.1 · pytest · ruff · mypy. Polars 1.44.2 o DuckDB 1.5.5 sólo cuando la medición los justifique",
+        "why": "3.14 es el único punto donde todas las librerías del conjunto tienen paquetes compilados disponibles: NumPy y SciPy exigen 3.12 o más, y Numba corta por debajo de 3.15."
+      },
+      "alternatives": [
+        {
+          "stack": "Python 3.13",
+          "when": "Si alguna librería de nicho no tiene paquete compilado para 3.14, porque en Windows eso obliga a compilar desde fuente"
+        },
+        {
+          "stack": "Sumar Numba, multiproceso o una extensión nativa",
+          "when": "Sólo con un perfilado que lo justifique. Numba no amortiza si el trabajo entero corre menos de un segundo, y la documentación oficial dice que empeora el rendimiento cuando el camino caliente es pandas"
+        }
+      ],
+      "free_tier_refs": ["github-actions"],
+      "red_adapter": "pytest — garantía menor que la del adaptador nativo, declarada",
+      "evidence": [
+        "No fijar 3.15 aunque salga el 2026-10-01: Numba, pandas, PyArrow y DuckDB no la soportan.",
+        "El hilo libre está oficialmente soportado desde 3.14 con una penalización de 1% a 8%, pero DuckDB y Polars no publican paquetes para esa variante, así que todavía no sirve para un stack de datos.",
+        "Polars 2.0 salió en release candidate el 2026-09-02 con el motor de streaming por defecto, que puede cambiar el orden de las filas. Su propia guía advierte que algunos cambios pueden afectar silenciosamente los resultados: no adoptarlo sin pruebas de paridad numérica."
+      ]
+    },
+    {
+      "product_type": "F",
+      "name": "Integración, API, backend o proceso interno",
+      "decision_criterion": "¿Quién lo consume es una máquina o una persona? Si es una máquina, no hay interfaz que diseñar y el stack se elige por dónde corre y con qué se integra.",
+      "recommended": {
+        "stack": "El lenguaje que ya hable con lo que se integra, con cero dependencias si el alcance lo permite. Node 24 nativo para herramientas de línea de comandos; Python 3.14 si toca el ecosistema de datos",
+        "why": "Una integración se elige por el extremo con el que habla, no por gusto. Cada dependencia que se suma es superficie que hay que auditar y actualizar."
+      },
+      "alternatives": [
+        {
+          "stack": "Un framework de API como FastAPI o similar",
+          "when": "Cuando hace falta exponer HTTP con validación de esquema y documentación automática, no cuando alcanza un proceso que corre y termina"
+        }
+      ],
+      "free_tier_refs": ["github-actions"],
+      "red_adapter": "el nativo de Node si el proceso es Node — la única garantía fuerte de las tres",
+      "evidence": [
+        "El propio protocolo es de este tipo: 48 comprobaciones mecánicas, cero dependencias externas, sin interfaz propia y con otro proceso o una persona en la terminal como consumidor."
+      ]
+    },
+    {
+      "product_type": "G",
+      "name": "Artefacto: documento, plan, planilla, presentación, imagen o panel",
+      "decision_criterion": "¿Se entrega una vez y no se opera? Si hay que mantenerlo, versionarlo o corregirlo en producción, no es un artefacto: es alguno de los otros siete.",
+      "recommended": {
+        "stack": "La herramienta que produzca el formato final, sin construir infraestructura alrededor",
+        "why": "Un artefacto no tiene despliegue ni operación. Montar un proyecto para generarlo es casi siempre más caro que el artefacto."
+      },
+      "alternatives": [
+        {
+          "stack": "Un generador propio cuando el artefacto se rehace seguido con datos nuevos",
+          "when": "A partir de la tercera vez que se regenera a mano. Antes de eso, generarlo a mano sale más barato"
+        }
+      ],
+      "free_tier_refs": [],
+      "red_adapter": "ninguno — sin lógica que ejecutar no hay test rojo posible, y forzarlo sería decoración",
+      "evidence": [
+        "El criterio de separación con el resto es operativo y no de formato: un panel que se actualiza solo con datos en vivo se opera, así que es tipo B, no G."
+      ]
+    },
+    {
+      "product_type": "H",
+      "name": "Otro",
+      "decision_criterion": "Ninguno de los siete alcanza. Elegir este código obliga a escribir por qué, y ese texto es el dato: si se repite entre proyectos, a la matriz le falta una fila.",
+      "recommended": {
+        "stack": "Sin recomendación por definición. Se investiga el caso y se registra el hueco",
+        "why": "Inventar una recomendación para un tipo que no se entiende es peor que no darla. Lo útil de este código es que hace visible lo que la matriz no cubre."
+      },
+      "alternatives": [],
+      "free_tier_refs": [],
+      "red_adapter": "sin determinar hasta clasificar el caso",
+      "evidence": [
+        "Va último a propósito, para que sea la salida del caso genuinamente distinto y no la salida cómoda de la primera duda."
+      ]
+    }
+  ],
+  "limits": [
+    "Las versiones y los límites de plan gratuito valen para el 2026-09-14 y para ninguna otra fecha. Dos filas ya llevan un aviso de que la última versión no es la usable, y ese aviso es lo que caduca más rápido.",
+    "El criterio de decisión de cada fila es una pregunta con respuesta observable, no una garantía de que la clasificación sea correcta. Un producto clasificado coherentemente y mal recibe la recomendación equivocada.",
+    "Los adaptadores de pytest y vitest tienen garantía menor que el nativo, y eso no es un detalle de implementación: los dos se falsificaron con cero pruebas fallando."
+  ]
+}

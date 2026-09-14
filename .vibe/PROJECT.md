@@ -23,7 +23,7 @@ paga porque hay algo real que perder. `risk_level` por-cambio (Phase 7.1) sigue 
 
 - `scripts/*.mjs` — gates mecánicos, uno por invariante. Cada uno tiene su espejo en `tests/`.
 - `contracts/*.json` — datos declarativos que los gates validan; nunca comandos ejecutables.
-- `SKILL.md` — orquestación de las 6 fases; `skills/*.md` — roles de subagente.
+- `SKILL.md` — orquestación de las once fases; `skills/*.md` — roles de subagente.
 - `docs/discovery/<slug>/runs/run-NNN/` — historial inmutable de decisiones con hash-chain.
 - Inyección de dependencias en cada gate (`read`, `runGit`, `stat`) para que los tests puedan
   falsificar sin tocar el filesystem real.

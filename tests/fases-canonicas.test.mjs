@@ -249,3 +249,67 @@ test('FALSIFICACIÓN · el contador de tarjetas ve las que hay y no confunde otr
   assert.equal(tarjetasDeFase('<div class="phase">a</div><div class="phase">b</div>'), 2);
   assert.equal(tarjetasDeFase('<div class="phases"><div class="phasey">x</div></div>'), 0);
 });
+
+// La herida, con su número de veces: UNA, y la peor de todas las que tuvo este vocabulario.
+// `.agents/skills/vibecodeprotocols/SKILL.md` decía «Protocolo de 9 fases» en su frontmatter
+// mientras el cuerpo del MISMO archivo, ocho líneas más abajo, decía «son once fases». Ese archivo
+// lo copia el instalador, así que cada proyecto que instaló el protocolo recibió el número
+// equivocado en el único renglón que un agente lee antes de decidir si abre la skill.
+//
+// POR QUÉ NO SE ENSANCHÓ `cuentasDeFases` PARA CAZARLO. Se midió antes de escribir: la forma ancha
+// —`(?:son|de|las|sus)\s+N\s+fases`— agrega 12 coincidencias sobre lo versionado y sólo 3 son
+// afirmaciones sobre este protocolo. Las otras 9 son subconjuntos legítimos («las tres fases de
+// cierre», «la primera de seis fases que el encargo pide»), fases de OTRA herramienta descrita en
+// `research/sources/` («las siete fases» de cyber-neo, «las cuatro fases de preguntas» de
+// the-architect), y afirmaciones viejas sobre VCP dentro de fuentes pineadas, que son registro
+// histórico por el mismo motivo que el CHANGELOG. Ensanchar habría producido ocho rojos falsos.
+//
+// LÍMITE HONESTO: esto mira el frontmatter, no la prosa. Un documento que diga el número
+// equivocado en el cuerpo con una forma que `cuentasDeFases` no reconoce sigue pasando.
+
+/** El `description:` del frontmatter YAML, que es lo que un agente lee antes de abrir la skill. */
+export function descripcionesDeFrontmatter(archivos, leer) {
+  const encontradas = [];
+  for (const archivo of archivos) {
+    let texto;
+    try { texto = leer(archivo); } catch { continue; }
+    const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/u.exec(texto);
+    if (!frontmatter) continue;
+    const descripcion = /^description:\s*(.+)$/mu.exec(frontmatter[1]);
+    if (!descripcion) continue;
+    for (const m of descripcion[1].matchAll(/([\wáéíóú]+)\s+fases/giu)) {
+      const valor = PALABRA[m[1].toLowerCase()] ?? Number(m[1]);
+      if (Number.isFinite(valor)) encontradas.push({ archivo, dicho: m[1], valor });
+    }
+  }
+  return encontradas;
+}
+
+test('el frontmatter de cada skill dice tantas fases como declara el canónico', SOLO_FUENTE, () => {
+  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const versionados = spawnSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' })
+    .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+  assert.ok(versionados.length > 0, 'git ls-files vino vacío: la comprobación no midió nada');
+  const dichas = descripcionesDeFrontmatter(versionados, (f) => readFileSync(join(repoRoot, f), 'utf8'));
+  assert.ok(dichas.length > 0, 'ningún frontmatter dice cuántas fases son: sin eso no hay nada que comparar');
+  assert.deepEqual(
+    dichas.filter((d) => d.valor !== canonicas.length).map((d) => `${d.archivo} dice «${d.dicho}»`),
+    [],
+    `el canónico declara ${canonicas.length} fases`,
+  );
+});
+
+test('FALSIFICACIÓN · lee el frontmatter y sólo el frontmatter, en número y en palabra', () => {
+  const leer = (f) => ({
+    'a.md': '---\nname: x\ndescription: Protocolo de once fases con gates\n---\n\nson 3 fases acá abajo',
+    'b.md': '---\ndescription: Protocolo de 9 fases\n---\n',
+    'c.md': '---\ndescription: sin número de fases\n---\n',
+    'd.md': 'description: Protocolo de 4 fases\n',
+    'e.md': '---\nname: y\n---\n',
+  }[f]);
+  const dichas = descripcionesDeFrontmatter(['a.md', 'b.md', 'c.md', 'd.md', 'e.md'], leer);
+  assert.deepEqual(dichas, [
+    { archivo: 'a.md', dicho: 'once', valor: 11 },
+    { archivo: 'b.md', dicho: '9', valor: 9 },
+  ]);
+});

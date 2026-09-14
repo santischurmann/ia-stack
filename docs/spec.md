@@ -1,67 +1,34 @@
-# Spec: lanzamiento-ia-stack
+# Spec: eleccion-de-stack
 
-**Fecha:** 2026-09-04 · **Estado:** implementada
-La spec anterior (`candidatos-de-research`, **quedó sin terminar**) se recupera con
-`git show 3aac9cf:docs/spec.md`. Su deuda está anotada en `.vibe/DEBT.md`.
+**Fecha:** 2026-09-14 · **Estado:** en redacción — la escribe la fase 3, después del research
+La spec anterior (`lanzamiento-ia-stack`, **implementada**, sus nueve etapas cerradas y publicadas)
+se recupera entera con `git show 7d98266:docs/spec.md`.
 
-## Problem / Problema
+---
 
-El protocolo era riguroso adentro y estaba roto para cualquiera que no fuera su autor. Tres
-defectos medidos, no supuestos: correr la suite sobrescribía la configuración global de quien
-clonara; toda instalación nacía con 26 fallos sobre 1096; y el repositorio publicaba datos de otro
-proyecto del autor. Encima, el README pedía ocho mil palabras para explicar once fases, y no había
-forma de ver el estado del trabajo sin leer archivos sueltos.
+## Todavía no está escrita, y por qué
 
-## Discovery / Investigación previa
+Este archivo existe para que los documentos no se contradigan sobre en qué se está trabajando, no
+para adelantar contenido. La spec se escribe en la **fase 3**, y no antes: hacerlo ahora obligaría a
+inventar criterios de aceptación sobre versiones que el research todavía no verificó, que es
+exactamente el orden que el protocolo prohíbe.
 
-Dos rondas de investigación con pasada adversarial, que mató dos de cinco diseños. Lo que cambió el
-plan: los 26 fallos no eran self-checks mal ubicados sino **seis causas raíz**, y tres eran
-defectos operativos del producto. La medición de punta a punta —instalar en un proyecto ajeno y
-correr la suite ahí— no la corría nadie, y es la única que ve lo que ve quien clona.
+Mientras tanto el alcance vive donde corresponde: `.vibe/SESSION.md` declara la funcionalidad, el
+objetivo y lo que queda fuera, y `docs/phase-plan.json` declara el orden de fases de este ciclo
+(`1.5`, `2`, `3`).
 
-## Target Users / Usuarios
+## Qué va a congelar cuando se escriba
 
-Quien instala el protocolo en su propio proyecto y nunca va a leer el repositorio de VCP. Todo lo
-que le hable del checkout de VCP es ruido que no puede accionar.
+Cinco cosas, en tablas y no en prosa, porque el tope de 650 palabras cuenta narración:
 
-## Acceptance Criteria / Criterios de aceptación
+1. La novena pregunta de Intake —el tipo de producto— y su enum A-H.
+2. La forma de `contracts/free-tier-limits.json` y del artefacto `stack-matrix.json`.
+3. Los tres adaptadores de test rojo y la lista blanca del despachador.
+4. Los arreglos de vocabulario de fases y su detector.
+5. Dónde quedó el expediente de fases archivado.
 
-- [x] **AC1:** GIVEN un clon limpio instalado en un proyecto ajeno WHEN se corre la suite ahí THEN
-  cero fallos, y las salteadas dicen por qué.
-- [x] **AC2:** GIVEN una instalación WHEN se corre cualquier gate a mano THEN ninguno le reclama un
-  archivo que sólo existe en el repositorio de VCP.
-- [x] **AC3:** GIVEN una instalación en un proyecto destino WHEN termina THEN nada fuera de ese
-  proyecto cambió: la huella de la configuración global queda idéntica.
-- [x] **AC4:** GIVEN lo versionado WHEN un barrido por forma busca otros árboles THEN no hay ninguna
-  referencia a otro proyecto del autor.
-- [x] **AC5:** GIVEN alguien que nunca vio el protocolo WHEN lee el README THEN entiende las once
-  fases, la memoria entre sesiones y el bucle de auto-mejora, con diagramas.
-- [x] **AC6:** GIVEN siete días de trabajo WHEN se pide el tablero THEN muestra proyectos, sesiones,
-  turnos, tokens deduplicados y horas como banda, fuera del repositorio.
-- [x] **AC7:** GIVEN una ronda de auto-mejora WHEN el agente propone THEN escribe como mucho cuatro
-  mejoras, cada una con su cita resuelta contra el archivo, y no ejecuta nada.
+## Límite de este archivo
 
-## Constraints / Restricciones
-
-Node nativo, cero dependencias de npm. Sin daemons, servicios cloud ni APIs externas. Nada se
-escribe fuera del árbol salvo pedido explícito con bandera. Cobertura total de líneas, ramas y
-funciones en `scripts/`. Todo script nuevo se declara en `contracts/empty-probe.json`. Sin test
-rojo visible no hay implementación.
-
-## Non-Goals / No-Goals
-
-No se promete llegar a trending: se pueden arreglar defectos y escribir mejor, que la gente mire
-eso no depende del repositorio. No se toca el vocabulario de fases de las máquinas —tres gates
-validan orden y un hash cubre el prefijo—, sólo el de la documentación. No se convierte el tablero
-en un servidor: genera una página y termina.
-
-## Stack & Dependencies
-
-Node 22 o superior, `node:test`, `git`. Nada más. La integración con herramientas de grafo queda
-opcional y declarada: el protocolo cierra su fase de deploy sin ellas.
-
-## Definition of Done (DoD)
-
-Las nueve etapas del plan cerradas y publicadas; la suite en verde con la máquina sin carga; la
-cobertura completa; la cadena de auditoría intacta contra la historia de git; y la medición de
-punta a punta sobre un clon del estado publicado, con cero fallos y la configuración global intacta.
+No es una spec: es un encabezado que declara identidad. Ningún gate de calidad lo aprueba todavía, y
+no debería. `verify-spec-wordcap.mjs check docs/spec.md --quality` va a rechazarlo hasta que la
+fase 3 lo complete, y ese rechazo es correcto.

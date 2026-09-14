@@ -288,6 +288,33 @@ Preguntale al usuario, una por una, y **esperá la respuesta**. No las contestes
 7. ¿Hace falta un artefacto visual — diagrama, vista, maqueta — y para quién?
 8. ¿Pedís sólo diagnóstico, o también implementación?
 
+La novena va aparte porque no es prosa libre: es un enum cerrado, y por eso se pregunta con menú.
+
+🔵 **¿Qué tipo de producto es?**
+
+- **A)** Sitio web o landing
+- **B)** Aplicación web
+- **C)** Progressive Web App
+- **D)** Aplicación de escritorio o híbrida
+- **E)** Sistema Python: trading, datos, automatización, research o IA
+- **F)** Integración, API, backend o proceso interno
+- **G)** Artefacto: documento, plan, planilla, presentación, imagen o dashboard
+- **H)** Otro — hay que escribir por qué ninguno de los siete alcanza
+
+La marca `— *(recomendado)*` se pone sobre el código que se deduce de las respuestas 1 a 8, citando
+de cuál sale. **No hay un tipo recomendado por defecto, y no puede haberlo**: recomendar antes de
+escuchar sería el defecto que este expediente existe para evitar.
+
+Esperando tu respuesta antes de continuar.
+
+Es enum y no prosa porque la matriz de stacks se indexa por ese código, y un texto libre la volvería
+incomparable entre ciclos. El **motivo es obligatorio para los ocho**, no sólo para `H`: un código
+sin motivo es un clic, no una clasificación, y nadie puede revisar después si estuvo bien
+clasificada. Mismo criterio que el campo `reason` de cada decisión en `docs/phase-decisions.json`.
+**Límite honesto**: el gate comprueba que el código sea uno de los ocho y que el motivo no esté
+vacío. **No sabe si el producto es realmente de ese tipo** — una clasificación coherente y
+equivocada pasa en verde.
+
 Escribí las respuestas en `docs/intake/<feature-slug>.json` desde `templates/intake.json`. Los
 **supuestos**, los **riesgos** y las **preguntas abiertas** van en sus listas propias, cada uno con
 id: lo que quede mezclado adentro de una respuesta no se puede señalar después. Una pregunta que
@@ -2010,6 +2037,14 @@ de un menú roto. Para destacar algo que no es una decisión: negrita, cita o `*
 
 **Verifica las plantillas, no la conversación**: no puede saber qué mensaje escribió el agente ni
 cómo lo pintó la terminal, y nada verifica eso de forma portable.
+
+**La marca de recomendación puede vivir en cualquier línea del menú**, no necesariamente sobre una
+opción. No es un descuido del gate: hay menús cuya recomendación **no puede** estar escrita de
+antemano, porque depende de lo que la persona acaba de contestar — el de tipo de producto de la
+fase 1.5 es el caso, y ahí la plantilla dice dónde va la marca en vez de traerla puesta. El costo de
+esa tolerancia es que una frase suelta que mencione la marca satisface el gate sin que ninguna
+opción esté recomendada de verdad. Se acepta a propósito: la alternativa es prohibir los menús
+derivados, que son justo aquellos donde recomendar sin escuchar sería el error.
 
 ## EL MENÚ CLICKEABLE ES UN UPGRADE POR HOST, NO EL PROTOCOLO
 

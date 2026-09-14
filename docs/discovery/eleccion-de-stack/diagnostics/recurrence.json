@@ -1,0 +1,15 @@
+{
+  "schema": "vcp.recurrence/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "first_loop_id": "loop-01",
+  "maintenance": "Revalidar contra documentación oficial las versiones de la matriz y los límites de plan gratuito, y volver a escribir la fecha de captura. No se mantiene con experiencia de uso: lo que se aprende de un proyecto concreto se queda en ese proyecto, para que el repositorio publicado no arrastre datos de nadie.",
+  "metric": "Días transcurridos desde la fecha de captura declarada en el contrato de límites de plan gratuito, y cantidad de filas de la matriz cuya versión recomendada ya no es la estable actual.",
+  "cadence": "Se mira al abrir sesión, junto con los demás chequeos de período del protocolo. La revalidación completa se hace cuando el gate rechaza por antigüedad, no antes.",
+  "review_owner": "Quien mantiene el protocolo. No se delega a quien instala: la matriz que se publica tiene que valer para cualquiera, y quien la usa en su proyecto no tiene por qué revalidarla para todos.",
+  "escalation": "Si la captura vence, el gate rechaza y la fase no cierra. No hay excedente tolerado ni aviso blando: un número de plan gratuito vencido se lee como cierto, así que es peor que no tener ninguno. Quien no quiera revalidar tiene que sacar la fila de la matriz declarándolo, no dejarla vieja.",
+  "promotion_criteria": "Que dos ciclos seguidos de proyectos distintos elijan su stack con la matriz y ninguno tenga que corregir la recomendación a mano. Recién ahí la pregunta de tipo de producto deja de ser propia de este ciclo y pasa a ser entrada obligatoria de todo Intake que no vaya por la vía rápida.",
+  "retirement_criteria": "Que la revalidación pase a costar más de lo que la matriz ahorra, medido en dos señales: que la mayoría de las filas requieran corrección manual en cada revalidación, o que nadie la consulte durante dos períodos completos. Lo decide quien mantiene el protocolo, y la baja se registra como cualquier otra decisión de fase, con su menú y su motivo. Sin este criterio escrito, una matriz que dejó de servir se sostiene por inercia porque nadie se anima a sacarla.",
+  "next_process": "El camino greenfield completo. Hoy todo el protocolo asume un repositorio que ya existe: detecta stack, compara contra el diff de git, busca la base común con la rama principal y espera una línea base de pruebas preexistente. Un proyecto nuevo no tiene nada de eso.",
+  "trigger": "Que alguien intente abrir un ciclo en un directorio vacío y el Bootstrap no pueda cerrar sus gates. Es observable sin instrumentar nada: el gate falla y dice cuál."
+}

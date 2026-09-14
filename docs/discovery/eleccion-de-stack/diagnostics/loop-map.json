@@ -1,0 +1,116 @@
+{
+  "schema": "vcp.loop-map/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "current": {
+    "input": "Un pedido de construir algo, sin que se declare qué tipo de producto es",
+    "transformation": "Se listan los archivos de manifiesto que ya existen en el directorio para inferir el stack",
+    "actor": "El orquestador, en el paso 2 de Bootstrap",
+    "decision": "Confirmar el stack detectado o corregirlo a mano",
+    "decision_owner": "La persona, en el menú del paso 8 de Bootstrap",
+    "action": "Se construye sobre lo que había, o sobre lo que el agente supuso cuando no había nada",
+    "measure": "Nada: no se mide ninguna propiedad del stack elegido",
+    "control": "Ninguno. Si no hay manifiestos, el listado sale vacío y el ciclo sigue igual",
+    "evidence": "El campo Stack & Dependencies de la spec, con el valor auto-detected",
+    "learning": "No se incorpora: la elección no queda registrada, así que no hay de qué aprender",
+    "next_iteration": "El siguiente proyecto vuelve a empezar de cero",
+    "exit_condition": "Se considera cerrado apenas la persona responde el menú de confirmación",
+    "block_condition": "No bloquea nunca; un stack sin adaptador de test rojo recién se choca contra la primera ley en la fase de construcción"
+  },
+  "delta": [
+    {
+      "field": "input",
+      "from": "Un pedido de construir algo, sin que se declare qué tipo de producto es",
+      "to": "Un pedido de construir algo, con el tipo de producto declarado como uno de ocho códigos y su motivo escrito",
+      "why": "Sin clasificar el producto no hay forma de recomendar: la misma pregunta de stack tiene respuestas opuestas para una landing y para un sistema de cómputo. El enum es cerrado porque la matriz se indexa por ese código."
+    },
+    {
+      "field": "transformation",
+      "from": "Se listan los archivos de manifiesto que ya existen en el directorio para inferir el stack",
+      "to": "Se resuelve la fila del tipo declarado contra una matriz con versiones verificadas y límites de plan gratuito fechados, y se propone un stack con sus alternativas",
+      "why": "Detectar sirve cuando hay algo que detectar. Un proyecto nuevo no tiene manifiestos, y ahí el paso actual no produce información."
+    },
+    {
+      "field": "decision",
+      "from": "Confirmar el stack detectado o corregirlo a mano",
+      "to": "Elegir entre el stack recomendado y sus alternativas, con el criterio de decisión y el costo de escalar a la vista",
+      "why": "Confirmar lo que ya está no es una elección. Para que lo sea hacen falta opciones comparables y el criterio que las separa."
+    },
+    {
+      "field": "actor",
+      "from": "El orquestador, en el paso 2 de Bootstrap",
+      "to": "El orquestador, en la fase de Intake y con la evidencia que produjo la fase de Research",
+      "why": "El paso se mueve de Bootstrap a Intake porque Bootstrap resuelve el entorno y el rigor, no el producto. Y se apoya en evidencia de Research: recomendar antes de investigar sería opinar."
+    },
+    {
+      "field": "decision_owner",
+      "from": "La persona, en el menú del paso 8 de Bootstrap",
+      "to": "La persona, en el menú de tipo de producto de la fase de Intake",
+      "why": "Sigue decidiendo la persona, pero en otro punto y sobre otra pregunta: antes confirmaba una detección, ahora elige entre opciones comparables. El menú se mueve con la decisión."
+    },
+    {
+      "field": "action",
+      "from": "Se construye sobre lo que había, o sobre lo que el agente supuso cuando no había nada",
+      "to": "Se construye sobre el stack elegido, con sus versiones fijadas exactas en la spec",
+      "why": "Fijar exacto y no por rango es lo que impide que la recomendación verificada se convierta en otra cosa al instalar. Medido: la última versión de TypeScript rompe este stack, así que resolver por caret manda a un repositorio que no compila."
+    },
+    {
+      "field": "measure",
+      "from": "Nada: no se mide ninguna propiedad del stack elegido",
+      "to": "La antigüedad de la captura de cada versión y de cada límite de plan gratuito, en días desde su fecha de consulta",
+      "why": "Un número de plan gratuito viejo es peor que ninguno, porque se lee como cierto. Medir la antigüedad es lo único que permite rechazar una tabla vencida en vez de dejarla pasar."
+    },
+    {
+      "field": "control",
+      "from": "Ninguno. Si no hay manifiestos, el listado sale vacío y el ciclo sigue igual",
+      "to": "Un gate que rechaza si algún tipo de producto quedó sin cubrir, si un servicio referenciado no declara qué lo saca del plan gratuito, o si la captura está vencida",
+      "why": "Una regla sin detector se olvida en la primera sesión apurada. Es la meta-regla que el propio protocolo ya declara para cualquier regla nueva."
+    },
+    {
+      "field": "evidence",
+      "from": "El campo Stack & Dependencies de la spec, con el valor auto-detected",
+      "to": "El tipo de producto y su motivo en el expediente de Intake, y la decisión de fase sellada por hash con el menú que se mostró",
+      "why": "Un valor autodetectado no dice quién eligió ni por qué. Lo que se puede revisar después es la decisión con su motivo, no el resultado de un listado de archivos."
+    },
+    {
+      "field": "learning",
+      "from": "No se incorpora: la elección no queda registrada, así que no hay de qué aprender",
+      "to": "La matriz y los límites de plan gratuito se revalidan contra documentación oficial cuando vencen, y la revalidación deja su fecha",
+      "why": "Lo que se aprende de un proyecto concreto se queda en ese proyecto; lo que mejora la matriz publicada sólo puede venir de documentación oficial, para que el repositorio no arrastre datos de nadie."
+    },
+    {
+      "field": "block_condition",
+      "from": "No bloquea nunca; un stack sin adaptador de test rojo recién se choca contra la primera ley en la fase de construcción",
+      "to": "Bloquea al elegir, si el stack recomendado no tiene adaptador de test rojo declarado, y quien destraba es la persona eligiendo otro stack o aceptando por escrito la garantía menor",
+      "why": "Descubrir en la fase de construcción que el stack elegido no puede pasar la primera ley es descubrirlo tarde. El choque tiene que pasar cuando todavía se puede elegir otra cosa."
+    }
+  ],
+  "target": {
+    "input": "Un pedido de construir algo, con el tipo de producto declarado como uno de ocho códigos y su motivo escrito",
+    "transformation": "Se resuelve la fila del tipo declarado contra una matriz con versiones verificadas y límites de plan gratuito fechados, y se propone un stack con sus alternativas",
+    "actor": "El orquestador, en la fase de Intake y con la evidencia que produjo la fase de Research",
+    "decision": "Elegir entre el stack recomendado y sus alternativas, con el criterio de decisión y el costo de escalar a la vista",
+    "decision_owner": "La persona, en el menú de tipo de producto de la fase de Intake",
+    "action": "Se construye sobre el stack elegido, con sus versiones fijadas exactas en la spec",
+    "measure": "La antigüedad de la captura de cada versión y de cada límite de plan gratuito, en días desde su fecha de consulta",
+    "control": "Un gate que rechaza si algún tipo de producto quedó sin cubrir, si un servicio referenciado no declara qué lo saca del plan gratuito, o si la captura está vencida",
+    "evidence": "El tipo de producto y su motivo en el expediente de Intake, y la decisión de fase sellada por hash con el menú que se mostró",
+    "learning": "La matriz y los límites de plan gratuito se revalidan contra documentación oficial cuando vencen, y la revalidación deja su fecha",
+    "next_iteration": "El siguiente proyecto vuelve a empezar de cero",
+    "exit_condition": "Se considera cerrado apenas la persona responde el menú de confirmación",
+    "block_condition": "Bloquea al elegir, si el stack recomendado no tiene adaptador de test rojo declarado, y quien destraba es la persona eligiendo otro stack o aceptando por escrito la garantía menor"
+  },
+  "first_loop": {
+    "id": "loop-01",
+    "owner": "Quien mantiene el protocolo y revalida la matriz",
+    "metric": "Días transcurridos desde la fecha de captura declarada en el contrato de límites de plan gratuito",
+    "cadence": "Se mira al abrir sesión, junto con los demás chequeos de período del protocolo",
+    "success_threshold": "El gate de la matriz sale verde: los ocho tipos cubiertos, cada servicio referenciado resuelve contra el contrato, y la captura no está vencida",
+    "next_candidate": "El camino greenfield completo: hoy el protocolo asume un repositorio que ya existe, con historia de git y línea base de pruebas",
+    "rollback": "El contrato de límites y la matriz son archivos de datos que ningún otro gate consume todavía. Sacarlos del camino obligatorio es quitar una línea del menú de Intake y volver el enum a opcional; el resto del protocolo queda igual. Cuesta una sesión.",
+    "failure_signals": [
+      "Un número del plan gratuito resulta falso cuando alguien lo comprueba contra la página del proveedor, o sea que la captura se copió mal y no sólo envejeció",
+      "Alguien elige un tipo de producto y la fila recomendada lo manda a un stack que no compila, como pasaría hoy con la última versión de TypeScript"
+    ]
+  }
+}

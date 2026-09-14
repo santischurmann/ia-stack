@@ -79,7 +79,10 @@ function registro(over = {}) {
     totals: { words_before: 1000, words_after: 600, files_before: 2, files_after: 1 },
     backup: {
       graphify: { done: true, evidence: 'graphify update . reconstruyo el grafo antes de mover el primer archivo' },
-      obsidian: { done: true, evidence: 'las notas quedaron espejadas en Obsidian/07_Backups_Log con su sha256' },
+      // Carpeta genérica a propósito: nombrar la subcarpeta real del vault de una persona metía un
+      // dato suyo en un repositorio que se publica, que es el defecto que docs/spec-ia-stack.md ya
+      // declaró en rojo.
+      obsidian: { done: true, evidence: 'las notas quedaron espejadas en la carpeta de respaldos del vault con su sha256' },
     },
     ...over,
   };

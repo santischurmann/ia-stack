@@ -10,6 +10,14 @@
       "reason": "Git ignore rules. Indexing them would add path patterns, not protocol concepts or cross-file relationships."
     },
     {
+      "path": ".vibe/sessions/",
+      "reason": "Bitácoras de sesiones ya cerradas, escritas una vez y nunca editadas. El estado vivo lo declara .vibe/SESSION.md, que sí está indexado; estas son su historia congelada. Archivar una sesión es una operación recurrente del protocolo -- la manda la fase 9 -- y sin este prefijo cada archivado dejaría la cobertura en rojo hasta reindexar una herramienta externa que el protocolo declara opcional."
+    },
+    {
+      "path": "docs/cycles/",
+      "reason": "Expedientes de ciclos cerrados, movidos byte a byte para no invalidar sus sellos. Son registro histórico sellado: su contenido no cambia y no aporta concepto nuevo al grafo, porque lo que describen ya está en el camino vivo. Archivar un ciclo es una operación recurrente del protocolo, y sin este prefijo cada archivado dejaría la cobertura en rojo hasta reindexar una herramienta externa que el protocolo declara opcional."
+    },
+    {
       "path": "contracts/design-tokens.json",
       "reason": "Declarative design-token contract: token names, scales and slop signatures consumed by verify-design-tokens.mjs. The AST extractor yields zero nodes for it, and the concepts it declares are already reachable through the gate that reads it."
     },

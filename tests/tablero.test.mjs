@@ -295,16 +295,20 @@ test('NINGÚN DATO DE SESIÓN ENTRA AL REPOSITORIO', SOLO_FUENTE, () => {
 // sus tokens y sus horas —que salen de la transcripción y no dependen de esto— pero sin estado de
 // fases. Nunca con el estado de OTRO proyecto, que es el único error que importaría.
 
+// El usuario de la fixture es inventado A PROPÓSITO. Este repositorio se publica, y un nombre de
+// usuario real del autor adentro de una prueba es un dato suyo viajando a la máquina de cualquiera
+// que clone. Es chico, pero es la misma clase de defecto que docs/spec-ia-stack.md ya declaró en
+// rojo: el repositorio publicando datos de otro proyecto del autor.
 test('rutaDeProyecto reconstruye la ruta y la comprueba contra el disco', () => {
-  const existentes = new Set(['C:/Users/Santi/Desktop/Claude/VibeCodeProtocols']);
+  const existentes = new Set(['C:/Users/ejemplo/Desktop/proyectos/MiProyecto']);
   const hay = (r) => existentes.has(String(r).split(String.fromCharCode(92)).join('/'));
-  assert.equal(rutaDeProyecto('C--Users-Santi-Desktop-Claude-VibeCodeProtocols', hay), 'C:/Users/Santi/Desktop/Claude/VibeCodeProtocols');
+  assert.equal(rutaDeProyecto('C--Users-ejemplo-Desktop-proyectos-MiProyecto', hay), 'C:/Users/ejemplo/Desktop/proyectos/MiProyecto');
 });
 
 test('FALSIFICACIÓN · un slug ambiguo devuelve null en vez de la carpeta equivocada', () => {
   // `mi-proyecto` y `mi/proyecto` colapsan al mismo slug. Si la interpretación directa no existe en
   // el disco, no se inventa: null. Mostrar el estado de otro proyecto sería peor que no mostrar nada.
-  assert.equal(rutaDeProyecto('C--Users-Santi-ia-stack', () => false), null);
+  assert.equal(rutaDeProyecto('C--Users-ejemplo-ia-stack', () => false), null);
   assert.equal(rutaDeProyecto('no-empieza-con-unidad', () => true), null);
   assert.equal(rutaDeProyecto('', () => true), null);
 });

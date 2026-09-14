@@ -1,0 +1,271 @@
+{
+  "schema": "vcp.prd/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "problem": "El protocolo detecta el stack que ya existe y pide confirmarlo, pero nunca lo elige. Un proyecto nuevo no tiene qué detectar, así que arranca sobre lo que el agente supuso, y ese supuesto no queda escrito en ningún artefacto. Además, el gate de test rojo sólo acepta un runner, así que elegir cualquier stack que no sea Node deja al proyecto sin poder cumplir la primera ley.",
+  "users": [
+    {
+      "role": "Quien instala el protocolo en su propio repositorio",
+      "context": "Al arrancar algo nuevo, en el momento exacto en que todavía no escribió una línea y tiene que decidir con qué construir"
+    },
+    {
+      "role": "Quien retoma un ciclo empezado por otra persona",
+      "context": "Al abrir la sesión y tener que entender por qué se eligió ese stack antes de tocar nada"
+    },
+    {
+      "role": "Quien mantiene el protocolo",
+      "context": "Cuando la captura de versiones y límites vence y hay que revalidarla contra documentación oficial"
+    }
+  ],
+  "jobs_to_be_done": [
+    "Decidir con qué construir sin tener que investigar de cero cada vez qué versiones son compatibles entre sí",
+    "Saber qué le alcanza del plan gratuito de cada servicio antes de empezar, y qué evento concreto lo va a sacar de ahí",
+    "Dejar escrito por qué eligió ese stack, para poder discutirlo después con alguien que llegue nuevo",
+    "Escribir su primer test rojo en el runner de ese stack sin que el protocolo lo frene"
+  ],
+  "outcome": "Que alguien arranque un proyecto nuevo, declare qué tipo de producto es, y reciba un stack recomendado con su fuente y su fecha de verificación, sus alternativas, el criterio por el que se eligió, qué le alcanza gratis y qué necesitaría pagar para escalarlo. Hoy no pasa ninguna de esas cosas.",
+  "non_goals": [
+    "Generar el proyecto: esto elige el stack, no crea archivos ni instala dependencias",
+    "Recomendar un stack universal. No existe, y la matriz tiene ocho filas justamente porque la respuesta cambia con el tipo de producto",
+    "Garantizar que la recomendación siga siendo correcta mañana. Las versiones y los planes gratuitos envejecen, y lo que se promete es la fecha de captura, no la vigencia",
+    "Cubrir el camino greenfield completo. El resto del protocolo sigue asumiendo un repositorio con historia de git y línea base de pruebas"
+  ],
+  "in_scope": [
+    "La novena pregunta del Intake, con su enum cerrado de ocho códigos y motivo obligatorio",
+    "La matriz de tipo de producto a stack recomendado, con alternativas y criterio de decisión",
+    "El contrato de límites de plan gratuito, con fecha de captura, disparador de escalado y tabla de costos al crecer",
+    "El despachador de adaptadores de test rojo y los adaptadores de pytest y vitest, con su garantía declarada como menor que la del nativo",
+    "El gate que barre por forma las rutas absolutas de directorio personal en lo versionado"
+  ],
+  "out_scope": [
+    "La tabla navegable de la matriz: se construye después, desde el mismo dato",
+    "Adaptadores de test rojo para runners distintos de pytest y vitest",
+    "Un mecanismo para afirmaciones con fuente documental dentro del expediente de candidatos, que hoy sólo admite repositorio y commit",
+    "La separación entre lo que el protocolo aprende de un proyecto y lo que se publica, que queda como pregunta abierta del Intake"
+  ],
+  "capabilities": [
+    {
+      "id": "CAP1",
+      "description": "El Intake pregunta qué tipo de producto es, con menú cerrado de ocho códigos, y rechaza un expediente que no lo declare o que declare un código fuera del enum",
+      "priority": "must"
+    },
+    {
+      "id": "CAP2",
+      "description": "Cada uno de los ocho tipos de producto tiene una fila en la matriz con stack recomendado, alternativas y el criterio observable que los separa",
+      "priority": "must"
+    },
+    {
+      "id": "CAP3",
+      "description": "Cada servicio que la matriz referencia resuelve contra el contrato de límites de plan gratuito, y ese contrato declara para cada servicio qué evento concreto saca del plan y cuánto cuesta el primer escalón pago",
+      "priority": "must"
+    },
+    {
+      "id": "CAP4",
+      "description": "El gate rechaza una captura de límites más vieja que el período declarado, en vez de dejarla pasar como cierta",
+      "priority": "must"
+    },
+    {
+      "id": "CAP5",
+      "description": "El despachador de test rojo elige adaptador por lista blanca de comandos y rechaza por nombre cualquier runner no declarado, sin adivinar",
+      "priority": "must"
+    },
+    {
+      "id": "CAP6",
+      "description": "Los adaptadores de pytest y vitest clasifican sobre reporte estructurado y no sobre texto, y rechazan un error de recolección o un archivo sin pruebas",
+      "priority": "must"
+    },
+    {
+      "id": "CAP7",
+      "description": "El receipt registra con qué adaptador se obtuvo cada verde, para que el de un adaptador de garantía menor no se lea igual que el del nativo",
+      "priority": "must"
+    },
+    {
+      "id": "CAP8",
+      "description": "Un barrido por forma sobre lo versionado encuentra cualquier ruta absoluta de directorio personal, y corre antes de sellar la traza y no después",
+      "priority": "should"
+    },
+    {
+      "id": "CAP9",
+      "description": "La matriz se puede renderizar como tabla navegable desde el mismo archivo de datos, sin escribirla a mano",
+      "priority": "could"
+    }
+  ],
+  "non_functional_requirements": [
+    {
+      "id": "NFR1",
+      "description": "Cero dependencias externas nuevas: todo corre con Node nativo, como el resto del protocolo",
+      "measure": "La prueba que barre los bloques de comandos de SKILL.md contra su lista blanca de binarios sigue verde, y no aparece ningún archivo de manifiesto de paquetes en el repositorio"
+    },
+    {
+      "id": "NFR2",
+      "description": "Ningún gate nuevo sale a la red ni aprovisiona nada: la investigación de límites se hace leyendo documentación y el resultado entra como dato",
+      "measure": "El gate de seguridad no reporta ninguna llamada de red en los scripts nuevos, y ninguno importa un cliente HTTP"
+    },
+    {
+      "id": "NFR3",
+      "description": "Cada gate nuevo declara qué hace cuando no hay nada que verificar, y lo distingue de aprobar",
+      "measure": "El contrato de la prueba de vacío declara cada script nuevo con su comportamiento esperado, y el gate que la corre sale verde"
+    },
+    {
+      "id": "NFR4",
+      "description": "Cada gate nuevo declara por escrito qué NO puede comprobar",
+      "measure": "El gate de contrato verifica que la frase de cada límite honesto exista literalmente en el archivo que la declara, y sale verde con los límites nuevos incluidos"
+    },
+    {
+      "id": "NFR5",
+      "description": "Cobertura completa de los scripts nuevos",
+      "measure": "El gate de cobertura reporta cada función y cada rama ejecutada en los scripts inventariados, incluidos los nuevos"
+    }
+  ],
+  "security": "Toca tres cosas. El contrato de límites y la matriz son datos que viajan al proyecto de cada usuario, así que una modificación no autorizada se propaga como recomendación falsa presentada como verificada; el control es validación de esquema con claves exactas antes de consumirlos. Lo versionado se publica, así que un dato privado que entre queda expuesto, y sobre la traza sellada queda para siempre porque es append-only. Y el veredicto del gate de test rojo es la puerta de la primera ley: medido el 2026-09-14, pytest y vitest ejecutan configuración del proyecto con acceso al pipeline de reporte y al código de salida, y los dos se falsificaron con cero pruebas fallando. Esa brecha se acepta por escrito porque no hay control que no rompa los proyectos que pretende servir, y se compensa registrando en el receipt con qué adaptador se obtuvo cada verde. Nada de esto abre un puerto ni acepta una conexión.",
+  "privacy": "No toca datos de personas: no hay usuarios, ni sesiones, ni identidades. El único dato personal en juego es el de quien escribe el protocolo, y va en la dirección contraria a lo habitual: el riesgo es que su nombre de usuario, sus rutas absolutas o los nombres de sus proyectos privados salgan publicados en lo versionado. El barrido por forma de la capacidad ocho existe para eso, y su límite está declarado: alcanza para rutas de directorio personal, no para nombres de proyecto, que ningún barrido mecánico distingue de una palabra cualquiera.",
+  "observability": {
+    "correlation": "ninguno — no hay peticiones que correlacionar: cada gate es un proceso que corre una vez, escribe a la salida estándar y termina con su código de salida. El identificador equivalente es el sello encadenado de la línea de traza que el orquestador escribe al cerrar la fase.",
+    "actor_on_writes": "La traza de auditoría declara el rol que escribió cada línea y la encadena por hash contra la anterior, y sólo el orquestador la escribe, nunca el subagente que hizo el trabajo. El expediente de decisiones de fase agrega quién eligió cada opción y cuándo se le mostró el menú.",
+    "failure_visible": "El gate escribe la causa en la salida de error con el prefijo de rechazo y sale con código distinto de cero, nombrando el archivo y la clave concreta. Un gate que no tuvo nada que verificar escribe el prefijo de vacío y sale cero, que es distinto de aprobar. La fase no cierra con un gate en rojo, y lo que faltó verificar se registra en la bitácora de sesión.",
+    "diagnostic_command": "node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json, que nombra el tipo de producto sin cubrir o el servicio cuya referencia no resuelve. Para el gate de test rojo, node scripts/verify-red.mjs check --test <archivo> --command <runner>, que dice si el runner está declarado y qué adaptador eligió."
+  },
+  "integrations": [
+    "ninguna — no se integra con ningún servicio. Los límites de plan gratuito de Vercel, Neon, Supabase, Cloudflare, Railway, Render, GitHub Actions y Fly.io se leyeron de su documentación pública y entran al repositorio como datos con fecha de captura; ningún gate los consulta en vivo ni tiene credenciales de ninguno."
+  ],
+  "data": "Dos archivos de datos declarativos en el repositorio: el contrato de límites de plan gratuito, vecino de los demás contratos, y la matriz, dentro del expediente de discovery de esta funcionalidad. Los dos son texto plano versionado, los borra quien tenga acceso de escritura al repositorio, y viajan al proyecto de quien instala porque el instalador copia la carpeta de contratos. No se guarda ningún dato de uso: lo que el protocolo aprenda de un proyecto concreto se queda en la memoria de ese proyecto y no vuelve acá.",
+  "architecture": "Tres piezas separadas a propósito. Primero, un dato: la matriz y el contrato de límites, que son declarativos y nunca ejecutables. Segundo, un gate que los valida, con la invariante cruzada de que todo servicio referenciado declare su disparador de escalado. Tercero, el menú de la fase de Intake, que lee la fila del tipo declarado. Se separan porque la matriz tiene que poder revalidarse sin tocar código, y el gate tiene que poder probarse sin la matriz real. La elección vive en el Intake y no en una fase nueva por una razón mecánica medida: el expediente de decisiones mete el prefijo del orden de fases dentro del hash de cada decisión, así que anteponer una fase cero invalida el sello de la primera decisión ya escrita, y el protocolo prohíbe reescribir traza sellada.",
+  "technology": {
+    "stack": "Node nativo",
+    "dependencies": [
+      "ninguna"
+    ],
+    "access": [
+      "repositorio"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "event": "Se cierra la fase de Intake de un ciclo",
+      "precondition": "El expediente de Intake declara un tipo de producto con su motivo",
+      "action": "node scripts/verify-intake.mjs check docs/intake/<slug>.json",
+      "observable_result": "Sale con código cero y la salida nombra cuántas respuestas, supuestos, riesgos y preguntas abiertas declara",
+      "test": "tests/verify-intake.test.mjs",
+      "expected_evidence": "La línea de cierre de fase en la bitácora de sesión y la decisión sellada en el expediente de fases"
+    },
+    {
+      "id": "AC2",
+      "event": "Se valida la matriz de stacks",
+      "precondition": "La matriz declara una fila por cada uno de los ocho tipos de producto",
+      "action": "node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
+      "observable_result": "Sale con código cero y la salida dice cuántos tipos cubrió y cuántos servicios resolvió contra el contrato de límites",
+      "test": "tests/verify-stack-matrix.test.mjs",
+      "expected_evidence": "La salida del comando, guardada en la bitácora de sesión al cerrar la fase"
+    },
+    {
+      "id": "AC3",
+      "event": "Un servicio referenciado por la matriz no declara qué evento saca del plan gratuito",
+      "precondition": "La matriz es válida en todo lo demás",
+      "action": "node scripts/verify-stack-matrix.mjs check <ruta>",
+      "observable_result": "Sale con código uno y nombra el servicio al que le falta el disparador de escalado",
+      "test": "tests/verify-stack-matrix.test.mjs",
+      "expected_evidence": "El mensaje de rechazo con el identificador del servicio"
+    },
+    {
+      "id": "AC4",
+      "event": "Se corre el gate de la matriz sin que exista el archivo",
+      "precondition": "El directorio no tiene matriz",
+      "action": "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+      "observable_result": "El gate de la matriz escribe el prefijo de vacío y sale cero, y la prueba de vacío lo acepta como tal y no como aprobación",
+      "test": "tests/verify-empty-probe.test.mjs",
+      "expected_evidence": "La entrada del script en el contrato de la prueba de vacío, con su comportamiento esperado escrito"
+    },
+    {
+      "id": "AC5",
+      "event": "Se pide correr el gate de test rojo con un runner que no está declarado",
+      "precondition": "El archivo de prueba existe y está contenido en el proyecto",
+      "action": "node scripts/verify-red.mjs check --test <archivo> --command jest",
+      "observable_result": "Sale con código uno y el motivo nombra el runner rechazado, sin intentar adivinar un adaptador",
+      "test": "tests/verify-red-dispatch.test.mjs",
+      "expected_evidence": "El mensaje de rechazo con el nombre del comando no declarado"
+    },
+    {
+      "id": "AC6",
+      "event": "Un proyecto falsifica el reporte de pytest desde su configuración, sin que falle ninguna prueba",
+      "precondition": "El adaptador de pytest corre contra ese proyecto",
+      "action": "node --test tests/verify-red-pytest.test.mjs",
+      "observable_result": "La prueba de falsificación pasa, lo que significa que el adaptador rechaza un reporte cuya línea señalada no contiene una aserción; y el límite honesto declara que un reporte forjado que sí la contenga pasa igual",
+      "test": "tests/verify-red-pytest.test.mjs",
+      "expected_evidence": "El límite honesto del adaptador, verificado por el gate de contrato contra la frase literal en su archivo"
+    },
+    {
+      "id": "AC7",
+      "event": "Se revisa el conteo de fases en un documento con frontmatter",
+      "precondition": "El documento declara una cantidad de fases en su descripción",
+      "action": "node --test tests/fases-canonicas.test.mjs",
+      "observable_result": "Sale con código cero, lo que significa que ningún frontmatter contradice el conteo canónico que declara el documento principal",
+      "test": "tests/fases-canonicas.test.mjs",
+      "expected_evidence": "La salida de la suite, con las pruebas de frontmatter en verde"
+    },
+    {
+      "id": "AC8",
+      "event": "Se agrega un gate nuevo al repositorio",
+      "precondition": "El gate declara su límite honesto y su comportamiento sin entrada",
+      "action": "node scripts/verify-vcp-contract.mjs check",
+      "observable_result": "Sale con código cero y la salida cuenta las promesas de contrato y los límites honestos verificados, incluidos los nuevos",
+      "test": "tests/verify-vcp-contract.test.mjs",
+      "expected_evidence": "El conteo de límites honestos, que sube al agregar cada gate nuevo"
+    }
+  ],
+  "metrics": [
+    {
+      "id": "M1",
+      "name": "Tipos de producto cubiertos por la matriz con stack recomendado, alternativas y criterio de decisión",
+      "baseline": "Cero: la matriz no existe",
+      "target": "Ocho, los ocho del enum. Uno faltante rechaza: el silencio no compra verde"
+    },
+    {
+      "id": "M2",
+      "name": "Runners de prueba que el gate de test rojo puede verificar",
+      "baseline": "Uno: sólo el nativo de Node",
+      "target": "Tres, con la garantía de cada uno declarada y distinguible en el receipt"
+    },
+    {
+      "id": "M3",
+      "name": "Rutas absolutas de directorio personal en archivos versionados",
+      "baseline": "Cuatro, encontradas por un barrido a mano el 2026-09-14",
+      "target": "Cero, comprobado por un gate y no por una revisión"
+    },
+    {
+      "id": "M4",
+      "name": "Días desde la fecha de captura del contrato de límites de plan gratuito",
+      "baseline": "Cero al escribirlo, el 2026-09-14",
+      "target": "Menor que el período declarado. Pasado ese número el gate rechaza, porque un número de plan gratuito vencido se lee como cierto"
+    }
+  ],
+  "risks": [
+    {
+      "id": "R1",
+      "description": "Que el repositorio publicado termine con datos privados de quien lo escribe. Ya pasó antes y está declarado en rojo en un spec anterior, y volvió a pasar durante este mismo ciclo",
+      "mitigation": "Un barrido por forma, no por lista de nombres, corriendo antes de sellar la traza. Sobre la traza no hay corrección posible, así que un detector que corra después llega tarde por diseño"
+    },
+    {
+      "id": "R2",
+      "description": "Que la matriz envejezca sin que nadie lo note y siga recomendando versiones que ya no compilan o límites que ya cambiaron",
+      "mitigation": "Fecha de captura obligatoria y rechazo por antigüedad. No hay aviso blando: o está fresca o el gate frena"
+    },
+    {
+      "id": "R3",
+      "description": "Que el verde de un adaptador de garantía menor se lea igual que el del nativo, y alguien confíe en una prueba que no prueba lo que cree",
+      "mitigation": "El receipt registra qué adaptador se usó, y el límite honesto de cada uno está verificado literalmente por el gate de contrato"
+    },
+    {
+      "id": "R4",
+      "description": "Que la matriz se llene de opiniones en vez de fuentes con fecha, porque escribir una opinión es más rápido que verificar",
+      "mitigation": "Cada fila referencia un servicio del contrato, y cada servicio declara de dónde salió su captura y cuándo. Una fila sin respaldo no resuelve y el gate la rechaza"
+    },
+    {
+      "id": "R5",
+      "description": "Que agregar la tabla navegable empuje el cierre del ciclo y lo vuelva interminable",
+      "mitigation": "Queda fuera del alcance de esta entrega y se construye después, desde el mismo dato, nunca a mano"
+    }
+  ],
+  "rollout": "Primero el propio repositorio del protocolo, que es el primer proyecto que consume la pregunta. Recién cuando un ciclo propio cierra sin que haya que corregir la recomendación a mano se publica la versión, y la matriz viaja al runtime que el instalador copia. La promoción a entrada obligatoria de todo Intake requiere dos ciclos de proyectos distintos sin corrección manual.",
+  "rollback": "Todo lo nuevo son archivos agregados, y el único enganche al camino existente son dos líneas: la novena pregunta del menú de Intake y la clave del enum en su validador. Volver atrás es quitar esas dos y borrar los archivos nuevos de su índice y de la prueba de vacío. No toca traza sellada, ni expedientes cerrados, ni datos de nadie, así que no hay estado a medias posible. Cuesta una sesión."
+}

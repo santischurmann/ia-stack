@@ -12,7 +12,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-intake.mjs');
-const { ANSWER_KEYS, MIN_ANSWER, SCHEMA, USAGE, main, validateIntake } = await import(pathToFileURL(script).href);
+const { ANSWER_KEYS, MIN_ANSWER, SCHEMA, TIPOS_DE_PRODUCTO, USAGE, main, validateIntake } = await import(pathToFileURL(script).href);
 
 const respuesta = (texto) => `${texto} — respuesta real y suficientemente larga para no ser relleno.`;
 function intake(overrides = {}) {
@@ -23,6 +23,7 @@ function intake(overrides = {}) {
     feature: 'intake-de-producto',
     date: '2026-09-01',
     answers,
+    tipo_de_producto: { codigo: 'F', motivo: respuesta('Es una herramienta interna de línea de comandos') },
     supuestos: [{ id: 'S1', texto: respuesta('El usuario tiene Node instalado') }],
     riesgos: [{ id: 'R1', texto: respuesta('El intake puede volverse burocracia') }],
     preguntas_abiertas: [{ id: 'Q1', texto: respuesta('Que pasa con un cambio chico'), bloqueante: false }],
@@ -187,4 +188,66 @@ test('FALSIFICACIÓN · la ruta se resuelve antes de leer: insegura rechaza, ine
     write: (l) => salida.push(l), writeError: () => {},
   }), 0, 'un proyecto que todavía no arrancó no incumple nada');
   assert.match(salida.at(-1), /^VACÍO: /u);
+});
+
+// LA NOVENA PREGUNTA, y la herida que la trae: el protocolo DETECTABA el stack pero nunca lo
+// ELEGÍA. Medido el 2026-09-14 sobre cbbff92: las únicas dos menciones de stack en SKILL.md son un
+// `ls package.json pyproject.toml` (línea 162) y un menú que pide confirmar lo detectado (línea
+// 245). Cero menciones de Next.js, React, Tailwind o FastAPI en SKILL.md, skills/ y templates/. Así
+// que un proyecto nuevo arrancaba sobre el stack que el agente supuso, sin que la elección quedara
+// escrita ni justificada en ningún lado.
+//
+// POR QUÉ NO ES UNA RESPUESTA MÁS DE `answers`. Las ocho respuestas son prosa libre con un piso de
+// largo. Ésta es un enum cerrado de ocho códigos: admitir texto libre la volvería incomparable
+// entre ciclos, y la matriz de stacks se indexa por ese código. Va aparte, con su propia regla.
+//
+// POR QUÉ EL MOTIVO ES OBLIGATORIO SIEMPRE Y NO SÓLO PARA `H`. Un código sin motivo es un clic: no
+// se puede revisar después ni discutir si estuvo bien clasificado. Es el mismo criterio que
+// `phase-decisions.json` ya aplica al campo `reason` de cada decisión.
+//
+// LÍMITE HONESTO, heredado del resto del gate: comprueba que el código sea uno de los ocho y que el
+// motivo no esté vacío. No sabe si el producto es realmente de ese tipo. Una clasificación coherente
+// y equivocada pasa en verde.
+
+test('FALSIFICACIÓN · un intake sin la novena pregunta ya no pasa', () => {
+  const sinTipo = intake();
+  delete sinTipo.tipo_de_producto;
+  const violaciones = validateIntake(sinTipo);
+  assert.ok(
+    violaciones.some((v) => /tipo_de_producto/u.test(v)),
+    `un intake sin tipo de producto tiene que ser rechazado, y devolvió: ${JSON.stringify(violaciones)}`,
+  );
+});
+
+test('los ocho códigos de tipo de producto se aceptan, y sólo ésos', () => {
+  for (const codigo of TIPOS_DE_PRODUCTO) {
+    const valido = intake({ tipo_de_producto: { codigo, motivo: respuesta(`Es de tipo ${codigo} porque`) } });
+    assert.deepEqual(validateIntake(valido), [], `el código ${codigo} debería aceptarse`);
+  }
+  assert.deepEqual(TIPOS_DE_PRODUCTO, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+});
+
+test('FALSIFICACIÓN · rechaza un código inventado, en minúscula, y una forma que no es objeto', () => {
+  const inventado = validateIntake(intake({ tipo_de_producto: { codigo: 'Z', motivo: respuesta('Algo') } }));
+  assert.ok(inventado.some((v) => /Z/u.test(v)), JSON.stringify(inventado));
+
+  const minuscula = validateIntake(intake({ tipo_de_producto: { codigo: 'b', motivo: respuesta('Algo') } }));
+  assert.ok(minuscula.some((v) => /tipo_de_producto/u.test(v)), 'una minúscula no es uno de los ocho códigos');
+
+  const sueltoTexto = validateIntake(intake({ tipo_de_producto: 'B' }));
+  assert.ok(sueltoTexto.some((v) => /tipo_de_producto/u.test(v)), 'el enum suelto sin motivo no alcanza');
+
+  const lista = validateIntake(intake({ tipo_de_producto: ['B'] }));
+  assert.ok(lista.some((v) => /tipo_de_producto/u.test(v)), 'una lista no es la forma declarada');
+});
+
+test('FALSIFICACIÓN · un código sin motivo real es un clic, no una clasificación', () => {
+  const vacio = validateIntake(intake({ tipo_de_producto: { codigo: 'B', motivo: '' } }));
+  assert.ok(vacio.some((v) => /motivo/u.test(v)), JSON.stringify(vacio));
+
+  const corto = validateIntake(intake({ tipo_de_producto: { codigo: 'B', motivo: 'web' } }));
+  assert.ok(corto.some((v) => /motivo/u.test(v)), 'un motivo más corto que el piso no es un motivo');
+
+  const extra = validateIntake(intake({ tipo_de_producto: { codigo: 'B', motivo: respuesta('Ok'), extra: 1 } }));
+  assert.ok(extra.some((v) => /tipo_de_producto/u.test(v)), 'una clave de más no se ignora en silencio');
 });

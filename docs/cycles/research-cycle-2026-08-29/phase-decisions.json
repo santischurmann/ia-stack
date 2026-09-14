@@ -1,0 +1,46 @@
+{
+  "schema": "vcp.phase-decisions/1",
+  "phase_order": [
+    "2",
+    "8"
+  ],
+  "decisions": [
+    {
+      "phase_id": "2",
+      "phase_name": "Research",
+      "options": [
+        "A) Contrato + gate + restyle — adoptar las convenciones en el mapa y construir el gate que las verifica",
+        "B) Sólo el gate — verificar lo que el mapa ya hace bien y frenar la regresión, sin tocar el diseño",
+        "C) Sólo el restyle del mapa — más cerca de shadcn, pero sin detector: la regla queda como decoración",
+        "D) Sólo el informe — archivar el análisis en research/ y no tocar código"
+      ],
+      "recommendation": "A) Contrato + gate + restyle — adoptar las convenciones en el mapa y construir el gate que las verifica",
+      "selected_option": "A) Contrato + gate + restyle — adoptar las convenciones en el mapa y construir el gate que las verifica",
+      "reason": "Adoptar sin verificar deja la regla como decoración, que es justo lo que este proyecto persigue. PROCEDENCIA DE LAS MARCAS DE TIEMPO: no se capturaron en el momento; están ancladas a git — timestamp es el commit e000f3f que esta decisión produjo, y shown_at es una cota inferior defendible dentro de la misma sesión. El contenido del menú sí es textual.",
+      "shown_at": "2026-08-29T16:50:00Z",
+      "timestamp": "2026-08-29T17:24:52Z",
+      "input_hash": "74b1dc00629adefb5d64d89407be689d58d8d741d1ccf99f4a18061c6902aaa1",
+      "status": "decided",
+      "previous_hash": "",
+      "current_hash": "11d02cc510d4a69f645aa04d68c6bc63829718e9aeba6d70a12cfdd4e0891f0f"
+    },
+    {
+      "phase_id": "8",
+      "phase_name": "Deploy",
+      "options": [
+        "A) Sólo lo atestiguable + nota — registrar las decisiones sostenibles con evidencia y dejar escrito que las 8 de la noche del 28 no se pueden reconstruir sin inventar",
+        "B) Reconstruir las 8 — recuperar los menús fijados por plantilla e inventar el resto, con timestamps aproximados",
+        "C) No crear el archivo — dejar el hueco declarado como límite honesto y capturar desde la próxima sesión"
+      ],
+      "recommendation": "A) Sólo lo atestiguable + nota — registrar las decisiones sostenibles con evidencia y dejar escrito que las 8 de la noche del 28 no se pueden reconstruir sin inventar",
+      "selected_option": "A) Sólo lo atestiguable + nota — registrar las decisiones sostenibles con evidencia y dejar escrito que las 8 de la noche del 28 no se pueden reconstruir sin inventar",
+      "reason": "Fabricar menús y horas dentro del archivo que respalda la afirmación de consentimiento sería exactamente el fallo que este gate declara no poder detectar. MARCAS DE TIEMPO: exactas al minuto, capturadas en el momento — es la primera decisión de este repositorio registrada mientras ocurría.",
+      "shown_at": "2026-08-29T21:54:00Z",
+      "timestamp": "2026-08-29T21:56:14Z",
+      "input_hash": "bc2d8e8c645e42b5c6206613f8c7ff20dddd8fa787dab5dc620bd4e5c51f6ced",
+      "status": "decided",
+      "previous_hash": "11d02cc510d4a69f645aa04d68c6bc63829718e9aeba6d70a12cfdd4e0891f0f",
+      "current_hash": "c2706505a71bf51fff7ef5764ecff731eb34ba2c0b3dc91f56e5eb0e4096fc73"
+    }
+  ]
+}

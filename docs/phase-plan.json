@@ -1,5 +1,9 @@
 {
   "schema": "vcp.phase-plan/1",
-  "feature": "research-cycle-2026-08-29",
-  "phase_order": ["2", "8"]
+  "feature": "eleccion-de-stack",
+  "phase_order": [
+    "1.5",
+    "2",
+    "3"
+  ]
 }

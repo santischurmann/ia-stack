@@ -1,0 +1,60 @@
+{
+  "schema": "vcp.adoption/1",
+  "feature": "eleccion-de-stack",
+  "date": "2026-09-14",
+  "owner": "Quien mantiene el protocolo: sostiene la decisión de que elegir stack forme parte del camino obligatorio, y la defiende cuando alguien propone saltearla por rapidez.",
+  "operational_owner": "Quien abre un ciclo en su propio proyecto y contesta la pregunta de tipo de producto. No es la misma persona: el que mantiene el protocolo no está en la sesión donde se elige, y confundirlos es cómo la pregunta termina contestada por el agente en vez de por alguien.",
+  "stakeholders": [
+    "Quien instala el protocolo en su repositorio y arranca un proyecto nuevo",
+    "Quien retoma un ciclo empezado por otra persona y necesita entender por qué se eligió ese stack",
+    "Quien mantiene la matriz y tiene que revalidarla contra documentación oficial cuando vence"
+  ],
+  "workflow_change": "Aparece una novena pregunta en el Intake, con menú cerrado de ocho códigos y motivo obligatorio. Antes de este cambio, arrancar un proyecto nuevo no requería declarar qué tipo de producto era: el stack se infería de los archivos que hubiera, o del supuesto del agente cuando no había ninguno.",
+  "training": "La matriz legible vive en skills/stack.md, que el instalador copia a cada proyecto. El menú con sus ocho opciones está en la fase de Intake de SKILL.md, junto con el motivo por el que el enum es cerrado y por el que el motivo es obligatorio para los ocho códigos y no sólo para el último.",
+  "success_signal": "Que alguien abra un proyecto nuevo, conteste la pregunta, y la recomendación que reciba le sirva sin tener que corregirla a mano. Cualitativa: dice que se usa, no cuánto.",
+  "adoption_checklist": [
+    {
+      "id": "CHK1",
+      "item": "El expediente de Intake del ciclo declara un tipo de producto de los ocho, con un motivo que no es relleno."
+    },
+    {
+      "id": "CHK2",
+      "item": "La decisión de tipo de producto quedó sellada en el expediente de fases, con el menú textual que se mostró y la opción elegida."
+    },
+    {
+      "id": "CHK3",
+      "item": "La spec del ciclo fija versiones exactas para el stack elegido, no rangos ni el valor autodetectado."
+    },
+    {
+      "id": "CHK4",
+      "item": "El stack elegido tiene un adaptador de test rojo declarado, y si su garantía es menor que la del adaptador nativo, eso quedó aceptado por escrito."
+    }
+  ],
+  "adoption_metric": {
+    "name": "Proporción de ciclos abiertos cuyo expediente de Intake declara un tipo de producto con motivo, sobre el total de ciclos abiertos que no fueron por la vía rápida",
+    "baseline": "Cero: la pregunta no existía antes de este ciclo, así que ningún expediente de Intake anterior la declara",
+    "target": "Todos los ciclos nuevos. No es una meta ambiciosa: el validador rechaza un expediente sin el campo, así que un ciclo que cierre su Intake necesariamente lo tiene. Lo que la métrica mide de verdad es cuántos ciclos se abren salteando el Intake entero."
+  },
+  "review_cadence": "Al cerrar cada ciclo, junto con el resto del receipt. No hay revisión propia: si hiciera falta una reunión aparte para saber si esto se usa, ya sería señal de que no.",
+  "fallback": "Si la pregunta se contesta siempre con el mismo código sin mirar, o si el motivo empieza a ser relleno, el problema no es la adopción sino la matriz: significa que la recomendación no aporta y la gente la despacha. Ahí se revisa la matriz, no se aprieta la adopción. Si la matriz tampoco mejora, corresponde el criterio de retiro del expediente de recurrencia.",
+  "rollout_steps": [
+    {
+      "id": "ROLLOUT1",
+      "when": "La spec está aprobada y los gates de la matriz y del contrato de límites están construidos y verdes",
+      "action": "Se usa en el propio ciclo del protocolo, que es el primer proyecto que la consume",
+      "exit_criteria": "El expediente de Intake de un ciclo del propio repositorio declara su tipo de producto y el gate lo acepta"
+    },
+    {
+      "id": "ROLLOUT2",
+      "when": "El primer ciclo propio cerró sin que hubiera que corregir la recomendación a mano",
+      "action": "Se publica la versión que incluye la pregunta, y la matriz viaja al runtime que el instalador copia",
+      "exit_criteria": "Una instalación limpia en un proyecto ajeno corre el Intake completo con su novena pregunta y cierra sin fallos"
+    },
+    {
+      "id": "ROLLOUT3",
+      "when": "Dos ciclos de proyectos distintos eligieron su stack con la matriz sin corregirla",
+      "action": "Se promueve: la pregunta deja de ser propia de este ciclo y pasa a ser entrada obligatoria de todo Intake",
+      "exit_criteria": "El criterio de promoción del expediente de recurrencia se cumple y queda registrado como decisión"
+    }
+  ]
+}

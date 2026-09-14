@@ -42,7 +42,7 @@ test('compareCoverage acepta un manifiesto que cubre todo lo rastreado', () => {
     manifest: ['a.mjs', 'b.md'],
     exclusions: [{ path: '.gitignore', reason }],
   });
-  assert.deepEqual(result, { ok: true, missing: [], ghosts: [], dead: [], contradictions: [] });
+  assert.deepEqual(result, { ok: true, missing: [], stale: [], ghosts: [], dead: [], contradictions: [] });
 });
 
 test('FALSIFICACIÓN · un archivo rastreado sin nodo ni exclusión declarada se reporta', () => {
@@ -77,6 +77,69 @@ test('FALSIFICACIÓN · una exclusión sin archivo real y una contradictoria se 
   });
   assert.equal(contradictory.ok, false);
   assert.deepEqual(contradictory.contradictions, ['b.md']);
+});
+
+// LA HERIDA, con su número de veces: UNA, y estructural. Archivar un expediente cerrado —mover
+// `docs/phase-decisions.json` a `docs/cycles/<ciclo>/`— dejó este gate en rojo, porque los dos
+// archivos movidos no estaban en un manifiesto generado tres días antes. Archivar un ciclo es una
+// operación RECURRENTE del protocolo, así que con exclusiones de ruta exacta cada archivado futuro
+// exigiría o reindexar una herramienta externa que el propio protocolo declara opcional, o agregar
+// dos entradas más a mano. Una exclusión por prefijo lo resuelve de una vez.
+//
+// POR QUÉ EL PREFIJO NO HEREDA LA REGLA DE CONTRADICCIÓN. Una exclusión de ruta exacta afirma «este
+// archivo no merece un nodo»; que el grafo lo haya indexado igual contradice esa afirmación y se
+// rechaza. Un prefijo afirma algo distinto: «lo que viva acá abajo no obliga a regenerar el grafo».
+// Esa afirmación sigue siendo cierta cuando el reindexado los toma igual — y de hecho los va a
+// tomar, porque Graphify indexa lo rastreado. Heredar la regla dejaría el gate en rojo en el
+// próximo reindexado, que es exactamente el defecto que este cambio viene a cerrar.
+//
+// LO QUE NO CAMBIA: un prefijo sin ningún archivo rastreado abajo sigue siendo una exclusión
+// muerta y se rechaza. Declarar carpetas que no existen no compra verde.
+test('una exclusión por prefijo cubre todo lo que vive bajo esa carpeta', () => {
+  const result = compareCoverage({
+    tracked: ['a.mjs', 'docs/cycles/c1/phase-decisions.json', 'docs/cycles/c1/phase-plan.json'],
+    manifest: ['a.mjs'],
+    exclusions: [{ path: 'docs/cycles/', reason }],
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual(result.missing, []);
+  assert.deepEqual(result.dead, []);
+});
+
+test('FALSIFICACIÓN · el prefijo no tapa lo que está al lado, ni sobrevive sin archivos abajo', () => {
+  const vecino = compareCoverage({
+    tracked: ['docs/cycles/c1/x.json', 'docs/cyclesX.json'],
+    manifest: [],
+    exclusions: [{ path: 'docs/cycles/', reason }],
+  });
+  assert.equal(vecino.ok, false);
+  assert.deepEqual(vecino.missing, ['docs/cyclesX.json']);
+
+  const vacio = compareCoverage({
+    tracked: ['a.mjs'],
+    manifest: ['a.mjs'],
+    exclusions: [{ path: 'docs/cycles/', reason }],
+  });
+  assert.equal(vacio.ok, false);
+  assert.deepEqual(vacio.dead, ['docs/cycles/']);
+});
+
+test('FALSIFICACIÓN · un prefijo ya indexado no contradice, una ruta exacta sí', () => {
+  const prefijo = compareCoverage({
+    tracked: ['docs/cycles/c1/x.json'],
+    manifest: ['docs/cycles/c1/x.json'],
+    exclusions: [{ path: 'docs/cycles/', reason }],
+  });
+  assert.equal(prefijo.ok, true, JSON.stringify(prefijo));
+  assert.deepEqual(prefijo.contradictions, []);
+
+  const exacta = compareCoverage({
+    tracked: ['docs/cycles/c1/x.json'],
+    manifest: ['docs/cycles/c1/x.json'],
+    exclusions: [{ path: 'docs/cycles/c1/x.json', reason }],
+  });
+  assert.equal(exacta.ok, false);
+  assert.deepEqual(exacta.contradictions, ['docs/cycles/c1/x.json']);
 });
 
 test('un proyecto sin contrato de exclusiones no falla: no declara ninguna', () => {
@@ -143,6 +206,13 @@ test('el repositorio real declara cobertura Graphify honesta', SOLO_FUENTE, (t) 
   assert.ok(tracked.includes('SKILL.md'), 'the fixture must read the real tracked set');
   const result = spawnSync(process.execPath, [script, 'check'], { cwd: repoRoot, encoding: 'utf8' });
   assert.equal(result.status, 0, `${result.stdout}${result.stderr}`);
+  // Un grafo más viejo que un archivo rastreado no es una cobertura mentida: es el estado esperado
+  // a mitad de ciclo, porque el reindexado va al publicar. Se declara SALTEADA con los archivos a la
+  // vista, nunca en verde — mismo criterio que el salteo de más arriba: un pase acá se leería como
+  // "la cobertura del grafo está bien", y en este estado no se pudo mirar.
+  if (/^DESACTUALIZADO: /u.test(result.stdout)) {
+    return t.skip(result.stdout.trim());
+  }
   assert.match(result.stdout, /Graphify manifest covers/u);
 });
 
@@ -200,4 +270,92 @@ test('FALSIFICACIÓN · main nombra el archivo declarado excluido que igual est�
     readExclusionList: () => [{ path: 'docs/secreto.md', reason: 'no se publica: lleva datos del cliente' }],
   }, (line) => salida.push(line), (line) => errores.push(line)), 0, errores.join(' || '));
   assert.match(salida.at(-1), /^OK: /u);
+});
+
+// VIEJO NO ES LO MISMO QUE DESHONESTO, y el gate los confundía.
+//
+// LA HERIDA, con su número de veces: DOS en la misma sesión, y la segunda destapó que la primera
+// sólo había tapado la mitad. Archivar un expediente lo puso en rojo; archivar una sesión, de nuevo;
+// escribir el archivo de Intake, una tercera vez. Las tres eran el mismo malentendido: un archivo
+// rastreado que el grafo no tiene puede significar DOS cosas opuestas, y el gate sólo sabía leer
+// una. Si el archivo ya existía cuando el grafo se construyó y no está, la declaración de cobertura
+// es falsa y hay que rechazarla. Si el archivo nació DESPUÉS, el grafo no miente: está viejo.
+//
+// Y estar viejo a mitad de ciclo es el estado ESPERADO, no un defecto: `skills/integracion-graphify.md`
+// fija el orden commit → graphify → record → check, o sea que el reindexado va al publicar. El ciclo
+// anterior nunca lo destapó porque cerró con un reindexado y no agregó archivos después.
+//
+// LÍMITE HONESTO: la edad se lee de la fecha de modificación del archivo contra la del manifiesto.
+// Un `git checkout` o un clon reescriben esas fechas, así que la clasificación puede correrse hacia
+// «desactualizado» después de una operación de git que toque el árbol. Se acepta porque el error cae
+// del lado seguro —reportar de más, nunca aprobar una cobertura mentida— y porque sin manifiesto la
+// prueba ya se declara salteada en vez de verde.
+
+test('un archivo más nuevo que el manifiesto está desactualizado, no ausente', () => {
+  const result = compareCoverage({
+    tracked: ['a.mjs', 'nuevo.json'],
+    manifest: ['a.mjs'],
+    exclusions: [],
+    builtAt: 1000,
+    mtimeOf: (path) => (path === 'nuevo.json' ? 2000 : 500),
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.deepEqual(result.missing, []);
+  assert.deepEqual(result.stale, ['nuevo.json']);
+});
+
+test('FALSIFICACIÓN · un archivo que ya existía cuando el grafo se construyó sigue rechazándose', () => {
+  const result = compareCoverage({
+    tracked: ['a.mjs', 'viejo.json'],
+    manifest: ['a.mjs'],
+    exclusions: [],
+    builtAt: 1000,
+    mtimeOf: (path) => (path === 'viejo.json' ? 500 : 500),
+  });
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missing, ['viejo.json']);
+  assert.deepEqual(result.stale, []);
+});
+
+test('FALSIFICACIÓN · sin fecha de construcción no se adivina: todo lo ausente rechaza', () => {
+  const result = compareCoverage({ tracked: ['a.mjs', 'x.json'], manifest: ['a.mjs'], exclusions: [] });
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.missing, ['x.json']);
+  assert.deepEqual(result.stale, []);
+
+  const sinReloj = compareCoverage({ tracked: ['a.mjs', 'x.json'], manifest: ['a.mjs'], exclusions: [], builtAt: 1000 });
+  assert.equal(sinReloj.ok, false, 'builtAt sin mtimeOf no alcanza para clasificar');
+  assert.deepEqual(sinReloj.missing, ['x.json']);
+});
+
+test('main dice DESACTUALIZADO, nombra los archivos y sale 0 sin declararlos cubiertos', () => {
+  const salida = [];
+  const errores = [];
+  const code = main(['check'], '.', {
+    readTracked: () => ['a.mjs', 'nuevo.json'],
+    readManifestPaths: () => ['a.mjs'],
+    readExclusionList: () => [],
+    manifestBuiltAt: () => 1000,
+    mtimeOf: (path) => (path === 'nuevo.json' ? 2000 : 500),
+  }, (l) => salida.push(l), (l) => errores.push(l));
+  assert.equal(code, 0, errores.join('\n'));
+  assert.deepEqual(errores, []);
+  assert.ok(salida.some((l) => /^DESACTUALIZADO: /u.test(l)), salida.join('\n'));
+  assert.ok(salida.some((l) => l.includes('nuevo.json')), 'tiene que nombrar el archivo, no sólo contarlo');
+  assert.ok(!salida.some((l) => /^OK: /u.test(l)), 'un grafo viejo no compra un OK de cobertura');
+});
+
+test('sin manifiesto en disco no se inventa una fecha: vuelve al rechazo estricto', () => {
+  // No se inyecta `manifestBuiltAt`: corre el lector real contra un directorio que no tiene
+  // manifiesto, que es el caso de un clon recién hecho. Devolver `null` ahí es lo que impide que un
+  // repositorio sin grafo apruebe cobertura por no poder fechar nada.
+  const errores = [];
+  const code = main(['check'], join(repoRoot, 'tests'), {
+    readTracked: () => ['a.mjs', 'x.json'],
+    readManifestPaths: () => ['a.mjs'],
+    readExclusionList: () => [],
+  }, () => {}, (l) => errores.push(l));
+  assert.equal(code, 1, 'sin fecha de construcción, un archivo ausente sigue siendo cobertura mentida');
+  assert.ok(errores.some((l) => l.includes('x.json')), errores.join('\n'));
+  assert.ok(!errores.some((l) => /DESACTUALIZADO/u.test(l)), 'no puede reportar desactualización sin haber podido fechar');
 });

@@ -43,7 +43,17 @@ Si tenés la herramienta y la querés usar, los pasos son estos.
   ```
   Cada archivo rastreado debe estar en `graphify-out/manifest.json` o llevar una exclusión con
   razón en `contracts/graphify-exclusions.json`; una entrada del manifest que Git ya no rastrea es
-  un fantasma y se rechaza. El gate prueba contabilidad, no comprensión: un archivo indexado
+  un fantasma y se rechaza.
+  **Viejo y deshonesto no son lo mismo, y la edad se lee de la fecha de modificación.** Un archivo
+  rastreado que el manifiesto no tiene significa una de dos cosas opuestas: si ya existía cuando el
+  grafo se construyó, la declaración de cobertura es falsa y el gate rechaza; si nació después, el
+  grafo no miente, está viejo, y el gate escribe `DESACTUALIZADO:` con los nombres y sale `0` —
+  porque el reindexado va al publicar, en este orden, y no en cada archivo que se agrega. Una
+  exclusión que termina en `/` es una carpeta y cubre lo que viva abajo, para que archivar un
+  expediente o una sesión no exija reindexar; un prefijo sin archivos abajo sigue siendo exclusión
+  muerta. **Límite:** `git checkout` y un clon reescriben las fechas de modificación, así que la
+  clasificación puede correrse hacia «desactualizado» después de una operación de Git que toque el
+  árbol. El error cae del lado seguro: reporta de más, nunca aprueba una cobertura mentida. El gate prueba contabilidad, no comprensión: un archivo indexado
   todavía puede haber producido cero nodos, así que "cubierto" nunca significa "entendido".
 
 ## El export a Obsidian

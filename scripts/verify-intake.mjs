@@ -39,6 +39,15 @@ export const ANSWER_KEYS = Object.freeze([
 /** Piso de largo. No mide calidad: descarta el vacio y la palabra suelta. */
 export const MIN_ANSWER = 20;
 
+/** La novena pregunta: que TIPO de producto es. Enum cerrado, no prosa, porque la matriz de stacks
+ * se indexa por este codigo y un texto libre la volveria incomparable entre ciclos.
+ *
+ * El orden es el de la conversacion, y `H` va ultimo a proposito: obliga a decir por que ninguno de
+ * los siete anteriores alcanza, en vez de ser la salida comoda de la primera duda. */
+export const TIPOS_DE_PRODUCTO = Object.freeze(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
+
+const TIPO_KEYS = Object.freeze(['codigo', 'motivo']);
+
 const LISTS = Object.freeze([
   { key: 'supuestos', singular: 'supuesto' },
   { key: 'riesgos', singular: 'riesgo' },
@@ -76,6 +85,23 @@ export function validateIntake(intake) {
     }
     for (const key of Object.keys(intake.answers)) {
       if (!ANSWER_KEYS.includes(key)) violations.push(`answers trae ${key}, que no es una de las ocho preguntas`);
+    }
+  }
+
+  // El motivo es obligatorio para los ocho codigos, no solo para `H`: un codigo sin motivo es un
+  // clic, no una clasificacion, y nadie puede revisar despues si estuvo bien clasificado. Mismo
+  // criterio que el campo `reason` de cada decision en phase-decisions.json.
+  const tipo = intake.tipo_de_producto;
+  if (!isObject(tipo)
+    || Object.keys(tipo).length !== TIPO_KEYS.length
+    || !Object.keys(tipo).every((key) => TIPO_KEYS.includes(key))) {
+    violations.push(`tipo_de_producto debe ser un objeto con exactamente ${TIPO_KEYS.join(' y ')}`);
+  } else {
+    if (!TIPOS_DE_PRODUCTO.includes(tipo.codigo)) {
+      violations.push(`tipo_de_producto declara ${JSON.stringify(tipo.codigo)}, que no es uno de los ocho códigos ${TIPOS_DE_PRODUCTO.join('/')}`);
+    }
+    if (!longEnough(tipo.motivo)) {
+      violations.push(`tipo_de_producto no dice por qué: el motivo tiene menos de ${MIN_ANSWER} caracteres`);
     }
   }
 

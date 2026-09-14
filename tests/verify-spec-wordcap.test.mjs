@@ -72,10 +72,15 @@ test('CLI exit codes match the library behavior for a real over-cap file', () =>
   }
 });
 
+// Estas dos pruebas son sobre la FORMA de una spec, no sobre si este repositorio tiene un modelo de
+// amenaza. La exigencia de la sección de seguridad la deriva el gate del árbol real, y eso tiene sus
+// propias pruebas más abajo. Sin inyectar aquí esa dependencia, crear un threat.json en cualquier
+// parte del repositorio ponía estas dos en rojo por una razón que no es la que están midiendo.
+// Reproducido el 2026-09-14 al escribir el threat.json de un ciclo nuevo.
 test('checkSpecQuality accepts a complete spec with event and invariant AC grammar', () => {
   assert.deepEqual(checkSpecQuality(VALID_SPEC), []);
   const output = [];
-  assert.equal(main(['check', 'spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, write: (line) => output.push(line) }), 0);
+  assert.equal(main(['check', 'spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, hasThreatModel: () => false, write: (line) => output.push(line) }), 0);
   assert.match(output.at(-1), /quality shape valid/);
 });
 
@@ -120,6 +125,7 @@ test('FALSIFICACIÓN · con --quality, una spec bajo el tope pero mal formada se
   const rota = VALID_SPEC.replace('## Constraints / Restricciones', '## Restricciones que no son la sección pedida');
   const code = main(['check', 'docs/spec.md', QUALITY_FLAG], {
     readFile: () => rota,
+    hasThreatModel: () => false,
     write: () => {},
     writeError: (line) => errors.push(line),
   });
@@ -127,7 +133,7 @@ test('FALSIFICACIÓN · con --quality, una spec bajo el tope pero mal formada se
   assert.ok(errors.some((line) => line.includes('quality: missing required section: Constraints / Restricciones')), errors.join(' || '));
   // Y la contraprueba: la misma spec sin tocar, con la misma bandera, sale en verde.
   const salida = [];
-  assert.equal(main(['check', 'docs/spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, write: (l) => salida.push(l), writeError: (l) => errors.push(l) }), 0, errors.join(' || '));
+  assert.equal(main(['check', 'docs/spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, hasThreatModel: () => false, write: (l) => salida.push(l), writeError: (l) => errors.push(l) }), 0, errors.join(' || '));
   assert.ok(salida.at(-1).includes('quality shape valid'));
 });
 

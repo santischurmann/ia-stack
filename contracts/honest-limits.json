@@ -86,6 +86,12 @@
       "why": "Es el mismo límite en el lugar operativo que lee quien corre el gate. Sin esta frase el agente reporta cobertura del grafo como si fuera entendimiento del código, y los archivos que dieron cero nodos no los revisa nadie."
     },
     {
+      "limit_id": "graphify-staleness-read-from-mtime",
+      "file": "skills/integracion-graphify.md",
+      "phrase": "Viejo y deshonesto no son lo mismo, y la edad se lee de la fecha de modificación",
+      "why": "El gate separa dos cosas que antes confundia. Un archivo rastreado ausente del manifiesto es cobertura MENTIDA si ya existia cuando el grafo se construyo, y es solo un grafo VIEJO si nacio despues; lo segundo es el estado esperado a mitad de ciclo porque este mismo documento fija el orden commit, graphify, record, check, o sea que el reindexado va al publicar. La herida que lo motivo se repitio TRES veces en una sola sesion: archivar un expediente, archivar una sesion y escribir el archivo de Intake dejaron el gate en rojo sin que ninguna cobertura fuera falsa. Lo que el gate NO puede hacer es fechar de forma robusta: lee la fecha de modificacion del archivo contra la del manifiesto, y un git checkout o un clon las reescriben, asi que la clasificacion puede correrse hacia desactualizado despues de una operacion de Git que toque el arbol. Se acepta porque el error cae del lado seguro -- reporta de mas, nunca aprueba una cobertura mentida -- y porque sin manifiesto la prueba ya se declara salteada en vez de verde. Tampoco distingue una plantilla legitima de un archivo que alguien toco para parecer nuevo."
+    },
+    {
       "limit_id": "receipt-command-is-never-re-executed",
       "file": "SKILL.md",
       "phrase": "nunca re-ejecuta el comando ni prueba criptográficamente",
@@ -456,6 +462,12 @@
       "file": "SKILL.md",
       "phrase": "Verifica las plantillas, no la conversación",
       "why": "verify-menu-shape lee los documentos del protocolo -- SKILL.md, README.md, skills/*.md -- y comprueba que cada bloque de decision sea una lista con al menos dos opciones, recomendacion explicita y linea de espera. Eso ataca la causa medida del problema: la plantilla canonica prescribia un bloque de codigo, que colapsa a un solo parrafo en todo motor de Markdown. Lo que NO puede hacer es mirar el mensaje que el agente efectivamente escribio en la conversacion, ni como lo renderizo la terminal, ni si la persona vio opciones: no hay forma portable de comprobar nada de eso, y leer los transcripts del usuario seria un adaptador por agente mas una invasion de su historial. Tampoco juzga si las opciones son buenas ni si la recomendacion es la correcta."
+    },
+    {
+      "limit_id": "menu-shape-recommendation-may-sit-off-option",
+      "file": "SKILL.md",
+      "phrase": "La marca de recomendación puede vivir en cualquier línea del menú",
+      "why": "verify-menu-shape exige que ALGUNA fila del bloque lleve la marca de recomendacion que LAW 7 pide explicita, y no que la lleve una fila de opcion. Es deliberado: hay menus cuya recomendacion no puede escribirse de antemano porque se deduce de lo que la persona acaba de contestar, y el de tipo de producto de la fase 1.5 es exactamente ese caso -- su plantilla dice donde va la marca en vez de traerla puesta, porque recomendar un tipo antes de escuchar las ocho respuestas seria el defecto que el expediente de Intake existe para evitar. Lo que NO puede hacer el gate es distinguir esa plantilla legitima de una frase suelta que menciona la marca sin que ninguna opcion este recomendada de verdad. Se acepta ese costo a proposito: la alternativa medida era prohibir los menus derivados."
     },
     {
       "limit_id": "ablation-gate-checks-record-not-run",
