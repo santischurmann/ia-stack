@@ -343,6 +343,56 @@ pytest y siete de vitest, más los dos ataques. **Los dos ataques aprueban**, y 
 como límite honesto en vez de disimulado — es la diferencia entre una garantía menor escrita y una
 garantía menor escondida.
 
+## Comparar contra otro protocolo destapó tres defectos, dos de seguridad
+
+Se estudió `quant-dhawan/dovsky` —un plano de control local para correr agentes: demonio, SQLite,
+sandbox de bubblewrap, aceptación humana explícita— contra IA Stack. Resuelven **el mismo problema
+desde extremos opuestos**: IA Stack es un protocolo que el agente sigue y cuyos gates verifican
+artefactos sobre el árbol que el propio agente controla; dovsky es un runtime que **aísla** al agente
+y sólo aplica el delta capturado después de que los gates del anfitrión pasan. El contraste es lo
+que dejó ver lo siguiente.
+
+### 1. El gate de repositorio limpio escaneaba el árbol de trabajo, y lo que se publica es el blob
+
+**Reproducido.** git guarda un enlace simbólico como un blob cuyo contenido es **la ruta destino**.
+Un enlace rastreado a `/home/<alguien>/.config/secretos` publica esa ruta personal — y el gate leía
+con `readFileSync`, que **sigue el enlace**: leía el destino y nunca el texto. Un repositorio que
+publicaba una ruta personal salía en **verde**. Ahora lee el blob con `git show :<ruta>`, que es
+exactamente lo que recibe un clon, y el ataque se rechaza.
+
+### 2. El mismo gate fallaba ABIERTO, y su hermano ya fallaba cerrado
+
+Un archivo rastreado que no se podía leer se contaba como «salteado» y no pasaba nada.
+`verify-security-baseline.mjs` ya hacía lo correcto —un fuente ilegible es severidad alta— así que
+**el protocolo ya tenía el patrón bueno y el gate nuevo no lo seguía**. La asimetría entre dos gates
+que escanean la misma superficie era el defecto de fondo. Corregido: ahora rechaza.
+
+### 3. La cobertura del 100% valía sólo en esta máquina
+
+Clonar el propio repositorio en limpio mostró que `verify-vcp-coverage` **rechazaba**: dos ramas de
+`verify-graphify-manifest.mjs` sólo se ejecutaban si existía `graphify-out/`, que está en
+.gitignore. **Un verde que depende de un directorio ignorado es un verde de una carpeta, no del
+repositorio**, y la frase «cobertura 100%» escrita en los mensajes de commit era local. Cubierto con
+carpetas descartables; ahora vale para cualquiera.
+
+### 4. Y el gate nuevo habría roto la integración continua antes de existir
+
+Preparando el CI: en un runner de GitHub la cuenta se llama `runner`, palabra que este protocolo usa
+en **72 de sus 393 archivos**. La comprobación de identidad habría dado 72 falsos positivos en cada
+corrida, y **un gate que grita siempre se termina apagando**. Se agregó una regla de frecuencia con
+el umbral sacado de la medición —la filtración real eran 3 de 393, un 0,8%, contra un 18%: veinte
+veces de separación— y un piso de corpus de 20 archivos, que es donde un único archivo deja de poder
+superar el umbral solo. La mitad ruidosa se apaga **diciéndolo**, y su precio quedó declarado.
+
+### Lo que no se trajo, y por qué
+
+De dovsky quedaron tres ideas medidas y **no adoptadas**, porque son cambios de arquitectura y no de
+gate: prueba de vida del proceso (PID + boot id + *start ticks*, con un estado explícito
+`reconcile_required` cuando no se puede probar); aceptación humana mecánicamente exigida, con el
+árbol revalidado contra la evidencia; y aislamiento del agente con aplicación de delta en vez de
+edición directa del árbol. Las tres cierran huecos que IA Stack hoy **no** cubre, y las tres
+merecen una decisión aparte.
+
 ## El grafo, reconstruido
 
 La prueba de cobertura del grafo venía salteada desde que empezó el ciclo, con el motivo escrito:

@@ -11,6 +11,10 @@
       "class": "otro"
     },
     {
+      "path": ".github/workflows/ci.yml",
+      "class": "otro"
+    },
+    {
       "path": ".gitignore",
       "class": "otro"
     },

@@ -62,7 +62,7 @@ function correr(args, over = {}) {
     root: repoRoot,
     homedir: () => IDENTIDAD.home,
     trackedFiles: () => [],
-    read: () => '',
+    leerBlob: () => '',
     readContract: () => contrato(),
     write: (l) => salida.push(l),
     writeError: (l) => errores.push(l),
@@ -89,7 +89,7 @@ test('sin archivos rastreados escribe VACÍO y sale 0, sin decir OK', () => {
 test('eleccion-de-stack · AC9 · encuentra la ruta del directorio personal de quien corre el gate', () => {
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: () => `El plan quedó en ${IDENTIDAD.home}\\Desktop\\plan.md y ahí sigue.\n`,
+    leerBlob: () => `El plan quedó en ${IDENTIDAD.home}\\Desktop\\plan.md y ahí sigue.\n`,
   });
   assert.equal(code, 1);
   assert.ok(errores.some((l) => /docs\/notas\.md/u.test(l)), errores.join('\n'));
@@ -101,7 +101,7 @@ test('encuentra el nombre de usuario a secas, que es la filtración que no parec
   // ninguna barra alrededor. Buscar sólo rutas lo habría dejado pasar.
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['tests/algo.test.mjs'],
-    read: () => `const firmante = '${IDENTIDAD.usuario} <s@t>';\n`,
+    leerBlob: () => `const firmante = '${IDENTIDAD.usuario} <s@t>';\n`,
   });
   assert.equal(code, 1);
   assert.ok(errores.some((l) => /tests\/algo\.test\.mjs/u.test(l)), errores.join('\n'));
@@ -111,7 +111,7 @@ test('el mensaje de rechazo NO reimprime la identidad que encontró', () => {
   // Un gate que grita el dato que protege lo filtra a los registros de CI, que suelen ser públicos.
   const { errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: () => `ruta: ${IDENTIDAD.home}\\Desktop\n`,
+    leerBlob: () => `ruta: ${IDENTIDAD.home}\\Desktop\n`,
   });
   const todo = errores.join('\n');
   assert.ok(!todo.includes(IDENTIDAD.usuario), `el rechazo reimprimió la identidad: ${todo}`);
@@ -122,7 +122,7 @@ test('encuentra rutas personales de OTRA máquina, que la comprobación de ident
   for (const ajena of [`${WIN}otrapersona/Desktop`, `${NIX}otrapersona/proyecto`, `${MAC}otrapersona/Documents`]) {
     const { code, errores } = correr(['check'], {
       trackedFiles: () => ['README.md'],
-      read: () => `copiado de ${ajena}\n`,
+      leerBlob: () => `copiado de ${ajena}\n`,
     });
     assert.equal(code, 1, ajena);
     assert.ok(errores.some((l) => /README\.md/u.test(l)), ajena);
@@ -135,17 +135,74 @@ test('un nombre de usuario demasiado corto apaga esa comprobación y LO DICE', (
   const { code, salida } = correr(['check'], {
     homedir: () => join('D:', 'u'),
     trackedFiles: () => ['README.md'],
-    read: () => 'texto sin nada personal\n',
+    leerBlob: () => 'texto sin nada personal\n',
   });
   assert.equal(code, 0);
   assert.ok(salida.some((l) => /LIMITE|LÍMITE/u.test(l) && /usuario/u.test(l)),
     `el gate tiene que declarar que apagó una comprobación: ${salida.join('\n')}`);
 });
 
+// UN NOMBRE DE USUARIO QUE ES UNA PALABRA DEL DOMINIO NO IDENTIFICA A NADIE.
+//
+// Encontrado el 2026-09-14 al preparar la integración continua, antes de que rompiera nada: en un
+// runner de GitHub Actions la cuenta se llama literalmente `runner`, y este repositorio menciona
+// «runner» en 72 de sus 393 archivos versionados, porque el despachador de test rojo habla de
+// runners todo el tiempo. La comprobación de identidad habría producido 72 hallazgos falsos y el CI
+// habría salido rojo en cada corrida — y un gate que grita siempre se termina apagando, que es la
+// forma más común de perder un gate.
+//
+// LA SEÑAL ES LA FRECUENCIA, y se mide en vez de suponerse. Una identidad filtrada aparece en un
+// puñado de archivos: el caso real de este repositorio eran 3 de 393, un 0,8%. Una palabra del
+// dominio aparece por todos lados: 72 de 393, un 18%. La separación es de veinte veces, no de un
+// pelo. Cuando la frecuencia dice «palabra», esa mitad se apaga DICIENDOLO —nunca en silencio— y la
+// comprobación de rutas, que no tiene este problema, sigue corriendo.
+test('un nombre de usuario que aparece por todo el repositorio se trata como palabra, no como identidad', () => {
+  const muchos = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`doc${i}.md`, 'esto habla de un runner declarado']));
+  const { code, salida } = correr(['check'], {
+    homedir: () => join('D:', 'Usuarios', 'runner'),
+    trackedFiles: () => Object.keys(muchos),
+    leerBlob: (r) => muchos[String(r)],
+  });
+
+  assert.equal(code, 0, 'veinte de veinte archivos: es vocabulario del proyecto, no una filtración');
+  assert.ok(salida.some((l) => /LIMITE|LÍMITE/u.test(l) && /palabra/u.test(l)),
+    `tiene que decir que apagó la comprobación y por qué: ${salida.join('\n')}`);
+});
+
+test('un nombre de usuario que aparece en pocos archivos SIGUE siendo una filtración', () => {
+  // El caso real que motivó el gate: el nombre del autor en tres archivos de 393.
+  const archivos = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`doc${i}.md`, 'texto limpio']));
+  archivos['tests/fixture.test.mjs'] = "const firmante = 'unapersona <s@t>';";
+  const { code, errores } = correr(['check'], {
+    homedir: () => join('D:', 'Usuarios', 'unapersona'),
+    trackedFiles: () => Object.keys(archivos),
+    leerBlob: (r) => archivos[String(r)],
+  });
+
+  assert.equal(code, 1, 'uno de veintiuno es una filtración, no vocabulario');
+  assert.ok(errores.some((l) => /fixture/u.test(l)), errores.join('\n'));
+});
+
+test('la ruta del directorio personal se sigue buscando aunque el nombre sea una palabra', () => {
+  // Apagar la mitad ruidosa no puede apagar la otra: una ruta de directorio personal en lo versionado sigue
+  // siendo una ruta de máquina publicada, se llame como se llame la cuenta.
+  const home = join('D:', 'Usuarios', 'runner');
+  const archivos = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`doc${i}.md`, 'un runner declarado']));
+  archivos['notas.md'] = `el plan quedó en ${home}\\Desktop`;
+  const { code, errores } = correr(['check'], {
+    homedir: () => home,
+    trackedFiles: () => Object.keys(archivos),
+    leerBlob: (r) => archivos[String(r)],
+  });
+
+  assert.equal(code, 1);
+  assert.ok(errores.some((l) => /notas\.md/u.test(l)), errores.join('\n'));
+});
+
 test('una excepción declarada con motivo real suprime el hallazgo de ese archivo', () => {
   const { code, salida } = correr(['check'], {
     trackedFiles: () => ['tests/tablero.test.mjs'],
-    read: () => `const ruta = "${rutaWin('otrapersona')}Desktop/proyectos/MiProyecto";\n`,
+    leerBlob: () => `const ruta = "${rutaWin('otrapersona')}Desktop/proyectos/MiProyecto";\n`,
     readContract: () => contrato({
       allowed: [{
         path: 'tests/tablero.test.mjs',
@@ -167,14 +224,14 @@ test('la excepción sólo vale para el archivo y el patrón que declara', () => 
 
   const otroArchivo = correr(['check'], {
     trackedFiles: () => ['tests/otro.test.mjs'],
-    read: () => `const ruta = "${rutaWin('otrapersona')}Desktop";\n`,
+    leerBlob: () => `const ruta = "${rutaWin('otrapersona')}Desktop";\n`,
     readContract: () => contrato({ allowed: [permiso] }),
   });
   assert.equal(otroArchivo.code, 1, 'la excepción se escapó a otro archivo');
 
   const otroPatron = correr(['check'], {
     trackedFiles: () => ['tests/tablero.test.mjs'],
-    read: () => `const ruta = "${rutaWin('distinto')}Desktop";\n`,
+    leerBlob: () => `const ruta = "${rutaWin('distinto')}Desktop";\n`,
     readContract: () => contrato({ allowed: [permiso] }),
   });
   assert.equal(otroPatron.code, 1, 'la excepción tapó un hallazgo que no declaraba');
@@ -207,17 +264,25 @@ test('un archivo binario no se escanea y no inventa hallazgos', () => {
 
   const { code } = correr(['check'], {
     trackedFiles: () => ['docs/imagen.png'],
-    read: () => Buffer.from([0x00, 0x01, 0x02]),
+    leerBlob: () => Buffer.from([0x00, 0x01, 0x02]),
   });
   assert.equal(code, 0);
 });
 
-test('un archivo que ya no está en disco se informa, no rompe el gate', () => {
+// ESTA PRUEBA CAMBIO DE VEREDICTO A PROPOSITO, el 2026-09-14.
+//
+// Antes decia que un archivo rastreado que no se puede leer «se informa y no rompe el gate», y
+// devolvia 0. Eso era FALLAR ABIERTO, y fue el defecto de fondo: un archivo que el repositorio
+// PUBLICA y que el gate no pudo revisar no es un archivo limpio, es uno que nadie miro. Ademas ya
+// no aplica el motivo que lo justificaba —«esta borrado del arbol de trabajo»— porque el gate pasó a
+// leer el blob del indice, que existe aunque el archivo no este en el disco.
+test('FALLA CERRADO · un archivo rastreado cuyo contenido publicado no se puede leer rechaza', () => {
   const { code, errores } = correr(['check'], {
-    trackedFiles: () => ['docs/borrado.md'],
-    read: () => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); },
+    trackedFiles: () => ['docs/opaco.md'],
+    leerBlob: () => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); },
   });
-  assert.equal(code, 0, errores.join('\n'));
+  assert.equal(code, 1, errores.join('\n'));
+  assert.ok(errores.some((l) => /nadie miró/u.test(l)), errores.join('\n'));
 });
 
 test('buscarEnTexto ubica cada hallazgo en su línea, y encuentra todas', () => {
@@ -266,7 +331,7 @@ test('un hallazgo repetido en la misma línea se cuenta una sola vez', () => {
 test('un contrato ausente NO afloja nada: se sigue sin excepciones, que es lo estricto', () => {
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: () => `ruta: ${IDENTIDAD.home}\\Desktop\n`,
+    leerBlob: () => `ruta: ${IDENTIDAD.home}\\Desktop\n`,
     readContract: () => { throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' }); },
   });
   assert.equal(code, 1, 'sin contrato tiene que seguir detectando, no rendirse');
@@ -276,7 +341,7 @@ test('un contrato ausente NO afloja nada: se sigue sin excepciones, que es lo es
 test('FALSIFICACIÓN · un contrato ilegible rechaza, y no se confunde con uno ausente', () => {
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: () => 'limpio\n',
+    leerBlob: () => 'limpio\n',
     readContract: () => { throw new SyntaxError('Unexpected token } in JSON'); },
   });
   assert.equal(code, 1);
@@ -288,7 +353,7 @@ test('FALSIFICACIÓN · un contrato ilegible rechaza, y no se confunde con uno a
   // rechazo que dice «undefined» no es un diagnóstico, es una pared.
   const crudo = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: () => 'limpio',
+    leerBlob: () => 'limpio',
     readContract: () => { throw 'el contrato se rompió de una forma rara'; },
   });
   assert.equal(crudo.code, 1);
@@ -300,7 +365,7 @@ test('FALSIFICACIÓN · un contrato mal formado rechaza antes de escanear un sol
   const leidos = [];
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
-    read: (r) => { leidos.push(String(r)); return 'limpio\n'; },
+    leerBlob: (r) => { leidos.push(String(r)); return 'limpio\n'; },
     readContract: () => contrato({ why: 'corto' }),
   });
   assert.equal(code, 1);
@@ -312,7 +377,7 @@ test('sin directorio personal resoluble, la comprobación de identidad se apaga 
   const { code, salida } = correr(['check'], {
     homedir: () => undefined,
     trackedFiles: () => ['README.md'],
-    read: () => 'texto sin nada personal\n',
+    leerBlob: () => 'texto sin nada personal\n',
   });
   assert.equal(code, 0);
   assert.ok(salida.some((l) => /LIMITE|LÍMITE/u.test(l) && /usuario/u.test(l)), salida.join('\n'));
@@ -321,13 +386,63 @@ test('sin directorio personal resoluble, la comprobación de identidad se apaga 
 test('el uso admite la ruta de contrato opcional, y rechaza una vacía', () => {
   const conRuta = correr(['check', 'contracts/otro.json'], {
     trackedFiles: () => ['README.md'],
-    read: () => 'limpio\n',
+    leerBlob: () => 'limpio\n',
   });
   assert.equal(conRuta.code, 0, conRuta.errores.join('\n'));
 
   const vacia = correr(['check', '   ']);
   assert.equal(vacia.code, 2);
   assert.ok(vacia.errores.some((l) => l === USAGE));
+});
+
+// LO QUE SE PUBLICA ES EL BLOB, NO EL ARCHIVO DEL ARBOL DE TRABAJO.
+//
+// Encontrado el 2026-09-14 comparando este protocolo contra otro, y reproducido: git guarda un
+// enlace simbolico como un blob cuyo contenido es LA RUTA DESTINO. Si esa ruta es personal, queda
+// publicada. La version anterior de este gate enumeraba con `git ls-files` y leia con `readFileSync`
+// del arbol de trabajo, que **sigue el enlace**: leia el destino y nunca el texto del enlace. Un
+// repositorio que publicaba `/home/<alguien>/.config/secretos` salia en VERDE.
+//
+// Y la segunda mitad del mismo defecto: un archivo que no se podia leer se contaba como «salteado» y
+// no pasaba nada. Eso es FALLAR ABIERTO. El gate hermano `verify-security-baseline.mjs` ya hacia lo
+// correcto —un archivo ilegible es un hallazgo de severidad alta, no un silencio— asi que el
+// protocolo ya tenia el patron bueno y este gate no lo seguia.
+test('un enlace simbólico rastreado se escanea por su TEXTO, que es lo que el repositorio publica', () => {
+  const { code, errores } = correr(['check'], {
+    trackedFiles: () => ['notas.md'],
+    // El lector de blobs devuelve lo que git publica; el árbol de trabajo ni se mira.
+    leerBlob: () => `${NIX}unapersona/.config/secretos`,
+  });
+  assert.equal(code, 1, 'el texto del enlace es una ruta personal y tiene que rechazar');
+  assert.ok(errores.some((l) => /notas\.md/u.test(l)), errores.join('\n'));
+});
+
+test('FALLA CERRADO · un archivo rastreado que no se puede leer es un hallazgo, no un silencio', () => {
+  const { code, errores } = correr(['check'], {
+    trackedFiles: () => ['opaco.md'],
+    leerBlob: () => { throw new Error('EACCES: permission denied'); },
+  });
+  assert.equal(code, 1, 'no poder mirar NO es haber mirado y no encontrar nada');
+  assert.ok(errores.some((l) => /opaco\.md/u.test(l)), errores.join('\n'));
+  assert.ok(errores.some((l) => /no se pudo (leer|revisar)/u.test(l)), errores.join('\n'));
+
+  // Y lanzar algo que NO es un Error tiene que dejar un motivo legible igual: `git` puede fallar de
+  // formas raras, y un rechazo que dice «undefined» no es un diagnostico.
+  const crudo = correr(['check'], {
+    trackedFiles: () => ['opaco.md'],
+    leerBlob: () => { throw 'git se rompió de una forma rara'; },
+  });
+  assert.equal(crudo.code, 1);
+  assert.ok(crudo.errores.some((l) => /forma rara/u.test(l)), crudo.errores.join(' | '));
+});
+
+test('el resumen cuenta los archivos revisados de verdad, y no infla con los que no pudo mirar', () => {
+  const { code, salida } = correr(['check'], {
+    trackedFiles: () => ['a.md', 'b.md'],
+    leerBlob: () => 'contenido limpio',
+  });
+  assert.equal(code, 0, salida.join('\n'));
+  assert.ok(/2 archivo/u.test(salida[0]), salida[0]);
 });
 
 test('EL REPOSITORIO REAL no publica la identidad de quien lo escribió', SOLO_FUENTE, async () => {
@@ -348,7 +463,7 @@ test('EL REPOSITORIO REAL no publica la identidad de quien lo escribió', SOLO_F
 });
 
 test('el gate declara que NO detecta nombres, sólo rutas e identidad de máquina', () => {
-  const { salida } = correr(['check'], { trackedFiles: () => ['README.md'], read: () => 'limpio\n' });
+  const { salida } = correr(['check'], { trackedFiles: () => ['README.md'], leerBlob: () => 'limpio\n' });
   const limite = salida.find((l) => /^LIMITE|^LÍMITE/u.test(l));
   assert.ok(limite, salida.join('\n'));
   assert.ok(/nombre/u.test(limite), `el límite tiene que nombrar el hueco de los nombres propios: ${limite}`);

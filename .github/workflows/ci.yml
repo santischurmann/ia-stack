@@ -1,0 +1,71 @@
+# Los gates de este protocolo corrian SOLO en la maquina del autor.
+#
+# Encontrado el 2026-09-14 comparando IA Stack contra otro protocolo que si tenia integracion
+# continua: este repositorio no tenia `.github/` en absoluto. Todo lo que se publicaba —1717 pruebas,
+# 53 scripts, 114 limites honestos— estaba verificado en un solo lugar, por una sola persona, y nadie
+# que clonara podia comprobar nada sin correrlo a mano. Un protocolo cuya promesa es «cada afirmacion
+# importante tiene detras un comando que la respalda» no puede pedirle eso a quien lo instala.
+#
+# ADEMAS ESTO MIDE ALGO QUE LA MAQUINA DEL AUTOR NO PUEDE MEDIR: si un verde depende de estado local
+# no rastreado. Ya paso: la cobertura daba 100% aca y REJECTABA en un clon limpio, porque dos ramas
+# solo se ejecutaban si existia `graphify-out/`, que esta en .gitignore. Ese verde era de una
+# carpeta, no del repositorio.
+#
+# LO QUE ESTE FLUJO NO HACE, dicho para que nadie lo suponga: no corre `verify-graphify-manifest`,
+# porque necesita un grafo construido que no viaja en el repositorio y su prueba ya se saltea
+# diciendolo. No publica nada, no despliega nada y no toca ningun secreto: el token solo puede leer.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Minimo privilegio: este flujo lee el codigo y nada mas. Sin esto, el token por defecto puede
+# escribir en el repositorio, que es mas permiso del que hace falta para correr pruebas.
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Suite y gates sobre un clon limpio
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Traer el codigo
+        uses: actions/checkout@v4
+        with:
+          # El historial completo: varios gates comparan contra la base de la rama, y con un clon
+          # superficial esa comparacion no existe y se leeria como «no hay nada que revisar».
+          fetch-depth: 0
+
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Sin dependencias, a proposito
+        run: |
+          test ! -f package.json || (echo "Este protocolo se declara sin dependencias externas y aparecio un package.json" && exit 1)
+          node --version
+
+      - name: Suite completa
+        run: node --test
+
+      - name: Cobertura de cada script inventariado
+        run: node scripts/verify-vcp-coverage.mjs
+
+      - name: El repositorio no publica la identidad de quien lo escribio
+        run: node scripts/verify-repo-clean.mjs check
+
+      - name: El indice cubre todo lo rastreado
+        run: node scripts/verify-vcp-index.mjs check
+
+      - name: Las promesas visibles del protocolo y sus limites honestos
+        run: node scripts/verify-vcp-contract.mjs check
+
+      - name: Cada gate se comporta sobre un directorio vacio como declara
+        run: node scripts/verify-empty-probe.mjs check contracts/empty-probe.json
+
+      - name: El runtime instalado es el del checkout
+        run: node scripts/verify-runtime-sync.mjs check

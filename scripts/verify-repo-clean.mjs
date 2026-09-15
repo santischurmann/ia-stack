@@ -23,6 +23,20 @@
 //   ningún archivo**: escribir el nombre del autor adentro del detector sería exactamente la misma
 //   filtración con otra forma.
 //
+// SE ESCANEA EL BLOB, NO EL ARCHIVO DEL ARBOL DE TRABAJO. Lo que un repositorio publica es lo que
+// git guarda, y las dos cosas divergen. El caso que lo demostro: git guarda un enlace simbolico
+// como un blob cuyo contenido es LA RUTA DESTINO, asi que un enlace a `/home/<alguien>/...`
+// publica esa ruta personal — y leer el archivo del arbol de trabajo **sigue el enlace** y lee el
+// destino, nunca el texto. Reproducido el 2026-09-14: un repositorio que publicaba
+// `/home/<alguien>/.config/secretos` salia en VERDE. Leer el blob tambien cubre el caso de un
+// archivo borrado del arbol pero todavia rastreado, que se publica igual.
+//
+// Y FALLA CERRADO. Un archivo que no se puede leer es un HALLAZGO, no un silencio: «no pude
+// mirar» no es «mire y no habia nada». El gate hermano `verify-security-baseline.mjs` ya lo hacia
+// asi —un fuente ilegible es severidad alta— de modo que el protocolo ya tenia el patron correcto
+// y este gate no lo seguia. Esa asimetria entre dos gates que escanean la misma superficie era el
+// defecto de fondo.
+//
 // LÍMITE HONESTO. Detecta rutas y la identidad de la máquina que lo corre. **No detecta nombres
 // propios, de clientes, de proyectos privados ni de carpetas personales que no tengan forma de
 // ruta**: para el gate son palabras como cualquier otra, y no hay forma mecánica de distinguirlas.
@@ -48,6 +62,33 @@ export const MIN_MOTIVO = 20;
  * silencio — se apaga diciéndolo, porque un gate que se desactiva callado es peor que no tenerlo.
  */
 export const MIN_USUARIO = 4;
+
+/**
+ * Un nombre de usuario que aparece en mas de esta fraccion de los archivos versionados es una
+ * PALABRA DEL DOMINIO, no una identidad, y buscarlo produce ruido en vez de senal.
+ *
+ * EL UMBRAL SALE DE UNA MEDICION, no de una intuicion. En un runner de GitHub Actions la cuenta se
+ * llama literalmente `runner`, y este protocolo menciona esa palabra en 72 de sus 393 archivos
+ * versionados —un 18%— porque el despachador de test rojo habla de runners todo el tiempo. La
+ * filtracion real que motivo este gate era el nombre del autor en 3 de 393: un 0,8%. La separacion
+ * entre las dos es de veinte veces, asi que el corte no esta en el filo de nada.
+ *
+ * Un gate que grita en cada corrida se termina apagando, y esa es la forma mas comun de perder un
+ * gate. Apagar la mitad ruidosa DICIENDOLO conserva la otra mitad, que no tiene este problema: una
+ * ruta de directorio personal es una ruta se llame como se llame la cuenta.
+ */
+export const FRACCION_DE_PALABRA = 0.05;
+
+/**
+ * Cuantos archivos hacen falta para que una frecuencia sea una medicion y no una anecdota.
+ *
+ * EL NUMERO NO ES ARBITRARIO: con veinte archivos, UNO SOLO es exactamente el 5%, o sea el
+ * umbral. Por debajo de veinte, un unico archivo con el nombre adentro ya superaria la
+ * fraccion y apagaria la comprobacion — que es justo el caso que hay que detectar, porque una
+ * filtracion real empieza en un archivo. Debajo del piso la regla no se aplica y se busca el
+ * nombre igual, que es el lado seguro del error.
+ */
+export const MIN_CORPUS = 20;
 
 const CONTRATO_POR_DEFECTO = join('contracts', 'repo-clean.json');
 
@@ -148,6 +189,15 @@ export function buscarEnTexto(texto, identidad = {}) {
   return hallazgos;
 }
 
+/**
+ * El contenido que git PUBLICA para una ruta rastreada: el blob del indice, no el archivo del
+ * arbol de trabajo. `git show :<ruta>` lee exactamente lo que un clon va a recibir, y para un
+ * enlace simbolico eso es el texto del destino.
+ */
+function leerBlobDeGit(raiz, ruta) {
+  return execFileSync('git', ['-C', raiz, 'show', `:${ruta}`], { encoding: 'buffer', stdio: 'pipe', maxBuffer: 64 * 1024 * 1024 });
+}
+
 /** Los archivos que git rastrea, relativos a la raíz. Sin repositorio, la lista es vacía. */
 function rastreadosPorGit(raiz) {
   try {
@@ -206,25 +256,40 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 0;
   }
 
-  const read = options.read ?? ((ruta) => readFileSync(join(raiz, ruta)));
+  const leerBlob = options.leerBlob ?? ((ruta) => leerBlobDeGit(raiz, ruta));
   const identidad = { home, usuario };
   const hallazgos = [];
+  const opacos = [];
   let revisados = 0;
-  let salteados = 0;
+  let binarios = 0;
 
+  // Se lee TODO primero y se clasifica despues: decidir si el nombre de usuario es una identidad o
+  // una palabra del dominio necesita la frecuencia sobre el conjunto, no sobre el archivo de turno.
+  const textos = [];
   for (const archivo of archivos) {
     let bytes;
     try {
-      bytes = read(archivo);
-    } catch {
-      // Rastreado pero ausente del disco: es un estado del árbol de trabajo, no una filtración.
-      salteados += 1;
+      bytes = leerBlob(archivo);
+    } catch (error) {
+      // FALLA CERRADO: no poder mirar un archivo que el repositorio publica no es haberlo mirado.
+      opacos.push({ archivo, motivo: error?.message ?? String(error) });
       continue;
     }
-    if (esBinario(bytes)) { salteados += 1; continue; }
-
+    if (esBinario(bytes)) { binarios += 1; continue; }
     revisados += 1;
-    const texto = Buffer.isBuffer(bytes) ? bytes.toString('utf8') : String(bytes);
+    textos.push({ archivo, texto: Buffer.isBuffer(bytes) ? bytes.toString('utf8') : String(bytes) });
+  }
+
+  // La frecuencia separa una identidad de una palabra del vocabulario del proyecto. Ver
+  // FRACCION_DE_PALABRA: el umbral sale de una medicion, no de una intuicion.
+  let usuarioEsPalabra = false;
+  if (identidad.usuario !== '' && revisados >= MIN_CORPUS) {
+    const conElNombre = textos.filter((f) => f.texto.includes(identidad.usuario)).length;
+    usuarioEsPalabra = conElNombre / revisados > FRACCION_DE_PALABRA;
+    if (usuarioEsPalabra) identidad.usuario = '';
+  }
+
+  for (const { archivo, texto } of textos) {
     // El indice siempre resuelve: los hallazgos traen el numero de linea que `buscarEnTexto` saco de
     // ESTE mismo texto, asi que una caida por si falta seria codigo muerto.
     const lineas = texto.split('\n');
@@ -232,6 +297,14 @@ export function main(args = process.argv.slice(2), options = {}) {
       if (permisoQueCubre(contrato.allowed, archivo, lineas[h.linea - 1])) continue;
       hallazgos.push({ archivo, ...h });
     }
+  }
+
+  if (opacos.length > 0) {
+    for (const o of opacos) {
+      writeError(`REJECTED: ${o.archivo} está rastreado y no se pudo leer su contenido publicado: ${o.motivo}. Un archivo que el repositorio publica y este gate no puede revisar NO es un archivo limpio: es uno que nadie miró.`);
+    }
+    writeError(`REJECTED: ${opacos.length} archivo(s) versionado(s) quedaron sin revisar. Este gate falla cerrado a propósito, igual que verify-security-baseline.mjs: «no pude mirar» no es «miré y no había nada».`);
+    return 1;
   }
 
   if (hallazgos.length > 0) {
@@ -242,8 +315,8 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
 
-  write(`OK: ${revisados} archivo(s) versionado(s) revisado(s) sin rastro de la identidad de quien corre este gate ni de rutas personales, con ${contrato.allowed.length} excepción(es) declarada(s) y ${salteados} archivo(s) binario(s) o ausente(s) fuera del alcance.`);
-  write(`LIMITE: detecta rutas con forma de directorio personal y la identidad de LA MÁQUINA QUE LO CORRE. NO detecta nombres propios, de clientes, de proyectos privados ni de carpetas personales que no tengan forma de ruta — para este gate son palabras como cualquier otra. Tampoco ve lo binario, lo no rastreado, ni lo ya escrito en el historial. Y una excepción declarada apaga su archivo: no distingue un marcador legítimo de una tapadera.${usuario === '' ? ` ADEMÁS, en esta corrida la búsqueda del nombre de usuario quedó APAGADA porque tiene menos de ${MIN_USUARIO} caracteres y produciría coincidencias falsas: acá sólo corrió la comprobación de rutas.` : ''}`);
+  write(`OK: ${revisados} archivo(s) versionado(s) revisado(s) por su CONTENIDO PUBLICADO —el blob, no el archivo del árbol de trabajo— sin rastro de la identidad de quien corre este gate ni de rutas personales, con ${contrato.allowed.length} excepción(es) declarada(s) y ${binarios} archivo(s) binario(s) fuera del alcance.`);
+  write(`LIMITE: detecta rutas con forma de directorio personal y la identidad de LA MÁQUINA QUE LO CORRE. NO detecta nombres propios, de clientes, de proyectos privados ni de carpetas personales que no tengan forma de ruta — para este gate son palabras como cualquier otra. Tampoco ve lo binario, lo no rastreado, ni lo ya escrito en el historial. Y una excepción declarada apaga su archivo: no distingue un marcador legítimo de una tapadera.${usuario === '' ? ` ADEMÁS, en esta corrida la búsqueda del nombre de usuario quedó APAGADA porque tiene menos de ${MIN_USUARIO} caracteres y produciría coincidencias falsas: acá sólo corrió la comprobación de rutas.` : ''}${usuarioEsPalabra ? ` ADEMÁS, en esta corrida la búsqueda del nombre de usuario quedó APAGADA porque ese nombre aparece en más del ${Math.round(FRACCION_DE_PALABRA * 100)}% de lo versionado: acá es una PALABRA del vocabulario del proyecto y no una identidad, así que buscarla sería ruido. La comprobación de rutas sí corrió. Si ese nombre además fuera una identidad filtrada, este gate no la vería.` : ''}`);
   return 0;
 }
 

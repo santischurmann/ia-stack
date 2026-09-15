@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +25,7 @@ const {
   readExclusions,
   readManifestPaths,
   readTrackedFiles,
+  MANIFEST_PATH,
   main,
 } = await import(`file://${script.replaceAll('\\', '/')}`);
 
@@ -358,4 +360,51 @@ test('sin manifiesto en disco no se inventa una fecha: vuelve al rechazo estrict
   assert.equal(code, 1, 'sin fecha de construcción, un archivo ausente sigue siendo cobertura mentida');
   assert.ok(errores.some((l) => l.includes('x.json')), errores.join('\n'));
   assert.ok(!errores.some((l) => /DESACTUALIZADO/u.test(l)), 'no puede reportar desactualización sin haber podido fechar');
+});
+
+// LA COBERTURA DE ESTE GATE VALIA SOLO EN LA MAQUINA DEL AUTOR.
+//
+// Encontrado el 2026-09-14 clonando el propio repositorio en limpio: `graphify-out/` esta en
+// .gitignore, asi que un clon recien hecho no tiene manifiesto, y las dos funciones que fechan el
+// grafo —`manifestBuiltAt` y `mtimeOf`, los valores por defecto de main— no se ejecutaban nunca.
+// Resultado: `verify-vcp-coverage.mjs` REJECTABA en cualquier maquina que no fuera la del autor, y
+// la afirmacion «cobertura 100%» escrita en los mensajes de commit era local.
+//
+// Un verde que depende de un directorio IGNORADO no es un verde del repositorio: es un verde de una
+// carpeta. Estas dos pruebas ejercitan esos valores por defecto contra carpetas descartables, con
+// manifiesto y sin el, asi que la cobertura pasa a valer para cualquiera que clone.
+test('el fechador del manifiesto devuelve null cuando no hay manifiesto, y un número cuando lo hay', () => {
+  const d = mkdtempSync(join(tmpdir(), 'vcp-graphify-cob-'));
+  try {
+    const salida = [];
+    const errores = [];
+
+    // Sin manifiesto: el fechador por defecto tiene que devolver null y el gate volver al modo
+    // estricto, NUNCA inventar una fecha.
+    main(['check'], d, {
+      readTracked: () => ['a.md'],
+      readManifestPaths: () => [],
+      readExclusionList: () => [],
+    }, (l) => salida.push(l), (l) => errores.push(l));
+    assert.ok(errores.length > 0 || salida.length > 0, 'el gate tiene que decir algo');
+
+    // Con manifiesto en disco: el mismo fechador por defecto ahora devuelve su mtime, y el de cada
+    // archivo tambien. Las dos ramas quedan ejecutadas sin depender de que exista graphify-out/.
+    mkdirSync(join(d, 'graphify-out'), { recursive: true });
+    writeFileSync(join(d, MANIFEST_PATH), JSON.stringify({ 'a.md': { mtime: 1 } }), 'utf8');
+    writeFileSync(join(d, 'a.md'), 'contenido', 'utf8');
+    // `reciente.md` EXISTE en disco y NO esta en el manifiesto: es el lado del fechador que devuelve
+    // un mtime de verdad. `nuevo.md` no existe: es el lado que devuelve 0. Hacen falta los dos.
+    writeFileSync(join(d, 'reciente.md'), 'nacio despues del grafo', 'utf8');
+    const s2 = [];
+    const e2 = [];
+    main(['check'], d, {
+      readTracked: () => ['a.md', 'nuevo.md', 'reciente.md'],
+      readManifestPaths: () => ['a.md'],
+      readExclusionList: () => [],
+    }, (l) => s2.push(l), (l) => e2.push(l));
+    assert.ok([...s2, ...e2].length > 0, 'el gate tiene que decir algo');
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
 });
