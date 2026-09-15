@@ -393,6 +393,28 @@ gate: prueba de vida del proceso (PID + boot id + *start ticks*, con un estado e
 edición directa del árbol. Las tres cierran huecos que IA Stack hoy **no** cubre, y las tres
 merecen una decisión aparte.
 
+## Tres decisiones tomadas sobre los hallazgos de la comparación
+
+**La integración continua se saca, por decisión tuya.** Se agregó, se publicó, corrió, y se retiró en
+el commit siguiente. Queda anotado lo que costaba y lo que compraba: los gates vuelven a correr sólo
+en la máquina de quien desarrolla, y **nadie que clone puede comprobar nada sin correrlo a mano**.
+Ese hueco vuelve a estar abierto y ahora está escrito. Lo que el CI sí alcanzó a demostrar antes de
+salir es que la cobertura del 100% dependía de una carpeta ignorada — ese arreglo se queda.
+
+**Los tres chequeos de período se corrieron, y los tres están sanos: vencidos, no rotos.**
+
+| Chequeo | Qué dijo |
+|---|---|
+| Sereno (auto-mejora) | TOCA: 10 días desde la última ronda, el período es 7 |
+| Ablación (limpieza medida) | TOCA: 13 días desde la última, el período es 7 |
+| Tablero | TOCA: 10 días desde el último, el período es 7 |
+
+Ninguno estaba roto en silencio, que era la pregunta. Los tres saben responder y venían
+respondiendo; nadie les preguntaba. Correrlos es trabajo aparte y sigue pendiente.
+
+**Lo que se construye es la firma humana**, que era el más barato de los tres huecos y el que más
+cambia: hoy `terminal_state: approved` lo escribe el agente y nadie más lo revisa.
+
 ## El grafo, reconstruido
 
 La prueba de cobertura del grafo venía salteada desde que empezó el ciclo, con el motivo escrito:
