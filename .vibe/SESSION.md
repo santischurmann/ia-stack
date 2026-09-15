@@ -408,13 +408,25 @@ en la máquina de quien desarrolla, y **nadie que clone puede comprobar nada sin
 Ese hueco vuelve a estar abierto y ahora está escrito. Lo que el CI sí alcanzó a demostrar antes de
 salir es que la cobertura del 100% dependía de una carpeta ignorada — ese arreglo se queda.
 
-**Los tres chequeos de período se corrieron, y los tres están sanos: vencidos, no rotos.**
+> **CORREGIDO EL MISMO DÍA, Y ESTO ES LO VIGENTE: el CI está adentro.** El párrafo de arriba quedó
+> escrito sobre una decisión que se tomó con un dato que te di MAL — se dijo que el flujo consumía
+> minutos de tu cuenta. Eso es cierto en repositorios privados y **falso en éste, que es público**:
+> ahí GitHub Actions no tiene costo ni tope. Con el dato corregido revisaste la decisión y el flujo
+> volvió. La historia lo muestra en tres commits: `d85bb1a` lo retira, `2b3758a` lo restituye, y hoy
+> `.github/workflows/ci.yml` existe y corre.
+>
+> **No se borra lo que decía el párrafo de arriba, a propósito.** Un registro de sesión es lo que se
+> pensó en ese momento, y reescribirlo para que cierre con el presente es la misma clase de cosa que
+> editar un packet sellado. Y además el registro de que una decisión se tomó sobre un dato falso vale
+> más que disimular que pasó.
 
-| Chequeo | Qué dijo |
-|---|---|
-| Sereno (auto-mejora) | TOCA: 10 días desde la última ronda, el período es 7 |
-| Ablación (limpieza medida) | TOCA: 13 días desde la última, el período es 7 |
-| Tablero | TOCA: 10 días desde el último, el período es 7 |
+**Los tres chequeos de período se corrieron, y los tres estaban sanos: vencidos, no rotos.** Dos se cerraron el 2026-09-15; la tercera sigue vencida y la columna de la derecha dice dónde quedó cada una.
+
+| Chequeo | Qué dijo entonces | Dónde quedó |
+|---|---|---|
+| Sereno (auto-mejora) | TOCA: 10 días desde la última ronda, el período es 7 | **Cerrado** el 2026-09-15: cuatro propuestas, y las cuatro implementadas ese mismo día |
+| Ablación (limpieza medida) | TOCA: 13 días desde la última, el período es 7 | **Sigue vencida.** Pide medir ocho tareas reales del operador en sus otros proyectos, antes y después de archivar cada tanda; un registro coherente e inventado pasa ese gate en verde, y eso es el verde falso que el protocolo existe para impedir |
+| Tablero | TOCA: 10 días desde el último, el período es 7 | **Cerrado** el 2026-09-15: 18 proyectos, fuera del árbol como el propio script exige |
 
 Ninguno estaba roto en silencio, que era la pregunta. Los tres saben responder y venían
 respondiendo; nadie les preguntaba. Correrlos es trabajo aparte y sigue pendiente.
