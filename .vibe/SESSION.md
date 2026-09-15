@@ -386,6 +386,13 @@ superar el umbral solo. La mitad ruidosa se apaga **diciéndolo**, y su precio q
 
 ### Lo que no se trajo, y por qué
 
+**Actualizado el 2026-09-15: las tres se decidieron una por una en `docs/adr/0002-las-tres-ideas-de-dovsky.md`.**
+La prueba de vida del candado **se adoptó** (`verify-lock-vivo.mjs`, con tres estados y no dos); la
+revalidación del árbol contra la evidencia **ya estaba implementada** y nadie lo había mirado
+(`tree_fingerprint` en el receipt, con prueba); exigir mecánicamente la aceptación humana **se
+declinó**, con el motivo del operador escrito; y el aislamiento del agente **no se adopta**, con sus
+tres razones. Lo que sigue es la nota original, que quedó desactualizada:
+
 De dovsky quedaron tres ideas medidas y **no adoptadas**, porque son cambios de arquitectura y no de
 gate: prueba de vida del proceso (PID + boot id + *start ticks*, con un estado explícito
 `reconcile_required` cuando no se puede probar); aceptación humana mecánicamente exigida, con el

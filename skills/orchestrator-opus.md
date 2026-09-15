@@ -169,8 +169,21 @@ NOTES: <only if STATUS != pass>
 )
 ```
 
-Before spawning: `tasks.json[task.id].owner = "<role>-<timestamp>"`, `locked = true`
-(atomic checkout, § AI COMPANY LAYER). On gate pass/abort: `locked = false`.
+Before spawning: `tasks.json[task.id].owner = "<role>-<timestamp>"`, `locked = true`, and
+`lock = {pid, boot, taken_at}` (atomic checkout, § AI COMPANY LAYER). On gate pass/abort:
+`locked = false`, `lock = null`.
+
+**Por qué el `lock` y no sólo el `owner`.** Si la sesión muere en el medio, el candado queda puesto
+para siempre y `owner` no prueba nada: es un rol y una fecha. La sesión siguiente no puede
+distinguir «alguien está trabajando en esto» de «esto lo dejó un proceso muerto», así que o rompe el
+trabajo de otro o se queda trabada. `verify-lock-vivo.mjs` contesta eso con tres estados y no dos —
+vivo, muerto, y `reconcile_required` cuando no puede probar ninguno—, y el `boot` es lo que hace que
+funcione: un PID se reusa, así que después de reiniciar «¿existe el 4242?» diría «sí» sobre un
+candado de hace tres días.
+
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-lock-vivo.mjs check docs/tasks.json
+```
 
 If a task looks harder mid-build and config allowed override (Phase 5 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
 

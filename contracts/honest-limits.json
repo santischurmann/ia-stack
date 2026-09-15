@@ -720,6 +720,12 @@
       "file": "skills/gates.md",
       "phrase": "NO sabe si una carpeta es de un proceso vivo",
       "why": "La herramienta distingue una carpeta de corrida muerta de una viva por la antiguedad, y eso es una apuesta y no una prueba: no hay forma portable de preguntarle al sistema si el proceso que creo una carpeta temporal sigue corriendo. Una corrida larga que pase el umbral se veria como basura. Por eso el modo por defecto LISTA y borrar es una decision explicita, y por eso el umbral es de horas y no de minutos. Lo que si esta acotado es el alcance: solo entra lo que coincide EXACTO con un prefijo derivado de tests/ mas los seis caracteres de mkdtemp, y nunca una carpeta con un fuente del usuario adentro."
+    },
+    {
+      "limit_id": "lock-liveness-cannot-see-pid-reuse",
+      "file": "skills/gates.md",
+      "phrase": "NO distingue un PID reusado dentro del mismo arranque",
+      "why": "El gate cierra el caso que de verdad pasa: la sesion que muere y la maquina que se reinicia, donde el marcador de arranque prueba que el proceso que puso el candado no existe mas. Lo que no puede hacer es distinguir, DENTRO del mismo arranque, un PID que el sistema reasigno a otro programa. dovsky lo cierra guardando la marca de tiempo de inicio del proceso -- start ticks --, que Node no expone de forma portable: en Linux sale de /proc y en Windows hace falta otra herramienta, y este protocolo no agrega dependencias. La respuesta a eso NO es suponer: es el tercer estado. Suponer muerto soltaria el candado de alguien trabajando y suponer vivo dejaria el repositorio trabado para siempre, asi que declara reconcile_required, sale 1 y lo decide una persona."
     }
   ]
 }

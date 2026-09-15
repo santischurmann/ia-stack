@@ -243,6 +243,10 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/adr/0002-las-tres-ideas-de-dovsky.md",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/cycles/research-cycle-2026-08-29/phase-decisions.json",
       "class": "evidencia"
     },
@@ -780,6 +784,10 @@
     },
     {
       "path": "scripts/verify-lessons.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-lock-vivo.mjs",
       "class": "gate"
     },
     {
@@ -1416,6 +1424,10 @@
     },
     {
       "path": "tests/verify-lessons.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-lock-vivo.test.mjs",
       "class": "prueba"
     },
     {

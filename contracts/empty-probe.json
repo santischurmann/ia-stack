@@ -514,6 +514,15 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay carpetas de prueba viejas que limpiar, y eso no es un incumplimiento: escribe VACIO y sale 0. Importa que sea VACIO y no OK porque esta herramienta BORRA cuando se lo piden, y un verde sobre una carpeta que no miro seria la peor forma de invitar a correrla con --borrar."
+    },
+    {
+      "script": "verify-lock-vivo.mjs",
+      "args": [
+        "check",
+        "docs/tasks.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay plan, asi que no hay candado que probar: escribe VACIO y sale 0. La distincion importa mas aca que en otros gates porque este decide si un candado se puede soltar: un OK sobre un plan que no existe se leeria como que nadie tiene nada tomado, que es una afirmacion, y lo cierto es que no se miro nada."
     }
   ]
 }

@@ -7,6 +7,39 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Las tres ideas de dovsky, decididas una por una** en
+  `docs/adr/0002-las-tres-ideas-de-dovsky.md`. Venían juntas en una línea de `SESSION.md` como «tres
+  no adoptadas», y esa forma de anotarlas era parte del problema: **son de clases distintas**, y
+  tratarlas igual obligaba a un veredicto único que ninguna merecía. Separarlas dejó ver que **una ya
+  estaba implementada y la nota decía que no**.
+
+  - **Prueba de vida del candado — adoptada.** `verify-lock-vivo.mjs`. `tasks.json` marca
+    `locked: true` antes de despachar, y si la sesión muere el candado queda puesto **para siempre**:
+    `owner` es un rol y una fecha, no prueba nada. La sesión siguiente o rompe el trabajo de otro o
+    se queda trabada. **Tres estados y no dos** — `vivo`, `muerto`, y `reconcile_required` cuando no
+    se puede probar ninguno, que es el que hace que esto sirva: las dos adivinanzas son destructivas.
+    El `boot` es lo que un PID solo no puede contestar, porque un PID se reusa y después de reiniciar
+    «¿existe el 4242?» diría «sí» sobre un candado de hace tres días. **No es hipotético: pasó acá**,
+    con las decenas de corridas que se mataron ese día.
+  - **Aceptación humana con el árbol revalidado — mitad ya estaba, mitad declinada.** El
+    `tree_fingerprint` del receipt ya se compara contra el estado evaluado vivo, con prueba: no había
+    nada que traer, y nadie lo había mirado. Exigir mecánicamente que una persona aceptó **se declinó
+    por decisión del operador**, con su motivo citado en el ADR: una ceremonia de firmas que nadie
+    sabe operar produce *la apariencia* de aceptación humana, que es peor que un límite declarado.
+  - **Aislamiento del agente con delta — no se adopta**, con tres razones en orden de peso: es otra
+    arquitectura y no una pieza, bubblewrap no corre en Windows, y cambiaría a quién protege el
+    protocolo — IA Stack asume un agente que coopera y falla, no uno que miente a propósito. **Si
+    algún día se adopta, se adopta entero**: media caja de arena es peor que ninguna, porque se
+    declara.
+
+- **Una prueba de duración medía contención, no duración.** La comprobación de que el tope del gate
+  de vínculos deja margen sobre el archivo más lento corría también dentro del gate de cobertura,
+  que lanza la suite **entera en paralelo**: el mismo archivo daba 111 s solo y 121–126 s con noventa
+  procesos compitiendo, contra un tope de 120. **La primera hipótesis era falsa y se descartó
+  midiendo**: se pensó que era la instrumentación heredada, se sacó `NODE_V8_COVERAGE` del hijo y
+  siguió fallando. Ahora se saltea bajo cobertura **diciendo por qué** — un pase silencioso se leería
+  como «el tope tiene margen», y lo cierto es que no se pudo medir.
+
 - **Las cuatro propuestas de la ronda del 2026-09-15, cerradas el mismo día.** Cada una con su
   prueba roja antes, y las cuatro salieron de defectos medidos ese día — tres de que el propio
   protocolo me agarró haciendo algo mal.

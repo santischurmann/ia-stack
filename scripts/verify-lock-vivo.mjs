@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+// verify-lock-vivo.mjs — un candado que nadie puede soltar porque no se sabe si su dueño existe.
+//
+// LA IDEA VIENE DE `quant-dhawan/dovsky`, estudiado el 2026-09-14. Para saber si un proceso que dice
+// estar corriendo sigue vivo no se conforma con el PID: guarda PID más identificador de arranque de
+// la máquina, y cuando no puede probar ninguna de las dos cosas declara un estado explícito
+// `reconcile_required` en vez de adivinar. Quedó anotada como no adoptada; ésta es su adopción.
+//
+// EL MODO DE FALLA ES REAL Y PASÓ ACÁ. `tasks.json` marca `locked: true` y `owner: "<rol>-<fecha>"`
+// antes de despachar, y lo suelta al pasar el gate. Si la sesión muere en el medio —y el 2026-09-15
+// se mataron decenas de corridas en este repositorio— el candado queda puesto **para siempre**, y
+// `owner` no prueba nada: es un rol y una fecha. La sesión siguiente no puede distinguir «alguien
+// está trabajando en esto» de «esto lo dejó un proceso muerto», así que o rompe el trabajo de otro
+// o se queda trabada. Las dos salidas son malas y hoy no hay forma de elegir con un dato.
+//
+// TRES RESPUESTAS, Y LA TERCERA ES LA QUE HACE QUE ESTO SIRVA:
+//
+//   vivo    — el proceso existe en ESTA máquina y en ESTE arranque. No se toca.
+//   muerto  — el arranque es otro, o el proceso ya no está. El candado es un fantasma: se suelta.
+//   reconcile_required — no se puede probar ninguna de las dos. Se dice, y decide una persona.
+//
+// POR QUÉ EL ARRANQUE Y NO SÓLO EL PID. Un PID se reusa. Después de reiniciar, el 4242 es otro
+// programa —puede ser el navegador—, y preguntar «¿existe el 4242?» diría «sí, vivo» sobre un
+// candado de hace tres días: exactamente el verde falso que este gate viene a impedir.
+//
+// LÍMITE HONESTO. Prueba que el proceso que puso el candado **ya no existe** cuando el arranque
+// cambió, y eso cubre el caso que de verdad pasa: la sesión que muere y la máquina que se reinicia.
+// **NO puede distinguir un PID reusado dentro del mismo arranque**: Node no expone de forma portable
+// la marca de tiempo de inicio de un proceso, que es lo que dovsky usa para cerrar ese hueco. Ahí no
+// inventa un veredicto — declara `reconcile_required` y sale 1. Y no sabe si el proceso vivo es el
+// que dice ser: comprueba que exista, no qué está haciendo.
+
+import { readFileSync } from 'node:fs';
+import { hostname, uptime } from 'node:os';
+import { join } from 'node:path';
+
+export const USAGE = 'usage: verify-lock-vivo.mjs check <tasks.json>';
+export const EMPTY = 'VACÍO';
+
+export const VIVO = 'vivo';
+export const MUERTO = 'muerto';
+export const RECONCILE = 'reconcile_required';
+
+/** El arranque se redondea a minutos: `uptime()` se corre unos milisegundos entre dos llamadas. */
+const GRANO_MS = 60_000;
+
+/**
+ * Un marcador del arranque de ESTA máquina. No es el `boot_id` de Linux —que no existe en Windows—
+ * sino cuándo arrancó, redondeado, más el nombre del equipo: dos llamadas seguidas dan lo mismo y un
+ * reinicio lo cambia, que es todo lo que hace falta para comparar. El nombre del equipo va adelante
+ * porque dos máquinas pueden haber arrancado en el mismo minuto.
+ */
+export function marcaDeArranque(io = {}) {
+  const nombre = (io.hostname ?? hostname)();
+  const segundos = (io.uptime ?? uptime)();
+  const ahora = io.ahora ?? Date.now();
+  return `${nombre}:${Math.round((ahora - segundos * 1000) / GRANO_MS)}`;
+}
+
+/** Lo que hay que escribir al tomar un candado para poder preguntar después. */
+export function tomarLock({ pid = process.pid, arranque = marcaDeArranque(), ahora = new Date().toISOString() } = {}) {
+  return { pid, boot: arranque, taken_at: ahora };
+}
+
+const esObjeto = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** ¿El proceso que puso este candado sigue vivo? Las tres respuestas, nunca dos. */
+export function estadoDelLock(lock, { arranque, existe }) {
+  if (!esObjeto(lock) || typeof lock.pid !== 'number' || typeof lock.boot !== 'string') {
+    return {
+      estado: RECONCILE,
+      motivo: 'el candado no declara pid y boot: es de antes de que esto existiera, o lo escribió algo que no sigue el protocolo. No se puede probar ni que viva ni que haya muerto',
+    };
+  }
+  // EL ARRANQUE PRIMERO, y es lo que un PID solo no puede contestar: si la máquina se reinició, el
+  // proceso que puso el candado no existe más, y da igual qué esté usando ese número hoy.
+  if (lock.boot !== arranque) {
+    return { estado: MUERTO, motivo: `el candado es de otro arranque (${lock.boot}, y ahora es ${arranque}): el proceso ${lock.pid} que lo puso no existe más` };
+  }
+  let vive;
+  try {
+    vive = existe(lock.pid);
+  } catch (error) {
+    return { estado: RECONCILE, motivo: `no se pudo preguntar por el proceso ${lock.pid}: ${error.message}. Suponer que murió soltaría el candado de alguien que está trabajando, y suponer que vive dejaría esto trabado para siempre` };
+  }
+  if (!vive) return { estado: MUERTO, motivo: `el proceso ${lock.pid} ya no existe en este arranque` };
+  return { estado: VIVO, motivo: `el proceso ${lock.pid} existe en este mismo arranque` };
+}
+
+/**
+ * ¿Existe ese proceso? `kill(pid, 0)` no manda ninguna señal: sólo pregunta.
+ *
+ * La señal se inyecta para poder probar las tres respuestas del sistema operativo. EPERM -- existe y
+ * es de otro usuario -- no se puede provocar de forma portable, y es justo la que NO hay que
+ * confundir con «no existe»: un candado de otra cuenta esta vivo.
+ */
+export const existeProceso = (pid, señal = (p) => process.kill(p, 0)) => {
+  try {
+    señal(pid);
+    return true;
+  } catch (error) {
+    // ESRCH es «no existe». EPERM es «existe y no es tuyo», que para esto cuenta como vivo.
+    if (error.code === 'ESRCH') return false;
+    if (error.code === 'EPERM') return true;
+    throw error;
+  }
+};
+
+const noVacio = (v) => typeof v === 'string' && v.trim().length > 0;
+
+function parseArgs(args) {
+  if (args.length !== 2 || args[0] !== 'check' || !noVacio(args[1])) return null;
+  return { ruta: args[1] };
+}
+
+export function main(args = process.argv.slice(2), options = {}) {
+  const write = options.write ?? console.log;
+  const writeError = options.writeError ?? console.error;
+
+  const parsed = parseArgs(args);
+  if (parsed === null) {
+    writeError(USAGE);
+    return 2;
+  }
+
+  const cwd = options.cwd ?? '.';
+  const leer = options.leer ?? ((ruta) => JSON.parse(readFileSync(join(cwd, ruta), 'utf8')));
+
+  let doc;
+  try {
+    doc = leer(parsed.ruta);
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      write(`${EMPTY}: no hay plan en ${parsed.ruta}. Sin tareas no hay candados que revisar.`);
+      return 0;
+    }
+    writeError(`REJECTED: ${parsed.ruta} existe pero no se puede leer: ${error?.message ?? error}.`);
+    return 1;
+  }
+
+  const tareas = esObjeto(doc) && Array.isArray(doc.tasks) ? doc.tasks : [];
+  const tomadas = tareas.filter((t) => esObjeto(t) && t.locked === true);
+  if (tomadas.length === 0) {
+    write(`${EMPTY}: ninguna de las ${tareas.length} tarea(s) está tomada. No hay candado que probar, y eso no es una aprobación: es que no había nada que mirar.`);
+    return 0;
+  }
+
+  const arranque = options.arranque ?? marcaDeArranque();
+  const existe = options.existe ?? existeProceso;
+
+  const cuenta = { [VIVO]: 0, [MUERTO]: 0, [RECONCILE]: 0 };
+  const problemas = [];
+  for (const t of tomadas) {
+    const { estado, motivo } = estadoDelLock(t.lock, { arranque, existe });
+    cuenta[estado] += 1;
+    if (estado === MUERTO) {
+      problemas.push(`REJECTED: ${t.id}: candado fantasma — ${motivo}. Es seguro soltarlo: poné locked en false y owner en null, y volvé a despachar la tarea.`);
+    } else if (estado === RECONCILE) {
+      problemas.push(`REJECTED: ${t.id}: RECONCILE_REQUIRED — ${motivo}. Esto lo decide una persona: mirá si hay una sesión trabajando en ${t.id} antes de soltar nada.`);
+    }
+  }
+
+  if (problemas.length > 0) {
+    for (const p of problemas) writeError(p);
+    return 1;
+  }
+
+  write(`OK: ${cuenta[VIVO]} candado(s) vivo(s) sobre ${tomadas.length} tarea(s) tomada(s): el proceso que los puso existe en este mismo arranque, así que hay alguien trabajando y no se tocan.`);
+  write('LIMITE: prueba que el proceso que puso el candado ya no existe cuando el arranque cambió, que es el caso que de verdad pasa —la sesión que muere, la máquina que se reinicia—. NO distingue un PID reusado dentro del mismo arranque: Node no expone de forma portable la marca de inicio de un proceso, así que ahí declara reconcile_required en vez de inventar un veredicto. Y comprueba que el proceso exista, nunca qué está haciendo.');
+  return 0;
+}
+
+if (process.argv[1] && process.argv[1].endsWith('verify-lock-vivo.mjs')) {
+  process.exitCode = main();
+}
