@@ -1,0 +1,27 @@
+{
+  "schema": "vcp.red-adapters/1",
+  "why": "Los runners de test rojo se declaran uno por uno para que el despachador no tenga que adivinar. La coincidencia contra command es EXACTA: pytest declarado no habilita pytest -q, porque las opciones cambian la forma del reporte y cada adaptador depende de esa forma. Clasificar la salida de un runner con el parser de otro convierte un rojo mal leido en un verde, y ese es el unico modo de falla que este contrato existe para impedir. Cada fila declara ademas QUE GARANTIA da, porque no son iguales y leerlas igual es el segundo modo de falla.",
+  "adapters": [
+    {
+      "command": "node --test",
+      "script": "verify-red-node.mjs",
+      "guarantee": "fuerte",
+      "why": "El unico codigo del proyecto que se ejecuta es el archivo de prueba, y corre adentro del marco TAP del harness, que escapa todo lo que ese archivo imprime. El proyecto no tiene un archivo de configuracion que node --test ejecute como codigo antes de las pruebas, asi que no hay desde donde reescribir el reporte ni forzar el codigo de salida.",
+      "limit": "Prueba que una prueba real corrio y fallo con metadata con forma de AssertionError. NO prueba que la asercion sea genuina: un throw de un Error con name reasignado a AssertionError desde adentro de un test() reproduce la forma exacta."
+    },
+    {
+      "command": "pytest",
+      "script": "verify-red-pytest.mjs",
+      "guarantee": "menor",
+      "why": "pytest ejecuta conftest.py del proyecto como plugin, con acceso a session.config.option.xmlpath y a session.exitstatus. Falsificado y medido en entorno virgen el 2026-09-14: un hookwrapper de pytest_sessionfinish reescribe el JUnit XML despues de que LogXML lo escribio y fuerza el codigo de salida, con una unica prueba que PASA. El stdout tampoco sirve de contraprueba, porque la salida capturada de la prueba se reimprime textual y sin escapar.",
+      "limit": "No prueba que haya corrido una prueba, y menos que la asercion sea genuina. --noconftest cierra el vector pero rompe cualquier proyecto con fixtures en conftest, asi que no sirve como default. Esta brecha es de protocolo y revision, no tecnica: el verde de este adaptador vale menos que el del nativo y tiene que leerse distinto."
+    },
+    {
+      "command": "vitest",
+      "script": "verify-red-vitest.mjs",
+      "guarantee": "menor",
+      "why": "vitest carga vitest.config.js del proyecto, que es codigo arbitrario. Falsificado y medido en entorno virgen el 2026-09-14: un globalSetup cuyo teardown corre despues del reporter reescribe el archivo de salida y fija process.exitCode, con cero pruebas fallando. Ademas failureMessages es literalmente err.stack y Error.prototype.name es escribible, asi que la forma de una AssertionError se falsifica desde adentro de un test() real.",
+      "limit": "No prueba que la asercion sea genuina ni que el reporte lo haya escrito vitest. --config apuntando a un archivo neutral cierra el vector del globalSetup pero deja al proyecto sin sus alias, sus setupFiles y su environment, asi que la mayoria de los proyectos reales no pueden correr sus pruebas asi. La brecha residual es de protocolo y revision, no tecnica."
+    }
+  ]
+}

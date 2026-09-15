@@ -199,6 +199,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/red-adapters.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/repo-clean.json",
       "class": "contrato"
     },
@@ -764,6 +768,18 @@
     },
     {
       "path": "scripts/verify-red-node.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red-pytest.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red-vitest.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-red.mjs",
       "class": "gate"
     },
     {
@@ -1335,11 +1351,31 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-receipt-adaptador.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-receipt-gate.test.mjs",
       "class": "prueba"
     },
     {
       "path": "tests/verify-receipt-v3.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-cobertura.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-dispatch-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-dispatch-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-dispatch.test.mjs",
       "class": "prueba"
     },
     {
@@ -1356,6 +1392,30 @@
     },
     {
       "path": "tests/verify-red-node.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-pytest-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-pytest-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-pytest.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-vitest-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-vitest-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-vitest.test.mjs",
       "class": "prueba"
     },
     {

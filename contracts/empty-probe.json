@@ -436,6 +436,42 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio git no rastrea nada, y una carpeta sin versionar no puede filtrar nada versionado: el gate escribe VACIO y sale 0. La distincion importa porque el modo de falla de este gate es el silencio. Si no encontrar archivos se leyera como OK, un repositorio donde git falla —o donde alguien corre el gate desde la carpeta equivocada— pareceria limpio, y limpio es justo lo que no se puede afirmar sin haber mirado nada."
+    },
+    {
+      "script": "verify-red.mjs",
+      "args": [
+        "check",
+        "--test",
+        "tests/no-existe.test.mjs",
+        "--command",
+        "node --test"
+      ],
+      "expect": "reject",
+      "why": "Sobre un directorio vacio no hay archivo de prueba, asi que el despachador resuelve el adaptador declarado, lo lanza, y el adaptador rechaza porque el archivo no existe. Rechazar es lo correcto y NO es un VACIO: pedir verificar un test rojo sobre un archivo que no esta es una peticion mal formada, no una carpeta que todavia no empezo. La diferencia importa porque un VACIO acá dejaria pasar la fase 5 sin ningun rojo visible, que es justo lo que LAW 1 prohibe."
+    },
+    {
+      "script": "verify-red-pytest.mjs",
+      "args": [
+        "check",
+        "--test",
+        "test_no_existe.py",
+        "--command",
+        "pytest"
+      ],
+      "expect": "reject",
+      "why": "Mismo criterio que el despachador: sin archivo de prueba no hay nada que medir, y eso se rechaza. El adaptador ni siquiera llega a sondear pytest, porque primero comprueba que el archivo exista: asi el veredicto no depende de si la maquina tiene Python instalado."
+    },
+    {
+      "script": "verify-red-vitest.mjs",
+      "args": [
+        "check",
+        "--test",
+        "no-existe.test.js",
+        "--command",
+        "vitest"
+      ],
+      "expect": "reject",
+      "why": "Mismo criterio. El orden de las comprobaciones importa: primero el archivo de prueba, despues el binario de vitest. Al reves, una carpeta vacia sin vitest instalado se quejaria de la instalacion y taparia el problema real, que es que no hay prueba."
     }
   ]
 }

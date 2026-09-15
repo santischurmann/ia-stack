@@ -75,7 +75,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' }).replace(/\r\n/g, '\n');
@@ -329,9 +329,31 @@ export function validateNotReviewedField(value) {
   return { ok: true };
 }
 
+/**
+ * AC8 · Un comando que invoca un adaptador de test rojo, por el despachador o directo.
+ *
+ * POR QUE SE RECONOCE POR EL COMANDO. Desde que hay tres adaptadores, dos dan una garantia
+ * estrictamente MENOR: pytest y vitest ejecutan codigo de configuracion del proyecto con control
+ * sobre el reporte y sobre el codigo de salida, y los dos ataques estan falsificados y medidos en
+ * entorno virgen. Si el receipt anota los tres verdes igual, la diferencia desaparece justo en el
+ * documento que se archiva, que es el unico que alguien va a leer seis meses despues.
+ *
+ * LIMITE: esto reconoce la FORMA del comando escrito, no lo que se ejecuto. Un comando redactado a
+ * mano que no nombre el adaptador esquiva la regla, igual que el resto del receipt, que comprueba la
+ * forma de la declaracion y nunca que sea cierta.
+ */
+export function invocaAdaptadorDeRed(comando) {
+  return /\bverify-red(?:-[a-z0-9-]+)?\.(?:mjs|sh|ps1)\b/u.test(String(comando ?? ''));
+}
+
 /** One acceptance-criteria entry. `verdict !== 'COMPLIANT'` blocks by itself — a receipt with any
  * UNTESTED/PARTIAL/FAILING AC can exist as a draft, but never reaches an approved `check`. */
-export function validateAcceptanceCriterion(ac, cwd, { readFile = readFileSync } = {}) {
+export function validateAcceptanceCriterion(ac, cwd, {
+  readFile = readFileSync,
+  resolveFile = safeRegularFile,
+  hashOf = (bytes) => createHash('sha256').update(bytes).digest('hex'),
+  readRedAdapters = (raiz) => JSON.parse(readFileSync(join(raiz, 'contracts', 'red-adapters.json'), 'utf8')),
+} = {}) {
   if (!ac || typeof ac !== 'object' || Array.isArray(ac)) return { ok: false, reason: 'acceptance_criteria entry must be an object' };
   if (!nonEmptyString(ac.ac_id)) return { ok: false, reason: 'acceptance_criteria entry missing ac_id' };
   const label = ac.ac_id;
@@ -344,15 +366,64 @@ export function validateAcceptanceCriterion(ac, cwd, { readFile = readFileSync }
   if (!nonEmptyString(ac.result)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty result` };
   let file;
   try {
-    file = safeRegularFile(ac.test_file, cwd);
+    file = resolveFile(ac.test_file, cwd);
   } catch (error) {
     return { ok: false, reason: `${label}: test_file is unsafe: ${error.message}` };
   }
-  const actualHash = createHash('sha256').update(readFile(file)).digest('hex');
+  const actualHash = hashOf(readFile(file));
   if (actualHash !== ac.test_hash_sha256) {
     return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk — the test changed since this AC was verified, regenerate the AC entry` };
   }
-  return { ok: true, testPath: file };
+
+  // AC8 · Con que adaptador se obtuvo ESTE verde. La regla es condicional y mecanica: sólo aplica a
+  // los criterios cuyo comando invoca un adaptador de test rojo, asi que ningun receipt anterior
+  // cambia de veredicto por existir esta comprobacion.
+  if (!invocaAdaptadorDeRed(ac.command)) {
+    if (nonEmptyString(ac.red_adapter)) {
+      return { ok: false, reason: `${label}: declara red_adapter pero su command no invoca ningun adaptador de test rojo — o el comando esta mal escrito, o el adaptador no viene al caso` };
+    }
+    return { ok: true, testPath: file };
+  }
+
+  // La garantia NO se copia al receipt: se resuelve contra el contrato. Declararla a mano seria la
+  // forma obvia de borrar la distincion, escribiendo `fuerte` sobre un adaptador que es `menor`.
+  if ('red_guarantee' in ac) {
+    return { ok: false, reason: `${label}: la garantia no se declara en el receipt, se resuelve contra contracts/red-adapters.json. Sacá red_guarantee: escribirla a mano permitiria llamar fuerte a un adaptador que el contrato declara menor` };
+  }
+  if (!nonEmptyString(ac.red_adapter)) {
+    return { ok: false, reason: `${label}: su command invoca un adaptador de test rojo, asi que tiene que declarar red_adapter con el archivo que produjo el verde. Sin eso, un verde de garantia menor se lee igual que uno del adaptador nativo` };
+  }
+
+  let contrato;
+  try {
+    contrato = readRedAdapters(cwd);
+  } catch (error) {
+    return { ok: false, reason: `${label}: no se pudo leer contracts/red-adapters.json para resolver la garantia de ${ac.red_adapter}: ${error.message}. Sin el contrato no hay con que comparar, y dejar pasar seria aprobar sin mirar` };
+  }
+
+  const fila = (contrato?.adapters ?? []).find((a) => a?.script === ac.red_adapter);
+  if (!fila) {
+    const declarados = (contrato?.adapters ?? []).map((a) => a?.script).join(', ') || 'ninguno';
+    return { ok: false, reason: `${label}: red_adapter ${JSON.stringify(ac.red_adapter)} no está declarado en contracts/red-adapters.json. Los declarados son: ${declarados}` };
+  }
+
+  return { ok: true, testPath: file, guarantee: fila.guarantee };
+}
+
+/**
+ * AC8 · El resumen de un receipt valido. A NIVEL DE MODULO y exportado a proposito: vivia adentro de
+ * `main` como closure, y una rama que solo se puede ejecutar montando un repositorio git entero con
+ * un receipt aprobado es una rama que en la practica nadie comprueba.
+ *
+ * Un receipt con verdes de garantia menor NO imprime lo mismo que uno con verdes del adaptador
+ * nativo. Si se lee igual, es igual — y lo que queda archivado es este texto.
+ */
+export function validatedSummary(receipt, label) {
+  const base = `${label}: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`;
+  const menores = receipt.acceptance_criteria.filter((ac) => invocaAdaptadorDeRed(ac?.command) && ac?.red_adapter && ac.red_adapter !== 'verify-red-node.mjs');
+  if (menores.length === 0) return base;
+  const cuales = menores.map((ac) => `${ac.ac_id} via ${ac.red_adapter}`).join(', ');
+  return `${base}. ATENCION — GARANTIA MENOR: ${menores.length} de esos verdes salieron de un adaptador de garantia menor (${cuales}), que NO equivale al nativo de Node: esos runners ejecutan codigo de configuracion del proyecto con control sobre el reporte y sobre el codigo de salida, y los dos ataques estan falsificados. Ver contracts/red-adapters.json`;
 }
 
 export function validateAcceptanceCriteria(acceptanceCriteria, cwd, options, declaredPaths) {
@@ -703,9 +774,7 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     return receipt;
   }
 
-  function validatedSummary(receipt, label) {
-    return `${label}: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`;
-  }
+
 
   if (cmd === 'check') {
     if (!arg) fail('usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]');

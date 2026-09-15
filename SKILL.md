@@ -725,8 +725,21 @@ que un subagente diga que pasó: se confía en lo que se deriva, no en lo que se
 explícito** de `docs/spec.md`. No es "al menos una": cada criterio tiene la suya, y se pueden contar
 sin ejecutar nada. El gate es `.vibe/vcp-runtime/scripts/verify-red.sh` (bash) o
 `.vibe/vcp-runtime/scripts/verify-red.ps1` (PowerShell), con un archivo de prueba literal y el
-comando exacto `node --test`. El adaptador que viene incluido ejecuta esa invocación él mismo, y
-rechaza cualquier otro runner en vez de adivinar leyendo una salida arbitraria. **Sólo pasa una
+comando exacto del runner. Los dos envoltorios llaman al **despachador**, que resuelve el comando
+contra `contracts/red-adapters.json` por **igualdad exacta** y lanza el adaptador declarado; un
+runner que no esté en ese contrato se rechaza nombrándolo y listando los que sí están, **sin
+adivinar nunca**. `pytest` declarado no habilita `pytest -q`: las opciones cambian la forma del
+reporte, y clasificar la salida de un runner con el parser de otro convierte un rojo mal leído en un
+verde.
+
+**Los tres adaptadores NO dan la misma garantía, y eso se dice en voz alta.** `node --test` es
+`fuerte`: el único código del proyecto que corre es el archivo de prueba, adentro del marco TAP del
+harness. `pytest` y `vitest` son `menor`, porque los dos ejecutan código de configuración del
+proyecto —`conftest.py`, `vitest.config.js`— con control sobre el reporte **y sobre el código de
+salida**; los dos ataques están falsificados, medidos en entorno virgen y comprobados contra los
+runners reales en `research/sources/adaptadores-red-2026-09-14.md`. Un verde de garantía menor sale
+con su límite escrito al lado, y **el receipt tiene que registrar con qué adaptador se obtuvo**: si
+un verde débil se lee igual que uno fuerte, es igual. **Sólo pasa una
 prueba que corrió y falló en su propia comprobación** — el gate exige un bloque de diagnóstico con
 `code: 'ERR_ASSERTION'` atado a su línea `not ok`. Un error de carga (el archivo bajo prueba
 todavía no existe, o no parsea) **no** pasa: fail-closed deliberado, porque un archivo de test

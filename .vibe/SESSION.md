@@ -176,6 +176,20 @@ valor que no es número. La exención pasó a ser un motivo escrito por fila.
 - **El frontmatter de una skill dice cuántas fases son, y el gate de menús tolera la marca de
   recomendación fuera de una opción.** Los dos límites quedaron declarados (106 y 107).
 
+### Cuatro guardas más que no se podían alcanzar
+
+Construir los tres adaptadores dejó cuatro guardas defensivas que el gate de cobertura marcó como
+inalcanzables: una caída `?? 'sin detalle'` después de un `String(...).trim()`, que nunca es nulo;
+dos comprobaciones de contención que repetían lo que la línea anterior ya había rechazado; y un
+valor por defecto en una función privada a la que quien la llama siempre le pasa el valor.
+
+**La respuesta a las tres primeras no fue borrarlas sino reemplazarlas por la buena.** Las dos de
+contención comparaban texto, y comparar texto no ve un enlace simbólico adentro del proyecto que
+apunte afuera. Ahora las dos usan `isContainedProjectPath`, la contención del protocolo, que
+resuelve con `realpath`. Escribir una segunda implementación más débil al lado de una ya endurecida
+es como se abren los agujeros que después nadie encuentra — y la señal de que estaba pasando fue,
+literalmente, que la guarda no se podía ejecutar.
+
 ### El gate de cobertura encontró código muerto, no falta de pruebas
 
 Dos guardas defensivas del gate nuevo eran **inalcanzables**: la deduplicación por línea —cada clase
@@ -228,6 +242,14 @@ faltaba la distinción de fondo entre *viejo* y *deshonesto*, que es la que cerr
   un fallo de aserción (`<archivo>:<línea>: <Excepción>`), así que el discriminador entre esos dos
   tiene que ser el par `errors`/`failures`, nunca la línea sola. Queda en
   `research/sources/adaptadores-red-2026-09-14.md`.
+- **Correr los adaptadores contra los runners de verdad encontró un falso negativo que la batería
+  no veía.** vitest informa la ruta del fallo **absoluta**; pytest la informa relativa al rootdir.
+  Los fixtures se habían escrito desde la ficha de research, que cita rutas cortas, así que las 15
+  pruebas del adaptador pasaban y **el rojo genuino salía RECHAZADO** contra vitest real. El
+  adaptador rechazaba exactamente lo que tenía que aprobar. Ahora acepta una ruta absoluta que caiga
+  adentro del proyecto, y habla siempre en rutas del proyecto — una ruta absoluta impresa lleva
+  adentro el nombre de usuario, y ese mensaje termina en registros de CI.
+
 - **El gate de repositorio limpio encontró contaminación real en su primera corrida.** Antes de
   escribirlo se midió qué había: el nombre de usuario del autor aparecía **siete veces en tres
   archivos versionados y ya publicados** —un expediente de discovery, una fuente pineada y cinco
@@ -276,9 +298,25 @@ fase 6, antes de sellar, porque una filtración que entra a `.vibe/AUDIT.md` no 
 está declarado y es grande: **no detecta nombres**, y de las cuatro filtraciones reales que lo
 motivaron habría encontrado dos.
 
-**Lo que sigue sin construir de la spec**: el despachador de test rojo y los adaptadores de pytest y
-vitest, o sea AC6, AC7 y AC8. Siete de los diez criterios están construidos; los tres restantes
-siguen vacíos a propósito.
+**AC6, AC7 y AC8 están construidos, y con eso los diez criterios de la spec tienen código detrás.**
+
+- **AC6** · `scripts/verify-red.mjs` es el despachador: resuelve el comando contra
+  `contracts/red-adapters.json` por **igualdad exacta** y no adivina nunca. `pytest` declarado no
+  habilita `pytest -q`, porque las opciones cambian la forma del reporte.
+- **AC7** · `scripts/verify-red-pytest.mjs` clasifica sobre el JUnit XML por contadores, no por
+  prosa ni por exit code, y comprueba contra el fuente que la línea señalada tenga un `assert`.
+- **AC8** · el receipt exige `red_adapter` en todo criterio cuyo comando invoque un adaptador, y
+  **la garantía se resuelve contra el contrato, no se copia**: declarar `fuerte` a mano sobre un
+  adaptador que el contrato dice `menor` se rechaza. El resumen del receipt cambia de texto cuando
+  hubo verdes de garantía menor.
+- Además `scripts/verify-red-vitest.mjs`, que la matriz de stacks ya nombraba para los tipos B y C.
+
+**Un proyecto Python ya puede pasar LAW 1**, que era lo que este ciclo venía a destrabar.
+
+Los tres adaptadores se corrieron contra los runners reales, no sólo contra fixtures: nueve casos de
+pytest y siete de vitest, más los dos ataques. **Los dos ataques aprueban**, y eso está declarado
+como límite honesto en vez de disimulado — es la diferencia entre una garantía menor escrita y una
+garantía menor escondida.
 
 ## No verificado
 

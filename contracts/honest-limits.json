@@ -666,6 +666,24 @@
       "file": "skills/gates.md",
       "phrase": "Lo que este gate NO detecta son los nombres",
       "why": "El gate encuentra rutas con forma de directorio personal y la identidad de la maquina que lo corre, que son las dos cosas mecanicamente decidibles. Un nombre propio, el de un cliente, el de un proyecto privado o el de una carpeta personal sin forma de ruta son palabras iguales a cualquier otra: no hay predicado que las separe sin una lista, y escribir esa lista adentro del repositorio seria publicar exactamente el dato que se quiere proteger. Medido el 2026-09-14 sobre las cuatro filtraciones reales del ciclo: el gate habria detectado dos —el nombre de usuario en fixtures y la ruta absoluta en el cuaderno de sesion— y las otras dos no, porque eran una subcarpeta personal nombrada y una linea de auditoria citando proyectos privados. Esa mitad queda como revision humana y no hay forma de cerrarla con este gate."
+    },
+    {
+      "limit_id": "red-dispatch-routes-but-does-not-judge",
+      "file": "skills/gates.md",
+      "phrase": "Verifica QUE adaptador corresponde y lo lanza; NO verifica lo que el adaptador concluye",
+      "why": "El despachador resuelve el comando contra el contrato y lanza el adaptador declarado. Lo que ese adaptador concluye no lo revisa nadie mas: si el adaptador miente, la mentira pasa por aca con su etiqueta de garantia puesta. Tampoco comprueba que el comando declarado sea el que el proyecto usa de verdad para correr sus pruebas, ni puede: alguien declara node --test y corre otra cosa, y el despachador ve unicamente la cadena que le pasaron. Y la lista de adaptadores es un DATO escrito a mano, no una deduccion: una fila que declare garantia fuerte sobre un runner debil no lo vuelve fuerte, solo lo declara mal, y ningun gate puede detectarlo."
+    },
+    {
+      "limit_id": "red-pytest-forged-report-with-an-assert-passes",
+      "file": "skills/gates.md",
+      "phrase": "un reporte forjado que señale una linea que SI tiene un `assert` pasa igual",
+      "why": "El adaptador lee el archivo fuente en vez de creerle al reporte, y eso cierra el caso del fallo inventado para una prueba que no existe. No cierra el caso general: pytest ejecuta conftest.py del proyecto como plugin, con acceso a la ruta del XML y al codigo de salida, asi que un hookwrapper de pytest_sessionfinish puede reescribir el reporte despues de escrito y forzar el exit code con una unica prueba que pasa. Comprobado contra pytest real el 2026-09-14: ese ataque APRUEBA este gate cuando la linea señalada contiene un assert, y solo lo rechaza cuando no lo contiene. --noconftest cerraria el vector y rompe cualquier proyecto con fixtures, asi que no es un default usable. La brecha es de protocolo y revision, no tecnica."
+    },
+    {
+      "limit_id": "red-vitest-globalsetup-attack-passes",
+      "file": "skills/gates.md",
+      "phrase": "ese ataque pasa este gate",
+      "why": "vitest carga vitest.config.js del proyecto, que es codigo arbitrario. Un globalSetup cuyo teardown corre despues del reporter reescribe el archivo de salida y fija process.exitCode con cero pruebas fallando. Falsificado, reproducido en entorno virgen y comprobado contra vitest real el 2026-09-14: el ataque aprueba este gate. Ademas failureMessages es literalmente err.stack y Error.prototype.name es escribible, asi que la forma de una AssertionError se falsifica desde adentro de un test() real. --config con un archivo neutral cerraria el primer vector y deja al proyecto sin sus alias, sus setupFiles y su environment, asi que no es un default usable."
     }
   ]
 }
