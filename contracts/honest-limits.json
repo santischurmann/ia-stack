@@ -146,10 +146,10 @@
       "why": "El gate resuelve el id del criterio contra el titulo de una llamada test() real: prueba que el vinculo existe, no que la prueba comprueba el criterio. Sin el limite, un AC nombrado por una prueba que verifica otra cosa se lee como AC cubierto, y la unica senal que quedaba de que faltaba probarlo se apaga."
     },
     {
-      "limit_id": "evidence-trace-criterion-ids-are-not-namespaced",
+      "limit_id": "evidence-trace-namespacing-has-a-migration-cost",
       "file": "skills/gates.md",
-      "phrase": "el id no lleva el nombre de la funcionalidad, asi que una prueba de OTRA feature que use el mismo",
-      "why": "El emparejamiento es por identificador literal contra los titulos de todas las pruebas del directorio, y los identificadores de criterio no llevan el slug de su funcionalidad. Como la plantilla de spec numera desde AC1, dos features cualesquiera solapan sus identificadores desde el primero. Medido el 2026-09-14: una spec recien escrita con diez criterios salio en verde porque verify-audit-chain.test.mjs titula sus pruebas con AC1, AC2, AC3, AC4, AC11 y AC12, que son criterios de otra cosa. Eso es MAS grave que el limite de suficiencia ya declarado: ahi la prueba al menos hablaba del mismo criterio y podia no alcanzar; aca no hay ninguna relacion. El gate no puede cerrarlo solo porque nada en un titulo de prueba dice a que funcionalidad pertenece."
+      "phrase": "el cierre tiene un costo de migración que no se puede esquivar",
+      "why": "El verde falso quedo cerrado: un criterio se identifica por el par funcionalidad + id, y la funcionalidad sale del titulo de la propia spec. Lo que queda es el costo de esa decision, y conviene decirlo en vez de descubrirlo: todo titulo de prueba escrito antes del 2026-09-14 lleva el id solo, asi que correr criteria contra una spec anterior reporta TODOS sus criterios sin cubrir. No es que las pruebas falten, es que su traza no esta escrita. Migrar es manual y prueba por prueba, porque decidir cual prueba responde a cual criterio es juicio y no una transformacion de texto: elegir mal produce una traza que miente, que es peor que no tenerla. Y el limite de fondo no se movio: el gate sigue comprobando que una prueba NOMBRE el criterio, nunca que lo compruebe."
     },
     {
       "limit_id": "evidence-trace-degrades-to-green-without-inputs",

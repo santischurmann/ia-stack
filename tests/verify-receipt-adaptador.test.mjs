@@ -76,7 +76,7 @@ test('un criterio que NO invoca un adaptador no necesita declarar uno', () => {
   assert.equal(r.ok, true, r.reason);
 });
 
-test('AC8 · un criterio que invoca un adaptador SIN declararlo se rechaza', () => {
+test('eleccion-de-stack · AC8 · un criterio que invoca un adaptador SIN declararlo se rechaza', () => {
   const r = validateAcceptanceCriterion(
     criterio({ command: 'node scripts/verify-red.mjs check --test tests/test_a.py --command "pytest"' }),
     repoRoot,

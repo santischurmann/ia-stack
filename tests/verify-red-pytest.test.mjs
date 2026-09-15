@@ -84,7 +84,7 @@ test('un rojo genuino aprueba: failures=1, errors=0, AssertionError, y la línea
   assert.ok(salida.some((l) => /LIMITE|LÍMITE/u.test(l)), 'tiene que declarar qué NO puede comprobar');
 });
 
-test('AC7 · si la línea señalada NO contiene una aserción, rechaza', () => {
+test('eleccion-de-stack · AC7 · si la línea señalada NO contiene una aserción, rechaza', () => {
   const { code, errores } = correr(undefined, { read: () => 'def test_suma():\n    return 3\n' });
   assert.equal(code, 1);
   assert.ok(errores.some((l) => /assert/u.test(l) && /l[íi]nea/u.test(l)), errores.join('\n'));

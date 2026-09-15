@@ -112,6 +112,10 @@ test('E2E · las nuevas garantías del runtime instalado funcionan sobre un proy
   // The strict spec gate is opt-in but usable from the installed runtime.
   mkdirSync(join(root, 'docs'), { recursive: true });
   writeFileSync(join(root, 'docs', 'spec.md'), [
+    // El titulo con la funcionalidad no es decorativo: un identificador como AC1 no identifica nada
+    // sin el, porque todas las specs numeran desde AC1 y el criterio de una quedaria cubierto por la
+    // prueba de otra. `verify-evidence-trace criteria` rechaza una spec con criterios y sin titulo.
+    '# Spec: demo-de-punta-a-punta', '',
     '## Problem / Problema', 'Necesitamos un resultado repetible.',
     '## Discovery / Investigación previa', 'La evidencia local fue revisada.',
     '## Target Users / Usuarios', 'Equipo de producto.',
@@ -183,13 +187,16 @@ test('E2E · a medida que aparecen los artefactos, los gates pasan de VACÍO a v
   // 2. Con spec y una prueba que nombra su criterio: verifica de verdad.
   mkdirSync(join(root, 'docs'), { recursive: true });
   mkdirSync(join(root, 'tests'), { recursive: true });
-  writeFileSync(join(root, 'docs', 'spec.md'), '# Spec\n\n- [ ] **AC1:** GIVEN algo WHEN corre THEN sale 0.\n', 'utf8');
-  writeFileSync(join(root, 'tests', 'demo.test.mjs'), "import test from 'node:test';\ntest('AC1 · cubre el criterio', () => {});\n", 'utf8');
+  // El titulo lleva la funcionalidad, y la prueba la nombra junto al id: el par <slug> + <id> es lo
+  // que identifica un criterio. Sin el slug, AC1 de esta spec quedaria cubierto por la prueba de
+  // cualquier otra, que es el verde falso que se cerro el 2026-09-14.
+  writeFileSync(join(root, 'docs', 'spec.md'), '# Spec: demo-de-gates\n\n- [ ] **AC1:** GIVEN algo WHEN corre THEN sale 0.\n', 'utf8');
+  writeFileSync(join(root, 'tests', 'demo.test.mjs'), "import test from 'node:test';\ntest('demo-de-gates · AC1 · cubre el criterio', () => {});\n", 'utf8');
   const conSpec = gate(root, 'verify-evidence-trace.mjs', 'criteria', '--spec', 'docs/spec.md', '--tests', 'tests');
   assert.deepEqual({ clase: conSpec.clase, nombra: conSpec.salida.includes('AC1') || conSpec.salida.includes('1 criterio') }, { clase: 'ok', nombra: true }, conSpec.salida);
 
   // 3. Un criterio sin prueba que lo nombre: rechaza, y dice cuál.
-  writeFileSync(join(root, 'docs', 'spec.md'), '# Spec\n\n- [ ] **AC1:** uno.\n- [ ] **AC2:** dos, sin prueba.\n', 'utf8');
+  writeFileSync(join(root, 'docs', 'spec.md'), '# Spec: demo-de-gates\n\n- [ ] **AC1:** uno.\n- [ ] **AC2:** dos, sin prueba.\n', 'utf8');
   const faltante = gate(root, 'verify-evidence-trace.mjs', 'criteria', '--spec', 'docs/spec.md', '--tests', 'tests');
   assert.deepEqual({ clase: faltante.clase, nombraAC2: faltante.salida.includes('AC2') }, { clase: 'reject', nombraAC2: true });
 

@@ -67,7 +67,7 @@ test('los ocho códigos son exactamente A a H, y el orden es el declarado', () =
   assert.deepEqual(TIPOS_DE_PRODUCTO, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
 });
 
-test('FALSIFICACIÓN · AC2 · un tipo de producto sin fila se rechaza nombrándolo', () => {
+test('FALSIFICACIÓN · eleccion-de-stack · AC2 · un tipo de producto sin fila se rechaza nombrándolo', () => {
   const sinE = matriz({ rows: matriz().rows.filter((r) => r.product_type !== 'E') });
   const violaciones = validateMatrix(sinE, idsDisponibles);
   assert.ok(

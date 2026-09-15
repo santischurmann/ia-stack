@@ -227,7 +227,7 @@ test('los ocho códigos de tipo de producto se aceptan, y sólo ésos', () => {
   assert.deepEqual(TIPOS_DE_PRODUCTO, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']);
 });
 
-test('FALSIFICACIÓN · rechaza un código inventado, en minúscula, y una forma que no es objeto', () => {
+test('FALSIFICACIÓN · eleccion-de-stack · AC1 · rechaza un código inventado, en minúscula, y una forma que no es objeto', () => {
   const inventado = validateIntake(intake({ tipo_de_producto: { codigo: 'Z', motivo: respuesta('Algo') } }));
   assert.ok(inventado.some((v) => /Z/u.test(v)), JSON.stringify(inventado));
 

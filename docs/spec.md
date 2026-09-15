@@ -34,16 +34,16 @@ atados a la decisión `d002` de `run-001`. Lo medido:
 El pedazo mínimo es AC1 más AC2: que declarar un tipo de producto devuelva un stack con fuente,
 fecha y costo de escalar. Si eso solo no ahorra trabajo, el resto no lo salva.
 
-- [ ] **AC1:** GIVEN un expediente de Intake, WHEN declara `tipo_de_producto` con código fuera del enum A-H o sin motivo real, THEN `verify-intake.mjs` sale 1 nombrando la clave.
-- [ ] **AC2:** GIVEN la matriz, WHEN algún tipo de producto no tiene fila, THEN `verify-stack-matrix.mjs` sale 1 y nombra el tipo faltante.
-- [ ] **AC3:** GIVEN un servicio referenciado por la matriz, WHEN no declara qué evento saca del plan gratuito, THEN el gate sale 1 y nombra el servicio.
-- [ ] **AC4:** GIVEN el contrato de límites, WHEN su fecha de captura supera el período declarado, THEN el gate sale 1 en vez de aceptarla.
-- [ ] **AC5:** GIVEN un directorio sin matriz, WHEN corre el gate, THEN escribe `VACÍO:` y sale 0, y la prueba de vacío lo acepta como tal y no como aprobación.
-- [ ] **AC6:** GIVEN un runner no declarado, WHEN se pide el gate de test rojo, THEN sale 1 nombrando el comando, sin adivinar adaptador.
-- [ ] **AC7:** GIVEN un reporte de pytest cuya línea señalada no contiene una aserción, WHEN corre el adaptador, THEN sale 1; y su límite honesto declara que un reporte forjado que sí la contenga pasa igual.
-- [ ] **AC8:** THE SYSTEM SHALL registrar en el receipt con qué adaptador se obtuvo cada verde, de modo que el de garantía menor no se lea igual que el nativo.
-- [ ] **AC9:** GIVEN lo versionado, WHEN contiene una ruta absoluta de directorio personal, THEN el gate de repositorio limpio sale 1 antes de que la traza se selle.
-- [ ] **AC10:** GIVEN un frontmatter de skill, WHEN declara una cantidad de fases distinta de la canónica, THEN la suite sale 1 nombrando el archivo.
+- [x] **AC1:** GIVEN un expediente de Intake, WHEN declara `tipo_de_producto` con código fuera del enum A-H o sin motivo real, THEN `verify-intake.mjs` sale 1 nombrando la clave.
+- [x] **AC2:** GIVEN la matriz, WHEN algún tipo de producto no tiene fila, THEN `verify-stack-matrix.mjs` sale 1 y nombra el tipo faltante.
+- [x] **AC3:** GIVEN un servicio referenciado por la matriz, WHEN no declara qué evento saca del plan gratuito, THEN el gate sale 1 y nombra el servicio.
+- [x] **AC4:** GIVEN el contrato de límites, WHEN su fecha de captura supera el período declarado, THEN el gate sale 1 en vez de aceptarla.
+- [x] **AC5:** GIVEN un directorio sin matriz, WHEN corre el gate, THEN escribe `VACÍO:` y sale 0, y la prueba de vacío lo acepta como tal y no como aprobación.
+- [x] **AC6:** GIVEN un runner no declarado, WHEN se pide el gate de test rojo, THEN sale 1 nombrando el comando, sin adivinar adaptador.
+- [x] **AC7:** GIVEN un reporte de pytest cuya línea señalada no contiene una aserción, WHEN corre el adaptador, THEN sale 1; y su límite honesto declara que un reporte forjado que sí la contenga pasa igual.
+- [x] **AC8:** THE SYSTEM SHALL registrar en el receipt con qué adaptador se obtuvo cada verde, de modo que el de garantía menor no se lea igual que el nativo.
+- [x] **AC9:** GIVEN lo versionado, WHEN contiene una ruta absoluta de directorio personal, THEN el gate de repositorio limpio sale 1 antes de que la traza se selle.
+- [x] **AC10:** GIVEN un frontmatter de skill, WHEN declara una cantidad de fases distinta de la canónica, THEN la suite sale 1 nombrando el archivo.
 
 ## Constraints / Restricciones
 
@@ -100,5 +100,5 @@ sale a la red.
 | Un verde débil se lee como uno fuerte | AC8 más el límite honesto de cada adaptador |
 | La matriz se llena de opinión en vez de fuentes | AC3: una fila sin servicio que resuelva no pasa |
 | La tabla navegable empuja el cierre | Queda en Non-Goals y se genera desde el dato |
-| Medición de adaptadores hecha en entorno no limpio | Declarado como límite en su ficha; repetir en entorno virgen antes de construir |
-| Los criterios de esta spec dan verde contra pruebas de otra funcionalidad | Los identificadores no llevan el slug y la plantilla numera desde AC1, así que el solapamiento es la regla. Declarado como límite el 2026-09-14; **el verde de `evidence-trace criteria` no cuenta como cobertura de estos criterios hasta que exista la prueba nombrada en cada uno** |
+| Medición de adaptadores hecha en entorno no limpio | **Resuelto**: se repitió en entorno virgen con cero complementos y todo se sostuvo; los dos adaptadores se corrieron además contra pytest y vitest reales |
+| Los criterios de esta spec dan verde contra pruebas de otra funcionalidad | **Cerrado**: un criterio se identifica por el par funcionalidad + identificador, y la funcionalidad sale del título de la propia spec. Las diez pruebas nombran su criterio, así que el verde de `evidence-trace criteria` ahora sí es cobertura de estos criterios |

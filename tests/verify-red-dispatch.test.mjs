@@ -69,7 +69,7 @@ test('un uso inválido sale 2 y no se confunde con un rechazo', () => {
   }
 });
 
-test('AC6 · un runner no declarado sale 1, lo nombra, y NO adivina adaptador', () => {
+test('eleccion-de-stack · AC6 · un runner no declarado sale 1, lo nombra, y NO adivina adaptador', () => {
   const corridas = [];
   const { code, errores } = correr(['check', '--test', 'tests/a.test.mjs', '--command', 'pytest -q --tb=short'], {
     run: (...a) => { corridas.push(a); return { status: 0, stdout: '', stderr: '' }; },

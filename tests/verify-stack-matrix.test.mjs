@@ -60,7 +60,7 @@ test('AC3 · un contrato completo no tiene violaciones', () => {
   assert.deepEqual(validateLimits(contrato()), []);
 });
 
-test('FALSIFICACIÓN · AC3 · un servicio sin disparador de escalado se rechaza nombrándolo', () => {
+test('FALSIFICACIÓN · eleccion-de-stack · AC3 · un servicio sin disparador de escalado se rechaza nombrándolo', () => {
   const sinTrigger = contrato({ services: [servicio({ upgrade_trigger: '' })] });
   const violaciones = validateLimits(sinTrigger);
   assert.ok(
@@ -136,7 +136,7 @@ test('el contrato real del repositorio pasa su propia validación', async () => 
 // POR QUÉ IMPORTA LA DISTINCIÓN. Un gate que aprueba por ausencia de entrada dice que la cobertura
 // está bien cuando en realidad no se miró nada. Es la invención propia de este repositorio y todo
 // gate nuevo tiene que declarar cuál de las dos cosas hace.
-test('AC5 · sin matriz ni contrato escribe VACÍO y sale 0, sin decir OK', () => {
+test('eleccion-de-stack · AC5 · sin matriz ni contrato escribe VACÍO y sale 0, sin decir OK', () => {
   const salida = [];
   const errores = [];
   const code = main(['check', 'docs/no-existe.json'], {

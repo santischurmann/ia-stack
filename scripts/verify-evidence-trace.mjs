@@ -5,7 +5,16 @@
 // them by hand; nothing obliged the next session.
 //
 // HONEST LIMIT: `criteria` proves that a literal test()/it() declaration NAMES the criterion, not
-// that the test actually checks it — traceability, never sufficiency. `claims` proves that a
+// that the test actually checks it — traceability, never sufficiency.
+//
+// LA IDENTIDAD DE UN CRITERIO ES <slug> + <id>, NO EL ID SOLO. Los identificadores de criterio no
+// llevan el nombre de la funcionalidad y la plantilla de spec numera desde AC1, asi que dos
+// features cualesquiera solapan sus identificadores desde el primero. Medido el 2026-09-14: una
+// spec recien escrita con diez criterios y CERO pruebas propias salio en verde, porque otro
+// archivo de pruebas titulaba las suyas con AC1, AC2, AC3 y AC4 — criterios de otra funcionalidad.
+// Por eso una prueba cuenta solo si nombra las DOS cosas como segmentos de su titulo. El slug sale
+// del titulo de la spec que se esta comprobando, no de una bandera: quien corre el gate no puede
+// equivocarse de funcionalidad ni elegir la que le conviene. `claims` proves that a
 // declared link resolves to an identifier the spec declares, not that the claim supports it. And
 // both degrade to exit 0 where there is nothing to compare against (no spec, no Discovery, a spec
 // with no criteria, a claim with no declared link): absence of a spec is not a violation, so a
@@ -34,6 +43,7 @@ export const MENTION_SEPARATOR = '·';
 export const LINK_FIELDS = ['linked_requirement_id', 'linked_ac_id'];
 
 const CRITERION_LINE = /^[ \t]*[-*+][ \t]+\[[ xX]?\][ \t]*\*\*(AC\d+)\b[^*]*:\*\*/gmu;
+const FEATURE_TITLE = /^#[ \t]+Spec:[ \t]+([a-z0-9]+(?:-[a-z0-9]+)*)[ \t]*$/mu;
 const BOLD_RUN = /\*\*([^*]+)\*\*/gu;
 const LEADING_TOKEN = /^[A-Za-z0-9-]*/u;
 const IDENTIFIER = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$/u;
@@ -71,6 +81,19 @@ export function literalTestTitles(source) {
   return titles;
 }
 
+/**
+ * El slug de la funcionalidad, leido del titulo de la spec: `# Spec: <slug>`.
+ *
+ * Se exige la forma de un slug —minusculas, digitos y guiones— porque es la misma que exigen los
+ * cinco gates que ya reciben un feature-slug por argumento. Un titulo con espacios o mayusculas no
+ * es un slug y se trata como ausente: el gate rechaza en vez de degradar al emparejamiento flojo,
+ * porque degradar dejaria la puerta abierta a recuperar el verde falso borrando el titulo.
+ */
+export function readFeatureSlug(source) {
+  const match = FEATURE_TITLE.exec(String(source ?? ''));
+  return match ? match[1] : null;
+}
+
 export function titleMentions(title, criterionId) {
   return title.split(MENTION_SEPARATOR).some((segment) => segment.trim() === criterionId);
 }
@@ -86,9 +109,20 @@ export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) 
   if (!io.exists(specFile)) {
     return { ok: true, vacuous: true, message: `sin ${specPath}: no hay criterios declarados que cubrir.` };
   }
-  const criteria = readCriterionIds(io.read(specFile, 'utf8'));
+  const spec = io.read(specFile, 'utf8');
+  const slug = readFeatureSlug(spec);
+  const criteria = readCriterionIds(spec);
   if (criteria.length === 0) {
     return { ok: true, vacuous: true, message: `${specPath} no declara ningún criterio con la forma "${CRITERION_SHAPE}".` };
+  }
+  // Una spec CON criterios y SIN funcionalidad no se puede comprobar, y degradar al emparejamiento
+  // flojo dejaria la puerta abierta: cualquiera recupera el verde falso borrando el titulo.
+  if (slug === null) {
+    return {
+      ok: false,
+      code: 'EVIDENCE_TRACE_SPEC_WITHOUT_FEATURE',
+      message: `${specPath} declara ${criteria.length} criterio(s) y su titulo no dice de que funcionalidad son. Tiene que empezar con "# Spec: <slug>", en minusculas y con guiones. Sin eso, un identificador como AC1 no identifica nada: todas las specs numeran desde AC1, asi que el criterio de una quedaria cubierto por la prueba de otra.`,
+    };
   }
   let sources;
   try {
@@ -99,6 +133,11 @@ export function checkCriteria(projectRoot, specPath, testsDir, io = DEFAULT_IO) 
   const mentioned = new Set();
   for (const source of sources) {
     for (const title of literalTestTitles(source)) {
+      // LAS DOS COSAS, no una: el id identifica el criterio DENTRO de su spec, y el slug dice de
+      // cual spec. Sin el slug, el primer criterio de cualquier funcionalidad cubre al primero de
+      // todas las demas. El orden de los segmentos es libre a proposito, porque el protocolo ya
+      // obliga al prefijo `FALSIFICACIÓN · ` en algunas pruebas y fijar posiciones lo prohibiria.
+      if (!titleMentions(title, slug)) continue;
       for (const criterionId of criteria) {
         if (titleMentions(title, criterionId)) mentioned.add(criterionId);
       }

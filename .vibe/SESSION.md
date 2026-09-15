@@ -176,6 +176,28 @@ valor que no es número. La exención pasó a ser un motivo escrito por fila.
 - **El frontmatter de una skill dice cuántas fases son, y el gate de menús tolera la marca de
   recomendación fuera de una opción.** Los dos límites quedaron declarados (106 y 107).
 
+### El verde falso se cerró cambiando qué IDENTIFICA a un criterio
+
+El límite honesto 108 decía que los identificadores de criterio no llevan el nombre de la
+funcionalidad, y que como la plantilla numera desde `AC1`, **dos specs cualesquiera solapan sus
+identificadores desde el primero**. Medido: una spec recién escrita con diez criterios y cero
+pruebas propias salía en verde contra títulos de otro archivo.
+
+La corrección no fue endurecer el emparejamiento sino **cambiar la identidad**: un criterio es el
+par `funcionalidad + id`, y la prueba tiene que nombrar los dos. **La funcionalidad sale del título
+de la propia spec**, no de una bandera — quien corre el gate no puede equivocarse de funcionalidad
+ni elegir la que le conviene. Y una spec con criterios y sin ese título **se rechaza**: degradar al
+emparejamiento viejo habría dejado la puerta abierta a recuperar el verde falso borrando una línea.
+
+La colisión estaba viva en el repositorio, no en teoría: `tests/verify-intake.test.mjs` tiene
+títulos `AC2 ·` y `AC6 ·` que son criterios de otra funcionalidad.
+
+**Lo que costó, y que quedó declarado como el límite residual**: todo título escrito antes de este
+cambio lleva el id solo, así que correr `criteria` contra una spec vieja reporta todos sus criterios
+sin cubrir. No es que falten las pruebas — es que su traza no está escrita, y migrarla es prueba por
+prueba, porque decidir cuál prueba responde a cuál criterio es juicio. Elegir mal produce una traza
+que miente, que es peor que no tenerla.
+
 ### Cuatro guardas más que no se podían alcanzar
 
 Construir los tres adaptadores dejó cuatro guardas defensivas que el gate de cobertura marcó como
@@ -298,7 +320,10 @@ fase 6, antes de sellar, porque una filtración que entra a `.vibe/AUDIT.md` no 
 está declarado y es grande: **no detecta nombres**, y de las cuatro filtraciones reales que lo
 motivaron habría encontrado dos.
 
-**AC6, AC7 y AC8 están construidos, y con eso los diez criterios de la spec tienen código detrás.**
+**Los diez criterios están construidos Y con traza verificable.** Los casilleros de `docs/spec.md`
+pasaron a `- [x]` recién ahora, cuando cada uno tiene una prueba que lo nombra con su funcionalidad
+— antes el verde de `evidence-trace criteria` era falso y marcarlos habría sido firmar sobre un gate
+que se sabía roto.
 
 - **AC6** · `scripts/verify-red.mjs` es el despachador: resuelve el comando contra
   `contracts/red-adapters.json` por **igualdad exacta** y no adivina nunca. `pytest` declarado no

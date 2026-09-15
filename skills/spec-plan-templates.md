@@ -15,7 +15,7 @@ Use verbatim. Replace `<placeholders>`. Config menu (Phase 3 SPEC / Phase 4 PLAN
 ## TEMPLATE: docs/spec.md
 
 ```markdown
-# Spec: <feature-name>
+# Spec: <feature-slug>
 
 **Date:** <YYYY-MM-DD> | **Status:** Draft | Approved
 

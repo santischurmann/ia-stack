@@ -16,6 +16,7 @@ import {
   main,
   parseArgs,
   readCriterionIds,
+  readFeatureSlug,
   REQUIRE_LINKS_FLAG,
   titleMentions,
 } from '../scripts/verify-evidence-trace.mjs';
@@ -187,8 +188,8 @@ test('criteria sin docs/spec.md sale en verde: un proyecto sin spec no incumple 
 test('criteria con todos los criterios nombrados por una prueba sale en verde e informa cuántos', () => fixture((root) => {
   writeSpec(root);
   writeTests(root, {
-    'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n",
-    'dos.test.mjs': "test('FALSIFICACIÓN · AC92 · cubre el segundo', () => {});\n",
+    'uno.test.mjs': "test('demo · AC91 · cubre el primero', () => {});\n",
+    'dos.test.mjs': "test('FALSIFICACIÓN · demo · AC92 · cubre el segundo', () => {});\n",
   });
   const result = checkCriteria(root, 'docs/spec.md', 'tests');
   assert.deepEqual({ ok: result.ok, dice2: /\b2\b/u.test(result.message) }, { ok: true, dice2: true });
@@ -196,7 +197,7 @@ test('criteria con todos los criterios nombrados por una prueba sale en verde e 
 
 test('FALSIFICACIÓN · criteria nombra el criterio que ninguna prueba menciona y sale en rojo', () => fixture((root) => {
   writeSpec(root);
-  writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre sólo el primero', () => {});\n" });
+  writeTests(root, { 'uno.test.mjs': "test('demo · AC91 · cubre sólo el primero', () => {});\n" });
   const result = checkCriteria(root, 'docs/spec.md', 'tests');
   assert.equal(result.ok, false);
   assert.equal(result.code, 'EVIDENCE_TRACE_CRITERION_UNCOVERED');
@@ -207,7 +208,7 @@ test('FALSIFICACIÓN · criteria nombra el criterio que ninguna prueba menciona 
 test('FALSIFICACIÓN · criteria no acepta una mención en comentario, en prosa ni fuera de un archivo de pruebas', () => fixture((root) => {
   writeSpec(root);
   writeTests(root, {
-    'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n// AC92 mencionado en un comentario\nconst nota = \"AC92 en un string\";\n",
+    'uno.test.mjs': "test('demo · AC91 · cubre el primero', () => {});\n// AC92 mencionado en un comentario\nconst nota = \"AC92 en un string\";\n",
     'dos.test.mjs': "test('la prueba habla de AC92 en su prosa sin separarlo', () => {});\n",
     'ayuda.mjs': "test('AC92 · en un archivo que no es de pruebas', () => {});\n",
   });
@@ -234,9 +235,9 @@ test('FALSIFICACIÓN · criteria sale en rojo cuando el directorio de pruebas no
 
 test('criteria recorre subdirectorios del árbol de pruebas', () => fixture((root) => {
   writeSpec(root);
-  const dir = writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre el primero', () => {});\n" });
+  const dir = writeTests(root, { 'uno.test.mjs': "test('demo · AC91 · cubre el primero', () => {});\n" });
   mkdirSync(join(dir, 'anidado'));
-  writeFileSync(join(dir, 'anidado', 'dos.test.mjs'), "test('AC92 · cubre el segundo desde un subdirectorio', () => {});\n", 'utf8');
+  writeFileSync(join(dir, 'anidado', 'dos.test.mjs'), "test('demo · AC92 · cubre el segundo desde un subdirectorio', () => {});\n", 'utf8');
   assert.equal(checkCriteria(root, 'docs/spec.md', 'tests').ok, true);
 }));
 
@@ -389,14 +390,14 @@ test('main traduce el resultado de cada subcomando a 0 o 1 y escribe OK o REJECT
 
 test('el CLI real refleja los exit codes de la librería sobre archivos en disco', () => fixture((root) => {
   writeSpec(root);
-  writeTests(root, { 'uno.test.mjs': "test('AC91 · cubre sólo el primero', () => {});\n" });
+  writeTests(root, { 'uno.test.mjs': "test('demo · AC91 · cubre sólo el primero', () => {});\n" });
   const run = (args) => spawnSync(process.execPath, [script, ...args], { cwd: root, encoding: 'utf8' });
 
   const rojo = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']);
   assert.equal(rojo.status, 1);
   assert.match(rojo.stderr, /AC92/u);
 
-  writeFileSync(join(root, 'tests', 'dos.test.mjs'), "test('AC92 · cubre el segundo', () => {});\n", 'utf8');
+  writeFileSync(join(root, 'tests', 'dos.test.mjs'), "test('demo · AC92 · cubre el segundo', () => {});\n", 'utf8');
   const verde = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests']);
   assert.equal(verde.status, 0);
   assert.match(verde.stdout, /^OK: /u);
@@ -425,7 +426,7 @@ test('cada camino sin entradas se marca vacuous, y los que sí comparan algo no'
   vacios.push(checkClaims(root, feature));
 
   writeSpec(root);
-  writeTests(root, { 'uno.test.mjs': "test('AC91 · uno', () => {});\ntest('AC92 · dos', () => {});\n" });
+  writeTests(root, { 'uno.test.mjs': "test('demo · AC91 · uno', () => {});\ntest('demo · AC92 · dos', () => {});\n" });
   llenos.push(checkCriteria(root, 'docs/spec.md', 'tests'));
   rmSync(join(root, 'docs', 'discovery'), { recursive: true });
   writeDiscovery(root, [claim({ linked_ac_id: 'AC91' })]);
@@ -523,7 +524,7 @@ test('FALSIFICACIÓN · el CLI real rechaza el verde vacío bajo --require-input
   assert.match(estricto.stderr, new RegExp(NO_INPUTS_CODE, 'u'));
 
   writeSpec(root);
-  writeTests(root, { 'uno.test.mjs': "test('AC91 · uno', () => {});\ntest('AC92 · dos', () => {});\n" });
+  writeTests(root, { 'uno.test.mjs': "test('demo · AC91 · uno', () => {});\ntest('demo · AC92 · dos', () => {});\n" });
   const verde = run(['criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs']);
   assert.deepEqual({ status: verde.status, ok: verde.stdout.startsWith('OK: ') }, { status: 0, ok: true });
 }));
@@ -596,4 +597,89 @@ test('claims combina --spec con --require-links: el modo estricto también vale 
     requireInputs: true,
     requireLinks: true,
   });
+});
+
+// EL VERDE FALSO QUE ESTE BLOQUE CIERRA (limite honesto 108, declarado el 2026-09-14).
+//
+// Los identificadores de criterio NO llevan el nombre de la funcionalidad, y la plantilla de spec
+// numera desde AC1. O sea que dos features cualesquiera solapan sus identificadores desde el
+// primero. Medido: una spec recien escrita con diez criterios y CERO pruebas propias salio en VERDE,
+// porque `verify-audit-chain.test.mjs` titula las suyas con AC1, AC2, AC3, AC4, AC11 y AC12 — que
+// son criterios de OTRA funcionalidad.
+//
+// LA UNICIDAD SALE DE LA SPEC MISMA, no de una bandera. El titulo del documento ya dice `# Spec:
+// <slug>`, asi que quien corre el gate no puede equivocarse de funcionalidad ni elegir la que le
+// conviene: el par que identifica un criterio es <slug> + <id>, y la prueba tiene que nombrar los
+// dos como segmentos de su titulo.
+
+const SPEC_CON_SLUG = '# Spec: mi-funcionalidad\n\n## Acceptance Criteria\n\n- [ ] **AC91:** algo que verificar.\n';
+
+test('readFeatureSlug saca la funcionalidad del titulo de la spec', () => {
+  assert.equal(readFeatureSlug(SPEC_CON_SLUG), 'mi-funcionalidad');
+  assert.equal(readFeatureSlug('# Spec: otra-cosa-mas\n'), 'otra-cosa-mas');
+  assert.equal(readFeatureSlug('# Spec:   con-espacios-de-mas   \n'), 'con-espacios-de-mas');
+  assert.equal(readFeatureSlug('# Otro titulo cualquiera\n'), null);
+  // Y lo que ni siquiera es texto: el lector recibe lo que devuelva io.read, que en un proyecto roto
+  // puede ser cualquier cosa. Contestar null es la respuesta correcta; explotar seria un rechazo con
+  // la causa equivocada.
+  assert.equal(readFeatureSlug(null), null);
+  assert.equal(readFeatureSlug(undefined), null);
+  assert.equal(readFeatureSlug('sin titulo\n'), null);
+  assert.equal(readFeatureSlug('# Spec: Con Mayusculas Y Espacios\n'), null, 'un slug tiene la forma de un slug');
+});
+
+test('108 · una prueba que nombra el id pero NO la funcionalidad ya no cuenta', () => {
+  // Este es exactamente el caso medido: el id solo, de otra funcionalidad.
+  const ajena = "test('AC91 · una prueba de otra funcionalidad que numera igual', () => {});";
+  const resultado = checkCriteria('/p', 'docs/spec.md', 'tests', {
+    exists: () => true,
+    read: (ruta) => (String(ruta).endsWith('spec.md') ? SPEC_CON_SLUG : ajena),
+    list: () => [{ isFile: () => true, name: 'ajena.test.mjs', parentPath: 'tests' }],
+  });
+  assert.equal(resultado.ok, false, JSON.stringify(resultado));
+  assert.match(resultado.message, /AC91/u);
+});
+
+test('108 · nombrando la funcionalidad Y el id, cuenta', () => {
+  const propia = "test('mi-funcionalidad · AC91 · la prueba que si cubre el criterio', () => {});";
+  const resultado = checkCriteria('/p', 'docs/spec.md', 'tests', {
+    exists: () => true,
+    read: (ruta) => (String(ruta).endsWith('spec.md') ? SPEC_CON_SLUG : propia),
+    list: () => [{ isFile: () => true, name: 'propia.test.mjs', parentPath: 'tests' }],
+  });
+  assert.equal(resultado.ok, true, JSON.stringify(resultado));
+});
+
+test('108 · el orden de los segmentos no importa, y la falsificacion tambien cuenta', () => {
+  for (const titulo of [
+    'mi-funcionalidad · AC91 · texto',
+    'AC91 · mi-funcionalidad · texto',
+    'FALSIFICACIÓN · mi-funcionalidad · AC91 · texto',
+  ]) {
+    const resultado = checkCriteria('/p', 'docs/spec.md', 'tests', {
+      exists: () => true,
+      read: (ruta) => (String(ruta).endsWith('spec.md') ? SPEC_CON_SLUG : `test(${JSON.stringify(titulo)}, () => {});`),
+      list: () => [{ isFile: () => true, name: 'x.test.mjs', parentPath: 'tests' }],
+    });
+    assert.equal(resultado.ok, true, titulo + ': ' + JSON.stringify(resultado));
+  }
+});
+
+test('108 · una spec sin slug en el titulo se RECHAZA, en vez de volver al emparejamiento flojo', () => {
+  // Degradar al comportamiento viejo cuando falta el slug seria dejar la puerta abierta: cualquiera
+  // que borre el titulo recupera el verde falso.
+  const resultado = checkCriteria('/p', 'docs/spec.md', 'tests', {
+    exists: () => true,
+    read: (ruta) => (String(ruta).endsWith('spec.md')
+      ? '# Un titulo cualquiera\n\n- [ ] **AC91:** algo.\n'
+      : "test('AC91 · algo', () => {});"),
+    list: () => [{ isFile: () => true, name: 'x.test.mjs', parentPath: 'tests' }],
+  });
+  assert.equal(resultado.ok, false, JSON.stringify(resultado));
+  assert.match(resultado.message, /Spec:/u);
+});
+
+test('108 · EL REPOSITORIO REAL: cada criterio de la spec lo nombra una prueba con su funcionalidad', () => {
+  const resultado = checkCriteria(repoRoot, 'docs/spec.md', 'tests');
+  assert.equal(resultado.ok, true, resultado.message);
 });

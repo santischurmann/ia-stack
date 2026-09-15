@@ -36,7 +36,7 @@ test('AC4 · una captura dentro del periodo no tiene violaciones', () => {
   assert.deepEqual(validateFreshness(contrato(), '2026-11-17'), [], 'el dia 90 exacto todavia entra');
 });
 
-test('FALSIFICACIÓN · AC4 · una captura vencida se rechaza diciendo que la causa es el tiempo', () => {
+test('FALSIFICACIÓN · eleccion-de-stack · AC4 · una captura vencida se rechaza diciendo que la causa es el tiempo', () => {
   const violaciones = validateFreshness(contrato(), '2026-12-25');
   assert.ok(violaciones.length > 0, 'una captura de 102 dias tiene que rechazar con periodo de 90');
   assert.ok(

@@ -86,7 +86,7 @@ test('sin archivos rastreados escribe VACÍO y sale 0, sin decir OK', () => {
   assert.ok(!salida.some((l) => /^OK: /u.test(l)), 'una carpeta sin archivos no compra un OK de limpieza');
 });
 
-test('encuentra la ruta del directorio personal de quien corre el gate', () => {
+test('eleccion-de-stack · AC9 · encuentra la ruta del directorio personal de quien corre el gate', () => {
   const { code, errores } = correr(['check'], {
     trackedFiles: () => ['docs/notas.md'],
     read: () => `El plan quedó en ${IDENTIDAD.home}\\Desktop\\plan.md y ahí sigue.\n`,

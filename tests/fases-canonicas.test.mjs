@@ -91,7 +91,7 @@ export function cuentasDeFases(archivos, leer) {
   return dichas;
 }
 
-test('todo documento que dice cuántas fases son coincide con el canónico', SOLO_FUENTE, () => {
+test('eleccion-de-stack · AC10 · todo documento que dice cuántas fases son coincide con el canónico', SOLO_FUENTE, () => {
   const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
   const versionados = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' })
     .stdout.split('\n').map((l) => l.trim()).filter((f) => f.endsWith('.md'));

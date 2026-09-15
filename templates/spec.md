@@ -1,4 +1,4 @@
-# Spec: <feature-name>
+# Spec: <feature-slug>
 
 **Date:** <YYYY-MM-DD>
 **Version:** 1.0
