@@ -490,6 +490,14 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay plan, y un ciclo sin plan todavia no incumple el modelo de tareas: el gate escribe VACIO y sale 0. La distincion vale porque este gate se apoya en la spec para comprobar los criterios de aprobacion, y en una carpeta vacia tampoco hay spec; tratar esas dos ausencias como rechazo convertiria el arranque de cualquier proyecto en un rojo que no dice nada."
+    },
+    {
+      "script": "verify-gate-docs.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "self",
+      "why": "Verifica el propio runtime y no el proyecto de quien lo corre: su raiz sale de import.meta.url, asi que sobre un directorio vacio sigue mirando los scripts y los documentos de su propia copia instalada y puede salir OK. Es correcto que sea asi -la pregunta que contesta es si el PROTOCOLO documenta sus gates, no si el proyecto de al lado los documenta- y por eso se declara self y no empty: un VACIO aca seria mentir sobre que se miro."
     }
   ]
 }

@@ -7,6 +7,58 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tres de las once fases no ofrecían un solo menú, y la otra punta del protocolo ya los exigía.**
+  Medido el 2026-09-15 sobre `SKILL.md`: las fases **2 (Research), 5.5 (Triangulate) y 7 (Simplify)**
+  no tenían ninguno. Las tres cerraban con una frase mandando a presentar uno —«la decisión se
+  presenta con 🔵», «presentá 🔵 con al menos dos opciones»— **sin dar ninguno**.
+
+  - **Es una contradicción interna, no una omisión de estilo.**
+    `verify-phase-decisions.mjs --require-complete` exige una decisión registrada, con su menú y su
+    opción elegida, por cada fase que el proyecto declara. Una punta pide el menú y la otra no lo
+    da. Se comprobó sobre la corrida real de este repositorio: `docs/phase-decisions.json` tiene una
+    decisión de fase 2 **con un menú improvisado en el momento**. Lo que se inventa cada vez no es
+    un protocolo.
+  - **`verify-menu-shape.mjs` contaba menús y nunca preguntaba de qué fase era cada uno.** Ahora sí,
+    y la exigencia **se deriva del árbol**: si el documento declara fases, cada fase trae su menú;
+    un documento sin fases —las skills— no cambia en nada.
+  - **Tres menús más estaban escritos y eran invisibles para el propio gate**: uno adentro de un
+    bloque de código —con las opciones sueltas `A)` que este gate existe para prohibir, prescrito
+    por el propio documento—, y dos embutidos a mitad de una línea numerada. El gate reconocía
+    `🔵 **título**` al principio de línea y `🔵 ` sin negrita, y con eso se le escapaban. Es el verde
+    más peligroso de todos: contaba menos menús y decía OK.
+  - **La primera versión del detector acusaba prosa**, y eso se corrigió antes de que entrara: `Al
+    cerrar, presentá 🔵 con al menos dos opciones` es el documento explicando su convención, no un
+    menú. Un gate que obliga a escribir peor es peor que ninguno. La regla quedó en que el círculo
+    tiene que **abrir el contenido** de la línea —después de la sangría y del marcador de lista— y
+    que un puntero al menú de abajo no es un menú invisible.
+  - De 14 menús visibles a **19**, y las once fases cubiertas.
+
+- **Ocho gates no se podían correr desde ningún documento del protocolo.** `verify-gate-docs.mjs`.
+  Medido sobre los 54 scripts y los 20 documentos: ocho no tenían un solo comando copiable en
+  ninguna parte, y **seis ni siquiera aparecían en `SKILL.md`** — estaban nombrados sólo en la tabla
+  de `skills/gates.md`, que dice qué hacen y nunca cómo se corren. La batería seguía verde: los
+  gates andaban, sólo que nadie afuera sabía invocarlos. Es la forma más silenciosa de que el
+  documento se despegue de la máquina.
+
+  - **Es el otro tramo de una regla que ya estaba a medias.** `tests/verify-ablation.test.mjs` exige
+    desde hace meses que la tabla nombre a todos los gates, y funcionó: los 54 estaban nombrados.
+    Nombrar no es alcanzar.
+  - **Tres eran un olvido y se les escribió el ejemplo** — `verify-test-bindings.mjs`,
+    `verify-research-citations.mjs` y `verify-design-tokens.mjs`—, más el gate de LAW 1: la fase 5.1
+    describía el despachador y los envoltorios en prosa y **no tenía un solo comando a mano**.
+  - **Cinco NO son un olvido, y ahora se declaran.** Los adaptadores de test rojo y el despachador
+    se alcanzan por los envoltorios; `ratchet.mjs` es una biblioteca. Darles un ejemplo enseñaría a
+    saltear el despachador, o sea a leer el reporte de un runner con el clasificador de otro.
+    `contracts/gate-docs.json` los lista con **quién los invoca y por qué**, que es lo que hace que
+    la excepción se pueda revisar en vez de creerse.
+  - **Falla cerrado por partida doble**: sin el contrato rechaza —una lista de excepciones que no
+    está no es una lista vacía—, y un contrato que declara un script inexistente también rechaza,
+    porque una excepción viva para algo que ya no está exceptúa al próximo que se llame igual.
+  - **Corrección de la medición del plan**, que decía nueve huérfanos: ese número salía de mirar
+    sólo `SKILL.md`. Seis de esos nueve ya tenían su ejemplo en una skill, `verify-red.sh` entre
+    ellos. Exigirlo en `SKILL.md` habría mandado a duplicar documentación bien puesta, y duplicarla
+    es garantizar que las dos copias diverjan.
+
 - **Los campos de una tarea dejaron de ser prosa: hay un gate que los lee.** `verify-task-shape.mjs`.
   Medido el 2026-09-15 sobre `docs/tasks.json` y los dos únicos scripts que abren ese archivo: de los
   **20 campos de una tarea, un gate leía 6** —`id`, `depends_on`, los tres conjuntos de escritura y

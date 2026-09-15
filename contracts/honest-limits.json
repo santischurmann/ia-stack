@@ -702,6 +702,12 @@
       "file": "skills/gates.md",
       "phrase": "NO comprueba que la tarea haga lo que dice",
       "why": "El gate mecaniza el modelo de tareas que skills/orchestrator-opus.md especifica campo por campo: que el rol exista en la matriz, que el verificador sea un comando y no una persona, que el criterio de aprobacion nombre un AC que la spec declare de verdad. Todo eso es contabilidad comprobable. Lo que no puede hacer es leer la tarea y juzgar si el trabajo que describe es el trabajo que se hizo: una tarea coherente e inventada, con un AC que existe y un comando que corre, pasa en verde. La evidencia listada tampoco se re-ejecuta. description, goal, rollback y handoff se exigen escritos y nunca verdaderos, porque pedirle a un gate que juzgue prosa obliga a quien la escribe a fabricar la forma que el gate espera, que es exactamente el error corregido dos veces en el gate de la matriz de stacks. Cuando la spec no se puede leer, la comprobacion fuerte no corre y el verde lo dice en vez de aprobar por defecto."
+    },
+    {
+      "limit_id": "gate-docs-proves-the-name-not-the-command",
+      "file": "skills/gates.md",
+      "phrase": "NO comprueba que ese comando funcione",
+      "why": "El gate cierra un hueco real y medido: ocho scripts no se podian correr desde ningun documento del protocolo, y seis ni siquiera aparecian en SKILL.md. Lo que comprueba es que el nombre del script este adentro de un bloque de codigo, que es contabilidad y no comprension. No ejecuta el comando ni valida sus argumentos: un ejemplo con la bandera equivocada, o con una ruta que en una instalacion real no existe, pasa en verde. Tampoco sabe si el ejemplo esta donde tiene que estar: uno escondido en la skill equivocada cuenta igual que el de la fase correcta. Y sobre las excepciones es mas modesto todavia: que alguien declare que un script no se invoca a mano no prueba que no se pueda invocar, solo deja escrito quien dice invocarlo para que una persona lo pueda revisar."
     }
   ]
 }

@@ -112,3 +112,18 @@ No prueba que una fuente sea suficiente semánticamente ni sustituye a quien dec
 hace visible qué evidencia se usó, qué quedó fuera y qué decisión humana falta antes de pasar a
 Spec.
 
+## Las citas se revalidan, y hay un gate que lo comprueba
+
+Cada cita `archivo:línea` del informe de research externo tiene que figurar en
+`contracts/research-citations.json` con el resultado de haberla resuelto contra su commit pineado.
+
+```bash
+node .vibe/vcp-runtime/scripts/verify-research-citations.mjs check contracts/research-citations.json
+```
+
+Agregar una cita al informe sin revalidarla rechaza, y al revés: un registro que ya no corresponde a
+ninguna cita del informe también frena. **Compara el informe contra el registro de la revalidación,
+no contra los repositorios** —los clones pesan más de un giga, no están en el árbol y el gate no
+sale a la red—, así que un contrato escrito a mano con huellas inventadas pasa igual. Y una cita
+resuelta dice que el archivo y la línea existen, **no que digan lo que el informe afirma sobre
+ellos**: juzgar eso es leer, no comparar.

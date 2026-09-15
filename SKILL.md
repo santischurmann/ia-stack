@@ -233,16 +233,28 @@ Esperando tu respuesta antes de continuar.
 7b. **Nivel de rigor del proyecto** (source: `research/sources/protocolo-muralla.md` point #24) —
    una sola vez por proyecto, no por cambio, si `.vibe/PROJECT.md` todavía no lo tiene declarado.
    Complementa a `risk_level` (que es por-cambio, Phase 7.1) — este es el piso general:
-   ```
-   🔵 Nivel del proyecto (una vez, se guarda en PROJECT.md):
-   A) Vidriera — si algo falla se ve feo un rato, nadie pierde nada real
-   B) Herramienta — alguien toma una decisión con un número mal si esto falla
-   C) Producto con plata — alguien pierde dinero o confianza real si esto falla
-   ```
+
+🔵 **Nivel de rigor del proyecto** (una vez, se guarda en `PROJECT.md`)
+
+- **B)** Herramienta — alguien toma una decisión con un número mal si esto falla — *(recomendado
+  cuando no está claro: es el punto medio, y equivocarse para abajo cuesta más que para arriba)*
+- **A)** Vidriera — si algo falla se ve feo un rato, nadie pierde nada real
+- **C)** Producto con plata — alguien pierde dinero o confianza real si esto falla
+
+Esperando tu respuesta antes de continuar.
+
    La rigurosidad se paga y solo se paga cuando hay algo que perder — un nivel `A` no debería
    terminar arrastrando el aparato completo de un `C` salvo que un cambio puntual lo dispare por
    `risk_level` propio (Phase 7.1, ortogonal a esto).
-8. 🔵 confirm detected stack (A approve / B correct).
+8. **Confirmar el stack detectado** — el paso 5 lo dedujo; una deducción no es una decisión.
+
+🔵 **¿El stack detectado es el correcto?**
+
+- **A)** Sí, es ése — *(recomendado si el paso 5 encontró un manifiesto y no una carpeta vacía)*
+- **B)** No, es otro — [decime cuál]. Un stack mal detectado se paga en cada gate que después
+  elige el runner equivocado.
+
+Esperando tu respuesta antes de continuar.
 9. **Capability matrix gate** — antes de despachar roles, verificá la matriz nativa de permisos:
    ```bash
    node .vibe/vcp-runtime/scripts/verify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json
@@ -580,6 +592,13 @@ node scripts/verify-discovery-requirements.mjs check --completed-phase I2
 
 El gate sigue la cadena de reemplazos de cada requisito hasta una fila activa con su prueba verde, y ahí se detiene: **nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo**. Un requisito puede quedar sustituido por otro que pide bastante menos, con el gate en verde: la equivalencia de significado la revisa una persona. Y la prueba que respalda cada requisito se valida como en `verify-test-bindings.mjs`: **el test se nombra, no se comprueba: alcanza con que exista y salga ok.**
 
+```bash
+node .vibe/vcp-runtime/scripts/verify-test-bindings.mjs check
+```
+
+Corre cada archivo de prueba vinculado **en aislamiento** y lee el resultado del formato de salida
+exacto, no de una afirmación. Sólo acepta archivos locales del proyecto.
+
 Un claim que cita un criterio o requisito inexistente es una referencia rota, no evidencia. El
 último gate de la fase resuelve cada `linked_requirement_id` y `linked_ac_id` del packet de la
 **decisión vigente** contra los identificadores que `docs/spec.md` declara en negrita:
@@ -620,7 +639,20 @@ la que le corresponde al packet**: elegir el archivo correcto es responsabilidad
 `views/*.md` es sólo una vista derivada y reproducible: no admite timestamps, rutas absolutas ni
 datos del entorno, y jamás sustituye los JSON inmutables. Los gates prueban forma, cadena, hashes y
 reproducibilidad; no prueban por sí mismos suficiencia semántica de un claim. La decisión de pasar
-a Spec sigue siendo humana y se presenta con 🔵.
+a Spec sigue siendo humana, y este es el menú con el que se presenta.
+
+🔵 **Discovery cerrado — ¿se abre la Spec?**
+
+- **A)** Sí, pasar a la Spec — *(recomendado si los seis diagnósticos están en verde y ningún claim
+  quedó sin vínculo)*. Lo que Research dejó escrito se congela: la Spec se escribe **contra eso**,
+  no contra lo que uno se acuerda.
+- **B)** Falta evidencia — [decime qué pregunta quedó sin contestar]. Se vuelve al packet, se
+  agrega el claim con su fuente, y recién ahí se cierra. Una duda que se arrastra a la Spec se
+  convierte en un criterio de aceptación que nadie puede comprobar.
+- **C)** El problema cambió — volver al Intake. Si lo que Research encontró corre el problema de
+  lugar, seguir a la Spec es escribir bien la solución equivocada.
+
+Esperando tu respuesta antes de continuar.
 
 ---
 
@@ -828,7 +860,20 @@ proyecto —`conftest.py`, `vitest.config.js`— con control sobre el reporte **
 salida**; los dos ataques están falsificados, medidos en entorno virgen y comprobados contra los
 runners reales en `research/sources/adaptadores-red-2026-09-14.md`. Un verde de garantía menor sale
 con su límite escrito al lado, y **el receipt tiene que registrar con qué adaptador se obtuvo**: si
-un verde débil se lee igual que uno fuerte, es igual. **Sólo pasa una
+un verde débil se lee igual que uno fuerte, es igual.
+
+```bash
+# El envoltorio, que es lo que se corre: archivo de prueba y comando EXACTO del runner.
+bash .vibe/vcp-runtime/scripts/verify-red.sh 'tests/mi-cosa.test.mjs' 'node --test'
+# PowerShell: .vibe/vcp-runtime/scripts/verify-red.ps1 'tests/mi-cosa.test.mjs' 'node --test'
+```
+
+Los dos envoltorios llaman al despachador, y **el despachador no se invoca a mano**: es él quien
+resuelve el runner contra el contrato y elige el adaptador. Correr un adaptador directo sería
+elegirlo a mano, o sea leer el reporte de un runner con el clasificador de otro. Está declarado así
+en `contracts/gate-docs.json`, con quién lo invoca.
+
+**Sólo pasa una
 prueba que corrió y falló en su propia comprobación** — el gate exige un bloque de diagnóstico con
 `code: 'ERR_ASSERTION'` atado a su línea `not ok`. Un error de carga (el archivo bajo prueba
 todavía no existe, o no parsea) **no** pasa: fail-closed deliberado, porque un archivo de test
@@ -1024,7 +1069,16 @@ refactoriza hasta cerrar TRIANGULATE.
 Un `covered` que apunta a un archivo cualquiera pasa igual, y la lista de vectores es fija: su
 completitud es una decisión humana, no un resultado del gate.
 
-Al cerrar, presentá 🔵 con al menos dos opciones y registrá la elección.
+🔵 **Triangulación cerrada — ¿se refactoriza?**
+
+- **A)** Sí, pasar a REFACTOR — *(recomendado si `--require-complete` sale en verde)*. Los vectores
+  declarados quedaron cubiertos, así que refactorizar tiene contra qué chocar.
+- **B)** Faltan vectores — [decime cuáles]. Se derivan y se cubren primero: refactorizar con
+  vectores abiertos es mover código que nada vigila.
+- **C)** Un vector no aplica a este cambio — [decime cuál y por qué]. Queda escrito como exclusión
+  con su motivo, que es distinto de darlo por cubierto.
+
+Esperando tu respuesta antes de continuar.
 
 ---
 
@@ -1448,6 +1502,19 @@ ya simplificado:
 No es ceremonia. Simplificar toca código que ya estaba verde, y **simplificar sin volver a
 verificar es exactamente cómo se rompe algo en silencio**. Si esto sale rojo, la fase no cerró:
 se reporta qué se rompió y se arregla antes de tocar la Fase 8.
+
+**7.3 La decisión de la fase.**
+
+🔵 **Simplificación hecha — ¿se publica esto?**
+
+- **A)** Sí, pasar a DEPLOY — *(recomendado si la suite volvió a salir verde sobre el estado ya
+  simplificado)*. El diff que se publica es el simplificado, no el de antes.
+- **B)** Revertir la simplificación y publicar lo anterior — [decime qué te preocupa]. Es una
+  salida legítima: un cambio de forma que nadie pidió no vale un riesgo en producción.
+- **C)** Simplificar más — [decime qué quedó dando vueltas]. Vuelve a 7.1 con el `risk_level` ya
+  declarado, y la suite vuelve a correr después.
+
+Esperando tu respuesta antes de continuar.
 
 ---
 

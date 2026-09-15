@@ -195,6 +195,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/gate-docs.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/graphify-exclusions.json",
       "class": "contrato"
     },
@@ -724,6 +728,10 @@
     },
     {
       "path": "scripts/verify-feature-activa.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-gate-docs.mjs",
       "class": "gate"
     },
     {
@@ -1320,6 +1328,18 @@
     },
     {
       "path": "tests/verify-feature-activa.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-gate-docs-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-gate-docs-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-gate-docs.test.mjs",
       "class": "prueba"
     },
     {

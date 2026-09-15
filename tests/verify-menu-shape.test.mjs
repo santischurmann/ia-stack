@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
-import { EMPTY, LIMITS, USAGE, main, parseMenus, validateMenus } from '../scripts/verify-menu-shape.mjs';
+import { EMPTY, LIMITS, USAGE, main, parseMenus, parsePhases, validateMenus } from '../scripts/verify-menu-shape.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -430,4 +430,120 @@ test('FR-4 · un 🔵 usado como aviso se rechaza, y el error dice por qué', ()
   const { code, errores } = corrida(doc(aviso, menu()));
   assert.equal(code, 1);
   assert.match(errores, /dos opciones/u);
+});
+
+// --- UNA FASE SIN MENU ES UNA FASE QUE SE CIERRA SOLA -------------------------------------------
+//
+// LO MEDIDO el 2026-09-15 sobre el SKILL.md real: de las once fases, **TRES no tenian un solo menu**
+// -- 2 (RESEARCH), 5.5 (TRIANGULATE) y 7 (SIMPLIFY)-- y una cuarta tenia uno sangrado, o sea
+// invisible para este mismo gate. Nadie se enteraba porque este gate contaba menus y nunca pregunto
+// de que fase era cada uno.
+//
+// Y ESO CONTRADICE AL PROPIO PROTOCOLO, que es lo que lo convierte en un defecto y no en una
+// omision de estilo: `verify-phase-decisions.mjs --require-complete` EXIGE una decision registrada
+// -con su menu y su opcion elegida- por cada fase que el proyecto declara en `phase_order`. O sea
+// que una punta del protocolo pide el menu y la otra no lo da. Se comprobo sobre la corrida real de
+// este repositorio: `docs/phase-decisions.json` tiene una decision de fase 2 **con un menu que
+// alguien improviso en el momento**, porque el documento no trae ninguno. Cada usuario tiene que
+// inventarlo, y lo que se inventa cada vez no es un protocolo.
+//
+// LA EXIGENCIA SE DERIVA DEL ARBOL, no de una bandera: si el documento declara fases, cada fase
+// tiene que traer su menu. Un documento sin fases -las skills, por ejemplo- no cambia en nada.
+
+const fase = (id, cuerpo) => [`## PHASE ${id} — DEMO`, '', cuerpo, ''].join('\n');
+const menuValido = [
+  '🔵 **¿Seguimos?**',
+  '',
+  '- **A)** Seguir — *(recomendado)*',
+  '- **B)** Parar',
+  '',
+  'Esperando tu respuesta antes de continuar.',
+].join('\n');
+
+test('una fase sin ningun menu se rechaza NOMBRANDO la fase', () => {
+  const doc = [fase('1', menuValido), fase('2', 'Prosa sin ninguna decisión ofrecida.')].join('\n');
+  const v = validateMenus(doc);
+  assert.ok(v.some((x) => /fase 2/iu.test(x)), v.join(' | '));
+  assert.ok(!v.some((x) => /fase 1\b/iu.test(x)), `la fase 1 sí tiene menú: ${v.join(' | ')}`);
+});
+
+test('con un menu por fase no hay violaciones', () => {
+  assert.deepEqual(validateMenus([fase('1', menuValido), fase('2', menuValido)].join('\n')), []);
+});
+
+test('UN MENU ESCRITO E INVISIBLE se acusa por su motivo, y no como si faltara', () => {
+  // Los TRES motivos, los tres medidos sobre el SKILL.md real. El menú está escrito y se lee bien;
+  // el barrido no lo ve. Decir «esta fase no tiene menú» mandaría a escribir uno que ya está.
+  const sangrado = fase('1', ['   🔵 **¿Seguimos?**', '', '   - **A)** Sí — *(recomendado)*', '', '   Esperando tu respuesta.'].join('\n'));
+  assert.ok(validateMenus(sangrado).some((x) => /sangr/iu.test(x)), validateMenus(sangrado).join(' | '));
+
+  const enFence = fase('1', ['```', '🔵 Nivel del proyecto:', 'A) Uno', 'B) Otro', '```'].join('\n'));
+  assert.ok(validateMenus(enFence).some((x) => /bloque de código/iu.test(x)), validateMenus(enFence).join(' | '));
+
+  const aMitad = fase('1', '8. 🔵 confirmar el stack detectado (A aprobar / B corregir).');
+  assert.ok(validateMenus(aMitad).some((x) => /mitad de una línea/iu.test(x)), validateMenus(aMitad).join(' | '));
+});
+
+test('PROSA QUE HABLA DE MENUS no es un menú: un gate que obliga a escribir peor es peor que ninguno', () => {
+  // Los dos casos reales que la primera versión de este detector acusó sin que hubiera nada que
+  // arreglar. El primero es el documento explicando su propia convención; el segundo, una frase que
+  // el salto de línea partió justo ahí — salió de skills/research.md.
+  const explicando = fase('1', [menuValido, '', 'Al cerrar, presentá 🔵 con al menos dos opciones y una recomendación.'].join('\n'));
+  assert.deepEqual(validateMenus(explicando), []);
+
+  const cortadaPorElSalto = fase('1', [menuValido, '', 'cada adopción vuelve a pasar por el ciclo completo y un menú', '🔵. El loop se describe en otra skill.'].join('\n'));
+  assert.deepEqual(validateMenus(cortadaPorElSalto), []);
+});
+
+test('UN PUNTERO al menú de abajo no es un menú invisible', () => {
+  // `3. 🔵 pedir confirmación explícita:` seguido del menú de verdad es un paso que lo ANUNCIA.
+  // Acusarlo obligaría a reescribir un texto que está bien.
+  const doc = fase('1', ['3. 🔵 pedir confirmación explícita antes de aplicar el fix:', menuValido].join('\n'));
+  assert.deepEqual(validateMenus(doc), []);
+
+  // Y el anuncio NO cubre a la fase por sí solo: si el menú de verdad no está, la fase queda sin uno.
+  const soloElAnuncio = fase('1', '3. 🔵 pedir confirmación explícita antes de aplicar el fix.');
+  assert.ok(validateMenus(soloElAnuncio).some((x) => /fase 1/iu.test(x)), validateMenus(soloElAnuncio).join(' | '));
+});
+
+test('un documento SIN fases no cambia en nada: la exigencia sale del árbol', () => {
+  assert.deepEqual(validateMenus(menuValido), []);
+  assert.deepEqual(validateMenus('# Una skill cualquiera\n\nProsa y nada más.\n'), []);
+});
+
+test('parsePhases lee las fases que el documento declara, en PHASE y en FASE', () => {
+  const doc = ['## PHASE 1 — BOOTSTRAP', 'x', '## FASE 5.5 — TRIANGULATE', 'y', '## No es una fase', 'z'].join('\n');
+  assert.deepEqual(parsePhases(doc).map((f) => f.id), ['1', '5.5']);
+});
+
+test('FALSIFICACIÓN · una fase nombrada dentro de un bloque de código no es una fase', () => {
+  const doc = [fase('1', menuValido), '```', '## PHASE 99 — ESTO ES UN EJEMPLO', '```', ''].join('\n');
+  assert.deepEqual(parsePhases(doc).map((f) => f.id), ['1']);
+  assert.deepEqual(validateMenus(doc), []);
+});
+
+test('el peor de los tres: sangrado Y adentro de un bloque de código', () => {
+  // Es el caso REAL que tenía la fase 1 hasta el 2026-09-15: `   🔵 Nivel del proyecto:` adentro de
+  // un fence, con las opciones sueltas `A)` que este gate existe para prohibir. La sangría lo saca
+  // del reconocimiento por línea de inicio, y el fence lo hace colapsar: se acusa por el fence, que
+  // es el problema que importa.
+  const doc = fase('1', ['```', '   🔵 Nivel del proyecto:', '   A) Uno', '   B) Otro', '```'].join('\n'));
+  const v = validateMenus(doc);
+  assert.ok(v.some((x) => /bloque de código/iu.test(x)), v.join(' | '));
+  assert.ok(!v.some((x) => /sangría/iu.test(x)), `el fence manda sobre la sangría: ${v.join(' | ')}`);
+});
+
+test('una fase sin título se nombra igual, por su número y su línea', () => {
+  const doc = ['## PHASE 4', '', 'Prosa sin ninguna decisión ofrecida.', ''].join('\n');
+  const v = validateMenus(doc);
+  assert.ok(v.some((x) => /fase 4/iu.test(x)), v.join(' | '));
+  assert.ok(!v.some((x) => /\(\)/u.test(x)), `un paréntesis vacío no dice nada: ${v.join(' | ')}`);
+  assert.deepEqual(parsePhases(doc), [{ line: 1, id: '4', title: '' }]);
+});
+
+test('EL DOCUMENTO REAL declara un menú visible en cada una de sus fases', () => {
+  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const fases = parsePhases(skill);
+  assert.ok(fases.length >= 11, `el protocolo declara ${fases.length} fase(s)`);
+  assert.deepEqual(validateMenus(skill), []);
 });

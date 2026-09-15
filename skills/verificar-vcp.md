@@ -12,8 +12,22 @@ node --test --test-concurrency=32
 node scripts/verify-vcp-coverage.mjs
 node scripts/verify-vcp-contract.mjs check
 node scripts/verify-security-baseline.mjs check --base origin/main
+node scripts/verify-gate-docs.mjs check
+node scripts/verify-design-tokens.mjs check contracts/design-tokens.json
 git diff --check
 ```
+
+**El cuarto comando es el que impide que este documento se despegue de la máquina.** Comprueba que
+cada gate de `scripts/` se pueda correr desde algún documento del protocolo —un comando copiable
+adentro de un bloque de código— o esté declarado en `contracts/gate-docs.json` como uno que no se
+invoca a mano, diciendo quién lo invoca y por qué. Se midió el 2026-09-15 que **ocho no tenían un
+solo comando copiable en ninguna parte**, y seis de ésos ni siquiera aparecían en `SKILL.md`:
+estaban nombrados sólo en la tabla de gates, que dice qué hacen y nunca cómo se corren. La batería
+seguía verde —los gates andaban—, sólo que nadie afuera sabía invocarlos.
+
+El quinto valida el sistema de diseño de las superficies visuales que este repositorio declara.
+**Verifica forma y coherencia, nunca contraste ni legibilidad**: dos tokens que cumplen todas las
+reglas pueden ser gris sobre gris.
 
 El segundo comando no informa un porcentaje: exige que **algún proceso de la suite haya ejecutado
 cada función y cada rama** de los scripts que mide, y si falta alguna la nombra con archivo y

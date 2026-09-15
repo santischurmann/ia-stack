@@ -19,6 +19,21 @@
 // el protocolo pueda citar el anti-patron y explicarlo. Vale para UN bloque y el comentario tiene
 // que estar solo al principio de la linea; el gate NO juzga si lo marcado es de verdad un ejemplo.
 //
+// UNA FASE SIN MENU ES UNA FASE QUE SE CIERRA SOLA. Agregado el 2026-09-15, medido sobre el SKILL.md
+// real: de las once fases, TRES no tenian un solo menu -2 (Research), 5.5 (Triangulate) y 7
+// (Simplify)- y una cuarta tenia uno sangrado, o sea invisible para este mismo gate. Nadie se
+// enteraba porque el gate contaba menus y nunca pregunto de que fase era cada uno.
+//
+// Es un defecto y no una omision de estilo porque CONTRADICE a la otra punta del protocolo:
+// `verify-phase-decisions.mjs --require-complete` exige una decision registrada, con su menu y su
+// opcion elegida, por cada fase que el proyecto declara. Una punta pide el menu y la otra no lo da.
+// Comprobado sobre la corrida real de este repositorio: hay una decision de fase 2 con un menu que
+// alguien improviso en el momento, porque el documento no trae ninguno. Lo que se inventa cada vez
+// no es un protocolo.
+//
+// La exigencia SE DERIVA DEL ARBOL y no de una bandera: si el documento declara fases, cada fase
+// tiene que traer su menu; un documento sin fases -las skills- no cambia en nada.
+//
 // LIMITE HONESTO. Verifica las PLANTILLAS que el protocolo prescribe en sus propios documentos.
 // NO verifica el mensaje que el agente efectivamente escribio en la conversacion, ni como lo pinto
 // la terminal, ni que la persona haya visto nada: no hay forma portable de comprobar eso. Tampoco
@@ -50,6 +65,24 @@ const QUESTION = /^\*\*\d+\./u;
 // El texto de una opción de plantilla: `[opción]`, `<tema>`. No es contenido, es un hueco a llenar.
 const PLACEHOLDER = /^[[<].*[\]>]$/u;
 const FENCE = /^\s*(```|~~~)/u;
+/** Un encabezado de fase, en las dos formas en que el protocolo las escribe. */
+const PHASE_HEADING = /^##[ \t]+(?:PHASE|FASE)[ \t]+([0-9]+(?:\.[0-9]+)?)\b[ \t]*(.*)$/u;
+/**
+ * UN MENU ESCRITO, contra PROSA QUE HABLA DE MENUS. La diferencia esta medida sobre el SKILL.md
+ * real, donde conviven las dos: `   🔵 Nivel del proyecto:` y `8. 🔵 confirm detected stack` son
+ * menus -el circulo ABRE el contenido de la linea, despues de la sangria y del marcador de lista-,
+ * mientras que `Al cerrar, presentá 🔵 con al menos dos opciones` es el documento explicando su
+ * propia convencion. Buscar el circulo en cualquier parte acusaba cinco parrafos de prosa, y un
+ * gate que obliga a escribir peor es peor que ninguno.
+ *
+ * Y el circulo tiene que abrir CONTENIDO, no puntuacion: `un menú\n🔵. El loop...` es una frase que
+ * el salto de linea partio ahi, no un menu. Salio de `skills/research.md`, que este mismo gate
+ * acusaba sin que hubiera nada que arreglar.
+ */
+const LEADING_MARK = /^[ \t>]*(?:[-*+]\s+|\d+[.)]\s+)?\**🔵(?=[ \t*])/u;
+const INDENTED = /^[ \t]/u;
+/** Un solo texto para el peor de los tres motivos: dos redacciones de lo mismo divergen. */
+const EN_UN_FENCE = 'está adentro de un bloque de código, donde las opciones colapsan a un párrafo';
 export const RECOMMENDATION = '*(recomendado';
 /**
  * La linea que dice que la fase esta bloqueada, en las formas en que se escribe de verdad. Era un
@@ -108,8 +141,10 @@ export function parseMenus(source) {
       continue;
     }
     if (row.delimiter) continue;
-    // LOOSE_HEADING alcanza: matchea todo `🔵 ` al principio de linea, con negrita o sin ella.
-    if (ejemplo && LOOSE_HEADING.test(row.text)) {
+    // Cualquier circulo cierra la marca de ejemplo, no solo el que arranca la linea: si el
+    // anti-patron citado esta sangrado o adentro de un fence -que es justo como se citan-, exigir
+    // que empiece la linea dejaba la marca prendida y apagaba el menu REAL de mas abajo.
+    if (ejemplo && LEADING_MARK.test(row.text)) {
       // Vale para UN bloque: si no, una marca suelta arriba del archivo apagaría el gate entero.
       ejemplo = false;
       continue;
@@ -118,10 +153,34 @@ export function parseMenus(source) {
     // como menú: encontrado sobre el SKILL.md real, dos menús de PHASE 1 escritos así. Se registra
     // igual, para acusarlo por nombre en vez de dejarlo pasar por no reconocerlo.
     if (LOOSE_HEADING.test(row.text) && !HEADING.test(row.text)) {
-      menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: null, loose: true });
+      // El fence primero: un menu sin negrita ADENTRO de un bloque de codigo esta roto por dos
+      // motivos, y el peor es el bloque. Avisar de la negrita tapaba el que importa.
+      const razon = row.fence ? EN_UN_FENCE : null;
+      if (razon !== null) menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: null, invisible: razon });
+      else menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: null, loose: true });
       continue;
     }
-    if (!HEADING.test(row.text)) continue;
+    if (!HEADING.test(row.text)) {
+      // EL CIRCULO QUE NO ENTRA POR NINGUNA PUERTA. Encontrado el 2026-09-15 sobre el SKILL.md real:
+      // el gate reconocia `🔵 **titulo**` al principio de linea y `🔵 ` sin negrita, y con eso se le
+      // escapaban DOS menus de la fase 1 -uno sangrado ADENTRO de un bloque de codigo, con las
+      // opciones sueltas `A)` que este mismo gate existe para prohibir, y otro embutido a mitad de
+      // una linea numerada-. Los dos se leen como menu para una persona y no existian para el gate,
+      // que es el verde mas peligroso: contaba menos menus y decia OK.
+      // UN PUNTERO AL MENU DE ABAJO NO ES UN MENU INVISIBLE. `3. 🔵 pedir confirmación explícita:`
+      // seguido en la linea siguiente por el `🔵 **titulo**` de verdad es un paso que ANUNCIA el
+      // menu, y acusarlo obligaria a reescribir un texto que esta bien. Se mira la proxima linea con
+      // contenido: si ahi hay un menu reconocible, esto es su anuncio.
+      const siguiente = rows.slice(index + 1).find((n) => !n.delimiter && n.text.trim() !== '');
+      const anunciaElDeAbajo = siguiente !== undefined && !siguiente.fence && HEADING.test(siguiente.text);
+      if (LEADING_MARK.test(row.text) && !anunciaElDeAbajo) {
+        const razon = row.fence
+          ? EN_UN_FENCE
+          : (INDENTED.test(row.text) ? 'arranca con sangría' : 'está embutido a mitad de una línea');
+        menus.push({ line: row.line, title: row.text.trim(), body: [], closed: true, hidden: null, invisible: razon });
+      }
+      continue;
+    }
     if (row.fence || row.comment) {
       // No se descarta: un menu escondido es el verde mas peligroso, porque el gate contaba menos
       // menus y decia OK. Se registra con su motivo para que el bloque se acuse por nombre.
@@ -144,6 +203,20 @@ export function parseMenus(source) {
   return menus;
 }
 
+/**
+ * Las fases que el documento DECLARA. Una linea dentro de un bloque de codigo no declara nada: el
+ * protocolo cita sus propios encabezados como ejemplo, y contarlos inventaria fases que no existen.
+ */
+export function parsePhases(source) {
+  const fases = [];
+  for (const row of scan(source).rows) {
+    if (row.fence || row.delimiter || row.comment) continue;
+    const match = PHASE_HEADING.exec(row.text);
+    if (match !== null) fases.push({ line: row.line, id: match[1], title: match[2].trim() });
+  }
+  return fases;
+}
+
 /** Todas las violaciones, sin lanzar nunca. */
 export function validateMenus(source) {
   const violations = [];
@@ -152,6 +225,10 @@ export function validateMenus(source) {
   }
   for (const menu of parseMenus(source)) {
     const donde = `línea ${menu.line} (${menu.title.slice(0, 48)})`;
+    if (menu.invisible !== undefined) {
+      violations.push(`${donde}: el menú ${menu.invisible}, así que el barrido no lo reconoce y queda sin verificar. Escribilo como \`🔵 **título**\` pegado al margen izquierdo, con las opciones en lista`);
+      continue;
+    }
     if (menu.loose === true) {
       violations.push(`${donde}: el título del menú no está en negrita (\`🔵 **título**\`), así que el barrido no lo reconoce como menú y todo lo que sigue queda sin verificar`);
       continue;
@@ -213,6 +290,20 @@ export function validateMenus(source) {
       violations.push(`${donde}: no termina en una línea de espera («${CLOSER}…» o equivalente), así que no dice que la fase está bloqueada`);
     }
   }
+
+  // UNA FASE SIN MENU ES UNA FASE QUE SE CIERRA SOLA. La exigencia se deriva del árbol: sólo corre
+  // si el documento declara fases.
+  const fases = parsePhases(source);
+  if (fases.length > 0) {
+    const menus = parseMenus(source).filter((m) => m.hidden === null && m.loose !== true && m.invisible === undefined);
+    for (const [indice, f] of fases.entries()) {
+      const hasta = indice + 1 < fases.length ? fases[indice + 1].line : Number.POSITIVE_INFINITY;
+      if (!menus.some((m) => m.line > f.line && m.line < hasta)) {
+        violations.push(`la fase ${f.id}${f.title === '' ? '' : ` (${f.title.slice(0, 40)})`} de la línea ${f.line} no ofrece un solo menú visible: LAW 7 pide una decisión por fase, y verify-phase-decisions.mjs --require-complete la va a exigir registrada. Sin menú acá, quien corra el protocolo la tiene que improvisar`);
+      }
+    }
+  }
+
   return violations;
 }
 
@@ -261,7 +352,9 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
   const total = parseMenus(source).length;
-  write(`OK: ${path} declara ${total} menú(s) como lista con al menos dos opciones, recomendación explícita y línea de espera.`);
+  const fases = parsePhases(source);
+  const porFase = fases.length === 0 ? '' : ` y cubre las ${fases.length} fase(s) que declara`;
+  write(`OK: ${path} declara ${total} menú(s) como lista con al menos dos opciones, recomendación explícita y línea de espera${porFase}.`);
   write(LIMITS_TEXT);
   return 0;
 }

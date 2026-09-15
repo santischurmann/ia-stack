@@ -1,0 +1,31 @@
+{
+  "schema": "vcp.gate-docs/1",
+  "why": "Un gate que nadie puede correr desde el documento es un gate que no existe. Medido el 2026-09-15: ocho de los 54 scripts no tenian un solo comando copiable en ningun documento del protocolo, y seis de esos ocho ni siquiera aparecen en SKILL.md -- estaban nombrados solo en la tabla de skills/gates.md, que dice que hacen y nunca como se corren. TRES de los ocho eran un olvido y se les escribio el ejemplo -verify-design-tokens, verify-research-citations y verify-test-bindings-. Los CINCO de esta lista NO son un olvido: darles un ejemplo ensenaria a invocarlos mal. Cada uno dice quien lo invoca, para que la excepcion se pueda revisar en vez de creerse.",
+  "not_invoked_directly": [
+    {
+      "script": "verify-red.mjs",
+      "invoked_by": "verify-red.sh y verify-red.ps1",
+      "why": "Es el despachador de test rojo, y lo que se corre son los dos envoltorios. El despachador resuelve el comando del runner contra contracts/red-adapters.json por igualdad exacta y lanza el adaptador declarado: un ejemplo suelto invitaria a saltear esa resolucion, que es justo la pieza que impide leer el reporte de un runner con el clasificador de otro. La fase 5.1 de SKILL.md trae el comando del envoltorio, que es el que hay que copiar."
+    },
+    {
+      "script": "verify-red-node.mjs",
+      "invoked_by": "verify-red.mjs",
+      "why": "Es el adaptador de test rojo para Node, y ademas la biblioteca de rutas contenidas que usan otros gates. Se llega a el por el despachador, que resuelve el runner declarado en contracts/red-adapters.json: un ejemplo suelto ensenaria a saltear esa resolucion y a correr el adaptador de Node sobre un proyecto que declaro pytest, que es exactamente el modo de falla que el despachador existe para impedir."
+    },
+    {
+      "script": "verify-red-pytest.mjs",
+      "invoked_by": "verify-red.mjs",
+      "why": "Adaptador de pytest, de garantia MENOR y declarada: clasifica sobre el JUnit XML y no sobre stdout. Se llega por el despachador. Un ejemplo copiable invitaria a elegir el adaptador a mano, y elegir mal significa leer un reporte con el clasificador de otro runner y darle un verde a un rojo."
+    },
+    {
+      "script": "verify-red-vitest.mjs",
+      "invoked_by": "verify-red.mjs",
+      "why": "Adaptador de vitest, mismo criterio que el de pytest: garantia menor declarada y acceso por despachador. La eleccion del adaptador sale del contrato de runners por igualdad exacta, nunca de lo que alguien copie de un documento."
+    },
+    {
+      "script": "ratchet.mjs",
+      "invoked_by": "los gates que importan safeProjectFile, entre ellos verify-menu-shape.mjs",
+      "why": "Es una biblioteca de rutas seguras con un CLI minimo que sin subcomando valido sale 2. Lo que hace de verdad -confinar una ruta al proyecto y cortar un enlace simbolico que apunte afuera- lo ejercitan los gates que la importan y sus pruebas, no una invocacion a mano. Es lo mismo que ya declara contracts/empty-probe.json sobre este script."
+    }
+  ]
+}
