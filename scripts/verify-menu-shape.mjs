@@ -6,7 +6,7 @@
 // DENTRO de un bloque de codigo, con lineas sueltas `A)` / `B)`. Medido sobre motores de Markdown:
 // esas lineas colapsan a UN solo parrafo, y un fence ademas renderiza como caja de codigo. O sea
 // que el protocolo prescribia por escrito el unico formato que garantiza que el menu NO se vea
-// como menu. Ningun gate se enteraba: verify-vcp-contract pasa 107 checks sin una sola regla de
+// como menu. Ningun gate se enteraba: verify-ia-stack-contract pasa 107 checks sin una sola regla de
 // forma sobre los menus.
 //
 // COMO. Un menu arranca en una linea `🔵 **titulo**` y termina en su linea de espera. Entre las

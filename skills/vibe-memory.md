@@ -35,6 +35,17 @@ gate-state recall across compaction/restart — never a replacement for the file
 
 ---
 
+## El ayudante de `.vibe/`, que hace lo mismo sin escribirlo a mano
+
+```bash
+bash .vibe/ia-stack-runtime/scripts/vibe-memory.sh init
+bash .vibe/ia-stack-runtime/scripts/vibe-memory.sh save session "lo que pasó en esta sesión"
+```
+
+`init` crea la estructura de `.vibe/` y `save <tipo> "<texto>"` agrega al archivo que corresponde.
+**`save lesson` está deliberadamente rechazado**: una lección se confirma con una persona y no se
+puede escribir salteando esa confirmación. Para el registro de auditoría existe `save audit`.
+
 ## BOOTSTRAP (Phase 1)
 
 ### If .vibe/ does not exist:
@@ -189,8 +200,8 @@ trail (who did what, never edited once written). Full org-chart/budget/checkout 
 sellador, nunca a mano — así el escritor y el verificador comparten la misma función de hash y no
 pueden divergir:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs append .vibe/AUDIT.md "[fecha] Rol | acción | evidencia | ref"
-node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs check .vibe/AUDIT.md
+node .vibe/ia-stack-runtime/scripts/verify-audit-chain.mjs append .vibe/AUDIT.md "[fecha] Rol | acción | evidencia | ref"
+node .vibe/ia-stack-runtime/scripts/verify-audit-chain.mjs check .vibe/AUDIT.md
 ```
 Cada línea sellada lleva el hash de la anterior, así editar una línea vieja rompe la cadena y el
 gate nombra la línea exacta. `append` se niega a sellar sobre una traza ya rota: un sello nuevo
@@ -337,7 +348,7 @@ contains unfinished work or `docs/tasks.json` has a non-`done` task, establish t
 lowercase-kebab-case feature slug and run:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
 ```
 
 Only exit `0` permits reading the ledger bottom-up. Exit `1` is a fail-closed identity conflict:

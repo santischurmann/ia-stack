@@ -1,7 +1,7 @@
 # Integración opcional con un grafo externo
 
 **Esto NO es parte del camino obligatorio del protocolo.** VCP cierra la fase 8 sin ninguna
-herramienta de grafo: para eso está `verify-vcp-index.mjs`, que es Node y git y nada más.
+herramienta de grafo: para eso está `verify-ia-stack-index.mjs`, que es Node y git y nada más.
 
 Durante un tiempo estos pasos estaban en la fase 8.2 **sin marcarse como opcionales**, y encima un
 gate estaba cableado a la salida de esa CLI. Quien instalara VCP sin ella no podía cerrar la fase,
@@ -23,10 +23,10 @@ Si tenés la herramienta y la querés usar, los pasos son estos.
   HEAD real leyéndolo con `git rev-parse`, así que registrar antes de commitear ata el receipt al
   commit anterior y `check` lo rechaza.
   ```bash
-  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs record \
+  node .vibe/ia-stack-runtime/scripts/verify-backup-state.mjs record \
     --report graphify-out/GRAPH_REPORT.md --graph graphify-out/graph.json \
     --manifest graphify-out/backup-state.json
-  node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
+  node .vibe/ia-stack-runtime/scripts/verify-backup-state.mjs check graphify-out/backup-state.json
   ```
   **El sello lo registra el protocolo, no Graphify.** El gate no lee el `- Built from commit:` del
   `GRAPH_REPORT.md`, y la razón es concreta: Graphify sólo reescribe ese reporte cuando cambia la
@@ -39,7 +39,7 @@ Si tenés la herramienta y la querés usar, los pasos son estos.
   contra `git ls-files`, acá abajo.
   Después del reindexado, probá que la cobertura declarada del grafo sea honesta:
   ```bash
-  node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
+  node .vibe/ia-stack-runtime/scripts/verify-graphify-manifest.mjs check
   ```
   Cada archivo rastreado debe estar en `graphify-out/manifest.json` o llevar una exclusión con
   razón en `contracts/graphify-exclusions.json`; una entrada del manifest que Git ya no rastrea es
@@ -61,7 +61,7 @@ Si tenés la herramienta y la querés usar, los pasos son estos.
 Si además exportás a un vault, el gate comprueba la forma de lo exportado:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian
+node .vibe/ia-stack-runtime/scripts/verify-obsidian-export.mjs check graphify-out/obsidian
 ```
 
 Verifica que el destino esté dentro del proyecto, que sea un árbol regular y sin symlinks, y que

@@ -3,11 +3,15 @@
 # every command in SKILL.md resolves from that project, not from the package clone.
 set -euo pipefail
 
-SKILL_NAME="VibeCodeProtocols"
+SKILL_NAME="ia-stack"
+# EL NOMBRE ANTERIOR SIGUE ANDANDO. `/VibeCodeProtocols` esta escrito en cada proyecto que ya lo
+# instalo, en notas y en costumbre: quitarlo convertiria un cambio de nombre en una rotura para
+# todos los que ya lo usaban. Se instalan las dos, con el mismo contenido.
+SKILL_ALIAS="VibeCodeProtocols"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
 TARGET_DIR="$HOME/.claude/skills"
-RUNTIME_DIR="$HOME/.claude/vcp-runtime"
+RUNTIME_DIR="$HOME/.claude/ia-stack-runtime"
 PROJECT_DIR=""
 
 usage() {
@@ -49,7 +53,8 @@ echo "Runtime: $RUNTIME_DIR"
 
 mkdir -p "$TARGET_DIR" "$TARGET_DIR/vcp-skills"
 cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_NAME.md"
-cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/vcp-skills/"
+cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_ALIAS.md"
+cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/ia-stack-skills/"
 copy_runtime "$RUNTIME_DIR"
 chmod +x "$RUNTIME_DIR/scripts/"*.sh
 echo "OK: skill, sub-skills, and self-contained runtime installed."
@@ -70,8 +75,8 @@ if [ -n "$PROJECT_DIR" ]; then
     sed -i "s/(fill in)/$PROJECT_NAME/1" "$VIBE_DIR/PROJECT.md" 2>/dev/null || true
     sed -i "s/YYYY-MM-DD/$TODAY/g" "$VIBE_DIR/PROJECT.md" 2>/dev/null || true
   fi
-  copy_runtime "$VIBE_DIR/vcp-runtime"
-  chmod +x "$VIBE_DIR/vcp-runtime/scripts/"*.sh
+  copy_runtime "$VIBE_DIR/ia-stack-runtime"
+  chmod +x "$VIBE_DIR/ia-stack-runtime/scripts/"*.sh
   # El runtime es una copia de esta herramienta, no codigo del proyecto. Sin esta regla queda como
   # archivo sin seguimiento, y entonces: se commitea sin querer junto al trabajo del usuario, y el
   # gate de seguridad lo trata como superficie viva -- un hallazgo dentro del runtime bloquearia el
@@ -87,7 +92,7 @@ if [ -n "$PROJECT_DIR" ]; then
 ' "$ARCHIVE_RULE" >> "$IGNORE_FILE"
     echo "OK: $ARCHIVE_RULE agregado a .gitignore"
   fi
-  IGNORE_RULE=".vibe/vcp-runtime/"
+  IGNORE_RULE=".vibe/ia-stack-runtime/"
   if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
     [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
     printf '# VibeCodeProtocols: copia del runtime, no es codigo del proyecto
@@ -97,12 +102,12 @@ if [ -n "$PROJECT_DIR" ]; then
   fi
   # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
   # .codex/skills/, y sus instrucciones solo en AGENTS.md -- verificado ejecutando: un SKILL.md
-  # suelto en la raiz y los skills/*.md le son invisibles. Sin estos dos punteros, VCP existe en el
+  # suelto en la raiz y los skills/*.md le son invisibles. Sin estos dos punteros, IA Stack existe en el
   # proyecto pero Codex no ve nada de el. Son punteros al runtime, no copias: una copia se
   # desincroniza y ningun gate las mantiene iguales.
-  mkdir -p "$PROJECT_DIR/.agents/skills/vibecodeprotocols"
-  CODEX_SKILL_SRC="$PACKAGE_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
-  CODEX_SKILL_DST="$PROJECT_DIR/.agents/skills/vibecodeprotocols/SKILL.md"
+  mkdir -p "$PROJECT_DIR/.agents/skills/ia-stack"
+  CODEX_SKILL_SRC="$PACKAGE_DIR/.agents/skills/ia-stack/SKILL.md"
+  CODEX_SKILL_DST="$PROJECT_DIR/.agents/skills/ia-stack/SKILL.md"
   # Instalar VCP dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen y
   # destino son el mismo archivo y `cp` falla. No es un error, es que ya esta donde tiene que estar.
   if [ "$CODEX_SKILL_SRC" != "$CODEX_SKILL_DST" ]; then
@@ -112,11 +117,19 @@ if [ -n "$PROJECT_DIR" ]; then
     cp "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
     echo "OK: AGENTS.md creado -> Codex ya ve el protocolo"
   else
-    echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/vcp-runtime/SKILL.md."
+    echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
   fi
-  echo "OK: project runtime -> $VIBE_DIR/vcp-runtime"
+    # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15, cuando el protocolo paso a llamarse IA Stack. El
+  # instalador COPIA Y NUNCA PODA, asi que una instalacion anterior queda con las dos carpetas y la
+  # vieja es una copia de los gates que alguien puede ejecutar sin darse cuenta. No se borra sola:
+  # borrar sin que lo pidan es peor que avisar.
+  if [ -d "$VIBE_DIR/vcp-runtime" ]; then
+    echo "AVISO: quedo $VIBE_DIR/vcp-runtime, del nombre anterior del protocolo. Ya no se actualiza."
+    echo "       Borrala a mano, mirando la ruta, para que no sobreviva una copia vieja de los gates."
+  fi
+  echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"
 else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."
 fi
 
-echo "Next: restart Claude Code, open the project, then invoke /VibeCodeProtocols."
+echo "Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando)."

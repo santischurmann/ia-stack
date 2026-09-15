@@ -207,7 +207,7 @@
       "id": "AC8",
       "event": "Se agrega un gate nuevo al repositorio",
       "precondition": "El gate declara su límite honesto y su comportamiento sin entrada",
-      "action": "node scripts/verify-vcp-contract.mjs check",
+      "action": "node scripts/verify-ia-stack-contract.mjs check",
       "observable_result": "Sale con código cero y la salida cuenta las promesas de contrato y los límites honestos verificados, incluidos los nuevos",
       "test": "tests/verify-vcp-contract.test.mjs",
       "expected_evidence": "El conteo de límites honestos, que sube al agregar cada gate nuevo"

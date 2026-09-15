@@ -13,7 +13,7 @@ claims `INFERRED` ni `INSUFFICIENT_EVIDENCE`: el problema es enteramente interno
 
 | Categoría | Estado | Evidencia |
 |---|---|---|
-| Proceso roto | **Observado** | Cuatro reglas del protocolo existen sólo como texto: la ventana entre `check` y `commit` (`SKILL.md:693`), el carácter append-only de `AUDIT.md` (`skills/vibe-memory.md:99`), la distinción deuda-vieja/hallazgo-nuevo (ausente en `verify-security-baseline.mjs:314`) y las frases de límite honesto (cobertura parcial en `verify-vcp-contract.mjs`). El propio protocolo declara que una regla sin detector es decorativa. |
+| Proceso roto | **Observado** | Cuatro reglas del protocolo existen sólo como texto: la ventana entre `check` y `commit` (`SKILL.md:693`), el carácter append-only de `AUDIT.md` (`skills/vibe-memory.md:99`), la distinción deuda-vieja/hallazgo-nuevo (ausente en `verify-security-baseline.mjs:314`) y las frases de límite honesto (cobertura parcial en `verify-ia-stack-contract.mjs`). El propio protocolo declara que una regla sin detector es decorativa. |
 | Pérdida de información | **Observado** | `AUDIT.md` es la traza de accountability y nada detecta la reescritura de una línea pasada. Una sesión puede alterar su propio historial sin dejar rastro. |
 | Retrabajo | **Hipótesis** | No se recolectó evidencia de retrabajo real causado por estos huecos. No se presenta como diagnóstico. |
 | Bucle abierto | **Observado** | `verify-receipt.mjs:421` documenta explícitamente una ventana que no cierra. Está declarada honestamente pero nunca se cerró. |

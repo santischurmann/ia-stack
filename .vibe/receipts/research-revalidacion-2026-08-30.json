@@ -95,8 +95,8 @@
   "not_reviewed": "De las 145 citas resueltas se leyeron a mano cuatro, para comprobar que la linea sostiene lo que el informe afirma. Las otras 138 estan comprobadas en su existencia, NO en su interpretacion: el gate compara archivo y linea, no significado. No se leyo un solo archivo mas del corpus: la cobertura de lectura sigue en 2,05% y el barrido no la reemplaza. No se revisaron las secciones 2, 3 y 4 del informe -los 24 mecanismos, los rechazos y las convergencias positivas- buscando otras conclusiones falsas; las dos correcciones cubren la seccion 5 y las citas. Las seis sondas del barrido las elegi yo mirando las conclusiones que queria poner a prueba: una septima sonda que a nadie se le ocurrio puede estar tapando algo, y el barrido no puede decir que no. Y la revalidacion completa no se puede repetir desde este repositorio: los clones pesan mas de un giga y no estan aca; lo que queda commiteado es el registro de lo que se midio.",
   "evidence": [
     "node --test --test-concurrency=32 -> tests 732, pass 732, fail 0",
-    "node scripts/verify-vcp-coverage.mjs -> OK: 27 scripts al 100% de lineas, ramas y funciones",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 55 honest limits verified",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: 27 scripts al 100% de lineas, ramas y funciones",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 84 checks, 55 honest limits verified",
     "node scripts/verify-research-citations.mjs check contracts/research-citations.json -> OK: 145 citas, 142 resueltas",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 26 gates, 2 self, 1 excluido",
     "node scripts/verify-audit-chain.mjs check .vibe/AUDIT.md -> OK: 66 lineas encadenadas",

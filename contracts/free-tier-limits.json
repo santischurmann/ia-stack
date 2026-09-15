@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.free-tier-limits/1",
+  "schema": "ia.free-tier-limits/1",
   "why": "Que le alcanza a un proyecto del plan gratuito de cada servicio, y que evento concreto lo saca de ahi. Lo importante no es el cupo: es el disparador, porque casi ninguno es un numero que se pueda ver venir.",
   "revalidated": "2026-09-14",
   "max_age_days": 90,

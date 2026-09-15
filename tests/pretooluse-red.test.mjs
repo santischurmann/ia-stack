@@ -30,7 +30,7 @@ function session(root, feature = 'billing-fix') {
 function validReceipt(overrides = {}) {
   const testContent = 'import test from \'node:test\'; import assert from \'node:assert/strict\'; test(\'x\', () => assert.equal(1, 2));\n';
   return {
-    schema: 'vcp.red-receipt/v2', feature: 'billing-fix', task: 'T01',
+    schema: 'ia.red-receipt/v2', feature: 'billing-fix', task: 'T01',
     emitted_at: new Date(NOW).toISOString(), expires_at: new Date(NOW + RECEIPT_TTL_MS).toISOString(),
     tests: { 'test/billing.test.mjs': sha(testContent) }, allowed_paths: ['src/billing.mjs'],
     red_proofs: [{ test_path: 'test/billing.test.mjs', command: 'node --test', exit_code: 1, output_sha256: 'a'.repeat(64) }],
@@ -215,7 +215,7 @@ test('DOCUMENTED LIMIT (advisory model, not a bypass to fix) · a receipt writte
     const testContent = seedValidState(root);
     const forgedNow = Date.now();
     const forged = {
-      schema: 'vcp.red-receipt/v2', feature: 'billing-fix', task: 'T01',
+      schema: 'ia.red-receipt/v2', feature: 'billing-fix', task: 'T01',
       emitted_at: new Date(forgedNow).toISOString(), expires_at: new Date(forgedNow + RECEIPT_TTL_MS).toISOString(),
       tests: { 'test/billing.test.mjs': sha(testContent) }, allowed_paths: ['src/billing.mjs'],
       red_proofs: [{ test_path: 'test/billing.test.mjs', command: 'node --test', exit_code: 1, output_sha256: ZERO_SHA }],

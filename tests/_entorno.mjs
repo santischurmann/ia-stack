@@ -1,7 +1,7 @@
 // Donde estoy corriendo, y por que importa.
 //
 // El instalador copia tests/ ENTERO al proyecto de otra persona, en
-// `<proyecto>/.vibe/vcp-runtime/tests/`. Ahi adentro conviven dos cosas que no son lo mismo:
+// `<proyecto>/.vibe/ia-stack-runtime/tests/`. Ahi adentro conviven dos cosas que no son lo mismo:
 //
 //   - pruebas OPERATIVAS, que ejercitan los gates y tienen sentido en cualquier proyecto;
 //   - SELF-CHECKS del repositorio de VCP, que leen el README, el CHANGELOG, docs/ o examples/
@@ -16,7 +16,7 @@
 // repositorio ajeno para despues exigir que el README de VCP lo nombrara.
 //
 // La deteccion es por FORMA y no por una lista de rutas: un runtime instalado siempre vive en
-// `<algo>/.vibe/vcp-runtime`. Y nada se saltea en silencio -- se saltea diciendo por que, que es la
+// `<algo>/.vibe/ia-stack-runtime`. Y nada se saltea en silencio -- se saltea diciendo por que, que es la
 // diferencia entre declarar un limite y esconder un hueco.
 
 // La guarda NO se define aca: se reexporta la del gate, que la deriva de DEFAULT_RUNTIME_PATH.

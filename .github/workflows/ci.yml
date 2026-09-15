@@ -60,16 +60,16 @@ jobs:
         run: node --test
 
       - name: Cobertura de cada script inventariado
-        run: node scripts/verify-vcp-coverage.mjs
+        run: node scripts/verify-ia-stack-coverage.mjs
 
       - name: El repositorio no publica la identidad de quien lo escribio
         run: node scripts/verify-repo-clean.mjs check
 
       - name: El indice cubre todo lo rastreado
-        run: node scripts/verify-vcp-index.mjs check
+        run: node scripts/verify-ia-stack-index.mjs check
 
       - name: Las promesas visibles del protocolo y sus limites honestos
-        run: node scripts/verify-vcp-contract.mjs check
+        run: node scripts/verify-ia-stack-contract.mjs check
 
       - name: Cada gate se comporta sobre un directorio vacio como declara
         run: node scripts/verify-empty-probe.mjs check contracts/empty-probe.json

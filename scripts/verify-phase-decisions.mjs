@@ -33,13 +33,14 @@
 
 import { readFileSync } from 'node:fs';
 import { chainHashFor } from './verify-audit-chain.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-phase-decisions.mjs check <decisions.json> [--require-inputs] [--require-complete]';
 export const NO_INPUTS_CODE = 'PHASE_DECISION_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 export const REQUIRE_COMPLETE_FLAG = '--require-complete';
-export const SCHEMA = 'vcp.phase-decisions/1';
+export const SCHEMA = 'ia.phase-decisions/1';
 // `superseded` existe para que una decisión reemplazada no se borre: se marca y se registra la
 // nueva, igual que hace el inventario de requisitos con `replaced`. Borrarla dejaría la cadena rota
 // y, peor, el historial sin la decisión que se abandonó.
@@ -132,7 +133,7 @@ export function checkDocument(document) {
   if (!isObject(document) || !hasExactKeys(document, DOCUMENT_KEYS)) {
     return [violation('PHASE_DECISION_SCHEMA_INVALID', `el archivo debe declarar exactamente ${[...DOCUMENT_KEYS].join(', ')}`)];
   }
-  if (document.schema !== SCHEMA) {
+  if (!mismoSchema(document.schema, SCHEMA)) {
     return [violation('PHASE_DECISION_SCHEMA_INVALID', `el archivo debe declarar schema ${SCHEMA}`)];
   }
   // El orden de fases lo declara el propio archivo, nunca una lista fija acá: VCP usa fases -1, 0,

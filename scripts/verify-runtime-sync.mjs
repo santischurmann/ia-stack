@@ -23,7 +23,21 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 export const USAGE = 'usage: verify-runtime-sync.mjs check [--runtime <path>] [--require-inputs]';
-export const DEFAULT_RUNTIME_PATH = '.vibe/vcp-runtime';
+export const DEFAULT_RUNTIME_PATH = '.vibe/ia-stack-runtime';
+
+/**
+ * LAS DOS CARPETAS, en orden de preferencia. El protocolo paso a llamarse IA Stack el 2026-09-15 y
+ * la carpeta instalada cambio de nombre; toda instalacion anterior tiene la vieja, y ese nombre esta
+ * en la ruta de CADA comando que el protocolo documenta. Romperlas de golpe convertiria un cambio de
+ * nombre en una rotura para todo el que ya lo estaba usando.
+ *
+ * Se prefiere la nueva y se acepta la vieja, y cuando se usa la vieja el gate lo DICE: un verde
+ * silencioso sobre la carpeta vieja dejaria a un proyecto sin migrar para siempre sin enterarse.
+ */
+export const RUTAS_DE_RUNTIME = Object.freeze(['.vibe/ia-stack-runtime', '.vibe/vcp-runtime']);
+
+/** La carpeta vieja, la unica que este gate acepta ademas de la vigente. */
+export const RUTA_LEGADO = '.vibe/vcp-runtime';
 export const NO_INPUTS_CODE = 'RUNTIME_SYNC_NO_INPUTS';
 export const EMPTY_PREFIX = 'VACÍO: ';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
@@ -39,9 +53,13 @@ export const REQUIRE_INPUTS_FLAG = '--require-inputs';
  * y eso no es un OK: es VACIO. */
 export function esRuntimeInstalado(root) {
   const partes = resolve(root).split(/[\\/]/u).filter(Boolean);
-  const esperadas = DEFAULT_RUNTIME_PATH.split('/');
-  if (partes.length < esperadas.length) return false;
-  return partes.slice(-esperadas.length).join('/') === esperadas.join('/');
+  // LAS DOS, no solo la vigente: un proyecto con la carpeta vieja que no se reconociera correria
+  // self-checks que no le corresponden y veria rojos que no son suyos.
+  return RUTAS_DE_RUNTIME.some((ruta) => {
+    const esperadas = ruta.split('/');
+    return partes.length >= esperadas.length
+      && partes.slice(-esperadas.length).join('/') === esperadas.join('/');
+  });
 }
 
 // Derived from copy_runtime() in scripts/install.sh and Copy-Runtime in scripts/install.ps1 — not
@@ -144,8 +162,18 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
     return 2;
   }
   const stat = io.stat ?? statSync;
+
+  // LA NUEVA GANA, LA VIEJA SE ACEPTA. Y si estan las DOS no se elige en silencio: una copia vieja
+  // que sobrevive a la migracion es un gate retirado que se sigue pudiendo ejecutar, el mismo modo
+  // de falla que este gate ya declara para los archivos que sobran.
+  const presentes = RUTAS_DE_RUNTIME.filter((ruta) => statKind(join(cwd, ...ruta.split('/')), stat) === 'directory');
+  if (parsed.runtime === null && presentes.length > 1) {
+    writeError(`REJECTED: hay dos runtimes instalados: ${presentes.join(' y ')}. El segundo es del nombre anterior del protocolo y ya no se actualiza: borralo a mano, mirando la ruta, para que no quede una copia vieja de los gates que alguien pueda ejecutar sin darse cuenta.`);
+    return 1;
+  }
+  const rutaElegida = presentes[0] ?? DEFAULT_RUNTIME_PATH;
   const runtimeRoot = parsed.runtime === null
-    ? join(cwd, ...DEFAULT_RUNTIME_PATH.split('/'))
+    ? join(cwd, ...rutaElegida.split('/'))
     : resolve(cwd, parsed.runtime);
   if (statKind(runtimeRoot, stat) !== 'directory') {
     // A path the operator named explicitly and that is not a runtime is a mistake worth failing on:
@@ -154,7 +182,7 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
       writeError(`REJECTED: --runtime does not name an installed runtime directory: ${parsed.runtime}`);
       return 1;
     }
-    const message = `no runtime installed at ${DEFAULT_RUNTIME_PATH} — nothing to compare (a source checkout without an installed runtime is normal).`;
+    const message = `no runtime installed at ${RUTAS_DE_RUNTIME.join(' ni ')} — nothing to compare (a source checkout without an installed runtime is normal).`;
     if (parsed.requireInputs) {
       writeError(`REJECTED: ${NO_INPUTS_CODE}: ${message}`);
       return 1;
@@ -188,6 +216,9 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
       writeError('Aviso: el instalador copia, no borra — reinstalar NO saca los archivos de mas de arriba. Borralos a mano del runtime instalado, uno por uno y mirando cada ruta: un archivo que el origen ya no tiene es un gate retirado que se sigue ejecutando desde la copia.');
     }
     return 1;
+  }
+  if (parsed.runtime === null && rutaElegida === RUTA_LEGADO) {
+    write(`AVISO: el runtime instalado está en ${RUTA_LEGADO}, que es el nombre anterior del protocolo. Se sigue aceptando y se compara igual, pero la carpeta vigente es ${DEFAULT_RUNTIME_PATH}: reinstalá para migrar, y después borrá la vieja a mano.`);
   }
   write(`OK: the installed runtime at ${runtimeRoot} matches this source checkout in all ${result.compared} file(s).`);
   return 0;

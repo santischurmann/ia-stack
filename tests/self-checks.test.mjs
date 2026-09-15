@@ -80,7 +80,7 @@ test('FALSIFICACIÓN · lo que el instalador copia a la raíz no se inventa acá
 });
 
 test('FALSIFICACIÓN · la guarda de entorno reconoce una instalación y no un checkout', (t) => {
-  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'vcp-runtime')), true);
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'ia-stack-runtime')), true);
   assert.equal(esRuntimeInstalado(join('C:', 'Users', 'x', 'ia-stack')), false);
   // Y el atajo que usan las pruebas: en el checkout no saltea nada.
   assert.equal(saltarSiEsRuntimeInstalado(t, repoRoot, 'prueba'), esRuntimeInstalado(repoRoot));

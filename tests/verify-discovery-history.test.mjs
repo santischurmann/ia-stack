@@ -118,9 +118,9 @@ test('FALSIFICACIÓN · borrar una decisión ya commiteada rompe el ancla', () =
 
 test('FALSIFICACIÓN · reescribir un packet ya commiteado también rompe el ancla', () => {
   repo(({ raiz, escribir, commit }) => {
-    escribir(packet(SLUG, 2), '{"schema":"vcp.discovery-packet/1"}');
+    escribir(packet(SLUG, 2), '{"schema":"ia.discovery-packet/1"}');
     commit('packet original');
-    escribir(packet(SLUG, 2), '{"schema":"vcp.discovery-packet/1","research_snapshot":{"claims":[]}}');
+    escribir(packet(SLUG, 2), '{"schema":"ia.discovery-packet/1","research_snapshot":{"claims":[]}}');
     commit('reescribo el packet');
     const r = verifyDiscoveryGrowth(raiz, SLUG);
     assert.equal(r.violations.length, 1, JSON.stringify(r));
@@ -134,7 +134,7 @@ test('agregar decisiones nuevas es exactamente lo que un expediente hace, y no e
     escribir(decision(SLUG, 1), '{"decision_id":"d001"}');
     commit('primera');
     escribir(decision(SLUG, 2), '{"decision_id":"d002"}');
-    escribir(packet(SLUG, 2), '{"schema":"vcp.discovery-packet/1"}');
+    escribir(packet(SLUG, 2), '{"schema":"ia.discovery-packet/1"}');
     commit('segunda, con su packet');
     const r = verifyDiscoveryGrowth(raiz, SLUG);
     assert.deepEqual(r.violations, []);

@@ -80,10 +80,10 @@ test('FALSIFICACIÓN · a missing graph, corrupt and missing manifests reject', 
 
     writeFileSync(manifestPath, JSON.stringify({ schema: 'wrong' }));
     assert.match(verify(manifestPath, root).reason, /unknown backup manifest schema/i);
-    writeFileSync(manifestPath, JSON.stringify({ schema: 'vcp.graphify-backup/v1' }));
+    writeFileSync(manifestPath, JSON.stringify({ schema: 'ia.graphify-backup/v1' }));
     assert.match(verify(manifestPath, root).reason, /missing required fields/i);
     writeFileSync(manifestPath, JSON.stringify({
-      schema: 'vcp.graphify-backup/v1', git_head: 'x', graph_report: 'x', graph_report_sha256: 'x', graph: '', graph_sha256: 'x',
+      schema: 'ia.graphify-backup/v1', git_head: 'x', graph_report: 'x', graph_report_sha256: 'x', graph: '', graph_sha256: 'x',
     }));
     assert.match(verify(manifestPath, root).reason, /missing required fields/i);
   } finally {
@@ -178,7 +178,7 @@ test('FALSIFICACIÓN · backup evidence never reads, writes or follows a path ou
 
     mkdirSync(join(root, '.vibe'), { recursive: true });
     writeFileSync(join(root, '.vibe', 'backup.json'), JSON.stringify({
-      schema: 'vcp.graphify-backup/v1', git_head: 'x', graph_report: '../outside.md', graph_report_sha256: 'x', graph: '../outside.json', graph_sha256: 'x',
+      schema: 'ia.graphify-backup/v1', git_head: 'x', graph_report: '../outside.md', graph_report_sha256: 'x', graph: '../outside.json', graph_sha256: 'x',
     }));
     assert.match(verify('.vibe/backup.json', root).reason, /escapes the project/i, 'manifest fields cannot redirect verification outside the checkout');
     assert.match(verify(join(outside, 'missing.json'), root).reason, /escapes the project/i, 'check itself rejects an external manifest path');
@@ -274,7 +274,7 @@ test('FALSIFICACIÓN · a checkout with no commit yet cannot be sealed and canno
     assert.throws(() => record({ ...RECORD_ARGS, cwd: root }), /git HEAD/iu, 'there is no commit to bind the receipt to');
     mkdirSync(join(root, '.vibe'), { recursive: true });
     writeFileSync(join(root, '.vibe', 'backup.json'), JSON.stringify({
-      schema: 'vcp.graphify-backup/v1', git_head: 'deadbeef', recorded_at: '2026-08-28T00:00:00.000Z',
+      schema: 'ia.graphify-backup/v1', git_head: 'deadbeef', recorded_at: '2026-08-28T00:00:00.000Z',
       graph_report: 'graphify-out/GRAPH_REPORT.md', graph_report_sha256: sha256(join(root, 'graphify-out', 'GRAPH_REPORT.md')),
       graph: 'graphify-out/graph.json', graph_sha256: sha256(join(root, 'graphify-out', 'graph.json')),
     }));

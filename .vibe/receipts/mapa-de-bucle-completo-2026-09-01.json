@@ -51,7 +51,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-product-diagnostics.test.mjs",
       "test_hash_sha256": "61ee80e7f6e8c6f53dccb7180dc912222aa9739f3ed14c58f94433d1b12c81e4",
-      "command": "node scripts/verify-vcp-coverage.mjs",
+      "command": "node scripts/verify-ia-stack-coverage.mjs",
       "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 3 ramas sin ejercitar en validateDelta: :239, :246 y :254."
     }
   ],
@@ -125,15 +125,15 @@
       "reason": "No hay ningun loop-map.json real en el repositorio: el unico era la plantilla. Se midio la forma del gate, no su efecto."
     }
   ],
-  "reproduction": "Antes: validateLoopStage exigia exactamente input, measure, decision_owner, action, control y learning, y validateLoopMap no tenia delta ni pedia rollback ni señales de fallo. RED: con la fixture ampliada a trece campos y delta, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. Durante el BUILD, el reemplazo del bloque borro cuatro helpers del PRD y la suite lo delato con ReferenceError: validateUsers is not defined; se restauraron desde HEAD y se verificaron identicos. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 3 ramas sin ejecutar en validateDelta con archivo y linea. El gate de contrato tambien freno el trabajo: la frase del limite honesto quedaba partida por un salto de linea en el README y por lo tanto no existia literalmente; se reacomodo el texto. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 852 pruebas cada una, cobertura 33 de 33, y contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
+  "reproduction": "Antes: validateLoopStage exigia exactamente input, measure, decision_owner, action, control y learning, y validateLoopMap no tenia delta ni pedia rollback ni señales de fallo. RED: con la fixture ampliada a trece campos y delta, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. Durante el BUILD, el reemplazo del bloque borro cuatro helpers del PRD y la suite lo delato con ReferenceError: validateUsers is not defined; se restauraron desde HEAD y se verificaron identicos. TRIANGULATE: node scripts/verify-ia-stack-coverage.mjs nombro 3 ramas sin ejecutar en validateDelta con archivo y linea. El gate de contrato tambien freno el trabajo: la frase del limite honesto quedaba partida por un salto de linea en el README y por lo tanto no existia literalmente; se reacomodo el texto. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 852 pruebas cada una, cobertura 33 de 33, y contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
   "not_reviewed": "De los trece campos del bucle, doce son prosa que el gate no puede juzgar: no sabe si la metrica declarada se mide de verdad, ni si el control frena algo, ni si la condicion de bloqueo describe un bloqueo real. Lo unico verificado es la coherencia interna del delta contra current y target. Tampoco comprueba que el rollback sea ejecutable ni que las señales de fallo sean observables: exige que esten escritas. Que los trece campos sean los correctos no esta medido: salen del encargo. Y quedan sin auditar contra el encargo los otros cuatro artefactos del mismo gate: PRD, implementacion, adopcion y recurrencia; del PRD ya se sabe que sus criterios de aceptacion piden dos campos donde el encargo pide siete.",
   "evidence": [
     "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 852, pass 852, fail 0",
     "node --test tests/verify-product-diagnostics.test.mjs -> 20 de 20 en verde; con el gate anterior eran 6 rojas conductuales",
-    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
-    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 3 ramas sin ejecutar en validateDelta: :239, :246, :254",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-ia-stack-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 3 ramas sin ejecutar en validateDelta: :239, :246, :254",
     "diff de los 4 helpers del PRD entre HEAD y el arbol -> IDENTICO en validateUsers, validateCapabilities, validateAcceptanceCriteria y validateRisks",
-    "node scripts/verify-vcp-contract.mjs check -> primero REJECTED por el limite honesto partido en dos lineas; tras reacomodar el README, OK con 107 checks y 64 limites",
+    "node scripts/verify-ia-stack-contract.mjs check -> primero REJECTED por el limite honesto partido en dos lineas; tras reacomodar el README, OK con 107 checks y 64 limites",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s)",
     "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 5 task(s), 24 declared writer path(s), sin conflictos sin secuenciar",
     "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",

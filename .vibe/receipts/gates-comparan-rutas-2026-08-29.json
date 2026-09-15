@@ -8,7 +8,7 @@
       "contracts/empty-probe.json",
       "scripts/verify-empty-probe.mjs",
       "scripts/verify-graphify-manifest.mjs",
-      "scripts/verify-vcp-coverage.mjs",
+      "scripts/verify-ia-stack-coverage.mjs",
       "tests/verify-empty-probe.test.mjs",
       "tests/verify-graphify-manifest.test.mjs",
       "tests/verify-vcp-coverage.test.mjs"
@@ -73,19 +73,19 @@
       "reason": "No se conto: haria falta reconstruir el inventario viejo y cruzarlo archivo por archivo contra tests/. Se reprodujo el mecanismo con un caso concreto, no se midio su alcance historico."
     }
   ],
-  "reproduction": "Con el codigo anterior a este cambio: (1) cobertura — pasarle a evaluateCoverageRun un reporte cuya unica fila viene bajo la cabecera de directorio 'tests' y pedirle scripts/huerfano.mjs: devolvia ok. (2) sonda — correr verify-empty-probe con el contrato sin pretooluse-red.mjs ni ratchet.mjs: salia OK, ninguno de los dos aparecia como no declarado. (3) manifiesto — poner {\"archivo.mjs\": {}} en graphify-out/manifest.json: contaba como indexado. Verificacion posterior: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json && node scripts/verify-graphify-manifest.mjs check",
+  "reproduction": "Con el codigo anterior a este cambio: (1) cobertura — pasarle a evaluateCoverageRun un reporte cuya unica fila viene bajo la cabecera de directorio 'tests' y pedirle scripts/huerfano.mjs: devolvia ok. (2) sonda — correr verify-empty-probe con el contrato sin pretooluse-red.mjs ni ratchet.mjs: salia OK, ninguno de los dos aparecia como no declarado. (3) manifiesto — poner {\"archivo.mjs\": {}} en graphify-out/manifest.json: contaba como indexado. Verificacion posterior: node --test --test-concurrency=32 && node scripts/verify-ia-stack-coverage.mjs && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json && node scripts/verify-graphify-manifest.mjs check",
   "not_reviewed": "Esto se hizo como Direct Build, sin spec formal: los tres AC de arriba se derivaron de los arreglos despues de hacerlos, no de criterios escritos en docs/spec.md antes de empezar. No se midio cuantos scripts estaban falsamente cubiertos por un homonimo antes del arreglo. No se ejercito el instalador de PowerShell (solo install.sh). No se investigaron los 16 archivos que graphify reporta con cero nodos. La custodia de los commits anteriores a este no se audito: se leyo el estado de firma de este commit, nada mas.",
   "evidence": [
     "node --test --test-concurrency=32 -> tests 609, pass 609, fail 0, skipped 0",
-    "node scripts/verify-vcp-coverage.mjs -> OK: All 25 expected Node script(s) are at 100% lines, branches, and functions.",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 84 user-visible protocol contract checks pass; 34 honest limits verified.",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: All 25 expected Node script(s) are at 100% lines, branches, and functions.",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 84 user-visible protocol contract checks pass; 34 honest limits verified.",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 24 gate(s), 2 que verifican el propio checkout, 1 excluido con motivo escrito.",
     "node scripts/verify-graphify-manifest.mjs check -> OK: Graphify manifest covers 177 tracked file(s) with every exclusion declared and justified.",
     "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: scanned 7 live changed file(s); no blocking Critical/High findings, 0 accepted.",
     "node scripts/verify-audit-chain.mjs check .vibe/AUDIT.md -> OK: intact audit chain over 51 chained line(s).",
     "node scripts/verify-audit-chain.mjs history .vibe/AUDIT.md -> OK: solo crecio a lo largo de 33 version(es) commiteada(s).",
     "node scripts/verify-backup-state.mjs check graphify-out/backup-state.json -> OK: Graphify backup matches b620ac9137f3a0738d4d714cf4af0ffebfe84c6a.",
-    "node scripts/verify-runtime-sync.mjs check -> OK: the installed runtime at .vibe/vcp-runtime matches this source checkout in all 118 file(s).",
+    "node scripts/verify-runtime-sync.mjs check -> OK: the installed runtime at .vibe/ia-stack-runtime matches this source checkout in all 118 file(s).",
     "git clone https://github.com/santischurmann/VibeCodeProtocols.git && node --test --test-concurrency=32 -> tests 609, pass 608, fail 0, skipped 1 (la de cobertura del grafo, que se declara salteada porque graphify-out/ no se publica).",
     "git push origin main -> ce18178..e7a31fa, luego e7a31fa..b620ac9"
   ],

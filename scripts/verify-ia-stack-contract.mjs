@@ -6,14 +6,15 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { EMPTY_PREFIX, esRuntimeInstalado } from './verify-runtime-sync.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const USAGE = 'usage: verify-vcp-contract.mjs check';
+export const USAGE = 'usage: verify-ia-stack-contract.mjs check';
 export const REQUIREMENTS = [
-  ['README.md', /VCP ayuda a una IA/u, 'simple purpose statement'],
-  ['README.md', /\.vibe\/vcp-runtime\/scripts\//u, 'project-local runtime command path'],
+  ['README.md', /IA Stack ayuda a una IA/u, 'simple purpose statement'],
+  ['README.md', /\.vibe\/ia-stack-runtime\/scripts\//u, 'project-local runtime command path'],
   ['INSTALL.md', /--project\b/u, 'explicit Bash project installation'],
   ['INSTALL.md', /-ProjectDir\b/u, 'explicit PowerShell project installation'],
-  ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'runtime plan gate'],
+  ['SKILL.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'runtime plan gate'],
   ['SKILL.md', /verify-security-baseline\.mjs/u, 'mechanical security baseline'],
   ['skills/integracion-graphify.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
   ['README.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],
@@ -59,7 +60,7 @@ export const REQUIREMENTS = [
   ['SKILL.md', /Cuándo una fase está terminada/u, 'explicit phase-completion rule'],
   ['SKILL.md', /Redacción reutilizable/u, 'reuse canonical wording'],
   ['skills/gates.md', /verify-runtime-sync\.mjs check/u, 'mechanical runtime-sync gate'],
-  // Running the gate from inside .vibe/vcp-runtime/ compares the installed copy with itself: it is
+  // Running the gate from inside .vibe/ia-stack-runtime/ compares the installed copy with itself: it is
   // always green and proves nothing. The promise that it runs from the source checkout is the whole
   // gate, so it is pinned as text and not left to whoever edits the phase later.
   ['SKILL.md', /nunca desde el runtime/u, 'runtime-sync gate runs from the source checkout, never against itself'],
@@ -73,10 +74,10 @@ export const REQUIREMENTS = [
   ['skills/receipt.md', /Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC/u, 'receipt v2: all-AC-COMPLIANT requirement'],
   ['skills/receipt.md', /nunca re-ejecuta el comando ni prueba criptográficamente/u, 'receipt v2: command/result is reviewable evidence, not cryptographic proof'],
   ['skills/receipt.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
-  ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
+  ['SKILL.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
   ['SKILL.md', /verify-spec-wordcap\.mjs check docs\/spec\.md --quality/u, 'strict spec quality-shape gate'],
   ['skills/gates.md', /verify-spec-wordcap\.mjs --quality/u, 'strict spec quality-shape gate'],
-  ['SKILL.md', /verify-capability-matrix\.mjs check \.vibe\/vcp-runtime\/contracts\/capability-matrix\.json/u, 'mechanical capability-separation gate'],
+  ['SKILL.md', /verify-capability-matrix\.mjs check \.vibe\/ia-stack-runtime\/contracts\/capability-matrix\.json/u, 'mechanical capability-separation gate'],
   ['skills/gates.md', /verify-capability-matrix\.mjs/u, 'capability matrix gate'],
   ['SKILL.md', /verify-discovery-core\.mjs/u, 'immutable Discovery history gate'],
   ['SKILL.md', /verify-scope-diff\.mjs check/u, 'mechanical scope-vs-diff gate'],
@@ -93,8 +94,8 @@ export const REQUIREMENTS = [
   // variable de entorno existe para bajarla. El contrato clavaba la mentira en su lugar, y por eso
   // una correccion anterior pudo arreglar el parrafo de arriba y no la fila de la tabla. Ahora fija
   // el hecho -- el valor real y para que sirve el override -- en vez de una redaccion.
-  ['skills/gates.md', /--test-concurrency=32[\s\S]*?VCP_TEST_CONCURRENCY=<n>` existe para \*\*bajarlo\*\*/u, 'coverage runner default is 32 and the override only lowers it'],
-  ['skills/gates.md', /VCP_BASH_PATH/u, 'explicit Windows Bash selection'],
+  ['skills/gates.md', /--test-concurrency=32[\s\S]*?IA_STACK_TEST_CONCURRENCY=<n>` existe para \*\*bajarlo\*\*/u, 'coverage runner default is 32 and the override only lowers it'],
+  ['skills/gates.md', /IA_STACK_BASH_PATH/u, 'explicit Windows Bash selection'],
   ['SKILL.md', /verify-evidence-runner\.mjs run/u, 'native argv evidence runner'],
   ['SKILL.md', /verify-evidence-runner\.mjs check .*--require-complete/u, 'strict evidence completion gate'],
   ['skills/gates.md', /verify-evidence-runner\.mjs/u, 'native evidence runner'],
@@ -116,11 +117,11 @@ export const REQUIREMENTS = [
   ['skills/gates.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
   ['SKILL.md', /verify-phase-menu\.mjs check docs\/phase-decisions\.json --plan docs\/phase-plan\.json/u, 'canonical phase-plan integration gate'],
   ['skills/gates.md', /verify-phase-menu\.mjs check/u, 'canonical phase-plan integration gate'],
-  ['templates/diagnostics/caio.json', /vcp\.caio\/1/u, 'CAIO diagnostic template schema'],
-  ['templates/phase-plan.json', /vcp\.phase-plan\/1/u, 'canonical phase-plan template schema'],
+  ['templates/diagnostics/caio.json', /ia\.caio\/1/u, 'CAIO diagnostic template schema'],
+  ['templates/phase-plan.json', /ia\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
   // qué existe. Borrar el gate no puede borrar en silencio el motivo por el que se agregó.
-  // vcp.receipt/v3: el DoD dejo de terminar en "adversarial pass". Las cuatro anclas son la regla,
+  // ia.receipt/v3: el DoD dejo de terminar en "adversarial pass". Las cuatro anclas son la regla,
   // no el gate -- un receipt sin soporte declarado o con una regresion disfrazada de limite tiene
   // que seguir siendo un rechazo aunque alguien renombre el script que lo detecta.
   // La fase 8 dejo de ser commit+push+zip. Las anclas son la regla, no el gate: un despliegue sin
@@ -135,11 +136,11 @@ export const REQUIREMENTS = [
   ['SKILL.md', /verify-threat-model\.mjs check --feature/u, 'the attack-surface gate wired into 6.2'],
   ['SKILL.md', /Superficie de ataque/u, 'the attack surface is declared before building'],
   ['skills/gates.md', /verify-threat-model\.mjs/u, 'the attack-surface gate is in the gate table'],
-  ['SKILL.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
+  ['SKILL.md', /ia\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   ['SKILL.md', /soporte declarado/u, 'DoD asks what a user complaint is diagnosed with'],
   ['skills/receipt.md', /El discriminador es mecánico, no de criterio: el campo/u, 'limit vs regression is decided by shape, never by judgement'],
   ['skills/receipt.md', /refutar es\nun hecho contable, no una impresión|refutar es un hecho contable/u, 'the adversarial round is counted, not narrated'],
-  ['skills/gates.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
+  ['skills/gates.md', /ia\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   // El gate y la regla se fijan aparte a proposito: el gate detecta la regla, pero la regla es del
   // protocolo y tiene que seguir escrita aunque alguien mueva, renombre o borre el gate que la
   // detecta. La sexta forma de asercion prohibida es la unica de esa lista que trae detector.
@@ -165,13 +166,13 @@ export const REQUIREMENTS = [
   ['templates/vibe/SESSION.md', /## No verificado/u, 'documented unverified-check section'],
   ['templates/spec.md', /## Discovery \/ Investigación previa/u, 'Discovery evidence section in canonical spec'],
   ['templates/plan.md', /## Write-conflict preflight/u, 'canonical plan preflight section'],
-  ['templates/plan.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],
-  ['skills/spec-plan-templates.md', /\.vibe\/vcp-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'embedded plan gate command'],
+  ['templates/plan.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'canonical plan gate command'],
+  ['skills/spec-plan-templates.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'embedded plan gate command'],
   // El bucle de auto-mejora. Las dos mitades se fijan por separado a proposito: `due` sin `check` es
   // un recordatorio que no verifica nada, y `check` sin `due` es un gate que nadie sabe cuando correr.
   ['README.md', /verify-sereno\.mjs due/u, 'self-improvement loop: how to know a round is due'],
   ['README.md', /verify-sereno\.mjs check/u, 'self-improvement loop: how to verify the round it wrote'],
-  ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-sereno\.mjs/u, 'self-improvement loop wired into PHASE 9'],
+  ['SKILL.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-sereno\.mjs/u, 'self-improvement loop wired into PHASE 9'],
   ['README.md', /\*\*como mucho cuatro\*\*/u, 'the cap of four proposals, which is the feature'],
   ['skills/vibe-memory.md', /4000 caracteres/u, 'the forward-only cap on a new audit line'],
   ['SKILL.md', /verify-feature-activa\.mjs/u, 'the gate that compares who declares the active feature'],
@@ -204,7 +205,7 @@ export const FORBIDDEN_PHRASES = [
 // "improves the wording" can weaken a limit and nobody learns which guarantee was lost. This half
 // moves the limits into a data file where each one carries the reason it exists.
 export const HONEST_LIMITS_FILE = 'contracts/honest-limits.json';
-export const HONEST_LIMITS_SCHEMA = 'vcp.honest-limits/1';
+export const HONEST_LIMITS_SCHEMA = 'ia.honest-limits/1';
 const LIMIT_FIELDS = ['limit_id', 'file', 'phrase', 'why'];
 const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const WINDOWS_DRIVE = /^[a-z]:/iu;
@@ -254,7 +255,7 @@ export function readHonestLimits(read) {
   } catch (error) {
     throw new Error(`${HONEST_LIMITS_FILE} is not valid JSON: ${error.message}`);
   }
-  if (document?.schema !== HONEST_LIMITS_SCHEMA) {
+  if (!mismoSchema(document?.schema, HONEST_LIMITS_SCHEMA)) {
     throw new Error(`${HONEST_LIMITS_FILE} must declare schema ${HONEST_LIMITS_SCHEMA}`);
   }
   if (!Array.isArray(document.limits)) throw new Error(`${HONEST_LIMITS_FILE} must contain a limits array`);
@@ -325,8 +326,8 @@ export function contractViolations(read) {
 }
 
 /** Donde vive ESTE script. Es lo que decide si el gate esta adentro de un runtime instalado, y no el
- * directorio de trabajo: quien instala VCP no hace `cd .vibe/vcp-runtime` para correr un gate, corre
- * `node .vibe/vcp-runtime/scripts/<gate>.mjs` desde la raiz de su proyecto. Medido el 2026-09-04
+ * directorio de trabajo: quien instala VCP no hace `cd .vibe/ia-stack-runtime` para correr un gate, corre
+ * `node .vibe/ia-stack-runtime/scripts/<gate>.mjs` desde la raiz de su proyecto. Medido el 2026-09-04
  * sobre una instalacion real: asi invocado, el gate daba 113 rechazos que hablaban de README.md e
  * INSTALL.md del repositorio de VCP, archivos que el instalador no copia. */
 export const RAIZ_DEL_SCRIPT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -363,6 +364,6 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   return 0;
 }
 
-if (process.argv[1] && process.argv[1].endsWith('verify-vcp-contract.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('verify-ia-stack-contract.mjs')) {
   process.exitCode = main();
 }

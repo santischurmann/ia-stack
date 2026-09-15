@@ -13,8 +13,8 @@ import {
 
 const feature = 'research-flow';
 const script = fileURLToPath(new URL('../scripts/verify-discovery-views.mjs', import.meta.url));
-const decisionSchema = 'vcp.discovery-decision/3';
-const packetSchema = 'vcp.discovery-packet/1';
+const decisionSchema = 'ia.discovery-decision/3';
+const packetSchema = 'ia.discovery-packet/1';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const encode = (value) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`);
 function write(path, value) { const bytes = Buffer.isBuffer(value) ? value : encode(value); writeFileSync(path, bytes); return bytes; }

@@ -539,7 +539,7 @@ test('FALSIFICACIÓN · otra categoría, otro archivo u otra evidencia dan otro 
 });
 
 test('readSecurityBaseline acepta un documento bien formado y devuelve las entradas revisadas', () => {
-  assert.equal(SECURITY_BASELINE_SCHEMA, 'vcp.security-baseline/1');
+  assert.equal(SECURITY_BASELINE_SCHEMA, 'ia.security-baseline/1');
   const entries = [acceptedEntry(), acceptedEntry({ path: 'scripts/otro.mjs' })];
   assert.deepEqual(readSecurityBaseline(readerFor(entries)), entries);
   assert.deepEqual(readSecurityBaseline(readerFor([])), []);
@@ -556,7 +556,7 @@ test('FALSIFICACIÓN · readSecurityBaseline rechaza un baseline ilegible, sin s
   for (const shape of ['[]', 'null', '"texto"', '12']) {
     expectError(() => readSecurityBaseline(() => shape), /schema/iu);
   }
-  expectError(() => readSecurityBaseline(readerFor([], 'vcp.security-baseline/2')), /schema/iu);
+  expectError(() => readSecurityBaseline(readerFor([], 'ia.security-baseline/2')), /schema/iu);
   expectError(() => readSecurityBaseline(() => JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA })), /accepted/iu);
   expectError(() => readSecurityBaseline(() => JSON.stringify({ schema: SECURITY_BASELINE_SCHEMA, accepted: {} })), /accepted/iu);
 });

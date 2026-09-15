@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.triangulate/1",
+  "schema": "ia.triangulate/1",
   "feature": "eleccion-de-stack",
   "date": "2026-09-14",
   "vectors": {

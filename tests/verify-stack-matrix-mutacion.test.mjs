@@ -43,7 +43,7 @@ const servicio = (over = {}) => ({
 });
 
 const contrato = (over = {}) => ({
-  schema: 'vcp.free-tier-limits/1',
+  schema: 'ia.free-tier-limits/1',
   why: texto('Qué le alcanza a un proyecto del plan gratuito'),
   revalidated: '2026-09-14',
   max_age_days: 90,
@@ -66,7 +66,7 @@ const fila = (product_type, over = {}) => ({
 });
 
 const matriz = (over = {}) => ({
-  schema: 'vcp.stack-matrix/1',
+  schema: 'ia.stack-matrix/1',
   feature: 'eleccion-de-stack',
   date: '2026-09-14',
   captured_at: '2026-09-14',
@@ -246,7 +246,7 @@ test('el formato de fecha se comprueba de verdad, no sólo que haya algo escrito
 test('la matriz con otro esquema corta nombrando el esquema esperado', () => {
   const violaciones = validateMatrix({ schema: 'otro' }, ids);
   assert.ok(
-    violaciones.some((v) => /vcp\.stack-matrix/u.test(v)),
+    violaciones.some((v) => /ia\.stack-matrix/u.test(v)),
     `contar una sola violación no distingue el corte por esquema de la falta de rows: ${JSON.stringify(violaciones)}`,
   );
 });

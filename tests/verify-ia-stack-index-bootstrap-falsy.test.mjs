@@ -1,13 +1,13 @@
-// Isolated worker: covers the non-CLI branch without running coverage recursively.
+// Worker aislado: cubre la rama falsa del guard de ejecución directa sin correr el gate.
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const script = join(root, 'scripts', 'verify-vcp-coverage.mjs');
+const script = join(root, 'scripts', 'verify-ia-stack-index.mjs');
 const original = process.argv;
 process.argv = [process.execPath];
 await import(pathToFileURL(script).href);
 process.argv = original;
 
-test('coverage bootstrap does not execute without a script path', () => {});
+test('el gate del índice no se ejecuta sin una ruta de script', () => {});

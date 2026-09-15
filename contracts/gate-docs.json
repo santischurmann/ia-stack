@@ -1,6 +1,6 @@
 {
-  "schema": "vcp.gate-docs/1",
-  "why": "Un gate que nadie puede correr desde el documento es un gate que no existe. Medido el 2026-09-15: ocho de los 54 scripts no tenian un solo comando copiable en ningun documento del protocolo, y seis de esos ocho ni siquiera aparecen en SKILL.md -- estaban nombrados solo en la tabla de skills/gates.md, que dice que hacen y nunca como se corren. TRES de los ocho eran un olvido y se les escribio el ejemplo -verify-design-tokens, verify-research-citations y verify-test-bindings-. Los CINCO de esta lista NO son un olvido: darles un ejemplo ensenaria a invocarlos mal. Cada uno dice quien lo invoca, para que la excepcion se pueda revisar en vez de creerse.",
+  "schema": "ia.gate-docs/1",
+  "why": "Un gate que nadie puede correr desde el documento es un gate que no existe. Medido el 2026-09-15: ocho de los 54 scripts no tenian un solo comando copiable en ningun documento del protocolo, y seis de esos ocho ni siquiera aparecen en SKILL.md -- estaban nombrados solo en la tabla de skills/gates.md, que dice que hacen y nunca como se corren. TRES de los ocho eran un olvido y se les escribio el ejemplo -verify-design-tokens, verify-research-citations y verify-test-bindings-. Los CINCO de esta lista NO son un olvido: darles un ejemplo ensenaria a invocarlos mal. Cada uno dice quien lo invoca, para que la excepcion se pueda revisar en vez de creerse. ALCANCE: el gate mira TODO script de scripts/. Su primera version filtraba por prefijo -verify-, ratchet, pretooluse- y eso dejaba seis archivos afuera sin que nadie los contara: una lista escrita a mano que alguien tiene que acordarse de ampliar es justo de lo que este gate existe para no depender.",
   "not_invoked_directly": [
     {
       "script": "verify-red.mjs",
@@ -26,6 +26,16 @@
       "script": "ratchet.mjs",
       "invoked_by": "los gates que importan safeProjectFile, entre ellos verify-menu-shape.mjs",
       "why": "Es una biblioteca de rutas seguras con un CLI minimo que sin subcomando valido sale 2. Lo que hace de verdad -confinar una ruta al proyecto y cortar un enlace simbolico que apunte afuera- lo ejercitan los gates que la importan y sus pruebas, no una invocacion a mano. Es lo mismo que ya declara contracts/empty-probe.json sobre este script."
+    },
+    {
+      "script": "schema-compat.mjs",
+      "invoked_by": "los 29 gates que comparan un schema, entre ellos verify-receipt.mjs y verify-ia-stack-index.mjs",
+      "why": "Es la biblioteca que decide si un schema con el prefijo viejo `vcp.` equivale al nuevo `ia.`. No tiene CLI ni lee el directorio de trabajo: correrla a mano no verifica nada. Lo que hace de verdad lo prueban tests/schema-compat.test.mjs y cada gate que la importa."
+    },
+    {
+      "script": "tablero-modelo.mjs",
+      "invoked_by": "tablero.mjs y tablero-servidor.mjs",
+      "why": "Es la mitad PURA del tablero -las cuentas y el render, sin tocar el disco-, separada del CLI a proposito para poder probar cada numero pasandole registros en memoria. Un ejemplo copiable sugeriria que se corre sola, y no produce nada por si misma."
     }
   ]
 }

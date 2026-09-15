@@ -48,8 +48,9 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { homedir as homedirReal } from 'node:os';
 import { basename, join } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.repo-clean/1';
+export const SCHEMA = 'ia.repo-clean/1';
 export const USAGE = 'usage: verify-repo-clean.mjs check [contrato.json]';
 export const EMPTY = 'VACÍO';
 
@@ -121,7 +122,7 @@ const clavesExactas = (v, claves) => esObjeto(v)
 
 export function validarContrato(contrato) {
   if (!esObjeto(contrato)) return ['el contrato debe ser un objeto'];
-  if (contrato.schema !== SCHEMA) return [`el contrato debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
+  if (!mismoSchema(contrato.schema, SCHEMA)) return [`el contrato debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
   if (!clavesExactas(contrato, CONTRATO_KEYS)) {
     return [`el contrato debe declarar exactamente ${CONTRATO_KEYS.join(', ')}`];
   }

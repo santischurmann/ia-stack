@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.mejoras/1",
+  "schema": "ia.mejoras/1",
   "run_id": "AAAA-MM-DD",
   "why": "Plantilla del bucle de auto-mejora. Cada 7 dias, al abrir sesion, el protocolo mira lo que se hizo y propone COMO MUCHO CUATRO mejoras. No las aplica: las escribe, con la cita de donde salio cada una. La persona aplica, saltea o copia.",
   "propuestas": [

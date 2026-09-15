@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.recurrence/1",
+  "schema": "ia.recurrence/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
   "first_loop_id": "loop-01",

@@ -370,7 +370,7 @@ test('FALSIFICACIÓN · un documento que no declara exactamente schema, phase_or
     [],
     { schema: SCHEMA, phase_order: PHASES },
     { ...base, extra: true },
-    { ...base, schema: 'vcp.phase-decisions/999' },
+    { ...base, schema: 'ia.phase-decisions/999' },
     { ...base, phase_order: '0,1' },
     { ...base, phase_order: [] },
     { ...base, phase_order: ['0', ''] },

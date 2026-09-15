@@ -15,7 +15,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-audit-chain.test.mjs",
       "test_hash_sha256": "55a81a6cefb6a5c3b03ad10b6f6e800f406bf1f0b046a1475a94ed1de9a7e622",
-      "command": "node scripts/verify-vcp-coverage.mjs (13 corridas consecutivas)",
+      "command": "node scripts/verify-ia-stack-coverage.mjs (13 corridas consecutivas)",
       "result": "13 de 13 en verde. Antes del cambio, tres corridas daban OK / FALLA / OK."
     },
     {
@@ -58,11 +58,11 @@
       "reason": "No hay un numero que lo cierre: ausencia de fallas en 38 corridas es evidencia fuerte, no una demostracion. La primera hipotesis de esta misma investigacion -que el flake dependia del paralelismo- se sostuvo en 7 corridas sin fallas y era falsa."
     }
   ],
-  "reproduction": "Antes del cambio: correr `node --test --experimental-test-coverage --test-concurrency=1 tests/verify-audit-chain.test.mjs` en bucle sobre un arbol limpio. Alrededor de 1 de cada 10 corridas reporta verify-audit-chain.mjs con branches 99.10%. Comparando el lcov de una corrida verde contra una roja se ve la causa: BRF:110 contra BRF:111, o sea que cambia el TOTAL de ramas instrumentadas, y la rama extra es siempre la de la linea 206 -el `|| ''` de log.stderr-. Verificacion: node --test --test-concurrency=32 && node scripts/verify-vcp-coverage.mjs repetido.",
+  "reproduction": "Antes del cambio: correr `node --test --experimental-test-coverage --test-concurrency=1 tests/verify-audit-chain.test.mjs` en bucle sobre un arbol limpio. Alrededor de 1 de cada 10 corridas reporta verify-audit-chain.mjs con branches 99.10%. Comparando el lcov de una corrida verde contra una roja se ve la causa: BRF:110 contra BRF:111, o sea que cambia el TOTAL de ramas instrumentadas, y la rama extra es siempre la de la linea 206 -el `|| ''` de log.stderr-. Verificacion: node --test --test-concurrency=32 && node scripts/verify-ia-stack-coverage.mjs repetido.",
   "not_reviewed": "No se investigo POR QUE V8 instrumenta esa rama de forma intermitente -optimizacion, deoptimizacion, orden de ejecucion-; se cerro el sintoma cubriendo la rama, no la causa dentro de V8. Es posible que otras ramas del proyecto tengan la misma fragilidad latente y todavia no se hayan manifestado: no se hizo un barrido buscandolas. La ausencia de fallas en 38 corridas es evidencia, no demostracion. Y el gate sigue sin declarar un limite honesto propio sobre esto.",
   "evidence": [
     "25 corridas de tests/verify-audit-chain.test.mjs con cobertura, concurrency=1 -> 0 fallas, BRF=112 en las 25",
-    "13 corridas de node scripts/verify-vcp-coverage.mjs -> OK: All 26 expected Node script(s) are at 100% en las 13",
+    "13 corridas de node scripts/verify-ia-stack-coverage.mjs -> OK: All 26 expected Node script(s) are at 100% en las 13",
     "antes del cambio, 3 corridas del gate completo -> OK / FALLA / OK",
     "antes del cambio, 10 corridas del archivo aislado -> 1 falla en la decima, BRDA:206 sin cubrir",
     "lcov comparado: corrida verde BRF:110 BRH:110, corrida roja BRF:111 BRH:110",

@@ -27,7 +27,7 @@
 Before approval, run:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
+node .vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 ```
 
 `CONFLICT` blocks the plan. `SERIALIZED` means the declared dependency order must be preserved;
@@ -37,7 +37,7 @@ those tasks are never dispatched together. The complete writer set is `files_to_
 After GREEN, compare that writer set with the real Git delta (including untracked files):
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check \
   --tasks docs/tasks.json --task <task-id> --base <git-ref>
 ```
 

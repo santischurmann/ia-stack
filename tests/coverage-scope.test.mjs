@@ -24,7 +24,7 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
   : {};
 
 const contract = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'coverage-scope.json'), 'utf8'));
-const { listMjsScripts } = await import(pathToFileURL(join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs')).href);
+const { listMjsScripts } = await import(pathToFileURL(join(repoRoot, 'scripts', 'verify-ia-stack-coverage.mjs')).href);
 
 const MIN_REASON = 60;
 /**
@@ -41,7 +41,7 @@ const repoMjs = () => {
 };
 
 test('el contrato declara su esquema y una razón real por cada directorio', () => {
-  assert.equal(contract.schema, 'vcp.coverage-scope/1');
+  assert.equal(contract.schema, 'ia.coverage-scope/1');
   assert.ok(contract.why.length >= MIN_REASON, 'el contrato tiene que decir por qué existe');
   const todos = [...contract.measured, ...contract.excluded];
   assert.ok(todos.length > 0, 'un contrato vacío declara un denominador vacío');

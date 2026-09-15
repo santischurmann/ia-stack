@@ -50,7 +50,7 @@ export const NARRATIVOS = Object.freeze(['description', 'goal', 'rollback', 'han
 
 /**
  * La raíz del runtime: la carpeta que contiene a `scripts/`. Instalada es
- * `<proyecto>/.vibe/vcp-runtime`; en este repositorio coincide con la raíz del proyecto. La matriz
+ * `<proyecto>/.vibe/ia-stack-runtime`; en este repositorio coincide con la raíz del proyecto. La matriz
  * de capacidades y las skills de subagente viajan con el runtime —`COPIED_DIRECTORIES` de
  * `verify-runtime-sync.mjs` las nombra—, así que se abren desde acá y no desde el directorio de
  * trabajo. Mismo patrón que `verify-stack-matrix.mjs`, y por el mismo defecto que allá costó

@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.triangulate-vectors/1",
+  "schema": "ia.triangulate-vectors/1",
   "why": "Los vectores que hay que buscar a proposito antes de refactorizar. La lista existe para que TRIANGULATE no dependa de lo que a cada uno se le ocurra ese dia: sin una lista fija, se revisa lo que ya se sabe buscar, que es justo lo que no encuentra nada nuevo.",
   "vectors": [
     {

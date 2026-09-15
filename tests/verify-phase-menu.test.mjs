@@ -29,8 +29,8 @@ function row(id, previous = '', offset = 0) {
   decision.current_hash = hashDecision(previous, decision, ORDER);
   return decision;
 }
-function valid() { const first = row('intake', '', 0); const second = row('research', first.current_hash, 2); return { schema: 'vcp.phase-decisions/1', phase_order: ORDER, decisions: [first, second] }; }
-const plan = { schema: 'vcp.phase-plan/1', feature: 'demo-feature', phase_order: ORDER };
+function valid() { const first = row('intake', '', 0); const second = row('research', first.current_hash, 2); return { schema: 'ia.phase-decisions/1', phase_order: ORDER, decisions: [first, second] }; }
+const plan = { schema: 'ia.phase-plan/1', feature: 'demo-feature', phase_order: ORDER };
 
 test('accepts complete decisions against canonical plan', () => assert.equal(checkPhaseMenu(valid(), plan).ok, true));
 test('rejects self-declared order mismatch', () => {

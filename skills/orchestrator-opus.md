@@ -110,7 +110,7 @@ pass now") is treated as `STATUS: blocked` by the orchestrator — self-reported
 proof doesn't gate anything (see "trust what's derived, not narrated" — SKILL.md § LAWS). A
 handoff missing a valid `NOT_REVIEWED` declaration is also blocked: persist the exact report as
 `.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md`, run
-`node .vibe/vcp-runtime/scripts/verify-handoff-report.mjs check <report>`, and append its
+`node .vibe/ia-stack-runtime/scripts/verify-handoff-report.mjs check <report>`, and append its
 declaration plus path to `tasks.json[task].not_reviewed` only after exit `0`.
 
 ---
@@ -198,9 +198,9 @@ Task T01:
 
 **Sequential, always:** RED → GREEN → TRIANGULATE (incl. its Builder-fix loop) → REFACTOR within one task.
 
-**Parallel, if Phase 4 CONFIG allowed it:** run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
+**Parallel, if Phase 4 CONFIG allowed it:** run `node .vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` first. Only tasks with no unresolved write conflict may be dispatched at once. The verifier derives writers from `files_to_create`, `files_to_modify`, and `test_files`: an exact shared path with a direct/transitive `depends_on` route is reported `SERIALIZED` and stays topological; a shared path without such order exits 1 and blocks dispatch until the plan is split or serialized. Atomic checkout (§ AI COMPANY LAYER) protects one task from duplicate owners; it does **not** prove two different tasks write disjoint files.
 
-After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>`. This compares the complete writer set with tracked and untracked paths in the real checkout; operational files are ignored only by an explicit repeated `--ignore <path>`. A rejection pauses the task and returns it to the 🔵 plan choice; never explain it away as a harmless extra file.
+After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>`. This compares the complete writer set with tracked and untracked paths in the real checkout; operational files are ignored only by an explicit repeated `--ignore <path>`. A rejection pauses the task and returns it to the 🔵 plan choice; never explain it away as a harmless extra file.
 
 **CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 6.1/4.3 for fixes.
 
@@ -227,7 +227,7 @@ After each task reaches GREEN, run `node .vibe/vcp-runtime/scripts/verify-scope-
 
 ## RESUME AFTER RESTART / COMPACTION
 
-1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 1 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
+1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 1 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
 2. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
 3. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
 4. `git diff` its test files — changed since RED = violation, stop, report.
@@ -256,7 +256,7 @@ para las fases 6, 7 y 8: un quinto vocabulario de fases, del mismo tipo que
 - [ ] 6.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
 - [ ] 6.2 native `security-baseline.md` clean (no open Critical/High). Every Critical/High finding went through the Refutador BEFORE anyone touched it — only `corroborado` gets fixed
 - [ ] 6.3 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 6.3.1 replanning threshold got 🔵 confirm before continuing. From `estandar` up the Refutador is a separate agent, never the reviewer's own `verdict`
-- [ ] 6.4 full suite green (post-fix) + receipt `vcp.receipt/v3` written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)
+- [ ] 6.4 full suite green (post-fix) + receipt `ia.receipt/v3` written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)
 - [ ] 6.4b **soporte declarado**: the receipt's `support` block answers "if someone says it does not work, what do you diagnose it with?" — `correlation`, `actor_on_writes`, `failure_visible`, `diagnostic_command`, each either stated or `"ninguno — <motivo>"`. 100% coverage does not cover this: coverage measures code execution, support measures product observability
 - [ ] 6.4c **límite vs regresión**: anything the change does not do on purpose is in `limits[]`; anything that used to work and no longer does is in `regressions[]` with a resolution. A `before` field decides which list it belongs to — it is not a judgement call. An `accepted_by_user` regression resolves against a `decided` entry of `docs/phase-decisions.json` or the receipt cannot be approved
 - [ ] 7.1 risk_level classified (bajo/estandar/alto/critico, evidence-based, not "looks big") + tests green after simplify

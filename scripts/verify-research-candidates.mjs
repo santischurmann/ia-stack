@@ -19,9 +19,10 @@ import { readFileSync } from 'node:fs';
 import { safeProjectFile } from './ratchet.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mismoSchema } from './schema-compat.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-export const SCHEMA = 'vcp.research-candidates/1';
+export const SCHEMA = 'ia.research-candidates/1';
 export const PINNED_PATH = join(repoRoot, 'contracts', 'research-citations.json');
 export const USAGE = 'usage: verify-research-candidates.mjs check <candidates.json>';
 export const EMPTY = 'VACÍO';
@@ -52,7 +53,7 @@ export function loadPinned(contract) {
 /** Todas las violaciones del expediente, sin lanzar nunca. */
 export function validateCandidates(document, pinned) {
   if (!isObject(document)) return [`el expediente debe ser un objeto JSON que declare ${SCHEMA}`];
-  if (document.schema !== SCHEMA) return [`el expediente debe declarar ${SCHEMA}, no ${JSON.stringify(document.schema)}`];
+  if (!mismoSchema(document.schema, SCHEMA)) return [`el expediente debe declarar ${SCHEMA}, no ${JSON.stringify(document.schema)}`];
   const violations = [];
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(document.date ?? '')) violations.push('date debe ser una fecha AAAA-MM-DD');
   if (!Array.isArray(document.candidates) || document.candidates.length === 0) {

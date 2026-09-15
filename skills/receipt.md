@@ -14,19 +14,19 @@ lo que LAW 8 exige para publicar: sin un receipt con `terminal_state: approved` 
 evaluado actual, no hay push ni merge. El gate es `verify-receipt.mjs`.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
 ```
 
 ---
 
-**Schema `vcp.receipt/v3` — el único que `verify-receipt.mjs check` puede aprobar** (los schemas
-`vcp.receipt/v1` y `vcp.receipt/v2` son archivísticos: cualquier receipt viejo se lee con
+**Schema `ia.receipt/v3` — el único que `verify-receipt.mjs check` puede aprobar** (los schemas
+`ia.receipt/v1` y `ia.receipt/v2` son archivísticos: cualquier receipt viejo se lee con
 `inspect-legacy`, nunca con `check` — ver más abajo):
 
 ```
 .vibe/receipts/<feature-slug>-<fecha>.json
 {
-  "schema": "vcp.receipt/v3",
+  "schema": "ia.receipt/v3",
   "feature": "<de docs/spec.md>",
   "task": "<id de la tarea; en vía completa sale de tasks.json, ej. T02; en vía corta, el nombre del cambio>",
   "scope": { "declared_paths": ["<paths tocados, autodeclarados>"] },
@@ -148,14 +148,14 @@ corrió o fue teatro: en la corrida que motivó la regla, de **60 hallazgos prop
    se va a escribir (aunque ese archivo todavía no exista en disco — el flag solo importa para
    la exclusión, no requiere que el archivo ya esté ahí):
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-receipt.mjs fingerprint .vibe/receipts/<feature-slug>-<fecha>.json
+   node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs fingerprint .vibe/receipts/<feature-slug>-<fecha>.json
    ```
 3. **El receipt se escribe con ese `git_head`+`tree_fingerprint` exactos**, inmediatamente — no
    hay paso intermedio entre calcular el fingerprint y escribir el JSON que lo contiene.
 4. **`git add -A` de nuevo, ahora incluyendo el receipt recién escrito** — el receipt mismo debe
    quedar staged para el commit de 8.1 (`git add -A && git commit`, el receipt es parte de lo que
    se commitea, es evidencia permanente en el repo).
-5. **`node .vibe/vcp-runtime/scripts/verify-receipt.mjs check <receipt>` (8.1)** — vuelve a calcular el fingerprint
+5. **`node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs check <receipt>` (8.1)** — vuelve a calcular el fingerprint
    del estado actual (excluyendo el mismo path del receipt) y lo compara. Si nada cambió entre
    el paso 2 y este paso, matchea → exit 0.
 

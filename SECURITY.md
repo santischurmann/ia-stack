@@ -8,7 +8,7 @@ en seguro por sí solo y no reemplaza una revisión especializada.
 En cada Phase 6.2 corre `verify-security-baseline.mjs` sobre los cambios que se van a liberar:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base origin/main
+node .vibe/ia-stack-runtime/scripts/verify-security-baseline.mjs check --base origin/main
 ```
 
 El gate bloquea hallazgos Critical/High de secretos y llaves privadas, archivos sensibles,

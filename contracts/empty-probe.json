@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.empty-probe/v1",
+  "schema": "ia.empty-probe/v1",
   "why": "Cada gate declara aca que hace cuando lo corren sobre un directorio vacio. Un gate que dice OK ahi esta afirmando haber verificado algo cuando no habia nada que verificar. Un script .mjs de scripts/ que no figure en esta lista es un rechazo: agregar un gate obliga a declarar su comportamiento sin entradas.",
   "expectations": {
     "reject": "sale distinto de 0 porque no hay entradas y lo dice",
@@ -407,7 +407,7 @@
       "why": "Sobre un directorio vacio no hay expediente de triangulacion, y eso no es un incumplimiento: es un proyecto que todavia no triangulo. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados veintiseis vectores que nadie miro."
     },
     {
-      "script": "verify-vcp-contract.mjs",
+      "script": "verify-ia-stack-contract.mjs",
       "args": [
         "check"
       ],
@@ -416,13 +416,13 @@
       "why_runtime": "Este contrato verifica los documentos de VCP -- README.md, INSTALL.md, SKILL.md -- y el instalador no copia los dos primeros. Adentro del runtime instalado en el proyecto de otra persona no hay nada que comparar, y eso es VACIO, no un rechazo. Medido el 2026-09-04 sobre una instalacion real: corrido desde la raiz del proyecto daba 113 rechazos, todos nombrando archivos del repositorio de VCP que ese proyecto no tiene ni tiene por que tener."
     },
     {
-      "script": "verify-vcp-coverage.mjs",
+      "script": "verify-ia-stack-coverage.mjs",
       "args": [],
       "expect": "skip",
       "why": "Correrlo ejecuta la suite entera con instrumentacion de cobertura: cuesta minutos y su resultado depende de la suite, no del directorio de trabajo. Excluido por costo, no porque se lo considere seguro: su comportamiento sin entradas NO esta probado por esta sonda."
     },
     {
-      "script": "verify-vcp-index.mjs",
+      "script": "verify-ia-stack-index.mjs",
       "args": [
         "check"
       ],
@@ -497,7 +497,15 @@
         "check"
       ],
       "expect": "self",
-      "why": "Verifica el propio runtime y no el proyecto de quien lo corre: su raiz sale de import.meta.url, asi que sobre un directorio vacio sigue mirando los scripts y los documentos de su propia copia instalada y puede salir OK. Es correcto que sea asi -la pregunta que contesta es si el PROTOCOLO documenta sus gates, no si el proyecto de al lado los documenta- y por eso se declara self y no empty: un VACIO aca seria mentir sobre que se miro."
+      "why": "Verifica el propio runtime y no el proyecto de quien lo corre: su raiz sale de import.meta.url, asi que sobre un directorio vacio sigue mirando los scripts y los documentos de su propia copia instalada y puede salir OK. Es correcto que sea asi -la pregunta que contesta es si el PROTOCOLO documenta sus gates, no si el proyecto de al lado los documenta- y por eso se declara self y no empty: un VACIO aca seria mentir sobre que se miro. Adentro de un runtime INSTALADO en cambio escribe VACIO y sale 0, porque ahi faltan README.md e INSTALL.md -que el instalador no copia- y acusar sus ejemplos como ausentes mandaria a arreglar algo que no esta roto.",
+      "expect_runtime": "empty",
+      "why_runtime": "Desde el repositorio fuente mira su propio arbol y puede salir OK, por eso self. Desde un runtime INSTALADO escribe VACIO, y es correcto que cambie: el instalador no copia README.md ni INSTALL.md, que son los documentos donde viven los ejemplos de los dos instaladores. Acusar esos ejemplos como ausentes desde ahi mandaria a arreglar algo que no esta roto, y decir OK seria afirmar que se comprobaron documentos que no estan. Lo encontro el E2E que corre la sonda desde una instalacion real, que es donde tenia que encontrarse."
+    },
+    {
+      "script": "schema-compat.mjs",
+      "args": [],
+      "expect": "skip",
+      "why": "No es un gate: es la biblioteca que decide si un schema con el prefijo viejo `vcp.` equivale al nuevo `ia.`. No tiene CLI ni lee el directorio de trabajo, asi que no hay comportamiento sobre una carpeta vacia que probar. Lo que hace de verdad lo prueban tests/schema-compat.test.mjs y los 29 gates que la importan."
     }
   ]
 }

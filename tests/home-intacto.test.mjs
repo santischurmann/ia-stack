@@ -1,6 +1,6 @@
 // Correr la suite no puede tocar el `~/.claude` de quien la corre.
 //
-// `scripts/install.sh` escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/vcp-runtime`
+// `scripts/install.sh` escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/ia-stack-runtime`
 // (lineas 9-10), y lo hace ANTES del bloque `if [ -n "$PROJECT_DIR" ]`: pasar `--project` no
 // reemplaza ni suprime esa escritura. Dos pruebas invocaban el instalador con `--project` solo, y
 // entre las dos ejecutaban el instalador ocho veces por pasada. Resultado: `git clone && node --test`
@@ -124,11 +124,11 @@ test('FALSIFICACIÓN · la regla de forma distingue una invocación aislada de u
 // instalador y compara el árbol antes y después. Es la única que mide el efecto y no la forma,
 // pero tarda ~200 s y, dentro de la suite completa, compite consigo misma: lanza otra vez archivos
 // que la suite ya está corriendo, y la contención hace fallar a las vecinas. Por eso se pide
-// explícitamente con `VCP_HOME_GUARD=1`, y por eso la regla de forma de arriba corre siempre.
+// explícitamente con `IA_STACK_HOME_GUARD=1`, y por eso la regla de forma de arriba corre siempre.
 // LÍMITE: mientras no se pida, el daño no se mide — sólo se comprueba que la forma lo impida.
 test('el daño real: correr las pruebas que invocan al instalador no toca ~/.claude', (t) => {
-  if (process.env.VCP_HOME_GUARD !== '1') {
-    t.skip('comprobación de daño: pedila con VCP_HOME_GUARD=1 (tarda ~200 s y compite con la suite)');
+  if (process.env.IA_STACK_HOME_GUARD !== '1') {
+    t.skip('comprobación de daño: pedila con IA_STACK_HOME_GUARD=1 (tarda ~200 s y compite con la suite)');
     return;
   }
   const instalador = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');

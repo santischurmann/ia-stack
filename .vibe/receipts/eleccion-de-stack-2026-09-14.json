@@ -15,7 +15,7 @@
       "contracts/free-tier-limits.json",
       "contracts/graphify-exclusions.json",
       "contracts/honest-limits.json",
-      "contracts/vcp-index.json",
+      "contracts/ia-stack-index.json",
       "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md",
       "docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json",
       "docs/discovery/eleccion-de-stack/diagnostics/threat.json",
@@ -189,7 +189,7 @@
       "logica-del-gate": 16
     }
   },
-  "reproduction": "node --test  ·  node scripts/verify-vcp-coverage.mjs  ·  node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json  ·  node scripts/verify-triangulate.mjs check docs/triangulate/eleccion-de-stack.json --require-complete  ·  node scripts/verify-vcp-contract.mjs check  ·  node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
+  "reproduction": "node --test  ·  node scripts/verify-ia-stack-coverage.mjs  ·  node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json  ·  node scripts/verify-triangulate.mjs check docs/triangulate/eleccion-de-stack.json --require-complete  ·  node scripts/verify-ia-stack-contract.mjs check  ·  node scripts/verify-empty-probe.mjs check contracts/empty-probe.json",
   "not_reviewed": "De los 74 hallazgos que los tres atacantes propusieron, reproduje personalmente ocho: la version de vitest que ninguna ficha contiene, el precio de certificado inventado, las tarifas de excedente de Vercel ausentes, el hard true sobre lo que la ficha declaro no verificado, la restriccion de Numba invertida, la ausencia de D1 en el contrato, el regex corrompido por un heredoc, y los rechazos que el propio gate emitio al aplicar cada correccion. Los otros 26 que quedan como inconclusive los acepte sobre la reproduccion que el agente reporto, sin repetirla: es un estandar mas debil y por eso van contados aparte y no como survived. Tampoco se reviso si las recomendaciones de la matriz son buenas decisiones de ingenieria -- el gate comprueba que cada fila tenga su criterio escrito, nunca que ese criterio lleve a la eleccion correcta. Y los nueve hallazgos que quedaron sin accion estan en la ficha de cada atacante, no en este receipt. NOTA DE PROCEDENCIA DEL SELLO: el receipt se escribio primero con la huella del arbol anterior y commitearlo movio el HEAD, asi que quedo viejo contra su propio comando de comprobacion. Se resello contra el arbol vigente excluyendo el propio archivo del calculo, que es para lo que ese parametro existe. El orden correcto es preparar el indice y dejar que verify-receipt commit haga el commit, porque direcciona el arbol ANTES de crearlo; commitear a mano primero rompe esa secuencia.",
   "evidence": [
     "tests/verify-stack-matrix-mutacion.test.mjs: cada prueba mata una mutacion sobreviviente concreta, con el comentario diciendo cual",

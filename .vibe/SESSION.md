@@ -286,7 +286,7 @@ faltaba la distinción de fondo entre *viejo* y *deshonesto*, que es la que cerr
   `REJECTED: ... falta contracts/free-tier-limits.json`. La causa es que el gate abría su propio
   contrato con una ruta relativa al directorio de trabajo, y **en este repositorio la raíz del
   runtime y la del proyecto son la misma carpeta**, así que funcionaba por coincidencia. Instalado,
-  el runtime vive en `.vibe/vcp-runtime/` y la ruta no existe. Es el caso puro de que la batería
+  el runtime vive en `.vibe/ia-stack-runtime/` y la ruta no existe. Es el caso puro de que la batería
   verde no cierra un gate y el dato real sí: ninguna prueba unitaria podía ver una coincidencia de
   rutas que sólo se rompe al mudar el código de máquina.
 
@@ -369,7 +369,7 @@ que escanean la misma superficie era el defecto de fondo. Corregido: ahora recha
 
 ### 3. La cobertura del 100% valía sólo en esta máquina
 
-Clonar el propio repositorio en limpio mostró que `verify-vcp-coverage` **rechazaba**: dos ramas de
+Clonar el propio repositorio en limpio mostró que `verify-ia-stack-coverage` **rechazaba**: dos ramas de
 `verify-graphify-manifest.mjs` sólo se ejecutaban si existía `graphify-out/`, que está en
 .gitignore. **Un verde que depende de un directorio ignorado es un verde de una carpeta, no del
 repositorio**, y la frase «cobertura 100%» escrita en los mensajes de commit era local. Cubierto con

@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.phase-decisions/1",
+  "schema": "ia.phase-decisions/1",
   "phase_order": [
     "1.5",
     "2",

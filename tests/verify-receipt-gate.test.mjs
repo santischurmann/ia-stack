@@ -89,7 +89,7 @@ function fixture({ sha256 = false } = {}) {
 
 function writeReceipt(root, overrides = {}) {
   const {
-    schema = 'vcp.receipt/v3',
+    schema = 'ia.receipt/v3',
     evidence = ['node --test: 1 pass'],
     terminalState = 'approved',
     acceptanceCriteria = defaultAcceptanceCriteria(),
@@ -120,7 +120,7 @@ function writeReceipt(root, overrides = {}) {
   const json = fingerprint.output.match(/\{\s*"git_head"[\s\S]*?\n\}/)?.[0];
   assert.notEqual(json, undefined, `fingerprint emitted no JSON object\n${fingerprint.output}`);
   const { git_head, tree_fingerprint } = JSON.parse(json);
-  const receipt = schema === 'vcp.receipt/v1'
+  const receipt = schema === 'ia.receipt/v1'
     ? { schema, feature, risk_level: 'low', terminal_state: terminalState, git_head, tree_fingerprint, evidence }
     : {
       schema, feature, task, scope, acceptance_criteria: acceptanceCriteria, review_4r: reviewFourR,
@@ -247,11 +247,11 @@ test('FALSIFICACIÓN · check rejects a v3 receipt missing a required field and 
     const receipt = writeReceipt(root);
     const absolute = join(root, ...receipt.split('/'));
     const parsed = JSON.parse(readFileSync(absolute, 'utf8'));
-    parsed.schema = 'vcp.receipt/v9';
+    parsed.schema = 'ia.receipt/v9';
     writeFileSync(absolute, `${JSON.stringify(parsed, null, 2)}\n`);
     const result = gate(root, 'check', receipt);
     assert.equal(result.status, 1, 'unrecognized schema must reject');
-    assert.match(result.output, /unknown schema: vcp\.receipt\/v9/);
+    assert.match(result.output, /unknown schema: ia\.receipt\/v9/);
   });
 });
 
@@ -373,7 +373,7 @@ test('FALSIFICACIÓN · a repository with zero commits fails closed with a contr
     mkdirSync(join(root, 'test'), { recursive: true });
     writeFileSync(join(root, 'test', 'x.test.mjs'), TEST_FILE_CONTENT);
     writeFileSync(join(root, 'receipt.json'), JSON.stringify({
-      schema: 'vcp.receipt/v3', feature: 'x', task: 'T01',
+      schema: 'ia.receipt/v3', feature: 'x', task: 'T01',
       limits: [], regressions: [],
       support: {
         correlation: 'cada peticion lleva X-Request-Id', actor_on_writes: 'toda escritura graba actor_id',
@@ -480,7 +480,7 @@ test('FALSIFICACIÓN · receipt file hashing accepts only regular files physical
 });
 
 // -------------------------------------------------------------------------------------------
-// vcp.receipt/v3 (y las invariantes de v2 que compone) — invariants, 9 required scenarios plus pure-function unit coverage.
+// ia.receipt/v3 (y las invariantes de v2 que compone) — invariants, 9 required scenarios plus pure-function unit coverage.
 // -------------------------------------------------------------------------------------------
 
 test('FALSIFICACIÓN · v3 approved with any AC UNTESTED/PARTIAL/FAILING is rejected by check', () => {
@@ -586,9 +586,9 @@ test('FALSIFICACIÓN · not_reviewed placeholders ("n/a", blank, bare "none") ar
   });
 });
 
-test('FALSIFICACIÓN · a vcp.receipt/v1 receipt always fails check, regardless of content, and points to inspect-legacy', () => {
+test('FALSIFICACIÓN · a ia.receipt/v1 receipt always fails check, regardless of content, and points to inspect-legacy', () => {
   withFixture((root) => {
-    const receipt = writeReceipt(root, { schema: 'vcp.receipt/v1' });
+    const receipt = writeReceipt(root, { schema: 'ia.receipt/v1' });
     const result = gate(root, 'check', receipt);
     assert.equal(result.status, 1, 'v1 must never pass check');
     assert.match(result.output, /archival-only and cannot pass check/);
@@ -598,28 +598,28 @@ test('FALSIFICACIÓN · a vcp.receipt/v1 receipt always fails check, regardless 
 
 test('inspect-legacy reports archival status for v1 and v2 read-only and never modifies the receipt or the repository', () => {
   withFixture((root) => {
-    const receipt = writeReceipt(root, { schema: 'vcp.receipt/v1' });
+    const receipt = writeReceipt(root, { schema: 'ia.receipt/v1' });
     const absolute = join(root, ...receipt.split('/'));
     const before = readFileSync(absolute, 'utf8');
     const statusBefore = gitOk(root, 'status', '--porcelain');
     const result = gate(root, 'inspect-legacy', receipt);
     assert.equal(result.status, 0, result.output);
-    assert.match(result.output, /ARCHIVAL: vcp\.receipt\/v1/);
+    assert.match(result.output, /ARCHIVAL: ia\.receipt\/v1/);
     assert.match(result.output, /does not authorize any commit, publish, or gate decision/);
     assert.equal(readFileSync(absolute, 'utf8'), before, 'inspect-legacy must not modify the receipt file');
     assert.equal(gitOk(root, 'status', '--porcelain'), statusBefore, 'inspect-legacy must not change repository state');
 
     // v2 tambien es archivistico desde el bump a v3: se lee, nunca aprueba.
-    const archivoV2 = writeReceipt(root, { schema: 'vcp.receipt/v2' });
+    const archivoV2 = writeReceipt(root, { schema: 'ia.receipt/v2' });
     const v2Result = gate(root, 'inspect-legacy', archivoV2);
     assert.equal(v2Result.status, 0, v2Result.output);
-    assert.match(v2Result.output, /ARCHIVAL: vcp\.receipt\/v2/);
+    assert.match(v2Result.output, /ARCHIVAL: ia\.receipt\/v2/);
 
     // Y el schema VIGENTE nunca pasa por aca: para eso esta `check`.
     const vigente = writeReceipt(root);
     const vigenteResult = gate(root, 'inspect-legacy', vigente);
     assert.equal(vigenteResult.status, 1);
-    assert.match(vigenteResult.output, /use check for vcp\.receipt\/v3/);
+    assert.match(vigenteResult.output, /use check for ia\.receipt\/v3/);
   });
 });
 
@@ -724,7 +724,7 @@ test('inspect-legacy rejects a missing argument and reports "(missing)" for a v1
     const relative = '.vibe/receipts/bare-v1.json';
     const absolute = join(root, ...relative.split('/'));
     mkdirSync(dirname(absolute), { recursive: true });
-    writeFileSync(absolute, JSON.stringify({ schema: 'vcp.receipt/v1' }));
+    writeFileSync(absolute, JSON.stringify({ schema: 'ia.receipt/v1' }));
     const result = gate(root, 'inspect-legacy', relative);
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /feature="\(missing\)"/);
@@ -832,9 +832,9 @@ test('FALSIFICACIÓN · commit rechaza un receipt escalated y uno con un AC no C
   });
 });
 
-test('FALSIFICACIÓN · commit rechaza vcp.receipt/v1 sin commitear, igual que check', () => {
+test('FALSIFICACIÓN · commit rechaza ia.receipt/v1 sin commitear, igual que check', () => {
   withFixture((root) => {
-    const receipt = writeReceipt(root, { schema: 'vcp.receipt/v1' });
+    const receipt = writeReceipt(root, { schema: 'ia.receipt/v1' });
     const before = history(root);
     const result = gate(root, 'commit', receipt, '--message', COMMIT_MESSAGE);
     assert.equal(result.status, 1, 'v1 es archival: no autoriza ningún commit, igual que en check');
@@ -1146,7 +1146,7 @@ test('FALSIFICACIÓN · un recibo sin ninguna medición se rechaza, igual que un
   assert.match(validateMeasurements([]).reason, /al menos una|at least one/iu);
 });
 
-// --- vcp.receipt/v3: los cuatro campos que el DoD paso a exigir ---------------------------------
+// --- ia.receipt/v3: los cuatro campos que el DoD paso a exigir ---------------------------------
 //
 // DOS fixtures para todos los casos, no once. La primera version abria un repositorio de git por
 // caso y este archivo -- que ya era el mas lento de la suite y el que define el margen del tope de
@@ -1202,7 +1202,7 @@ test('v3 acepta una regresion cuando la decision humana existe, y frena si el re
     const sello = 'd'.repeat(64);
     mkdirSync(join(root, 'docs'), { recursive: true });
     const decisiones = join(root, 'docs', 'phase-decisions.json');
-    const registro = { schema: 'vcp.phase-decisions/1', phase_order: ['6'], decisions: [{ phase_id: '6', status: 'decided', current_hash: sello }] };
+    const registro = { schema: 'ia.phase-decisions/1', phase_order: ['6'], decisions: [{ phase_id: '6', status: 'decided', current_hash: sello }] };
     writeFileSync(decisiones, `${JSON.stringify(registro, null, 2)}\n`);
     gitOk(root, 'add', '-A');
     const receipt = writeReceipt(root, {

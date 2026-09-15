@@ -40,9 +40,10 @@
 // esa linea sostenga lo que el informe afirma sobre ella. Juzgar eso es leer, no comparar.
 
 import { readFileSync } from 'node:fs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-research-citations.mjs check <research-citations.json>';
-export const SCHEMA = 'vcp.research-citations/v1';
+export const SCHEMA = 'ia.research-citations/v1';
 
 export const LIMIT =
   'Límite: esto compara el informe contra el registro de la revalidación, no contra los repositorios. ' +
@@ -86,7 +87,7 @@ export function readContract(path, readFile = readFileSync) {
   } catch (error) {
     return { document: null, error: `el contrato no es JSON válido: ${error.message}` };
   }
-  if (document?.schema !== SCHEMA) {
+  if (!mismoSchema(document?.schema, SCHEMA)) {
     return { document: null, error: `el esquema declarado no es ${SCHEMA}` };
   }
   if (!Array.isArray(document.citations)) {

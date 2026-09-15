@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.caio/1",
+  "schema": "ia.caio/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
   "process": {

@@ -84,7 +84,7 @@ El detalle vive en el modelo; acá va el resumen que hace que alguien lo abra.
 2. T02 — <description> (needs T01)
 
 ## Write-conflict preflight
-Run `node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` before approval.
+Run `node .vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json` before approval.
 
 | Result | Task pair | Shared path | Action |
 |---|---|---|---|
@@ -110,7 +110,7 @@ untracked files:
 Each task runs: RED → GREEN → TRIANGULATE → REFACTOR → (DOCS if needed)
 CHORE runs once after all tasks: lint + typecheck + coverage + build
 ```bash
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check \
   --tasks docs/tasks.json --task <task-id> --base <git-ref>
 ```
 
@@ -149,7 +149,7 @@ directory-wide ignore to hide undeclared writers.
       "owner": null,
       "locked": false,
       "role": "Test-Engineer",
-      "verifier": ".vibe/vcp-runtime/scripts/verify-red.sh|.ps1 (Node-native mechanical adapter, not a persona)",
+      "verifier": ".vibe/ia-stack-runtime/scripts/verify-red.sh|.ps1 (Node-native mechanical adapter, not a persona)",
       "approval_criteria": "<spec.md AC-id this task closes, verbatim>",
       "evidence": [],
       "not_reviewed": [],

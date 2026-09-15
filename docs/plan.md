@@ -61,7 +61,7 @@ invoca, y el contrato de datos no lo lee nadie más. No toca traza sellada ni ex
 ```bash
 node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json
 node scripts/verify-empty-probe.mjs check contracts/empty-probe.json
-node scripts/verify-vcp-contract.mjs check
-node scripts/verify-vcp-coverage.mjs
+node scripts/verify-ia-stack-contract.mjs check
+node scripts/verify-ia-stack-coverage.mjs
 node --test
 ```

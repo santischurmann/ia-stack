@@ -30,8 +30,9 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.red-adapters/1';
+export const SCHEMA = 'ia.red-adapters/1';
 export const USAGE = 'usage: verify-red.mjs check --test <project-relative-test-file> --command "<runner>"';
 
 /** Dos garantías y no tres: una intermedia sería el cajón donde va a parar lo que no se quiso medir. */
@@ -44,7 +45,7 @@ const CONTRATO_PATH = join('contracts', 'red-adapters.json');
 /**
  * La raíz del runtime: la carpeta que contiene a `scripts/`. El contrato viaja CON el gate, así que
  * se busca desde acá y no desde donde alguien paró la terminal — instalado, el runtime vive en
- * `.vibe/vcp-runtime/` y una ruta relativa al directorio de trabajo no existe. Medido el 2026-09-14
+ * `.vibe/ia-stack-runtime/` y una ruta relativa al directorio de trabajo no existe. Medido el 2026-09-14
  * sobre una instalación real, con la batería entera en verde.
  */
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -63,7 +64,7 @@ const clavesExactas = (v, claves) => esObjeto(v)
 
 export function validarContrato(contrato) {
   if (!esObjeto(contrato)) return ['el contrato debe ser un objeto'];
-  if (contrato.schema !== SCHEMA) return [`el contrato debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
+  if (!mismoSchema(contrato.schema, SCHEMA)) return [`el contrato debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
   if (!clavesExactas(contrato, CONTRATO_KEYS)) return [`el contrato debe declarar exactamente ${CONTRATO_KEYS.join(', ')}`];
 
   const violaciones = [];

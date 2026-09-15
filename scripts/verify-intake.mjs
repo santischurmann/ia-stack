@@ -19,8 +19,9 @@
 // respuesta real de relleno del mismo largo: descarta el vacio y la palabra suelta, nada mas.
 import { readFileSync } from 'node:fs';
 import { safeProjectFile } from './ratchet.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.intake/1';
+export const SCHEMA = 'ia.intake/1';
 export const USAGE = 'usage: verify-intake.mjs check <intake.json>';
 export const EMPTY = 'VACÍO';
 
@@ -65,7 +66,7 @@ export function validateIntake(intake) {
   if (!isObject(intake)) return [`el intake debe ser un objeto JSON que declare ${SCHEMA}`];
   // El esquema se mira primero y corta: enumerar campos de un archivo que no es un intake produce
   // una lista de reproches sobre algo que nunca pretendio serlo.
-  if (intake.schema !== SCHEMA) return [`el intake debe declarar ${SCHEMA}, no ${JSON.stringify(intake.schema)}`];
+  if (!mismoSchema(intake.schema, SCHEMA)) return [`el intake debe declarar ${SCHEMA}, no ${JSON.stringify(intake.schema)}`];
 
   const violations = [];
   // `feature` es un slug corto, no una respuesta: se le pide que exista, no que sea larga.

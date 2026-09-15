@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.prd/1",
+  "schema": "ia.prd/1",
   "feature": "nombre-en-kebab-case",
   "date": "2026-01-01",
   "problem": "Qué está roto hoy, en términos observables.",

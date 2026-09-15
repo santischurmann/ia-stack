@@ -6,9 +6,10 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.evidence-runner/v1';
-export const REQUEST_SCHEMA = 'vcp.evidence-request/v1';
+export const SCHEMA = 'ia.evidence-runner/v1';
+export const REQUEST_SCHEMA = 'ia.evidence-request/v1';
 export const USAGE = 'usage: verify-evidence-runner.mjs run <request.json> <record.json> | verify-evidence-runner.mjs check <record.json> [--require-complete]';
 export const REQUIRE_COMPLETE_FLAG = '--require-complete';
 export const STATUSES = new Set(['passed', 'failed', 'skipped']);
@@ -78,7 +79,7 @@ function readJson(path, readFile = readFileSync) {
 
 export function validateRequest(request) {
   const violations = [];
-  if (!isObject(request) || !exactKeys(request, REQUEST_KEYS) || request.schema !== REQUEST_SCHEMA) {
+  if (!isObject(request) || !exactKeys(request, REQUEST_KEYS) || !mismoSchema(request.schema, REQUEST_SCHEMA)) {
     return [`request must use ${REQUEST_SCHEMA} with exactly schema, command, cwd, timeout_ms and skip_reason`];
   }
   if (!Array.isArray(request.command) || request.command.length === 0 || request.command.some((item) => typeof item !== 'string' || item === '')) {
@@ -96,7 +97,7 @@ export function validateRequest(request) {
 
 export function validateRecord(record, { requireComplete = false } = {}) {
   const violations = [];
-  if (!isObject(record) || !exactKeys(record, RECORD_KEYS) || record.schema !== SCHEMA) {
+  if (!isObject(record) || !exactKeys(record, RECORD_KEYS) || !mismoSchema(record.schema, SCHEMA)) {
     return [`record must use ${SCHEMA} with its exact fields`];
   }
   if (!STATUSES.has(record.status)) violations.push(`status must be one of ${[...STATUSES].join(', ')}`);

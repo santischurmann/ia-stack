@@ -1,9 +1,9 @@
 ---
-name: VibeCodeProtocols
+name: ia-stack
 description: "TDD methodology for Claude Code: the orchestrator runs VCP's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
 ---
 
-# VibeCodeProtocols — caveman edition
+# IA Stack — caveman edition
 
 **Versión:** 2.0.0 · etiquetada como `v2.0.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
@@ -86,7 +86,7 @@ contexto es la forma más común de que un protocolo se degrade sin que nadie lo
 opción que la persona eligió y por qué se anotan en `docs/phase-decisions.json` —una decisión por
 fase, en el orden que declara su propio `phase_order`, encadenadas por hash como la traza de
 auditoría— antes de pasar a la fase siguiente. Detector:
-`node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`.
+`node .vibe/ia-stack-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`.
 Una decisión reemplazada no se borra: se marca `superseded` y se registra la nueva.
 **Límite honesto del gate**: demuestra que la decisión quedó registrada de forma coherente, no
 demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus
@@ -129,13 +129,13 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    usan los papeles, gates y reglas de evidencia nativos de VCP. **No se invoca ni se exige otra
    skill** para ensanchar, reemplazar o autorizar una fase.
 1b. **Runtime sync check — antes de correr cualquier otro gate.** Todo lo que sigue se ejecuta desde
-   `.vibe/vcp-runtime/`, una copia que `install.sh` dejó una vez y que envejece sola. Correr el
+   `.vibe/ia-stack-runtime/`, una copia que `install.sh` dejó una vez y que envejece sola. Correr el
    protocolo entero contra gates viejos invalida todo lo demás, así que esto va primero. Se corre
-   **desde el checkout fuente de VibeCodeProtocols**, nunca desde el runtime (compararlo consigo
+   **desde el checkout fuente de IA Stack**, nunca desde el runtime (compararlo consigo
    mismo siempre da verde y no prueba nada):
    ```bash
-   # parado en el checkout fuente de VibeCodeProtocols
-   node scripts/verify-runtime-sync.mjs check --runtime <project-root>/.vibe/vcp-runtime
+   # parado en el checkout fuente de IA Stack
+   node scripts/verify-runtime-sync.mjs check --runtime <project-root>/.vibe/ia-stack-runtime
    ```
    Exit `0` con `no runtime installed` (checkout limpio) o con `matches this source checkout` → seguir.
    Exit `1` → **reinstalar antes de continuar**: `bash scripts/install.sh --project <project-root>`
@@ -148,9 +148,9 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    protocolo tienen período propio, y cada una sabe sola si le toca. Los tres comandos son de
    lectura, no escriben nada, y salen `0` incluso cuando no toca:
    ```bash
-   node .vibe/vcp-runtime/scripts/tablero.mjs due
-   node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
-   node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
+   node .vibe/ia-stack-runtime/scripts/tablero.mjs due
+   node .vibe/ia-stack-runtime/scripts/verify-sereno.mjs due
+   node .vibe/ia-stack-runtime/scripts/verify-ablation.mjs due docs/ablation.json
    ```
    El que diga `TOCA:` se atiende en su fase —el tablero y el bucle en la 9.0 y 9.0.1, la limpieza
    en el resto de la fase 9— y el que diga `OK:` o `VACÍO:` se deja pasar sin más. **Preguntar acá
@@ -166,7 +166,7 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
 
    Run the mechanical identity gate first:
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
+   node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>
    ```
    Compara el slug declarado en `SESSION.md` contra el que se le pasa, y nada más.
    **No verifica de dónde salió el slug pedido: el agente lo elige.** Un agente que pide el slug
@@ -174,7 +174,7 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
 
    Y corré el gate que compara los documentos entre sí, que es la otra mitad:
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-feature-activa.mjs check
+   node .vibe/ia-stack-runtime/scripts/verify-feature-activa.mjs check
    ```
    `docs/spec.md` y `.vibe/SESSION.md` tienen que nombrar la **misma** feature. Con menos de dos
    declarantes escribe `VACÍO:` y sale `0`: no hay dos nombres que comparar. **Detecta el desacuerdo,
@@ -211,7 +211,7 @@ Esperando tu respuesta antes de continuar.
 5b. **Estado retomable** — la identidad dice de quién es el checkpoint; esto dice si sirve para
    retomar. Se corre después del gate de identidad y antes de re-detectar la fase:
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-session-state.mjs check --session .vibe/SESSION.md
+   node .vibe/ia-stack-runtime/scripts/verify-session-state.mjs check --session .vibe/SESSION.md
    ```
    Exit `0` → seguir. Exit `1` → resolver antes de retomar: **tres intentos fallidos sobre el mismo
    problema** sin decisión humana registrada, una interrupción que no dice dónde retomar
@@ -257,7 +257,7 @@ Esperando tu respuesta antes de continuar.
 Esperando tu respuesta antes de continuar.
 9. **Capability matrix gate** — antes de despachar roles, verificá la matriz nativa de permisos:
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json
+   node .vibe/ia-stack-runtime/scripts/verify-capability-matrix.mjs check .vibe/ia-stack-runtime/contracts/capability-matrix.json
    ```
    Rechaza una matriz con roles duplicados, herramientas desconocidas, un escritor que también
    aprueba la misma superficie o un rol de sólo lectura con `Write`/`Edit`. Es un contrato de
@@ -281,7 +281,7 @@ Esperando tu respuesta antes de continuar.
    mirar.
 
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-scavenge.mjs check docs/scavenge/<feature-slug>.json
+   node .vibe/ia-stack-runtime/scripts/verify-scavenge.mjs check docs/scavenge/<feature-slug>.json
    ```
 
    Sin archivo el gate escribe `VACÍO:` y sale `0` — un ciclo que todavía no arrancó no incumple
@@ -335,7 +335,7 @@ Esperando tu respuesta antes de continuar.
    la plantilla.
 
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
+   node .vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
    ```
 
    El verde **dice contra qué listado se comprobó** —`vía corta` o `vía completa`—, porque dos
@@ -400,7 +400,7 @@ conteste. **No inventes una respuesta para destrabar el gate**: eso convierte el
 decoración, que es exactamente lo que este archivo existe para evitar.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-intake.mjs check docs/intake/<feature-slug>.json
+node .vibe/ia-stack-runtime/scripts/verify-intake.mjs check docs/intake/<feature-slug>.json
 ```
 
 Sin ningún intake el gate escribe `VACÍO:` y sale `0`: un proyecto que todavía no arrancó no
@@ -431,7 +431,7 @@ El procedimiento completo, la tabla legible por tipo y la de costo de escalar es
 JSON, nunca de la memoria del modelo**: las versiones y los cupos vencen, y el modelo no sabe cuándo.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-stack-matrix.mjs check .vibe/vcp-runtime/contracts/stack-matrix.json
+node .vibe/ia-stack-runtime/scripts/verify-stack-matrix.mjs check .vibe/ia-stack-runtime/contracts/stack-matrix.json
 ```
 
 Sin matriz ni contrato el gate escribe `VACÍO:` y sale `0`: un proyecto que todavía no eligió stack
@@ -461,7 +461,7 @@ antes de comprometer tareas de implementación.
    línea, función, problema que resuelve, evidencia, **contraejemplo**, costo, riesgo,
    compatibilidad, decisión y test necesario—:
    ```bash
-   node .vibe/vcp-runtime/scripts/verify-research-candidates.mjs check research/candidates.json
+   node .vibe/ia-stack-runtime/scripts/verify-research-candidates.mjs check research/candidates.json
    ```
    La evidencia tiene que citar `archivo:línea` **del archivo que el candidato declara**, y el
    contraejemplo no puede ser esa cita repetida. Un `adopt` sin test declarado rechaza.
@@ -562,7 +562,7 @@ Los seis resultados durables de esta fase viven en
 > condiciona publicar es LAW 8 y el recibo.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
+node .vibe/ia-stack-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
 ```
 
 El gate exige forma, IDs únicos, dependencias, relaciones y evidencia declarada; **Los diagnósticos
@@ -576,9 +576,9 @@ termina `completed`, su snapshot de claims en
 una corrección agrega un sucesor con hash del predecesor. Antes de Spec:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
 ```
 
 Un verde acá prueba que el Markdown se regenera byte a byte desde el JSON, no que la vista alcance para decidir. **La vista no muestra motivos de skip, override ni el texto de los claims.** Para juzgar una decisión hay que abrir el JSON, no el resumen.
@@ -593,7 +593,7 @@ node scripts/verify-discovery-requirements.mjs check --completed-phase I2
 El gate sigue la cadena de reemplazos de cada requisito hasta una fila activa con su prueba verde, y ahí se detiene: **nunca juzga si una regla reescrita o reemplazada sigue exigiendo lo mismo**. Un requisito puede quedar sustituido por otro que pide bastante menos, con el gate en verde: la equivalencia de significado la revisa una persona. Y la prueba que respalda cada requisito se valida como en `verify-test-bindings.mjs`: **el test se nombra, no se comprueba: alcanza con que exista y salga ok.**
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-test-bindings.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-test-bindings.mjs check
 ```
 
 Corre cada archivo de prueba vinculado **en aislamiento** y lee el resultado del formato de salida
@@ -604,7 +604,7 @@ Un claim que cita un criterio o requisito inexistente es una referencia rota, no
 **decisión vigente** contra los identificadores que `docs/spec.md` declara en negrita:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug>
 ```
 
 En el primer Discovery todavía no hay spec y el gate sale 0 diciéndolo; empieza a morder en la
@@ -614,7 +614,7 @@ En el cierre, cuando la spec y el packet ya existen, el modo estricto convierte 
 rechazo: cada claim vigente tiene que enlazar al menos un requisito o criterio declarado.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
+node .vibe/ia-stack-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
 ```
 
 `--require-links` implica `--require-inputs` y sólo es válido para `claims`; no cambia el modo
@@ -630,7 +630,7 @@ un identificador que la spec nueva reutiliza resuelve en verde significando otra
 un Discovery ya cerrado hay que decir contra qué spec se resuelve:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --spec docs/discovery/<feature-slug>/spec.md --require-inputs --require-links
+node .vibe/ia-stack-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --spec docs/discovery/<feature-slug>/spec.md --require-inputs --require-links
 ```
 
 El gate comprueba que el identificador exista en la spec indicada; **no comprueba que esa spec sea
@@ -702,7 +702,7 @@ una ambigüedad a un criterio de aceptación adivinado.**
 `templates/spec.md` since an earlier hardening round but never enforced; a spec nobody reads
 envenena todas las fases que siguen; ver `research/sources/protocolo-muralla.md` punto #8):
 ```bash
-node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md
+node .vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md
 ```
 Sale 0 sólo si la spec tiene 650 palabras o menos, **sin contar** bloques de código ni filas de
 tabla (la misma exclusión que la plantilla ya declara). Si sale 1, se recorta la narración **antes**
@@ -710,7 +710,7 @@ de la revisión de contenido, no después: un borrador que no pasa esto nunca ll
 
 Antes de aprobar la spec, corré también el chequeo estricto de calidad de forma:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
+node .vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
 ```
 Ese modo exige las secciones canónicas, al menos un AC único con gramática
 `GIVEN … WHEN … THEN` o `THE SYSTEM SHALL`, y rechaza placeholders o preguntas
@@ -760,7 +760,7 @@ Lo que un ADR pide y ningún otro documento del protocolo exige: **las opciones 
 el registro de una decisión que va a sobrevivir a la sesión.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-adr.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-adr.mjs check
 ```
 
 Sin carpeta escribe `VACÍO:` y sale `0` — un proyecto que no tomó decisiones estructurales no
@@ -770,7 +770,7 @@ sale igual de verde que uno que no tomó ninguna.
 
 **Preflight de conflictos (gate mecánico, antes de pedir aprobación):**
 ```bash
-node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
+node .vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
 ```
 El gate usa como writers los tres campos declarados por tarea: `files_to_create`,
 `files_to_modify` y `test_files`. Dos tareas que declaran el mismo path sólo pasan si existe
@@ -782,7 +782,7 @@ del orchestrator de que las tareas “parecen independientes”.
 
 **Forma de cada tarea (gate mecánico, el mismo preflight):**
 ```bash
-node .vibe/vcp-runtime/scripts/verify-task-shape.mjs check docs/tasks.json
+node .vibe/ia-stack-runtime/scripts/verify-task-shape.mjs check docs/tasks.json
 ```
 Los dos gates leen el mismo archivo y miran cosas distintas: el de conflictos cruza los conjuntos de
 escritura entre tareas; éste mira **adentro** de cada tarea. Exige que `approval_criteria` **nombre
@@ -838,14 +838,14 @@ frontera de **quién puede certificar qué**:
 - **Refactor-Engineer** no toca el contrato de ninguno de los dos: sólo la estructura.
 
 **Ninguno de los cuatro certifica su propio gate.** Eso lo hacen mecánicamente
-`.vibe/vcp-runtime/scripts/verify-red.sh`/`.ps1` y el runner de pruebas. Nunca se acepta como gate
+`.vibe/ia-stack-runtime/scripts/verify-red.sh`/`.ps1` y el runner de pruebas. Nunca se acepta como gate
 que un subagente diga que pasó: se confía en lo que se deriva, no en lo que se narra.
 
 **5.1 RED** (papel: Test-Engineer) — `skills/subagent-red.md`. Se lanza con
 `model: sonnet, effort: <config>`. Escribe **exactamente una prueba por cada criterio de aceptación
 explícito** de `docs/spec.md`. No es "al menos una": cada criterio tiene la suya, y se pueden contar
-sin ejecutar nada. El gate es `.vibe/vcp-runtime/scripts/verify-red.sh` (bash) o
-`.vibe/vcp-runtime/scripts/verify-red.ps1` (PowerShell), con un archivo de prueba literal y el
+sin ejecutar nada. El gate es `.vibe/ia-stack-runtime/scripts/verify-red.sh` (bash) o
+`.vibe/ia-stack-runtime/scripts/verify-red.ps1` (PowerShell), con un archivo de prueba literal y el
 comando exacto del runner. Los dos envoltorios llaman al **despachador**, que resuelve el comando
 contra `contracts/red-adapters.json` por **igualdad exacta** y lanza el adaptador declarado; un
 runner que no esté en ese contrato se rechaza nombrándolo y listando los que sí están, **sin
@@ -864,8 +864,8 @@ un verde débil se lee igual que uno fuerte, es igual.
 
 ```bash
 # El envoltorio, que es lo que se corre: archivo de prueba y comando EXACTO del runner.
-bash .vibe/vcp-runtime/scripts/verify-red.sh 'tests/mi-cosa.test.mjs' 'node --test'
-# PowerShell: .vibe/vcp-runtime/scripts/verify-red.ps1 'tests/mi-cosa.test.mjs' 'node --test'
+bash .vibe/ia-stack-runtime/scripts/verify-red.sh 'tests/mi-cosa.test.mjs' 'node --test'
+# PowerShell: .vibe/ia-stack-runtime/scripts/verify-red.ps1 'tests/mi-cosa.test.mjs' 'node --test'
 ```
 
 Los dos envoltorios llaman al despachador, y **el despachador no se invoca a mano**: es él quien
@@ -916,7 +916,7 @@ por regla, y TRIANGULATE y la revisión 4R las marcan si se cuelan.
 La sexta sí tiene detector —es la única de la lista que lo tiene, y toda regla nueva de este
 protocolo tiene que traer el suyo—:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-assert-order.mjs check tests
+node .vibe/ia-stack-runtime/scripts/verify-assert-order.mjs check tests
 ```
 **Sale 0 siempre: es un aviso, todavía no un gate.** Nace así por una medición propia — cinco
 diseños de detectores de seguridad de este repositorio dieron 43, 26, 6, 5 y 3 hallazgos, **todos
@@ -945,7 +945,7 @@ cambios de otra tarea es un arreglo que nadie revisó como cambio propio.
 declaró que iba a escribir contra el delta real de Git. `git diff --stat` es sólo un resumen y **no
 ve los archivos sin versionar**. Se corre:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check \
+node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check \
   --tasks docs/tasks.json --task <task-id> --base <git-ref> \
   --ignore <explicit-operational-file-if-needed>
 ```
@@ -961,7 +961,7 @@ cambia, se vuelve a correr antes del receipt.
 `README.md`, sección "Gates que sí son código"), entonces apenas `verify-red.sh`/`.ps1` confirma que
 el adaptador aceptó la evidencia del RED, se corre:
 ```bash
-node .vibe/vcp-runtime/scripts/pretooluse-red.mjs emit --feature <feature-slug> --task <task-id> --tests <red-test-file-1,red-test-file-2> --files <declared-production-path-1,declared-production-path-2> --command "node --test"
+node .vibe/ia-stack-runtime/scripts/pretooluse-red.mjs emit --feature <feature-slug> --task <task-id> --tests <red-test-file-1,red-test-file-2> --files <declared-production-path-1,declared-production-path-2> --command "node --test"
 ```
 Es opcional y su ausencia no rompe nada. Cuando está, convierte "primero el rojo, después el
 código" en un bloqueo del harness, en vez de algo que el modelo tiene que acordarse de comprobar.
@@ -1023,7 +1023,7 @@ siguiente fase **es un artefacto, no charla descartable**. Se guarda su texto ex
 `.vibe/handoffs/<feature-slug>-<task-id>-<gate>.md` (or
 `.vibe/handoffs/<feature-slug>-PHASE-<n>.md` si la entrega es de fase), y después se corre:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-handoff-report.mjs check .vibe/handoffs/<feature-slug>-<task-id>-<gate>.md
+node .vibe/ia-stack-runtime/scripts/verify-handoff-report.mjs check .vibe/handoffs/<feature-slug>-<task-id>-<gate>.md
 ```
 El informe declara **exactamente una** línea `NOT_REVIEWED:`: o una superficie concreta que quedó
 sin mirar, o `none — <alcance revisado, específico>`. Si falta, está vacía, está duplicada o es un
@@ -1057,8 +1057,8 @@ el que está—. El expediente de la funcionalidad declara **cada uno** con uno 
 vector que falta rechaza, y uno que el contrato no declara también.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json
-node .vibe/vcp-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json --require-complete
+node .vibe/ia-stack-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json
+node .vibe/ia-stack-runtime/scripts/verify-triangulate.mjs check docs/triangulate/<feature-slug>.json --require-complete
 ```
 
 Sin la bandera informa cuántos quedan pendientes y sale `0`: sirve mientras se trabaja. Con
@@ -1092,7 +1092,7 @@ LAW 5 prohíbe editar una línea ya escrita, y lo único que queda es agregar un
 pasó una vez, y la corrección sigue ahí abajo de la línea que no se pudo borrar.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-repo-clean.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-repo-clean.mjs check
 ```
 
 Busca dos cosas: rutas con forma de directorio personal, y el nombre de usuario de la máquina que lo
@@ -1165,7 +1165,7 @@ no siempre hay. Pero si se saltea, **se dice**, en vez de reportar el gate como 
 **6.1.1 Cobertura de shell** — cuánto ejercitan los escenarios declarados:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json
+node .vibe/ia-stack-runtime/scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json
 ```
 
 Los scripts de shell no tenían medición, y el hueco estaba declarado como sin respuesta portable.
@@ -1176,13 +1176,13 @@ ejecutó. Sin dependencias, sin servicios.
 escenario exige motivo escrito y se cuenta en la salida, para que no desaparezca. PowerShell queda
 declarado **sin medición**: no hay forma portable de sacarle el número de línea.
 En Windows, la sonda prefiere `C:\Program Files\Git\bin\bash.exe` para no confundir el shim de
-WSL (`C:\Windows\System32\bash.exe`) con un Bash funcional; `VCP_BASH_PATH` permite indicar otro
+WSL (`C:\Windows\System32\bash.exe`) con un Bash funcional; `IA_STACK_BASH_PATH` permite indicar otro
 binario real. Si no hay Git Bash, el comando queda sujeto al `bash` disponible y el resultado debe
 dejar ese límite explícito.
 
 **6.2 Seguridad** (papel: Security-Officer) — se corre el gate nativo y autocontenido que documenta
 `skills/security-baseline.md`:
-`node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-u-origin/main>`.
+`node .vibe/ia-stack-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-u-origin/main>`.
 
 Escanea el delta contra la base **más** lo que está en el índice, lo modificado sin agregar y lo que
 no está versionado: no sólo la historia commiteada. Bloquea secretos críticos y altos, artefactos
@@ -1206,7 +1206,7 @@ superficie sin control pasaba en verde mientras el escáner no encontrara un pat
 es justo lo que pasa con authz, que el escáner declara no cubrir. La segunda mitad:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-threat-model.mjs check --feature <feature-slug> \
+node .vibe/ia-stack-runtime/scripts/verify-threat-model.mjs check --feature <feature-slug> \
   --spec docs/spec.md --receipt .vibe/receipts/<feature-slug>-<fecha>.json --require-inputs
 ```
 
@@ -1386,14 +1386,14 @@ Las salidas `.ndjson`/`.gz` son artefactos locales ignorados por Git; se conserv
 compactas y se regeneran con el builder cuando el corpus está disponible.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
+node .vibe/ia-stack-runtime/scripts/verify-evidence-trace.mjs criteria --spec docs/spec.md --tests tests --require-inputs
 ```
 
 También cerrá la trazabilidad del research vigente antes de escribir el receipt. En este punto ya
 existen la spec y el packet; por eso cada claim tiene que llevar al menos un vínculo resoluble:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
+node .vibe/ia-stack-runtime/scripts/verify-evidence-trace.mjs claims --feature <feature-slug> --require-inputs --require-links
 ```
 
 Si un claim no enlaza ningún `linked_requirement_id` ni `linked_ac_id`, el cierre se rechaza en vez
@@ -1401,8 +1401,8 @@ de convertir la ausencia de vínculo en un verde vacío.
 
 Registrá la evidencia de comandos con el runner nativo, siempre como argv sin shell:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json
-node .vibe/vcp-runtime/scripts/verify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete
+node .vibe/ia-stack-runtime/scripts/verify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json
+node .vibe/ia-stack-runtime/scripts/verify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete
 ```
 Cuando ejecuta el vector, el registro conserva comando, exit code, duración, el `HEAD` del `cwd`
 real, salida limitada a 4096 bytes y hashes. El ejecutable debe ser un nombre nativo de la
@@ -1432,7 +1432,7 @@ con `OK:` legítimo porque mira el propio checkout de VCP, no el proyecto) y `sk
 Los dos últimos exigen motivo escrito, y la salida dice cuántos hay de cada uno.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-empty-probe.mjs check contracts/empty-probe.json
+node .vibe/ia-stack-runtime/scripts/verify-empty-probe.mjs check contracts/empty-probe.json
 ```
 
 Esta sonda existe por un fallo propio, reproducido tres veces: la lista de gates que decían `OK:`
@@ -1445,14 +1445,14 @@ declarado lo acepta sin chistar.
 Después, escribí el receipt (el propio orchestrator lo lee/
 escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
 
-**El receipt se escribe acá, y sus reglas viven en `skills/receipt.md`.** Esquema `vcp.receipt/v3`,
+**El receipt se escribe acá, y sus reglas viven en `skills/receipt.md`.** Esquema `ia.receipt/v3`,
 la regla dura sobre `acceptance_criteria`, la separación entre un límite y una regresión, el conteo
 de la ronda adversarial y el ciclo de vida exacto: todo eso es un subsistema entero y estaba
 documentado en el medio de esta fase. Se mudó el 2026-09-15 — **170 líneas, sin cambiar una sola
 regla** — porque obligaba a atravesarlo aunque sólo se quisiera saber cómo correr la suite.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json
 ```
 
 **Lo que no cambió**: se escribe inmediatamente antes de la 8.1, en el mismo aliento. Si el estado
@@ -1529,8 +1529,8 @@ commiteado es el revisado; **no certifica que la cosa arranque**, y hasta acá e
 nada que lo hiciera.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-u-origin/main>
-node .vibe/vcp-runtime/scripts/verify-deploy.mjs check --feature <feature-slug> --require-inputs
+node .vibe/ia-stack-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-u-origin/main>
+node .vibe/ia-stack-runtime/scripts/verify-deploy.mjs check --feature <feature-slug> --require-inputs
 ```
 
 **El escáner se vuelve a correr acá, y no es ceremonia:** 6.2 corre antes de 6.3, de 6.4 y de toda
@@ -1564,7 +1564,7 @@ plazo.
 **8.0.1 Comprobación por HTTP, sólo en esta máquina.**
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-deploy.mjs health --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-deploy.mjs health --feature <feature-slug>
 ```
 
 Tres resultados mecánicos, **calcados del gate de lint/typecheck** de 6.1, que es un patrón que este
@@ -1590,13 +1590,13 @@ verde. Un cambio que no sabe cómo volver atrás no se promueve.
 **8.1 Commit/push/merge** — gate previo, mecánico, no de lectura:
 Antes de preparar el commit, cerrá el registro de elecciones de todas las fases declaradas:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json --require-complete
+node .vibe/ia-stack-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json --require-complete
 ```
 Si falta una fase, su menú o su elección, el deploy se detiene. Este flag no prueba voluntad humana;
 prueba que ninguna fase declarada quedó sin registro.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json \
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs check .vibe/receipts/<feature-slug>-<fecha>.json \
   --require-clean-worktree
 ```
 `--require-clean-worktree` exige además que no queden paths unstaged ni untracked: el árbol
@@ -1606,7 +1606,7 @@ para un receipt intermedio, donde atestiguar trabajo sin stagear es exactamente 
 
 **Preferible: validar y escribir en una sola corrida.**
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs commit .vibe/receipts/<feature-slug>-<fecha>.json \
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs commit .vibe/receipts/<feature-slug>-<fecha>.json \
   --message "<mensaje del commit>"
 ```
 Valida igual que `check --require-clean-worktree`, commitea, y **después confirma** que el árbol
@@ -1620,23 +1620,23 @@ que resuelve.
 puede escribir en ese instante. La confirmación posterior demuestra que el commit contiene el
 índice revisado; no demuestra que no hubo una escritura concurrente.
 
-Exit 0 **únicamente** si `schema: vcp.receipt/v3` Y `terminal_state: approved` Y **todos** los
+Exit 0 **únicamente** si `schema: ia.receipt/v3` Y `terminal_state: approved` Y **todos** los
 `acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
 estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed`/`limits`/`regressions`/`support`/
 `refutation` pasan su validación de forma → proceder. Exit 1 en cualquier otro caso — receipt
-ausente, stale, `schema: vcp.receipt/v1` o `vcp.receipt/v2` (archivísticos, nunca pasables por
+ausente, stale, `schema: ia.receipt/v1` o `ia.receipt/v2` (archivísticos, nunca pasables por
 `check` — ver abajo), cualquier AC no-`COMPLIANT`, hash de test desactualizado, medición `-1` sin
 motivo, `not_reviewed` placeholder, una regresión `accepted_by_user` cuyo `user_decision_ref` no
 resuelve, un campo de `support` sin declarar, un conteo de `refutation` que no cierra, o
 `terminal_state: escalated` (**siempre**, tenga o no `override_note`) → frenar acá, reportar al
 usuario, no commitear (LAW 8). El script imprime la razón exacta del rechazo.
 
-**Los receipts `vcp.receipt/v1` y `vcp.receipt/v2` son archivo, no evidencia viva.** Un proyecto con
+**Los receipts `ia.receipt/v1` y `ia.receipt/v2` son archivo, no evidencia viva.** Un proyecto con
 receipts de antes de este schema los conserva sin migración automática — nadie los borra ni los
 reescribe. Un receipt no se parchea nunca: si hace falta uno vigente, se genera uno nuevo sobre el
 estado real. Para leer los viejos sin intentar aprobarlos:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs inspect-legacy .vibe/receipts/<archivo-viejo>.json
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs inspect-legacy .vibe/receipts/<archivo-viejo>.json
 ```
 Comando de solo lectura: informa que es evidencia archivística de un schema anterior, no
 modifica nada, y **nunca** habilita un commit/publish — `check` sigue siendo la única puerta, y
@@ -1680,7 +1680,7 @@ Esperando tu respuesta antes de continuar.
 **8.1.1 Ancla de la traza** — antes de publicar, la historia de git tiene que respaldar la traza:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-audit-chain.mjs history .vibe/AUDIT.md
+node .vibe/ia-stack-runtime/scripts/verify-audit-chain.mjs history .vibe/AUDIT.md
 ```
 
 `check` mira adentro del archivo y agarra la edición de una línea. **No agarra recortar el final ni
@@ -1696,7 +1696,7 @@ cualquiera que tenga un clon previo o el remoto.
 **8.1.2 Custodia del recibo** — quién firmó el commit que lo lleva:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-receipt.mjs custody .vibe/receipts/<feature-slug>-<fecha>.json
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs custody .vibe/receipts/<feature-slug>-<fecha>.json
 ```
 
 VCP no puede crear ni guardar claves, pero **sí puede dejar de callarse**: git ya trae firma de
@@ -1712,8 +1712,8 @@ custodia vale hasta donde tu clave exija presencia humana.
 - **El índice del proyecto.** Después del commit se regenera y se comprueba el inventario propio:
 
   ```bash
-  node .vibe/vcp-runtime/scripts/verify-vcp-index.mjs record
-  node .vibe/vcp-runtime/scripts/verify-vcp-index.mjs check
+  node .vibe/ia-stack-runtime/scripts/verify-ia-stack-index.mjs record
+  node .vibe/ia-stack-runtime/scripts/verify-ia-stack-index.mjs check
   ```
 
   Dice qué archivos cubre el repositorio y cuáles quedan afuera con motivo escrito. No necesita
@@ -1727,7 +1727,7 @@ custodia vale hasta donde tu clave exija presencia humana.
 viven en `contracts/honest-limits.json`, cada una con el `why` de qué garantía se pierde si
 desaparece:
 ```bash
-node .vibe/vcp-runtime/scripts/verify-vcp-contract.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-ia-stack-contract.mjs check
 ```
 Debilitar una de esas frases pone el gate en rojo y el mensaje imprime el motivo, para que quien la
 tocó entienda qué está sacando. La comparación es de texto literal, nunca un patrón que alguien
@@ -1747,7 +1747,7 @@ Una vez escrita la entrada, el archivo se verifica. Era el único artefacto del 
 gate miraba:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-lessons.mjs check .vibe/LESSONS.md
+node .vibe/ia-stack-runtime/scripts/verify-lessons.mjs check .vibe/LESSONS.md
 ```
 
 El archivo que el instalador escribe en un proyecto nuevo —cabecera y plantilla, cero lecciones—
@@ -1796,9 +1796,9 @@ Se relee en Phase 1 Bootstrap junto con SESSION.md/DECISIONS.md (últimas 2 entr
 **9.0 El tablero** (mismo período de 7 días, misma lógica de `due`):
 
 ```bash
-node .vibe/vcp-runtime/scripts/tablero.mjs due
-node .vibe/vcp-runtime/scripts/tablero.mjs build
-node .vibe/vcp-runtime/scripts/tablero-servidor.mjs serve
+node .vibe/ia-stack-runtime/scripts/tablero.mjs due
+node .vibe/ia-stack-runtime/scripts/tablero.mjs build
+node .vibe/ia-stack-runtime/scripts/tablero-servidor.mjs serve
 ```
 
 Genera una página local con proyectos, sesiones, turnos, tokens y una **banda** de horas. Se abre
@@ -1820,14 +1820,14 @@ de esa misma carpeta, si querés la columna.
 **9.0.1 El bucle de auto-mejora** (mismo período de 7 días, misma lógica de `due`):
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
+node .vibe/ia-stack-runtime/scripts/verify-sereno.mjs due
 ```
 
 Si toca, el agente mira lo que se hizo y escribe **como mucho cuatro** propuestas en
 `docs/mejoras/AAAA-MM-DD.json`, copiando la forma de `templates/mejoras.json`. Después:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json
+node .vibe/ia-stack-runtime/scripts/verify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json
 ```
 
 Las cuatro reglas, y por qué cada una:
@@ -1853,7 +1853,7 @@ compite con lo que sí importa. Esta fase saca lo que sobra **sin perder nada**.
 recuerda** — la fecha de la última corrida vive en `docs/ablation.json`:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-ablation.mjs due docs/ablation.json
+node .vibe/ia-stack-runtime/scripts/verify-ablation.mjs due docs/ablation.json
 ```
 
 Si nunca se limpió, dice que toca. VCP te lo ofrece con un menú y **nunca mueve un archivo sin tu
@@ -1952,7 +1952,7 @@ la regresión — no el archivo entero — y se mide otra vez. De a cinco, porqu
 grande sabés que algo empeoró pero no cuál.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-ablation.mjs check docs/ablation.json
+node .vibe/ia-stack-runtime/scripts/verify-ablation.mjs check docs/ablation.json
 ```
 
 ### El registro se publica redactado
@@ -2090,7 +2090,7 @@ código colapsa a un solo párrafo: la plantilla que este mismo archivo prescrib
 ningún gate se enteraba.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-menu-shape.mjs check SKILL.md
+node .vibe/ia-stack-runtime/scripts/verify-menu-shape.mjs check SKILL.md
 ```
 
 Rechaza todo bloque `🔵` que no sea una lista de al menos dos opciones `- **A)** texto`, con marca
@@ -2172,7 +2172,7 @@ Respondido el 🔵 que cierra una fase, la decisión se registra en `docs/phase-
 parezca haber estado ahí rompe el hash de esa decisión y la cadena hacia adelante. El gate no
 escribe: el sello se calcula con `hashDecision(previous_hash, decision)` del propio módulo.
 
-Gate durante el trabajo: `node .vibe/vcp-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
+Gate durante el trabajo: `node .vibe/ia-stack-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`
 (sin archivo escribe `VACÍO:` y sale `0`: un proyecto que no arrancó ninguna fase no incumple nada; agregá `--require-inputs` para que esa ausencia sea rechazo).
 Gate de cierre: agregá `--require-complete`. En ese modo, cada identificador de `phase_order` tiene
 que tener una decisión vigente (`decided`) con su menú, recomendación, elección y motivo; una fase
@@ -2188,7 +2188,7 @@ traía diez slugs en inglés que no existían como fase en ningún otro lado, y 
 contra su propia compañera. En el cierre corré además:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json
+node .vibe/ia-stack-runtime/scripts/verify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json
 ```
 
 Este segundo gate exige que el orden del registro coincida exactamente con el plan y que todas las

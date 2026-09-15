@@ -26,14 +26,15 @@ import { join, resolve } from 'node:path';
 // manda la regla de redaccion reutilizable del protocolo: dos redacciones distintas de la misma
 // garantia divergen con el tiempo y nadie sabe cual es la vigente.
 import { SUPPORT_FIELDS, validateDeclaredField } from './verify-receipt.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const SCHEMAS = Object.freeze({
-  caio: 'vcp.caio/1',
-  'loop-map': 'vcp.loop-map/1',
-  prd: 'vcp.prd/1',
-  adoption: 'vcp.adoption/1',
-  recurrence: 'vcp.recurrence/1',
-  threat: 'vcp.threat-model/1',
+  caio: 'ia.caio/1',
+  'loop-map': 'ia.loop-map/1',
+  prd: 'ia.prd/1',
+  adoption: 'ia.adoption/1',
+  recurrence: 'ia.recurrence/1',
+  threat: 'ia.threat-model/1',
 });
 
 /** Las superficies por las que entra dato ajeno, y las clases de control que las guardan. Las dos
@@ -161,7 +162,7 @@ function validateFindingList(value, at, violations, knownIds = null) {
   });
 }
 function validateHeader(document, kind, violations) {
-  if (document.schema !== SCHEMAS[kind]) add(violations, `schema debe ser ${SCHEMAS[kind]}`);
+  if (!mismoSchema(document.schema, SCHEMAS[kind])) add(violations, `schema debe ser ${SCHEMAS[kind]}`);
   if (!FEATURE_SLUG.test(document.feature ?? '')) add(violations, 'feature debe ser un slug en kebab-case');
   if (!isDate(document.date)) add(violations, 'date debe ser una fecha AAAA-MM-DD válida');
 }

@@ -1,10 +1,10 @@
 {
-  "schema": "vcp.index/1",
+  "schema": "ia.index/1",
   "why": "Que archivos cubre este repositorio y cuales quedan afuera con motivo escrito. Reemplaza la parte del grafo que el protocolo de verdad usaba, sin depender de ninguna herramienta externa.",
   "entries": [
     {
-      "path": ".agents/skills/vibecodeprotocols/SKILL.md",
-      "class": "documento"
+      "path": ".agents/skills/ia-stack/SKILL.md",
+      "class": "skill"
     },
     {
       "path": ".gitattributes",
@@ -207,6 +207,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/ia-stack-index.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/red-adapters.json",
       "class": "contrato"
     },
@@ -228,10 +232,6 @@
     },
     {
       "path": "contracts/triangulate-vectors.json",
-      "class": "contrato"
-    },
-    {
-      "path": "contracts/vcp-index.json",
       "class": "contrato"
     },
     {
@@ -315,6 +315,10 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/decisions/d005.json",
+      "class": "evidencia"
+    },
+    {
       "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d002.json",
       "class": "evidencia"
     },
@@ -324,6 +328,10 @@
     },
     {
       "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d004.json",
+      "class": "evidencia"
+    },
+    {
+      "path": "docs/discovery/integridad-verificable/runs/run-001/packets/d005.json",
       "class": "evidencia"
     },
     {
@@ -659,6 +667,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/schema-compat.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/tablero-modelo.mjs",
       "class": "gate"
     },
@@ -740,6 +752,18 @@
     },
     {
       "path": "scripts/verify-handoff-report.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-ia-stack-contract.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-ia-stack-coverage.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-ia-stack-index.mjs",
       "class": "gate"
     },
     {
@@ -871,18 +895,6 @@
       "class": "gate"
     },
     {
-      "path": "scripts/verify-vcp-contract.mjs",
-      "class": "gate"
-    },
-    {
-      "path": "scripts/verify-vcp-coverage.mjs",
-      "class": "gate"
-    },
-    {
-      "path": "scripts/verify-vcp-index.mjs",
-      "class": "gate"
-    },
-    {
       "path": "scripts/vibe-memory.sh",
       "class": "gate"
     },
@@ -951,7 +963,7 @@
       "class": "skill"
     },
     {
-      "path": "skills/verificar-vcp.md",
+      "path": "skills/verificar-ia-stack.md",
       "class": "skill"
     },
     {
@@ -1132,6 +1144,10 @@
     },
     {
       "path": "tests/require-artifact.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/schema-compat.test.mjs",
       "class": "prueba"
     },
     {
@@ -1348,6 +1364,38 @@
     },
     {
       "path": "tests/verify-handoff-report.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-contract.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-coverage-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-coverage-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-coverage-e2e.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-coverage.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-index-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-index-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-ia-stack-index.test.mjs",
       "class": "prueba"
     },
     {
@@ -1604,38 +1652,6 @@
     },
     {
       "path": "tests/verify-triangulate.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-contract.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-coverage-bootstrap-cli.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-coverage-bootstrap-falsy.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-coverage-e2e.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-coverage.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-index-bootstrap-cli.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-index-bootstrap-falsy.test.mjs",
-      "class": "prueba"
-    },
-    {
-      "path": "tests/verify-vcp-index.test.mjs",
       "class": "prueba"
     },
     {

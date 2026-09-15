@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.mejoras/1",
+  "schema": "ia.mejoras/1",
   "run_id": "2026-09-05",
   "why": "Segunda ronda del mismo dia, corrida a pedido. El gate dijo que no tocaba -- 0 dias de 7 -- y se corrio igual. Este archivo lleva sufijo porque el nombre ES la fecha y la primera ronda de hoy ya ocupaba el suyo: ese limite lo destapo este mismo ejercicio y se cerro antes de escribir esto.",
   "propuestas": [

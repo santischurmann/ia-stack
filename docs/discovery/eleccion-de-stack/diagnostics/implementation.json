@@ -42,7 +42,7 @@
       "id": "STEP6",
       "action": "Cablear la matriz al menú de tipo de producto de la fase de Intake, para que la recomendación salga del dato y no de la prosa",
       "depends_on": ["STEP2"],
-      "validation": "node scripts/verify-menu-shape.mjs check SKILL.md && node scripts/verify-vcp-contract.mjs check",
+      "validation": "node scripts/verify-menu-shape.mjs check SKILL.md && node scripts/verify-ia-stack-contract.mjs check",
       "access_needed": ["ninguno"]
     },
     {

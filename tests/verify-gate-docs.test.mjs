@@ -46,9 +46,9 @@ function arbol({ gates = [], docs = {}, contrato = undefined } = {}) {
   return root;
 }
 
-const conComando = (g) => ['# Doc', '', '```bash', `node .vibe/vcp-runtime/scripts/${g} check algo`, '```', ''].join('\n');
+const conComando = (g) => ['# Doc', '', '```bash', `node .vibe/ia-stack-runtime/scripts/${g} check algo`, '```', ''].join('\n');
 
-const contratoVacio = { schema: 'vcp.gate-docs/1', why: 'x', not_invoked_directly: [] };
+const contratoVacio = { schema: 'ia.gate-docs/1', why: 'x', not_invoked_directly: [] };
 
 test('un uso inválido sale 2 y no se confunde con un rechazo', () => {
   const errores = [];
@@ -109,7 +109,7 @@ test('un gate que NO se invoca a mano se declara, con su motivo y con quién lo 
     gates: ['verify-adaptador.mjs'],
     docs: { 'SKILL.md': '# Nada' },
     contrato: {
-      schema: 'vcp.gate-docs/1',
+      schema: 'ia.gate-docs/1',
       why: 'x',
       not_invoked_directly: [{
         script: 'verify-adaptador.mjs',
@@ -134,7 +134,7 @@ test('una declaración a medias no declara nada', () => {
     { script: 'verify-adaptador.mjs', invoked_by: 'verify-d.mjs', why: 'corto' },
     { script: '', invoked_by: 'verify-d.mjs', why: 'Un motivo suficientemente largo para pasar el piso.' },
   ]) {
-    const v = validar(['verify-adaptador.mjs'], new Set(), { schema: 'vcp.gate-docs/1', why: 'x', not_invoked_directly: [entrada] });
+    const v = validar(['verify-adaptador.mjs'], new Set(), { schema: 'ia.gate-docs/1', why: 'x', not_invoked_directly: [entrada] });
     assert.ok(v.length > 0, JSON.stringify(entrada));
   }
 });
@@ -144,7 +144,7 @@ test('FALSIFICACIÓN · declarar un gate que NO existe también se rechaza', () 
   // excepcion viva para algo que ya no esta, y la proxima vez que alguien cree ese nombre nace
   // exceptuado sin que nadie lo haya decidido.
   const v = validar([], new Set(), {
-    schema: 'vcp.gate-docs/1',
+    schema: 'ia.gate-docs/1',
     why: 'x',
     not_invoked_directly: [{ script: 'verify-fantasma.mjs', invoked_by: 'verify-d.mjs', why: 'Un motivo suficientemente largo para pasar el piso.' }],
   });
@@ -155,7 +155,7 @@ test('FALSIFICACIÓN · un gate declarado Y documentado es una contradicción, y
   // Las dos cosas no pueden ser ciertas: o se corre a mano y tiene ejemplo, o no se corre a mano.
   // Dejarlo pasar convertiria al contrato en una lista que nadie revisa.
   const v = validar(['verify-algo.mjs'], new Set(['verify-algo.mjs']), {
-    schema: 'vcp.gate-docs/1',
+    schema: 'ia.gate-docs/1',
     why: 'x',
     not_invoked_directly: [{ script: 'verify-algo.mjs', invoked_by: 'verify-d.mjs', why: 'Un motivo suficientemente largo para pasar el piso.' }],
   });
@@ -194,11 +194,11 @@ test('sin el contrato el gate RECHAZA: aprobar sin la lista de excepciones serí
 test('un contrato con el schema equivocado, o sin la lista, no es un contrato', () => {
   // Es la misma distincion que el gate hace con su ausencia: un contrato ilegible no se puede tomar
   // por una lista vacia de excepciones, porque eso aprobaria cualquier gate sin ejemplo.
-  const conSchemaMalo = validar([], new Set(), { schema: 'vcp.otra-cosa/9', not_invoked_directly: [] });
+  const conSchemaMalo = validar([], new Set(), { schema: 'ia.otra-cosa/9', not_invoked_directly: [] });
   assert.ok(conSchemaMalo.some((x) => /schema/u.test(x)), conSchemaMalo.join(' | '));
 
   for (const lista of ['no es una lista', null, undefined, 42]) {
-    const v = validar([], new Set(), { schema: 'vcp.gate-docs/1', why: 'x', not_invoked_directly: lista });
+    const v = validar([], new Set(), { schema: 'ia.gate-docs/1', why: 'x', not_invoked_directly: lista });
     assert.ok(v.some((x) => /not_invoked_directly/u.test(x)), `${JSON.stringify(lista)}: ${v.join(' | ')}`);
   }
 });
@@ -214,6 +214,27 @@ test('si no se puede listar scripts/, el gate RECHAZA en vez de decir que no hay
   });
   assert.equal(code, 1);
   assert.match(errores.join('\n'), /scripts\//u);
+});
+
+test('ADENTRO DE UN RUNTIME INSTALADO no hay nada que verificar, y eso es VACÍO', () => {
+  // Lo encontró el E2E, que es donde tenía que encontrarse. El instalador no copia `README.md` ni
+  // `INSTALL.md`, que son los documentos donde viven los ejemplos de los dos instaladores: desde
+  // adentro de una instalación el gate los acusaba como si faltaran, y mandaba a arreglar algo que
+  // no está roto. Mismo patrón que `verify-ia-stack-contract.mjs`, y por la misma razón.
+  const root = arbol({ gates: ['install.sh'], docs: { 'SKILL.md': '# Nada' }, contrato: contratoVacio });
+  const instalado = join(root, '.vibe', 'ia-stack-runtime');
+  mkdirSync(join(instalado, 'scripts'), { recursive: true });
+  mkdirSync(join(instalado, 'skills'), { recursive: true });
+  writeFileSync(join(instalado, 'scripts', 'install.sh'), '# un instalador\n', 'utf8');
+  writeFileSync(join(instalado, 'SKILL.md'), '# Nada', 'utf8');
+  try {
+    const salida = [];
+    const code = main(['check'], { root: instalado, write: (l) => salida.push(l), writeError: (l) => salida.push(l) });
+    assert.equal(code, 0, salida.join('\n'));
+    assert.ok(/^VACÍO: /u.test(salida[0]), salida.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('EL PROTOCOLO REAL: cada gate se puede correr desde un documento, o está declarado', () => {

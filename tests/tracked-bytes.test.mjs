@@ -102,7 +102,7 @@ test('la regla cubre todo el árbol trackeado, no sólo lo que ya rompió una ve
  * lo trate como binario. Medido el 2026-09-01: `grep -n "CONTROL_CHARACTERS"
  * scripts/verify-discovery-core.mjs` respondía `Binary file ... matches` y escondía la línea, así
  * que buscar en el código saltaba en silencio dos gates enteros. El mismo defecto ya se había
- * arreglado una vez en verify-vcp-coverage.mjs con `String.fromCharCode(0)`, que produce el mismo
+ * arreglado una vez en verify-ia-stack-coverage.mjs con `String.fromCharCode(0)`, que produce el mismo
  * byte en tiempo de ejecución sin escribirlo en el fuente.
  */
 export function rawNulBytes(buffer) {

@@ -172,7 +172,7 @@ test('FALSIFICACIÓN · un archivo válido con BOM no se reporta como JSON invá
 test('FALSIFICACIÓN · un contrato de vectores mal formado se rechaza como contrato, no como expediente', () => {
   // Estas ramas las nombró la cobertura una por una. Un contrato roto que se leyera como expediente
   // incompleto mandaría a corregir el archivo equivocado.
-  const conVectors = (vectors) => ({ schema: 'vcp.triangulate-vectors/1', why: motivo, vectors });
+  const conVectors = (vectors) => ({ schema: 'ia.triangulate-vectors/1', why: motivo, vectors });
   const casos = [
     [conVectors([]), 'al menos un vector'],
     [conVectors('no es lista'), 'al menos un vector'],

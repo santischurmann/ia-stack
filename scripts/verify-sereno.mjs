@@ -23,9 +23,10 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-sereno.mjs check <mejoras.json> | verify-sereno.mjs due [--today AAAA-MM-DD] [--dir <carpeta>]';
-export const SCHEMA = 'vcp.mejoras/1';
+export const SCHEMA = 'ia.mejoras/1';
 export const CARPETA = 'docs/mejoras';
 export const PERIODO_DIAS = 7;
 export const MAX_PROPUESTAS = 4;
@@ -49,7 +50,7 @@ export function violaciones(registro, leer, hoy) {
   if (registro === null || typeof registro !== 'object' || Array.isArray(registro)) {
     return [`el registro tiene que ser un objeto con schema ${SCHEMA}`];
   }
-  if (registro.schema !== SCHEMA) malas.push(`el registro debe declarar schema ${SCHEMA}`);
+  if (!mismoSchema(registro.schema, SCHEMA)) malas.push(`el registro debe declarar schema ${SCHEMA}`);
   if (typeof registro.run_id !== 'string' || !FECHA.test(registro.run_id)) {
     malas.push('el run_id tiene que ser una fecha AAAA-MM-DD: sin fecha no hay período que medir');
   } else if (hoy !== undefined && diasEntre(registro.run_id, hoy) < 0) {

@@ -62,7 +62,7 @@ export function isContainedProjectPath(value, cwd = '.') {
 /**
  * Target test files are executable project code. Do not pass every secret from the parent agent
  * process into that code by default: only OS bootstrap variables survive, plus names an operator
- * explicitly opts into with VCP_RED_ENV_ALLOW=NAME_A,NAME_B. NODE_* values are never forwarded
+ * explicitly opts into with IA_STACK_RED_ENV_ALLOW=NAME_A,NAME_B (the older VCP_RED_ENV_ALLOW is still read). NODE_* values are never forwarded
  * because NODE_OPTIONS/NODE_PATH can alter the runner itself. This reduces ambient-secret leaks;
  * it is deliberately NOT a filesystem, network, or process sandbox for an untrusted project.
  */
@@ -71,7 +71,10 @@ export function redTestEnvironment(source = process.env) {
   for (const key of HOST_ENVIRONMENT_KEYS) {
     if (typeof source[key] === 'string') environment[key] = source[key];
   }
-  const allowed = typeof source.VCP_RED_ENV_ALLOW === 'string' ? source.VCP_RED_ENV_ALLOW.split(',') : [];
+  // Las dos, prefiriendo la nueva: una lista de permitidos que deja de leerse por un cambio de
+  // nombre convierte un rojo genuino en uno que parece del entorno.
+  const declarado = source.IA_STACK_RED_ENV_ALLOW ?? source.VCP_RED_ENV_ALLOW;
+  const allowed = typeof declarado === 'string' ? declarado.split(',') : [];
   for (const rawName of allowed) {
     const name = rawName.trim();
     if (EXPLICIT_ENVIRONMENT_NAME.test(name) && !name.startsWith('NODE_') && typeof source[name] === 'string') {

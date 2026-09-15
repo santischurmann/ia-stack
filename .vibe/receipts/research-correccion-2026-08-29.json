@@ -36,7 +36,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-discovery-history.test.mjs",
       "test_hash_sha256": "446fee4be6a48c8ca3f7da5c152681d80641659dede99843808f73282b201594",
-      "command": "grep -c 'Sigue abierto' research/external-sources-2026-08-28.md && node scripts/verify-vcp-contract.mjs check",
+      "command": "grep -c 'Sigue abierto' research/external-sources-2026-08-28.md && node scripts/verify-ia-stack-contract.mjs check",
       "result": "La tabla de la correccion marca custodia como Parcial y consentimiento como Sigue abierto. El contrato pasa con 51 limites verificados textuales, entre ellos los que declaran que la custodia firma con la clave que este a mano y que las decisiones inventadas pasan el gate."
     }
   ],
@@ -78,7 +78,7 @@
     "node scripts/verify-discovery-core.mjs history --feature integridad-verificable -> OK: solo crecio",
     "node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json -> OK: install.sh 72.2%, verify-red.sh 57.1%",
     "node scripts/verify-receipt.mjs custody -> OK, informa el estado de firma del commit",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 84 checks, 51 honest limits verified",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 84 checks, 51 honest limits verified",
     "node scripts/verify-security-baseline.mjs check --base origin/main -> OK: 1 archivo, 0 bloqueantes",
     "git push origin main -> 52fe114..511fc9f"
   ],

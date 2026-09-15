@@ -40,8 +40,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { isContainedProjectPath } from './verify-red-node.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.scavenge/1';
+export const SCHEMA = 'ia.scavenge/1';
 export const USAGE = 'usage: verify-scavenge.mjs check <scavenge.json>';
 export const EMPTY = 'VACÍO';
 
@@ -78,7 +79,7 @@ const CLAVES_DE = Object.freeze({
 
 export function validarScavenge(doc) {
   if (!esObjeto(doc)) return ['el scavenge debe ser un objeto'];
-  if (doc.schema !== SCHEMA) return [`el scavenge debe declarar schema ${SCHEMA}, no ${JSON.stringify(doc.schema)}`];
+  if (!mismoSchema(doc.schema, SCHEMA)) return [`el scavenge debe declarar schema ${SCHEMA}, no ${JSON.stringify(doc.schema)}`];
   if (!clavesExactas(doc, RAIZ_KEYS)) return [`el scavenge debe declarar exactamente ${RAIZ_KEYS.join(', ')}`];
 
   const violaciones = [];

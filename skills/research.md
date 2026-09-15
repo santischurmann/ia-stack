@@ -66,7 +66,7 @@ adopta y cuál es el siguiente bucle de mejora. El gate nativo comprueba campos,
 evidencia y referencias:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
+node .vibe/ia-stack-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
 ```
 
 **Los diagnósticos comprueban forma e invariantes, nunca verdad semántica.** Una fila puede tener
@@ -94,17 +94,17 @@ que tenga el corpus materializado.
 
 ```bash
 # Verifica la cadena inmutable de decisiones y snapshots.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-core.mjs check --feature <feature-slug>
 
 # Resuelve cada fuente citada contra el árbol: el archivo existe y su huella sigue siendo la declarada.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs sources --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-core.mjs sources --feature <feature-slug>
 
 # Ancla externa: el expediente solo crecio a lo largo de la historia de git.
-node .vibe/vcp-runtime/scripts/verify-discovery-core.mjs history --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-core.mjs history --feature <feature-slug>
 
 # Genera y luego comprueba vistas reproducibles (sin timestamps ni paths del entorno).
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
-node .vibe/vcp-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-views.mjs render --feature <feature-slug>
+node .vibe/ia-stack-runtime/scripts/verify-discovery-views.mjs check --feature <feature-slug>
 ```
 
 Discovery puede terminar en `completed`, `skipped` u `overridden`, siempre con evidencia y motivo.
@@ -118,7 +118,7 @@ Cada cita `archivo:línea` del informe de research externo tiene que figurar en
 `contracts/research-citations.json` con el resultado de haberla resuelto contra su commit pineado.
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-research-citations.mjs check contracts/research-citations.json
+node .vibe/ia-stack-runtime/scripts/verify-research-citations.mjs check contracts/research-citations.json
 ```
 
 Agregar una cita al informe sin revalidarla rechaza, y al revés: un registro que ya no corresponde a

@@ -30,6 +30,7 @@ import { safeProjectFile } from './ratchet.mjs';
 // rueda a marzo, asi que el criterio correcto -- round-trip en UTC -- ya vive probado en el gate de
 // lecciones. Una segunda copia seria una segunda cosa que arreglar cuando aparezca el proximo caso.
 import { realDate } from './verify-lessons.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 export const USAGE = 'usage: verify-ablation.mjs check <ablation.json> | verify-ablation.mjs due <ablation.json> [--today <AAAA-MM-DD>]';
@@ -38,8 +39,8 @@ export const PERIOD_DAYS = 7;
 export const EMPTY = 'VACÍO';
 export const LIMITS = 'LÍMITE';
 export const LIMITS_TEXT = `${LIMITS}: verifica el registro de una ablación, no la ablación. No corre las pruebas del set, no juzga si son representativas y no sabe si un resultado que dice "igual" era igual. Un registro coherente e inventado pasa en verde.`;
-export const SCHEMA = 'vcp.ablation/1';
-export const SCOPE_SCHEMA = 'vcp.ablation-scope/1';
+export const SCHEMA = 'ia.ablation/1';
+export const SCOPE_SCHEMA = 'ia.ablation-scope/1';
 export const SCOPE_PATH = join(repoRoot, 'contracts', 'ablation-scope.json');
 export const VERDICTS = new Set(['QUEDA', 'ARCHIVAR', 'REESCRIBIR']);
 export const COMPARISONS = new Set(['igual', 'mejor', 'peor']);
@@ -162,7 +163,7 @@ export function globToRegExp(pattern) {
 /** Los datos del contrato, sin lanzar nunca: un contrato roto se informa como contrato roto. */
 export function loadScope(contract) {
   const violations = [];
-  if (!isObject(contract) || contract.schema !== SCOPE_SCHEMA) {
+  if (!isObject(contract) || !mismoSchema(contract.schema, SCOPE_SCHEMA)) {
     return { untouchable: [], minTests: 0, maxTests: 0, maxBatch: 0, violations: [`el contrato de alcance debe declarar ${SCOPE_SCHEMA}`] };
   }
   if (!Array.isArray(contract.untouchable) || contract.untouchable.length === 0) {
@@ -390,7 +391,7 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
 export function validateAblation(record, scope, io) {
   if (scope.violations.length > 0) return scope.violations;
   if (!isObject(record)) return [`el registro debe ser un objeto JSON que declare ${SCHEMA}`];
-  if (record.schema !== SCHEMA) return [`el registro debe declarar ${SCHEMA}, no ${JSON.stringify(record.schema)}`];
+  if (!mismoSchema(record.schema, SCHEMA)) return [`el registro debe declarar ${SCHEMA}, no ${JSON.stringify(record.schema)}`];
   if (!exactKeys(record, RECORD_KEYS)) return [`el registro debe declarar exactamente ${RECORD_KEYS.join(', ')}`];
 
   const violations = [];

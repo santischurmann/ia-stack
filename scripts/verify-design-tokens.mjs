@@ -34,9 +34,10 @@
 // pasa, porque distinguirlo de `inherit` o `currentColor` sin un parser da falsos positivos.
 
 import { readFileSync } from 'node:fs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-design-tokens.mjs check <design-tokens.json>';
-export const SCHEMA = 'vcp.design-tokens/v1';
+export const SCHEMA = 'ia.design-tokens/v1';
 
 /** Los tres estados de tema del lector. El default del sistema no estampa nada, asi que un color
  * que solo existe en un bloque oscuro no aplica nunca ahi. */
@@ -70,7 +71,7 @@ export function readContract(path, readFile = readFileSync) {
   if (document === null || typeof document !== 'object' || Array.isArray(document)) {
     return { document: null, error: `${path} no es un objeto` };
   }
-  if (document.schema !== SCHEMA) {
+  if (!mismoSchema(document.schema, SCHEMA)) {
     return { document: null, error: `${path} declara schema ${JSON.stringify(document.schema)}, se esperaba ${SCHEMA}` };
   }
   if (!Array.isArray(document.surfaces) || document.surfaces.length === 0) {

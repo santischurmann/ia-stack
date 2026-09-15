@@ -25,9 +25,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { esRuntimeInstalado } from './verify-runtime-sync.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-empty-probe.mjs check <empty-probe.json>';
-export const SCHEMA = 'vcp.empty-probe/v1';
+export const SCHEMA = 'ia.empty-probe/v1';
 export const SCRIPTS_DIR = resolve(fileURLToPath(new URL('.', import.meta.url)));
 // Todo script ejecutable de scripts/, no solo los que empiezan con verify-. Antes pretooluse-red.mjs y
 // ratchet.mjs quedaban afuera de la enumeracion: ni se probaban ni aparecian como no declarados,
@@ -68,7 +69,7 @@ export function readContract(path, readFile = readFileSync) {
   if (document === null || typeof document !== 'object' || Array.isArray(document)) {
     return { document: null, error: `${path} no es un objeto` };
   }
-  if (document.schema !== SCHEMA) {
+  if (!mismoSchema(document.schema, SCHEMA)) {
     return { document: null, error: `${path} declara schema ${JSON.stringify(document.schema)}, se esperaba ${SCHEMA}` };
   }
   if (!Array.isArray(document.gates) || document.gates.length === 0) {
@@ -103,7 +104,7 @@ export function validateShape(gates) {
     if (JUSTIFIED.includes(gate.expect) && (typeof gate.why !== 'string' || gate.why.trim() === '')) {
       violations.push(`${gate.script}: "${gate.expect}" exige un "why" que lo justifique por escrito`);
     }
-    // Un gate cuyo veredicto cambia segun DONDE VIVE el script. verify-vcp-contract.mjs es el
+    // Un gate cuyo veredicto cambia segun DONDE VIVE el script. verify-ia-stack-contract.mjs es el
     // caso: desde el checkout rechaza porque faltan los documentos de VCP, y desde el runtime
     // instalado escribe VACIO porque el instalador no los copia. Los dos son correctos, y con una
     // sola casilla uno de los dos contextos quedaba en rojo para siempre.
@@ -142,7 +143,7 @@ export function classify(outcome) {
 
 /** La raiz del arbol donde vive ESTA sonda: el checkout de VCP, o el runtime instalado adentro del
  * proyecto de otra persona. Es `dirname` de scripts/, no scripts/ mismo -- la guarda compara los dos
- * ultimos segmentos contra `.vibe/vcp-runtime`, y `<algo>/.vibe/vcp-runtime/scripts` no termina en
+ * ultimos segmentos contra `.vibe/ia-stack-runtime`, y `<algo>/.vibe/ia-stack-runtime/scripts` no termina en
  * eso. Ese error hizo que expect_runtime no se aplicara nunca, y lo agarro la prueba de punta a
  * punta, no la unitaria: la unitaria pasaba el contexto a mano y por eso no miraba este calculo. */
 export const RAIZ_DE_ESTE_ARBOL = dirname(SCRIPTS_DIR);
@@ -176,7 +177,7 @@ export function probe(gates, run = runInEmptyDirectory, enRuntimeInstalado = esR
   return violations;
 }
 
-/** BAJA a los subdirectorios, por el mismo motivo que listMjsScripts en verify-vcp-coverage.mjs: un
+/** BAJA a los subdirectorios, por el mismo motivo que listMjsScripts en verify-ia-stack-coverage.mjs: un
  * `scripts/sub/x.mjs` no aparecia como gate presente y nadie exigia declararlo. Comprobado el
  * 2026-09-04 creando uno -- la sonda dio OK sin pedir nada. */
 export function listGateScripts(list = readdirSync) {

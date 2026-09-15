@@ -7,9 +7,10 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const DECISION_SCHEMA = 'vcp.discovery-decision/3';
-export const PACKET_SCHEMA = 'vcp.discovery-packet/1';
+export const DECISION_SCHEMA = 'ia.discovery-decision/3';
+export const PACKET_SCHEMA = 'ia.discovery-packet/1';
 export const USAGE = 'usage: verify-discovery-core.mjs check --feature <feature-slug> | verify-discovery-core.mjs sources --feature <feature-slug> [--require-current] | verify-discovery-core.mjs history --feature <feature-slug>';
 
 const FEATURE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
@@ -170,7 +171,7 @@ function assertPayload(decision) {
 }
 
 function assertDecisionShape(decision) {
-  if (!isObject(decision) || !exactKeys(decision, DECISION_KEYS) || decision.schema !== DECISION_SCHEMA || !nonEmpty(decision.run_id) || !nonEmpty(decision.feature_slug) || !/^d\d{3}$/u.test(decision.decision_id)) {
+  if (!isObject(decision) || !exactKeys(decision, DECISION_KEYS) || !mismoSchema(decision.schema, DECISION_SCHEMA) || !nonEmpty(decision.run_id) || !nonEmpty(decision.feature_slug) || !/^d\d{3}$/u.test(decision.decision_id)) {
     reject('DISCOVERY_SCHEMA_INVALID', 'decision schema is invalid');
   }
   assertDate(decision.evaluated_at, 'DISCOVERY_SCHEMA_INVALID');
@@ -290,7 +291,7 @@ export function readPacket(projectRoot, runId, decision, previousPacket, assertF
   const bytes = readFileSync(path);
   if (sha256(bytes) !== decision.packet_sha256) reject('DISCOVERY_PACKET_HASH_MISMATCH', `${decision.decision_id}: packet hash differs`);
   const packet = parseJson(bytes, 'DISCOVERY_PACKET_INVALID_SCHEMA', path);
-  if (!isObject(packet) || !exactKeys(packet, PACKET_KEYS) || packet.schema !== PACKET_SCHEMA || packet.decision_id !== decision.decision_id) {
+  if (!isObject(packet) || !exactKeys(packet, PACKET_KEYS) || !mismoSchema(packet.schema, PACKET_SCHEMA) || packet.decision_id !== decision.decision_id) {
     reject('DISCOVERY_PACKET_INVALID_SCHEMA', `${decision.decision_id}: packet schema is invalid`);
   }
   const snapshot = validateSnapshot(packet.research_snapshot, decision);
@@ -347,7 +348,7 @@ function readRun(projectRoot, featureSlug, runId) {
     const { decision, bytes } = entry;
     const expectedId = `d${String(index + 1).padStart(3, '0')}`;
     if (decision.decision_id !== expectedId) reject('DISCOVERY_DECISION_ID_GAP', `${runId}: expected ${expectedId}`);
-    if (decision.run_id !== runId || decision.feature_slug !== featureSlug || decision.schema !== DECISION_SCHEMA) reject('DISCOVERY_IMMUTABLE_FIELD_CHANGED', `${decision.decision_id}: run identity differs`);
+    if (decision.run_id !== runId || decision.feature_slug !== featureSlug || !mismoSchema(decision.schema, DECISION_SCHEMA)) reject('DISCOVERY_IMMUTABLE_FIELD_CHANGED', `${decision.decision_id}: run identity differs`);
     if (!previous) {
       if (decision.decision_id !== 'd001' || decision.status !== 'pending' || decision.transition_kind !== 'initial' || decision.predecessor_hash !== null || decision.previous_status !== null) {
         reject('DISCOVERY_SCHEMA_INVALID', `${runId}: d001 must be the pending initial root`);

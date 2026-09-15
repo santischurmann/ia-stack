@@ -51,7 +51,7 @@ en una carpeta limpia, que nunca se había hecho. La próxima vez, la instalaci�
 del cierre, no después.
 
 **Open:**
-- `contracts/empty-probe.json` — `verify-vcp-coverage.mjs` está excluido con motivo (correrlo
+- `contracts/empty-probe.json` — `verify-ia-stack-coverage.mjs` está excluido con motivo (correrlo
   ejecuta la suite entera): su comportamiento sin entradas **no está probado**.
 - `scripts/verify-empty-probe.mjs` — la sonda prueba **una** invocación por gate; otro subcomando
   puede tener su propio verde vacío sin que nadie lo note.

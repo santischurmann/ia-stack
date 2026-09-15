@@ -1,0 +1,24 @@
+{
+  "schema": "vcp.discovery-decision/3",
+  "run_id": "run-001",
+  "feature_slug": "integridad-verificable",
+  "decision_id": "d005",
+  "evaluated_at": "2026-09-15",
+  "status": "completed",
+  "transition_kind": "correction",
+  "supersedes": "d004",
+  "predecessor_hash": "f3719fdbf04cfac735f73ce7cc45ac4339f2e64f19cde0ed9134810cef7c0755",
+  "previous_status": "completed",
+  "activation_result": "required",
+  "triggers_observed": [
+    "ventana-toctou-declarada",
+    "convencion-sin-detector",
+    "deuda-indistinguible-de-hallazgo-nuevo",
+    "limite-honesto-sin-fijar"
+  ],
+  "correction_reason": "Cinco archivos del protocolo cambiaron de nombre el 2026-09-15, cuando todo paso a llamarse IA Stack, y uno de ellos era la fuente del claim-wording-parcial: scripts/verify-vcp-contract.mjs es hoy scripts/verify-ia-stack-contract.mjs. La fuente NO cambio de contenido, cambio de ruta, y un locator apunta a una ruta. El primer intento de reparacion EDITO los packets sellados de d002 a d004 y recalculo sus hashes: eso es exactamente lo que este expediente prohibe -solo crece, y ninguna version commiteada puede modificarse-, y el gate de crecimiento lo detecto contra la historia de git. Esta decision es la reparacion correcta: no se edita nada, se agrega. El packet de d005 mantiene los cuatro claims con sus vinculos y repunta el unico locator que se movio, con su huella re-capturada.",
+  "skip": null,
+  "override": null,
+  "packet_ref": "packets/d005.json",
+  "packet_sha256": "6427469d4cf3e705ff53ee3ff72ce15bdbb8721c3541c821565613ba06f85a27"
+}

@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { isContainedProjectPath, isTestPath, normalizeProjectPath, verifyNodeRed } from './verify-red-node.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const RECEIPT_DIR = '.vibe/red-receipts';
 const RECEIPT_TREE = `${RECEIPT_DIR}/`;
@@ -75,7 +76,7 @@ export const RED_GATED_EXTENSIONS = Object.freeze([
 const RED_GATED = new RegExp(`\.(?:${RED_GATED_EXTENSIONS.join('|')})$`, 'iu');
 
 export function receiptValid(receipt, { cwd = '.', feature, now = Date.now() } = {}) {
-  if (!receipt || receipt.schema !== 'vcp.red-receipt/v2') return { ok: false, reason: 'unknown or missing receipt schema' };
+  if (!receipt || !mismoSchema(receipt.schema, 'ia.red-receipt/v2')) return { ok: false, reason: 'unknown or missing receipt schema' };
   if (!FEATURE.test(receipt.feature ?? '') || receipt.feature !== feature) return { ok: false, reason: 'receipt feature does not match active feature' };
   if (!TASK.test(receipt.task ?? '')) return { ok: false, reason: 'receipt task is invalid' };
   const tests = receipt.tests && typeof receipt.tests === 'object' && !Array.isArray(receipt.tests) ? Object.entries(receipt.tests) : [];
@@ -192,7 +193,7 @@ export function emit({ feature, task, tests, files, command, cwd = '.', now = Da
   const emittedAt = new Date(now).toISOString();
   const expiresAt = new Date(now + RECEIPT_TTL_MS).toISOString();
   const receipt = {
-    schema: 'vcp.red-receipt/v2', feature, task, emitted_at: emittedAt, expires_at: expiresAt,
+    schema: 'ia.red-receipt/v2', feature, task, emitted_at: emittedAt, expires_at: expiresAt,
     tests: entries, allowed_paths: allowedPaths, red_proofs: redProofs,
   };
   const dest = receiptPath(feature, task, cwd);

@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.mejoras/1",
+  "schema": "ia.mejoras/1",
   "run_id": "2026-09-04",
   "why": "Primera ronda del bucle de auto-mejora, escrita durante la sesion que lo construyo. Las cuatro propuestas salen de defectos que aparecieron ESTA sesion y que quedaron sin cerrar; cada una cita la linea donde se escribio el hallazgo.",
   "propuestas": [
@@ -23,7 +23,7 @@
       "titulo": "Los dos gates que enumeran scripts/ no bajan a subdirectorios",
       "por_que": "Un archivo en scripts/subcarpeta/ escapa a la medicion de cobertura Y a la obligacion de declararse en el contrato de sondas. Se comprobo creando uno: empty-probe dio OK sin exigir nada. Hoy se evita por convencion -- todo plano -- y no por regla.",
       "cita": {
-        "archivo": "scripts/verify-vcp-coverage.mjs",
+        "archivo": "scripts/verify-ia-stack-coverage.mjs",
         "texto_literal": "entry.isFile() && entry.name.endsWith('.mjs')"
       }
     },

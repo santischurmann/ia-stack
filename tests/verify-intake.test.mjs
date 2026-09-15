@@ -121,7 +121,7 @@ test('FALSIFICACIÓN · validateIntake devuelve las violaciones sin lanzar, incl
 test('FALSIFICACIÓN · cada campo de cabecera se rechaza por su cuenta, con su nombre', () => {
   // Estas ramas no las ejercitaba ninguna prueba: el gate podía estar aceptando un intake sin fecha,
   // sin nombre de feature o con una pregunta de más disfrazada de respuesta. Encontradas midiendo,
-  // no leyendo: verify-vcp-coverage las nombró una por una.
+  // no leyendo: verify-ia-stack-coverage las nombró una por una.
   const casos = [
     [{ feature: '' }, 'feature'],
     [{ feature: 42 }, 'feature'],

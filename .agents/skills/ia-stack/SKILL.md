@@ -1,15 +1,15 @@
 ---
-name: vibecodeprotocols
+name: ia-stack
 description: Protocolo de once fases con gates mecánicos para investigar, diseñar, construir, verificar y publicar software con agentes. Sin test rojo visible no hay implementación. Cada decisión se presenta como menú de opciones con recomendación explícita.
 ---
 
-# VibeCodeProtocols
+# IA Stack
 
 **Leé el protocolo entero antes de operar**: son once fases encadenadas por gates que se ejecutan, y
 saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó VCP acá:
 
 - `SKILL.md` en la raíz — este es el repositorio de VCP.
-- `.vibe/vcp-runtime/SKILL.md` — VCP está instalado como herramienta en este proyecto.
+- `.vibe/ia-stack-runtime/SKILL.md` — VCP está instalado como herramienta en este proyecto.
 
 Este archivo es un **puntero, no una copia**. Codex descubre skills de repositorio sólo en
 `.agents/skills/<nombre>/SKILL.md` y en `.codex/skills/<nombre>/SKILL.md` — verificado ejecutando:
@@ -29,7 +29,7 @@ Si este archivo dice algo distinto de `SKILL.md`, manda `SKILL.md`.
 
 ## Sub-skills
 
-Las doce sub-skills están junto al protocolo, en `skills/*.md` (o `.vibe/vcp-runtime/skills/*.md`): los subagentes de cada rol
+Las doce sub-skills están junto al protocolo, en `skills/*.md` (o `.vibe/ia-stack-runtime/skills/*.md`): los subagentes de cada rol
 (`subagent-red`, `subagent-green`, `subagent-refactor`, `subagent-triangulate`, `subagent-docs`,
 `subagent-chore`), el orquestador (`orchestrator-opus`), las plantillas de spec y plan
 (`spec-plan-templates`), la memoria (`vibe-memory`), la línea base de seguridad

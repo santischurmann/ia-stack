@@ -23,9 +23,10 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { safeProjectFile } from './ratchet.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.free-tier-limits/1';
-export const MATRIX_SCHEMA = 'vcp.stack-matrix/1';
+export const SCHEMA = 'ia.free-tier-limits/1';
+export const MATRIX_SCHEMA = 'ia.stack-matrix/1';
 export const USAGE = 'usage: verify-stack-matrix.mjs check <matrix.json>';
 export const EMPTY = 'VACÍO';
 
@@ -110,7 +111,7 @@ export function validateLimits(contrato) {
   if (!esObjeto(contrato)) return [`el contrato de límites debe ser un objeto JSON que declare ${SCHEMA}`];
   // El esquema se mira primero y corta: enumerar campos de un archivo que no es el contrato produce
   // una lista de reproches sobre algo que nunca pretendió serlo.
-  if (contrato.schema !== SCHEMA) return [`el contrato debe declarar ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
+  if (!mismoSchema(contrato.schema, SCHEMA)) return [`el contrato debe declarar ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
 
   const violaciones = [];
   if (!clavesExactas(contrato, RAIZ_KEYS)) {
@@ -228,7 +229,7 @@ const SIN_RECOMENDACION = 'H';
  */
 export function validateMatrix(matriz, idsDisponibles = new Set()) {
   if (!esObjeto(matriz)) return [`la matriz debe ser un objeto JSON que declare ${MATRIX_SCHEMA}`];
-  if (matriz.schema !== MATRIX_SCHEMA) return [`la matriz debe declarar ${MATRIX_SCHEMA}, no ${JSON.stringify(matriz.schema)}`];
+  if (!mismoSchema(matriz.schema, MATRIX_SCHEMA)) return [`la matriz debe declarar ${MATRIX_SCHEMA}, no ${JSON.stringify(matriz.schema)}`];
 
   const violaciones = [];
   if (!Array.isArray(matriz.rows)) return ['rows debe ser una lista de filas'];
@@ -344,7 +345,7 @@ const CONTRATO_PATH = join('contracts', 'free-tier-limits.json');
 
 /**
  * La raíz del runtime: la carpeta que contiene a `scripts/`, o sea este mismo paquete. Instalada es
- * `<proyecto>/.vibe/vcp-runtime`; en el repositorio de VCP coincide con la raíz del proyecto, y **por
+ * `<proyecto>/.vibe/ia-stack-runtime`; en el repositorio de VCP coincide con la raíz del proyecto, y **por
  * esa coincidencia el defecto era invisible desde acá**: el contrato se abría relativo al directorio
  * de trabajo y funcionaba, mientras que en un proyecto ajeno el gate no encontraba su propio
  * contrato y rechazaba. Medido sobre una instalación real el 2026-09-14, con la batería en verde.
@@ -400,7 +401,7 @@ export function main(args = process.argv.slice(2), options = {}) {
   // adversarial que motivó esta contención atacaba con un enlace de directorio que redirigía
   // `contracts/` afuera; anclado acá ese enlace tendría que vivir adentro del runtime, y ahí lo
   // corta igual. Lo que NO se puede exigir es que el runtime esté adentro del proyecto: instalado
-  // vive en `.vibe/vcp-runtime/` y la sonda de carpeta vacía lo corre desde un directorio que no lo
+  // vive en `.vibe/ia-stack-runtime/` y la sonda de carpeta vacía lo corre desde un directorio que no lo
   // contiene. Exigirlo rompía los dos casos legítimos, medido el 2026-09-14.
   const runtimeRoot = options.runtimeRoot ?? RUNTIME_ROOT;
   const nombreContrato = CONTRATO_PATH;

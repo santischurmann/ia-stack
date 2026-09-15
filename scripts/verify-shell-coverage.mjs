@@ -19,9 +19,10 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-shell-coverage.mjs check <shell-coverage.json>';
-export const SCHEMA = 'vcp.shell-coverage/v1';
+export const SCHEMA = 'ia.shell-coverage/v1';
 export const REPO_ROOT = resolve(dirname(fileURLToPath(new URL('.', import.meta.url))));
 export const TRACE_PREFIX = 'VCPLINE:';
 export const DIR_TOKEN = '{DIR}';
@@ -33,8 +34,10 @@ const COMMENT_OR_BLANK = /^\s*(?:#.*)?$/u;
 /** Prefer a real Bash on Windows: System32\bash.exe can be a WSL shim whose distro is absent. */
 export function resolveBash(env = process.env, exists = existsSync, platform = process.platform) {
   if (platform !== 'win32') return 'bash';
-  const configured = typeof env.VCP_BASH_PATH === 'string' && env.VCP_BASH_PATH.trim() !== ''
-    ? env.VCP_BASH_PATH
+  // Las dos, prefiriendo la nueva.
+  const declarado = env.IA_STACK_BASH_PATH ?? env.IA_STACK_BASH_PATH;
+  const configured = typeof declarado === 'string' && declarado.trim() !== ''
+    ? declarado
     : WINDOWS_GIT_BASH;
   return exists(configured) ? configured : 'bash';
 }
@@ -98,7 +101,7 @@ export function readContract(path, readFile = readFileSync) {
   } catch (error) {
     return { documento: null, error: `no se puede leer ${path} como JSON: ${error.message}` };
   }
-  if (documento === null || typeof documento !== 'object' || Array.isArray(documento) || documento.schema !== SCHEMA) {
+  if (documento === null || typeof documento !== 'object' || Array.isArray(documento) || !mismoSchema(documento.schema, SCHEMA)) {
     return { documento: null, error: `${path} tiene que declarar schema ${SCHEMA}` };
   }
   if (!Array.isArray(documento.scripts) || documento.scripts.length === 0) {

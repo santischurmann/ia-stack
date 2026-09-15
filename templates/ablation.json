@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.ablation/1",
+  "schema": "ia.ablation/1",
   "run_id": "AAAA-MM-DD",
   "archive_dir": ".claude-archive/AAAA-MM-DD",
   "rollback_command": "un comando que MUEVE de vuelta lo archivado. Nunca rm, del ni Remove-Item: el gate lo rechaza.",

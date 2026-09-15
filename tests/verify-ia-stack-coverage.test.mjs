@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const coverageGate = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
+const coverageGate = join(repoRoot, 'scripts', 'verify-ia-stack-coverage.mjs');
 const {
   DEFAULT_TEST_CONCURRENCY,
   NO_COVERAGE_DATA,
@@ -119,7 +119,7 @@ test('collectScriptCoverage indexa por la URL exacta del archivo del proyecto', 
     }));
     writeFileSync(join(directorio, 'coverage-2.json'), JSON.stringify({
       result: [
-        { url: 'file:///C:/Temp/vcp-e2e-XXXX/.vibe/vcp-runtime/scripts/demo.mjs', functions: [fn('f', [rango(0, 10, 0)])] },
+        { url: 'file:///C:/Temp/vcp-e2e-XXXX/.vibe/ia-stack-runtime/scripts/demo.mjs', functions: [fn('f', [rango(0, 10, 0)])] },
         { url },
       ],
     }));
@@ -181,7 +181,7 @@ test('listMjsScripts includes only executable Node files from its explicit inven
     { name: 'nested', isFile: () => false },
   ];
   assert.deepEqual(listMjsScripts('/project', () => entries), ['scripts/verify-one.mjs']);
-  assert.ok(listMjsScripts(repoRoot).includes('scripts/verify-vcp-coverage.mjs'));
+  assert.ok(listMjsScripts(repoRoot).includes('scripts/verify-ia-stack-coverage.mjs'));
 });
 
 test('fingerprintScripts cambia cuando cambia el contenido de un script', () => {
@@ -370,7 +370,7 @@ test('fingerprintScripts sin inyecciones lee el inventario y el contenido reales
   assert.match(huella, /^[0-9a-f]{64}$/u);
   assert.equal(huella, fingerprintScripts(), 'la huella del mismo árbol quieto tiene que repetirse');
   const inventario = listMjsScripts();
-  assert.ok(inventario.includes('scripts/verify-vcp-coverage.mjs'), 'el inventario por defecto no se leyó del proyecto');
+  assert.ok(inventario.includes('scripts/verify-ia-stack-coverage.mjs'), 'el inventario por defecto no se leyó del proyecto');
 });
 test('CLI usage is fast and rejects arguments without launching the coverage suite', () => {
   const started = Date.now();

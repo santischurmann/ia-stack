@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-security-baseline.mjs check [--base <git-revision>] [--baseline <file>]';
 const CODE_OR_MANIFEST = /\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|kt|swift|sql|ya?ml|json)$/iu;
@@ -394,7 +395,7 @@ export function scanChangedFiles({ cwd = '.', base = 'HEAD', files = changedFile
 }
 
 // --- Accepted-debt baseline --------------------------------------------------------------------
-export const SECURITY_BASELINE_SCHEMA = 'vcp.security-baseline/1';
+export const SECURITY_BASELINE_SCHEMA = 'ia.security-baseline/1';
 const ACCEPTED_KEYS = ['finding_id', 'category', 'path', 'evidence', 'reason', 'accepted_by', 'accepted_at'];
 const NON_EMPTY_KEYS = ['category', 'path', 'evidence', 'accepted_by'];
 // The three fields the identity hash joins with `\n`. `reason` is deliberately absent: it is prose,
@@ -443,7 +444,7 @@ export function readSecurityBaseline(read) {
   } catch (error) {
     throw new Error(`the security baseline is not valid JSON: ${error.message}`);
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || parsed.schema !== SECURITY_BASELINE_SCHEMA) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !mismoSchema(parsed.schema, SECURITY_BASELINE_SCHEMA)) {
     throw new Error(`the security baseline must declare schema ${SECURITY_BASELINE_SCHEMA}`);
   }
   if (!Array.isArray(parsed.accepted)) throw new Error('the security baseline must contain an accepted array');

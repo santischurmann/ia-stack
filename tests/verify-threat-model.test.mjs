@@ -23,7 +23,7 @@ import {
 } from '../scripts/verify-threat-model.mjs';
 
 const MODELO = {
-  schema: 'vcp.threat-model/1',
+  schema: 'ia.threat-model/1',
   controls: [
     { id: 'C1', entrypoint_id: 'E1', asset_id: 'A1', kind: 'authz', ac_id: 'AC7' },
     { id: 'C2', entrypoint_id: 'E1', asset_id: 'A1', kind: 'validation', ac_id: 'AC8' },

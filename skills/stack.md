@@ -7,8 +7,8 @@ sirve de nada si nadie la lee. Este archivo es el paso que la lee: entra un cód
 **Dónde vive el dato.** La canónica que leen los gates es `contracts/stack-matrix.json`; los
 límites de cada plan gratuito están en `contracts/free-tier-limits.json`. Los dos viajan con el
 runtime porque el instalador copia `contracts/`. En un proyecto donde el protocolo está instalado
-los dos viven bajo `.vibe/vcp-runtime/`, así que la ruta completa es
-`.vibe/vcp-runtime/contracts/stack-matrix.json`. **Este archivo es la copia legible para
+los dos viven bajo `.vibe/ia-stack-runtime/`, así que la ruta completa es
+`.vibe/ia-stack-runtime/contracts/stack-matrix.json`. **Este archivo es la copia legible para
 personas**, y `tests/stack-matriz-pareada.test.mjs` comprueba que diga lo mismo que la canónica:
 si editás uno solo de los dos, la suite sale roja. La tabla de abajo está *renderizada* desde el
 JSON, no tipeada — si tenés que cambiar un dato, cambialo en el JSON.

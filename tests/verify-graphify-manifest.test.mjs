@@ -367,7 +367,7 @@ test('sin manifiesto en disco no se inventa una fecha: vuelve al rechazo estrict
 // Encontrado el 2026-09-14 clonando el propio repositorio en limpio: `graphify-out/` esta en
 // .gitignore, asi que un clon recien hecho no tiene manifiesto, y las dos funciones que fechan el
 // grafo —`manifestBuiltAt` y `mtimeOf`, los valores por defecto de main— no se ejecutaban nunca.
-// Resultado: `verify-vcp-coverage.mjs` REJECTABA en cualquier maquina que no fuera la del autor, y
+// Resultado: `verify-ia-stack-coverage.mjs` REJECTABA en cualquier maquina que no fuera la del autor, y
 // la afirmacion «cobertura 100%» escrita en los mensajes de commit era local.
 //
 // Un verde que depende de un directorio IGNORADO no es un verde del repositorio: es un verde de una

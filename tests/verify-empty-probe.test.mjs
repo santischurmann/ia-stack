@@ -340,7 +340,7 @@ test('FALSIFICACION · un gate declarado usage SIN motivo es un skip invisible y
 
 // --- Un gate cuyo veredicto depende de dónde vive el script --------------------------------------
 //
-// `verify-vcp-contract.mjs` verifica los documentos de VCP. Desde el checkout fuente, sobre una
+// `verify-ia-stack-contract.mjs` verifica los documentos de VCP. Desde el checkout fuente, sobre una
 // carpeta vacía, RECHAZA: faltan README.md e INSTALL.md, y eso es información. Desde el runtime
 // instalado en el proyecto de otra persona escribe VACÍO, porque el instalador no copia esos
 // archivos y no hay nada que comparar. Son dos comportamientos correctos del mismo gate.
@@ -370,13 +370,13 @@ test('FALSIFICACIÓN · expect_runtime sin motivo escrito, o con un veredicto in
 });
 
 test('la raíz que la sonda mira es el árbol, no scripts/ — el error que sólo agarró el e2e', SOLO_FUENTE, () => {
-  // `esRuntimeInstalado` compara los dos últimos segmentos contra `.vibe/vcp-runtime`, así que
-  // pasarle `<algo>/.vibe/vcp-runtime/scripts` devuelve false SIEMPRE y `expect_runtime` no se
+  // `esRuntimeInstalado` compara los dos últimos segmentos contra `.vibe/ia-stack-runtime`, así que
+  // pasarle `<algo>/.vibe/ia-stack-runtime/scripts` devuelve false SIEMPRE y `expect_runtime` no se
   // aplicaría nunca. La prueba unitaria de arriba pasa el contexto a mano, así que no puede ver
   // este cálculo: hace falta afirmarlo sobre la ubicación real.
   assert.equal(RAIZ_DE_ESTE_ARBOL, dirname(SCRIPTS_DIR));
   assert.equal(esRuntimeInstalado(RAIZ_DE_ESTE_ARBOL), false, 'este checkout no es un runtime instalado');
-  assert.equal(esRuntimeInstalado(join(RAIZ_DE_ESTE_ARBOL, '.vibe', 'vcp-runtime')), true, 'y la forma instalada sí se reconoce');
+  assert.equal(esRuntimeInstalado(join(RAIZ_DE_ESTE_ARBOL, '.vibe', 'ia-stack-runtime')), true, 'y la forma instalada sí se reconoce');
 });
 
 // --- El mismo escape, del otro lado --------------------------------------------------------------

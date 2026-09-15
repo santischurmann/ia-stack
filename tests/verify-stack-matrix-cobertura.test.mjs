@@ -46,7 +46,7 @@ const fila = (product_type, overrides = {}) => ({
 });
 
 const matriz = (overrides = {}) => ({
-  schema: 'vcp.stack-matrix/1',
+  schema: 'ia.stack-matrix/1',
   feature: 'eleccion-de-stack',
   date: '2026-09-14',
   captured_at: '2026-09-14',

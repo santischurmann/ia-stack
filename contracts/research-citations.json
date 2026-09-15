@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.research-citations/v1",
+  "schema": "ia.research-citations/v1",
   "revalidated": "2026-08-30",
   "report": "research/external-sources-2026-08-28.md",
   "method": "Se clonaron las catorce fuentes a su commit pineado, se materializaron los 15581 archivos en disco, y cada cita del informe se resolvió contra ese árbol con cuatro reglas en orden: repo nombrado en la misma línea, ruta aprendida de otra cita completa, subsecuencia ordenada de segmentos, y rango de líneas que cabe en el archivo. Lo que queda ambiguo se declara ambiguo; no se adivina.",

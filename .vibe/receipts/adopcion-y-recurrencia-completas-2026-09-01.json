@@ -52,7 +52,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-product-diagnostics.test.mjs",
       "test_hash_sha256": "a5166b55ad33ec248eb3c2070427e43d8922c8d15e3c66e968bcc80f4fb5ff0a",
-      "command": "node scripts/verify-vcp-coverage.mjs",
+      "command": "node scripts/verify-ia-stack-coverage.mjs",
       "result": "OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas, sin ninguna rama nueva sin ejercitar. La comparacion de funciones contra HEAD dio cero perdidas."
     }
   ],
@@ -130,11 +130,11 @@
   "evidence": [
     "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0",
     "node --test tests/verify-product-diagnostics.test.mjs -> 28 de 28 en verde; con el gate anterior eran 6 rojas conductuales",
-    "node scripts/verify-vcp-coverage.mjs -> OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: los 34 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
     "comparacion de funciones del archivo contra HEAD -> 0 perdidas",
     "validateAdoption sobre templates/diagnostics/adoption.json -> 0 violaciones",
     "validateRecurrence sobre templates/diagnostics/recurrence.json -> 0 violaciones",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 67 honest limits verified",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 67 honest limits verified",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 33 gate(s)",
     "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 8 task(s), sin conflictos sin secuenciar",
     "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 9 live changed file(s); no blocking Critical/High findings",

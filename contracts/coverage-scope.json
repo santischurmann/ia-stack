@@ -1,10 +1,10 @@
 {
-  "schema": "vcp.coverage-scope/1",
+  "schema": "ia.coverage-scope/1",
   "why": "El gate de cobertura mide scripts/ y nada mas. Sin este contrato ese recorte es invisible: el README decia '100% de lineas, ramas y funciones para los scripts Node de VCP' y research/ tambien son scripts Node de VCP. Un denominador que no se declara se lee como si fuera todo.",
   "measured": [
     {
       "directory": "scripts",
-      "why": "Son los gates que el protocolo ejecuta y de los que depende cada veredicto. verify-vcp-coverage.mjs exige que toda funcion y toda rama de estos archivos las haya ejecutado algun proceso de la suite."
+      "why": "Son los gates que el protocolo ejecuta y de los que depende cada veredicto. verify-ia-stack-coverage.mjs exige que toda funcion y toda rama de estos archivos las haya ejecutado algun proceso de la suite."
     }
   ],
   "excluded": [

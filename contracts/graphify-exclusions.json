@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.graphify-exclusions/1",
+  "schema": "ia.graphify-exclusions/1",
   "exclusions": [
     {
       "path": ".gitattributes",

@@ -17,7 +17,7 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
   ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
   : {};
 
-const script = join(repoRoot, 'scripts', 'verify-vcp-contract.mjs');
+const script = join(repoRoot, 'scripts', 'verify-ia-stack-contract.mjs');
 const {
   FORBIDDEN_PHRASES,
   HONEST_LIMITS_SCHEMA,
@@ -30,7 +30,7 @@ const {
 
 function completeReadBase(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/vcp-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nEl sello lo registra el protocolo, no Graphify\ncommit → graphify → record → check\nModelo de seguridad y límites\nResearch: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs\n## PHASE 1 — BOOTSTRAP
+  return `VCP ayuda a una IA\n.vibe/ia-stack-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nEl sello lo registra el protocolo, no Graphify\ncommit → graphify → record → check\nModelo de seguridad y límites\nResearch: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs\n## PHASE 1 — BOOTSTRAP
 ## PHASE 2 — RESEARCH
 ## PHASE 3 — SPEC
 ## PHASE 4 — PLAN
@@ -56,7 +56,7 @@ verify-phase-decisions.mjs check docs/phase-decisions.json\nNinguna fase cierra 
 
 // Keep the synthetic reader aligned with the live documentation contract.
 function completeRead(path) {
-  const content = `${completeReadBase(path)}\nclaims --feature <feature-slug> --require-inputs --require-links\n\`--require-links\` exige además un packet no vacío y que cada claim tenga al menos uno\n--test-concurrency=32 y \`VCP_TEST_CONCURRENCY=<n>\` existe para **bajarlo**\nVCP_BASH_PATH\nverify-spec-wordcap.mjs check docs/spec.md --quality\nverify-spec-wordcap.mjs --quality\nverify-capability-matrix.mjs check .vibe/vcp-runtime/contracts/capability-matrix.json\nverify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json\nverify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete\nbuild-complete-review-index.mjs\nsin confundirlas con comprensión semántica\nverify-product-diagnostics.mjs check\nLos diagnósticos comprueban forma e invariantes, nunca verdad semántica.\nverify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json\nvcp.caio/1\nvcp.phase-plan/1\nverify-sereno.mjs due\nverify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json\n.vibe/vcp-runtime/scripts/verify-sereno.mjs\n**como mucho cuatro**\n4000 caracteres\nverify-feature-activa.mjs\nnunca a quién le pregunta\nno ve el HTML que se arma con plantillas del lado del servidor\nverify-adr.mjs\nno sabe si un ADR hacía falta\nUn test que afirma que ningún campo prohibido sale por un endpoint pasa cuando el endpoint\nverify-assert-order.mjs check tests\nvcp.receipt/v3\nsoporte declarado\nEl discriminador es mecánico, no de criterio: el campo\nrefutar es un hecho contable, no una impresión\nverify-threat-model.mjs check --feature\nSuperficie de ataque\nverify-deploy.mjs check --feature\nverify-deploy.mjs health --feature\nel estado precede al contenido`;
+  const content = `${completeReadBase(path)}\nclaims --feature <feature-slug> --require-inputs --require-links\n\`--require-links\` exige además un packet no vacío y que cada claim tenga al menos uno\n--test-concurrency=32 y \`IA_STACK_TEST_CONCURRENCY=<n>\` existe para **bajarlo**\nIA_STACK_BASH_PATH\nverify-spec-wordcap.mjs check docs/spec.md --quality\nverify-spec-wordcap.mjs --quality\nverify-capability-matrix.mjs check .vibe/ia-stack-runtime/contracts/capability-matrix.json\nverify-evidence-runner.mjs run .vibe/evidence/request.json .vibe/evidence/record.json\nverify-evidence-runner.mjs check .vibe/evidence/record.json --require-complete\nbuild-complete-review-index.mjs\nsin confundirlas con comprensión semántica\nverify-product-diagnostics.mjs check\nLos diagnósticos comprueban forma e invariantes, nunca verdad semántica.\nverify-phase-menu.mjs check docs/phase-decisions.json --plan docs/phase-plan.json\nia.caio/1\nia.phase-plan/1\nverify-sereno.mjs due\nverify-sereno.mjs check docs/mejoras/AAAA-MM-DD.json\n.vibe/ia-stack-runtime/scripts/verify-sereno.mjs\n**como mucho cuatro**\n4000 caracteres\nverify-feature-activa.mjs\nnunca a quién le pregunta\nno ve el HTML que se arma con plantillas del lado del servidor\nverify-adr.mjs\nno sabe si un ADR hacía falta\nUn test que afirma que ningún campo prohibido sale por un endpoint pasa cuando el endpoint\nverify-assert-order.mjs check tests\nia.receipt/v3\nsoporte declarado\nEl discriminador es mecánico, no de criterio: el campo\nrefutar es un hecho contable, no una impresión\nverify-threat-model.mjs check --feature\nSuperficie de ataque\nverify-deploy.mjs check --feature\nverify-deploy.mjs health --feature\nel estado precede al contenido`;
   return path === 'SKILL.md' ? `${content}\n--require-complete` : content;
 }
 
@@ -204,7 +204,7 @@ test('FALSIFICACIÓN · contract rejects docs that drop the runtime-sync gate or
     : completeRead(path));
   assert.equal(missingReadme.some((item) => /skills\/gates\.md: missing mechanical runtime-sync gate/u.test(item)), true);
 
-  // Sin esta frase el gate se puede terminar corriendo desde .vibe/vcp-runtime/, comparando la
+  // Sin esta frase el gate se puede terminar corriendo desde .vibe/ia-stack-runtime/, comparando la
   // copia instalada consigo misma: verde siempre, evidencia cero.
   const missingOrigin = contractViolations((path) => path === 'SKILL.md'
     ? completeRead(path).replace('nunca desde el runtime', 'o desde el runtime, da igual')
@@ -214,7 +214,7 @@ test('FALSIFICACIÓN · contract rejects docs that drop the runtime-sync gate or
 
 test('FALSIFICACIÓN · contract rejects SKILL.md missing the mechanical spec word-cap gate command', () => {
   const missingWordcap = contractViolations((path) => path === 'SKILL.md'
-    ? completeRead(path).replace('.vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs', 'algo distinto')
+    ? completeRead(path).replace('.vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs', 'algo distinto')
     : completeRead(path));
   assert.equal(missingWordcap.some((item) => /SKILL\.md: missing mechanical spec word-cap gate/u.test(item)), true);
 });
@@ -235,7 +235,7 @@ test('main reports pass, invalid usage and a real repository contract failure wi
 // --- Honest limits declared as reviewable data (AC10) -------------------------------------------
 
 const HONEST_LIMITS_FILE = 'contracts/honest-limits.json';
-const HONEST_LIMITS_VERSION = 'vcp.honest-limits/1';
+const HONEST_LIMITS_VERSION = 'ia.honest-limits/1';
 
 const TRUST_BOUNDARY_LIMIT = {
   limit_id: 'pretooluse-not-a-trust-boundary',
@@ -292,7 +292,7 @@ test('FALSIFICACIÓN · readHonestLimits rechaza schema ajeno, forma inválida, 
   const withLimits = (limits) => () => honestLimitsDocument(limits);
   const withLimit = (patch) => withLimits([{ ...TRUST_BOUNDARY_LIMIT, ...patch }]);
 
-  expectError(() => readHonestLimits(() => honestLimitsDocument([TRUST_BOUNDARY_LIMIT], 'vcp.honest-limits/2')), /schema/u);
+  expectError(() => readHonestLimits(() => honestLimitsDocument([TRUST_BOUNDARY_LIMIT], 'ia.honest-limits/2')), /schema/u);
   expectError(() => readHonestLimits(() => JSON.stringify({ limits: [TRUST_BOUNDARY_LIMIT] })), /schema/u);
   expectError(() => readHonestLimits(() => honestLimitsDocument(TRUST_BOUNDARY_LIMIT)), /limits array/u);
   expectError(() => readHonestLimits(withLimits([{ ...TRUST_BOUNDARY_LIMIT, owner: 'alguien' }])), /limit_id, file, phrase and why/u);
@@ -343,7 +343,7 @@ test('FALSIFICACIÓN · readHonestLimits nunca degrada a "sin límites" ante un 
   expectError(() => readHonestLimits(() => '{'), /is not valid JSON/u);
   expectError(() => readHonestLimits(() => 'null'), /schema/u);
   expectError(() => readHonestLimits(() => '[]'), /schema/u);
-  expectError(() => readHonestLimits(() => '"vcp.honest-limits/1"'), /schema/u);
+  expectError(() => readHonestLimits(() => '"ia.honest-limits/1"'), /schema/u);
   expectError(() => readHonestLimits(() => honestLimitsDocument([])), /at least one honest limit/u);
 });
 
@@ -472,7 +472,7 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
     assert.equal(main(['check'], root, () => {}, (line) => absent.push(line), root), 1);
     assert.match(absent.join('\n'), /honest-limits\.json/u);
 
-    writeHonestLimits(root, '{ "schema": "vcp.honest-limits/1", "limits": [');
+    writeHonestLimits(root, '{ "schema": "ia.honest-limits/1", "limits": [');
     const malformed = [];
     assert.equal(main(['check'], root, () => {}, (line) => malformed.push(line), root), 1);
     assert.match(malformed.join('\n'), /honest-limits\.json/u);
@@ -514,7 +514,7 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
 test('adentro de un runtime instalado el contrato dice VACÍO, no rechaza', () => {
   const salidas = [];
   const errores = [];
-  const raiz = join('C:', 'proyecto-ajeno', '.vibe', 'vcp-runtime');
+  const raiz = join('C:', 'proyecto-ajeno', '.vibe', 'ia-stack-runtime');
   const codigo = main(['check'], raiz, (m) => salidas.push(m), (m) => errores.push(m));
   assert.equal(codigo, 0, `esperaba VACÍO y salió ${codigo}: ${errores.join(' | ')}`);
   assert.deepEqual(errores, []);
@@ -524,7 +524,7 @@ test('adentro de un runtime instalado el contrato dice VACÍO, no rechaza', () =
 // --- El gate corrido desde la raíz del proyecto, que es como lo corre una persona ---------------
 //
 // La guarda de runtime instalado miraba SOLO el directorio de trabajo. Quien instala VCP no hace
-// `cd .vibe/vcp-runtime` para correr un gate: corre `node .vibe/vcp-runtime/scripts/<gate>.mjs`
+// `cd .vibe/ia-stack-runtime` para correr un gate: corre `node .vibe/ia-stack-runtime/scripts/<gate>.mjs`
 // desde la raíz de su proyecto, y ahí el cwd es su proyecto, no el runtime. Medido el 2026-09-04
 // sobre una instalación real: 113 rechazos, todos hablando de README.md e INSTALL.md del
 // repositorio de VCP, que el instalador no copia.
@@ -534,7 +534,7 @@ test('adentro de un runtime instalado el contrato dice VACÍO, no rechaza', () =
 test('el contrato escribe VACÍO cuando el script vive en un runtime instalado, se lo llame desde donde se lo llame', () => {
   const salidas = [];
   const errores = [];
-  const code = main(['check'], '/un/proyecto/cualquiera', (l) => salidas.push(l), (l) => errores.push(l), '/un/proyecto/.vibe/vcp-runtime');
+  const code = main(['check'], '/un/proyecto/cualquiera', (l) => salidas.push(l), (l) => errores.push(l), '/un/proyecto/.vibe/ia-stack-runtime');
   assert.deepEqual({ code, errores }, { code: 0, errores: [] });
   assert.match(salidas.join('\n'), /^VACÍO: /u);
 });

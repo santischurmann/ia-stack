@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.intake/1",
+  "schema": "ia.intake/1",
   "feature": "eleccion-de-stack",
   "date": "2026-09-14",
   "answers": {

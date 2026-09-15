@@ -4,8 +4,9 @@
 // It cannot prove which human or agent actually used a tool outside the recorded plan.
 
 import { readFileSync } from 'node:fs';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const SCHEMA = 'vcp.capability-matrix/v1';
+export const SCHEMA = 'ia.capability-matrix/v1';
 export const USAGE = 'usage: verify-capability-matrix.mjs check <capability-matrix.json>';
 export const TOOL_SET = new Set(['Read', 'Write', 'Edit', 'Bash', 'Task', 'Agent', 'Glob', 'Grep', 'TodoWrite', 'Skill']);
 export const SURFACES = new Set(['tests', 'production', 'docs', 'state', 'security', 'release']);
@@ -37,7 +38,7 @@ function uniqueList(values) {
 
 export function validateMatrix(document) {
   const violations = [];
-  if (!isObject(document) || !exactKeys(document, MATRIX_KEYS) || document.schema !== SCHEMA) {
+  if (!isObject(document) || !exactKeys(document, MATRIX_KEYS) || !mismoSchema(document.schema, SCHEMA)) {
     return [`matrix must use ${SCHEMA} with exactly schema, roles and rules`];
   }
   if (!Array.isArray(document.roles) || document.roles.length === 0) {

@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.ablation/1",
+  "schema": "ia.ablation/1",
   "run_id": "2026-09-02",
   "archive_dir": "<archivo>/2026-09-02",
   "rollback_command": "git -C ~/.claude checkout 3bd5bf4b8481 -- skills/ && git -C ~/.claude checkout HEAD -- CLAUDE.md",

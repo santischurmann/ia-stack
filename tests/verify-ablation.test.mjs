@@ -23,7 +23,7 @@ const ARCHIVO = '.claude-archive/2026-09-01';
 const scope = () => JSON.parse(readScope());
 function readScope() {
   return JSON.stringify({
-    schema: 'vcp.ablation-scope/1',
+    schema: 'ia.ablation-scope/1',
     why: 'motivo del contrato, largo suficiente para pasar el mínimo',
     golden_rule: 'En la limpieza NO EXISTE rm. Nada se borra: todo se mueve.',
     in_scope: [{ path: '~/.claude/skills', why: 'las skills globales cargan palabras en cada sesión' }],
@@ -1464,7 +1464,7 @@ export function concurrenciasAfirmadas(texto) {
 }
 
 test('la documentación no puede contradecir la concurrencia por defecto que declara el script', SOLO_FUENTE, async () => {
-  const { DEFAULT_TEST_CONCURRENCY } = await import('../scripts/verify-vcp-coverage.mjs');
+  const { DEFAULT_TEST_CONCURRENCY } = await import('../scripts/verify-ia-stack-coverage.mjs');
   // La afirmación se mudó a skills/gates.md cuando la tabla salió del README. La comprobación sigue
   // al ancla, no al archivo que la tenía antes: lo que importa es que el número no se separe del
   // código, no en qué documento está escrito.
@@ -1542,14 +1542,14 @@ test('FALSIFICACIÓN · leer el repo del remote distingue url, y sin remote no d
 // nada que preguntarle al repositorio de quien lo instala.
 //
 // La deteccion es por FORMA, no por una lista de rutas conocidas: un runtime instalado siempre vive
-// en `<proyecto>/.vibe/vcp-runtime`. Y no se salta en silencio -- se salta DICIENDO por que.
+// en `<proyecto>/.vibe/ia-stack-runtime`. Y no se salta en silencio -- se salta DICIENDO por que.
 //
 // La funcion vivia aca y se mudo a `tests/_entorno.mjs` cuando aparecieron otros seis archivos con
 // el mismo problema. Dos copias de una guarda son dos guardas que se pueden desincronizar.
 
 test('FALSIFICACIÓN · se reconoce un runtime instalado por su forma, y sólo eso', () => {
-  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'vcp-runtime')), true);
-  assert.equal(esRuntimeInstalado(join('C:', 'proy', 'vcp-runtime')), false, 'sin .vibe encima no es un runtime instalado');
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'ia-stack-runtime')), true);
+  assert.equal(esRuntimeInstalado(join('C:', 'proy', 'ia-stack-runtime')), false, 'sin .vibe encima no es un runtime instalado');
   assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'otra-cosa')), false);
   assert.equal(esRuntimeInstalado(join('C:', 'Users', 'x', 'ia-stack')), false, 'el checkout fuente NO puede confundirse con una instalación');
 });
@@ -1557,7 +1557,7 @@ test('FALSIFICACIÓN · se reconoce un runtime instalado por su forma, y sólo e
 test('los self-checks del repositorio no corren dentro del runtime instalado de otra persona', () => {
   // Falsificación de la fuga concreta: si esto se ejecutara en un proyecto ajeno, `repoRemoto`
   // leería el remote de esa persona. La guarda tiene que cortar ANTES de preguntar nada.
-  const raizInstalada = join('C:', 'proyecto-ajeno', '.vibe', 'vcp-runtime');
+  const raizInstalada = join('C:', 'proyecto-ajeno', '.vibe', 'ia-stack-runtime');
   let pregunto = false;
   const espia = () => { pregunto = true; return 'https://github.com/otra-persona/su-proyecto.git'; };
   if (!esRuntimeInstalado(raizInstalada)) repoRemoto(espia, raizInstalada);

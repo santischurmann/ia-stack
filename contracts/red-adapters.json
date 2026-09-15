@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.red-adapters/1",
+  "schema": "ia.red-adapters/1",
   "why": "Los runners de test rojo se declaran uno por uno para que el despachador no tenga que adivinar. La coincidencia contra command es EXACTA: pytest declarado no habilita pytest -q, porque las opciones cambian la forma del reporte y cada adaptador depende de esa forma. Clasificar la salida de un runner con el parser de otro convierte un rojo mal leido en un verde, y ese es el unico modo de falla que este contrato existe para impedir. Cada fila declara ademas QUE GARANTIA da, porque no son iguales y leerlas igual es el segundo modo de falla.",
   "adapters": [
     {

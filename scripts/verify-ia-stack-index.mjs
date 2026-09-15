@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-vcp-index.mjs — el mapa propio del proyecto, sin depender de ninguna herramienta externa.
+// verify-ia-stack-index.mjs — el mapa propio del proyecto, sin depender de ninguna herramienta externa.
 //
 // POR QUE EXISTE. La fase 8.2 exigia correr una CLI de terceros -- `graphify` -- y cableaba un gate
 // a su salida. No estaba marcada como opcional y no es una dependencia declarada del protocolo:
@@ -19,10 +19,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
-export const USAGE = 'usage: verify-vcp-index.mjs check [<index.json>] | verify-vcp-index.mjs record [<index.json>]';
-export const SCHEMA = 'vcp.index/1';
-export const DEFAULT_PATH = 'contracts/vcp-index.json';
+export const USAGE = 'usage: verify-ia-stack-index.mjs check [<index.json>] | verify-ia-stack-index.mjs record [<index.json>]';
+export const SCHEMA = 'ia.index/1';
+export const DEFAULT_PATH = 'contracts/ia-stack-index.json';
 export const EMPTY_PREFIX = 'VACÍO: ';
 
 /** Las clases que una entrada puede declarar. Es una lista corta a proposito: si hiciera falta una
@@ -73,7 +74,7 @@ export function comparar(indice, rutas) {
 export function violaciones(indice) {
   const malas = [];
   if (indice === null || typeof indice !== 'object' || Array.isArray(indice)) return [`el índice tiene que ser un objeto con schema ${SCHEMA}`];
-  if (indice.schema !== SCHEMA) malas.push(`el índice debe declarar schema ${SCHEMA}`);
+  if (!mismoSchema(indice.schema, SCHEMA)) malas.push(`el índice debe declarar schema ${SCHEMA}`);
   if (typeof indice.why !== 'string' || indice.why.trim().length < 20) malas.push('el índice necesita un `why` escrito: un inventario sin motivo es una lista que nadie sabe para qué existe');
   if (!Array.isArray(indice.entries) || indice.entries.length === 0) malas.push('el índice no declara ninguna entrada');
   for (const [i, e] of (indice.entries ?? []).entries()) {
@@ -140,7 +141,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   return 0;
 }
 
-if (process.argv[1] && process.argv[1].endsWith('verify-vcp-index.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('verify-ia-stack-index.mjs')) {
   // `process.exitCode`, no `process.exit()`: el segundo mata el worker de pruebas que importa este
   // archivo para cubrir esta misma linea, y la prueba de bootstrap falla sin decir por que.
   process.exitCode = main();

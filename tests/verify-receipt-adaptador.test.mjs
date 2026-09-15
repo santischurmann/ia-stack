@@ -57,7 +57,7 @@ const deps = (over = {}) => ({
 test('invocaAdaptadorDeRed reconoce el despachador y los adaptadores, y sólo esos', () => {
   for (const c of [
     'node scripts/verify-red.mjs check --test a --command "pytest"',
-    'node .vibe/vcp-runtime/scripts/verify-red-pytest.mjs check --test a --command "pytest"',
+    'node .vibe/ia-stack-runtime/scripts/verify-red-pytest.mjs check --test a --command "pytest"',
     'bash scripts/verify-red.sh tests/a.test.mjs "node --test"',
   ]) {
     assert.equal(invocaAdaptadorDeRed(c), true, c);

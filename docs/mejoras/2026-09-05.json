@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.mejoras/1",
+  "schema": "ia.mejoras/1",
   "run_id": "2026-09-05",
   "why": "Ronda corrida a pedido, no por calendario: la anterior fue hace 1 dia y el periodo es 7. Las cuatro propuestas salen de medir el repositorio despues de cerrar los pendientes, no de repasar la sesion de memoria. Cada una cita la linea que la respalda.",
   "propuestas": [

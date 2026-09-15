@@ -51,7 +51,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-product-diagnostics.test.mjs",
       "test_hash_sha256": "28f265f3efa3955b9151945b76f1bee8ee001f2d51655f0c2cd355e5bcffe4a3",
-      "command": "node scripts/verify-vcp-coverage.mjs",
+      "command": "node scripts/verify-ia-stack-coverage.mjs",
       "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 2 ramas sin ejercitar en validateIdentifiedList: :349 y :351. Se comprobo ademas, con git show, que ninguna funcion del archivo se perdiera al reescribir el bloque."
     }
   ],
@@ -125,15 +125,15 @@
       "reason": "No hay ningun prd.json real todavia: el unico era la plantilla. Es el riesgo principal del cambio y no esta medido."
     }
   ],
-  "reproduction": "Antes: validatePrd exigia exactamente schema, feature, date, problem, users, outcome, in_scope, out_scope, capabilities, technology, acceptance_criteria y risks -- nueve secciones de contenido -- y validateAcceptanceCriteria exigia exactKeys(item, ['id','statement']). RED: con la fixture ampliada a veintiuna secciones y criterios de siete campos, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 2 ramas sin ejecutar en validateIdentifiedList con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 857 pruebas cada una, cobertura 33 de 33 scripts, y contrato, sonda vacia, conflictos de plan, seguridad y sincronizacion del runtime en 0.",
+  "reproduction": "Antes: validatePrd exigia exactamente schema, feature, date, problem, users, outcome, in_scope, out_scope, capabilities, technology, acceptance_criteria y risks -- nueve secciones de contenido -- y validateAcceptanceCriteria exigia exactKeys(item, ['id','statement']). RED: con la fixture ampliada a veintiuna secciones y criterios de siete campos, node --test tests/verify-product-diagnostics.test.mjs da 6 rojas conductuales. TRIANGULATE: node scripts/verify-ia-stack-coverage.mjs nombro 2 ramas sin ejecutar en validateIdentifiedList con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 857 pruebas cada una, cobertura 33 de 33 scripts, y contrato, sonda vacia, conflictos de plan, seguridad y sincronizacion del runtime en 0.",
   "not_reviewed": "El campo test de cada criterio se exige escrito, nunca resuelto: el gate no abre el archivo ni comprueba que esa prueba nombre al criterio. Eso lo hace verify-evidence-trace.mjs criteria, otro gate y otro momento, asi que un PRD con seis campos llenos y un test inventado pasa igual. Tampoco juzga si una seccion dice algo: veintiuna secciones de relleno pasan, y ese es el riesgo principal del cambio, declarado y no medido. Que las veintiuna sean las correctas sale del encargo, no de una medicion. Y quedan sin auditar contra el encargo los tres artefactos restantes del gate: implementacion, adopcion y recurrencia.",
   "evidence": [
     "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 857, pass 857, fail 0",
     "node --test tests/verify-product-diagnostics.test.mjs -> 25 de 25 en verde; con el gate anterior eran 6 rojas conductuales",
-    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
-    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 2 ramas sin ejecutar en validateIdentifiedList: :349 y :351",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-ia-stack-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 2 ramas sin ejecutar en validateIdentifiedList: :349 y :351",
     "comparacion de funciones del archivo contra HEAD -> 0 perdidas, 1 nueva (validateIdentifiedList)",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 65 honest limits verified",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 65 honest limits verified",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s)",
     "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> OK: 6 task(s), 24 declared writer path(s), sin conflictos sin secuenciar",
     "node scripts/verify-security-baseline.mjs check --base HEAD -> OK: scanned 8 live changed file(s); no blocking Critical/High findings",

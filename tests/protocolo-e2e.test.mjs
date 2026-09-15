@@ -22,7 +22,7 @@ import test from 'node:test';
 import { REAL_SPAWN_TIMEOUT_MS } from './spawn-budget.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const RUNTIME = join('.vibe', 'vcp-runtime', 'scripts');
+const RUNTIME = join('.vibe', 'ia-stack-runtime', 'scripts');
 const bash = process.platform === 'win32' && existsSync('C:\\Program Files\\Git\\bin\\bash.exe')
   ? 'C:\\Program Files\\Git\\bin\\bash.exe'
   : 'bash';
@@ -47,7 +47,7 @@ function aBash(ruta) {
   return ruta.replace(/\\/g, '/').replace(/^([A-Za-z]):/u, (_, unidad) => `/${unidad.toLowerCase()}`);
 }
 
-/** El instalador escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/vcp-runtime`
+/** El instalador escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/ia-stack-runtime`
  * (install.sh:9-10), ANTES del bloque de `--project`: pasar sólo `--project` no suprime esa
  * escritura. Estas pruebas corrían el instalador siete veces por pasada contra el `$HOME` real de
  * quien corre la suite. Se aísla con los tres flags MÁS `HOME` sobrescrito —cinturón y tirantes,
@@ -96,17 +96,17 @@ test('E2E · instalar en un proyecto limpio deja el runtime usable y fuera de la
 
   // Hallazgo 58: ni un solo archivo del runtime puede quedar como código vivo del usuario.
   const superficie = git('ls-files', '--others', '--exclude-standard').stdout.split('\n').filter(Boolean);
-  assert.deepEqual(superficie.filter((f) => f.includes('vcp-runtime')), [], 'el runtime no es código del proyecto');
+  assert.deepEqual(superficie.filter((f) => f.includes('ia-stack-runtime')), [], 'el runtime no es código del proyecto');
 
   // Y el .gitignore que ya tenía el proyecto sigue estando.
-  const ignore = git('check-ignore', '-v', '.vibe/vcp-runtime/scripts/verify-receipt.mjs').stdout;
-  assert.match(ignore, /vcp-runtime/u, 'la regla tiene que ser la que ignora el runtime');
+  const ignore = git('check-ignore', '-v', '.vibe/ia-stack-runtime/scripts/verify-receipt.mjs').stdout;
+  assert.match(ignore, /ia-stack-runtime/u, 'la regla tiene que ser la que ignora el runtime');
 }));
 
 test('E2E · las nuevas garantías del runtime instalado funcionan sobre un proyecto real', () => conProyecto((root) => {
   assert.equal(instalar(root).status, 0);
 
-  const matrix = gate(root, 'verify-capability-matrix.mjs', 'check', '.vibe/vcp-runtime/contracts/capability-matrix.json');
+  const matrix = gate(root, 'verify-capability-matrix.mjs', 'check', '.vibe/ia-stack-runtime/contracts/capability-matrix.json');
   assert.equal(matrix.clase, 'ok', matrix.salida);
 
   // The strict spec gate is opt-in but usable from the installed runtime.
@@ -130,7 +130,7 @@ test('E2E · las nuevas garantías del runtime instalado funcionan sobre un proy
 
   mkdirSync(join(root, '.vibe', 'evidence'), { recursive: true });
   writeFileSync(join(root, '.vibe', 'evidence', 'request.json'), JSON.stringify({
-    schema: 'vcp.evidence-request/v1', command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null,
+    schema: 'ia.evidence-request/v1', command: ['node', '-e', 'process.exit(0)'], cwd: '.', timeout_ms: REAL_SPAWN_TIMEOUT_MS, skip_reason: null,
   }) + '\n', 'utf8');
   const recorded = gate(root, 'verify-evidence-runner.mjs', 'run', '.vibe/evidence/request.json', '.vibe/evidence/record.json');
   assert.equal(recorded.clase, 'ok', recorded.salida);
@@ -239,7 +239,7 @@ test('E2E · la sonda de carpeta vacía y el contrato corren desde el runtime in
   assert.equal(instalar(root).status, 0);
 
   // La sonda mira los gates del propio runtime, así que su contrato viaja con él.
-  const sonda = gate(root, 'verify-empty-probe.mjs', 'check', join('.vibe', 'vcp-runtime', 'contracts', 'empty-probe.json'));
+  const sonda = gate(root, 'verify-empty-probe.mjs', 'check', join('.vibe', 'ia-stack-runtime', 'contracts', 'empty-probe.json'));
   assert.deepEqual({ clase: sonda.clase }, { clase: 'ok' }, sonda.salida);
 
   // El gate de sincronización corrido DESDE el proyecto no es un checkout fuente: tiene que
@@ -275,7 +275,7 @@ test('E2E · la via corta cierra: scavenge, spec minima, test rojo y traza, sin 
   writeFileSync(join(root, 'scripts', 'util.mjs'), 'export function sumar(a, b) {\n  return a + b;\n}\n', 'utf8');
 
   writeFileSync(join(root, 'docs', 'scavenge', 'cambio-chico.json'), JSON.stringify({
-    schema: 'vcp.scavenge/1',
+    schema: 'ia.scavenge/1',
     feature: 'cambio-chico',
     date: '2026-09-15',
     scope: 'corto',

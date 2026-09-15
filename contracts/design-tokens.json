@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.design-tokens/v1",
+  "schema": "ia.design-tokens/v1",
   "why": "Las reglas de diseno de VCP eran convencion sin detector, que es exactamente lo que este proyecto llama decoracion. El prestamo real de shadcn/ui no es su stack -React, Tailwind y Radix son justo lo que VCP no puede tener- sino su modelo: el sistema de diseno es un contrato declarado que una maquina revisa. Cada superficie visual declara aca su paleta, y el gate comprueba que los tokens existan en los tres estados de tema, que los dos bloques oscuros no hayan derivado uno del otro, que cada superficie traiga su color de texto emparejado, y que ningun color se cuele fuera del sistema.",
   "conventions": {
     "pairing": "Cada token de superficie declarado en `surfaces` tiene que tener su companero de texto con el sufijo `-foreground`. Es la regla de shadcn: una superficie nunca viaja sin el color que se lee encima, asi que no se puede pintar un fondo y heredar un texto que quedo del tema anterior.",

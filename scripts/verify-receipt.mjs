@@ -76,6 +76,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' }).replace(/\r\n/g, '\n');
@@ -294,7 +295,7 @@ function fail(reason) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// vcp.receipt/v2 — la base que v3 compone; ningún schema anterior autoriza por sí solo un commit for gates that authorize a commit/publish decision.
+// ia.receipt/v2 — la base que v3 compone; ningún schema anterior autoriza por sí solo un commit for gates that authorize a commit/publish decision.
 //
 // HONEST SCOPE (do not oversell): `command`, `result`, `measurements` and `reproduction` are
 // structured, human-reviewable evidence — a record of what an author claims ran and what it
@@ -305,8 +306,8 @@ function fail(reason) {
 // with the real Git delta; this validator deliberately stays focused on receipt integrity.
 // ---------------------------------------------------------------------------------------------
 
-const V2_SCHEMA = 'vcp.receipt/v2';
-const V1_SCHEMA = 'vcp.receipt/v1';
+const V2_SCHEMA = 'ia.receipt/v2';
+const V1_SCHEMA = 'ia.receipt/v1';
 const AC_VERDICTS = new Set(['COMPLIANT', 'FAILING', 'UNTESTED', 'PARTIAL']);
 const SHA256_HEX = /^[0-9a-f]{64}$/u;
 const NOT_REVIEWED_PLACEHOLDERS = new Set(['n/a', 'unknown', 'nothing']);
@@ -508,14 +509,14 @@ export function validateReview4r(review) {
   return { ok: true };
 }
 
-// --- vcp.receipt/v3 -----------------------------------------------------------------------------
+// --- ia.receipt/v3 -----------------------------------------------------------------------------
 //
 // LA HERIDA (proyecto real, septiembre de 2026): un constructor puso un permiso correcto, midió que
 // eso dejaba a un rol sin una pantalla, lo escribió con precisión en el docstring —archivo, rango y
 // permiso— y entregó la tarea como hecha. La declaración era honesta y detallada, y ESO ES
 // JUSTAMENTE LO QUE LA HACE FACIL DE ACEPTAR SIN MIRARLA. Un límite se declara; una regresión se
 // resuelve o se revierte. `not_reviewed` no los separaba: es un solo string.
-export const V3_SCHEMA = 'vcp.receipt/v3';
+export const V3_SCHEMA = 'ia.receipt/v3';
 export const REGRESSION_RESOLUTIONS = new Set(['fixed', 'reverted', 'accepted_by_user']);
 export const SUPPORT_FIELDS = Object.freeze(['correlation', 'actor_on_writes', 'failure_visible', 'diagnostic_command']);
 const LIMIT_FIELDS = Object.freeze(['id', 'what', 'why_acceptable', 'owner']);
@@ -638,7 +639,7 @@ export function validateRefutation(refutation) {
   return { ok: true };
 }
 
-/** Full vcp.receipt/v2 validation, everything the module header's honest-scope note applies to.
+/** Full ia.receipt/v2 validation, everything the module header's honest-scope note applies to.
  * Does NOT check git_head/tree_fingerprint — the caller compares those against a live
  * fingerprint the same way it already does for v1. */
 export function validateReceiptV2(receipt, cwd, options) {
@@ -671,7 +672,7 @@ export function validateReceiptV2(receipt, cwd, options) {
   return { ok: true };
 }
 
-/** `vcp.receipt/v3` = todo lo de v2 más los cuatro campos que el DoD pasó a exigir. Se compone en
+/** `ia.receipt/v3` = todo lo de v2 más los cuatro campos que el DoD pasó a exigir. Se compone en
  * vez de duplicarse: si mañana cambia una regla de v2, cambia en un solo lugar. */
 export function validateReceiptV3(receipt, cwd, options = {}) {
   const base = validateReceiptV2(receipt, cwd, options);
@@ -750,10 +751,10 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
     // regardless of its content. Point the caller at the read-only inspector instead of leaving
     // it looking like a transient rejection.
-    if (receipt.schema === V1_SCHEMA || receipt.schema === V2_SCHEMA) {
+    if (mismoSchema(receipt.schema, V1_SCHEMA) || mismoSchema(receipt.schema, V2_SCHEMA)) {
       fail(`schema ${receipt.schema} is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${path}`);
     }
-    if (receipt.schema !== V3_SCHEMA) fail(`unknown schema: ${receipt.schema}`);
+    if (!mismoSchema(receipt.schema, V3_SCHEMA)) fail(`unknown schema: ${receipt.schema}`);
 
     const shape = validateReceiptV3(receipt, realpathSync('.'), { decisionSeals: loadDecisionSeals() });
     if (!shape.ok) fail(shape.reason);
@@ -822,13 +823,13 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
   if (cmd === 'inspect-legacy') {
     if (!arg) fail('usage: verify-receipt.mjs inspect-legacy <receipt.json>');
     const receipt = readReceiptSafely(arg);
-    if (receipt.schema !== V1_SCHEMA && receipt.schema !== V2_SCHEMA) {
-      fail(`inspect-legacy is for archival schemas (vcp.receipt/v1, vcp.receipt/v2), got: ${receipt.schema} — use check for vcp.receipt/v3`);
+    if (!mismoSchema(receipt.schema, V1_SCHEMA) && !mismoSchema(receipt.schema, V2_SCHEMA)) {
+      fail(`inspect-legacy is for archival schemas (ia.receipt/v1, ia.receipt/v2), got: ${receipt.schema} — use check for ia.receipt/v3`);
     }
     // Read-only report — no fingerprint recomputation, no exit-1 path past this point, no write
     // of any kind. This is archival evidence: it never authorizes a commit/publish decision.
     console.log(`ARCHIVAL: ${receipt.schema} receipt for feature="${receipt.feature ?? '(missing)'}", terminal_state="${receipt.terminal_state ?? '(missing)'}".`);
-    console.log('This receipt predates the vcp.receipt/v3 schema. It is archival evidence only —');
+    console.log('This receipt predates the ia.receipt/v3 schema. It is archival evidence only —');
     console.log('it cannot pass `check` and does not authorize any commit, publish, or gate decision.');
     process.exit(0);
   }

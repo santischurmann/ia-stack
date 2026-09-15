@@ -1,4 +1,4 @@
-// `vcp.receipt/v3`: separar un LIMITE de una REGRESION, y exigir soporte y refutación.
+// `ia.receipt/v3`: separar un LIMITE de una REGRESION, y exigir soporte y refutación.
 //
 // LA HERIDA, medida sobre un proyecto real en septiembre de 2026. Un constructor puso un permiso
 // correcto, midió que eso dejaba a un rol sin una pantalla, lo escribió con precisión en el
@@ -177,7 +177,7 @@ test('los conteos tienen que ser enteros no negativos', () => {
 });
 
 test('el esquema v3 es el que se declara', () => {
-  assert.equal(V3_SCHEMA, 'vcp.receipt/v3');
+  assert.equal(V3_SCHEMA, 'ia.receipt/v3');
 });
 
 // --- Basura por la puerta: ninguna de estas funciones lanza nunca ------------------------------

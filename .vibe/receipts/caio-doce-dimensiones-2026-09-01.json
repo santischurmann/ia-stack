@@ -60,7 +60,7 @@
       "verdict": "COMPLIANT",
       "test_file": "tests/verify-product-diagnostics.test.mjs",
       "test_hash_sha256": "30d152c9b62c244419da8583533ddefbad6f65a0d30f35d1917b1f00719c4717",
-      "command": "node scripts/verify-vcp-coverage.mjs",
+      "command": "node scripts/verify-ia-stack-coverage.mjs",
       "result": "OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. La medicion habia nombrado 4 ramas sin ejercitar: verify-product-diagnostics.mjs:83, :186, :197 y :206."
     }
   ],
@@ -128,14 +128,14 @@
       "reason": "No hay ningun caio.json real en el repositorio todavia: el unico era la plantilla. Se midio la forma del gate, no su efecto sobre diagnosticos escritos."
     }
   ],
-  "reproduction": "Antes: validateCaio exigia exactamente broken_process, information_loss, repeated_work y open_loops, y STATUSES era new Set(['observed','hypothesis']). Las otras ocho dimensiones del encargo y las clases inference y missing_data no existian. RED: con la fixture ampliada a doce dimensiones y cuatro clases, node --test tests/verify-product-diagnostics.test.mjs da 8 rojas, todas conductuales -- el gate rechaza la forma nueva y no reconoce las clases. TRIANGULATE: node scripts/verify-vcp-coverage.mjs nombro 4 ramas sin ejecutar con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 848 pruebas cada una, cobertura 33 de 33 scripts, y los gates de contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
+  "reproduction": "Antes: validateCaio exigia exactamente broken_process, information_loss, repeated_work y open_loops, y STATUSES era new Set(['observed','hypothesis']). Las otras ocho dimensiones del encargo y las clases inference y missing_data no existian. RED: con la fixture ampliada a doce dimensiones y cuatro clases, node --test tests/verify-product-diagnostics.test.mjs da 8 rojas, todas conductuales -- el gate rechaza la forma nueva y no reconoce las clases. TRIANGULATE: node scripts/verify-ia-stack-coverage.mjs nombro 4 ramas sin ejecutar con archivo y linea. Verificacion posterior: 10 corridas de node --test --test-concurrency=32 en verde con 848 pruebas cada una, cobertura 33 de 33 scripts, y los gates de contrato, sonda vacia, conflictos de plan y sincronizacion del runtime en 0.",
   "not_reviewed": "El gate no abre el locator de una evidencia: un hallazgo observado con una cita inventada pasa igual. Comprueba que la etiqueta cargue lo que su nombre exige, no que sea cierta; resolver locators contra el arbol es trabajo de verify-discovery-core.mjs sources, otro gate y otro momento. Tampoco juzga si un hallazgo esta bien clasificado: alguien puede escribir como observed lo que en realidad dedujo, y mientras adjunte una evidencia con forma valida el gate lo acepta. Que las doce dimensiones sean las correctas no esta medido: salen del encargo. Y no se auditaron los otros cinco artefactos del mismo gate -- loop-map, prd, implementation, adoption y recurrence -- contra lo que el encargo pide para cada uno; el mapa de bucle ya se sabe corto y queda como trabajo siguiente.",
   "evidence": [
     "node --test --test-concurrency=32 (x10) -> 10 de 10 exit 0, tests 848, pass 848, fail 0",
     "node --test tests/verify-product-diagnostics.test.mjs -> 16 de 16 en verde; con el gate anterior eran 8 rojas conductuales",
-    "node scripts/verify-vcp-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
-    "node scripts/verify-vcp-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 4 ramas sin ejecutar: verify-product-diagnostics.mjs:83, :186, :197, :206",
-    "node scripts/verify-vcp-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 63 honest limits verified",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: los 33 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas",
+    "node scripts/verify-ia-stack-coverage.mjs (antes de TRIANGULATE) -> REJECTED: 4 ramas sin ejecutar: verify-product-diagnostics.mjs:83, :186, :197, :206",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 107 user-visible protocol contract checks pass; 63 honest limits verified",
     "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 32 gate(s) se comportan sobre un directorio vacio como declara el contrato",
     "node scripts/verify-plan-conflicts.mjs check docs/tasks.json -> primero CONFLICT: B3 and B4 both declare write access to skill.md; tras declarar depends_on, OK con 4 tareas y 24 solapamientos serializados",
     "node scripts/verify-runtime-sync.mjs check -> OK: el runtime instalado coincide con este checkout",

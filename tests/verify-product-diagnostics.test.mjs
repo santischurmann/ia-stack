@@ -312,7 +312,7 @@ test('FALSIFICACIÓN · una dimensión vacía sin cobertura declarada pasa desap
 });
 
 test('FALSIFICACIÓN · los rechazos de evidencia y de cobertura mal formada también se ejercitan', () => {
-  // Encontradas midiendo, no leyendo: verify-vcp-coverage nombró estas cuatro ramas una por una.
+  // Encontradas midiendo, no leyendo: verify-ia-stack-coverage nombró estas cuatro ramas una por una.
   // Un camino de rechazo que ningún proceso ejecutó es un camino del que no se sabe si rechaza.
   const sinEvidencia = caio();
   sinEvidencia.findings.broken_process[0].evidence = [];
@@ -401,7 +401,7 @@ test('FALSIFICACIÓN · el primer bucle declara cómo se deshace y cómo se sabe
 });
 
 test('FALSIFICACIÓN · el delta rechaza no ser lista, traer claves ajenas y repetir un campo', () => {
-  // Encontradas midiendo: verify-vcp-coverage nombró estas tres ramas de validateDelta con línea.
+  // Encontradas midiendo: verify-ia-stack-coverage nombró estas tres ramas de validateDelta con línea.
   const noEsLista = loopMap();
   noEsLista.delta = 'measure y control cambiaron';
   assert.ok(validateLoopMap(noEsLista).some((v) => v.includes('delta debe ser una lista')));
@@ -628,7 +628,7 @@ test('FALSIFICACIÓN · observability rechaza lo que no es objeto y un campo que
 
 function threat() {
   return {
-    schema: 'vcp.threat-model/1',
+    schema: 'ia.threat-model/1',
     feature: 'demo',
     date: '2026-09-08',
     assets: [{ id: 'A1', what: 'el listado de usuarios y sus roles', why_it_matters: 'expone quien puede hacer que en toda la aplicacion' }],

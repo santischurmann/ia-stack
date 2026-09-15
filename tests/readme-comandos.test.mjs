@@ -31,7 +31,7 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
 
 const USO_INCORRECTO = 2;
 
-/** Los comandos `node .vibe/vcp-runtime/scripts/<gate>` que un documento publica dentro de un bloque
+/** Los comandos `node .vibe/ia-stack-runtime/scripts/<gate>` que un documento publica dentro de un bloque
  * bash. Se leen del texto, no de una lista: si mañana alguien agrega uno, entra solo.
  *
  * DOS FORMAS QUE NO SON COMANDOS ROTOS, y por eso se tratan aparte:
@@ -53,7 +53,7 @@ export function comandosPublicados(texto) {
   for (const bloque of bloques) {
     const unido = bloque.replace(/\\\n\s*/gu, ' ');
     for (const linea of unido.split('\n')) {
-      const m = linea.match(/^node\s+\.vibe\/vcp-runtime\/(scripts\/[\w.-]+\.mjs)(.*)$/u);
+      const m = linea.match(/^node\s+\.vibe\/ia-stack-runtime\/(scripts\/[\w.-]+\.mjs)(.*)$/u);
       if (m === null) continue;
       const entrada = { script: m[1], args: m[2].trim().split(/\s+/u).filter(Boolean) };
       if (/<[^>]+>/u.test(m[2])) conPlaceholder.push(entrada);
@@ -89,7 +89,7 @@ test('todo comando que el protocolo publica corre: ninguno muere por uso incorre
 });
 
 test('FALSIFICACIÓN · el barrido lee los comandos del texto y no confunde otra prosa', () => {
-  const doc = '```bash\nnode .vibe/vcp-runtime/scripts/verify-x.mjs check --flag v\nls algo\n```\ntexto\n```bash\nnode .vibe/vcp-runtime/scripts/verify-y.mjs\n```';
+  const doc = '```bash\nnode .vibe/ia-stack-runtime/scripts/verify-x.mjs check --flag v\nls algo\n```\ntexto\n```bash\nnode .vibe/ia-stack-runtime/scripts/verify-y.mjs\n```';
   assert.deepEqual(comandosPublicados(doc).ejecutables, [
     { script: 'scripts/verify-x.mjs', args: ['check', '--flag', 'v'] },
     { script: 'scripts/verify-y.mjs', args: [] },
@@ -100,12 +100,12 @@ test('FALSIFICACIÓN · el barrido lee los comandos del texto y no confunde otra
 test('FALSIFICACIÓN · el placeholder se aparta y la continuación de línea se une', () => {
   // Las dos formas que daban falso positivo. Sin ellas, 6 sobre 33 en SKILL.md, y ninguno era un
   // defecto: correr una plantilla da `usage:` porque es una plantilla, no porque esté rota.
-  const conHueco = '```bash\nnode .vibe/vcp-runtime/scripts/verify-z.mjs check --feature <feature-slug>\n```';
+  const conHueco = '```bash\nnode .vibe/ia-stack-runtime/scripts/verify-z.mjs check --feature <feature-slug>\n```';
   const r = comandosPublicados(conHueco);
   assert.deepEqual(r.ejecutables, [], 'una plantilla no es un comando ejecutable');
   assert.deepEqual(r.conPlaceholder.map((c) => c.script), ['scripts/verify-z.mjs'], 'pero se cuenta aparte, para que el salteo se vea');
 
-  const partido = `\`\`\`bash\nnode .vibe/vcp-runtime/scripts/verify-w.mjs check \\\n  --tasks docs/tasks.json\n\`\`\``;
+  const partido = `\`\`\`bash\nnode .vibe/ia-stack-runtime/scripts/verify-w.mjs check \\\n  --tasks docs/tasks.json\n\`\`\``;
   assert.deepEqual(comandosPublicados(partido).ejecutables, [
     { script: 'scripts/verify-w.mjs', args: ['check', '--tasks', 'docs/tasks.json'] },
   ], 'un comando partido en dos líneas es UN comando, no uno truncado');

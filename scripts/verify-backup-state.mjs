@@ -19,9 +19,10 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-backup-state.mjs record --report <GRAPH_REPORT.md> --graph <graph.json> --manifest <backup.json> | check <backup.json>';
-export const MANIFEST_SCHEMA = 'vcp.graphify-backup/v1';
+export const MANIFEST_SCHEMA = 'ia.graphify-backup/v1';
 
 function gitHead(cwd) {
   try {
@@ -105,7 +106,7 @@ function isSameFile(one, other) {
 
 function isBackupManifest(file) {
   try {
-    return JSON.parse(readFileSync(file, 'utf8')).schema === MANIFEST_SCHEMA;
+    return mismoSchema(JSON.parse(readFileSync(file, 'utf8')).schema, MANIFEST_SCHEMA);
   } catch {
     // Unparseable, or parsed to something with no fields to read: either way it is not a receipt
     // this tool wrote, so it is not ours to overwrite.
@@ -181,7 +182,7 @@ export function verify(manifestPath, cwd = '.') {
   } catch (error) {
     return { ok: false, reason: `backup manifest is not valid JSON: ${error.message}` };
   }
-  if (manifest.schema !== MANIFEST_SCHEMA) return { ok: false, reason: 'unknown backup manifest schema' };
+  if (!mismoSchema(manifest.schema, MANIFEST_SCHEMA)) return { ok: false, reason: 'unknown backup manifest schema' };
   const required = ['git_head', 'graph_report', 'graph_report_sha256', 'graph', 'graph_sha256'];
   if (required.some((field) => typeof manifest[field] !== 'string' || manifest[field] === '')) return { ok: false, reason: 'backup manifest has missing required fields' };
   try {

@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.ablation-scope/1",
+  "schema": "ia.ablation-scope/1",
   "why": "La limpieza mueve archivos de configuracion del usuario. Sin este contrato, que puede tocar y que no queda en la cabeza de quien la corre, y esa es exactamente la clase de decision que no se recuerda a las tres de la manana. El alcance se declara antes de mover el primer archivo, y el gate lo compara contra lo que efectivamente se archivo.",
   "golden_rule": "En la limpieza NO EXISTE rm. Nada se borra: todo se mueve a .claude-archive/<fecha>/ conservando la ruta relativa. Si parece que la unica salida es borrar, se para y se pregunta.",
   "in_scope": [

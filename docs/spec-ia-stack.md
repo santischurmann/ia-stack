@@ -24,7 +24,7 @@ Esto no es opinión. Cada punto se reprodujo con un comando.
 ### 2.1 Los tres defectos que hay que arreglar antes de mostrar el proyecto a nadie
 
 **🔴 Correr las pruebas te pisa tu configuración global de Claude Code.**
-`scripts/install.sh` escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/vcp-runtime`.
+`scripts/install.sh` escribe por defecto en `$HOME/.claude/skills` y `$HOME/.claude/ia-stack-runtime`.
 La opción `--project` **no** cambia eso. La suite llama al instalador, así que
 `git clone && node --test` le sobrescribe la configuración a quien lo corra.
 Confirmado con la fecha de modificación del archivo en esta máquina.

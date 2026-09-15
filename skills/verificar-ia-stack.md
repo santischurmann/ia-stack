@@ -9,8 +9,8 @@ Antes de publicar cambios en este repositorio corré:
 
 ```bash
 node --test --test-concurrency=32
-node scripts/verify-vcp-coverage.mjs
-node scripts/verify-vcp-contract.mjs check
+node scripts/verify-ia-stack-coverage.mjs
+node scripts/verify-ia-stack-contract.mjs check
 node scripts/verify-security-baseline.mjs check --base origin/main
 node scripts/verify-gate-docs.mjs check
 node scripts/verify-design-tokens.mjs check contracts/design-tokens.json
@@ -46,7 +46,7 @@ es deuda escrita, no cobertura. Los scripts Bash y PowerShell se validan aparte,
 **Sobre la concurrencia.** Durante un tiempo este bloque decía `--test-concurrency=1`. Serializar
 no arreglaba nada: tapaba una suite inestable, y de paso escondía los huecos de cobertura. El
 defecto se cerró —la medición está en `tests/spawn-budget.mjs`—, así que el valor volvió a 32.
-`VCP_TEST_CONCURRENCY` existe para una máquina con menos núcleos, no para volver a esconder un
+`IA_STACK_TEST_CONCURRENCY` existe para una máquina con menos núcleos, no para volver a esconder un
 rojo. **Diez corridas en verde no demuestran que la suite sea determinista**: son la ausencia de
 un contraejemplo en diez intentos.
 

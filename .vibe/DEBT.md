@@ -36,7 +36,7 @@ castellano se rehacen a mano. El remapeo automático por mayoría de nodos SÓLO
 `.graphify_labels.json` **antes** de correr el update — el backup que rota Graphify se sobrescribe
 con el estado ya degradado, y entonces no hay fuente.
 **Why deferred:** El grafo está fuera de lo versionado y es una integración **opcional**: la etapa 6
-le dio al protocolo su propio índice (`verify-vcp-index.mjs`) justamente para no depender de esta
+le dio al protocolo su propio índice (`verify-ia-stack-index.mjs`) justamente para no depender de esta
 herramienta. Automatizarlo sería un script más que mantener, con cobertura y declaración, para una
 dependencia que el protocolo ya no necesita. Mitigación mientras tanto: copiar el archivo de
 etiquetas antes de cada update.

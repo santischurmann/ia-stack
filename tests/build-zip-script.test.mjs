@@ -64,13 +64,13 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
     const argsFile = join(root, 'zip-args.txt');
     const zipStub = join(binDir, 'zip');
     const shaStub = join(binDir, 'sha256sum');
-    writeFileSync(zipStub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$VCP_ZIP_ARGS"\nprintf archive > "$2"\n');
+    writeFileSync(zipStub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$IA_STACK_ZIP_ARGS"\nprintf archive > "$2"\n');
     writeFileSync(shaStub, '#!/usr/bin/env bash\nprintf "0000000000000000000000000000000000000000000000000000000000000000  %s\\n" "$1"\n');
     chmodSync(zipStub, 0o755);
     chmodSync(shaStub, 0o755);
     const delimiter = process.platform === 'win32' ? ';' : ':';
     const result = runAt([fixtureScript, 'security-test'], packageDir, {
-      ...process.env, PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`, VCP_ZIP_ARGS: argsFile,
+      ...process.env, PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`, IA_STACK_ZIP_ARGS: argsFile,
     });
     assert.equal(result.status, 0, result.output);
     const archiveArgs = readFileSync(argsFile, 'utf8').trim().split(/\r?\n/u);
@@ -130,13 +130,13 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
     const argsFile = join(root, 'zip-args.txt');
     const zipStub = join(binDir, 'zip');
     const shaStub = join(binDir, 'sha256sum');
-    writeFileSync(zipStub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$VCP_ZIP_ARGS"\nprintf archive > "$2"\n');
+    writeFileSync(zipStub, '#!/usr/bin/env bash\nprintf "%s\\n" "$@" > "$IA_STACK_ZIP_ARGS"\nprintf archive > "$2"\n');
     writeFileSync(shaStub, '#!/usr/bin/env bash\nprintf "0000000000000000000000000000000000000000000000000000000000000000  %s\\n" "$1"\n');
     chmodSync(zipStub, 0o755);
     chmodSync(shaStub, 0o755);
     const delimiter = process.platform === 'win32' ? ';' : ':';
     const result = runAt([join(scriptsDir, 'build-zip.sh'), 'git-test'], packageDir, {
-      ...process.env, PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`, VCP_ZIP_ARGS: argsFile,
+      ...process.env, PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`, IA_STACK_ZIP_ARGS: argsFile,
     });
     assert.equal(result.status, 0, result.output);
     const args = readFileSync(argsFile, 'utf8').trim().split(/\r?\n/u);

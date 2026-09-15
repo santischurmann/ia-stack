@@ -401,7 +401,7 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
     git(sourceWithoutInventory, ['add', 'README.md']);
     git(sourceWithoutInventory, ['commit', '--quiet', '-m', 'fixture']);
     assert.deepEqual(readPreviousInventory(sourceWithoutInventory, 'HEAD', sourceWithoutInventory), {
-      schema: 'vcp.discovery-requirements/1', requirements: [],
+      schema: 'ia.discovery-requirements/1', requirements: [],
     });
   } finally {
     rmSync(sourceWithoutInventory, { recursive: true, force: true });
@@ -590,7 +590,7 @@ test('un selftest matado por señal, sin objeto de error, también sube como "no
 
 test('adentro de un runtime instalado, la fase I2 sólo exige los documentos que el instalador copia', () => {
   const raiz = mkdtempSync(join(tmpdir(), 'vcp-docs-runtime-'));
-  const runtime = join(raiz, '.vibe', 'vcp-runtime');
+  const runtime = join(raiz, '.vibe', 'ia-stack-runtime');
   try {
     mkdirSync(join(runtime, 'templates'), { recursive: true });
     writeFileSync(join(runtime, 'SKILL.md'), 'verify-discovery-requirements.mjs\n');
@@ -612,7 +612,7 @@ test('FALSIFICACIÓN · la exención vale por la forma del runtime, no por el ar
     // Mismo contenido, pero NO es un runtime instalado: acá el README sigue siendo obligatorio.
     assert.equal(docsContract(raiz), false);
     // Y adentro del runtime, lo que SÍ se copia se sigue exigiendo: sacar SKILL.md rechaza igual.
-    const runtime = join(raiz, '.vibe', 'vcp-runtime');
+    const runtime = join(raiz, '.vibe', 'ia-stack-runtime');
     mkdirSync(join(runtime, 'templates'), { recursive: true });
     writeFileSync(join(runtime, 'templates', 'spec.md'), 'Discovery\n');
     assert.equal(docsContract(runtime), false);

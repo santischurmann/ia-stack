@@ -2,7 +2,7 @@
 
 **Date:** <YYYY-MM-DD>
 **Version:** 1.0
-**Author:** Opus (VibeCodeProtocols)
+**Author:** Opus (IA Stack)
 **Status:** Draft
 **Word cap:** ~650 words for this document (excl. tables/code blocks). A spec nobody reads
 poisons every phase that follows — tables before narration, headers organize, they don't explain.

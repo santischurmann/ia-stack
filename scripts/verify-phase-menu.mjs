@@ -7,9 +7,10 @@
 
 import { readFileSync } from 'node:fs';
 import { checkDecisions } from './verify-phase-decisions.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-phase-menu.mjs check <decisions.json> --plan <phase-plan.json>';
-export const SCHEMA = 'vcp.phase-plan/1';
+export const SCHEMA = 'ia.phase-plan/1';
 export const PLAN_MISMATCH = 'PHASE_MENU_PLAN_MISMATCH';
 
 function violation(code, message) { return { code, message }; }
@@ -21,7 +22,7 @@ export function checkPlan(plan) {
     || Object.keys(plan).length !== 3) {
     return [violation('PHASE_PLAN_SCHEMA_INVALID', 'el plan debe declarar exactamente schema, feature y phase_order')];
   }
-  if (plan.schema !== SCHEMA) return [violation('PHASE_PLAN_SCHEMA_INVALID', `el plan debe declarar schema ${SCHEMA}`)];
+  if (!mismoSchema(plan.schema, SCHEMA)) return [violation('PHASE_PLAN_SCHEMA_INVALID', `el plan debe declarar schema ${SCHEMA}`)];
   if (!nonEmpty(plan.feature)) return [violation('PHASE_PLAN_SCHEMA_INVALID', 'feature debe ser un identificador no vacío')];
   if (!Array.isArray(plan.phase_order) || plan.phase_order.length === 0 || !plan.phase_order.every(nonEmpty)
     || new Set(plan.phase_order).size !== plan.phase_order.length) {

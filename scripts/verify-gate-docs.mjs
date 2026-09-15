@@ -34,9 +34,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { esRuntimeInstalado } from './verify-runtime-sync.mjs';
+import { mismoSchema } from './schema-compat.mjs';
+
 export const USAGE = 'usage: verify-gate-docs.mjs check';
 export const EMPTY = 'VACÍO';
-export const SCHEMA = 'vcp.gate-docs/1';
+export const SCHEMA = 'ia.gate-docs/1';
 export const CONTRATO = 'contracts/gate-docs.json';
 
 /** Un motivo tiene que decir algo. Mismo piso que el resto de los gates del protocolo. */
@@ -50,7 +53,14 @@ export const MIN_TEXTO = 20;
  */
 export const DOCUMENTOS = Object.freeze(['SKILL.md', 'README.md', 'skills']);
 
-const GATE = /^(?:verify-|ratchet|pretooluse-).*\.(?:mjs|sh|ps1)$/u;
+/**
+ * TODO script de `scripts/`, sin lista de prefijos. La primera version filtraba por
+ * `^(verify-|ratchet|pretooluse-)` y eso dejaba afuera seis archivos -el tablero, el
+ * compatibilizador de schemas, los envoltorios de empaquetado-: una lista escrita a mano que alguien
+ * tiene que acordarse de ampliar es exactamente lo que este gate existe para no depender. El alcance
+ * se deriva del arbol; lo que no se invoca a mano se declara en el contrato, con su motivo.
+ */
+const GATE = /\.(?:mjs|sh|ps1)$/u;
 const FENCE = /^\s*(?:```|~~~)/u;
 const NOMBRE_EN_COMANDO = /[A-Za-z0-9_.-]+\.(?:mjs|sh|ps1)/gu;
 const RELLENO = /^(tbd|todo|pendiente|n\/a|na|placeholder|xxx+|-+|\.+)$/iu;
@@ -100,7 +110,7 @@ export function comandosDe(fuente) {
  */
 export function validar(gates, documentados, contrato) {
   if (!esObjeto(contrato)) return [`no hay ${CONTRATO} legible: sin la lista de excepciones no se puede distinguir un gate que no se invoca a mano de uno al que se le olvidó el ejemplo, y aprobar sin esa distinción sería aprobar cualquier cosa`];
-  if (contrato.schema !== SCHEMA) return [`${CONTRATO} debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
+  if (!mismoSchema(contrato.schema, SCHEMA)) return [`${CONTRATO} debe declarar schema ${SCHEMA}, no ${JSON.stringify(contrato.schema)}`];
   if (!Array.isArray(contrato.not_invoked_directly)) return [`${CONTRATO} debe declarar not_invoked_directly como una lista, aunque esté vacía`];
 
   const violaciones = [];
@@ -173,6 +183,16 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
 
   const root = options.root ?? resolve(fileURLToPath(new URL('..', import.meta.url)));
+
+  // ADENTRO DE UN RUNTIME INSTALADO NO HAY NADA QUE VERIFICAR, Y ESO ES VACIO. El instalador no
+  // copia `README.md` ni `INSTALL.md`, que son los documentos donde viven los ejemplos de los dos
+  // instaladores: desde una instalacion el gate los acusaba como si faltaran y mandaba a arreglar
+  // algo que no esta roto. Lo encontro el E2E. Mismo patron que `verify-ia-stack-contract.mjs`.
+  if (esRuntimeInstalado(root)) {
+    write(`${EMPTY}: este gate comprueba los documentos del protocolo, y el instalador no copia README.md ni INSTALL.md: adentro de un runtime instalado no hay con qué comparar.`);
+    return 0;
+  }
+
   const listar = options.listar ?? readdirSync;
 
   let gates;

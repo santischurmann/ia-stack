@@ -212,7 +212,7 @@ test('el gate real compone las tres invariantes y sale verde sobre el repositori
 // Medido el 2026-09-14 sobre una instalación real, y sólo apareció ahí: la batería estaba entera en
 // verde. En el repositorio de VCP la raíz del runtime y la del proyecto son la misma carpeta, así
 // que abrir `contracts/free-tier-limits.json` relativo al directorio de trabajo funcionaba por
-// coincidencia. Instalado en un proyecto ajeno el runtime queda en `.vibe/vcp-runtime/`, y el gate
+// coincidencia. Instalado en un proyecto ajeno el runtime queda en `.vibe/ia-stack-runtime/`, y el gate
 // salía `REJECTED: hay un archivo en <matriz> pero falta contracts/free-tier-limits.json` — o sea
 // que el paso que SKILL.md publica no corría para nadie más que para este repositorio.
 //
@@ -221,7 +221,7 @@ test('el gate real compone las tres invariantes y sale verde sobre el repositori
 test('el contrato se resuelve contra la raíz del runtime, no contra el directorio de trabajo', SOLO_FUENTE, async () => {
   const { readFileSync } = await import('node:fs');
   const proyecto = join('C:', 'proyecto-ajeno');
-  const runtime = join(proyecto, '.vibe', 'vcp-runtime');
+  const runtime = join(proyecto, '.vibe', 'ia-stack-runtime');
   const contratoInstalado = join(runtime, 'contracts', 'free-tier-limits.json');
   const matrizDelProyecto = join(proyecto, 'docs', 'matriz.json');
 
@@ -280,7 +280,7 @@ test('FALSIFICACIÓN · un contrato que se escapa de la raíz del RUNTIME se rec
   // La contención de la ronda adversarial se conserva, anclada donde corresponde. El ataque original
   // era un enlace de directorio que redirigía `contracts/` afuera; ahora ese enlace tendría que
   // vivir adentro del runtime, y ahí lo corta este resolvedor. Lo que NO se contiene contra la raíz
-  // del proyecto es la ubicación del runtime en sí: instalado vive en `.vibe/vcp-runtime/` y la
+  // del proyecto es la ubicación del runtime en sí: instalado vive en `.vibe/ia-stack-runtime/` y la
   // sonda de carpeta vacía lo corre desde un directorio que no lo contiene, los dos casos legítimos.
   const errores = [];
   const leidos = [];
@@ -368,7 +368,7 @@ test('FALSIFICACIÓN · main tolera un contrato sin lista de servicios y una mat
     safePath: (_r, p) => p,
     read: (ruta) => (String(ruta).includes('free-tier')
       ? JSON.stringify({ ...contrato(), services: 'ninguna' })
-      : JSON.stringify({ schema: 'vcp.stack-matrix/1' })),
+      : JSON.stringify({ schema: 'ia.stack-matrix/1' })),
     hoy: '2026-09-14',
     write: () => {},
     writeError: (l) => errores.push(l),

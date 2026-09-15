@@ -1,8 +1,8 @@
-# VibeCodeProtocols
+# IA Stack
 
 **Leé el protocolo entero antes de operar**: son once fases con gates mecánicos, y saltarse uno
 invalida el resto. Está en `SKILL.md` si este es el repositorio de VCP, o en
-`.vibe/vcp-runtime/SKILL.md` si VCP está instalado acá como herramienta.
+`.vibe/ia-stack-runtime/SKILL.md` si VCP está instalado acá como herramienta.
 
 Reglas que no dependen de la fase:
 

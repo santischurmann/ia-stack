@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.honest-limits/1",
+  "schema": "ia.honest-limits/1",
   "limits": [
     {
       "limit_id": "pretooluse-hook-is-not-a-trust-boundary",
@@ -275,7 +275,7 @@
       "limit_id": "scope-diff-blind-to-gitignored-paths",
       "file": "skills/gates.md",
       "phrase": "No ve los archivos que Git ignora: escribir ahí pasa en verde.",
-      "why": "El delta observado se arma con git diff (sólo archivos trackeados) más git ls-files --others --exclude-standard, y ese flag descarta todo lo que .gitignore excluye. Si la tarea tocó sus writers declarados, escribir además en dist/, _backups/, graphify-out/, .ua/ o research/.fetch/ es invisible y el gate escribe OK igual. Pesa porque verify-security-baseline.mjs arma su delta con el mismo --exclude-standard: un .env con un secreto no lo mira ningún gate del protocolo. El runtime instalado en .vibe/vcp-runtime/ también es ignorado, pero ése sí lo cubre verify-runtime-sync.mjs, así que no es el ejemplo del hueco. Sin esta frase, el verde se lee como \"nadie escribió fuera de los writers declarados de la tarea\", que es justo lo que este gate no puede afirmar."
+      "why": "El delta observado se arma con git diff (sólo archivos trackeados) más git ls-files --others --exclude-standard, y ese flag descarta todo lo que .gitignore excluye. Si la tarea tocó sus writers declarados, escribir además en dist/, _backups/, graphify-out/, .ua/ o research/.fetch/ es invisible y el gate escribe OK igual. Pesa porque verify-security-baseline.mjs arma su delta con el mismo --exclude-standard: un .env con un secreto no lo mira ningún gate del protocolo. El runtime instalado en .vibe/ia-stack-runtime/ también es ignorado, pero ése sí lo cubre verify-runtime-sync.mjs, así que no es el ejemplo del hueco. Sin esta frase, el verde se lee como \"nadie escribió fuera de los writers declarados de la tarea\", que es justo lo que este gate no puede afirmar."
     },
     {
       "limit_id": "spec-wordcap-does-not-bound-document-length",
@@ -293,7 +293,7 @@
       "limit_id": "undeclared-honest-limits-are-not-protected",
       "file": "skills/gates.md",
       "phrase": "Un límite que nadie declaró en el contrato tampoco se protege.",
-      "why": "El gate sólo revisa las frases que alguien ya escribió a mano en contracts/honest-limits.json: recorre esa lista y nada más. Un gate cuyo límite nadie declaró queda sin protección y no produce ninguna señal, ni siquiera una advertencia. Sin esta frase, la salida OK con su conteo de límites verificados se lee como si los límites honestos del protocolo estuvieran completos, cuando lo único probado es que las frases de esa lista siguen textuales. Reproducido: el propio verify-vcp-contract.mjs pasó en verde durante meses sin tener ningún límite declarado sobre sí mismo."
+      "why": "El gate sólo revisa las frases que alguien ya escribió a mano en contracts/honest-limits.json: recorre esa lista y nada más. Un gate cuyo límite nadie declaró queda sin protección y no produce ninguna señal, ni siquiera una advertencia. Sin esta frase, la salida OK con su conteo de límites verificados se lee como si los límites honestos del protocolo estuvieran completos, cuando lo único probado es que las frases de esa lista siguen textuales. Reproducido: el propio verify-ia-stack-contract.mjs pasó en verde durante meses sin tener ningún límite declarado sobre sí mismo."
     },
     {
       "limit_id": "coverage-percent-measures-execution-not-assertions",
@@ -357,19 +357,19 @@
     },
     {
       "limit_id": "coverage-measures-execution-not-assertion",
-      "file": "skills/verificar-vcp.md",
+      "file": "skills/verificar-ia-stack.md",
       "phrase": "Mide ejecución, no aserción",
       "why": "El gate comprueba que algún proceso haya ejecutado cada función y cada rama, no que alguna prueba afirme algo sobre ellas. Sin la frase, un verde de cobertura se lee como \"esto está verificado\", cuando lo único probado es que el código corrió: una rama recorrida por una prueba que no la examina cuenta igual que una verificada."
     },
     {
       "limit_id": "research-verifiers-are-declared-debt",
-      "file": "skills/verificar-vcp.md",
+      "file": "skills/verificar-ia-stack.md",
       "phrase": "es deuda escrita, no cobertura",
       "why": "Cuatro verificadores de research/ que el protocolo manda correr en su fase de verificación no tienen prueba propia. El contrato de alcance los excluye de la medición con su motivo, y eso podría leerse como que están cubiertos de otro modo. No lo están: la exclusión declara una deuda, no una garantía."
     },
     {
       "limit_id": "ten-green-runs-are-not-determinism",
-      "file": "skills/verificar-vcp.md",
+      "file": "skills/verificar-ia-stack.md",
       "phrase": "no demuestran que la suite sea determinista",
       "why": "El defecto que hacía fallar la suite 2 de cada 5 corridas se cerró y se comprobó con diez corridas seguidas en verde. Diez corridas son la ausencia de un contraejemplo en diez intentos, no una demostración. Sin la frase, el número se lee como prueba y nadie vuelve a mirar si reaparece la intermitencia."
     },
@@ -659,7 +659,7 @@
       "limit_id": "stack-matrix-trusts-the-runtime-it-lives-in",
       "file": "skills/gates.md",
       "phrase": "Lo que este gate NO comprueba es cuál runtime está leyendo",
-      "why": "El contrato de limites viaja adentro del runtime y el gate lo abre desde la carpeta que contiene a su propio archivo, resuelta por import.meta.url. Eso es lo que lo hace portable: instalado en un proyecto ajeno el runtime vive en .vibe/vcp-runtime/ y la ruta relativa al directorio de trabajo no existe. El precio es que el gate confia en el paquete donde vive: no verifica que ese runtime sea el que el proyecto quiso instalar, ni compara su contenido contra ninguna huella. Un runtime manipulado se cree a si mismo, y ningun sello de este gate lo detecta. La contencion que si aplica es contra enlaces DENTRO del runtime: un enlace de directorio en contracts/ que apunte afuera se corta. Quien quiera la garantia de que el runtime instalado es el del checkout tiene que correr verify-runtime-sync.mjs, que es otro gate y compara archivo por archivo."
+      "why": "El contrato de limites viaja adentro del runtime y el gate lo abre desde la carpeta que contiene a su propio archivo, resuelta por import.meta.url. Eso es lo que lo hace portable: instalado en un proyecto ajeno el runtime vive en .vibe/ia-stack-runtime/ y la ruta relativa al directorio de trabajo no existe. El precio es que el gate confia en el paquete donde vive: no verifica que ese runtime sea el que el proyecto quiso instalar, ni compara su contenido contra ninguna huella. Un runtime manipulado se cree a si mismo, y ningun sello de este gate lo detecta. La contencion que si aplica es contra enlaces DENTRO del runtime: un enlace de directorio en contracts/ que apunte afuera se corta. Quien quiera la garantia de que el runtime instalado es el del checkout tiene que correr verify-runtime-sync.mjs, que es otro gate y compara archivo por archivo."
     },
     {
       "limit_id": "repo-clean-finds-paths-never-names",
@@ -708,6 +708,12 @@
       "file": "skills/gates.md",
       "phrase": "NO comprueba que ese comando funcione",
       "why": "El gate cierra un hueco real y medido: ocho scripts no se podian correr desde ningun documento del protocolo, y seis ni siquiera aparecian en SKILL.md. Lo que comprueba es que el nombre del script este adentro de un bloque de codigo, que es contabilidad y no comprension. No ejecuta el comando ni valida sus argumentos: un ejemplo con la bandera equivocada, o con una ruta que en una instalacion real no existe, pasa en verde. Tampoco sabe si el ejemplo esta donde tiene que estar: uno escondido en la skill equivocada cuenta igual que el de la fase correcta. Y sobre las excepciones es mas modesto todavia: que alguien declare que un script no se invoca a mano no prueba que no se pueda invocar, solo deja escrito quien dice invocarlo para que una persona lo pueda revisar."
+    },
+    {
+      "limit_id": "schema-compat-has-no-end-date",
+      "file": "skills/gates.md",
+      "phrase": "No sabe cuándo termina la compatibilidad",
+      "why": "Aceptar el prefijo viejo era la unica forma de renombrar los 42 schemas sin invalidar todo lo que el protocolo produjo hasta el 2026-09-15: recibos, contratos, paquetes de Discovery. El costo es que la tolerancia no tiene vencimiento. No hay fecha de corte, no hay aviso y no hay conteo: un proyecto que nunca migre sus artefactos va a pasar en verde para siempre, y este repositorio no se va a enterar. Se declara en vez de fingir que es temporal, porque una compatibilidad que se promete transitoria y nadie retira es peor que una que se sabe permanente. Lo que si esta acotado es el alcance: solo el prefijo, con la misma familia y la misma version, y solo en la direccion viejo-hacia-nuevo."
     }
   ]
 }

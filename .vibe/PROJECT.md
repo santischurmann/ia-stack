@@ -1,13 +1,13 @@
 # Project Memory
 
-**Name:** VibeCodeProtocols
+**Name:** IA Stack
 **Stack:** Node v24.13.1 nativo, cero dependencias por diseño. Tests: `node --test`.
 Cobertura: `node --experimental-test-coverage`. Bash + PowerShell sólo en instaladores.
 **Goals:** Protocolo autocontenido para que una IA trabaje con disciplina verificable:
 entender → decidir → test rojo → cambio → casos borde → revisión → evidencia → release.
 Cada regla del protocolo debe traer su propio detector mecánico.
 **Started:** 2026-08-27
-**Owner:** VibeCodeProtocols
+**Owner:** IA Stack
 
 ---
 
@@ -32,8 +32,8 @@ paga porque hay algo real que perder. `risk_level` por-cambio (Phase 7.1) sigue 
 
 ## Key conventions
 
-- Un gate nuevo no se declara listo sin 100% de líneas, ramas y funciones en `verify-vcp-coverage`.
-- Toda promesa visible al usuario en README/SKILL/SECURITY se fija en `verify-vcp-contract.mjs`,
+- Un gate nuevo no se declara listo sin 100% de líneas, ramas y funciones en `verify-ia-stack-coverage`.
+- Toda promesa visible al usuario en README/SKILL/SECURITY se fija en `verify-ia-stack-contract.mjs`,
   para que la documentación no pueda derivar en silencio.
 - Los límites honestos se escriben en el header del propio script, no sólo en la documentación.
 - Patrones auto-referenciales en scripts de seguridad se fragmentan con concatenación (`'a' + 'b'`)

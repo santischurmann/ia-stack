@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.repo-clean/1",
+  "schema": "ia.repo-clean/1",
   "why": "Las excepciones al gate de repositorio limpio se declaran una por una, con el archivo, el texto exacto que se permite y el motivo por el que ese texto es legitimo. Una lista vacia es el estado mas estricto y el que conviene defender: cada entrada que se agrega es una comprobacion que se apaga para ese archivo. El gate NO puede distinguir un marcador inventado de una tapadera, asi que el motivo escrito es toda la revision que hay, y es humana.",
   "allowed": [
     {

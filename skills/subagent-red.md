@@ -90,7 +90,7 @@ Valid evidence here is TWO separate facts, both stated, never merged into a fals
   - **Static AC coverage**: `grep -c "test(" <file>` (or equivalent) == number of ACs in
     `docs/spec.md` — count tests written, don't count them as "failed".
   - **RED gate classification**: the missing-module/import error, exactly as
-    `.vibe/vcp-runtime/scripts/verify-red.sh`/`.ps1` classifies it (mechanical, not narrated).
+    `.vibe/ia-stack-runtime/scripts/verify-red.sh`/`.ps1` classifies it (mechanical, not narrated).
 
 **(b) SUT exists (stub/partial) — real per-test assertion failures.** Each `test()` actually
 runs and its own assertion fails independently. Here the runner's fail-count IS a true

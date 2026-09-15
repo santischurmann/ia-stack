@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-vcp-coverage.mjs — prueba que cada script Node inventariado ejecutó todas sus funciones y
+// verify-ia-stack-coverage.mjs — prueba que cada script Node inventariado ejecutó todas sus funciones y
 // todas sus ramas durante la suite, y lo prueba de una manera que da el MISMO resultado sobre el
 // mismo árbol.
 //
@@ -39,7 +39,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const USAGE = 'usage: node scripts/verify-vcp-coverage.mjs';
+const USAGE = 'usage: node scripts/verify-ia-stack-coverage.mjs';
 export const NO_INPUTS_SOURCE_CHANGED = 'COVERAGE_SOURCE_CHANGED';
 export const NO_COVERAGE_DATA = 'COVERAGE_NO_DATA';
 export const UNREADABLE_COVERAGE = 'COVERAGE_UNREADABLE';
@@ -199,7 +199,9 @@ export function evaluateCoverage(byScript, sources) {
 export const DEFAULT_TEST_CONCURRENCY = '32';
 
 export function resolveTestConcurrency(env = process.env) {
-  const requested = env.VCP_TEST_CONCURRENCY;
+  // Las dos, prefiriendo la nueva: bajar la concurrencia es lo que hace una maquina con pocos
+  // nucleos, y perder ese ajuste por un cambio de nombre deja la suite inestable sin motivo.
+  const requested = env.IA_STACK_TEST_CONCURRENCY ?? env.VCP_TEST_CONCURRENCY;
   return typeof requested === 'string' && /^[1-9][0-9]*$/u.test(requested)
     ? requested
     : DEFAULT_TEST_CONCURRENCY;
@@ -311,6 +313,6 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
   }
 }
 
-if (process.argv[1] && process.argv[1].endsWith('verify-vcp-coverage.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('verify-ia-stack-coverage.mjs')) {
   process.exitCode = main();
 }

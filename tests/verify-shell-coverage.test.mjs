@@ -110,8 +110,11 @@ test('resolveBash evita el shim WSL roto cuando hay Git Bash disponible', () => 
   if (process.platform !== 'win32') assert.equal(resolveBash({}), 'bash');
   else assert.equal(resolveBash({}), existsSync(WINDOWS_GIT_BASH) ? WINDOWS_GIT_BASH : 'bash');
   assert.equal(resolveBash({}, () => true, 'linux'), 'bash');
-  assert.equal(resolveBash({ VCP_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
-  assert.equal(resolveBash({ VCP_BASH_PATH: 'C:/missing/bash.exe' }, () => false), 'bash');
+  assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
+  // EL NOMBRE VIEJO SE SIGUE LEYENDO: quien ya lo tenia puesto no se entera del cambio de nombre
+  // del protocolo por un Bash que de golpe no se encuentra.
+  assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
+  assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/missing/bash.exe' }, () => false), 'bash');
 });
 
 test('runScenario sustituye el directorio temporal en setup y args', () => {

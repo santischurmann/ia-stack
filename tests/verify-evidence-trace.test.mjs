@@ -77,7 +77,7 @@ function writeDiscovery(root, claims, { completed = true } = {}) {
   mkdirSync(join(run, 'decisions'), { recursive: true });
   mkdirSync(join(run, 'packets'), { recursive: true });
   const base = {
-    schema: 'vcp.discovery-decision/3',
+    schema: 'ia.discovery-decision/3',
     run_id: 'run-001',
     feature_slug: feature,
     decision_id: 'd001',
@@ -99,7 +99,7 @@ function writeDiscovery(root, claims, { completed = true } = {}) {
   writeFileSync(join(run, 'decisions', 'd001.json'), d1);
   if (!completed) return run;
   const packet = json({
-    schema: 'vcp.discovery-packet/1',
+    schema: 'ia.discovery-packet/1',
     decision_id: 'd002',
     research_snapshot: { captured_at: '2026-08-27', claims },
   });
@@ -490,17 +490,17 @@ test('FALSIFICACIÓN · --require-links rechaza el claim sin vínculo en el CLI 
   assert.match(rojo.stderr, /EVIDENCE_TRACE_CLAIM_UNLINKED/u);
 
   writeFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'packets', 'd002.json'), json({
-    schema: 'vcp.discovery-packet/1',
+    schema: 'ia.discovery-packet/1',
     decision_id: 'd002',
     research_snapshot: { captured_at: '2026-08-27', claims: [claim({ linked_ac_id: 'AC91' })] },
   }));
   // The packet hash is deliberately refreshed so the fixture remains a real, valid Discovery run.
   const packet = readFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'packets', 'd002.json'));
   writeFileSync(join(root, 'docs', 'discovery', feature, 'runs', 'run-001', 'decisions', 'd002.json'), json({
-    schema: 'vcp.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd002',
+    schema: 'ia.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd002',
     evaluated_at: '2026-08-28', status: 'completed', transition_kind: 'activation', supersedes: 'd001',
     predecessor_hash: hash(json({
-      schema: 'vcp.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd001',
+      schema: 'ia.discovery-decision/3', run_id: 'run-001', feature_slug: feature, decision_id: 'd001',
       evaluated_at: '2026-08-27', status: 'pending', transition_kind: 'initial', supersedes: null,
       predecessor_hash: null, previous_status: null, activation_result: 'discovery-result-v1',
       triggers_observed: ['scope'], correction_reason: null, skip: null, override: null,

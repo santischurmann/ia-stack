@@ -208,7 +208,7 @@
       "files_to_modify": [
         "skills/gates.md",
         "contracts/honest-limits.json",
-        "contracts/vcp-index.json",
+        "contracts/ia-stack-index.json",
         "contracts/coverage-scope.json",
         "CHANGELOG.md"
       ],
@@ -225,7 +225,7 @@
       "owner": "Constructor",
       "locked": false,
       "role": "docs",
-      "verifier": "node scripts/verify-vcp-contract.mjs check && node scripts/verify-vcp-index.mjs check contracts/vcp-index.json",
+      "verifier": "node scripts/verify-ia-stack-contract.mjs check && node scripts/verify-ia-stack-index.mjs check contracts/ia-stack-index.json",
       "approval_criteria": "Registra el gate que cierra AC3 y AC4 de docs/spec.md, sin lo cual queda fuera de las dos comprobaciones que impiden degradarlo: el limite honesto verificado literalmente contra la frase en su archivo; el script y sus pruebas declarados en el indice; el script dentro del alcance de cobertura y al cien por ciento.",
       "evidence": [
         "contracts/honest-limits.json: la entrada del gate nuevo"

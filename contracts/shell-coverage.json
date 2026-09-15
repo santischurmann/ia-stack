@@ -1,5 +1,5 @@
 {
-  "schema": "vcp.shell-coverage/v1",
+  "schema": "ia.shell-coverage/v1",
   "why": "Cuanto de cada script de shell llegan a ejecutar los escenarios declarados. Se mide con el instrumento que trae el propio bash: PS4 con $LINENO mas set -x, sin dependencias. Mide LINEAS EJECUTADAS, no ramas: una linea `if` cuenta como cubierta apenas se evalua, aunque su `else` no se haya probado nunca. El piso existe para que el numero no baje en silencio, no para declarar que el script es correcto.",
   "scripts": [
     {

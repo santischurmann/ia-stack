@@ -1,6 +1,6 @@
-# VibeCodeProtocols (VCP)
+# IA Stack
 
-**VCP ayuda a una IA a cambiar código sin inventar que revisó, probó o entendió algo.**
+**IA Stack ayuda a una IA a cambiar código sin inventar que revisó, probó o entendió algo.**
 
 No es un linter ni un framework. Es un protocolo: once fases, cada una con un chequeo que se
 ejecuta y frena si algo no está. La idea de fondo cabe en una línea:
@@ -9,9 +9,12 @@ ejecuta y frena si algo no está. La idea de fondo cabe en una línea:
 entender -> decidir -> test rojo -> cambio chico -> casos borde -> revisión -> evidencia -> release
 ```
 
-> **El repositorio se llama `ia-stack`; el protocolo que vive adentro, VibeCodeProtocols.** Se
-> renombró el repositorio y no la skill: `/VibeCodeProtocols` ya está escrito en cada proyecto que
-> lo instaló. Una prueba comprueba que este README siga nombrando al repositorio donde vive.
+> **Se llama IA Stack: el repositorio, el protocolo y la skill.** Hasta el 2026-09-15 eran dos
+> nombres — el repositorio `ia-stack` y el protocolo `VibeCodeProtocols`—, y convivir con dos
+> nombres para la misma cosa obliga a explicarlo cada vez. **`/VibeCodeProtocols` sigue andando**:
+> está escrito en cada proyecto que ya lo instaló, y quitarlo convertiría un cambio de nombre en una
+> rotura para quien ya lo estaba usando. El instalador deja las dos invocaciones, con el mismo
+> contenido. Una prueba comprueba que este README siga nombrando al repositorio donde vive.
 
 ---
 
@@ -41,9 +44,9 @@ En Windows PowerShell:
 .\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto
 ```
 
-Queda un runtime completo adentro de tu proyecto, en `.vibe/vcp-runtime/`. Reiniciá tu agente,
-abrí el proyecto y usá `/VibeCodeProtocols`. Desde ahí los comandos salen de
-`.vibe/vcp-runtime/scripts/`, nunca del clone original.
+Queda un runtime completo adentro de tu proyecto, en `.vibe/ia-stack-runtime/`. Reiniciá tu agente,
+abrí el proyecto y usá `/ia-stack` (o `/VibeCodeProtocols`, que sigue andando). Desde ahí los comandos salen de
+`.vibe/ia-stack-runtime/scripts/`, nunca del clone original.
 
 ---
 
@@ -185,8 +188,8 @@ Un comando genera una página local con lo que pasó: proyectos, sesiones, turno
 Se abre con doble clic. Sin servidor, sin puerto, sin nada que quede corriendo.
 
 ```bash
-node .vibe/vcp-runtime/scripts/tablero.mjs build      # escribe el archivo
-node .vibe/vcp-runtime/scripts/tablero-servidor.mjs serve   # o lo servís en localhost
+node .vibe/ia-stack-runtime/scripts/tablero.mjs build      # escribe el archivo
+node .vibe/ia-stack-runtime/scripts/tablero-servidor.mjs serve   # o lo servís en localhost
 ```
 
 Muestra, por proyecto: sesiones, turnos, tokens, horas **por día**, en qué fase quedó cada uno
@@ -247,19 +250,19 @@ sea la decisión correcta, ni que la persona la haya entendido.
 | **[`SKILL.md`](SKILL.md)** | El protocolo completo, fase por fase. Es lo que lee el agente. |
 | **[`skills/gates.md`](skills/gates.md)** | Todos los chequeos, qué comprueba cada uno y qué **no** puede comprobar. |
 | **[`skills/research.md`](skills/research.md)** | **Research: investigar antes de especificar** — la pasada de Discovery. |
-| **[`skills/verificar-vcp.md`](skills/verificar-vcp.md)** | Cómo verificar el propio repositorio de VCP. |
+| **[`skills/verificar-ia-stack.md`](skills/verificar-ia-stack.md)** | Cómo verificar el propio repositorio de VCP. |
 | **[`SECURITY.md`](SECURITY.md)** | **Modelo de seguridad y límites**. |
 | **[`INSTALL.md`](INSTALL.md)** | Instalación y desinstalación en detalle. |
 
 Comandos que vas a usar seguido, todos desde el runtime instalado:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-feature-activa.mjs check
-node .vibe/vcp-runtime/scripts/verify-graphify-manifest.mjs check
-node .vibe/vcp-runtime/scripts/verify-sereno.mjs due
-node .vibe/vcp-runtime/scripts/verify-adr.mjs check
-node .vibe/vcp-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task T01 --base HEAD
-node .vibe/vcp-runtime/scripts/verify-backup-state.mjs check .vibe/backup.json
+node .vibe/ia-stack-runtime/scripts/verify-feature-activa.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-graphify-manifest.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-sereno.mjs due
+node .vibe/ia-stack-runtime/scripts/verify-adr.mjs check
+node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task T01 --base HEAD
+node .vibe/ia-stack-runtime/scripts/verify-backup-state.mjs check .vibe/backup.json
 ```
 
 Una prueba **corre** los comandos de este archivo y falla si alguno muere con `usage:` — hasta el

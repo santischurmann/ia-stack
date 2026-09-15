@@ -36,15 +36,18 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { join } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-deploy.mjs check --feature <feature-slug> [--require-inputs] | verify-deploy.mjs health --feature <feature-slug>';
 export const EMPTY_PREFIX = 'VACÍO: ';
-export const SCHEMA = 'vcp.deploy/1';
+export const SCHEMA = 'ia.deploy/1';
 export const NO_INPUTS_CODE = 'DEPLOY_NO_INPUTS';
 export const LOOPBACK_CODE = 'DEPLOY_HOST_NOT_LOOPBACK';
 export const STATUS_BEFORE_BODY_CODE = 'DEPLOY_BODY_WITHOUT_STATUS';
 export const REQUIRE_INPUTS_FLAG = '--require-inputs';
-export const PROBE_TIMEOUT_MS = Number(process.env.VCP_DEPLOY_TIMEOUT_MS ?? 5000);
+// El nombre anterior de la variable se sigue leyendo: quien ya la tenia puesta no se entera del
+// cambio de nombre del protocolo por un timeout distinto. Se prefiere el nuevo.
+export const PROBE_TIMEOUT_MS = Number(process.env.IA_STACK_DEPLOY_TIMEOUT_MS ?? process.env.VCP_DEPLOY_TIMEOUT_MS ?? 5000);
 export const LIMIT_LINE = 'LÍMITE: no audita dependencias —VCP no trae SCA y ese límite está declarado—, comprueba que el servicio responde en esta máquina y nunca que un despliegue remoto esté sano, y verifica el registro de la reversión, no la reversión.';
 
 /** La misma prohibición que la fase 9 ya tiene escrita: la vuelta atrás MUEVE de vuelta, nunca
@@ -113,7 +116,7 @@ export function manifestContradicho(manifest, versionados) {
 export function validateDeploy(document, { versionados = null } = {}) {
   const violations = [];
   if (!isObject(document)) return ['el expediente de despliegue debe ser un objeto JSON'];
-  if (document.schema !== SCHEMA) violations.push(`schema debe ser ${SCHEMA}`);
+  if (!mismoSchema(document.schema, SCHEMA)) violations.push(`schema debe ser ${SCHEMA}`);
   if (!FEATURE_SLUG.test(document.feature ?? '')) violations.push('feature debe ser un slug en kebab-case');
   if (!DATE.test(document.date ?? '')) violations.push('date debe ser una fecha AAAA-MM-DD');
 

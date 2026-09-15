@@ -30,8 +30,8 @@ allowed-tools: Read, Bash
 Before every GREEN subagent spawn, the orchestrator MUST run this check:
 
 ```bash
-.vibe/vcp-runtime/scripts/verify-red.sh "<literal-test-file>" "node --test"     # bash
-.vibe/vcp-runtime/scripts/verify-red.ps1 -TestPattern "<literal-test-file>" -TestCmd "node --test"   # PowerShell
+.vibe/ia-stack-runtime/scripts/verify-red.sh "<literal-test-file>" "node --test"     # bash
+.vibe/ia-stack-runtime/scripts/verify-red.ps1 -TestPattern "<literal-test-file>" -TestCmd "node --test"   # PowerShell
 ```
 
 Script on disk = single source of truth — do NOT re-embed copies (they drift). The gate is
@@ -50,7 +50,7 @@ relax this one into a generic output regex.
 
 ## RESUME AFTER COMPACTION / RESTART
 
-1. Establish the requested lowercase-kebab-case feature slug, then run `node .vibe/vcp-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 1 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
+1. Establish the requested lowercase-kebab-case feature slug, then run `node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Exit `0` is required before reading the ledger; exit `1` means show the Phase 1 🔵 conflict/legacy menu in `SKILL.md` and wait — never resume silently.
 2. Re-read, in order: this file → `.vibe/SESSION.md` → `docs/tasks.json`.
 3. Re-detect phase (never trust memory): run current task's tests. FAIL = pre-GREEN (RED done). PASS = post-GREEN.
 4. `git diff` test files. Changed since RED = violation → stop, report.

@@ -9,9 +9,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-graphify-manifest.mjs check';
-export const EXCLUSIONS_SCHEMA = 'vcp.graphify-exclusions/1';
+export const EXCLUSIONS_SCHEMA = 'ia.graphify-exclusions/1';
 export const EXCLUSIONS_PATH = join('contracts', 'graphify-exclusions.json');
 export const MANIFEST_PATH = join('graphify-out', 'manifest.json');
 
@@ -80,7 +81,7 @@ export function readExclusions(read) {
     if (error.code === 'ENOENT') return [];
     throw new Error(`${EXCLUSIONS_PATH} is not valid JSON: ${error.message}`);
   }
-  if (!parsed || typeof parsed !== 'object' || parsed.schema !== EXCLUSIONS_SCHEMA) {
+  if (!parsed || typeof parsed !== 'object' || !mismoSchema(parsed.schema, EXCLUSIONS_SCHEMA)) {
     throw new Error(`${EXCLUSIONS_PATH} must declare schema ${EXCLUSIONS_SCHEMA}`);
   }
   if (!Array.isArray(parsed.exclusions)) throw new Error(`${EXCLUSIONS_PATH} must contain an exclusions array`);

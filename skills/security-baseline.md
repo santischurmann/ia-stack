@@ -17,7 +17,7 @@ pattern-based safety floor, not a claim of complete application-security coverag
 From the project root, run:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-or-origin/main>
+node .vibe/ia-stack-runtime/scripts/verify-security-baseline.mjs check --base <merge-base-or-origin/main>
 ```
 
 It scans the union of the base delta, staged, unstaged and untracked non-ignored paths. A newly

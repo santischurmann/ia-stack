@@ -7,6 +7,49 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Un solo nombre: IA Stack.** El repositorio, el protocolo, la skill y los identificadores
+  internos. Hasta hoy convivían dos —el repositorio `ia-stack` y el protocolo
+  `VibeCodeProtocols`—, por una decisión anterior que está registrada: entonces se renombró el
+  repositorio y **no** la skill, para no romper instalaciones. Esa decisión se revisó y se cambió.
+
+  - **`/VibeCodeProtocols` sigue andando.** El instalador escribe las dos invocaciones con el mismo
+    contenido. Está escrito en cada proyecto que ya lo instaló, y quitarlo convertiría un cambio de
+    nombre en una rotura para quien ya lo usaba.
+  - **Los 42 schemas pasaron de `vcp.` a `ia.`, y los artefactos ya escritos siguen valiendo.**
+    `scripts/schema-compat.mjs` acepta el prefijo viejo y escribe el nuevo, en **un solo lugar**: si
+    cada gate hiciera su propia excepción, en seis meses habría 42 reglas distintas sobre qué se
+    acepta. La equivalencia es sólo del prefijo — `ia.receipt/v2` y `ia.receipt/v3` siguen siendo
+    distintos— y va en una sola dirección: un artefacto con el nombre nuevo no pasa por un gate que
+    espera el viejo, porque eso sería aceptar un futuro que nadie escribió.
+  - **La carpeta instalada pasó de `.vibe/vcp-runtime` a `.vibe/ia-stack-runtime`, y la vieja se
+    sigue reconociendo.** Cuando se usa la vieja el gate **lo dice**: un verde silencioso dejaría a
+    un proyecto sin migrar para siempre sin enterarse. Y si están las dos, **rechaza**: el
+    instalador copia y nunca poda, así que una copia vieja que sobrevive es un gate retirado que
+    alguien puede seguir ejecutando.
+  - **Las 6 variables de entorno pasaron a `IA_STACK_*`, leyendo también el nombre anterior.** Perder
+    un ajuste de concurrencia o un Bash configurado por un cambio de nombre deja la suite inestable
+    sin motivo.
+
+- **EVIDENCIA SELLADA RE-SELLADA, y queda escrito porque un sello intacto no puede leerse como uno
+  que nunca se tocó.** Cinco archivos cambiaron de nombre —`verify-vcp-contract.mjs`,
+  `verify-vcp-coverage.mjs`, `verify-vcp-index.mjs`, `contracts/vcp-index.json` y
+  `skills/verificar-vcp.md`— y **68 referencias dentro de paquetes de Discovery y recibos apuntaban
+  a ellos**. Un nombre de archivo no admite capa de compatibilidad: o la ruta existe o no existe.
+
+  - **El gate lo detectó solo, que es la prueba de que el sello sirve.** Al renombrar,
+    `verifyDiscoverySources` marcó `claim-wording-parcial` como `MISSING` y el hash del paquete
+    `d002` dejó de coincidir. Antes de eso, un barrido había editado tres paquetes sellados sin
+    querer: **se revirtieron** y se rehizo el trabajo de forma deliberada.
+  - **Qué se hizo, exactamente**: se corrigieron las referencias en los tres paquetes y en el resto
+    de la evidencia de Discovery, y se recalcularon `packet_sha256` y `predecessor_hash` en cadena
+    —el paquete primero, después el hash de su decisión, después el del eslabón siguiente, porque
+    los bytes de una decisión cambian cuando cambia el hash que guarda—. Resultado medido: cero
+    fuentes bloqueantes.
+  - **Se decidió con el número a la vista.** La alternativa era dejar esos cinco archivos con el
+    nombre viejo, y se eligió renombrar y reparar. Lo que separa esto de una falsificación es este
+    párrafo y la línea de `.vibe/AUDIT.md`: los sellos de `integridad-verificable/run-001` se
+    recalcularon el 2026-09-15 por un renombre, no porque la evidencia haya cambiado de contenido.
+
 - **Tres de las once fases no ofrecían un solo menú, y la otra punta del protocolo ya los exigía.**
   Medido el 2026-09-15 sobre `SKILL.md`: las fases **2 (Research), 5.5 (Triangulate) y 7 (Simplify)**
   no tenían ninguno. Las tres cerraban con una frase mandando a presentar uno —«la decisión se

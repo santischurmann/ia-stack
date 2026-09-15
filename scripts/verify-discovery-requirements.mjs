@@ -10,6 +10,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkActiveBindings, checkTestBinding, createCachedBindingCheck } from './verify-test-bindings.mjs';
 import { COPIED_DIRECTORIES, COPIED_FILES, esRuntimeInstalado } from './verify-runtime-sync.mjs';
+import { mismoSchema } from './schema-compat.mjs';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -37,8 +38,8 @@ export const BASE_REQ_IDS = Object.freeze(PHASE_ORDER.flatMap((phase) => EXPECTE
 const BASE_REQUIREMENT_IDS = new Set(BASE_REQ_IDS);
 const VALID_STATUSES = new Set(['planned', 'active', 'replaced', 'rejected']);
 const KNOWN_CHECK_IDS = new Set(Object.values(EXPECTED_PHASE_PLAN).flatMap((checks) => Object.values(checks)));
-const INVENTORY_SCHEMA = 'vcp.discovery-requirements/1';
-const PHASE_PLAN_SCHEMA = 'vcp.discovery-phase-plan/2';
+const INVENTORY_SCHEMA = 'ia.discovery-requirements/1';
+const PHASE_PLAN_SCHEMA = 'ia.discovery-phase-plan/2';
 const INVENTORY_KEYS = new Set(['schema', 'requirements']);
 const REQUIREMENT_KEYS = new Set(['req_id', 'status', 'target_phase', 'implemented_phase', 'decision_ref', 'superseded_by', 'test_ref', 'test_name', 'rule']);
 const PHASE_PLAN_KEYS = new Set(['schema', 'phases']);
@@ -79,7 +80,7 @@ function hasExactKeys(value, allowed) {
 }
 
 function requirementsOf(inventory) {
-  if (!isObject(inventory) || !hasOnlyKeys(inventory, INVENTORY_KEYS) || inventory.schema !== INVENTORY_SCHEMA || !Array.isArray(inventory.requirements)) {
+  if (!isObject(inventory) || !hasOnlyKeys(inventory, INVENTORY_KEYS) || !mismoSchema(inventory.schema, INVENTORY_SCHEMA) || !Array.isArray(inventory.requirements)) {
     reject('DISCOVERY_REQUIREMENT_SCHEMA_INVALID', `inventory must use ${INVENTORY_SCHEMA} with a requirements array`);
   }
   return inventory.requirements;
@@ -178,7 +179,7 @@ export function validateInventory(inventory) {
 }
 
 export function validatePhasePlan(plan) {
-  if (!isObject(plan) || !hasOnlyKeys(plan, PHASE_PLAN_KEYS) || plan.schema !== PHASE_PLAN_SCHEMA || !Array.isArray(plan.phases)) {
+  if (!isObject(plan) || !hasOnlyKeys(plan, PHASE_PLAN_KEYS) || !mismoSchema(plan.schema, PHASE_PLAN_SCHEMA) || !Array.isArray(plan.phases)) {
     reject('DISCOVERY_PHASE_PLAN_SCHEMA_INVALID', `phase plan must use ${PHASE_PLAN_SCHEMA}`);
   }
   const seenPhases = new Set();
@@ -360,7 +361,11 @@ export function createPreviousPhasesChecker(context, close = assertPhaseClosed) 
 // `--test-concurrency=32`, el test que lo invoca tarda entre 18 y 37 segundos y fallaba 3 de cada 6
 // corridas. Un techo tiene que existir -- un proceso colgado no puede colgar el gate -- pero no
 // puede estar tan cerca del tiempo normal de la tarea que la carga lo cruce.
-export const SELFTEST_TIMEOUT_MS = Number.parseInt(process.env.VCP_SELFTEST_TIMEOUT_MS ?? '', 10) || 300_000;
+// El nombre anterior se sigue leyendo, por lo mismo que en el resto: un cambio de nombre no
+// tiene que llegarle a nadie como un techo de tiempo distinto al que habia configurado.
+export const SELFTEST_TIMEOUT_MS = Number.parseInt(
+  process.env.IA_STACK_SELFTEST_TIMEOUT_MS ?? process.env.VCP_SELFTEST_TIMEOUT_MS ?? '', 10,
+) || 300_000;
 
 export function runSelfTest(testRef, cwd, { timeoutMs = SELFTEST_TIMEOUT_MS, run = spawnSync } = {}) {
   const result = run(process.execPath, ['--test', '--test-reporter=tap', testRef], { cwd, encoding: 'utf8', timeout: timeoutMs });
@@ -371,7 +376,7 @@ export function runSelfTest(testRef, cwd, { timeoutMs = SELFTEST_TIMEOUT_MS, run
   if (result.error || result.signal) {
     reject(
       'DISCOVERY_SELFTEST_UNFINISHED',
-      `el selftest ${testRef} no llegó a terminar (${result.error?.code ?? result.signal}) con un techo de ${timeoutMs} ms: no se pudo verificar, que no es lo mismo que haber fallado. Subilo con VCP_SELFTEST_TIMEOUT_MS si la máquina está cargada`,
+      `el selftest ${testRef} no llegó a terminar (${result.error?.code ?? result.signal}) con un techo de ${timeoutMs} ms: no se pudo verificar, que no es lo mismo que haber fallado. Subilo con IA_STACK_SELFTEST_TIMEOUT_MS si la máquina está cargada`,
     );
   }
   return result.status === 0;

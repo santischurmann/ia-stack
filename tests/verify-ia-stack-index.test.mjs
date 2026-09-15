@@ -23,7 +23,7 @@ import {
   parseArguments,
   rutasRastreadas,
   violaciones,
-} from '../scripts/verify-vcp-index.mjs';
+} from '../scripts/verify-ia-stack-index.mjs';
 
 const indiceValido = (rutas = ['scripts/a.mjs', 'README.md']) => construirIndice(rutas);
 

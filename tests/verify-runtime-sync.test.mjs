@@ -15,6 +15,7 @@ const {
   COPIED_DIRECTORIES,
   COPIED_FILES,
   DEFAULT_RUNTIME_PATH,
+  RUTAS_DE_RUNTIME,
   USAGE,
   compareInventories,
   esRuntimeInstalado,
@@ -27,7 +28,7 @@ const {
 
 const SOURCE_FILES = [
   ['scripts/verify-red-node.mjs', 'export const gate = 1;\n'],
-  ['contracts/honest-limits.json', '{"schema":"vcp.honest-limits/1"}\n'],
+  ['contracts/honest-limits.json', '{"schema":"ia.honest-limits/1"}\n'],
   ['tests/verify-red-node.test.mjs', 'import test from "node:test";\n'],
   ['templates/vibe/PROJECT.md', '# (fill in)\nStarted: YYYY-MM-DD\n'],
   ['skills/vibe-memory.md', '# memoria\n'],
@@ -471,18 +472,18 @@ test('sin runtime instalado el gate escribe VACÍO, no OK', () => {
 test('parseArguments informa --require-inputs sin perder --runtime', () => {
   assert.deepEqual(parseArguments(['check']), { runtime: null, requireInputs: false });
   assert.deepEqual(parseArguments(['check', '--require-inputs']), { runtime: null, requireInputs: true });
-  assert.deepEqual(parseArguments(['check', '--runtime', '.vibe/vcp-runtime', '--require-inputs']), { runtime: '.vibe/vcp-runtime', requireInputs: true });
+  assert.deepEqual(parseArguments(['check', '--runtime', '.vibe/ia-stack-runtime', '--require-inputs']), { runtime: '.vibe/ia-stack-runtime', requireInputs: true });
   assert.equal(parseArguments(['--require-inputs']), null);
 });
 
 // --- El instalador tiene que proteger el repo del usuario de su propio runtime ------------------
 
-test('los dos instaladores ignoran .vibe/vcp-runtime/ en el repo del proyecto', () => {
+test('los dos instaladores ignoran .vibe/ia-stack-runtime/ en el repo del proyecto', () => {
   const sh = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');
   const ps = readFileSync(join(repoRoot, 'scripts', 'install.ps1'), 'utf8');
   for (const [nombre, source] of [['install.sh', sh], ['install.ps1', ps]]) {
     assert.ok(source.includes('.gitignore'), `${nombre} tiene que escribir la regla en .gitignore`);
-    assert.ok(source.includes('.vibe/vcp-runtime/'), `${nombre} tiene que ignorar el runtime instalado`);
+    assert.ok(source.includes('.vibe/ia-stack-runtime/'), `${nombre} tiene que ignorar el runtime instalado`);
   }
 });
 
@@ -583,4 +584,62 @@ test('FALSIFICACIÓN · esRuntimeInstalado no confunde un checkout con una insta
   assert.equal(esRuntimeInstalado(join('C:', 'proy', '.vibe', 'otra-cosa')), false);
   // Una ruta más corta que el sufijo buscado: la rama que evita leer fuera del arreglo.
   assert.equal(esRuntimeInstalado('/'), false);
+});
+
+// --- LA CARPETA DEL RUNTIME CAMBIO DE NOMBRE, Y LAS INSTALACIONES VIEJAS SIGUEN ANDANDO ----------
+//
+// El protocolo pasó a llamarse IA Stack el 2026-09-15 y la carpeta instalada pasó de
+// `.vibe/vcp-runtime` a `.vibe/ia-stack-runtime`. Toda instalación anterior tiene la vieja, y ese
+// nombre está en la ruta de CADA comando que el protocolo documenta. Romperlas de golpe convertiría
+// un cambio de nombre en una rotura para todo el que ya lo estaba usando.
+//
+// La regla: **se prefiere la nueva y se acepta la vieja**, y cuando se usa la vieja el gate lo DICE.
+// Un verde silencioso sobre la carpeta vieja dejaría a un proyecto sin migrar para siempre sin
+// enterarse, que es la misma trampa que el gate de sincronía ya tiene declarada sobre los archivos
+// que sobran: lo que no se nombra, no se migra.
+
+test('la ruta vigente es la nueva, y la vieja se sigue reconociendo', () => {
+  assert.equal(DEFAULT_RUNTIME_PATH, '.vibe/ia-stack-runtime');
+  assert.deepEqual([...RUTAS_DE_RUNTIME], ['.vibe/ia-stack-runtime', '.vibe/vcp-runtime']);
+});
+
+test('esRuntimeInstalado reconoce las DOS carpetas', () => {
+  // Varios gates se saltean sus self-checks preguntando esto. Si sólo reconociera la nueva, un
+  // proyecto con la carpeta vieja correría comprobaciones que no le corresponden y vería rojos que
+  // no son suyos.
+  assert.equal(esRuntimeInstalado('/proyecto/.vibe/ia-stack-runtime'), true);
+  assert.equal(esRuntimeInstalado('/proyecto/.vibe/vcp-runtime'), true);
+  assert.equal(esRuntimeInstalado('/proyecto/.vibe'), false);
+  assert.equal(esRuntimeInstalado('/proyecto/.vibe/otra-cosa'), false);
+});
+
+test('UNA INSTALACION VIEJA se compara igual, y el gate dice que está con el nombre viejo', () => {
+  const { root, source } = sourceCheckout();
+  try {
+    installRuntime(source, join(source, '.vibe', 'vcp-runtime'));
+    const salida = [];
+    const code = main(['check'], source, {}, (l) => salida.push(l), (l) => salida.push(l));
+    assert.equal(code, 0, salida.join('\n'));
+    assert.match(salida.join('\n'), /vcp-runtime/u, 'tiene que nombrar la carpeta vieja que encontró');
+    assert.match(salida.join('\n'), /ia-stack-runtime/u, 'y decir cuál es la nueva');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('con LAS DOS carpetas, gana la nueva y la vieja se acusa como sobrante', () => {
+  // Es el estado peligroso de verdad: el instalador copia y no poda, así que después de migrar
+  // quedan las dos. Un gate viejo que sigue vivo en la carpeta vieja se puede seguir ejecutando.
+  const { root, source } = sourceCheckout();
+  try {
+    installRuntime(source, join(source, '.vibe', 'ia-stack-runtime'));
+    installRuntime(source, join(source, '.vibe', 'vcp-runtime'));
+    const salida = [];
+    const code = main(['check'], source, {}, (l) => salida.push(l), (l) => salida.push(l));
+    assert.equal(code, 1, salida.join('\n'));
+    assert.match(salida.join('\n'), /vcp-runtime/u);
+    assert.match(salida.join('\n'), /borr|saca|elimin/iu, 'tiene que decir qué hacer con la vieja');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

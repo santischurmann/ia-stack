@@ -1,4 +1,4 @@
-# Instalar VibeCodeProtocols
+# Instalar IA Stack
 
 Necesitás Claude Code, Git y Node. Bash o PowerShell se usan sólo para el instalador y las
 entradas de RED; el runtime no instala dependencias globales.
@@ -24,23 +24,26 @@ cd vibecodeprotocols
 El instalador hace dos copias distintas:
 
 1. El skill y sus sub-skills en `~/.claude/skills/`, para que Claude Code lo vea.
-2. Un runtime autocontenido en `<proyecto>/.vibe/vcp-runtime/`, para que cada comando y template
+2. Un runtime autocontenido en `<proyecto>/.vibe/ia-stack-runtime/`, para que cada comando y template
    exista dentro del proyecto que lo usa.
 
-No se inicializa `.vibe/` por accidente en el clone de VCP: tenés que pasar el proyecto de forma
+No se inicializa `.vibe/` por accidente en el clone de IA Stack: tenés que pasar el proyecto de forma
 explícita.
 
 ## Después
 
 1. Reiniciá Claude Code.
 2. Abrí el proyecto destino.
-3. Invocá `/VibeCodeProtocols`.
+3. Invocá `/ia-stack`.
+
+   `/VibeCodeProtocols` es el nombre anterior y **sigue andando**: el instalador deja las dos,
+   con el mismo contenido, para no romper lo que ya estaba escrito en cada proyecto.
 
 Los comandos de protocolo se ejecutan desde el proyecto:
 
 ```bash
-node .vibe/vcp-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
-.vibe/vcp-runtime/scripts/vibe-memory.sh read
+node .vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs check docs/tasks.json
+.vibe/ia-stack-runtime/scripts/vibe-memory.sh read
 ```
 
 En PowerShell usá los `.mjs` con `node`; el instalador de PowerShell crea el runtime igual que el
@@ -63,14 +66,14 @@ de Bash.
 ```
 
 `--runtime-dir`/`-RuntimeDir` guarda además una copia global de referencia. El runtime que usa el
-proyecto es siempre `.vibe/vcp-runtime`; no depende de esa ruta global.
+proyecto es siempre `.vibe/ia-stack-runtime`; no depende de esa ruta global.
 
 ## Problemas comunes
 
 - **El skill no aparece:** reiniciá Claude Code y verificá
-  `~/.claude/skills/VibeCodeProtocols.md`.
+  `~/.claude/skills/ia-stack.md`.
 - **Un comando dice “file not found”:** ejecutalo desde el proyecto y usá
-  `.vibe/vcp-runtime/scripts/...`, no `./scripts/...`.
+  `.vibe/ia-stack-runtime/scripts/...`, no `./scripts/...`.
 - **RED rechaza mi comando:** el adapter incluido acepta sólo `node --test` con un archivo de
   test literal. Es intencional: otro runner necesita un adapter probado.
 - **No hay `.vibe/`:** volvé a correr el instalador con `--project`/`-ProjectDir`; no copies
@@ -82,6 +85,6 @@ Podés borrar el skill y el runtime global. Conservá `.vibe/` del proyecto: ah�
 decisiones y evidencia.
 
 ```bash
-rm ~/.claude/skills/VibeCodeProtocols.md
-rm -rf ~/.claude/skills/vcp-skills ~/.claude/vcp-runtime
+rm ~/.claude/skills/ia-stack.md ~/.claude/skills/VibeCodeProtocols.md
+rm -rf ~/.claude/skills/ia-stack-skills ~/.claude/ia-stack-runtime
 ```

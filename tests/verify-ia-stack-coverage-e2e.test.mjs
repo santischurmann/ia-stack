@@ -13,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const script = join(repoRoot, 'scripts', 'verify-vcp-coverage.mjs');
+const script = join(repoRoot, 'scripts', 'verify-ia-stack-coverage.mjs');
 const { main, runCoverage } = await import(pathToFileURL(script).href);
 
 const DEMO = 'export function demo(x) {\n  if (x) return 1;\n  return 2;\n}\n';

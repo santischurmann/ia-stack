@@ -22,10 +22,11 @@ import { readFileSync } from 'node:fs';
 import { safeProjectFile } from './ratchet.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mismoSchema } from './schema-compat.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-export const SCHEMA = 'vcp.triangulate/1';
-export const VECTORS_SCHEMA = 'vcp.triangulate-vectors/1';
+export const SCHEMA = 'ia.triangulate/1';
+export const VECTORS_SCHEMA = 'ia.triangulate-vectors/1';
 export const VECTORS_PATH = join(repoRoot, 'contracts', 'triangulate-vectors.json');
 export const COMPLETE_FLAG = '--require-complete';
 export const USAGE = `usage: verify-triangulate.mjs check <triangulate.json> [${COMPLETE_FLAG}]`;
@@ -53,7 +54,7 @@ const exactKeys = (v, keys) => isObject(v) && Object.keys(v).length === keys.len
 
 /** Los ids del contrato, sin lanzar nunca: un contrato roto se informa como contrato roto. */
 export function loadVectors(contract) {
-  if (!isObject(contract) || contract.schema !== VECTORS_SCHEMA) {
+  if (!isObject(contract) || !mismoSchema(contract.schema, VECTORS_SCHEMA)) {
     return { ids: [], violations: [`el contrato de vectores debe declarar ${VECTORS_SCHEMA}`] };
   }
   if (!Array.isArray(contract.vectors) || contract.vectors.length === 0) {
@@ -82,7 +83,7 @@ export function loadVectors(contract) {
 /** Todas las violaciones del expediente, sin lanzar nunca. */
 export function validateTriangulate(document, ids) {
   if (!isObject(document)) return [`el expediente debe ser un objeto JSON que declare ${SCHEMA}`];
-  if (document.schema !== SCHEMA) return [`el expediente debe declarar ${SCHEMA}, no ${JSON.stringify(document.schema)}`];
+  if (!mismoSchema(document.schema, SCHEMA)) return [`el expediente debe declarar ${SCHEMA}, no ${JSON.stringify(document.schema)}`];
   const violations = [];
   if (typeof document.feature !== 'string' || document.feature.trim() === '') violations.push('feature debe nombrar la funcionalidad');
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(document.date ?? '')) violations.push('date debe ser una fecha AAAA-MM-DD');
