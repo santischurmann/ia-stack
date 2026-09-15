@@ -247,3 +247,113 @@ test('E2E · la sonda de carpeta vacía y el contrato corren desde el runtime in
   const sync = gate(root, 'verify-runtime-sync.mjs', 'check');
   assert.notEqual(sync.clase, 'ok', 'desde el proyecto no se puede afirmar que el runtime coincide con su fuente');
 }));
+
+// --- LA VIA CORTA CIERRA -------------------------------------------------------------------------
+//
+// ESTA ES LA PRUEBA QUE NO EXISTIA, y su ausencia dejo pasar el defecto mas grave que se encontro en
+// todo el rediseno: el protocolo publicitaba un atajo —«Cambio chico, ≤3 archivos: ¿pipeline
+// completo o directo a Build?»— que NO TENIA SALIDA LEGAL. Medido el 2026-09-15:
+//
+//   1. El test rojo exigia una prueba por cada criterio de `docs/spec.md`, y el atajo saltaba la spec.
+//   2. La fase 6 corria la traza con `--require-inputs`, donde la ausencia de spec pasa a RECHAZO.
+//   3. El recibo pedia campos que el atajo nunca escribia.
+//
+// Empezabas liviano y te frenaba al final, con el trabajo ya hecho. La bateria entera estaba en
+// verde mientras tanto, porque ninguna prueba recorria el camino completo: cada gate se probaba por
+// separado y el recorrido no se probaba nunca.
+//
+// Esta prueba recorre la via corta de punta a punta con los gates REALES del runtime instalado. Si
+// alguien vuelve a romper el recorrido, se entera aca y no seis fases despues.
+test('E2E · la via corta cierra: scavenge, spec minima, test rojo y traza, sin quedar trabada', () => conProyecto((root) => {
+  assert.equal(instalar(root).status, 0);
+
+  mkdirSync(join(root, 'docs', 'scavenge'), { recursive: true });
+  mkdirSync(join(root, 'scripts'), { recursive: true });
+  mkdirSync(join(root, 'tests'), { recursive: true });
+
+  // El codigo que ya existe, para que el locator del scavenge resuelva a una linea de verdad.
+  writeFileSync(join(root, 'scripts', 'util.mjs'), 'export function sumar(a, b) {\n  return a + b;\n}\n', 'utf8');
+
+  writeFileSync(join(root, 'docs', 'scavenge', 'cambio-chico.json'), JSON.stringify({
+    schema: 'vcp.scavenge/1',
+    feature: 'cambio-chico',
+    date: '2026-09-15',
+    scope: 'corto',
+    reusable: [{
+      id: 'R1',
+      what: 'Ya existe la funcion de suma que este cambio tiene que endurecer, en vez de escribir otra al lado.',
+      locator: 'scripts/util.mjs:1',
+    }],
+    missing: [{ id: 'M1', what: 'No valida sus entradas: con texto devuelve una concatenacion en vez de fallar.' }],
+    breaks: [],
+    unknowns: [],
+  }, null, 2), 'utf8');
+
+  // Tres secciones, no ocho. La via sale del scavenge, no de una bandera.
+  writeFileSync(join(root, 'docs', 'spec.md'), [
+    '# Spec: cambio-chico',
+    '',
+    '## Problem / Problema',
+    'La funcion de suma no valida sus entradas y con texto devuelve una concatenacion.',
+    '',
+    '## Acceptance Criteria / Criterios de aceptación',
+    '- [ ] **AC1:** GIVEN una entrada que no es un numero, WHEN se llama a sumar, THEN lanza en vez de concatenar.',
+    '',
+    '## Definition of Done (DoD)',
+    'Suite verde y el gate declarando su limite.',
+    '',
+  ].join('\n'), 'utf8');
+
+  // El titulo nombra funcionalidad Y criterio: es lo que la traza exige desde que se cerro el
+  // solapamiento de identificadores entre features.
+  writeFileSync(join(root, 'tests', 'util.test.mjs'), [
+    "import assert from 'node:assert/strict';",
+    "import test from 'node:test';",
+    "import { sumar } from '../scripts/util.mjs';",
+    '',
+    "test('cambio-chico · AC1 · sumar rechaza lo que no es un numero', () => {",
+    "  assert.throws(() => sumar('a', 1));",
+    '});',
+    '',
+  ].join('\n'), 'utf8');
+
+  const scavenge = gate(root, 'verify-scavenge.mjs', 'check', 'docs/scavenge/cambio-chico.json');
+  assert.equal(scavenge.clase, 'ok', scavenge.salida);
+
+  const tope = gate(root, 'verify-spec-wordcap.mjs', 'check', 'docs/spec.md');
+  assert.equal(tope.clase, 'ok', tope.salida);
+
+  // La pieza central: tres secciones aprueban PORQUE el scavenge declaro scope corto.
+  const calidad = gate(root, 'verify-spec-wordcap.mjs', 'check', 'docs/spec.md', '--quality');
+  assert.equal(calidad.clase, 'ok', calidad.salida);
+  assert.match(calidad.salida, /vía corta/u, 'el verde tiene que decir contra que listado se comprobo');
+
+  // La contradiccion numero 2, la que frenaba al final: con la spec presente, la traza cierra.
+  const traza = gate(root, 'verify-evidence-trace.mjs', 'criteria', '--spec', 'docs/spec.md', '--tests', 'tests', '--require-inputs');
+  assert.equal(traza.clase, 'ok', traza.salida);
+}));
+
+test('E2E · sin scavenge en scope corto, esa misma spec de tres secciones se RECHAZA', () => conProyecto((root) => {
+  // La contraprueba: la via corta no se consigue escribiendo menos, se consigue declarando el
+  // alcance en el scavenge. Sin eso, una spec de tres secciones es una spec incompleta.
+  assert.equal(instalar(root).status, 0);
+  mkdirSync(join(root, 'docs'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'spec.md'), [
+    '# Spec: cambio-chico',
+    '',
+    '## Problem / Problema',
+    'La funcion de suma no valida sus entradas.',
+    '',
+    '## Acceptance Criteria / Criterios de aceptación',
+    '- [ ] **AC1:** GIVEN algo que no es numero, WHEN se suma, THEN lanza.',
+    '',
+    '## Definition of Done (DoD)',
+    'Suite verde.',
+    '',
+  ].join('\n'), 'utf8');
+
+  const calidad = gate(root, 'verify-spec-wordcap.mjs', 'check', 'docs/spec.md', '--quality');
+  assert.equal(calidad.clase, 'reject', calidad.salida);
+  assert.match(calidad.salida, /vía completa/u);
+  assert.match(calidad.salida, /Discovery/u);
+}));

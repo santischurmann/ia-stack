@@ -289,16 +289,45 @@ Esperando tu respuesta antes de continuar.
    coherente e inventado pasa en verde. Y el alcance lo declara quien escribe, así que no distingue
    haber mirado poco de haber mirado mal.
 
-   Con el scavenge escrito, el enrutado sale de él. Sólo 1-3 archivos de contexto requerido Y sin ambigüedad de requirements → 🔵
-   ofrecer skip a Direct Build (RED→GREEN→TRIANGULATE→REFACTOR de Phase 5 directo, sin Spec/Plan
-   formales, igual hard-gate de red test). 4+ archivos de contexto, o cualquier ambigüedad, o
-   pide artefacto durable (spec/plan que otro vaya a leer después) → full pipeline, sin excepción.
-   Nunca auto-decide silenciosamente — el 🔵 siempre pregunta, el usuario elige:
+   **Con el scavenge escrito, el enrutado sale de él.** Sólo 1-3 archivos de contexto requerido y
+   sin ambigüedad de requisitos → se ofrece la **vía corta**. 4+ archivos, cualquier ambigüedad, o
+   un pedido de artefacto durable que otro vaya a leer después → **vía completa, sin excepción**.
+   Nunca se auto-decide en silencio: el menú siempre pregunta y la persona elige.
+
+**11. La vía, elegida por la persona** (este menú cierra la fase 1).
+
+🔵 **¿Vía corta o vía completa?**
+
+- **A)** Vía corta — *(recomendado para 1-3 archivos sin ambigüedad)*. Scavenge + una **spec mínima
+  de tres secciones**: problema, criterios de aceptación y definición de terminado. Sin Discovery,
+  sin `plan.md`. Después el ciclo normal: rojo → verde → triangular → refactorizar.
+- **B)** Vía completa — Scavenge + los diagnósticos de Discovery + spec completa de ocho secciones +
+  `plan.md` y `tasks.json`. Para trabajo que toca arquitectura, usuarios, o que alguien más va a
+  leer después.
+
+Esperando tu respuesta antes de continuar.
+
+   **Lo que la vía corta NO saltea, y conviene decirlo porque antes no estaba dicho:** el test rojo,
+   la triangulación, la fase 6 completa y el recibo. Lo que se acorta es **el expediente de
+   producto**, nunca la verificación.
+
+   **La spec mínima no es opcional, y ésa es la corrección de fondo.** Hasta el 2026-09-15 la vía
+   corta prometía saltar la spec entera, y eso la dejaba **sin salida legal**: el test rojo exige
+   una prueba por cada criterio de `docs/spec.md`, la fase 6 convierte la ausencia de spec en
+   rechazo, y el recibo pide una funcionalidad que sale de ahí. Empezabas liviano y te frenaba al
+   final, con el trabajo ya hecho. Los criterios de aceptación son lo que sostiene a esos tres
+   gates; lo que sobraba era la ceremonia alrededor, y eso es lo que se saca.
+
+   La vía corta **se activa declarando `scope: "corto"` en el scavenge**, no con una bandera: la
+   exigencia se deriva del árbol, igual que la sección de seguridad. `templates/spec-minima.md` es
+   la plantilla.
+
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-spec-wordcap.mjs check docs/spec.md --quality
    ```
-   🔵 Cambio chico (≤3 archivos necesarios para entender/verificar, sin ambigüedad) — ¿pipeline completo o directo a Build?
-   A) Direct Build — salta Spec/Plan, RED→GREEN→TRIANGULATE→REFACTOR igual
-   B) Full pipeline — Spec→Plan→Build→Final
-   ```
+
+   El verde **dice contra qué listado se comprobó** —`vía corta` o `vía completa`—, porque dos
+   verdes que se leen igual y significan cosas distintas son peores que un rojo.
 
 ---
 
@@ -1347,7 +1376,7 @@ escribe con Read/Write — sin script de shell, sin dependencia de `jq`).
 {
   "schema": "vcp.receipt/v3",
   "feature": "<de docs/spec.md>",
-  "task": "<id de tasks.json, ej. T02>",
+  "task": "<id de la tarea; en vía completa sale de tasks.json, ej. T02; en vía corta, el nombre del cambio>",
   "scope": { "declared_paths": ["<paths tocados, autodeclarados>"] },
   "acceptance_criteria": [
     {
