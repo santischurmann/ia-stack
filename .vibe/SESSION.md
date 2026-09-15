@@ -343,6 +343,30 @@ pytest y siete de vitest, más los dos ataques. **Los dos ataques aprueban**, y 
 como límite honesto en vez de disimulado — es la diferencia entre una garantía menor escrita y una
 garantía menor escondida.
 
+## El grafo, reconstruido
+
+La prueba de cobertura del grafo venía salteada desde que empezó el ciclo, con el motivo escrito:
+*«el grafo se construyó antes que 50 archivos rastreados, así que todavía no los cubre… esto NO dice
+que la cobertura esté bien: dice que no se pudo mirar»*. Se reconstruyó con `graphify update`, que es
+la reextracción determinista y **no usa LLM ni sale a la red**.
+
+**3565 nodos, 4958 aristas, 281 comunidades** sobre 389 entradas de manifiesto. El gate pasó de
+`DESACTUALIZADO` a `OK: cubre 387 archivo(s) rastreado(s) con cada exclusión declarada`, y la suite
+bajó de 2 salteadas a 1 — la que queda es el guard de `~/.claude`, que es opt-in por diseño.
+
+Se comprobó que los archivos nuevos estén **en el manifiesto** y no absorbidos por una exclusión: los
+trece que se miraron —los tres adaptadores, el despachador, el gate de repo limpio, los cuatro
+contratos nuevos, `skills/stack.md`, dos pruebas y la ficha de research— están indexados.
+
+**Lo que NO se hizo, y queda anotado:** el conjunto de comunidades cambió (250 etiquetas guardadas,
+281 comunidades ahora; 28 renombradas por su nodo central). Refrescar esos nombres es `graphify
+label`, que **sí llama a un LLM externo**, así que no se corrió. Las comunidades renombradas por hub
+son descriptivas pero no curadas.
+
+Y el aviso de la propia herramienta: **84 archivos fuente produjeron cero nodos** y están ausentes
+del grafo — casi todos JSON de datos, que no tienen código que extraer. El manifiesto los cubre
+igual; el grafo no los representa. Son dos cosas distintas y conviene no confundirlas.
+
 ## No verificado
 
 - que las diez pruebas nombradas por los criterios de la spec existan: no verificado — ninguna está
