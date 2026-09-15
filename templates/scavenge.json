@@ -1,0 +1,32 @@
+{
+  "schema": "vcp.scavenge/1",
+  "feature": "<feature-slug>",
+  "date": "<AAAA-MM-DD>",
+  "scope": "corto",
+  "reusable": [
+    {
+      "id": "R1",
+      "what": "<Que ya existe en este proyecto que sirva para lo que se va a construir, y por que sirve. El tamano lo pone el trabajo: para un cambio chico alcanza una linea por hallazgo.>",
+      "locator": "<archivo:linea>"
+    }
+  ],
+  "missing": [
+    {
+      "id": "M1",
+      "what": "<Que hace falta y no esta. Sin locator a proposito: no se puede apuntar a una linea de algo que no existe.>"
+    }
+  ],
+  "breaks": [
+    {
+      "id": "B1",
+      "what": "<Que se va a romper al hacer este cambio. El locator es opcional: a veces se sabe QUE se rompe y todavia no DONDE.>"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "U1",
+      "question": "<Que queda sin saber sobre el codigo despues de mirarlo.>",
+      "how_to_answer": "<COMO se contesta esa pregunta. Una duda sin forma de resolverla no es un plan para sacarla: es una duda anotada.>"
+    }
+  ]
+}

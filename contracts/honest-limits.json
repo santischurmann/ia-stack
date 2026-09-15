@@ -690,6 +690,12 @@
       "file": "skills/gates.md",
       "phrase": "si ese nombre además fuera una identidad filtrada, este gate no la vería",
       "why": "La comprobacion de identidad busca el nombre de usuario de la maquina que corre el gate. Cuando ese nombre es una palabra del vocabulario del proyecto la busqueda produce ruido y no senal, y un gate que grita en cada corrida se termina apagando, que es la forma mas comun de perder un gate. Medido el 2026-09-14: en un runner de integracion continua la cuenta se llama runner, y este protocolo menciona esa palabra en 72 de sus 393 archivos versionados, un 18%; la filtracion real que motivo el gate era el nombre del autor en 3 de 393, un 0,8%. El corte esta en 5% sobre un corpus de al menos 20 archivos, que es donde un unico archivo deja de poder superarlo solo. El precio es este: alguien cuyo nombre de usuario coincida con una palabra frecuente del proyecto pierde esa mitad del gate, y la filtracion de su nombre no se detecta. La comprobacion de rutas sigue corriendo y no tiene ese problema."
+    },
+    {
+      "limit_id": "scavenge-proves-the-line-exists-not-what-it-says",
+      "file": "skills/gates.md",
+      "phrase": "NO comprueba que esa línea diga lo que la entrada afirma",
+      "why": "El gate abre el archivo que cada hallazgo de reuso declara y comprueba que la linea exista, que es estrictamente mas de lo que hace el gate hermano de citas de research. Lo que no puede hacer es leer esa linea y juzgar si sostiene la afirmacion: eso es comprension, no contabilidad. Un scavenge coherente e inventado, apuntando a lineas que existen, pasa en verde. Las otras tres listas —lo que falta, lo que se rompe y lo que queda sin saber— no tienen forma de probarse y por eso no se les pide locator: exigirlo obligaria a inventar uno, que es empujar una mentira al dato, el mismo error que ya se corrigio dos veces en el gate de la matriz de stacks. Y el alcance lo declara quien escribe, asi que el gate no distingue haber mirado poco de haber mirado mal."
     }
   ]
 }

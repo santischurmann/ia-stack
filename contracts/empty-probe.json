@@ -472,6 +472,15 @@
       ],
       "expect": "reject",
       "why": "Mismo criterio. El orden de las comprobaciones importa: primero el archivo de prueba, despues el binario de vitest. Al reves, una carpeta vacia sin vitest instalado se quejaria de la instalacion y taparia el problema real, que es que no hay prueba."
+    },
+    {
+      "script": "verify-scavenge.mjs",
+      "args": [
+        "check",
+        "docs/scavenge/no-existe.json"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay scavenge, y eso no es un incumplimiento: es un ciclo que todavia no miro su codigo. El gate escribe VACIO y sale 0. La distincion importa mas aca que en otros gates, porque el modo de falla de este paso es que alguien cree el archivo vacio para destrabar: por eso un scavenge CON las cuatro listas vacias si rechaza, mientras que la ausencia del archivo no."
     }
   ]
 }

@@ -250,10 +250,46 @@ Esperando tu respuesta antes de continuar.
    Rechaza una matriz con roles duplicados, herramientas desconocidas, un escritor que también
    aprueba la misma superficie o un rol de sólo lectura con `Write`/`Edit`. Es un contrato de
    separación revisable, no un sandbox: una herramienta externa puede ignorarlo.
-10. **Auto-routing triage** — mecánico, nunca a criterio del modelo: primero enumerá los archivos
-   que hay que **entender o verificar** para decidir con seguridad (archivo a cambiar + sus tests,
-   callers/callees/config o contrato directo; no sólo el tamaño del diff) y registralos en
-   `SESSION.md`. Sólo 1-3 archivos de contexto requerido Y sin ambigüedad de requirements → 🔵
+10. **SCAVENGE — mirá el código, no lo cuentes** (gate: `verify-scavenge.mjs`). Enumerá los
+   archivos que hay que **entender o verificar** para decidir con seguridad (archivo a cambiar +
+   sus tests, callers/callees/config o contrato directo; no sólo el tamaño del diff), registralos en
+   `SESSION.md`, **y abrilos**. Lo que encontrás va a `docs/scavenge/<feature-slug>.json` desde
+   `templates/scavenge.json`, con cuatro listas que responden cuatro preguntas distintas:
+
+   - **`reusable`** — qué YA existe acá que sirva, cada uno con su `archivo:línea`. Es la única
+     comprobable, y el gate **abre el archivo y verifica que esa línea exista**.
+   - **`missing`** — qué falta. Sin locator a propósito: no se puede apuntar a una línea de algo
+     que no está.
+   - **`breaks`** — qué se va a romper. El locator es opcional: a veces se sabe qué y todavía no dónde.
+   - **`unknowns`** — qué queda sin saber, **y cómo se contesta**. Una duda sin forma de resolverla
+     es una duda anotada, no un plan para sacarla.
+
+   **El tamaño lo pone el trabajo, no una regla**: `scope: corto` para un cambio chico son cinco
+   líneas; `scope: completo` para algo grande es un documento. Lo que no cambia es que haya que
+   mirar.
+
+   ```bash
+   node .vibe/vcp-runtime/scripts/verify-scavenge.mjs check docs/scavenge/<feature-slug>.json
+   ```
+
+   Sin archivo el gate escribe `VACÍO:` y sale `0` — un ciclo que todavía no arrancó no incumple
+   nada. Pero **un scavenge con las cuatro listas vacías RECHAZA**: eso no es «miré y no había
+   nada», es no haber mirado, y aceptarlo convertiría el paso en un archivo que se crea para
+   destrabar el gate.
+
+   **Por qué existe este paso.** Medido sobre este mismo documento el 2026-09-15: **ningún paso
+   previo a la spec leía el código**. Se olfateaba el stack con un `ls`, se leía la memoria del
+   protocolo, y se contaban archivos para enrutar — un número que ningún gate validaba y ningún
+   script leía. Todo el encontrar huecos y revisar lógica ocurría después: el escaneo de
+   clarificaciones en la fase 3, los conflictos de plan en la 4, y `verify-scope-diff` **después del
+   GREEN**. Los huecos aparecían con el código ya escrito, que es el momento más caro para verlos.
+
+   **Límite honesto**: el gate comprueba que cada locator resuelva a una línea real. **No comprueba
+   que esa línea diga lo que la entrada afirma**, ni que alguien haya leído el código: un scavenge
+   coherente e inventado pasa en verde. Y el alcance lo declara quien escribe, así que no distingue
+   haber mirado poco de haber mirado mal.
+
+   Con el scavenge escrito, el enrutado sale de él. Sólo 1-3 archivos de contexto requerido Y sin ambigüedad de requirements → 🔵
    ofrecer skip a Direct Build (RED→GREEN→TRIANGULATE→REFACTOR de Phase 5 directo, sin Spec/Plan
    formales, igual hard-gate de red test). 4+ archivos de contexto, o cualquier ambigüedad, o
    pide artefacto durable (spec/plan que otro vaya a leer después) → full pipeline, sin excepción.

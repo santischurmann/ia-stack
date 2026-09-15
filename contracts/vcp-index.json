@@ -815,6 +815,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-scavenge.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-scope-diff.mjs",
       "class": "gate"
     },
@@ -1000,6 +1004,10 @@
     },
     {
       "path": "templates/research-candidates.json",
+      "class": "plantilla"
+    },
+    {
+      "path": "templates/scavenge.json",
       "class": "plantilla"
     },
     {
@@ -1448,6 +1456,22 @@
     },
     {
       "path": "tests/verify-runtime-sync.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-scavenge-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-scavenge-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-scavenge-cobertura.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-scavenge.test.mjs",
       "class": "prueba"
     },
     {
