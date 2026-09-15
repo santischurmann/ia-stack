@@ -1,0 +1,39 @@
+{
+  "schema": "ia.mejoras/1",
+  "run_id": "2026-09-15",
+  "why": "Ronda vencida: pasaron 10 dias del periodo de 7. Sale de una sesion larga que renombro el protocolo entero y rompio -- y reparo -- una invariante dura. Las cuatro propuestas son defectos MEDIDOS hoy, no ideas: tres salieron de que el propio protocolo me agarro haciendo algo mal, y la cuarta de una limitacion que acepte a sabiendas y no tiene fecha de vencimiento.",
+  "propuestas": [
+    {
+      "titulo": "El gate que protege la evidencia sellada no puede avisar antes de commitear, que es cuando todavia se puede deshacer",
+      "por_que": "verifyDiscoveryGrowth ancla contra git: recorre los commits y acusa cualquiera que MODIFIQUE una decision o un packet. Eso lo hace imposible de esquivar recalculando hashes, que es su virtud. Pero tiene una consecuencia medida hoy en carne propia: hasta que el cambio no esta commiteado no hay version commiteada que comparar, asi que la suite dio VERDE con seis archivos sellados ya editados en el arbol de trabajo, y el rojo aparecio recien despues del commit -- y del push. La reparacion costo reescribir historia publica. Un chequeo que comparara el arbol de trabajo contra HEAD habria dicho lo mismo minutos antes, cuando deshacer era `git checkout --`. No reemplaza al ancla de git: la adelanta.",
+      "cita": {
+        "archivo": "scripts/verify-discovery-core.mjs",
+        "texto_literal": "ninguna version commiteada puede modificarlos"
+      }
+    },
+    {
+      "titulo": "Una corrida interrumpida deja sus carpetas temporales y nada las junta despues",
+      "por_que": "Medido hoy: 198 carpetas vcp-discovery-core-* tiradas en Temp, todas del mismo dia, mas 280 en total sobre 105 prefijos distintos. No falta ningun rmSync -- se reviso archivo por archivo: los 50 que usan mkdtempSync tienen al menos uno por cada uno, y el delta de una suite completa es CERO. Salen de corridas matadas: un proceso que muere nunca ejecuta su finally, y este repositorio corre su suite en segundo plano todo el tiempo. El finally no puede cubrir ese caso por construccion. Lo que falta es lo de despues: que la suite barra al arrancar las carpetas de sus propios prefijos mas viejas que unas horas. El riesgo de un barrido es borrar de mas, asi que la regla tendria que ser la misma que se uso a mano hoy: prefijo declarado por una prueba mas los seis caracteres exactos que mkdtemp agrega, nunca un comodin.",
+      "cita": {
+        "archivo": "tests/verify-discovery-core.test.mjs",
+        "texto_literal": "finally { rmSync(value.root, { recursive: true, force: true }); }"
+      }
+    },
+    {
+      "titulo": "El instalador copia y nunca poda, asi que un gate retirado sigue vivo en cada instalacion",
+      "por_que": "Se corrigio hoy el mensaje del gate, que mandaba a reinstalar para arreglar algo que reinstalar no arregla: se comprobo borrando un archivo del checkout, corriendo install.sh exactamente como la linea indicaba, y viendo el archivo seguir ahi. Pero eso arregla el AVISO, no la causa. Un archivo que el origen ya no tiene y sobrevive en la copia instalada es un gate retirado que alguien puede seguir ejecutando, y la unica defensa hoy es que una persona lea el aviso y borre a mano. Podar automaticamente es borrar archivos, asi que no se hizo sin pedirlo: la propuesta es decidirlo, no hacerlo de callado. Una salida intermedia es que el instalador MUEVA lo que sobra a una carpeta con fecha en vez de borrarlo, que es la regla que este repositorio ya usa para el junk.",
+      "cita": {
+        "archivo": "scripts/verify-runtime-sync.mjs",
+        "texto_literal": "el instalador copia, no borra"
+      }
+    },
+    {
+      "titulo": "La compatibilidad del nombre viejo no tiene vencimiento ni contador, asi que nadie va a saber cuando sacarla",
+      "por_que": "Aceptar el prefijo vcp. fue la unica forma de renombrar 42 schemas sin invalidar todo lo que el protocolo produjo hasta hoy, y se declaro como limite honesto. El problema es lo que NO tiene: no hay fecha de corte, no hay aviso y -- sobre todo -- no hay cuenta. Nada mide cuantos artefactos siguen llegando con el nombre viejo, asi que dentro de un ano no va a haber forma de saber si la tolerancia todavia sirve o si ya no la usa nadie y solo queda como deuda. Una sola linea en el verde del gate, diciendo cuantos artefactos leidos traian el prefijo viejo, convierte una compatibilidad eterna en una que se puede retirar con un dato. Es la misma disciplina que el resto: no prometer que es transitoria, sino poder medirlo.",
+      "cita": {
+        "archivo": "skills/gates.md",
+        "texto_literal": "No sabe cuándo termina la compatibilidad"
+      }
+    }
+  ]
+}
