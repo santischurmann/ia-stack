@@ -1011,6 +1011,10 @@
       "class": "plantilla"
     },
     {
+      "path": "templates/spec-minima.md",
+      "class": "plantilla"
+    },
+    {
       "path": "templates/spec.md",
       "class": "plantilla"
     },

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-spec-wordcap.mjs');
-const { QUALITY_FLAG, USAGE, WORD_CAP, checkSpecQuality, countSpecWords, main } = await import(pathToFileURL(script).href);
+const { QUALITY_FLAG, SECCIONES_VIA_CORTA, USAGE, WORD_CAP, checkSpecQuality, countSpecWords, main, viaDeLaSpec } = await import(pathToFileURL(script).href);
 
 import { esRuntimeInstalado } from './_entorno.mjs';
 
@@ -130,7 +130,10 @@ test('FALSIFICACIÓN · con --quality, una spec bajo el tope pero mal formada se
     writeError: (line) => errors.push(line),
   });
   assert.equal(code, 1, 'aceptó una spec sin una sección obligatoria');
-  assert.ok(errors.some((line) => line.includes('quality: missing required section: Constraints / Restricciones')), errors.join(' || '));
+  // El mensaje NOMBRA LA VIA desde el 2026-09-15. Sin eso, «falta Constraints» es desconcertante
+  // para quien creia estar en la via corta: el rechazo tiene que decir contra que listado se
+  // comprobo, o manda a buscar el problema al lugar equivocado.
+  assert.ok(errors.some((line) => /quality \(vía \w+\): missing required section: Constraints \/ Restricciones/u.test(line)), errors.join(' || '));
   // Y la contraprueba: la misma spec sin tocar, con la misma bandera, sale en verde.
   const salida = [];
   assert.equal(main(['check', 'docs/spec.md', QUALITY_FLAG], { readFile: () => VALID_SPEC, hasThreatModel: () => false, write: (l) => salida.push(l), writeError: (l) => errors.push(l) }), 0, errors.join(' || '));
@@ -224,4 +227,134 @@ test('el CLI deriva la exigencia del árbol, no de una bandera', () => {
     write: (m) => dichos.push(m), writeError: () => {},
     readFile: () => VALID_SPEC, hasThreatModel: () => false,
   }), 0, dichos.join('\n'));
+});
+
+// LA VIA CORTA NO SE DECLARA CON UNA BANDERA: SE DERIVA DEL ARBOL.
+//
+// Este gate ya tenia la regla escrita para la seccion de seguridad: «la exigencia se deriva del
+// ARBOL y no de una bandera que alguien tiene que acordarse de pasar», porque una exigencia que
+// depende de recordarla se olvida en la primera sesion bajo presion. La via corta sigue la misma
+// regla: sale del `scope` que el scavenge de esa funcionalidad ya declaro.
+//
+// QUE SE SACA Y QUE NO. En via corta sobreviven tres secciones y se caen cinco:
+//
+//   Problem              se queda — sin esto nadie sabe por que se hizo
+//   Acceptance Criteria  se queda — es lo que leen el test rojo, la traza y el recibo
+//   Definition of Done   se queda — sin esto «terminado» no quiere decir nada
+//
+//   Discovery, Target Users, Constraints, Non-Goals y Stack & Dependencies se caen: son el
+//   expediente de producto, y un cambio de tres archivos sin ambiguedad no necesita uno.
+//
+// EL RIGOR DE LOS CRITERIOS NO BAJA. Gramatica GIVEN/WHEN/THEN, ids unicos, sin marcadores de
+// clarificacion sin resolver y sin marcadores de plantilla: identico en las dos vias. Bajar eso
+// romperia el test rojo, la traza de evidencia y el recibo, que es exactamente lo que hacia que el
+// atajo publicitado no tuviera salida legal.
+//
+// Y LA SEGURIDAD NO TIENE VIA CORTA: si el proyecto declaro una superficie de ataque, la spec la
+// nombra aunque sea corta.
+
+const SPEC_CORTA = [
+  '# Spec: cambio-chico',
+  '',
+  '## Problem / Problema',
+  'Hace falta arreglar una cosa concreta que hoy no anda.',
+  '',
+  '## Acceptance Criteria / Criterios de aceptación',
+  '- [ ] **AC1:** GIVEN una entrada mal formada, WHEN corre el gate, THEN sale 1 nombrando la clave.',
+  '',
+  '## Definition of Done (DoD)',
+  'Suite verde y el gate declarando su límite.',
+  '',
+].join('\n');
+
+test('viaDeLaSpec lee la vía del scavenge de esa funcionalidad, no de una bandera', () => {
+  const corto = { exists: () => true, read: () => JSON.stringify({ scope: 'corto' }) };
+  assert.equal(viaDeLaSpec(SPEC_CORTA, '.', corto), 'corta');
+
+  const completo = { exists: () => true, read: () => JSON.stringify({ scope: 'completo' }) };
+  assert.equal(viaDeLaSpec(SPEC_CORTA, '.', completo), 'completa');
+
+  // Sin scavenge la vía es la completa: la ausencia nunca afloja una exigencia.
+  const ninguno = { exists: () => false, read: () => { throw new Error('no debería leer'); } };
+  assert.equal(viaDeLaSpec(SPEC_CORTA, '.', ninguno), 'completa');
+
+  // Un scavenge ilegible tampoco afloja nada.
+  const roto = { exists: () => true, read: () => 'no es json' };
+  assert.equal(viaDeLaSpec(SPEC_CORTA, '.', roto), 'completa');
+
+  // Y una spec sin título de funcionalidad no resuelve a ningún scavenge.
+  assert.equal(viaDeLaSpec('## Problem / Problema\ntexto\n', '.', corto), 'completa');
+
+  // Ni siquiera algo que no es texto: el lector recibe lo que devuelva `readFile`, y en un proyecto
+  // roto puede ser cualquier cosa. Contestar «completa» es lo correcto; explotar seria un rechazo
+  // con la causa equivocada.
+  for (const basura of [null, undefined, 42]) {
+    assert.equal(viaDeLaSpec(basura, '.', corto), 'completa', JSON.stringify(basura));
+  }
+});
+
+test('VIA CORTA · una spec de tres secciones pasa, y no se le piden las otras cinco', () => {
+  const violaciones = checkSpecQuality(SPEC_CORTA, { via: 'corta' });
+  assert.deepEqual(violaciones, [], violaciones.join(' | '));
+});
+
+test('VIA CORTA · esa misma spec NO pasa como completa', () => {
+  const violaciones = checkSpecQuality(SPEC_CORTA, { via: 'completa' });
+  assert.ok(violaciones.some((v) => /Discovery/u.test(v)), violaciones.join(' | '));
+  assert.ok(violaciones.some((v) => /Non-Goals/u.test(v)), violaciones.join(' | '));
+});
+
+test('VIA CORTA · el rigor de los criterios NO baja', () => {
+  const sinGramatica = SPEC_CORTA.replace(
+    '- [ ] **AC1:** GIVEN una entrada mal formada, WHEN corre el gate, THEN sale 1 nombrando la clave.',
+    '- [ ] **AC1:** el gate tiene que andar bien.',
+  );
+  assert.ok(checkSpecQuality(sinGramatica, { via: 'corta' }).some((v) => /GIVEN/u.test(v)));
+
+  const sinCriterios = SPEC_CORTA.replace(/^- \[ \] \*\*AC1.*$/mu, 'nada acá.');
+  assert.ok(checkSpecQuality(sinCriterios, { via: 'corta' }).some((v) => /acceptance criterion/u.test(v)));
+
+  const conMarcador = SPEC_CORTA.replace('Hace falta arreglar', '[NEEDS CLARIFICATION: qué] Hace falta arreglar');
+  assert.ok(checkSpecQuality(conMarcador, { via: 'corta' }).some((v) => /CLARIFICATION/u.test(v)));
+
+  const duplicado = SPEC_CORTA.replace(
+    '## Definition of Done (DoD)',
+    '- [ ] **AC1:** GIVEN otra cosa, WHEN pasa, THEN sale 1.\n\n## Definition of Done (DoD)',
+  );
+  assert.ok(checkSpecQuality(duplicado, { via: 'corta' }).some((v) => /duplicate/u.test(v)));
+});
+
+test('VIA CORTA · la seguridad no tiene vía corta', () => {
+  const violaciones = checkSpecQuality(SPEC_CORTA, { via: 'corta', requireSecuritySurface: true });
+  assert.ok(violaciones.some((v) => /Security surface/u.test(v)), violaciones.join(' | '));
+});
+
+test('viaDeLaSpec corre contra el DISCO REAL con sus valores por defecto', () => {
+  // Las demas pruebas inyectan `exists` y `read` para poder describir casos sin montar un arbol. Eso
+  // deja sin ejecutar el lado por defecto, que es justo el que corre en produccion: si estuviera
+  // roto, la bateria seguiria en verde y el gate fallaria recien en la maquina de alguien.
+  const d = mkdtempSync(join(tmpdir(), 'vcp-via-'));
+  try {
+    // Sin scavenge en disco: via completa, y sin explotar.
+    assert.equal(viaDeLaSpec(SPEC_CORTA, d), 'completa');
+
+    // Con un scavenge real que declara scope corto: via corta.
+    mkdirSync(join(d, 'docs', 'scavenge'), { recursive: true });
+    writeFileSync(join(d, 'docs', 'scavenge', 'cambio-chico.json'), JSON.stringify({ scope: 'corto' }), 'utf8');
+    assert.equal(viaDeLaSpec(SPEC_CORTA, d), 'corta');
+
+    // Y con uno ilegible en disco: vuelve a completa, nunca afloja.
+    writeFileSync(join(d, 'docs', 'scavenge', 'cambio-chico.json'), 'no es json', 'utf8');
+    assert.equal(viaDeLaSpec(SPEC_CORTA, d), 'completa');
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+});
+
+test('las secciones de la vía corta son las tres que los gates de abajo necesitan', () => {
+  assert.deepEqual(SECCIONES_VIA_CORTA, [
+    'Problem / Problema',
+    'Acceptance Criteria / Criterios de aceptación',
+    'Definition of Done (DoD)',
+  ]);
 });
