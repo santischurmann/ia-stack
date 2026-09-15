@@ -21,7 +21,11 @@
 // LÍMITE HONESTO. Esto hace que un artefacto viejo **se lea**, no que sea correcto: lo que el gate
 // comprueba después es exactamente lo mismo que antes. Y no sabe cuándo termina la compatibilidad —
 // no hay fecha de corte ni aviso: mientras esta función acepte el prefijo viejo, un proyecto puede
-// no migrar nunca y nada se lo va a decir.
+// no migrar nunca y nada se lo va a decir. Lo que SÍ hay desde el 2026-09-15 es un contador, y es
+// la diferencia entre una deuda eterna y una retirable: `leidosConNombreViejo()` dice cuántos de
+// los schemas leídos en esta corrida traían el nombre viejo. Es una foto del proceso, no un
+// histórico — se reinicia en cada corrida —, así que responde «se usa acá y ahora», nunca «nadie lo
+// usa en ningún lado».
 
 /** El prefijo vigente. Todo artefacto nuevo lo escribe. */
 export const PREFIJO = 'ia.';
@@ -47,5 +51,48 @@ export function aLegado(schema) {
  */
 export function mismoSchema(valor, esperado) {
   if (!esCadena(valor) || !esCadena(esperado) || !esperado.startsWith(PREFIJO)) return false;
-  return valor === esperado || valor === aLegado(esperado);
+  return COMPARTIDO.mirar(valor, esperado);
+}
+
+/**
+ * UNA COMPATIBILIDAD QUE NO SE PUEDE MEDIR SE QUEDA PARA SIEMPRE. Este modulo declara por escrito
+ * que no sabe cuando termina la tolerancia; el contador es lo que hace falta para poder retirarla:
+ * sin un numero, dentro de un ano nadie va a poder decir si todavia sirve o si ya no la usa nadie.
+ *
+ * NO CAMBIA NINGUN VEREDICTO. Cuenta, y nada mas. Y cuenta solo lo que COINCIDIO: sumar los
+ * rechazos inflaria el uso del nombre viejo con artefactos que ni siquiera son de esa familia.
+ */
+export function contarLegado() {
+  return {
+    total: 0,
+    legado: 0,
+    mirar(valor, esperado) {
+      if (!esCadena(valor) || !esCadena(esperado) || !esperado.startsWith(PREFIJO)) return false;
+      const viejo = aLegado(esperado);
+      if (valor !== esperado && valor !== viejo) return false;
+      this.total += 1;
+      if (valor === viejo && viejo !== esperado) this.legado += 1;
+      return true;
+    },
+    resumen() {
+      if (this.total === 0) return 'compatibilidad de nombre: nada que contar todavía, ningún schema se comparó.';
+      const base = `compatibilidad de nombre: en esta corrida, ${this.legado} de ${this.total} schema(s) leído(s) traían el prefijo viejo ${LEGADO}`;
+      // NO se dice «nadie la usa». Una corrida que leyo un schema no habla del mundo: habla de esa
+      // corrida. Para retirar la tolerancia hace falta que el numero sea cero SOSTENIDO, no una foto.
+      return this.legado === 0
+        ? `${base}. Cero acá: para retirarla hace falta que siga en cero corrida tras corrida, no una sola vez.`
+        : `${base}. Mientras ese número no sea cero, retirarla rompe artefactos que todavía existen.`;
+    },
+  };
+}
+
+/**
+ * El contador COMPARTIDO, que es el unico numero que sirve. Uno por gate diria «este gate leyo dos
+ * artefactos viejos» y nadie sumaria los 29; lo que se quiere saber es del protocolo entero.
+ */
+const COMPARTIDO = contarLegado();
+
+/** Lo leido hasta ahora en este proceso. Es una foto, no un historico: se reinicia en cada corrida. */
+export function leidosConNombreViejo() {
+  return { total: COMPARTIDO.total, legado: COMPARTIDO.legado, resumen: COMPARTIDO.resumen() };
 }

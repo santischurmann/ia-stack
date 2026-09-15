@@ -663,6 +663,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/limpiar-temporales.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/pretooluse-red.mjs",
       "class": "gate"
     },
@@ -1112,6 +1116,10 @@
     },
     {
       "path": "tests/install-runtime.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/limpiar-temporales.test.mjs",
       "class": "prueba"
     },
     {

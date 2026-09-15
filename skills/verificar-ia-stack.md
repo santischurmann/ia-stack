@@ -70,3 +70,15 @@ directorio incluido. Si el árbol no es un repositorio **falla cerrado**, porque
 poder distinguir lo versionado de lo local es peor que no publicar. Rechaza paths inseguros y
 genera el SHA-256 del ZIP.
 
+## Las carpetas que una corrida interrumpida deja tiradas
+
+```bash
+node scripts/limpiar-temporales.mjs listar
+node scripts/limpiar-temporales.mjs listar --borrar
+```
+
+**El primer comando no borra nada**: lista. El segundo saca sólo lo que la lista mostró. Medido el
+2026-09-15: 198 carpetas de un solo prefijo, todas del mismo día. No faltaba ningún `rmSync` — el
+delta de una suite completa es cero—: salen de corridas matadas, y un proceso que muere nunca
+ejecuta su `finally`. Una carpeta con un `.mq5`, `.ex5`, `.env`, `.key` o `.pem` adentro **no se
+toca**, aunque el nombre coincida.

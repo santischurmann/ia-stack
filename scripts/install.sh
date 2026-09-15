@@ -92,6 +92,15 @@ if [ -n "$PROJECT_DIR" ]; then
 ' "$ARCHIVE_RULE" >> "$IGNORE_FILE"
     echo "OK: $ARCHIVE_RULE agregado a .gitignore"
   fi
+  # Lo que la poda mueve es una copia del runtime, igual que el runtime: tampoco se versiona.
+  RUNTIME_ARCHIVE_RULE=".vibe/ia-stack-archive/"
+  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$RUNTIME_ARCHIVE_RULE" "$IGNORE_FILE"; then
+    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
+    printf '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto
+%s
+' "$RUNTIME_ARCHIVE_RULE" >> "$IGNORE_FILE"
+    echo "OK: $RUNTIME_ARCHIVE_RULE agregado a .gitignore"
+  fi
   IGNORE_RULE=".vibe/ia-stack-runtime/"
   if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
     [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
@@ -119,13 +128,23 @@ if [ -n "$PROJECT_DIR" ]; then
   else
     echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
   fi
-    # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15, cuando el protocolo paso a llamarse IA Stack. El
-  # instalador COPIA Y NUNCA PODA, asi que una instalacion anterior queda con las dos carpetas y la
-  # vieja es una copia de los gates que alguien puede ejecutar sin darse cuenta. No se borra sola:
-  # borrar sin que lo pidan es peor que avisar.
+  # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15, cuando el protocolo paso a llamarse IA Stack. Hasta
+  # entonces el instalador COPIABA Y NUNCA PODABA, asi que una instalacion anterior quedaba con las
+  # dos y la vieja era una copia de los gates que alguien podia ejecutar sin darse cuenta. Avisar no
+  # alcanzaba: el aviso se lee una vez y la copia se queda para siempre.
+  #
+  # AHORA SE PODA, Y SE PODA MOVIENDO. Es la regla de oro del propio protocolo -- en una limpieza NO
+  # EXISTE rm: todo se mueve conservando la ruta -- y aca vale igual. La carpeta vieja va al lado, a
+  # la vista, con fecha, y vuelve con un mv si algo se rompio.
   if [ -d "$VIBE_DIR/vcp-runtime" ]; then
-    echo "AVISO: quedo $VIBE_DIR/vcp-runtime, del nombre anterior del protocolo. Ya no se actualiza."
-    echo "       Borrala a mano, mirando la ruta, para que no sobreviva una copia vieja de los gates."
+    ARCHIVO_DIR="$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%d)"
+    mkdir -p "$ARCHIVO_DIR"
+    if mv "$VIBE_DIR/vcp-runtime" "$ARCHIVO_DIR/vcp-runtime"; then
+      echo "PODADO: $VIBE_DIR/vcp-runtime era del nombre anterior y ya no se actualizaba."
+      echo "        Se MOVIO a $ARCHIVO_DIR/vcp-runtime. No se borro nada: si algo se rompe, vuelve con mv."
+    else
+      echo "AVISO: no se pudo mover $VIBE_DIR/vcp-runtime. Sacala a mano: es una copia vieja de los gates." >&2
+    fi
   fi
   echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"
 else

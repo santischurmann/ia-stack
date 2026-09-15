@@ -70,3 +70,5 @@ research/semantic-functional-index-*.json.gz
 # repositorio: en un clon de otra persona un `git add -A` la publicaba. La regla vive aca para que
 # la proteccion sea del proyecto y no de la maquina.
 .claude/
+# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto
+.vibe/ia-stack-archive/

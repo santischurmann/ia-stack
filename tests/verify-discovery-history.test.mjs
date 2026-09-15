@@ -15,6 +15,7 @@ import {
   IMMUTABLE_IN_RUN,
   findMutations,
   gitDiscoveryVersions,
+  mutacionesSinCommitear,
   main,
   parseArgs,
   verifyDiscoveryGrowth,
@@ -261,4 +262,124 @@ test('main dice "borrado" y no "modificado" cuando el expediente se recortó', (
   const borrada = { anchored: true, error: null, commits: 2, violations: [{ commit: 'def5678', path: `docs/discovery/${SLUG}/runs/run-001/decisions/d002.json`, change: 'D' }] };
   assert.equal(main(['history', '--feature', SLUG], '.', () => {}, (m) => errores.push(m), undefined, { growth: () => borrada }), 1);
   assert.match(errores.join('\n'), /borrado en def5678/u);
+});
+
+// --- EL AVISO LLEGA ANTES DE COMMITEAR, QUE ES CUANDO TODAVIA SE PUEDE DESHACER ------------------
+//
+// EL DEFECTO, pagado en carne propia el 2026-09-15 y anotado como propuesta 1 de la ronda de ese
+// dia. `findMutations` recorre la HISTORIA de git, y eso lo hace imposible de esquivar recalculando
+// hashes: un expediente reescrito entero vuelve a cuadrar contra si mismo, y contra git no. Esa es
+// su virtud y no se toca.
+//
+// Su consecuencia es que **no puede hablar hasta que el cambio esta commiteado**. Ese dia se
+// editaron seis archivos sellados en el arbol de trabajo, la suite entera dio VERDE -- no habia
+// version commiteada que comparar --, se commiteo, se publico, y recien ahi aparecio el rojo. La
+// reparacion costo reescribir historia publica. Un `git diff HEAD` habria dicho lo mismo minutos
+// antes, cuando deshacer era un `git checkout --`.
+//
+// `mutacionesSinCommitear` NO reemplaza al ancla: la adelanta. Son dos preguntas distintas y las dos
+// hacen falta -- una mira lo que ya paso y no se puede cambiar, la otra lo que esta por pasar.
+
+test('mutacionesSinCommitear acusa un archivo sellado modificado que TODAVIA no se commiteó', () => {
+  repo(({ raiz, escribir, commit }) => {
+    escribir(packet(SLUG, 2), '{"decision_id":"d002"}');
+    commit('expediente inicial');
+    escribir(packet(SLUG, 2), '{"decision_id":"d002","editado":true}');
+
+    const sucias = mutacionesSinCommitear(raiz, SLUG);
+    assert.equal(sucias.length, 1, JSON.stringify(sucias));
+    assert.match(sucias[0].path, /packets\/d002\.json$/u);
+    assert.equal(sucias[0].change, 'M');
+  });
+});
+
+test('un archivo sellado NUEVO no es una mutación: el expediente crece agregando', () => {
+  repo(({ raiz, escribir, commit }) => {
+    escribir(packet(SLUG, 2), '{"decision_id":"d002"}');
+    commit('expediente inicial');
+    escribir(packet(SLUG, 9), '{"decision_id":"d009"}');
+    assert.deepEqual(mutacionesSinCommitear(raiz, SLUG), []);
+  });
+});
+
+test('las vistas derivadas cambian sin acusar: cambiar es su trabajo', () => {
+  repo(({ raiz, escribir, commit }) => {
+    escribir(packet(SLUG, 2), '{"decision_id":"d002"}');
+    escribir(`docs/discovery/${SLUG}/views/run-001.md`, '# vista\n');
+    commit('expediente inicial');
+    escribir(`docs/discovery/${SLUG}/views/run-001.md`, '# vista regenerada\n');
+    assert.deepEqual(mutacionesSinCommitear(raiz, SLUG), []);
+  });
+});
+
+test('verifyDiscoveryGrowth trae las dos listas, y las distingue', () => {
+  // Las commiteadas ya no se deshacen sin reescribir historia; las sucias se deshacen con un
+  // checkout. Mezclarlas en una lista perdería justamente la diferencia que hace útil avisar.
+  repo(({ raiz, escribir, commit }) => {
+    escribir(packet(SLUG, 2), '{"decision_id":"d002"}');
+    commit('expediente inicial');
+    escribir(packet(SLUG, 2), '{"decision_id":"d002","editado":true}');
+
+    const r = verifyDiscoveryGrowth(raiz, SLUG);
+    assert.equal(r.anchored, true);
+    assert.deepEqual(r.violations, [], 'nada commiteado modificó un archivo sellado');
+    assert.equal(r.sinCommitear.length, 1, JSON.stringify(r.sinCommitear));
+  });
+});
+
+test('main history RECHAZA una mutación sin commitear, diciendo que todavía se deshace', () => {
+  const errores = [];
+  const sucio = {
+    anchored: true,
+    error: null,
+    commits: 3,
+    violations: [],
+    sinCommitear: [{ path: `docs/discovery/${SLUG}/runs/run-001/packets/d002.json`, change: 'M' }],
+  };
+  assert.equal(main(['history', '--feature', SLUG], '.', () => {}, (m) => errores.push(m), undefined, { growth: () => sucio }), 1);
+  assert.match(errores.join('\n'), /DISCOVERY_HISTORY_DIRTY/u);
+  assert.match(errores.join('\n'), /d002\.json/u);
+  assert.match(errores.join('\n'), /checkout/u, 'tiene que decir cómo deshacerlo mientras todavía se puede');
+});
+
+test('EL EXPEDIENTE REAL no tiene mutaciones sin commitear tampoco', () => {
+  const raizReal = dirname(dirname(fileURLToPath(import.meta.url)));
+  if (esRuntimeInstalado(raizReal)) return;
+  assert.deepEqual(mutacionesSinCommitear(raizReal, 'integridad-verificable'), []);
+});
+
+test('si git no contesta, mutacionesSinCommitear no inventa una lista vacía de seguridad', () => {
+  // Devuelve `[]` a propósito y eso es una decisión, no un olvido: el ancla de la historia sigue
+  // siendo la que manda, y un rojo acá por un git que no respondió sería ruido sobre el gate real.
+  assert.deepEqual(mutacionesSinCommitear('/x', SLUG, () => ({ status: 128, stdout: '', stderr: 'not a repo' })), []);
+});
+
+test('un git que contesta sin salida no rompe: lista vacía, no una excepción', () => {
+  assert.deepEqual(mutacionesSinCommitear('/x', SLUG, () => ({ status: 0 })), []);
+});
+
+test('lo que está FUERA del expediente del feature no entra, aunque git lo nombre', () => {
+  const salida = mutacionesSinCommitear('/x', SLUG, () => ({
+    status: 0,
+    stdout: [
+      'M\tdocs/spec.md',
+      `M\tdocs/discovery/otro-feature/runs/run-001/packets/d002.json`,
+      `M\tdocs/discovery/${SLUG}/runs/run-001/packets/d002.json`,
+      '',
+    ].join('\n'),
+  }));
+  assert.deepEqual(salida.map((x) => x.path), [`docs/discovery/${SLUG}/runs/run-001/packets/d002.json`]);
+});
+
+test('un archivo sellado BORRADO sin commitear se dice como borrado, no como modificado', () => {
+  const errores = [];
+  const sucio = {
+    anchored: true,
+    error: null,
+    commits: 2,
+    violations: [],
+    sinCommitear: [{ path: `docs/discovery/${SLUG}/runs/run-001/packets/d002.json`, change: 'D' }],
+  };
+  assert.equal(main(['history', '--feature', SLUG], '.', () => {}, (m) => errores.push(m), undefined, { growth: () => sucio }), 1);
+  assert.match(errores.join('\n'), /borrado: /u);
 });

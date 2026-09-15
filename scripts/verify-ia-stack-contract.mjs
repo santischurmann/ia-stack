@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { EMPTY_PREFIX, esRuntimeInstalado } from './verify-runtime-sync.mjs';
+import { leidosConNombreViejo } from './schema-compat.mjs';
 import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-ia-stack-contract.mjs check';
@@ -361,6 +362,10 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     return 1;
   }
   write(`OK: ${REQUIREMENTS.length + FORBIDDEN_PHRASES.length} user-visible protocol contract checks pass; ${limits.length} honest limit${limits.length === 1 ? '' : 's'} verified.`);
+  // EL DATO QUE PERMITE RETIRAR LA COMPATIBILIDAD ALGUN DIA. Sin un numero, una tolerancia que se
+  // promete transitoria se queda para siempre: nadie puede decir si todavia sirve. Es una foto de
+  // ESTA corrida, no un historico, y el mensaje lo dice asi.
+  write(leidosConNombreViejo().resumen);
   return 0;
 }
 

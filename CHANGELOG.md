@@ -7,6 +7,44 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Las cuatro propuestas de la ronda del 2026-09-15, cerradas el mismo día.** Cada una con su
+  prueba roja antes, y las cuatro salieron de defectos medidos ese día — tres de que el propio
+  protocolo me agarró haciendo algo mal.
+
+  - **El aviso llega antes de commitear, que es cuando todavía se puede deshacer.**
+    `mutacionesSinCommitear` compara el árbol de trabajo contra `HEAD`, y `history` lo reporta como
+    `DISCOVERY_HISTORY_DIRTY` con el comando exacto para revertirlo. **No reemplaza al ancla de
+    git: la adelanta.** Las dos listas viajan separadas porque mezclarlas perdería la única
+    diferencia que importa — lo commiteado ya no se deshace sin reescribir historia, lo sucio sí.
+    Es la propuesta que salió de que la suite diera verde con seis archivos sellados ya editados, y
+    el rojo apareciera después del push.
+  - **`limpiar-temporales.mjs`, y la mitad de su valor es que LISTA por defecto.** Sólo borra con
+    `--borrar`. Es la única herramienta del protocolo que borra, y hacerlo de más en el temporal
+    del sistema es borrar el trabajo de otro programa. Tres defensas más una: los prefijos **se
+    derivan de `tests/`**, el nombre tiene que ser prefijo + los **seis caracteres exactos** de
+    `mkdtempSync` sin comodines, una carpeta con `.mq5`/`.ex5`/`.env`/`.key`/`.pem` adentro **no se
+    toca y se nombra**, y si no se puede derivar un solo prefijo **rechaza en vez de barrer** —
+    una lista vacía con comodín de respaldo borraría el temporal entero.
+  - **El instalador ahora poda, y poda moviendo.** Avisar no alcanzaba: el aviso se lee una vez y
+    la copia vieja se queda para siempre. Los dos instaladores mueven la carpeta del nombre
+    anterior a `.vibe/ia-stack-archive/<fecha>/` — la regla de oro del propio protocolo, en una
+    limpieza **no existe `rm`** — y agregan esa ruta al `.gitignore`. Probado sobre una instalación
+    de mentira con un gate viejo plantado: terminó en el archivo con fecha, nada se borró.
+  - **La compatibilidad del nombre viejo ahora se puede medir.** `contarLegado` cuenta cuántos de
+    los schemas leídos traían el prefijo `vcp.`, y la línea sale en el verde del gate de
+    auto-chequeo. **No cambia ningún veredicto: cuenta.** Y cuenta sólo lo que coincidió — sumar
+    los rechazos inflaría el uso del nombre viejo con artefactos de otra familia.
+
+  - **Tres hallazgos colaterales, los tres corregidos antes de commitear.** La primera versión del
+    contador decía *«cero: la tolerancia ya no la usa nadie y se puede retirar»* sobre una muestra
+    de **un** schema en **un** proceso: exactamente el verde sobreafirmado que este repositorio
+    persigue, y ahora dice «en esta corrida» y aclara que retirarla pide cero **sostenido**. La
+    primera versión de la poda declaró la variable de la regla de ignorado y **no la usó** en
+    ninguno de los dos instaladores — código muerto, peor que no tenerla, porque parece que la
+    regla está puesta y nadie la escribe. Y `limpiar-temporales` guardaba el motivo de cada carpeta
+    que no pudo sacar y **nunca lo imprimía**: una que fallaba por estar en uso se veía igual que
+    una protegida por tener un fuente adentro.
+
 - **Un solo nombre: IA Stack.** El repositorio, el protocolo, la skill y los identificadores
   internos. Hasta hoy convivían dos —el repositorio `ia-stack` y el protocolo
   `VibeCodeProtocols`—, por una decisión anterior que está registrada: entonces se renombró el

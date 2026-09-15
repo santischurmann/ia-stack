@@ -67,6 +67,13 @@ if ($ProjectDir) {
     Write-Output "OK: $ArchiveRule agregado a .gitignore"
   }
   $ignoreFile = Join-Path $ProjectDir '.gitignore'
+  # Lo que la poda mueve es una copia del runtime, igual que el runtime: tampoco se versiona.
+  $runtimeArchiveRule = '.vibe/ia-stack-archive/'
+  if (-not ((Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $runtimeArchiveRule))) {
+    Add-Content -Path $ignoreFile -Value '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto'
+    Add-Content -Path $ignoreFile -Value $runtimeArchiveRule
+    Write-Host "OK: $runtimeArchiveRule agregado a .gitignore" -ForegroundColor Green
+  }
   $ignoreRule = '.vibe/ia-stack-runtime/'
   $yaEsta = (Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $ignoreRule)
   if (-not $yaEsta) {
@@ -93,12 +100,22 @@ if ($ProjectDir) {
   } else {
     Write-Output "NOTE: $ProjectAgents ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
   }
-    # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15. El instalador copia y nunca poda: una instalacion
-  # anterior queda con las dos, y la vieja es una copia de los gates que alguien puede ejecutar sin
-  # darse cuenta. No se borra sola.
+    # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15. Hasta entonces el instalador copiaba y nunca podaba,
+  # asi que una instalacion anterior quedaba con las dos y la vieja era una copia de los gates que
+  # alguien podia ejecutar sin darse cuenta. Avisar no alcanzaba: el aviso se lee una vez.
+  #
+  # AHORA SE PODA MOVIENDO, que es la regla de oro del propio protocolo: en una limpieza no existe
+  # rm. La carpeta vieja va al lado, con fecha, y vuelve con un Move-Item si algo se rompio.
   if (Test-Path "$VibeDir\vcp-runtime") {
-    Write-Output "AVISO: quedo $VibeDir\vcp-runtime, del nombre anterior del protocolo. Ya no se actualiza."
-    Write-Output "       Borrala a mano, mirando la ruta, para que no sobreviva una copia vieja de los gates."
+    $archivoDir = Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format 'yyyy-MM-dd'))
+    New-Item -ItemType Directory -Force -Path $archivoDir | Out-Null
+    try {
+      Move-Item -LiteralPath "$VibeDir\vcp-runtime" -Destination (Join-Path $archivoDir 'vcp-runtime') -Force -ErrorAction Stop
+      Write-Output "PODADO: $VibeDir\vcp-runtime era del nombre anterior y ya no se actualizaba."
+      Write-Output "        Se MOVIO a $archivoDir\vcp-runtime. No se borro nada: si algo se rompe, vuelve con Move-Item."
+    } catch {
+      Write-Output "AVISO: no se pudo mover $VibeDir\vcp-runtime. Sacala a mano: es una copia vieja de los gates."
+    }
   }
   Write-Host "OK: project runtime -> $VibeDir\ia-stack-runtime" -ForegroundColor Green
 } else {

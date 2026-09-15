@@ -223,7 +223,10 @@ test('main reports pass, invalid usage and a real repository contract failure wi
   const output = [];
   const errors = [];
   assert.equal(main(['check'], repoRoot, (line) => output.push(line), (line) => errors.push(line)), 0);
-  assert.match(output.at(-1), /contract checks pass/);
+  // Se mira el conjunto y no la ultima linea: desde el 2026-09-15 el verde lleva una linea mas -- el
+  // contador de compatibilidad de nombre -- y afirmar sobre la ULTIMA ataba la prueba al orden en que
+  // se escriben, que no es lo que dice verificar.
+  assert.match(output.join('\n'), /contract checks pass/u);
   assert.equal(main([], repoRoot, () => {}, (line) => errors.push(line)), 2);
   assert.match(errors.at(-1), /usage:/i);
   assert.equal(main(['check'], join(repoRoot, 'does-not-exist'), () => {}, (line) => errors.push(line)), 1);
@@ -486,7 +489,8 @@ test('FALSIFICACIÓN · main verifica los límites honestos además de los REQUI
     writeHonestLimits(root, honestLimitsDocument([limit]));
     const output = [];
     assert.equal(main(['check'], root, (line) => output.push(line), () => {}, root), 0);
-    assert.match(output.at(-1), /1 honest limit/u);
+    // Mismo motivo que arriba: el verde lleva una linea mas desde el 2026-09-15.
+    assert.match(output.join('\n'), /1 honest limit/u);
 
     writeContractFixture(root, { 'README.md': completeRead('README.md').replace(limit.phrase, 'El gate prueba comprensión') });
     const weakened = [];

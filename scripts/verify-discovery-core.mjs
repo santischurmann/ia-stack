@@ -527,10 +527,44 @@ export function findMutations(cwd, featureSlug, run = spawnSync) {
   return mutations;
 }
 
+/**
+ * Lo mismo que `findMutations`, pero sobre el ARBOL DE TRABAJO: archivos sellados que ya estan
+ * commiteados y se modificaron sin commitear todavia.
+ *
+ * POR QUE EXISTE, y se pago en carne propia el 2026-09-15. `findMutations` recorre la historia, y
+ * eso lo hace imposible de esquivar recalculando hashes -- un expediente reescrito entero vuelve a
+ * cuadrar contra si mismo, y contra git no --. Esa es su virtud. Su consecuencia es que no puede
+ * hablar hasta que el cambio esta commiteado: ese dia se editaron seis archivos sellados, la suite
+ * dio VERDE porque no habia version commiteada que comparar, se commiteo, se publico, y el rojo
+ * aparecio recien ahi. La reparacion costo reescribir historia publica.
+ *
+ * Esto NO reemplaza al ancla: la adelanta. Son dos preguntas distintas y las dos hacen falta -- una
+ * mira lo que ya paso y no se puede cambiar, la otra lo que todavia se deshace con un checkout.
+ *
+ * `--diff-filter=MD` igual que el ancla: un archivo NUEVO no es una mutacion, porque el expediente
+ * crece agregando. Y las vistas quedan afuera por `IMMUTABLE_IN_RUN`, que es su unico filtro.
+ */
+export function mutacionesSinCommitear(cwd, featureSlug, run = spawnSync) {
+  const git = gitRunner(cwd, run);
+  const path = `docs/discovery/${featureSlug}`;
+  const diff = git('diff', 'HEAD', '--diff-filter=MD', '--name-status', '--', path);
+  if (diff.status !== 0) return [];
+  const sucias = [];
+  for (const raw of (diff.stdout ?? '').split('\n')) {
+    const line = raw.trim();
+    if (line === '') continue;
+    const [change, ...rest] = line.split('\t');
+    const changed = rest.join('\t').replaceAll('\\', '/');
+    if (!changed.startsWith(`${path}/`)) continue;
+    if (IMMUTABLE_IN_RUN.test(changed)) sucias.push({ path: changed, change: change[0] });
+  }
+  return sucias;
+}
+
 export function verifyDiscoveryGrowth(cwd, featureSlug, options = {}) {
   const run = options.run ?? spawnSync;
   const { error, commits } = (options.versions ?? gitDiscoveryVersions)(cwd, featureSlug, run);
-  if (error !== null) return { anchored: false, error, commits: 0, violations: [] };
+  if (error !== null) return { anchored: false, error, commits: 0, violations: [], sinCommitear: [] };
   if (commits.length === 0) {
     // Sin version commiteada no hay ancla. Distinguimos el proyecto que todavia no registro nada
     // -no hay expediente en disco tampoco- del expediente que existe y nunca entro a la historia:
@@ -541,9 +575,18 @@ export function verifyDiscoveryGrowth(cwd, featureSlug, options = {}) {
       error: enDisco ? `el expediente de ${featureSlug} existe en disco y nunca se commiteó: no hay ninguna versión contra la cual anclarlo` : null,
       commits: 0,
       violations: [],
+      sinCommitear: [],
     };
   }
-  return { anchored: true, error: null, commits: commits.length, violations: (options.mutations ?? findMutations)(cwd, featureSlug, run) };
+  return {
+    anchored: true,
+    error: null,
+    commits: commits.length,
+    violations: (options.mutations ?? findMutations)(cwd, featureSlug, run),
+    // Las commiteadas ya no se deshacen sin reescribir historia; estas si, con un checkout. Van en
+    // listas separadas porque mezclarlas perderia justamente la diferencia que hace util avisar.
+    sinCommitear: (options.sucias ?? mutacionesSinCommitear)(cwd, featureSlug, run),
+  };
 }
 
 export function parseArgs(args) {
@@ -578,6 +621,16 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
       if (growth.violations.length > 0) {
         writeError(`REJECTED: DISCOVERY_HISTORY_REWRITTEN: ${growth.violations.length} decisión(es) o packet(s) ya commiteados fueron modificados o borrados:`);
         for (const v of growth.violations) writeError(`  ${v.change === 'D' ? 'borrado' : 'modificado'} en ${String(v.commit).slice(0, 7)}: ${v.path}`);
+        return 1;
+      }
+      // EL AVISO QUE LLEGA A TIEMPO. Va DESPUES de las commiteadas y antes del verde: lo de arriba
+      // ya no se deshace sin reescribir historia, esto todavia se deshace con un checkout. Se
+      // separan porque mezclarlas perderia la unica diferencia que hace util avisar.
+      if ((growth.sinCommitear ?? []).length > 0) {
+        writeError(`REJECTED: DISCOVERY_HISTORY_DIRTY: ${growth.sinCommitear.length} decisión(es) o packet(s) ya commiteados están modificados en el árbol de trabajo, y todavía NO se commitearon:`);
+        for (const v of growth.sinCommitear) writeError(`  ${v.change === 'D' ? 'borrado' : 'modificado'}: ${v.path}`);
+        writeError('  Un expediente sólo crece: si la fuente cambió, la reparación es AGREGAR una decisión de corrección que supersede, nunca editar lo sellado.');
+        writeError(`  Mientras no se commitee, esto se deshace: git checkout -- docs/discovery/${parsed.featureSlug}/`);
         return 1;
       }
       write(`OK: el expediente de ${parsed.featureSlug} sólo creció a lo largo de ${growth.commits} versión(es) commiteada(s); reescribirlo exigiría reescribir la historia de git.`);

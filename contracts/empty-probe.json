@@ -506,6 +506,14 @@
       "args": [],
       "expect": "skip",
       "why": "No es un gate: es la biblioteca que decide si un schema con el prefijo viejo `vcp.` equivale al nuevo `ia.`. No tiene CLI ni lee el directorio de trabajo, asi que no hay comportamiento sobre una carpeta vacia que probar. Lo que hace de verdad lo prueban tests/schema-compat.test.mjs y los 29 gates que la importan."
+    },
+    {
+      "script": "limpiar-temporales.mjs",
+      "args": [
+        "listar"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay carpetas de prueba viejas que limpiar, y eso no es un incumplimiento: escribe VACIO y sale 0. Importa que sea VACIO y no OK porque esta herramienta BORRA cuando se lo piden, y un verde sobre una carpeta que no miro seria la peor forma de invitar a correrla con --borrar."
     }
   ]
 }

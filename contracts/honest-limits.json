@@ -714,6 +714,12 @@
       "file": "skills/gates.md",
       "phrase": "No sabe cuándo termina la compatibilidad",
       "why": "Aceptar el prefijo viejo era la unica forma de renombrar los 42 schemas sin invalidar todo lo que el protocolo produjo hasta el 2026-09-15: recibos, contratos, paquetes de Discovery. El costo es que la tolerancia no tiene vencimiento. No hay fecha de corte, no hay aviso y no hay conteo: un proyecto que nunca migre sus artefactos va a pasar en verde para siempre, y este repositorio no se va a enterar. Se declara en vez de fingir que es temporal, porque una compatibilidad que se promete transitoria y nadie retira es peor que una que se sabe permanente. Lo que si esta acotado es el alcance: solo el prefijo, con la misma familia y la misma version, y solo en la direccion viejo-hacia-nuevo."
+    },
+    {
+      "limit_id": "temp-sweep-guesses-dead-from-age",
+      "file": "skills/gates.md",
+      "phrase": "NO sabe si una carpeta es de un proceso vivo",
+      "why": "La herramienta distingue una carpeta de corrida muerta de una viva por la antiguedad, y eso es una apuesta y no una prueba: no hay forma portable de preguntarle al sistema si el proceso que creo una carpeta temporal sigue corriendo. Una corrida larga que pase el umbral se veria como basura. Por eso el modo por defecto LISTA y borrar es una decision explicita, y por eso el umbral es de horas y no de minutos. Lo que si esta acotado es el alcance: solo entra lo que coincide EXACTO con un prefijo derivado de tests/ mas los seis caracteres de mkdtemp, y nunca una carpeta con un fuente del usuario adentro."
     }
   ]
 }
