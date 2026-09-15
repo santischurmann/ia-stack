@@ -169,21 +169,28 @@ test('FALSIFICACIÓN · contract rejects "confirms a genuine RED" / "genuine RED
   assert.deepEqual(legitimateOnly, []);
 });
 
-test('FALSIFICACIÓN · contract rejects SKILL.md missing receipt evidence limits or the scope-vs-diff gate', () => {
-  const missingAllCompliant = contractViolations((path) => path === 'SKILL.md'
-    ? completeRead(path).replace('Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC', 'algo distinto')
-    : completeRead(path));
-  assert.equal(missingAllCompliant.some((item) => /SKILL\.md: missing receipt v2: all-AC-COMPLIANT requirement/u.test(item)), true);
+// EL ARCHIVO CAMBIO, LA INVARIANTE NO. Las reglas del receipt vivian adentro de la fase 6 de
+// SKILL.md y se mudaron a `skills/receipt.md` el 2026-09-15: eran 170 lineas de un subsistema
+// entero —esquema, reglas duras, ciclo de vida y limites honestos— documentado en el medio de la
+// fase de pruebas, y sacarlas bajo esa fase de 533 a 377 lineas sin tocar una sola regla. Lo que
+// esta prueba comprueba sigue siendo lo mismo: que borrar cualquiera de esas promesas se detecte.
+test('FALSIFICACIÓN · contract rejects skills/receipt.md missing receipt evidence limits or the scope-vs-diff gate', () => {
+  const RECIBO = 'skills/receipt.md';
 
-  const missingCryptoLimit = contractViolations((path) => path === 'SKILL.md'
-    ? completeRead(path).replace('nunca re-ejecuta el comando ni prueba criptográficamente', 'algo distinto')
+  const missingAllCompliant = contractViolations((path) => path === RECIBO
+    ? completeRead(path).replaceAll('Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC', 'algo distinto')
     : completeRead(path));
-  assert.equal(missingCryptoLimit.some((item) => /SKILL\.md: missing receipt v2: command\/result is reviewable evidence/u.test(item)), true);
+  assert.equal(missingAllCompliant.some((item) => /skills\/receipt\.md: missing receipt v2: all-AC-COMPLIANT requirement/u.test(item)), true);
 
-  const missingScopeLimit = contractViolations((path) => path === 'SKILL.md'
-    ? completeRead(path).replace('scope.declared_paths sigue siendo un writer set verify-scope-diff.mjs', 'scope declaration omitted')
+  const missingCryptoLimit = contractViolations((path) => path === RECIBO
+    ? completeRead(path).replaceAll('nunca re-ejecuta el comando ni prueba criptográficamente', 'algo distinto')
     : completeRead(path));
-  assert.equal(missingScopeLimit.some((item) => /SKILL\.md: missing receipt v2: scope declaration and separate diff gate/u.test(item)), true);
+  assert.equal(missingCryptoLimit.some((item) => /skills\/receipt\.md: missing receipt v2: command\/result is reviewable evidence/u.test(item)), true);
+
+  const missingScopeLimit = contractViolations((path) => path === RECIBO
+    ? completeRead(path).replaceAll('scope.declared_paths sigue siendo un writer set verify-scope-diff.mjs', 'scope declaration omitted')
+    : completeRead(path));
+  assert.equal(missingScopeLimit.some((item) => /skills\/receipt\.md: missing receipt v2: scope declaration and separate diff gate/u.test(item)), true);
 });
 
 test('FALSIFICACIÓN · contract rejects docs that drop the runtime-sync gate or the promise that it runs from the source checkout', () => {

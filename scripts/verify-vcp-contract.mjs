@@ -70,9 +70,9 @@ export const REQUIREMENTS = [
   ['SECURITY.md', /configuraciones peligrosas de GitHub Actions/u, 'documented GitHub Actions detection scope'],
   ['SECURITY.md', /no una frontera de confianza/u, 'PreToolUse hook honest limit'],
   ['SECURITY.md', /no autentica a quien/u, 'ZIP checksum honest limit'],
-  ['SKILL.md', /Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC/u, 'receipt v2: all-AC-COMPLIANT requirement'],
-  ['SKILL.md', /nunca re-ejecuta el comando ni prueba criptográficamente/u, 'receipt v2: command/result is reviewable evidence, not cryptographic proof'],
-  ['SKILL.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
+  ['skills/receipt.md', /Regla dura sobre `acceptance_criteria`: `terminal_state: "approved"` exige TODOS los AC/u, 'receipt v2: all-AC-COMPLIANT requirement'],
+  ['skills/receipt.md', /nunca re-ejecuta el comando ni prueba criptográficamente/u, 'receipt v2: command/result is reviewable evidence, not cryptographic proof'],
+  ['skills/receipt.md', /`?scope\.declared_paths`? sigue siendo un writer set[\s\S]*verify-scope-diff\.mjs/u, 'receipt v2: scope declaration and separate diff gate'],
   ['SKILL.md', /\.vibe\/vcp-runtime\/scripts\/verify-spec-wordcap\.mjs/u, 'mechanical spec word-cap gate'],
   ['SKILL.md', /verify-spec-wordcap\.mjs check docs\/spec\.md --quality/u, 'strict spec quality-shape gate'],
   ['skills/gates.md', /verify-spec-wordcap\.mjs --quality/u, 'strict spec quality-shape gate'],
@@ -137,8 +137,8 @@ export const REQUIREMENTS = [
   ['skills/gates.md', /verify-threat-model\.mjs/u, 'the attack-surface gate is in the gate table'],
   ['SKILL.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   ['SKILL.md', /soporte declarado/u, 'DoD asks what a user complaint is diagnosed with'],
-  ['SKILL.md', /El discriminador es mecánico, no de criterio: el campo/u, 'limit vs regression is decided by shape, never by judgement'],
-  ['SKILL.md', /refutar es\nun hecho contable, no una impresión|refutar es un hecho contable/u, 'the adversarial round is counted, not narrated'],
+  ['skills/receipt.md', /El discriminador es mecánico, no de criterio: el campo/u, 'limit vs regression is decided by shape, never by judgement'],
+  ['skills/receipt.md', /refutar es\nun hecho contable, no una impresión|refutar es un hecho contable/u, 'the adversarial round is counted, not narrated'],
   ['skills/gates.md', /vcp\.receipt\/v3/u, 'the receipt schema that can authorize a commit'],
   // El gate y la regla se fijan aparte a proposito: el gate detecta la regla, pero la regla es del
   // protocolo y tiene que seguir escrita aunque alguien mueva, renombre o borre el gate que la

@@ -93,7 +93,7 @@
     },
     {
       "limit_id": "receipt-command-is-never-re-executed",
-      "file": "SKILL.md",
+      "file": "skills/receipt.md",
       "phrase": "nunca re-ejecuta el comando ni prueba criptográficamente",
       "why": "El par comando/resultado es evidencia estructurada escrita por quien la generó. Sin el límite se lee como prueba de que el comando corrió con ese resultado, que es justo lo que el gate mecánico no comprueba."
     },
