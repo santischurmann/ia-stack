@@ -7,6 +7,63 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los campos de una tarea dejaron de ser prosa: hay un gate que los lee.** `verify-task-shape.mjs`.
+  Medido el 2026-09-15 sobre `docs/tasks.json` y los dos únicos scripts que abren ese archivo: de los
+  **20 campos de una tarea, un gate leía 6** —`id`, `depends_on`, los tres conjuntos de escritura y
+  `status`—. Los otros catorce los sostenía la tabla de `skills/orchestrator-opus.md` § MINIMAL
+  AI-COMPANY TASK MODEL, que los especifica campo por campo desde hace meses. El gate no agrega
+  doctrina: mecaniza la que ya estaba escrita y que nada leía.
+
+  - **Cerró dos verdes falsos, y los dos aparecieron en el plan real de este repositorio.**
+    `approval_criteria` es el puente entre el plan y la spec, y estaba sin comprobar de los dos
+    lados: una tarea podía citar `AC9` sobre una spec que llega hasta `AC5`, o describir su criterio
+    en prosa sin nombrar ningún AC. **Dos de las seis tareas reales hacían lo segundo** — sonaban a
+    criterio y no eran trazables a nada. Ahora tiene que nombrar al menos un AC **y ese AC tiene que
+    existir**. Y `verifier`, que la tabla define como «the mechanical check ... never the role that
+    wrote the artifact being checked», no puede ser el nombre de un rol: es lo que sostiene «ningún
+    rol certifica su propio gate», y hasta hoy vivía sólo en prosa.
+  - **Lo demás que ahora se comprueba**: `role` contra `contracts/capability-matrix.json`; cada
+    `subagents` contra un `skills/subagent-<n>.md` que exista de verdad —no un enum escrito a mano—;
+    el `status` contra el ciclo cerrado; `blocked` exige motivo escrito y no-`blocked` lo prohíbe,
+    porque un motivo viejo se lee como si fuera de ahora; `locked` exige dueño; `done` exige al menos
+    una evidencia; y declarar archivos de prueba sin decir de qué tipo son es media declaración.
+  - **Lo que deliberadamente NO comprueba.** `description`, `goal`, `rollback` y `handoff` se exigen
+    escritos y **nunca verdaderos**: pedirle a un gate que juzgue prosa obliga a quien la escribe a
+    fabricar la forma que el gate espera, que es el error ya corregido dos veces en el gate de la
+    matriz de stacks. `depends_on` no se toca: lo valida entero `verify-plan-conflicts.mjs`.
+  - **Migración del plan de este repositorio, sin inventar un dato.** `not_reviewed` guardaba una
+    declaración real en prosa donde el modelo pide una lista: se envolvió sin tocar el texto.
+    Inventarle un `report_path` a una tarea que nunca pasó por un handoff habría sido fabricar
+    exactamente el dato que ese campo existe para no fabricar.
+
+- **El gate de sincronía del runtime daba un consejo que no arreglaba lo que rechazaba.** Encontrado
+  al borrar `templates/diagnostics/implementation.json`: el gate rechazó, se reinstaló exactamente
+  como su línea de arreglo indicaba, y **el archivo siguió en la copia instalada**. El instalador
+  copia y nunca poda, así que reinstalar arregla los archivos que difieren y los que faltan, y no
+  hace nada por los que sobran. Quien leyera ese rojo correría el mismo comando dos veces y vería lo
+  mismo. Ahora el gate lo dice: un archivo que el origen ya no tiene **es un gate retirado que se
+  sigue ejecutando desde la copia**, y hay que sacarlo a mano, mirando cada ruta.
+
+- **Un solo plan: `implementation.json` dejó de ser un diagnóstico obligatorio.** Discovery pasa de
+  siete artefactos a seis. Medido sobre el último ciclo real: `implementation.json` (fase 2) y
+  `tasks.json` (fase 4) decían lo mismo con otras palabras —7 pasos contra 6 tareas, el mismo
+  trabajo— y `tasks.json` es el único plan que los gates de construcción leen. Se escribían los dos
+  y uno se tiraba.
+
+  - **`access_needed` se mudó a la tarea**, donde ahora sí lo lee un gate. Era el campo propio de
+    `implementation.json` que valía la pena conservar: saber que una tarea necesita una credencial
+    que no tenés te frena antes de empezar, no a la mitad.
+  - `validation` ya lo cubrían `verifier` y `evidence`; `rollback` existe por tarea, que es donde
+    sirve, porque se revierte una tarea y no un lote. **El único que se pierde es `release_gate`**, y
+    se pierde porque ningún gate lo leyó nunca: su único lector era una línea de la fase 8, y lo que
+    de verdad condiciona publicar es LAW 8 y el recibo.
+  - Se fueron con él `templates/diagnostics/implementation.json` y el código que lo validaba —
+    dejarlo habría sido código muerto, y la cobertura al cien por ciento lo encuentra igual. La
+    cabecera del gate decía «the six product-discovery artefacts» mientras validaba siete: vuelve a
+    ser cierta.
+  - **Ruptura declarada**: un proyecto con un `docs/tasks.json` anterior a hoy va a rechazar hasta
+    que cada tarea declare `access_needed` y su `approval_criteria` nombre un AC que la spec tenga.
+
 - **El protocolo dejó de sólo detectar el stack y pasó a elegirlo, con evidencia fechada.** La fase
   de Intake tiene una novena pregunta —qué tipo de producto es, enum cerrado A-H con motivo
   obligatorio para los ocho códigos y no sólo para el último— y hay un gate nuevo,

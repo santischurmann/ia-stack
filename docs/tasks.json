@@ -21,14 +21,17 @@
       "locked": false,
       "role": "builder",
       "verifier": "node -e \"JSON.parse(require('fs').readFileSync('contracts/free-tier-limits.json','utf8'))\"",
-      "approval_criteria": "Los ocho servicios de research/sources/free-tiers-2026-09-14.md presentes, cada uno con fecha de captura, disparador de escalado y primer precio pago. Ningun numero que la ficha haya marcado como no verificado entra como si lo estuviera.",
+      "approval_criteria": "AC3 y AC4 de docs/spec.md no se pueden cerrar sin este dato: el gate no tiene contra que correr. Los ocho servicios de research/sources/free-tiers-2026-09-14.md presentes, cada uno con fecha de captura, disparador de escalado y primer precio pago. Ningun numero que la ficha haya marcado como no verificado entra como si lo estuviera.",
       "evidence": [
         "research/sources/free-tiers-2026-09-14.md: la fuente de cada numero, con URL y fecha"
       ],
-      "not_reviewed": "Que los numeros sean ciertos. La ficha los capturo el 2026-09-14 de paginas oficiales, pero nada en este repositorio puede comprobarlo sin salir a la red.",
+      "not_reviewed": [
+        "Que los numeros sean ciertos. La ficha los capturo el 2026-09-14 de paginas oficiales, pero nada en este repositorio puede comprobarlo sin salir a la red."
+      ],
       "rollback": "Borrar el archivo: todavia no lo lee ningun gate.",
       "handoff": "M1 deja el dato en su forma final; M2 escribe el validador que lo comprueba.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     },
     {
       "id": "M2",
@@ -62,10 +65,13 @@
       "evidence": [
         "tests/verify-stack-matrix.test.mjs: AC3 y su falsificacion"
       ],
-      "not_reviewed": "Que el disparador declarado sea el real. El gate comprueba que este escrito y que no sea relleno, no que corresponda a lo que el proveedor hace.",
+      "not_reviewed": [
+        "Que el disparador declarado sea el real. El gate comprueba que este escrito y que no sea relleno, no que corresponda a lo que el proveedor hace."
+      ],
       "rollback": "git revert: el gate es nuevo y ningun otro lo invoca.",
       "handoff": "M2 deja el validador del contrato; M3 y M4 le agregan las dos invariantes restantes, una despues de la otra porque escriben el mismo archivo.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     },
     {
       "id": "M3",
@@ -100,10 +106,13 @@
       "evidence": [
         "tests/verify-stack-matrix-cobertura.test.mjs: AC2 y su falsificacion"
       ],
-      "not_reviewed": "Que la clasificacion de un producto sea correcta. El gate comprueba que los ocho tipos tengan fila, no que un producto concreto este bien clasificado.",
+      "not_reviewed": [
+        "Que la clasificacion de un producto sea correcta. El gate comprueba que los ocho tipos tengan fila, no que un producto concreto este bien clasificado."
+      ],
       "rollback": "git revert de la tarea: la invariante es aditiva y su ausencia deja el gate mas permisivo, no roto.",
       "handoff": "M3 cierra la cobertura de tipos; M5 declara el comportamiento sin entrada de todo el gate.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     },
     {
       "id": "M4",
@@ -139,10 +148,13 @@
         "tests/verify-stack-matrix-antiguedad.test.mjs: AC4 y su falsificacion",
         "docs/adr/0001-los-limites-de-plan-gratuito-vencen.md: por que el rechazo es duro y no un aviso"
       ],
-      "not_reviewed": "Que el periodo elegido sea el correcto. Sale del research y no de una preferencia, pero hasta que se mida queda como una constante elegida, y eso esta anotado como pregunta abierta del Intake.",
+      "not_reviewed": [
+        "Que el periodo elegido sea el correcto. Sale del research y no de una preferencia, pero hasta que se mida queda como una constante elegida, y eso esta anotado como pregunta abierta del Intake."
+      ],
       "rollback": "git revert de la tarea: sin la regla el gate acepta capturas viejas, que es el estado anterior.",
       "handoff": "M4 cierra la regla de vencimiento. Serializada detras de M3 porque las dos escriben el mismo validador: el preflight lo marco como conflicto cuando se declararon los escritores reales.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     },
     {
       "id": "M5",
@@ -181,10 +193,13 @@
       "evidence": [
         "contracts/empty-probe.json: la fila del script nuevo con su motivo"
       ],
-      "not_reviewed": "Que el motivo escrito en el contrato sea el verdadero. El gate exige que haya texto, no que ese texto describa lo que el script hace.",
+      "not_reviewed": [
+        "Que el motivo escrito en el contrato sea el verdadero. El gate exige que haya texto, no que ese texto describa lo que el script hace."
+      ],
       "rollback": "git revert: sin la entrada, el gate de la prueba de vacio rechaza por script no declarado, que es un rojo visible y no un verde falso.",
       "handoff": "M5 deja el gate completo y probado; M6 lo registra en los cuatro archivos de inventario del repositorio.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     },
     {
       "id": "M6",
@@ -211,14 +226,17 @@
       "locked": false,
       "role": "docs",
       "verifier": "node scripts/verify-vcp-contract.mjs check && node scripts/verify-vcp-index.mjs check contracts/vcp-index.json",
-      "approval_criteria": "El limite honesto del gate nuevo verificado literalmente contra la frase en su archivo; el script y sus pruebas declarados en el indice; el script dentro del alcance de cobertura y al cien por ciento.",
+      "approval_criteria": "Registra el gate que cierra AC3 y AC4 de docs/spec.md, sin lo cual queda fuera de las dos comprobaciones que impiden degradarlo: el limite honesto verificado literalmente contra la frase en su archivo; el script y sus pruebas declarados en el indice; el script dentro del alcance de cobertura y al cien por ciento.",
       "evidence": [
         "contracts/honest-limits.json: la entrada del gate nuevo"
       ],
-      "not_reviewed": "Que el limite honesto declare todo lo que el gate no puede hacer. El contrato comprueba que la frase exista en su archivo, no que sea completa.",
+      "not_reviewed": [
+        "Que el limite honesto declare todo lo que el gate no puede hacer. El contrato comprueba que la frase exista en su archivo, no que sea completa."
+      ],
       "rollback": "git revert: el registro es aditivo y su ausencia deja rojos visibles en los gates de contrato e indice.",
       "handoff": "M6 cierra el pedazo minimo. La vuelta siguiente es el gate de repositorio limpio.",
-      "blocked_reason": ""
+      "blocked_reason": "",
+      "access_needed": "ninguno"
     }
   ]
 }

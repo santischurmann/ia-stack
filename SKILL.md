@@ -536,10 +536,18 @@ antes de comprometer tareas de implementación.
    **sólo si el proyecto declaró algún modelo** — y esa exigencia se deriva del árbol, no de una
    bandera que alguien tenga que acordarse de pasar.
 
-Los siete resultados durables de esta fase viven en
+Los seis resultados durables de esta fase viven en
 `docs/discovery/<feature-slug>/diagnostics/`: `caio.json`, `loop-map.json`, `prd.json`,
-`implementation.json`, `adoption.json`, `recurrence.json` y `threat.json`. Se validan juntos antes
-de abrir Spec:
+`adoption.json`, `recurrence.json` y `threat.json`. Se validan juntos antes de abrir Spec:
+
+> **Eran siete hasta el 2026-09-15.** `implementation.json` se fue porque **decía lo mismo que
+> `tasks.json` con otras palabras** —medido sobre el último ciclo real: 7 pasos contra 6 tareas, el
+> mismo trabajo— y `tasks.json` es el único plan que los gates de construcción leen de verdad. Se
+> escribían los dos y uno se tiraba. De sus campos propios, `access_needed` **se mudó a la tarea**,
+> donde ahora lo lee `verify-task-shape.mjs`; `validation` ya lo cubrían `verifier` y `evidence`;
+> `rollback` existe por tarea, que es donde sirve, porque se revierte una tarea y no un lote. El
+> único que se pierde es `release_gate`, y se pierde porque **ningún gate lo leyó nunca**: lo que
+> condiciona publicar es LAW 8 y el recibo.
 
 ```bash
 node .vibe/vcp-runtime/scripts/verify-product-diagnostics.mjs check <feature-slug> --require-inputs
@@ -739,6 +747,22 @@ que no se pueden despachar en paralelo. Cualquier overlap sin orden, id duplicad
 desconocida/cíclica, campo no-array o path fuera del proyecto devuelve exit 1: corregí el plan
 (serializá o dividí las tareas) y re-ejecutá el gate. No reemplaces este chequeo con la afirmación
 del orchestrator de que las tareas “parecen independientes”.
+
+**Forma de cada tarea (gate mecánico, el mismo preflight):**
+```bash
+node .vibe/vcp-runtime/scripts/verify-task-shape.mjs check docs/tasks.json
+```
+Los dos gates leen el mismo archivo y miran cosas distintas: el de conflictos cruza los conjuntos de
+escritura entre tareas; éste mira **adentro** de cada tarea. Exige que `approval_criteria` **nombre
+un AC que `docs/spec.md` declare de verdad** —antes una tarea podía citar `AC9` sobre una spec que
+llega hasta `AC5`, o describir su criterio en prosa sin nombrar ninguno—, que `verifier` sea un
+comando y **nunca el nombre de un rol** —es lo que sostiene «ningún rol certifica su propio gate»—,
+que `role` exista en la matriz de capacidades y cada `subagents` tenga su skill, que `access_needed`
+diga qué acceso hace falta o `ninguno`, y que `done` no llegue sin una sola evidencia. Se midió el
+2026-09-15 que de los 20 campos de una tarea **un gate leía 6**: los otros catorce los sostenía la
+tabla de `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL, que los especifica desde
+hace meses. **Lo que el gate NO puede hacer:** comprueba forma y coherencia, nunca que la tarea haga
+lo que dice ni que la evidencia listada sea real.
 
 🔵 **Revisión del plan**
 
@@ -1460,10 +1484,15 @@ cosas que no estaban en ningún lado:
   contener `rm`, `del`, `Remove-Item` ni `git clean` —la vuelta atrás mueve de vuelta, nunca
   elimina— y `rollback_tested` trae la evidencia de haberlo corrido una vez.
 
-**Nada de esto se escribe de cero.** Sale de lo que Research ya declaró y nadie volvía a leer:
-`implementation.rollback` → `deploy.rollback_command`; `implementation.release_gate` → los gates que
-corre este paso; `prd.rollout` → el orden de promoción; `prd.rollback` → el plazo. Cuatro campos que
-se escribían en la fase 2 y **no los leía ningún gate**.
+**Nada de esto se escribe de cero.** Sale de lo que ya está declarado y nadie volvía a leer: el
+`rollback` de la tarea en `docs/tasks.json` → `deploy.rollback_command`; los gates de LAW 8 y el
+recibo → lo que condiciona publicar; `prd.rollout` → el orden de promoción; `prd.rollback` → el
+plazo.
+
+> Los dos primeros salían de `implementation.json` hasta el 2026-09-15, y ése era **todo su uso
+> real**: dos campos que se escribían en la fase 2 y leía una sola línea de esta fase, nunca un
+> gate. El `rollback` por tarea dice lo mismo y mejor —se revierte una tarea, no un lote—, y lo que
+> de verdad condiciona publicar ya lo decide LAW 8, no un texto escrito seis fases antes.
 
 **8.0.1 Comprobación por HTTP, sólo en esta máquina.**
 

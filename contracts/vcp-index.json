@@ -847,6 +847,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-task-shape.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-test-bindings.mjs",
       "class": "gate"
     },
@@ -964,10 +968,6 @@
     },
     {
       "path": "templates/diagnostics/caio.json",
-      "class": "plantilla"
-    },
-    {
-      "path": "templates/diagnostics/implementation.json",
       "class": "plantilla"
     },
     {
@@ -1544,6 +1544,18 @@
     },
     {
       "path": "tests/verify-stack-matrix.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-task-shape-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-task-shape-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-task-shape.test.mjs",
       "class": "prueba"
     },
     {

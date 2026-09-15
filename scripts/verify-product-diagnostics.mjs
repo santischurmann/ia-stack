@@ -1,9 +1,17 @@
 #!/usr/bin/env node
 // Validates the six product-discovery artefacts that feed a VCP specification.
 //
-// The protocol used to mention CAIO, a loop map, PRD, implementation, adoption and recurrence
-// only as prose. That made it possible to jump from a vague research paragraph to a build plan
-// without a durable, reviewable description of the business process. This gate checks the shape
+// The protocol used to mention CAIO, a loop map, PRD, adoption and recurrence only as prose. That
+// made it possible to jump from a vague research paragraph to a build plan without a durable,
+// reviewable description of the business process.
+//
+// UN SOLO PLAN, el 2026-09-15. `implementation.json` se fue de esta lista: decia lo mismo que
+// `tasks.json` con otras palabras, y `tasks.json` es el unico plan que los gates de construccion
+// leen de verdad. De sus campos propios, `access_needed` se mudo a la tarea (donde ahora lo lee
+// `verify-task-shape.mjs`), `validation` ya lo cubrian `verifier` y `evidence`, `rollback` existe
+// por tarea —que es donde sirve—, y `release_gate` se pierde porque ningun gate lo leia nunca: lo
+// que condiciona publicar es LAW 8 y el recibo. La frase «six artefacts» de arriba, que era falsa
+// desde que el septimo entro, vuelve a ser cierta. This gate checks the shape
 // and cross-field invariants of the artefacts. It deliberately does not decide whether a diagnosis
 // is true or whether a proposed product is wise: those remain human/adversarial judgements.
 //
@@ -23,7 +31,6 @@ export const SCHEMAS = Object.freeze({
   caio: 'vcp.caio/1',
   'loop-map': 'vcp.loop-map/1',
   prd: 'vcp.prd/1',
-  implementation: 'vcp.implementation-plan/1',
   adoption: 'vcp.adoption/1',
   recurrence: 'vcp.recurrence/1',
   threat: 'vcp.threat-model/1',
@@ -426,30 +433,6 @@ export function validatePrd(document) {
   validateRisks(document.risks, violations);
   return violations;
 }
-function validatePlanSteps(value, violations) {
-  if (!Array.isArray(value) || value.length === 0) { add(violations, 'order debe tener al menos un paso'); return; }
-  const ids = new Set();
-  value.forEach((item, index) => {
-    const at = `order[${index}]`;
-    if (!exactKeys(item, ['id', 'action', 'depends_on', 'validation', 'access_needed'])) { add(violations, `${at} debe declarar id, action, depends_on, validation y access_needed`); return; }
-    if (!isId(item.id)) add(violations, `${at}.id no es válido`);
-    else if (ids.has(item.id)) add(violations, `order repite el id ${item.id}`);
-    else ids.add(item.id);
-    requireText(item.action, `${at}.action`, violations); requireText(item.validation, `${at}.validation`, violations);
-    requireStringArray(item.depends_on, `${at}.depends_on`, violations);
-    requireStringArray(item.access_needed, `${at}.access_needed`, violations);
-    if (Array.isArray(item.depends_on)) item.depends_on.forEach((dependency) => { if (!ids.has(dependency)) add(violations, `${at}.depends_on referencia ${dependency} que no aparece antes en el orden`); });
-  });
-}
-
-export function validateImplementation(document) {
-  const violations = [];
-  const keys = ['schema', 'feature', 'date', 'order', 'rollback', 'release_gate'];
-  if (!exactKeys(document, keys)) return [`implementation debe declarar exactamente ${keys.join(', ')}`];
-  validateHeader(document, 'implementation', violations); validatePlanSteps(document.order, violations); requireText(document.rollback, 'rollback', violations); requireText(document.release_gate, 'release_gate', violations);
-  return violations;
-}
-
 function validateRollout(value, violations) {
   if (!Array.isArray(value) || value.length === 0) { add(violations, 'rollout_steps debe tener al menos un paso'); return; }
   const ids = new Set();
@@ -627,7 +610,6 @@ export function validateArtifact(kind, document) {
     case 'caio': return validateCaio(document);
     case 'loop-map': return validateLoopMap(document);
     case 'prd': return validatePrd(document);
-    case 'implementation': return validateImplementation(document);
     case 'adoption': return validateAdoption(document);
     case 'recurrence': return validateRecurrence(document);
     case 'threat': return validateThreat(document);
@@ -640,7 +622,7 @@ export function validateDiagnostics(documents) {
     const result = validateArtifact(kind, documents[kind]);
     result.forEach((message) => violations.push(`${kind}: ${message}`));
   }
-  return { ok: violations.length === 0, violations, summary: `${ARTIFACTS.length}/${ARTIFACTS.length} artefactos CAIO, loop-map, PRD, implementation, adoption, recurrence y threat válidos` };
+  return { ok: violations.length === 0, violations, summary: `${ARTIFACTS.length}/${ARTIFACTS.length} artefactos CAIO, loop-map, PRD, adoption, recurrence y threat válidos` };
 }
 
 function parseArgs(args) {

@@ -390,6 +390,35 @@ test('main reporta un fallo de lectura del runtime en vez de darlo por sincroniz
   }
 });
 
+// EL CONSEJO DE ARREGLO MENTIA PARA UNA DE LAS TRES DIVERGENCIAS.
+//
+// Medido el 2026-09-15 sobre la instalacion real de este repositorio: se borro
+// `templates/diagnostics/implementation.json` del checkout, se corrio `scripts/install.sh --project .`
+// tal como el gate indica, y el archivo SIGUIO en el runtime instalado. El instalador copia, nunca
+// poda: para `differing` y `missing` reinstalar alcanza, para `extra` no hace absolutamente nada.
+//
+// Un gate que rechaza y da un comando que no arregla lo que rechaza deja a quien lo lee corriendo el
+// mismo comando dos veces y viendo el mismo rojo. El gate sigue rechazando —la divergencia es real y
+// peligrosa: un archivo borrado del origen que sigue vivo en la copia instalada es un gate retirado
+// que se sigue ejecutando—, pero ahora dice lo que de verdad lo saca.
+test('el consejo de arreglo distingue lo que reinstalar arregla de lo que no', () => {
+  const { root, source } = sourceCheckout();
+  try {
+    const runtime = installRuntime(source);
+    mkdirSync(join(runtime, 'scripts'), { recursive: true });
+    writeFileSync(join(runtime, 'scripts', 'verify-gate-retirado.mjs'), 'export const x = 1;\n');
+
+    const errors = [];
+    assert.equal(main(['check'], source, {}, () => {}, (line) => errors.push(line)), 1);
+    const salida = errors.join('\n');
+    assert.match(salida, /verify-gate-retirado\.mjs/u);
+    assert.match(salida, /reinstalar no (los )?(borra|saca|elimina)|el instalador copia, no borra/iu,
+      `el consejo tiene que decir que reinstalar no saca un archivo de mas: ${salida}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('main usa console por defecto cuando no le pasan escritores', () => {
   const { root, source } = sourceCheckout();
   const originalLog = console.log;

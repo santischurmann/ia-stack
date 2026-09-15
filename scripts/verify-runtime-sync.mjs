@@ -178,7 +178,15 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
     if (result.differing.length > 0) writeError(`REJECTED: installed runtime files that differ from this source: ${result.differing.join(', ')}`);
     if (result.missing.length > 0) writeError(`REJECTED: source files absent from the installed runtime: ${result.missing.join(', ')}`);
     if (result.extra.length > 0) writeError(`REJECTED: installed runtime files this source no longer has: ${result.extra.join(', ')}`);
+    // EL CONSEJO MENTIA PARA UNA DE LAS TRES DIVERGENCIAS. Comprobado el 2026-09-15 sobre la
+    // instalacion real: se borro un archivo del checkout, se reinstalo exactamente como esta linea
+    // indicaba, y el archivo SIGUIO en la copia instalada. El instalador copia y nunca poda, asi que
+    // reinstalar arregla `differing` y `missing` y no hace nada por `extra`. Un gate que rechaza y da
+    // un comando que no arregla lo que rechaza deja a quien lo lee corriendo lo mismo dos veces.
     writeError('Fix: reinstall the runtime from this checkout — scripts/install.sh --project <project-root> (PowerShell: scripts/install.ps1 -ProjectDir <project-root>).');
+    if (result.extra.length > 0) {
+      writeError('Aviso: el instalador copia, no borra — reinstalar NO saca los archivos de mas de arriba. Borralos a mano del runtime instalado, uno por uno y mirando cada ruta: un archivo que el origen ya no tiene es un gate retirado que se sigue ejecutando desde la copia.');
+    }
     return 1;
   }
   write(`OK: the installed runtime at ${runtimeRoot} matches this source checkout in all ${result.compared} file(s).`);

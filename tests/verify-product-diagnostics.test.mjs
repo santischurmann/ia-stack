@@ -10,7 +10,6 @@ import {
   validateArtifact,
   validateCaio,
   validateDiagnostics,
-  validateImplementation,
   validateLoopMap,
   validatePrd,
   validateRecurrence,
@@ -127,10 +126,6 @@ function prd() {
     rollback: 'se vuelve a exigir solo los cuatro artefactos anteriores, sin tocar los ya escritos',
   };
 }
-function implementation() {
-  return { schema: SCHEMAS.implementation, feature: 'demo-feature', date: '2026-09-01', order: [{ id: 'STEP1', action: 'construir base', depends_on: [], validation: 'node --test', access_needed: ['repo'] }, { id: 'STEP2', action: 'validar integración', depends_on: ['STEP1'], validation: 'gate E2E', access_needed: ['repo'] }], rollback: 'revertir el commit del lote', release_gate: 'suite y seguridad verdes' };
-}
-
 function adoption() {
   return { schema: SCHEMAS.adoption, feature: 'demo-feature', date: '2026-09-01',
     owner: 'responsable interno que sostiene el cambio',
@@ -152,16 +147,15 @@ function recurrence() {
     next_process: 'siguiente proceso', trigger: 'señal por debajo del umbral' };
 }
 
-function allDocs() { return { caio: caio(), 'loop-map': loopMap(), prd: prd(), implementation: implementation(), adoption: adoption(), recurrence: recurrence(), threat: threat() }; }
+function allDocs() { return { caio: caio(), 'loop-map': loopMap(), prd: prd(), adoption: adoption(), recurrence: recurrence(), threat: threat() }; }
 
-test('validates the seven complete product-discovery artefacts', () => {
+test('validates the six complete product-discovery artefacts', () => {
   const result = validateDiagnostics(allDocs());
   assert.equal(result.ok, true);
-  assert.match(result.summary, /7\/7/);
+  assert.match(result.summary, /6\/6/);
   assert.deepEqual(validateArtifact('caio', caio()), []);
   assert.deepEqual(validateArtifact('loop-map', loopMap()), []);
   assert.deepEqual(validateArtifact('prd', prd()), []);
-  assert.deepEqual(validateArtifact('implementation', implementation()), []);
   assert.deepEqual(validateArtifact('adoption', adoption()), []);
   assert.deepEqual(validateArtifact('recurrence', recurrence()), []);
 });
@@ -201,15 +195,6 @@ test('PRD validates users, scope, capabilities, technology, ACs and risks', () =
   const badAcId = prd(); badAcId.acceptance_criteria[0].id = 'bad id'; assert.ok(validatePrd(badAcId).some((x) => x.includes('no es válido')));
 });
 
-test('implementation plan enforces a topological order and rollback', () => {
-  assert.ok(validateImplementation({}).length > 0);
-  const bad = implementation(); bad.order[0].depends_on = ['STEP2']; bad.order[1].depends_on.push('MISSING'); bad.order.push(clone(bad.order[1])); bad.rollback = ''; bad.release_gate = ''; assert.ok(validateImplementation(bad).length >= 4);
-  const malformed = implementation(); malformed.order = 'x'; assert.ok(validateImplementation(malformed).some((x) => x.includes('order')));
-  const malformedStep = implementation(); malformedStep.order = [{ id: 'bad id' }]; assert.ok(validateImplementation(malformedStep).some((x) => x.includes('order[0] debe')));
-  const badStepId = implementation(); badStepId.order[0].id = 'bad id'; assert.ok(validateImplementation(badStepId).some((x) => x.includes('no es válido')));
-  const duplicateStep = implementation(); duplicateStep.order.push(clone(duplicateStep.order[0])); assert.ok(validateImplementation(duplicateStep).some((x) => x.includes('repite')));
-});
-
 test('adoption and recurrence require ownership, rollout and escalation', () => {
   assert.ok(validateAdoption({}).length > 0); assert.ok(validateRecurrence({}).length > 0);
   const a = adoption(); a.owner = ''; a.stakeholders = []; a.workflow_change = ''; a.rollout_steps[0].id = ''; a.rollout_steps.push(clone(a.rollout_steps[0])); assert.ok(validateAdoption(a).length >= 4);
@@ -236,7 +221,7 @@ test('CLI reports empty, missing, malformed, partial and valid directories', () 
     writeFileSync(join(dir, 'caio.json'), '{bad');
     assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
     for (const kind of ARTIFACTS) writeFileSync(join(dir, `${kind}.json`), JSON.stringify(allDocs()[kind]));
-    assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 0); assert.match(out.at(-1), /7\/7/);
+    assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 0); assert.match(out.at(-1), /6\/6/);
     rmSync(join(dir, 'caio.json')); assert.equal(main(['check', 'demo-feature'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
     const invalidDir = join(root, 'docs', 'discovery', 'other', 'diagnostics'); mkdirSync(join(root, 'docs', 'discovery', 'other'), { recursive: true }); writeFileSync(invalidDir, 'file'); assert.equal(main(['check', 'other'], root, {}, out.push.bind(out), err.push.bind(err)), 1);
   } finally { rmSync(root, { recursive: true, force: true }); }
@@ -631,7 +616,7 @@ test('FALSIFICACIÓN · observability rechaza lo que no es objeto y un campo que
   assert.ok(validatePrd(extra).some((v) => v.includes('tracing')), 'aceptó un campo de más');
 });
 
-// --- El septimo artefacto: la superficie de ataque -----------------------------------------------
+// --- La superficie de ataque, que entro septima y hoy es la sexta -----------------------------------------------
 //
 // LA HERIDA: toda la seguridad de VCP era POSTERIOR al codigo. La fase 6.2 escanea un delta ya
 // escrito y la lente Riesgo revisa un diff ya escrito; nada declaraba QUE HAY QUE PROTEGER antes de
@@ -668,9 +653,11 @@ test('un modelo de amenaza bien formado pasa', () => {
   assert.deepEqual(validateArtifact('threat', threat()), []);
 });
 
-test('threat es el septimo artefacto y entra al paquete', () => {
+test('threat entra al paquete, que desde el 2026-09-15 son seis y no siete', () => {
+  // Entro como septimo. Hoy son seis porque `implementation` se fue —duplicaba a `tasks.json`—, y
+  // la cuenta se afirma explicitamente para que nadie devuelva el duplicado sin que una prueba lo diga.
   assert.ok(ARTIFACTS.includes('threat'), 'threat tiene que ser uno de los artefactos');
-  assert.equal(ARTIFACTS.length, 7);
+  assert.equal(ARTIFACTS.length, 6);
 });
 
 test('FALSIFICACIÓN · una referencia que no resuelve es una referencia rota, no evidencia', () => {
@@ -824,4 +811,54 @@ test('FALSIFICACIÓN · un id inválido o una entrada que no es objeto no rompen
   const violaciones = validateArtifact('threat', entradaNula);
   assert.ok(violaciones.length > 0);
   assert.ok(violaciones.every((v) => typeof v === 'string'), 'ninguna violación puede venir rota');
+});
+
+// --- UN SOLO PLAN --------------------------------------------------------------------------------
+//
+// MEDIDO el 2026-09-15 sobre el ultimo ciclo real: `implementation.json` (fase 2) y `tasks.json`
+// (fase 4) decian lo mismo con otras palabras — 7 pasos contra 6 tareas, mismo trabajo. Se escribian
+// los dos planes y uno se tiraba, porque el unico que los gates de construccion pueden leer es
+// `tasks.json`: `verify-plan-conflicts.mjs` cruza sus conjuntos de escritura y `verify-scope-diff.mjs`
+// compara el diff contra ellos. Nada leia jamas `implementation.json` mas alla de su forma.
+//
+// De sus campos propios, `validation` ya estaba cubierto por `verifier` y `evidence` de una tarea,
+// `rollback` existe por tarea en `tasks.json` —que es donde sirve, porque se revierte una tarea y no
+// un lote—, y `access_needed` se MUDO a la tarea, donde ahora lo lee `verify-task-shape.mjs`. El
+// unico que se pierde es `release_gate`, y se pierde porque ningun gate lo leia nunca: lo que
+// realmente condiciona la publicacion es LAW 8 y el recibo.
+//
+// La cabecera de este gate decia «the six product-discovery artefacts» mientras validaba siete. Esa
+// frase vuelve a ser cierta.
+test('UN SOLO PLAN · los diagnosticos obligatorios son seis, e implementation ya no esta', () => {
+  assert.equal(ARTIFACTS.length, 6);
+  assert.equal(ARTIFACTS.includes('implementation'), false);
+  assert.equal(Object.hasOwn(SCHEMAS, 'implementation'), false);
+
+  const result = validateDiagnostics(allDocs());
+  assert.equal(result.ok, true, result.violations.join('\n'));
+  assert.match(result.summary, /6\/6/u);
+  assert.doesNotMatch(result.summary, /implementation/u);
+
+  // Y deja de ser un artefacto conocido: pedirlo por nombre no valida nada a medias.
+  assert.match(validateArtifact('implementation', {}).join('\n'), /desconocido/u);
+});
+
+test('UN SOLO PLAN · un directorio de diagnosticos SIN implementation.json pasa', () => {
+  // La contraprueba de fondo: antes esta carpeta rechazaba por un archivo faltante que duplicaba al
+  // plan. Ahora seis archivos alcanzan, y ese es todo el cambio para quien usa el protocolo.
+  const root = mkdtempSync(join(tmpdir(), 'vcp-diag-'));
+  try {
+    const directory = join(root, 'docs', 'discovery', 'demo-feature', 'diagnostics');
+    mkdirSync(directory, { recursive: true });
+    const docs = allDocs();
+    for (const kind of ARTIFACTS) writeFileSync(join(directory, `${kind}.json`), JSON.stringify(docs[kind]), 'utf8');
+
+    const salida = [];
+    const errores = [];
+    const code = main(['check', 'demo-feature'], root, {}, (l) => salida.push(l), (l) => errores.push(l));
+    assert.equal(code, 0, errores.join('\n'));
+    assert.match(salida.join('\n'), /6\/6/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
