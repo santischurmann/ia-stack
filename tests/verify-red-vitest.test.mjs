@@ -41,14 +41,37 @@ function reporte({ total = 1, fallados = 1, mensajeDeArchivo = '', aserciones = 
 
 const FUENTE = "import {test,expect} from 'vitest';\ntest('suma', () => { expect(1+1).toBe(3); });\n";
 
+/**
+ * LA RAIZ DEL PROYECTO DEL FIXTURE, escrita como la escribe cada plataforma. `C:/proyecto` es
+ * absoluta en Windows y RELATIVA en Linux, asi que fijarla rompia la mitad de lo que estas pruebas
+ * afirman apenas salian de una maquina. Lo encontro la primera corrida de la matriz, el 2026-09-16.
+ * La afirmacion -- «una ruta absoluta adentro del proyecto se acepta» -- no depende de la
+ * plataforma; la constante si.
+ */
+const PROYECTO = process.platform === 'win32' ? join('C:', 'proyecto').replaceAll('\\', '/') : '/proyecto';
+const OTRO_PROYECTO = process.platform === 'win32' ? 'C:/otro-proyecto' : '/otro-proyecto';
+
+/** Absoluta en cualquiera de las dos formas: `/x` o `C:/x`. */
+const ABSOLUTA = /^(?:[A-Za-z]:)?\//u;
+
+/**
+ * El doble de «esta ruta cae adentro del proyecto». Antes decia «no, si tiene letra de unidad», y
+ * eso dejaba afuera a la raiz del propio proyecto del fixture: un doble que no expresa la regla que
+ * dobla mide otra cosa, y cuando el codigo real cambia no avisa. Ahora dice lo que significa.
+ */
+const dentroDelProyecto = (r) => {
+  const ruta = String(r).replaceAll('\\', '/');
+  return !ABSOLUTA.test(ruta) || ruta.startsWith(`${PROYECTO}/`);
+};
+
 function correr(args = ['check', '--test', 'a.test.js', '--command', 'vitest'], over = {}) {
   const salida = [];
   const errores = [];
   const escrituras = [];
   const code = main(args, {
-    cwd: join('C:', 'proyecto'),
+    cwd: PROYECTO,
     existe: () => true,
-    contenida: (r) => !String(r).startsWith('/afuera') && !/^[A-Za-z]:/u.test(String(r)),
+    contenida: dentroDelProyecto,
     run: () => ({ status: 1, stdout: 'JSON report written to /tmp/x.json', stderr: '' }),
     read: () => FUENTE,
     leerReporte: () => reporte(),
@@ -155,7 +178,7 @@ test('el reporte temporal se escribe fuera del proyecto y se limpia', () => {
   const corridas = [];
   const { escrituras } = correr(undefined, { run: (b, a) => { corridas.push(a); return { status: 1, stdout: '', stderr: '' }; } });
   const destino = corridas[0].find((a) => a.startsWith('--outputFile=')).slice('--outputFile='.length);
-  assert.ok(!destino.startsWith(join('C:', 'proyecto')), `el reporte quedó adentro del proyecto: ${destino}`);
+  assert.ok(!destino.replaceAll('\\', '/').startsWith(`${PROYECTO}/`), `el reporte quedó adentro del proyecto: ${destino}`);
   assert.deepEqual(escrituras, [destino]);
 });
 
@@ -167,11 +190,7 @@ test('el reporte temporal se escribe fuera del proyecto y se limpia', () => {
 // comprobacion contra el fuente no aceptaba una ruta absoluta. Un falso negativo: el adaptador
 // rechazaba justo el rojo que tenia que aprobar.
 test('el reporte puede señalar una ruta ABSOLUTA, y si cae adentro del proyecto vale igual', () => {
-  // UNA RUTA ABSOLUTA DE ESTA PLATAFORMA, no una que sólo lo es en Windows. `join('C:', 'proyecto')`
-  // da `C:/proyecto` —absoluta allá— y `C:/proyecto` —RELATIVA— en Linux, así que la prueba medía
-  // otra cosa. Lo encontró la primera corrida de la matriz, el 2026-09-16.
-  const proyecto = process.platform === 'win32' ? join('C:', 'proyecto') : join('/tmp', 'proyecto');
-  const absoluta = join(proyecto, 'a.test.js').replaceAll('\\', '/');
+  const absoluta = `${PROYECTO}/a.test.js`;
   const { code, salida, errores } = correr(undefined, {
     leerReporte: () => reporte({
       aserciones: [{ status: 'failed', failureMessages: [`AssertionError: expected 1 to be 3\n    at ${absoluta}:2:34`] }],
@@ -183,13 +202,13 @@ test('el reporte puede señalar una ruta ABSOLUTA, y si cae adentro del proyecto
   // absoluta impresa lleva adentro el nombre de usuario, y eso termina en los registros de CI.
   const ok = salida.find((l) => /^OK: /u.test(l));
   assert.ok(/a\.test\.js:2/u.test(ok), ok);
-  assert.ok(!ok.includes(proyecto), `el mensaje reimprimió la ruta absoluta de la máquina: ${ok}`);
+  assert.ok(!ok.includes(PROYECTO), `el mensaje reimprimió la ruta absoluta de la máquina: ${ok}`);
 });
 
 test('una ruta absoluta que cae FUERA del proyecto se sigue rechazando', () => {
   const { code, errores } = correr(undefined, {
     leerReporte: () => reporte({
-      aserciones: [{ status: 'failed', failureMessages: ['AssertionError: x\n    at C:/otro-proyecto/a.test.js:2:34'] }],
+      aserciones: [{ status: 'failed', failureMessages: [`AssertionError: x\n    at ${OTRO_PROYECTO}/a.test.js:2:34`] }],
     }),
   });
   assert.equal(code, 1);
