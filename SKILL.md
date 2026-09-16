@@ -1162,6 +1162,26 @@ falla que motivó endurecer los gates de este repo —`verify-red.sh`/`.ps1`, `v
 Aplicarle la misma disciplina a los gates de un proyecto ajeno es opcional, porque cuesta tiempo que
 no siempre hay. Pero si se saltea, **se dice**, en vez de reportar el gate como verificado.
 
+**Y el ritual no es sólo para los gates: también para los dobles y las sondas.** Agregado el
+2026-09-16, después de que un doble de prueba mintiera todo un día sin que nadie lo notara. Decía
+que una ruta con letra de unidad cae **fuera** del proyecto, y la raíz del proyecto de ese mismo
+fixture era `C:/proyecto`: declaraba fuera del proyecto al proyecto mismo. Los casos pasaban porque
+el código real relativizaba antes de preguntarle, no porque el doble dijera la verdad.
+
+**Un doble que no se puede hacer fallar cambiando la regla real que dobla no es un doble: es una
+constante con forma de función.** El chequeo es el mismo que ya se le hace a un gate — tocar la
+regla real, exigir que el doble se ponga rojo, devolverla — y contesta la única pregunta que
+importa: si mañana el código cambia, ¿este doble avisa, o sigue en verde diciendo lo de siempre?
+
+La misma pregunta vale para una sonda que clasifica comportamiento. Si su respuesta depende del
+estado de la máquina y no de lo que dice medir, lo que publica describe esa máquina: el mismo día,
+una sonda declaraba que un gate «sale OK legítimamente» y eso sólo era cierto donde ese estado ya
+existía. En un clon limpio decía otra cosa, y las dos eran correctas.
+
+**Cómo se hace, en una línea:** copiá el archivo real, rompelo a propósito en los puntos que el
+doble o la sonda dicen cubrir, corré las pruebas, y restaurá desde la copia. Si no cae nada, lo que
+tenías no era una prueba.
+
 **6.1.1 Cobertura de shell** — cuánto ejercitan los escenarios declarados:
 
 ```bash

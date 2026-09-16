@@ -351,3 +351,18 @@ test('estadoDelProyecto sigue de largo si la carpeta de mejoras no se puede list
   const e = estadoDelProyecto('/proy', io);
   assert.equal(e.mejoras.total, 0, 'un permiso raro no es una ronda de mejoras');
 });
+
+test('due sin --today ni fecha inyectada usa la de hoy, y con una inyectada usa ésa', () => {
+  const nunca = () => { throw new Error('due no puede escribir'); };
+  // LAS DOS MITADES DEL `??`, y llegar ahí pide que exista la marca del último build. En un clon
+  // limpio no existe —el gate sale VACÍO antes— así que esta rama sólo se ejecutaba en una máquina
+  // que ya había generado un tablero: la cobertura daba 100% acá y rechazaba en el runner.
+  const conFecha = correr(['due'], { casa: '/casa', hay: () => true, leer: () => '2026-09-04\n', hoy: '2026-09-20', escribir: nunca, crear: nunca });
+  assert.match(conFecha.salidas.join(' '), /^TOCA:/u, conFecha.salidas.join(' '));
+
+  // Sin `hoy` inyectado cae en `new Date()`, que es la rama que nadie ejecutaba. El veredicto
+  // depende del día real, así que se comprueba que CONTESTE, no cuál de las dos respuestas da.
+  const sinFecha = correr(['due'], { casa: '/casa', hay: () => true, leer: () => '2026-09-04\n', escribir: nunca, crear: nunca });
+  assert.match(sinFecha.salidas.join(' '), /^(TOCA|OK):/u, sinFecha.salidas.join(' '));
+});
+

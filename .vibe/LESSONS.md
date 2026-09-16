@@ -237,3 +237,46 @@ instaladores y destinos limpios: acá no hay instalación de por medio y el dest
 de siempre, así que esa señal no lo habría marcado. Anotada, no fusionada.
 **Nota de pre-chequeo:** barrido de contenido sensible sobre la entrada de esta lección: cero
 coincidencias — no nombra rutas de usuario, tokens ni claves.
+
+## [2026-09-16] LESSON-10 Un booleano que tapa dos causas convierte «no lo miré» en una acusación — status: active
+
+**Project/phase/run:** ia-stack/phase-6/matriz-de-plataformas-2026-09-16
+**What happened:** El gate de ablación comprueba contra git que cada archivo declarado archivado esté
+de verdad en el commit que el registro nombra. Su sonda `gitHas` devolvía un booleano. Cuando la
+suite corrió por primera vez fuera de la máquina del autor, ahí no existía el repositorio
+`~/.claude` que el registro referencia, git falló, la sonda devolvió `false`, y el gate afirmó: «no
+está en el commit 3bd5bf4b de ~/.claude: eso no es un archivado, es un borrado». Acusó de borrar
+tres archivos que nunca miró. Y dos pruebas existentes **fijaban esa acusación falsa**, con un commit
+de ceros que ningún repositorio puede resolver.
+**Why (root cause):** Un booleano sólo puede expresar dos estados, y ahí había tres: el objeto está,
+el objeto no está, y no se pudo mirar. Al no tener dónde poner el tercero, colapsó contra el segundo
+— confundir la ausencia de evidencia con evidencia de ausencia —. El detalle que lo hace una lección
+y no una anécdota: el protocolo ya tenía el vocabulario de tres estados y lo aplicaba en otros gates;
+el que no lo tenía era justamente el que custodia la regla de que nada se borra.
+**How to avoid:** Cuando una sonda le pregunta al mundo —al disco, a git, al sistema operativo— y el
+mundo puede contestar «no puedo», eso es un tercer estado y va declarado. Nunca se colapsa contra
+«no». Y el tercero no se resuelve rechazando: un gate que rechaza por no poder mirar queda en rojo
+permanente para todo el que clone, y un gate que siempre rechaza se ignora. Se cuenta, y la salida lo
+dice con su motivo.
+**Detection signal:** Una sonda que consulta el mundo y devuelve un booleano. `grep -n "return .*status === 0" scripts/` encuentra a los candidatos: cada uno colapsa el fallo del comando contra el «no» del dominio. Y en la salida de un gate, cualquier afirmación categórica —«es un borrado», «no existe», «no coincide»— que se pueda emitir sin haber leído lo que nombra.
+**Confidence:** high
+
+## [2026-09-16] LESSON-11 Un doble que no expresa la regla que dobla mide otra cosa — status: active
+
+**Project/phase/run:** ia-stack/phase-6/matriz-de-plataformas-2026-09-16
+**What happened:** Un fixture de pruebas inyectaba un doble de «esta ruta cae adentro del proyecto»
+escrito como «no, si tiene letra de unidad». La raíz del proyecto de ese mismo fixture era
+`C:/proyecto`: el doble declaraba fuera del proyecto al proyecto mismo. Las pruebas pasaban igual,
+porque el código real relativiza la ruta **antes** de preguntarle al doble, así que el doble nunca
+decía la verdad y nunca iba a delatarlo nadie. Apareció sólo cuando la suite corrió en otra
+plataforma, donde la constante del fixture dejó de ser absoluta.
+**Why (root cause):** Un doble se escribe mirando qué hace falta para que la prueba pase, no qué
+significa la regla que reemplaza. Mientras el orden de las comprobaciones del código real lo tape, la
+diferencia es invisible — y el día que ese orden cambie, el doble va a seguir en verde diciendo lo
+de siempre, que es lo contrario de para lo que existe.
+**How to avoid:** Aplicarle a los dobles el mismo ritual de falsificación que a los gates: tocar la
+regla real que el doble reemplaza y exigir que la prueba se ponga roja. Si no cae nada, el doble es
+una constante con forma de función. Y escribir el doble como la regla, no como el resultado: «debajo
+de la raíz» en vez de «sin letra de unidad».
+**Detection signal:** Un doble cuyo cuerpo nombra una forma —un prefijo, una extensión, un carácter— en vez del concepto que el parámetro dice representar. Y una constante de fixture que sólo es válida en una plataforma: `grep -n "'C:'" tests/` o cualquier raíz fija.
+**Confidence:** high

@@ -298,3 +298,16 @@ test('un ledger o un manifiesto nulos, o sin sus listas, no revientan', () => {
   assert.match(revisarProfunda(lineas(), ledger(), {}, io()).join('\n'), /source root missing from manifest/u);
 });
 
+test('el lector de texto por defecto se usa aunque los JSON vengan inyectados', () => {
+  // Mismo motivo que en su hermano: esta función sólo corría donde los artefactos ya existían, así
+  // que la cobertura era de la máquina y no del repositorio.
+  const errores = [];
+  const code = main([], {
+    leerJson: (ruta) => (String(ruta).includes('manifest') ? manifest() : ledger()),
+    write: () => {},
+    writeError: (l) => errores.push(l),
+    ...io(),
+  });
+  assert.ok(code === 0 || code === 1, errores.join('\n'));
+});
+

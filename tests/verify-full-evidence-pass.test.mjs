@@ -228,3 +228,17 @@ test('un manifiesto sin `sources` no revienta: es una ausencia, no un dato roto'
   assert.match(revisarEvidencia([fila({ bytes_read: true })], ledger(), {}, io()).join('\n'), /root_dir/u);
 });
 
+test('el lector de texto por defecto se usa aunque el ledger venga inyectado', () => {
+  // SIN ESTO, ESTA FUNCION SOLO CORRIA EN UNA MAQUINA QUE YA TENIA LOS ARTEFACTOS. En un clon limpio
+  // la lectura del JSON falla primero y el lector de texto se crea sin que nadie lo llame: el gate de
+  // cobertura daba 100% acá y rechazaba en el runner. Inyectando sólo el JSON, el camino corre igual
+  // en cualquier máquina. Medido el 2026-09-16.
+  const errores = [];
+  const code = main([], {
+    leerJson: (ruta) => (String(ruta).includes('manifest') ? manifest() : ledger()),
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.ok(code === 0 || code === 1, errores.join('\n'));
+});
+
