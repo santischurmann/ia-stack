@@ -97,18 +97,24 @@ jobs:
       # CADA PLATAFORMA MIDE LO SUYO Y LO SUBE. El veredicto no se toma aca: se toma sobre la UNION,
       # en el trabajo de abajo. Medir por separado y exigir 100% en cada uno seria pedirle a Linux
       # que ejecute ramas que solo existen en Windows.
+      # EL DIRECTORIO NO EMPIEZA CON PUNTO, A PROPOSITO. `upload-artifact` ignora los archivos
+      # ocultos por omision: con `.cobertura` el paso salia en VERDE habiendo subido nada, y la
+      # fusion se topaba con cero archivos. `include-hidden-files: true` lo arreglaria igual y
+      # dejaria la trampa armada para el proximo directorio con punto.
       - name: Medir la cobertura de esta plataforma
         shell: bash
         run: |
-          rm -rf .cobertura && mkdir -p .cobertura
-          NODE_V8_COVERAGE=.cobertura node --test
+          rm -rf cobertura && mkdir -p cobertura
+          NODE_V8_COVERAGE=cobertura node --test
 
       - name: Subir la cobertura cruda
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cobertura-${{ matrix.os }}
-          path: .cobertura
+          path: cobertura
           retention-days: 1
+          # Subir cero archivos no es un exito: seria medir sobre la nada mas abajo.
+          if-no-files-found: error
 
   cobertura:
     name: Cobertura sobre la union de las plataformas
@@ -130,31 +136,35 @@ jobs:
       # -- uno por proceso -- y eso es lo que hace todos los dias: esto es la misma operacion con
       # mas archivos. No hay parser nuevo, ni formato nuevo, ni un segundo veredicto.
       - name: Bajar la cobertura de las dos plataformas
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: cobertura-*
-          path: .cobertura-bajada
+          path: cobertura-bajada
 
       - name: Juntar todo en un solo directorio
         shell: bash
         run: |
-          mkdir -p .cobertura
+          mkdir -p cobertura
           # Los nombres vienen repetidos entre plataformas -- `coverage-<pid>-<ts>.json` --, asi que
           # se prefija con el origen: dos archivos distintos que se pisan medirian la mitad, en
           # silencio, que es el modo de falla que esta fusion viene a impedir.
-          for dir in .cobertura-bajada/*/; do
+          for dir in cobertura-bajada/*/; do
             origen=$(basename "$dir")
             for f in "$dir"*.json; do
               [ -e "$f" ] || continue
-              cp "$f" ".cobertura/${origen}-$(basename "$f")"
+              cp "$f" "cobertura/${origen}-$(basename "$f")"
             done
           done
-          echo "archivos de cobertura fusionados: $(ls -1 .cobertura | wc -l)"
-          test "$(ls -1 .cobertura | wc -l)" -gt 0 || (echo "no llego un solo archivo de cobertura: no hay nada que medir" && exit 1)
+          echo "plataformas que aportaron: $(ls -1d cobertura-bajada/*/ 2>/dev/null | wc -l)"
+          echo "archivos de cobertura fusionados: $(ls -1 cobertura | wc -l)"
+          # DOS GUARDAS, y la primera es la que faltaba: con una sola plataforma el 100% no es sobre
+          # la union, y decir que si seria la mentira que esta fusion vino a sacar.
+          test "$(ls -1d cobertura-bajada/*/ 2>/dev/null | wc -l)" -eq 2 || (echo "no llegaron las dos plataformas: la union no se puede armar" && exit 1)
+          test "$(ls -1 cobertura | wc -l)" -gt 0 || (echo "no llego un solo archivo de cobertura: no hay nada que medir" && exit 1)
 
       # EL GATE DE SIEMPRE, sobre la union. El 100% pasa a significar «toda rama alcanzable en alguna
       # plataforma soportada se ejecuto en alguna», y una rama que NINGUNA alcanza es un hueco de
       # pruebas de verdad -- que es lo que este gate tiene que cazar y antes no podia, porque medir
       # solo en Windows dejaba las ramas de Linux sin comprobar por nadie.
       - name: Cobertura de cada script inventariado, sobre la union
-        run: node scripts/verify-ia-stack-coverage.mjs --coverage-dir .cobertura
+        run: node scripts/verify-ia-stack-coverage.mjs --coverage-dir cobertura

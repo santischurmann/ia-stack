@@ -74,5 +74,5 @@ research/semantic-functional-index-*.json.gz
 .vibe/ia-stack-archive/
 
 # La cobertura cruda que el CI fusiona entre plataformas. Es un insumo, no codigo del proyecto.
-.cobertura/
-.cobertura-bajada/
+cobertura/
+cobertura-bajada/
