@@ -72,3 +72,7 @@ research/semantic-functional-index-*.json.gz
 .claude/
 # IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto
 .vibe/ia-stack-archive/
+
+# La cobertura cruda que el CI fusiona entre plataformas. Es un insumo, no codigo del proyecto.
+.cobertura/
+.cobertura-bajada/

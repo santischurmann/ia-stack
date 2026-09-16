@@ -28,6 +28,7 @@ const {
   lineAt,
   alcanceMedido,
   listMjsScripts,
+  raizDelDocumento,
   main,
   resolveTestConcurrency,
   runCoverage,
@@ -509,4 +510,157 @@ test('listMjsScripts baja a los subdirectorios: un script anidado no escapa a la
     'scripts/sub/oculto.mjs',
     'scripts/verify-one.mjs',
   ]);
+});
+
+// --- Fusionar la cobertura de dos plataformas -----------------------------------------------------
+
+const RAIZ_WIN = 'file:///C:/Users/alguien/proyecto';
+const RAIZ_LINUX = 'file:///home/runner/work/ia-stack/ia-stack';
+
+test('la raíz de un archivo de cobertura se deriva de sus urls y del inventario', () => {
+  // UNA VEZ POR ARCHIVO, no por entrada: con la raíz conocida, todo lo demás vuelve a ser el match
+  // exacto que ya existe, sin tocar la lógica que decide qué está cubierto.
+  const scripts = ['scripts/a.mjs', 'scripts/b.mjs'];
+  assert.equal(raizDelDocumento([`${RAIZ_WIN}/scripts/a.mjs`, `${RAIZ_WIN}/scripts/b.mjs`], scripts).raiz, RAIZ_WIN);
+  assert.equal(raizDelDocumento([`${RAIZ_LINUX}/scripts/a.mjs`], scripts).raiz, RAIZ_LINUX);
+});
+
+test('las urls que el inventario no explica se ignoran: node:internal y node_modules no son del proyecto', () => {
+  // Un archivo de cobertura trae mucho mas que los scripts medidos. Lo que no se puede explicar no
+  // se usa para derivar nada, y tampoco es un error.
+  const r = raizDelDocumento(['node:internal/modules/cjs/loader', `${RAIZ_LINUX}/scripts/a.mjs`, 'file:///otro/lado/x.mjs'], ['scripts/a.mjs']);
+  assert.equal(r.raiz, RAIZ_LINUX);
+  assert.deepEqual(r.problemas, []);
+});
+
+test('FALSIFICACIÓN · dos raíces distintas en el mismo archivo es un archivo corrupto', () => {
+  // Un proceso corre en una máquina. Dos raíces en el mismo documento significa que alguien mezcló
+  // archivos, y elegir una inventaría cobertura sobre la otra.
+  const r = raizDelDocumento([`${RAIZ_WIN}/scripts/a.mjs`, `${RAIZ_LINUX}/scripts/a.mjs`], ['scripts/a.mjs']);
+  assert.equal(r.raiz, null);
+  assert.match(r.problemas.join('\n'), /dos raíces|más de una raíz/iu, r.problemas.join('\n'));
+});
+
+test('FALSIFICACIÓN · una url que explica MÁS DE UNA entrada se rechaza en vez de elegir', () => {
+  // El borde que marcó la revisión: si el inventario tuviera `scripts/a.mjs` y `vendor/scripts/a.mjs`,
+  // la url de la segunda termina en el sufijo de la primera. Atribuirle ejecución al archivo
+  // equivocado infla la cobertura, que es la dirección que más duele. Falla cerrado.
+  const r = raizDelDocumento([`${RAIZ_LINUX}/vendor/scripts/a.mjs`], ['scripts/a.mjs', 'vendor/scripts/a.mjs']);
+  assert.equal(r.raiz, null);
+  assert.match(r.problemas.join('\n'), /más de una entrada|ambigua/iu, r.problemas.join('\n'));
+});
+
+test('sin ninguna url explicable no hay raíz, y eso no es un defecto', () => {
+  // Un proceso que sólo tocó código de Node no dice nada sobre el proyecto. No hay nada que fusionar
+  // y tampoco nada que denunciar.
+  const r = raizDelDocumento(['node:internal/x'], ['scripts/a.mjs']);
+  assert.equal(r.raiz, null);
+  assert.deepEqual(r.problemas, []);
+});
+
+test('collectScriptCoverage junta cobertura de DOS plataformas sobre el mismo inventario', () => {
+  // Lo que esta fusión compra: una rama que sólo Linux alcanza la cubre la corrida de Linux, y una
+  // que sólo Windows alcanza, la de Windows. El 100% pasa a significar «toda rama alcanzable en
+  // alguna plataforma soportada se ejecutó en alguna».
+  const scripts = ['scripts/a.mjs'];
+  const documentos = {
+    'coverage-win.json': JSON.stringify({ result: [{ url: `${RAIZ_WIN}/scripts/a.mjs`, functions: [fn('w', [rango(0, 10, 1)])] }] }),
+    'coverage-linux.json': JSON.stringify({ result: [{ url: `${RAIZ_LINUX}/scripts/a.mjs`, functions: [fn('l', [rango(0, 10, 1)])] }] }),
+  };
+  const { byScript, unreadable } = collectScriptCoverage('/cov', scripts, '/no/importa', {
+    list: () => Object.keys(documentos),
+    read: (ruta) => documentos[String(ruta).split(/[\\/]/u).pop()],
+  });
+  assert.deepEqual(unreadable, []);
+  assert.equal(byScript.get('scripts/a.mjs').length, 2, 'los dos procesos tienen que contar, no uno');
+});
+
+test('FALSIFICACIÓN · un archivo de cobertura con dos raíces se reporta como ilegible, no se ignora', () => {
+  // Ignorarlo en silencio sería medir menos y llamarlo 100%.
+  const scripts = ['scripts/a.mjs'];
+  const { unreadable } = collectScriptCoverage('/cov', scripts, '/no/importa', {
+    list: () => ['mezclado.json'],
+    read: () => JSON.stringify({ result: [{ url: `${RAIZ_WIN}/scripts/a.mjs`, functions: [] }, { url: `${RAIZ_LINUX}/scripts/a.mjs`, functions: [] }] }),
+  });
+  assert.equal(unreadable.length, 1, 'tiene que decirse');
+  assert.match(unreadable.join('\n'), /raíz|raices|raíces/iu, unreadable.join('\n'));
+});
+
+// --- Juzgar una cobertura ya medida --------------------------------------------------------------
+
+test('con --coverage-dir el gate juzga lo que hay y NO corre la suite', () => {
+  // Es lo que hace posible la fusión: los archivos vienen de dos corridas en dos máquinas, y
+  // ninguna es ésta. Correr la suite de nuevo mediría una tercera cosa.
+  const salida = [];
+  const url = pathToFileURL(join(repoRoot, 'scripts', 'demo.mjs')).href;
+  const code = main(['--coverage-dir', '/cov'], () => { throw new Error('la suite no se tiene que correr'); }, (l) => salida.push(l), () => {}, repoRoot, {
+    alcance: { directorios: ['scripts'], archivos: [] },
+    readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    list: () => ['scripts/demo.mjs'],
+    read: () => FUENTE,
+    listCoverage: () => ['coverage-1.json'],
+    readCoverage: () => JSON.stringify({ result: [{ url, functions: [fn('f', [rango(0, FUENTE.length, 3)])] }] }),
+  });
+  assert.equal(code, 0, salida.join('\n'));
+  assert.match(salida.at(-1), /^OK: /u);
+});
+
+test('FALSIFICACIÓN · --coverage-dir sobre un directorio sin un solo archivo se rechaza', () => {
+  // Cero archivos darían cobertura perfecta sobre nada: el verde falso más barato que existe.
+  const errores = [];
+  const code = main(['--coverage-dir', '/cov'], () => { throw new Error('no se corre'); }, () => {}, (l) => errores.push(l), repoRoot, {
+    alcance: { directorios: ['scripts'], archivos: [] },
+    readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    list: () => ['scripts/demo.mjs'],
+    read: () => FUENTE,
+    listCoverage: () => [],
+    readCoverage: () => '{}',
+  });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), new RegExp(NO_COVERAGE_DATA, 'u'));
+});
+
+test('FALSIFICACIÓN · la huella se sigue tomando con --coverage-dir', () => {
+  // Vale igual o MÁS que en el modo normal: si el árbol de acá no es el que se midió allá, el
+  // veredicto no significa nada. Un script ilegible al tomar la huella se rechaza antes de juzgar.
+  const errores = [];
+  const code = main(['--coverage-dir', '/cov'], () => { throw new Error('no se corre'); }, () => {}, (l) => errores.push(l), repoRoot, {
+    alcance: { directorios: ['scripts'], archivos: [] },
+    readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    list: () => ['scripts/demo.mjs'],
+    read: () => { throw new Error('EACCES'); },
+    listCoverage: () => ['coverage-1.json'],
+    readCoverage: () => '{}',
+  });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), new RegExp(NO_INPUTS_SOURCE_CHANGED, 'u'));
+});
+
+test('FALSIFICACIÓN · un uso inválido sigue saliendo 2, y --coverage-dir sin ruta también', () => {
+  const errores = [];
+  assert.equal(main(['inesperado'], () => ({ status: 0 }), () => {}, (l) => errores.push(l)), 2);
+  assert.equal(main(['--coverage-dir'], () => ({ status: 0 }), () => {}, (l) => errores.push(l)), 2);
+  assert.equal(main(['--coverage-dir', '/cov', 'de-mas'], () => ({ status: 0 }), () => {}, (l) => errores.push(l)), 2);
+});
+
+test('FALSIFICACIÓN · con --coverage-dir el gate NO borra el directorio que le pasaron', () => {
+  // Adentro hay lo que costaron dos corridas en dos máquinas. Borrarlo sería destruir el insumo del
+  // veredicto que acaba de dar, y encima en silencio: el `finally` corre pase lo que pase.
+  const url = pathToFileURL(join(repoRoot, 'scripts', 'demo.mjs')).href;
+  const borrados = [];
+  const comun = {
+    alcance: { directorios: ['scripts'], archivos: [] },
+    readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    list: () => ['scripts/demo.mjs'],
+    read: () => FUENTE,
+    listCoverage: () => ['coverage-1.json'],
+    readCoverage: () => JSON.stringify({ result: [{ url, functions: [fn('f', [rango(0, FUENTE.length, 3)])] }] }),
+    rmdir: (p) => borrados.push(p),
+  };
+  main(['--coverage-dir', '/mio'], () => { throw new Error('no se corre'); }, () => {}, () => {}, repoRoot, comun);
+  assert.deepEqual(borrados, [], 'no se toca lo que no se creó');
+
+  // Y el temporal que SÍ crea se sigue borrando, que es para lo que existe la limpieza.
+  main([], () => ({ status: 0, stdout: '', stderr: '' }), () => {}, () => {}, repoRoot, { ...comun, mkdtemp: () => '/temporal-propio' });
+  assert.deepEqual(borrados, ['/temporal-propio']);
 });

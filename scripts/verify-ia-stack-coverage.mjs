@@ -39,7 +39,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const USAGE = 'usage: node scripts/verify-ia-stack-coverage.mjs';
+const USAGE = 'usage: node scripts/verify-ia-stack-coverage.mjs [--coverage-dir <directorio ya medido>]';
 export const NO_INPUTS_SOURCE_CHANGED = 'COVERAGE_SOURCE_CHANGED';
 export const NO_COVERAGE_DATA = 'COVERAGE_NO_DATA';
 export const UNREADABLE_COVERAGE = 'COVERAGE_UNREADABLE';
@@ -166,17 +166,54 @@ export function uncoveredRanges(processes, source) {
  * Un archivo de cobertura ilegible se informa, nunca se saltea: saltearlo perdería la cobertura que
  * ese proceso midió y podría inventar un hueco que no existe.
  */
+/**
+ * LA RAIZ QUE ESE ARCHIVO DE COBERTURA USABA, derivada de sus propias urls y del inventario.
+ *
+ * POR QUE HACE FALTA. El match era por URL ABSOLUTA EXACTA, armada con el `cwd` local. Eso alcanza
+ * mientras todo se mida en la misma maquina, y deja de alcanzar apenas se quiere fusionar lo medido
+ * en dos plataformas: `file:///C:/Users/...` contra `file:///home/runner/...`. Sin esto, la mitad de
+ * los archivos no matchea nada y la cobertura sale a la mitad, en silencio.
+ *
+ * UNA VEZ POR ARCHIVO, NO POR ENTRADA. Se resuelve una sola ambiguedad por documento en vez de N, y
+ * con la raiz conocida todo lo demas vuelve a ser el match exacto que ya existia: la logica que
+ * decide que esta cubierto no se toca.
+ *
+ * FALLA CERRADO EN LOS DOS BORDES:
+ *   - una url que explica MAS DE UNA entrada del inventario (`scripts/a.mjs` y `vendor/scripts/a.mjs`)
+ *     se rechaza en vez de elegir: atribuirle ejecucion al archivo equivocado infla la cobertura,
+ *     que es la direccion que mas duele.
+ *   - dos raices en el mismo documento significan que alguien mezclo archivos de dos corridas, y
+ *     quedarse con una inventaria cobertura sobre la otra.
+ *
+ * Lo que NO se puede explicar -- `node:internal/...`, algo fuera del proyecto -- se ignora sin ruido:
+ * un archivo de cobertura trae mucho mas que los scripts medidos.
+ */
+export function raizDelDocumento(urls, scripts) {
+  const problemas = [];
+  const raices = new Set();
+  for (const url of urls) {
+    const texto = String(url);
+    const explican = scripts.filter((script) => texto.endsWith(`/${script}`));
+    if (explican.length === 0) continue;
+    if (explican.length > 1) {
+      problemas.push(`la url ${texto} explica más de una entrada del inventario (${explican.join(', ')}): no se elige, se rechaza`);
+      continue;
+    }
+    raices.add(texto.slice(0, texto.length - explican[0].length - 1));
+  }
+  if (problemas.length > 0) return { raiz: null, problemas };
+  if (raices.size > 1) {
+    return { raiz: null, problemas: [`el documento declara más de una raíz (${[...raices].join(', ')}): son dos corridas mezcladas y quedarse con una inventaría cobertura sobre la otra`] };
+  }
+  return { raiz: raices.size === 1 ? [...raices][0] : null, problemas: [] };
+}
+
 export function collectScriptCoverage(directory, scripts, cwd = repoRoot, io = {}) {
   const list = io.list ?? readdirSync;
   const read = io.read ?? ((file) => readFileSync(file, 'utf8'));
-  const byUrl = new Map();
   const byScript = new Map();
-  for (const script of scripts) {
-    const url = pathToFileURL(join(cwd, script)).href;
-    const processes = [];
-    byUrl.set(url, processes);
-    byScript.set(script, processes);
-  }
+  for (const script of scripts) byScript.set(script, []);
+
   const unreadable = [];
   for (const name of [...list(directory)].sort()) {
     let document;
@@ -186,9 +223,33 @@ export function collectScriptCoverage(directory, scripts, cwd = repoRoot, io = {
       unreadable.push(`${name}: ${error.message}`);
       continue;
     }
-    for (const entry of document?.result ?? []) {
-      const processes = byUrl.get(entry.url);
-      if (processes !== undefined) processes.push(entry.functions ?? []);
+    const entries = document?.result ?? [];
+    // DOS CLASES DE DOCUMENTO, y la primera deja el comportamiento de siempre intacto.
+    //
+    // LOCAL: trae al menos una url armada con el `cwd` de esta corrida. Se usa el match EXACTO de
+    // siempre y todo lo demas se ignora -- incluida una COPIA del mismo script adentro de un runtime
+    // instalado en otro arbol, que termina en el mismo sufijo y NO tiene que contar. Ese es el
+    // defecto que este repositorio ya pago una vez: un homonimo cubriendo a un script sin tener una
+    // sola prueba.
+    //
+    // AJENO: no trae ninguna, asi que solo puede venir de otra plataforma -- el caso que la fusion
+    // existe para cubrir --. Recien ahi se deriva la raiz.
+    const locales = new Map(scripts.map((script) => [pathToFileURL(join(cwd, script)).href, script]));
+    const esLocal = entries.some((entry) => locales.has(String(entry.url)));
+    let byUrl = locales;
+    if (!esLocal) {
+      const { raiz, problemas } = raizDelDocumento(entries.map((entry) => entry.url), scripts);
+      if (problemas.length > 0) {
+        // Ignorarlo en silencio seria medir menos y llamarlo 100%.
+        unreadable.push(`${name}: ${problemas.join('; ')}`);
+        continue;
+      }
+      if (raiz === null) continue; // no tocó un solo script del inventario: no hay nada que sumar
+      byUrl = new Map(scripts.map((script) => [`${raiz}/${script}`, script]));
+    }
+    for (const entry of entries) {
+      const script = byUrl.get(String(entry.url));
+      if (script !== undefined) byScript.get(script).push(entry.functions ?? []);
     }
   }
   return { byScript, unreadable };
@@ -266,7 +327,13 @@ export function fingerprintScripts(list = () => listMjsScripts(), read = (name) 
 }
 
 export function main(args = process.argv.slice(2), run = runCoverage, write = console.log, writeError = console.error, cwd = repoRoot, io = {}) {
-  if (args.length !== 0) {
+  // `--coverage-dir` juzga una cobertura YA MEDIDA en vez de correr la suite. Existe para fusionar
+  // lo medido en dos plataformas: esos archivos vienen de dos corridas en dos maquinas, y ninguna de
+  // las dos es esta -- correr la suite de nuevo mediria una tercera cosa.
+  let yaMedido = null;
+  if (args.length === 2 && args[0] === '--coverage-dir' && args[1] !== '') {
+    yaMedido = args[1];
+  } else if (args.length !== 0) {
     writeError(USAGE);
     return 2;
   }
@@ -306,18 +373,21 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
 
   const makeDirectory = io.mkdtemp ?? ((prefix) => mkdtempSync(prefix));
   const removeDirectory = io.rmdir ?? ((path) => rmSync(path, { recursive: true, force: true }));
-  const directory = makeDirectory(join(tmpdir(), 'vcp-coverage-'));
+  // Con `--coverage-dir` no se crea nada y no se borra nada: el directorio es de quien lo paso.
+  const directory = yaMedido ?? makeDirectory(join(tmpdir(), 'vcp-coverage-'));
   try {
-    const result = run(spawnSync, cwd, directory);
-    const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
-    if (result.error) {
-      writeError(`Coverage command could not launch: ${result.error.message}`);
-      return 1;
-    }
-    if (result.status !== 0) {
-      if (output) writeError(output.trim());
-      writeError(`Coverage command exited ${result.status}`);
-      return 1;
+    if (yaMedido === null) {
+      const result = run(spawnSync, cwd, directory);
+      const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+      if (result.error) {
+        writeError(`Coverage command could not launch: ${result.error.message}`);
+        return 1;
+      }
+      if (result.status !== 0) {
+        if (output) writeError(output.trim());
+        writeError(`Coverage command exited ${result.status}`);
+        return 1;
+      }
     }
     const { byScript, unreadable } = collectScriptCoverage(directory, expectedScripts, cwd, { list: io.listCoverage, read: io.readCoverage });
     // Un número medido sobre código que se movió no es un número: se rechaza en vez de publicarlo.
@@ -339,7 +409,10 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
     write(`OK: ${verdict.message}`);
     return 0;
   } finally {
-    removeDirectory(directory);
+    // SOLO SE BORRA LO QUE ESTE GATE CREO. Con `--coverage-dir` el directorio es de quien lo paso, y
+    // adentro hay lo que costaron dos corridas en dos maquinas: borrarlo seria destruir el insumo
+    // del veredicto que se acaba de dar.
+    if (yaMedido === null) removeDirectory(directory);
   }
 }
 

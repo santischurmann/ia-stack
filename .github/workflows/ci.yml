@@ -94,16 +94,67 @@ jobs:
       - name: El runtime instalado es el del checkout
         run: node scripts/verify-runtime-sync.mjs check
 
-      # LA COBERTURA SE MIDE DONDE LA SUITE CORRE ENTERA, y hoy eso es Windows.
-      #
-      # El gate exige que TODA funcion y TODA rama las haya ejecutado algun proceso. Las pruebas que
-      # `contracts/platform-scope.json` declara como de Windows no corren en Linux, asi que alla sus
-      # ramas quedan sin ejecutar y el gate rechazaria por un motivo que no es un hueco de pruebas:
-      # es la plataforma. Medirlo igual daria un rojo permanente, y un gate que siempre rechaza se
-      # ignora — y uno ignorado no detecta nada.
-      #
-      # EL HUECO QUE ESTO DEJA, dicho: en Linux la cobertura NO se comprueba. Que el numero de
-      # Windows sea 100% no dice nada sobre las ramas que solo Linux ejecuta.
-      - name: Cobertura de cada script inventariado
-        if: runner.os == 'Windows'
-        run: node scripts/verify-ia-stack-coverage.mjs
+      # CADA PLATAFORMA MIDE LO SUYO Y LO SUBE. El veredicto no se toma aca: se toma sobre la UNION,
+      # en el trabajo de abajo. Medir por separado y exigir 100% en cada uno seria pedirle a Linux
+      # que ejecute ramas que solo existen en Windows.
+      - name: Medir la cobertura de esta plataforma
+        shell: bash
+        run: |
+          rm -rf .cobertura && mkdir -p .cobertura
+          NODE_V8_COVERAGE=.cobertura node --test
+
+      - name: Subir la cobertura cruda
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-${{ matrix.os }}
+          path: .cobertura
+          retention-days: 1
+
+  cobertura:
+    name: Cobertura sobre la union de las plataformas
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Traer el codigo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # LOS DOS DIRECTORIOS EN UNO SOLO. El gate ya combina varios archivos de `NODE_V8_COVERAGE`
+      # -- uno por proceso -- y eso es lo que hace todos los dias: esto es la misma operacion con
+      # mas archivos. No hay parser nuevo, ni formato nuevo, ni un segundo veredicto.
+      - name: Bajar la cobertura de las dos plataformas
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cobertura-*
+          path: .cobertura-bajada
+
+      - name: Juntar todo en un solo directorio
+        shell: bash
+        run: |
+          mkdir -p .cobertura
+          # Los nombres vienen repetidos entre plataformas -- `coverage-<pid>-<ts>.json` --, asi que
+          # se prefija con el origen: dos archivos distintos que se pisan medirian la mitad, en
+          # silencio, que es el modo de falla que esta fusion viene a impedir.
+          for dir in .cobertura-bajada/*/; do
+            origen=$(basename "$dir")
+            for f in "$dir"*.json; do
+              [ -e "$f" ] || continue
+              cp "$f" ".cobertura/${origen}-$(basename "$f")"
+            done
+          done
+          echo "archivos de cobertura fusionados: $(ls -1 .cobertura | wc -l)"
+          test "$(ls -1 .cobertura | wc -l)" -gt 0 || (echo "no llego un solo archivo de cobertura: no hay nada que medir" && exit 1)
+
+      # EL GATE DE SIEMPRE, sobre la union. El 100% pasa a significar «toda rama alcanzable en alguna
+      # plataforma soportada se ejecuto en alguna», y una rama que NINGUNA alcanza es un hueco de
+      # pruebas de verdad -- que es lo que este gate tiene que cazar y antes no podia, porque medir
+      # solo en Windows dejaba las ramas de Linux sin comprobar por nadie.
+      - name: Cobertura de cada script inventariado, sobre la union
+        run: node scripts/verify-ia-stack-coverage.mjs --coverage-dir .cobertura
