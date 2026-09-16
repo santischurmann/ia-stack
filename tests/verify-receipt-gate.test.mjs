@@ -431,7 +431,10 @@ test('FALSIFICACIÓN · receipts neither hash external links nor accept an exter
     symlinkSync(outside, join(root, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
     const linked = gate(root, 'fingerprint');
     assert.equal(linked.status, 1, 'an untracked junction/symlink must fail closed, not hash outside bytes');
-    assert.match(linked.output, /resolves outside the checkout/i);
+    // Mismo criterio que en ratchet: lo que se exige es el rechazo, no cuál guarda dispara primero.
+    // En Linux el enlace a directorio lo agarra «is a symbolic link»; en Windows el junction llega
+    // hasta «resolves outside the checkout». Las dos hablan de la frontera del checkout.
+    assert.match(linked.output, /resolves outside the checkout|is a symbolic link/i, linked.output);
 
     const externalReceipt = join(outside, 'receipt.json');
     writeFileSync(externalReceipt, '{}\n');

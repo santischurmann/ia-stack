@@ -6,6 +6,7 @@
     "usage": "sale 2 porque le faltan argumentos obligatorios; exige motivo escrito, porque un gate que siempre sale 2 no se prueba",
     "empty": "sale 0 y escribe VACIO: no habia nada que comparar y no se disfraza de verde",
     "self": "sale 0 y escribe OK legitimamente porque verifica el propio checkout de VCP, no el directorio de trabajo",
+    "machine": "sale 0 pero NO mira el directorio: lee el estado de la maquina, asi que puede escribir VACIO o OK y ninguna de las dos dice nada sobre el directorio vacio. Exige motivo escrito, porque es una renuncia a comprobar. Lo que si exige es salir 0: si rechaza o pide argumentos, eso habla del gate.",
     "skip": "no se corre; exige motivo escrito y se cuenta en la salida"
   },
   "gates": [
@@ -44,8 +45,8 @@
       "args": [
         "due"
       ],
-      "expect": "self",
-      "why": "No mira el directorio donde se lo corre: mira el estado de la maquina -- la marca del ultimo build en la carpeta del sistema -- asi que en un directorio vacio se comporta igual que en cualquier otro. Es deliberado: el tablero es de la persona, no del proyecto. Nunca escribe en el subcomando due, y eso lo prueba tests/tablero.test.mjs con un escritor que lanza si lo llaman."
+      "expect": "machine",
+      "why": "No mira el directorio donde se lo corre: mira el estado de la maquina -- la marca del ultimo build en la carpeta del sistema -- asi que en un directorio vacio se comporta igual que en cualquier otro. Es deliberado: el tablero es de la persona, no del proyecto. Declaraba `self`, y eso solo era cierto en una maquina que YA habia generado un tablero: medido el 2026-09-16 en la primera corrida de la matriz, en un clon limpio escribe VACIO y la sonda lo clasificaba `empty`. Las dos clasificaciones son correctas y ninguna habla del directorio vacio, asi que la expectativa que corresponde es `machine`. Nunca escribe en el subcomando due, y eso lo prueba tests/tablero.test.mjs con un escritor que lanza si lo llaman."
     },
     {
       "script": "verify-ablation.mjs",

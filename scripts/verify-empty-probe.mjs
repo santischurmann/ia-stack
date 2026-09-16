@@ -48,11 +48,31 @@ export const GATE_PATH = /^(?!.*\.test\.mjs$)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-
  * skip:   no se corre. Exige un `why`. El número de excluidos se escribe en la salida: un gate que
  *         nadie prueba tiene que verse, no desaparecer.
  */
-export const EXPECTATIONS = ['reject', 'usage', 'empty', 'self', 'skip'];
+export const EXPECTATIONS = ['reject', 'usage', 'empty', 'self', 'machine', 'skip'];
+
+/**
+ * QUE CLASE REAL SATISFACE CADA EXPECTATIVA. Casi todas piden exactamente la suya; `machine` es la
+ * excepcion y existe por un caso medido el 2026-09-16, cuando la matriz corrio por primera vez.
+ *
+ * `tablero.mjs due` no lee el directorio donde se lo corre: lee el estado de la MAQUINA -- la marca
+ * del ultimo build, en la carpeta del sistema --. En una maquina que ya genero un tablero escribe OK
+ * y se clasifica `self`; en un clon limpio escribe VACIO y se clasifica `empty`. Las dos son
+ * correctas, y NINGUNA dice nada sobre el directorio vacio. Forzar una convertia el contrato en una
+ * descripcion de la maquina de quien lo escribio: verde aca, rojo en el runner, por nada.
+ *
+ * Lo que `machine` SI exige es que salga 0. Si sobre un directorio vacio rechaza o pide argumentos,
+ * eso habla del gate y no de la maquina, y se rechaza. No es un comodin.
+ */
+export function aceptaClase(esperada, real) {
+  if (esperada === 'machine') return real === 'empty' || real === 'self';
+  return esperada === real;
+}
 // `usage` tambien exige motivo: un gate declarado con argumentos deliberadamente incompletos sale
 // 2 SIEMPRE, asi que la sonda nunca lo prueba de verdad y queda contado como si lo hubiera hecho.
 // Encontrado atacando esta sonda el 2026-08-28. Sin motivo escrito, es un skip invisible.
-export const JUSTIFIED = ['self', 'skip', 'usage'];
+// `machine` entra aca: es una renuncia a comprobar, y sin motivo escrito cualquier gate que
+// moleste se declara asi y la sonda deja de decir nada.
+export const JUSTIFIED = ['self', 'machine', 'skip', 'usage'];
 
 export function parseArgs(args) {
   if (args.length === 2 && args[0] === 'check' && args[1] !== '') return { contract: args[1] };
@@ -170,7 +190,7 @@ export function probe(gates, run = runInEmptyDirectory, enRuntimeInstalado = esR
     // `expect_runtime` solo manda donde vive este script. La sonda corre los gates del MISMO
     // arbol que ella, asi que su propia ubicacion es la de ellos.
     const esperado = enRuntimeInstalado && gate.expect_runtime !== undefined ? gate.expect_runtime : gate.expect;
-    if (actual === esperado) continue;
+    if (aceptaClase(esperado, actual)) continue;
     const said = (outcome.stdout || outcome.stderr || '').split('\n')[0].trim();
     violations.push(`${gate.script} sobre un directorio vacío se comporta como "${actual}" y el contrato declara "${esperado}"${enRuntimeInstalado && gate.expect_runtime !== undefined ? " (runtime instalado, expect_runtime)" : ""}: ${said}`);
   }
@@ -233,7 +253,9 @@ export function main(args = process.argv.slice(2), options = {}, write = console
   }
   const count = (expect) => document.gates.filter((gate) => gate.expect === expect).length;
   const probed = document.gates.length - count('skip');
-  write(`OK: ${probed} gate(s) se comportan sobre un directorio vacío como declara ${parsed.contract}; ${count('self')} verifica(n) el propio checkout y por eso pueden salir OK; ${count('skip')} excluido(s) con motivo escrito.`);
+  // Los `machine` se cuentan APARTE. Sumarlos a los comprobados inflaria el numero que la sonda
+  // publica: su respuesta no dice nada sobre el directorio vacio, y ese es el punto.
+  write(`OK: ${probed} gate(s) se comportan sobre un directorio vacío como declara ${parsed.contract}; ${count('self')} verifica(n) el propio checkout y por eso pueden salir OK; ${count('machine')} no mira(n) el directorio —leen el estado de la máquina— así que su respuesta no dice nada sobre él; ${count('skip')} excluido(s) con motivo escrito.`);
   return 0;
 }
 

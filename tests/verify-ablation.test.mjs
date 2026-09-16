@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
-import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
+import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, makeGitHas, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -1133,9 +1133,15 @@ test('el lector de git real responde sobre este mismo repositorio', () => {
     inventado.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
     inventado.survivors = [];
     writeFileSync(join(root, RUTA), json(inventado), 'utf8');
-    // Un commit de ceros no existe en ningún repositorio: git lo dice, y el gate lo repite.
-    const code = main(['check', RUTA], { root, write: () => {}, writeError: (l) => errores.push(l) });
-    assert.deepEqual({ code, acusa: /no está en el commit/iu.test(errores.join('\n')) }, { code: 1, acusa: true });
+    // UN COMMIT DE CEROS NO SE PUEDE RESOLVER, así que de él no se puede decir que un archivo no
+    // esté adentro. Hasta el 2026-09-16 el gate acusaba un borrado acá, y esta prueba fijaba esa
+    // acusación falsa: la primera corrida en un runner —donde ~/.claude no existe— la dejó a la
+    // vista. Lo correcto es decir que no se pudo comprobar, y salir 0 sin fingir que se comprobó.
+    const salida = [];
+    const code = main(['check', RUTA], { root, write: (l) => salida.push(l), writeError: (l) => errores.push(l) });
+    assert.equal(code, 0, errores.join('\n'));
+    assert.doesNotMatch(errores.join('\n'), /es un borrado/iu, 'no se puede acusar sobre un commit que no se resuelve');
+    assert.match(salida.join('\n'), /no se pudieron comprobar/u, salida.join('\n'));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -1164,8 +1170,46 @@ test('el lector de git expande ~/ contra el home real, igual que el lector de ar
     conTilde.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
     conTilde.survivors = [];
     writeFileSync(join(root, RUTA), json(conTilde), 'utf8');
+    const salida = [];
+    const code = main(['check', RUTA], { root, write: (l) => salida.push(l), writeError: (l) => errores.push(l) });
+    // Mismo criterio: el `~/` se expandió bien —eso es lo que esta prueba mide— y el commit de ceros
+    // sigue sin resolverse, así que no se acusa: se dice que no se pudo comprobar.
+    assert.equal(code, 0, errores.join('\n'));
+    assert.match(salida.join('\n'), /no se pudieron comprobar/u, salida.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('EL BORRADO DE VERDAD: commit real, y una ruta que no está en él, sí se acusa', () => {
+  // La regla no se aflojó. Con un repositorio que está y un commit que se alcanza, un archivo que
+  // no está adentro es un borrado y se llama así.
+  const root = mkdtempSync(join(tmpdir(), 'vcp-ablation-'));
+  const errores = [];
+  try {
+    mkdirSync(join(root, 'docs'), { recursive: true });
+    mkdirSync(join(root, 'contracts'), { recursive: true });
+    writeFileSync(join(root, 'contracts', 'ablation-scope.json'), readScope(), 'utf8');
+    const head = execFileSync('git', ['-C', repoRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    const inventado = registro();
+    inventado.batches[0].archived = [{
+      path: '~/.claude/skills/design-loop/SKILL.md',
+      archived_to: 'skills/este-archivo-no-existe-en-ningun-commit.md',
+      mode: 'git',
+      repo: repoRoot,
+      commit: head,
+      repetible: false,
+      requisito: false,
+      repartible: false,
+      verdict: 'ARCHIVAR',
+      reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+    }];
+    inventado.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+    inventado.survivors = [];
+    writeFileSync(join(root, RUTA), json(inventado), 'utf8');
     const code = main(['check', RUTA], { root, write: () => {}, writeError: (l) => errores.push(l) });
-    assert.deepEqual({ code, acusa: /no está en el commit/iu.test(errores.join('\n')) }, { code: 1, acusa: true });
+    assert.equal(code, 1, errores.join('\n'));
+    assert.match(errores.join('\n'), /es un borrado/u, errores.join('\n'));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -2059,4 +2103,75 @@ test('el set de pruebas de ESTE repositorio no tiene ninguna tarea redactada', S
     assert.doesNotMatch(entrada.task, /REDACTADO|\bTODO\b|\bTBD\b|PENDIENTE/iu, entrada.test_id);
     assert.doesNotMatch(entrada.why_representative, /REDACTADO|\bTODO\b|\bTBD\b|PENDIENTE/iu, entrada.test_id);
   }
+});
+
+// --- «No pude mirar» no es «lo borraste» ---------------------------------------------------------
+
+/** Un registro cuyo unico archivado vive en git: es el camino donde `gitHas` decide. */
+function registroEnGit() {
+  const r = registro();
+  r.batches[0].archived = [{
+    path: '~/.claude/skills/design-loop/SKILL.md',
+    archived_to: 'skills/design-loop/SKILL.md',
+    mode: 'git',
+    repo: '~/.claude',
+    commit: 'a'.repeat(40),
+    repetible: false,
+    requisito: false,
+    repartible: false,
+    verdict: 'ARCHIVAR',
+    reason: 'cero invocaciones en 82 días; el objeto queda recuperable del commit anterior al borrado',
+  }];
+  r.inventory = [{ path: '~/.claude/skills/design-loop/SKILL.md', words: 1061, percent: 100, last_modified: '2026-06-01' }];
+  r.survivors = [];
+  return r;
+}
+
+test('FALSIFICACIÓN · un objeto que git dice que NO está sigue siendo un borrado', () => {
+  // La regla original no se afloja: si el repositorio está y el commit está, y el archivo no, eso
+  // es un borrado y se llama así.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive'), gitHas: () => false };
+  assert.match(validateAblation(registroEnGit(), contrato, io).join('\n'), /es un borrado/u);
+});
+
+test('un objeto que no se PUEDE comprobar no es un borrado: se dice que no se pudo', () => {
+  // `null` es «no se pudo mirar»: el repositorio no está en esta máquina, o el commit no se alcanza.
+  // Acusar un borrado ahí es confundir la ausencia de evidencia con evidencia de ausencia.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive'), gitHas: () => null };
+  const sinComprobar = [];
+  const problemas = validateAblation(registroEnGit(), contrato, io, sinComprobar);
+  assert.deepEqual(problemas.filter((l) => /es un borrado/u.test(l)), [], problemas.join('\n'));
+  assert.equal(sinComprobar.length, 1, 'y se anota para que la salida lo diga');
+});
+
+test('lo que no se pudo comprobar se cuenta y sale en la salida, no en silencio', () => {
+  // Un verde que no aclara que no comprobó sus entradas es peor que un rojo: se lee como si las
+  // hubiera comprobado.
+  const salida = [];
+  const code = main(['check', 'docs/ablation.json'], {
+    root: repoRoot,
+    gitHas: () => null,
+    write: (l) => salida.push(l),
+    writeError: () => {},
+  });
+  assert.equal(code, 0, salida.join('\n'));
+  assert.match(salida.join('\n'), /no se (pudo|pudieron) comprobar/u, salida.join('\n'));
+});
+
+test('gitHas devuelve null cuando el repositorio no está en esta máquina', () => {
+  // La pieza que habla con git de verdad. Se prueba directo: un doble probaría el doble.
+  const preguntar = makeGitHas();
+  assert.equal(preguntar('~/carpeta-que-no-existe-en-ningun-lado', 'a'.repeat(40), 'x.md'), null);
+});
+
+test('gitHas distingue un commit inalcanzable de un archivo ausente', () => {
+  // Dos motivos distintos para que git falle, y sólo uno de los dos es un borrado.
+  const preguntar = makeGitHas();
+  // En ESTE repositorio, que sí es git: un commit que no existe no se puede comprobar.
+  assert.equal(preguntar('.', 'f'.repeat(40), 'README.md'), null, 'commit inalcanzable');
+  // Y con un commit real, un archivo que no está es false de verdad.
+  assert.equal(preguntar('.', 'HEAD', 'archivo-que-no-existe-jamas.md'), false);
+  assert.equal(preguntar('.', 'HEAD', 'README.md'), true);
 });

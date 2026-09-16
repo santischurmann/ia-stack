@@ -256,7 +256,12 @@ test('FALSIFICACIÓN · ratchet fails closed instead of following an untracked j
     const result = run(root, '--freeze');
     assert.equal(result.status, 1, result.output);
     assert.match(result.output, /REJECTED: unable to read.*safely/i);
-    assert.match(result.output, /resolves outside the project/i);
+    // EL RECHAZO ES LO QUE IMPORTA, NO CUAL GUARDA GANA. En Linux el enlace a directorio lo agarra
+    // primero «no es un archivo regular»; en Windows el junction pasa esa y lo agarra «resuelve
+    // fuera del proyecto». Las dos son la misma negativa y las dos hablan de la frontera del
+    // proyecto, así que se aceptan las dos y se las nombra: un mensaje que NO hablara de la
+    // frontera seguiría sin pasar. Medido el 2026-09-16, primera corrida de la matriz.
+    assert.match(result.output, /resolves outside the project|not a regular project file/i, result.output);
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });

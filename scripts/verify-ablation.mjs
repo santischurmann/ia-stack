@@ -297,7 +297,7 @@ function evidenciaDeArchivado(entry, io) {
   return null;
 }
 
-function checkArchived(entry, batchNo, record, scope, io, violations) {
+function checkArchived(entry, batchNo, record, scope, io, violations, sinComprobar) {
   const donde = `tanda ${batchNo}`;
   const porLineas = isObject(entry) && entry.mode === 'lines';
   const enGit = isObject(entry) && entry.mode === 'git';
@@ -354,7 +354,11 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
       violations.push(`${donde}: ${entry.path} no dice en qué repositorio quedó el objeto`);
       return;
     }
-    if (!io.gitHas(entry.repo, entry.commit, entry.archived_to)) {
+    const enGitDeVerdad = io.gitHas(entry.repo, entry.commit, entry.archived_to);
+    if (enGitDeVerdad === null) {
+      // NO SE PUDO MIRAR. No se acusa y no se aprueba: se anota para que la salida lo diga.
+      sinComprobar.push(`${donde}: ${entry.archived_to} no se pudo comprobar contra ${entry.repo} en el commit ${entry.commit.slice(0, 8)}: ese repositorio o ese commit no están en esta máquina`);
+    } else if (!enGitDeVerdad) {
       violations.push(`${donde}: ${entry.archived_to} no está en el commit ${entry.commit.slice(0, 8)} de ${entry.repo}: eso no es un archivado, es un borrado`);
     }
     if (io.exists(entry.path)) {
@@ -398,7 +402,13 @@ function checkArchived(entry, batchNo, record, scope, io, violations) {
 }
 
 /** Todas las violaciones, sin lanzar nunca. */
-export function validateAblation(record, scope, io) {
+/**
+ * `sinComprobar` se llena con lo que NO SE PUDO mirar -- un repositorio o un commit que esta maquina
+ * no tiene --. Va como parametro y no adentro de `io` porque `io` son las formas de mirar el mundo y
+ * esto es un resultado. Quien no lo pase recibe el comportamiento de siempre, menos la acusacion
+ * falsa: antes eso salia como «es un borrado».
+ */
+export function validateAblation(record, scope, io, sinComprobar = []) {
   if (scope.violations.length > 0) return scope.violations;
   if (!isObject(record)) return [`el registro debe ser un objeto JSON que declare ${SCHEMA}`];
   if (!mismoSchema(record.schema, SCHEMA)) return [`el registro debe declarar ${SCHEMA}, no ${JSON.stringify(record.schema)}`];
@@ -419,7 +429,7 @@ export function validateAblation(record, scope, io) {
       violations.push(`${donde}: archiva ${batch.archived.length} archivos y el contrato permite ${scope.maxBatch}: con una tanda más grande, una regresión no se puede atribuir a un archivo`);
     }
     for (const entry of batch.archived) {
-      checkArchived(entry, index + 1, record, scope, io, violations);
+      checkArchived(entry, index + 1, record, scope, io, violations, sinComprobar);
       if (isObject(entry)) archivados.add(entry.path);
     }
     checkMeasurement(batch.measured, ids, donde, violations);
@@ -537,13 +547,28 @@ function conHome(root, path) {
   return barras.startsWith('~/') ? join(homedir(), barras.slice(2)) : resolve(root, barras);
 }
 
-function makeGitHas() {
+export function makeGitHas(correr = spawnSync) {
   // ¿Existe ese objeto en ese commit? Se le pregunta a git, no se cree lo que dice el registro.
   // Cinco gates del repo ya consultan git, así que el mecanismo no es nuevo acá.
+  //
+  // TRES RESPUESTAS Y NO DOS, y la tercera es la que saca una acusación falsa. Antes devolvía un
+  // booleano: «el repositorio no está en esta máquina» y «el archivo no está en ese commit» salían
+  // los dos como `false`, y el gate afirmaba un borrado en los dos casos. Medido el 2026-09-16, la
+  // primera vez que la suite corrió en un runner: no hay `~/.claude` ahí, y el gate acusó de haber
+  // borrado tres archivos que nunca miró.
+  //
+  //   true   el objeto está en ese commit.
+  //   false  el repositorio está, el commit se alcanza, y el objeto NO está. Eso sí es un borrado.
+  //   null   no se pudo mirar. Ausencia de evidencia, que no es evidencia de ausencia.
   return (repo, commit, ruta) => {
     const carpeta = conHome('.', repo);
-    const salida = spawnSync('git', ['-C', carpeta, 'cat-file', '-e', `${commit}:${ruta}`], { encoding: 'utf8' });
-    return salida.status === 0;
+    // Primero: ¿hay un repositorio ahí? Sin esto, todo lo demás falla por el mismo motivo y no se
+    // distingue de un archivo ausente.
+    if (correr('git', ['-C', carpeta, 'rev-parse', '--git-dir'], { encoding: 'utf8' }).status !== 0) return null;
+    // Segundo: ¿se alcanza ese commit? Un commit que esta máquina no tiene no dice nada sobre lo
+    // que había adentro.
+    if (correr('git', ['-C', carpeta, 'cat-file', '-e', `${commit}^{commit}`], { encoding: 'utf8' }).status !== 0) return null;
+    return correr('git', ['-C', carpeta, 'cat-file', '-e', `${commit}:${ruta}`], { encoding: 'utf8' }).status === 0;
   };
 }
 
@@ -703,7 +728,8 @@ export function main(args = process.argv.slice(2), options = {}) {
     borradoEnHistoria: options.borradoEnHistoria ?? makeBorradoEnHistoria(),
     aviso: (mensaje) => avisos.push(mensaje),
   };
-  const violations = validateAblation(record, scope, io);
+  const sinComprobar = [];
+  const violations = validateAblation(record, scope, io, sinComprobar);
   // Un aviso no es un rechazo: sale por stderr para que se vea, y el gate sigue en 0. Lo que dice
   // es que el archivado SI ocurrió y alguien restauró el archivo después — que es exactamente lo
   // que el rechazo de antes hacía imposible de distinguir.
@@ -716,6 +742,13 @@ export function main(args = process.argv.slice(2), options = {}) {
   const tandas = record.batches.length;
   const archivados = record.batches.reduce((total, batch) => total + batch.archived.length, 0);
   write(`OK: ${path} registra ${tandas} tanda(s) y ${archivados} archivo(s) archivado(s), cada uno con motivo escrito, medido contra un set de ${record.test_set.length} pruebas, y con la vuelta atrás probada. Nada se borró: cada archivo está en el archivo y ya no en su lugar.`);
+  // LO QUE NO SE PUDO MIRAR SE DICE. Un verde que calla que no comprobó parte de lo que declara se
+  // lee como si lo hubiera comprobado, y eso es peor que un rojo: el rojo al menos se investiga.
+  if (sinComprobar.length > 0) {
+    write(`PERO ${sinComprobar.length} de esos archivo(s) no se pudieron comprobar en esta máquina, así que el «nada se borró» no los cubre:`);
+    for (const linea of sinComprobar) write(`  - ${linea}`);
+    write('Eso NO es una acusación: es que el repositorio o el commit que el registro nombra no están acá. Para comprobarlos hay que correr esto donde sí estén.');
+  }
   write(LIMITS_TEXT);
   return 0;
 }

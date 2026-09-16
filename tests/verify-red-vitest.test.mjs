@@ -167,7 +167,10 @@ test('el reporte temporal se escribe fuera del proyecto y se limpia', () => {
 // comprobacion contra el fuente no aceptaba una ruta absoluta. Un falso negativo: el adaptador
 // rechazaba justo el rojo que tenia que aprobar.
 test('el reporte puede señalar una ruta ABSOLUTA, y si cae adentro del proyecto vale igual', () => {
-  const proyecto = join('C:', 'proyecto');
+  // UNA RUTA ABSOLUTA DE ESTA PLATAFORMA, no una que sólo lo es en Windows. `join('C:', 'proyecto')`
+  // da `C:/proyecto` —absoluta allá— y `C:/proyecto` —RELATIVA— en Linux, así que la prueba medía
+  // otra cosa. Lo encontró la primera corrida de la matriz, el 2026-09-16.
+  const proyecto = process.platform === 'win32' ? join('C:', 'proyecto') : join('/tmp', 'proyecto');
   const absoluta = join(proyecto, 'a.test.js').replaceAll('\\', '/');
   const { code, salida, errores } = correr(undefined, {
     leerReporte: () => reporte({

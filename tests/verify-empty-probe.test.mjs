@@ -10,6 +10,7 @@ import { esRuntimeInstalado } from './_entorno.mjs';
 
 import {
   EXPECTATIONS,
+  aceptaClase,
   JUSTIFIED,
   SCHEMA,
   USAGE,
@@ -102,7 +103,7 @@ test('readContract usa readFileSync cuando no le pasan lector, y falla sobre un 
 
 // --- Forma de cada entrada declarada ------------------------------------------------------------
 
-test('validateShape acepta las cinco expectativas y exige motivo escrito sólo en self y skip', () => {
+test('validateShape acepta las seis expectativas y exige motivo escrito donde la comprobación se renuncia', () => {
   const válidos = [
     { script: 'verify-a.mjs', args: [], expect: 'reject' },
     { script: 'verify-b.mjs', args: ['check'], expect: 'usage', why: 'sin argumentos obligatorios no llega a mirar nada' },
@@ -111,10 +112,12 @@ test('validateShape acepta las cinco expectativas y exige motivo escrito sólo e
     { script: 'verify-e.mjs', args: [], expect: 'skip', why: 'cuesta minutos' },
   ];
   assert.deepEqual(validateShape(válidos), []);
-  assert.deepEqual(EXPECTATIONS, ['reject', 'usage', 'empty', 'self', 'skip']);
+  assert.deepEqual(EXPECTATIONS, ['reject', 'usage', 'empty', 'self', 'machine', 'skip']);
   // `usage` tambien exige motivo: un gate declarado con argumentos incompletos sale 2 siempre,
   // asi que la sonda nunca lo prueba y queda contado como si lo hubiera hecho.
-  assert.deepEqual([...JUSTIFIED].sort(), ['self', 'skip', 'usage']);
+  // `machine` tambien: declarar que un gate no mira el directorio es una renuncia a comprobar, y
+  // sin motivo escrito cualquier gate que moleste se declara asi y la sonda deja de decir nada.
+  assert.deepEqual([...JUSTIFIED].sort(), ['machine', 'self', 'skip', 'usage']);
 });
 
 test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self o un skip sin motivo no pasan', () => {
@@ -143,7 +146,7 @@ test('FALSIFICACIÓN · validateShape nombra cada entrada mal formada, y un self
     'gates[4].script no nombra un script .mjs de scripts/: 42',
     'verify-a.mjs: "args" tiene que ser una lista de strings',
     'verify-b.mjs: "args" tiene que ser una lista de strings',
-    'verify-c.mjs: "expect" tiene que ser uno de reject, usage, empty, self, skip, no "aprobado"',
+    'verify-c.mjs: "expect" tiene que ser uno de reject, usage, empty, self, machine, skip, no "aprobado"',
     'verify-d.mjs: "self" exige un "why" que lo justifique por escrito',
     'verify-e.mjs: "self" exige un "why" que lo justifique por escrito',
     'verify-f.mjs: "self" exige un "why" que lo justifique por escrito',
@@ -249,7 +252,7 @@ test('main sale 0 y cuenta los self y los skip cuando todo coincide', () => {
   }, (line) => written.push(line), () => {});
 
   assert.equal(status, 0);
-  assert.deepEqual(written, ['OK: 2 gate(s) se comportan sobre un directorio vacío como declara c.json; 1 verifica(n) el propio checkout y por eso pueden salir OK; 1 excluido(s) con motivo escrito.']);
+  assert.deepEqual(written, ['OK: 2 gate(s) se comportan sobre un directorio vacío como declara c.json; 1 verifica(n) el propio checkout y por eso pueden salir OK; 0 no mira(n) el directorio —leen el estado de la máquina— así que su respuesta no dice nada sobre él; 1 excluido(s) con motivo escrito.']);
 });
 
 test('FALSIFICACIÓN · main rechaza el uso inválido, el contrato roto y la forma inválida sin correr ningún gate', () => {
@@ -403,4 +406,46 @@ test('un gate declarado dentro de un subdirectorio es un nombre válido para el 
   // Y lo que nunca fue un gate sigue sin serlo: una prueba, o algo fuera de scripts/.
   assert.equal(validateShape([{ ...base, script: 'sub/verify-oculto.test.mjs' }]).length, 1);
   assert.equal(validateShape([{ ...base, script: '../fuera.mjs' }]).length, 1);
+});
+
+// --- `machine`: un gate que no mira el directorio -------------------------------------------------
+
+test('un gate declarado `machine` pasa escriba VACÍO o escriba OK', () => {
+  // Las dos clasificaciones son correctas y ninguna habla del directorio vacío: `tablero.mjs due`
+  // lee el estado de la máquina, así que su respuesta depende de si ESA máquina ya generó un
+  // tablero. Forzar una sola convertiría el contrato en una descripción de la máquina del autor.
+  for (const clase of ['empty', 'self']) {
+    assert.equal(aceptaClase('machine', clase), true, clase);
+  }
+});
+
+test('FALSIFICACIÓN · `machine` no tapa un gate que revienta ni uno que pide argumentos', () => {
+  // No es un comodín. Un gate que no mira el directorio igual tiene que SALIR 0: si rechaza o pide
+  // argumentos sobre un directorio vacío, eso sí habla del gate y no de la máquina.
+  for (const clase of ['reject', 'usage']) {
+    assert.equal(aceptaClase('machine', clase), false, clase);
+  }
+});
+
+test('FALSIFICACIÓN · `machine` sin motivo escrito se rechaza', () => {
+  // Es una renuncia a comprobar, como `self` y `skip`. Sin el motivo, cualquier gate que moleste se
+  // declara `machine` y la sonda deja de decir nada.
+  assert.equal(JUSTIFIED.includes('machine'), true, 'machine tiene que exigir motivo');
+});
+
+test('`machine` se cuenta aparte en la salida: no se suma a los que sí se comprobaron', () => {
+  // Sumarlos a los comprobados inflaría el número que la sonda publica, que es exactamente la clase
+  // de verde de más que este repositorio persigue.
+  // `write` y `writeError` son POSICIONALES en este gate, no van adentro de options: pasarlos ahi
+  // deja la prueba mirando un canal al que nadie escribe, que es un verde que no mide nada.
+  const salida = [];
+  const contrato = contractOf([
+    { script: 'tablero.mjs', args: ['due'], expect: 'machine', why: 'lee el estado de la máquina y no el directorio, así que su respuesta no habla de él' },
+  ]);
+  main(['check', 'c.json'], {
+    readFile: () => contrato,
+    list: () => ['tablero.mjs'],
+    run: () => ({ status: 0, stdout: 'VACÍO: todavía no se generó ningún tablero\n', stderr: '' }),
+  }, (l) => salida.push(l), () => {});
+  assert.match(salida.join('\n'), /no mira\(n\)? el directorio/u, salida.join('\n'));
 });
