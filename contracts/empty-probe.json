@@ -523,6 +523,14 @@
       ],
       "expect": "empty",
       "why": "Sobre un directorio vacio no hay plan, asi que no hay candado que probar: escribe VACIO y sale 0. La distincion importa mas aca que en otros gates porque este decide si un candado se puede soltar: un OK sobre un plan que no existe se leeria como que nadie tiene nada tomado, que es una afirmacion, y lo cierto es que no se miro nada."
+    },
+    {
+      "script": "verify-platform-scope.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "empty",
+      "why": "Un proyecto que recien arranca no tiene contracts/platform-scope.json, y eso no es un incumplimiento: es que ninguna de sus pruebas declara plataforma todavia. El gate escribe VACIO y sale 0. Escribir OK ahi afirmaria que se reviso que ningun salteo quedo sin declarar, sin haber mirado un solo archivo."
     }
   ]
 }

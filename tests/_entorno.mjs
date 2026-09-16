@@ -44,3 +44,19 @@ export function saltarSiEsRuntimeInstalado(t, root, que) {
   t.skip(`runtime instalado: «${que}» es un self-check del repositorio de VCP, no del proyecto de quien instala`);
   return true;
 }
+
+// --- Plataforma --------------------------------------------------------------------------------
+//
+// UNA PRUEBA QUE NO CORRE EN UNA PLATAFORMA SE SALTEA COMO **VACIO**, NUNCA COMO OK. Es el
+// vocabulario del propio protocolo: «no habia nada que comparar» no es «compare y paso». Y el
+// salteo NO se decide con un `if` suelto adentro de la prueba: se declara en
+// `contracts/platform-scope.json` y `verify-platform-scope.mjs` lo comprueba en los dos sentidos.
+// Un salteo que nadie revisa se ve igual que una prueba que corre.
+//
+// El argumento no es «por que»: es QUE QUEDA SIN VERIFICAR en las demas plataformas. Esa es la
+// mitad que alguien necesita leer para decidir si le alcanza.
+
+export function soloEnWindows(queQuedaSinVerificar) {
+  if (process.platform === 'win32') return {};
+  return { skip: `VACÍO en ${process.platform}: ${queQuedaSinVerificar}. No es un OK: es que acá no había nada que comparar.` };
+}

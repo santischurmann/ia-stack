@@ -20,6 +20,8 @@ import {
   tracedLines,
 } from '../scripts/verify-shell-coverage.mjs';
 
+import { soloEnWindows } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-shell-coverage.mjs');
 const NL = String.fromCharCode(10);
@@ -106,7 +108,7 @@ test('runScenario corre bash de verdad y devuelve la traza con números de líne
   assert.ok(tracedLines(salida).size > 0);
 });
 
-test('resolveBash evita el shim WSL roto cuando hay Git Bash disponible', () => {
+test('resolveBash evita el shim WSL roto cuando hay Git Bash disponible', soloEnWindows('la resolución de Bash no se comprueba: el shim de WSL, Git Bash y las rutas con letra de unidad sólo existen en Windows, así que ahí queda sin verificar que el gate elija el intérprete correcto'), () => {
   if (process.platform !== 'win32') assert.equal(resolveBash({}), 'bash');
   else assert.equal(resolveBash({}), existsSync(WINDOWS_GIT_BASH) ? WINDOWS_GIT_BASH : 'bash');
   assert.equal(resolveBash({}, () => true, 'linux'), 'bash');

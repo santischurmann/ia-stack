@@ -182,6 +182,34 @@ texto citado esté ahí, no que signifique lo que la propuesta dice.
 
 ---
 
+## Una prueba que no corre en tu plataforma
+
+La integración continua de este repositorio corrió por primera vez fuera de la máquina del autor el
+2026-09-16 y **nueve pruebas salieron rojas**: la suite asumía Windows —PowerShell, el shim de WSL,
+junctions, rutas con letra de unidad— y el runner era Ubuntu. No era una regresión: era el estreno.
+
+La salida fácil sería un `if` suelto adentro de cada prueba, y es lo que este gate impide. **Un
+salteo escrito adentro de la prueba que se saltea no lo revisa nadie**: una prueba que se saltea en
+todas las plataformas, o por un motivo que dejó de valer, se ve igual que una que corre. La
+declaración vive en `contracts/platform-scope.json` y se comprueba en los **dos sentidos**: lo
+declarado existe en el árbol, y lo que se saltea está declarado.
+
+Cada entrada trae por qué esa prueba es de esa plataforma y —la mitad que importa— **qué queda sin
+verificar** en las demás. «Esta prueba es de Windows» no dice nada; el hueco es lo otro.
+
+Y se saltea como **`VACÍO`**, nunca como `OK`. Es el vocabulario del propio protocolo: «no había
+nada que comparar» no es «comparé y pasó».
+
+```bash
+node scripts/verify-platform-scope.mjs check
+```
+
+**Lo que no puede hacer:** comprueba que el salteo esté declarado y que la declaración corresponda a
+una prueba real, nunca que el motivo sea cierto: una prueba que declara plataforma sin necesitarla
+pasa en verde. Y no corre nada, así que no sabe si esa prueba pasaría en la plataforma que excluye.
+
+---
+
 ## El tablero
 
 Un comando genera una página local con lo que pasó: proyectos, sesiones, turnos, tokens y horas.

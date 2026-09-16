@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { soloEnWindows } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
 const installSh = join(repoRoot, 'scripts', 'install.sh');
@@ -80,7 +82,7 @@ test('fresh Bash installation produces a project-local runtime whose gate comman
   }
 });
 
-test('fresh PowerShell installation produces the same project-local runtime', () => {
+test('fresh PowerShell installation produces the same project-local runtime', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();
   try {
     const result = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);

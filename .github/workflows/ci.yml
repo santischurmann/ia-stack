@@ -13,6 +13,14 @@
 # la decision se reviso y el flujo volvio. Queda escrito porque una decision tomada sobre un dato
 # falso no es una decision, y el registro de que se corrigio vale mas que disimular que no paso.
 #
+# Y LA PRIMERA CORRIDA ENCONTRO LO QUE TENIA QUE ENCONTRAR. El 2026-09-16, con el flujo corriendo
+# solo en Ubuntu, nueve pruebas salieron rojas: la suite asumia Windows —PowerShell, el shim de WSL,
+# junctions, rutas con letra de unidad— y nunca habia corrido en otro lado. No era una regresion:
+# era el estreno. De ahi sale la matriz de abajo, y de ahi sale `contracts/platform-scope.json`: una
+# prueba que no corre en una plataforma se declara, y se saltea como **VACIO** y nunca como OK.
+# «No habia nada que comparar» no es «compare y paso», y seria incoherente que el repositorio del
+# protocolo se aplicara al reves su propio vocabulario.
+#
 # ADEMAS ESTO MIDE ALGO QUE LA MAQUINA DEL AUTOR NO PUEDE MEDIR: si un verde depende de estado local
 # no rastreado. Ya paso, y fue este flujo el que lo encontro: la cobertura daba 100% en la maquina
 # del autor y RECHAZABA en un clon limpio, porque dos ramas solo se ejecutaban si existia
@@ -35,23 +43,32 @@ permissions:
 
 jobs:
   gates:
-    name: Suite y gates sobre un clon limpio
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    name: Suite y gates sobre un clon limpio (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      # `fail-fast: false` a proposito: si Ubuntu falla, queremos ver igual que hizo Windows. Cortar
+      # el otro trabajo esconde justo la comparacion que esta matriz existe para hacer.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - name: Traer el codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # El historial completo: varios gates comparan contra la base de la rama, y con un clon
           # superficial esa comparacion no existe y se leeria como «no hay nada que revisar».
           fetch-depth: 0
 
       - name: Node 24
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
       - name: Sin dependencias, a proposito
+        # `shell: bash` explicito: en el runner de Windows el shell por omision es PowerShell, y
+        # `test ! -f` no existe ahi. GitHub provee bash en los tres runners.
+        shell: bash
         run: |
           test ! -f package.json || (echo "Este protocolo se declara sin dependencias externas y aparecio un package.json" && exit 1)
           node --version
@@ -59,8 +76,8 @@ jobs:
       - name: Suite completa
         run: node --test
 
-      - name: Cobertura de cada script inventariado
-        run: node scripts/verify-ia-stack-coverage.mjs
+      - name: Cada prueba que no corre en esta plataforma esta declarada
+        run: node scripts/verify-platform-scope.mjs check
 
       - name: El repositorio no publica la identidad de quien lo escribio
         run: node scripts/verify-repo-clean.mjs check
@@ -76,3 +93,17 @@ jobs:
 
       - name: El runtime instalado es el del checkout
         run: node scripts/verify-runtime-sync.mjs check
+
+      # LA COBERTURA SE MIDE DONDE LA SUITE CORRE ENTERA, y hoy eso es Windows.
+      #
+      # El gate exige que TODA funcion y TODA rama las haya ejecutado algun proceso. Las pruebas que
+      # `contracts/platform-scope.json` declara como de Windows no corren en Linux, asi que alla sus
+      # ramas quedan sin ejecutar y el gate rechazaria por un motivo que no es un hueco de pruebas:
+      # es la plataforma. Medirlo igual daria un rojo permanente, y un gate que siempre rechaza se
+      # ignora — y uno ignorado no detecta nada.
+      #
+      # EL HUECO QUE ESTO DEJA, dicho: en Linux la cobertura NO se comprueba. Que el numero de
+      # Windows sea 100% no dice nada sobre las ramas que solo Linux ejecuta.
+      - name: Cobertura de cada script inventariado
+        if: runner.os == 'Windows'
+        run: node scripts/verify-ia-stack-coverage.mjs

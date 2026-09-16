@@ -211,6 +211,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/platform-scope.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/red-adapters.json",
       "class": "contrato"
     },
@@ -811,6 +815,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-platform-scope.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-product-diagnostics.mjs",
       "class": "gate"
     },
@@ -1367,6 +1375,14 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-full-evidence-pass-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-full-evidence-pass.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-gate-docs-bootstrap-cli.test.mjs",
       "class": "prueba"
     },
@@ -1456,6 +1472,10 @@
     },
     {
       "path": "tests/verify-plan-conflicts.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-platform-scope.test.mjs",
       "class": "prueba"
     },
     {
@@ -1580,6 +1600,30 @@
     },
     {
       "path": "tests/verify-security-baseline.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-deep-evidence-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-deep-evidence.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-functional-ledger-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-functional-ledger.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-review-index-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-semantic-review-index.test.mjs",
       "class": "prueba"
     },
     {
