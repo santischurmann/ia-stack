@@ -24,6 +24,9 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { mismoSchema } from './schema-compat.mjs';
+// La validacion de fecha no se reimplementa: el criterio correcto -- round-trip en UTC, para que
+// 2026-02-30 no ruede a marzo -- ya vive probado en el gate de lecciones.
+import { realDate } from './verify-lessons.mjs';
 
 export const USAGE = 'usage: verify-sereno.mjs check <mejoras.json> | verify-sereno.mjs due [--today AAAA-MM-DD] [--dir <carpeta>]';
 export const SCHEMA = 'ia.mejoras/1';
@@ -42,6 +45,29 @@ export function diasEntre(desde, hasta) {
   const b = Date.parse(`${hasta}T00:00:00Z`);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
   return Math.floor((b - a) / 86_400_000);
+}
+
+/**
+ * QUE SE LE PIDE A UNA CITA QUE YA NO RESUELVE PORQUE SE ARREGLO. No menos cosas: otras. Sin esto
+ * `corregida` seria una llave para apagar el gate -- escribir `corregida: {}` y listo --, asi que
+ * las tres piezas son obligatorias y la fecha tiene que ser una fecha de verdad. Lo unico que se
+ * afloja es el texto literal, y se afloja porque se ESPERA que ya no este: ese era el punto.
+ */
+function problemasDeCorregida(corregida, donde) {
+  if (corregida === null || typeof corregida !== 'object' || Array.isArray(corregida)) {
+    return [`${donde}: cita.corregida tiene que ser un objeto con fecha, donde y que_cambio`];
+  }
+  const malas = [];
+  if (typeof corregida.fecha !== 'string' || !FECHA.test(corregida.fecha) || !realDate(corregida.fecha)) {
+    malas.push(`${donde}: cita.corregida.fecha tiene que ser una fecha AAAA-MM-DD que exista: sin cuándo, «ya se arregló» no se puede ubicar en la historia`);
+  }
+  if (typeof corregida.donde !== 'string' || corregida.donde.trim() === '') {
+    malas.push(`${donde}: cita.corregida.donde tiene que decir en qué archivo quedó el arreglo`);
+  }
+  if (typeof corregida.que_cambio !== 'string' || corregida.que_cambio.trim().length < 30) {
+    malas.push(`${donde}: cita.corregida.que_cambio tiene que decir qué cambió, con al menos 30 caracteres. «Se arregló» no es un registro de nada`);
+  }
+  return malas;
 }
 
 /** Lo que hace invalido a un registro de mejoras. `leer` resuelve las citas contra el disco. */
@@ -90,6 +116,16 @@ export function violaciones(registro, leer, hoy) {
     let contenido;
     try { contenido = leer(cita.archivo); } catch (error) {
       malas.push(`${donde}: no se pudo leer ${cita.archivo} (${error.message}): una cita que no resuelve no respalda nada`);
+      continue;
+    }
+    // UNA CITA PUEDE DEJAR DE RESOLVER POR DOS MOTIVOS OPUESTOS, y tratarlos igual castiga arreglar
+    // las cosas. Si se pudrio -- el archivo cambio por otra cosa -- la propuesta perdio su origen, y
+    // ese es el defecto que este gate existe para encontrar. Si se corrigio -- la propuesta se
+    // implemento y el texto citado era JUSTO lo que estaba mal -- es el exito de la ronda. Hasta el
+    // 2026-09-16 los dos salian rojo, asi que arreglar un hallazgo rompia la suite y las unicas
+    // salidas eran no arreglarlo o reescribir el registro: las dos peores que el problema.
+    if (cita.corregida !== undefined) {
+      malas.push(...problemasDeCorregida(cita.corregida, donde));
       continue;
     }
     if (!contenido.includes(cita.texto_literal)) {
@@ -188,8 +224,15 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     for (const m of malas) writeError(`REJECTED: ${parsed.ruta}: ${m}`);
     return 1;
   }
-  write(`OK: ${parsed.ruta} registra ${registro.propuestas.length} propuesta(s), cada una con su cita resuelta contra el archivo que dice citar.`);
-  write('LÍMITE: comprueba que la propuesta tenga origen, no que valga la pena. Y que el texto citado esté ahí, no que signifique lo que la propuesta dice.');
+  // Cuantas citas dejaron de resolver porque su defecto se arreglo. Es la parte interesante del
+  // verde, y decir «las cuatro resuelven» cuando una no resuelve es afirmar de mas por la razon
+  // aunque el veredicto sea correcto.
+  const corregidas = registro.propuestas.filter((p) => p?.cita?.corregida !== undefined).length;
+  const detalle = corregidas === 0
+    ? 'cada una con su cita resuelta contra el archivo que dice citar'
+    : `${registro.propuestas.length - corregidas} con su cita resuelta contra el archivo que dice citar, y ${corregidas} cuya cita ya no resuelve porque el texto citado ERA el defecto y se arregló, con su fecha y qué cambió`;
+  write(`OK: ${parsed.ruta} registra ${registro.propuestas.length} propuesta(s), ${detalle}.`);
+  write('LÍMITE: comprueba que la propuesta tenga origen, no que valga la pena. Y que el texto citado esté ahí, no que signifique lo que la propuesta dice. Sobre una cita marcada como corregida comprueba menos todavía: que declare cuándo, dónde y qué cambió, nunca que el arreglo sea el que dice ser.');
   return 0;
 }
 

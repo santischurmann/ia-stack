@@ -281,3 +281,49 @@ test('FALSIFICACIÓN · un registro ilegible no convierte el aviso en un rechazo
   assert.equal(codigo, 0);
   assert.match(salidas.join(' '), /^OK:|^VACÍO:/u);
 });
+
+// --- Una cita que dejó de resolver porque la propuesta se implementó -----------------------------
+
+const CORREGIDA = {
+  fecha: '2026-09-16',
+  donde: 'skills/gates.md',
+  que_cambio: 'la frase se reemplazó porque dejó de ser cierta: ahora declara su fecha de corte',
+};
+const yaNoEsta = (over = {}) => propuesta({ cita: { archivo: ARCHIVO, texto_literal: 'esto ya no está en el archivo', ...over } });
+
+test('una cita con `corregida` no exige el texto literal: se espera que ya no esté', () => {
+  // El caso que apareció solo el 2026-09-16 y que el gate trataba como defecto: la propuesta se
+  // implementó, el texto citado era justo lo que estaba mal, y arreglarlo ponía la suite en rojo.
+  assert.deepEqual(violaciones(registro({ propuestas: [yaNoEsta({ corregida: CORREGIDA })] }), leer, '2026-09-20'), []);
+});
+
+test('FALSIFICACIÓN · `corregida` sin decir qué cambió no cierra nada', () => {
+  // Sin esto sería una llave para apagar el gate: poner `corregida: {}` y listo. Lo que se pide es
+  // otra cosa comprobable, no menos cosas.
+  const casos = [
+    {},
+    { fecha: '2026-09-16', donde: 'skills/gates.md' },
+    { fecha: '2026-09-16', que_cambio: 'algo cambió y quedó explicado con largo más que suficiente' },
+    { donde: 'skills/gates.md', que_cambio: 'algo cambió y quedó explicado con largo más que suficiente' },
+    { fecha: '2026-13-45', donde: 'skills/gates.md', que_cambio: 'algo cambió y quedó explicado con largo suficiente' },
+    { fecha: '2026-09-16', donde: 'skills/gates.md', que_cambio: 'corto' },
+    'no es un objeto',
+    null,
+  ];
+  for (const corregida of casos) {
+    const rotos = violaciones(registro({ propuestas: [yaNoEsta({ corregida })] }), leer, '2026-09-20');
+    assert.equal(rotos.length > 0, true, JSON.stringify(corregida));
+  }
+});
+
+test('FALSIFICACIÓN · `corregida` no tapa un archivo que ya no se puede leer', () => {
+  // Que el defecto se haya arreglado no dice nada sobre el archivo: si desapareció, la propuesta
+  // igual perdió su origen, y eso sigue siendo un hallazgo.
+  const roto = registro({ propuestas: [propuesta({ cita: { archivo: 'no-existe.md', texto_literal: 'lo que sea', corregida: CORREGIDA } })] });
+  assert.match(violaciones(roto, leer, '2026-09-20').join('\n'), /no se pudo leer/u);
+});
+
+test('sin `corregida`, una cita que no resuelve sigue siendo un defecto', () => {
+  // La regla original no se afloja: es la que encuentra la propuesta que perdió su origen.
+  assert.match(violaciones(registro({ propuestas: [yaNoEsta()] }), leer, '2026-09-20').join('\n'), /no está en origen\.md/u);
+});

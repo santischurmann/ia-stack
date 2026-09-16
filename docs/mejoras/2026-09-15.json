@@ -32,7 +32,12 @@
       "por_que": "Aceptar el prefijo vcp. fue la unica forma de renombrar 42 schemas sin invalidar todo lo que el protocolo produjo hasta hoy, y se declaro como limite honesto. El problema es lo que NO tiene: no hay fecha de corte, no hay aviso y -- sobre todo -- no hay cuenta. Nada mide cuantos artefactos siguen llegando con el nombre viejo, asi que dentro de un ano no va a haber forma de saber si la tolerancia todavia sirve o si ya no la usa nadie y solo queda como deuda. Una sola linea en el verde del gate, diciendo cuantos artefactos leidos traian el prefijo viejo, convierte una compatibilidad eterna en una que se puede retirar con un dato. Es la misma disciplina que el resto: no prometer que es transitoria, sino poder medirlo.",
       "cita": {
         "archivo": "skills/gates.md",
-        "texto_literal": "No sabe cuándo termina la compatibilidad"
+        "texto_literal": "No sabe cuándo termina la compatibilidad",
+        "corregida": {
+          "fecha": "2026-09-16",
+          "donde": "skills/gates.md",
+          "que_cambio": "La frase citada era el defecto, asi que dejo de existir cuando se arreglo. El contador se agrego el mismo 2026-09-15 y la fecha de corte el 2026-09-16: la compatibilidad vence el 2027-03-15, avisa los ultimos 60 dias, y pasada esa fecha verify-ia-stack-contract rechaza si la corrida todavia leyo artefactos con el prefijo viejo. Lo que NO vence es la lectura, a proposito: la evidencia sellada de docs/discovery declara el prefijo viejo y es append-only, asi que un corte que la apagara invalidaria la historia del repositorio. En gates.md quedo el limite que si sobrevive: el contador es una foto de una corrida, y un cero ahi no dice que nadie lo use."
+        }
       }
     }
   ],

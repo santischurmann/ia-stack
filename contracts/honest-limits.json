@@ -362,10 +362,10 @@
       "why": "El gate comprueba que algún proceso haya ejecutado cada función y cada rama, no que alguna prueba afirme algo sobre ellas. Sin la frase, un verde de cobertura se lee como \"esto está verificado\", cuando lo único probado es que el código corrió: una rama recorrida por una prueba que no la examina cuenta igual que una verificada."
     },
     {
-      "limit_id": "research-verifiers-are-declared-debt",
+      "limit_id": "research-verifiers-are-tested-against-fixtures-not-the-corpus",
       "file": "skills/verificar-ia-stack.md",
-      "phrase": "es deuda escrita, no cobertura",
-      "why": "Cuatro verificadores de research/ que el protocolo manda correr en su fase de verificación no tienen prueba propia. El contrato de alcance los excluye de la medición con su motivo, y eso podría leerse como que están cubiertos de otro modo. No lo están: la exclusión declara una deuda, no una garantía."
+      "phrase": "un clon limpio prueba los cuatro gates y no puede reproducir el expediente",
+      "why": "La deuda se pago el 2026-09-16: los cuatro verificadores de research/ que el protocolo manda correr tenian cero pruebas y ahora tienen 86, y entran al denominador de la cobertura por nombre en contracts/coverage-scope.json. Lo que queda es de otra clase y hay que decirlo: esas pruebas los alimentan con datos sinteticos de diez lineas. Comprueban que cada gate distinga un expediente sano de uno roto -- que es lo que un gate tiene que hacer y lo que antes no estaba probado --, pero NO comprueban que el expediente real este bien: eso pide correrlos contra sus artefactos, y esos artefactos son cientos de megas de corpus externo que no estan en git a proposito. Sin esta frase, «los cuatro verificadores tienen prueba» se lee como «el expediente esta verificado en un clon limpio», y en un clon limpio esos gates no tienen contra que correr."
     },
     {
       "limit_id": "ten-green-runs-are-not-determinism",
@@ -710,10 +710,10 @@
       "why": "El gate cierra un hueco real y medido: ocho scripts no se podian correr desde ningun documento del protocolo, y seis ni siquiera aparecian en SKILL.md. Lo que comprueba es que el nombre del script este adentro de un bloque de codigo, que es contabilidad y no comprension. No ejecuta el comando ni valida sus argumentos: un ejemplo con la bandera equivocada, o con una ruta que en una instalacion real no existe, pasa en verde. Tampoco sabe si el ejemplo esta donde tiene que estar: uno escondido en la skill equivocada cuenta igual que el de la fase correcta. Y sobre las excepciones es mas modesto todavia: que alguien declare que un script no se invoca a mano no prueba que no se pueda invocar, solo deja escrito quien dice invocarlo para que una persona lo pueda revisar."
     },
     {
-      "limit_id": "schema-compat-has-no-end-date",
+      "limit_id": "schema-compat-counter-is-a-photo-not-a-history",
       "file": "skills/gates.md",
-      "phrase": "No sabe cuándo termina la compatibilidad",
-      "why": "Aceptar el prefijo viejo era la unica forma de renombrar los 42 schemas sin invalidar todo lo que el protocolo produjo hasta el 2026-09-15: recibos, contratos, paquetes de Discovery. El costo es que la tolerancia no tiene vencimiento. No hay fecha de corte, no hay aviso y no hay conteo: un proyecto que nunca migre sus artefactos va a pasar en verde para siempre, y este repositorio no se va a enterar. Se declara en vez de fingir que es temporal, porque una compatibilidad que se promete transitoria y nadie retira es peor que una que se sabe permanente. Lo que si esta acotado es el alcance: solo el prefijo, con la misma familia y la misma version, y solo en la direccion viejo-hacia-nuevo."
+      "phrase": "un cero en una corrida no dice que nadie lo use",
+      "why": "La fecha de corte cerró el agujero grande: desde el 2026-09-16 la tolerancia vence el 2027-03-15, avisa los últimos 60 días y el gate del contrato rechaza si pasada esa fecha todavía se leen artefactos con el prefijo viejo. Lo que queda es más chico y hay que decirlo igual: el único dato que existe es un contador POR CORRIDA, que se reinicia en cada proceso. Un cero ahí significa «esta corrida no leyó ninguno» y nunca «ya nadie los usa», así que retirar la tolerancia pide un cero sostenido que nada guarda. Y leer el nombre viejo no vence nunca, a propósito: la evidencia sellada de docs/discovery/** lo declara y es append-only, así que un corte que apagara la lectura invalidaría la historia del repositorio. Sin esta frase, «tiene fecha de corte» se lee como «la migración está controlada», y lo que está controlado es el día, no el rastro."
     },
     {
       "limit_id": "temp-sweep-guesses-dead-from-age",
@@ -722,10 +722,10 @@
       "why": "La herramienta distingue una carpeta de corrida muerta de una viva por la antiguedad, y eso es una apuesta y no una prueba: no hay forma portable de preguntarle al sistema si el proceso que creo una carpeta temporal sigue corriendo. Una corrida larga que pase el umbral se veria como basura. Por eso el modo por defecto LISTA y borrar es una decision explicita, y por eso el umbral es de horas y no de minutos. Lo que si esta acotado es el alcance: solo entra lo que coincide EXACTO con un prefijo derivado de tests/ mas los seis caracteres de mkdtemp, y nunca una carpeta con un fuente del usuario adentro."
     },
     {
-      "limit_id": "lock-liveness-cannot-see-pid-reuse",
+      "limit_id": "lock-liveness-start-time-has-one-second-grain",
       "file": "skills/gates.md",
-      "phrase": "NO distingue un PID reusado dentro del mismo arranque",
-      "why": "El gate cierra el caso que de verdad pasa: la sesion que muere y la maquina que se reinicia, donde el marcador de arranque prueba que el proceso que puso el candado no existe mas. Lo que no puede hacer es distinguir, DENTRO del mismo arranque, un PID que el sistema reasigno a otro programa. dovsky lo cierra guardando la marca de tiempo de inicio del proceso -- start ticks --, que Node no expone de forma portable: en Linux sale de /proc y en Windows hace falta otra herramienta, y este protocolo no agrega dependencias. La respuesta a eso NO es suponer: es el tercer estado. Suponer muerto soltaria el candado de alguien trabajando y suponer vivo dejaria el repositorio trabado para siempre, asi que declara reconcile_required, sale 1 y lo decide una persona."
+      "phrase": "un segundo no es cero",
+      "why": "El hueco grande se cerro: la hora de arranque del proceso se lee en las tres plataformas y un numero que el sistema le dio a otro programa ahora sale MUERTO en vez de VIVO. Lo que queda es la precision. `ps -o lstart=` devuelve la fecha con grano de un segundo, asi que dos procesos con el mismo pid que arrancaron dentro del mismo segundo son indistinguibles: la ventana paso de todo el arranque de la maquina a un segundo, y achicarla no es cerrarla. Sin esta frase, «distingue un PID reusado» se lee como garantia y nadie sabe que todavia hay una ventana. Los otros dos bordes tambien se declaran donde pasan: un candado anterior al 2026-09-16 no trae el campo y lo dice en su motivo, y una plataforma que no sabe contestar da reconcile_required."
     }
   ]
 }

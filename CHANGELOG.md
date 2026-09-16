@@ -7,6 +7,65 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Tres límites honestos cerrados, y los tres dejaron uno más chico escrito en su lugar.** Un
+  límite no se borra cuando se paga: se reemplaza por el que queda, o el gate queda en verde sobre
+  algo que sigue sin poder probar.
+
+  - **La compatibilidad de nombres tiene fecha de corte.** Vence el **2027-03-15**, avisa los
+    últimos 60 días y después `verify-ia-stack-contract` **rechaza** si la corrida todavía leyó
+    artefactos con el prefijo viejo. Lo que **no** vence nunca es la LECTURA, y es la decisión que
+    más importa de todo esto: la evidencia sellada de `docs/discovery/**` declara el prefijo viejo y
+    es append-only por invariante, así que un corte que devolviera `false` a partir de cierto día
+    invalidaría la historia entera del repositorio un martes cualquiera. Lo que vence es el permiso
+    de seguir **produciendo** artefactos viejos. **Límite que queda**: el contador es una foto de una
+    corrida, así que un cero ahí no dice que nadie lo use.
+  - **El candado distingue un PID reusado.** Node no expone la hora de arranque de un proceso —por
+    eso el hueco estaba declarado— pero los tres sistemas sí: `/proc/<pid>/stat` en Linux,
+    `StartTime.Ticks` en Windows, `ps -o lstart=` en el resto. Un número que el sistema le dio a otro
+    programa ahora sale **MUERTO** en vez de leerse como vivo. Un candado escrito antes de hoy no
+    trae el campo y **no se traba**: sigue con arranque más pid y **nombra el hueco en su propio
+    motivo**, porque convertir en `reconcile` todos los candados ya escritos frenaría el protocolo de
+    golpe por un campo que nadie pudo poner. **Límite que queda**: donde la lectura tiene grano de un
+    segundo, dos procesos que arrancaron dentro del mismo segundo son indistinguibles — la ventana
+    pasó de «todo el arranque de la máquina» a un segundo, y **un segundo no es cero**.
+  - **Los cuatro verificadores de `research/` tienen prueba propia: 0 → 132.** Eran scripts
+    imperativos de nivel superior que leían sus insumos al importarse, así que probarlos exigía
+    versionar cientos de megas de corpus: por eso el contrato de cobertura los declaraba DEUDA con
+    nombre y apellido desde el 2026-09-01. Se les separó la lógica de la entrada/salida —una función
+    pura que recibe los artefactos ya leídos, y un `main` que cablea— y entraron al denominador:
+    **la cobertura pasó de 59 a 63 scripts, al 100%**. **Límite que queda**: las pruebas los alimentan
+    con datos sintéticos, así que comprueban que cada gate distinga un expediente sano de uno roto,
+    nunca que el expediente real esté bien — un clon limpio prueba los cuatro gates y no puede
+    reproducir el expediente.
+
+- **El denominador de la cobertura sale del contrato, no de un nombre escrito adentro del gate.**
+  `listMjsScripts` tenía `'scripts'` literal en el código mientras `contracts/coverage-scope.json`
+  declaraba lo mismo por su cuenta: **dos fuentes para un solo hecho**, que se separan sin que nada
+  avise —y cuando se separan, el contrato pasa a describir algo que no ocurre, que es peor que no
+  tenerlo porque alguien lo lee y le cree. Ahora el contrato admite **grano de archivo** además de
+  directorio, porque `research/` es mitad y mitad, y un contrato que sólo supiera hablar de
+  directorios obligaría a elegir entre medir todo o no medir nada. Un contrato que no declara nada
+  medido **se rechaza**: cero archivos darían cobertura perfecta sobre nada.
+
+- **El gate de sereno castigaba arreglar lo que la ronda encontró.** Apareció solo: la propuesta 4
+  de la ronda del 2026-09-15 citaba, literal, la frase de `skills/gates.md` que decía que la
+  compatibilidad no tenía vencimiento. Al arreglarlo, la frase dejó de estar y la suite se puso en
+  rojo. **Una cita puede dejar de resolver por dos motivos opuestos**: se pudrió —el archivo cambió
+  por otra cosa y la propuesta perdió su origen, que es el defecto que este gate existe para
+  encontrar— o se corrigió, que es el éxito. Tratarlos igual crea el incentivo perverso: conviene
+  no arreglar el hallazgo, o reescribir el registro. Con `cita.corregida` el texto literal ya no se
+  exige —se espera que no esté— y a cambio se exigen **cuándo, dónde y qué cambió**. No se afloja el
+  listón: se cambia qué se pide. Lo que no cambia es que el archivo tenga que seguir siendo legible.
+
+- **Una tarea redactada no es una tarea.** El gate de ablación exigía que cada entrada del set
+  trajera un enunciado de cierto largo, y `[REDACTADO] esta tarea nombraba algo sensible` pasa ese
+  mínimo de sobra **y no se puede correr**: el set declaraba medir ocho tareas y medía seis. Ahora se
+  rechaza por la palabra que el propio texto usa para admitir que está vacío, y el mensaje dice la
+  salida: escribir un enunciado equivalente que mida lo mismo sin nombrar lo que no puede publicarse.
+  Las dos tareas redactadas de este repositorio se reemplazaron — una de ellas mide **la regla más
+  dura de la configuración**, la de los fuentes que el repositorio no versiona, que hasta hoy no medía
+  ninguna.
+
 - **Las tres ideas de dovsky, decididas una por una** en
   `docs/adr/0002-las-tres-ideas-de-dovsky.md`. Venían juntas en una línea de `SESSION.md` como «tres
   no adoptadas», y esa forma de anotarlas era parte del problema: **son de clases distintas**, y
