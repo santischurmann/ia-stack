@@ -85,6 +85,14 @@ const GIT_KEYS = [...ARCHIVED_KEYS, 'mode', 'repo', 'commit'];
 export const MODES = new Set(['file', 'lines', 'git']);
 const SHA = /^[0-9a-f]{40}$/u;
 const MIN_REASON = 20;
+/**
+ * UN HUECO DECLARADO NO ES UNA TAREA. El minimo de longitud lo pasa cualquier parrafo, incluido uno
+ * que dice «[REDACTADO] esta tarea nombraba algo sensible» o «TODO: escribir el enunciado»: largo,
+ * coherente, y sin nada que una sesion pueda ejecutar. Un set con dos huecos asi declara medir ocho
+ * tareas y mide seis, y la linea base sale de comparar contra las que si se corrieron. Se rechaza
+ * por la palabra que el propio texto usa para admitir que esta vacio.
+ */
+const HUECO = /(\[?\bREDACTADO\b)|(^|[\s(\[])(TODO|TBD|FIXME|PENDIENTE|PLACEHOLDER)([\s:.,)\]—-]|$)/iu;
 /** Archivar algo que aprobo una de las tres R pide mas explicacion que archivar algo que no. */
 const MIN_JUDGED_REASON = 120;
 
@@ -222,6 +230,8 @@ function checkTestSet(record, scope, violations) {
     }
     if (!longEnough(entry.task) || !longEnough(entry.why_representative)) {
       violations.push(`el set de pruebas: ${entry.test_id} no dice qué hace ni por qué representa el trabajo real`);
+    } else if (HUECO.test(entry.task) || HUECO.test(entry.why_representative)) {
+      violations.push(`el set de pruebas: ${entry.test_id} declara un hueco (REDACTADO, TODO, TBD, PENDIENTE) en vez de un enunciado, así que no se puede correr: el set dice medir ${record.test_set.length} tareas y mide menos. Si el enunciado real nombra algo que no puede publicarse, escribí uno equivalente que mida lo mismo sin nombrarlo.`);
     }
     if (ids.has(entry.test_id)) violations.push(`el set de pruebas repite ${entry.test_id}`);
     ids.add(entry.test_id);

@@ -2021,3 +2021,42 @@ test('C1 · el descarte de renombrado se lee de la salida entera, y falla cerrad
   // Un log que falla tampoco inventa nada.
   assert.equal(makeBorradoEnHistoria(() => ({ status: 128, stdout: '' }))('~/.claude', 'a'.repeat(40), 'x'), null);
 });
+
+// --- Una tarea redactada no es una tarea ---------------------------------------------------------
+
+test('FALSIFICACIÓN · una tarea que declara estar redactada o pendiente se rechaza, aunque sea larga', () => {
+  // El minimo de longitud no alcanza: «[REDACTADO T1] Tarea real de otro proyecto del autor» pasa
+  // de sobra y no se puede correr. Un set con huecos declarados mide menos tareas de las que dice.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const marcadores = [
+    '[REDACTADO T1] Tarea real de otro proyecto del autor, sacada porque el repositorio es público',
+    'TODO: escribir el enunciado de esta tarea cuando se acuerde con la persona que la va a correr',
+    'TBD — todavía no está decidido qué mide esta entrada del set de pruebas de la ablación',
+    'PENDIENTE de definir: acá va la tarea real que representa el trabajo de todas las semanas',
+  ];
+  for (const task of marcadores) {
+    const caso = { test_set: [{ test_id: 't1', task, why_representative: 'representa el trabajo real de todas las semanas' }, ...[2, 3, 4, 5, 6].map(prueba)] };
+    const violaciones = validateAblation(registro(caso), contrato, io);
+    assert.equal(violaciones.length > 0, true, task);
+    assert.match(violaciones.join('\n'), /no se puede correr/u, task);
+  }
+});
+
+test('FALSIFICACIÓN · un motivo de representatividad redactado también se rechaza', () => {
+  // Si el motivo esta redactado, nadie puede juzgar si el set cubre el trabajo real: la pregunta
+  // que `why_representative` existe para contestar queda sin contestar.
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const caso = { test_set: [{ test_id: 't1', task: 'agregá una función que calcule el drawdown máximo', why_representative: '[REDACTADO] El motivo original nombraba una pieza sensible del producto' }, ...[2, 3, 4, 5, 6].map(prueba)] };
+  assert.match(validateAblation(registro(caso), contrato, io).join('\n'), /no se puede correr/u);
+});
+
+test('el set de pruebas de ESTE repositorio no tiene ninguna tarea redactada', SOLO_FUENTE, () => {
+  // El dato, no la regla. Un set con dos huecos declarados dice medir ocho tareas y mide seis.
+  const registro = JSON.parse(readFileSync(join(repoRoot, RUTA), 'utf8'));
+  for (const entrada of registro.test_set) {
+    assert.doesNotMatch(entrada.task, /REDACTADO|\bTODO\b|\bTBD\b|PENDIENTE/iu, entrada.test_id);
+    assert.doesNotMatch(entrada.why_representative, /REDACTADO|\bTODO\b|\bTBD\b|PENDIENTE/iu, entrada.test_id);
+  }
+});
