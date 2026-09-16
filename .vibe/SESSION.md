@@ -1,5 +1,41 @@
 # Session — 2026-09-14
 
+---
+
+## 2026-09-16 — tres límites honestos cerrados, y el gate que castigaba el arreglo
+
+**Estado**: 2047 pruebas / 0 fallas · cobertura 100% sobre **63** scripts (eran 59) · 131 promesas +
+121 límites honestos · publicado en `8219ac5`.
+
+**Lo que se cerró, y con qué quedó en su lugar.** Un límite honesto no se borra cuando se paga: se
+reemplaza por el que queda, o el gate queda en verde sobre algo que sigue sin poder probar.
+
+| Se cerró | Lo que queda escrito |
+|---|---|
+| La compatibilidad del nombre viejo no tenía vencimiento | Vence el **2027-03-15** y el gate rechaza pasada esa fecha. **La LECTURA no vence nunca**: la evidencia sellada declara el prefijo viejo y es append-only — un corte que la apagara invalidaría la historia entera. El contador sigue siendo una foto de una corrida |
+| El candado no veía un PID reusado | Se lee la hora de arranque del proceso en las tres plataformas. Queda: donde el grano es de un segundo, dos procesos del mismo segundo son indistinguibles |
+| Cuatro verificadores de `research/` sin una sola prueba | 132 pruebas y entraron al denominador. Queda: se prueban con datos sintéticos, así que un clon limpio prueba los gates y no puede reproducir el expediente |
+
+**El hallazgo que no se buscaba.** El gate de sereno **castigaba arreglar lo que él mismo había hecho
+encontrar**: la propuesta 4 citaba, literal, la frase que describía el defecto, y al arreglarlo la
+suite se puso en rojo. Una cita deja de resolver por dos motivos opuestos — se pudrió, o se
+corrigió — y tratarlos igual hacía que conviniera no arreglar el hallazgo. Se agregó la distinción,
+no un parche al registro.
+
+**Y el denominador de la cobertura salía de dos lugares**: `'scripts'` literal adentro del gate, y el
+contrato declarándolo por su cuenta. Ahora el gate lee el contrato, con grano de archivo.
+
+**Un incumplimiento de LAW 1, dicho.** En el tercer verificador de `research/` se escribió el script
+antes de correr la prueba, así que **no se vio el rojo**. Se compensó por mutación — tres reglas
+rotas a propósito, tres pruebas caídas, restaurado y 26/26 —, pero el orden estuvo mal y queda
+anotado porque compensar no es lo mismo que cumplir.
+
+**Abierto**: la ablación. El set ya no tiene tareas redactadas y las rutas acordadas están en
+`.claude/ablation-run-scope.json` (gitignorado, no viaja). Falta lo único que esta sesión no podía
+hacer: **medir la línea base en sesiones nuevas**, porque una sesión que ya tiene la configuración
+cargada no puede medir si esa configuración aporta.
+
+
 **Feature slug:** eleccion-de-stack
 **Goal:** que el protocolo elija el stack en vez de sólo detectarlo: una novena pregunta de Intake
 con el tipo de producto (A-H), una matriz con evidencia fechada, y la regla de arrancar siempre en
