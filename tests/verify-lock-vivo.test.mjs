@@ -34,7 +34,7 @@ import test from 'node:test';
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'verify-lock-vivo.mjs');
 const {
-  MUERTO, RECONCILE, USAGE, VIVO, estadoDelLock, existeProceso, main, marcaDeArranque, tomarLock,
+  MUERTO, RECONCILE, USAGE, VIVO, estadoDelLock, existeProceso, inicioDelProceso, main, marcaDeArranque, tomarLock,
 } = await import(pathToFileURL(script).href);
 
 const arranque = 'maquina-A:1000000';
@@ -99,11 +99,14 @@ test('RECONCILE · un lock sin marca de arranque es de antes de que esto existie
 });
 
 test('tomarLock escribe lo que hace falta para poder preguntar después', () => {
-  const l = tomarLock({ pid: 777, arranque, ahora: '2026-09-15T10:00:00.000Z' });
-  assert.deepEqual(Object.keys(l).sort(), ['boot', 'pid', 'taken_at']);
+  // `start` entra acá el 2026-09-16: sin la hora de arranque DEL PROCESO no hay forma de distinguir
+  // un PID que el sistema le dio a otro programa, y ese era el hueco que el límite declaraba.
+  const l = tomarLock({ pid: 777, arranque, inicio: () => 'ticks:111', ahora: '2026-09-15T10:00:00.000Z' });
+  assert.deepEqual(Object.keys(l).sort(), ['boot', 'pid', 'start', 'taken_at']);
   assert.equal(l.pid, 777);
   assert.equal(l.boot, arranque);
-  assert.equal(estadoDelLock(l, { arranque, existe: () => true }).estado, VIVO);
+  assert.equal(l.start, 'ticks:111');
+  assert.equal(estadoDelLock(l, { arranque, existe: () => true, inicio: () => 'ticks:111' }).estado, VIVO);
 });
 
 test('EL PLAN REAL: cada tarea tomada dice si su dueño sigue vivo', () => {
@@ -261,3 +264,111 @@ test('sin inyectarle el arranque ni el probe, usa los de verdad', () => {
   assert.equal(code, 0, salida.join('\n'));
   assert.match(salida.join('\n'), /vivo/iu);
 });
+
+// --- El PID reusado dentro del mismo arranque ----------------------------------------------------
+
+test('inicioDelProceso contesta algo estable para ESTE proceso, y nada para uno que no existe', () => {
+  // La unica pieza nueva que le habla al sistema operativo. Se prueba directo: un doble probaria el
+  // doble. Si esta plataforma no sabe contestar, devuelve null y lo dice -- no inventa una marca.
+  const a = inicioDelProceso(process.pid);
+  if (a === null) return; // plataforma sin sonda: el resto del sistema lo trata como reconcile
+  assert.equal(typeof a, 'string');
+  assert.ok(a.length > 0);
+  assert.equal(inicioDelProceso(process.pid), a, 'dos lecturas seguidas tienen que dar lo mismo');
+  assert.equal(inicioDelProceso(0x7ffffffe), null, 'un pid que no existe no tiene hora de arranque');
+});
+
+test('tomarLock guarda la hora de arranque del proceso, no sólo la de la máquina', () => {
+  const l = tomarLock();
+  assert.equal(l.pid, process.pid);
+  assert.equal(typeof l.boot, 'string');
+  assert.ok('start' in l, 'sin start no hay forma de distinguir un PID reusado');
+});
+
+test('un PID reusado dentro del mismo arranque se declara MUERTO, no vivo', () => {
+  // El caso que el límite declaraba imposible. El número existe —lo tomó otro programa— y el
+  // proceso que puso el candado no está: antes esto salía `vivo` y trababa la tarea para siempre.
+  const r = estadoDelLock(
+    { pid: 4242, boot: 'maquina:29000000', start: 'ticks:111' },
+    { arranque: 'maquina:29000000', existe: () => true, inicio: () => 'ticks:999' },
+  );
+  assert.equal(r.estado, MUERTO);
+  assert.match(r.motivo, /reusad|otro proceso|no es el mismo/iu, r.motivo);
+});
+
+test('mismo PID y mismo arranque de proceso sigue siendo VIVO', () => {
+  const r = estadoDelLock(
+    { pid: 4242, boot: 'maquina:29000000', start: 'ticks:111' },
+    { arranque: 'maquina:29000000', existe: () => true, inicio: () => 'ticks:111' },
+  );
+  assert.equal(r.estado, VIVO);
+});
+
+test('un candado con start que hoy no se puede leer es RECONCILE, no una adivinanza', () => {
+  // Las dos adivinanzas son destructivas: soltar rompe el trabajo de alguien, no soltar traba para
+  // siempre. Cuando no se puede probar ninguna, se dice.
+  const r = estadoDelLock(
+    { pid: 4242, boot: 'maquina:29000000', start: 'ticks:111' },
+    { arranque: 'maquina:29000000', existe: () => true, inicio: () => null },
+  );
+  assert.equal(r.estado, RECONCILE);
+});
+
+test('un candado VIEJO sin start sigue funcionando, y dice qué es lo que no puede distinguir', () => {
+  // Convertir en reconcile todos los candados ya escritos trabaría el protocolo entero de golpe.
+  // Se sigue con arranque + pid, que es lo que había, y se nombra el hueco en vez de taparlo.
+  const r = estadoDelLock(
+    { pid: 4242, boot: 'maquina:29000000' },
+    { arranque: 'maquina:29000000', existe: () => true, inicio: () => 'ticks:999' },
+  );
+  assert.equal(r.estado, VIVO);
+  assert.match(r.motivo, /no declara.*arranque del proceso|no puede distinguir/iu, r.motivo);
+});
+
+// --- Las tres plataformas, y esta máquina es una sola ---------------------------------------------
+
+test('en Linux la hora de arranque sale del campo 22 de /proc/<pid>/stat', () => {
+  // El nombre del ejecutable va entre paréntesis y PUEDE traer espacios y paréntesis adentro: por
+  // eso se corta desde el ÚLTIMO ')'. Un `split(' ')` ingenuo corre todos los campos y devuelve
+  // basura que igual parece un número.
+  const stat = ['42', '(mi (raro) prog)', 'S', '1', ...Array.from({ length: 17 }, (_, i) => String(i)), '99887766', 'resto'].join(' ');
+  assert.equal(inicioDelProceso(42, { platform: 'linux', leer: () => stat }), 'linux:99887766');
+});
+
+test('en Linux, un stat ilegible o sin la forma esperada no inventa una marca', () => {
+  assert.equal(inicioDelProceso(42, { platform: 'linux', leer: () => { throw new Error('ENOENT'); } }), null);
+  assert.equal(inicioDelProceso(42, { platform: 'linux', leer: () => 'sin parentesis ni campos' }), null);
+  const corto = '42 (prog) S 1 2 3';
+  assert.equal(inicioDelProceso(42, { platform: 'linux', leer: () => corto }), null, 'faltan campos: no hay campo 22');
+});
+
+test('en Windows la hora de arranque sale de Get-Process, y sólo si contestó bien', () => {
+  assert.equal(inicioDelProceso(42, { platform: 'win32', spawn: () => ({ status: 0, stdout: ' 639251178227621846 \n' }) }), 'win:639251178227621846');
+  assert.equal(inicioDelProceso(42, { platform: 'win32', spawn: () => ({ status: 1, stdout: '' }) }), null);
+  assert.equal(inicioDelProceso(42, { platform: 'win32', spawn: () => ({ status: 0, stdout: 'no es un número' }) }), null);
+  assert.equal(inicioDelProceso(42, { platform: 'win32', spawn: () => undefined }), null, 'un spawn que no devuelve nada tampoco');
+});
+
+test('en macOS y el resto sale de ps, y una salida vacía no es una marca', () => {
+  assert.equal(inicioDelProceso(42, { platform: 'darwin', spawn: () => ({ status: 0, stdout: 'Mon Sep 15 10:00:00 2026' }) }), 'ps:Mon Sep 15 10:00:00 2026');
+  assert.equal(inicioDelProceso(42, { platform: 'darwin', spawn: () => ({ status: 0, stdout: '   ' }) }), null);
+  assert.equal(inicioDelProceso(42, { platform: 'darwin', spawn: () => ({ status: 1, stdout: 'x' }) }), null);
+});
+
+test('una sonda que revienta al preguntar es RECONCILE, no un veredicto', () => {
+  // Las dos adivinanzas son destructivas, así que cuando la pregunta misma falla se dice.
+  const r = estadoDelLock(
+    { pid: 4242, boot: 'maquina:29000000', start: 'ticks:111' },
+    { arranque: 'maquina:29000000', existe: () => true, inicio: () => { throw new Error('el probe explotó'); } },
+  );
+  assert.equal(r.estado, RECONCILE);
+  assert.match(r.motivo, /el probe explotó/u);
+});
+
+test('un comando que contesta sin stdout no da una marca vacía: da null', () => {
+  // `{ status: 0 }` sin salida es lo que devuelve un spawn que no pudo capturar nada. Tratar eso
+  // como una marca convertiria «no se pudo leer» en «leido», que es el verde falso de siempre.
+  assert.equal(inicioDelProceso(42, { platform: 'win32', spawn: () => ({ status: 0 }) }), null);
+  assert.equal(inicioDelProceso(42, { platform: 'darwin', spawn: () => ({ status: 0 }) }), null);
+});
+
