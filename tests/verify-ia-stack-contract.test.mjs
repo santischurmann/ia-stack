@@ -18,8 +18,11 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
   : {};
 
 const script = join(repoRoot, 'scripts', 'verify-ia-stack-contract.mjs');
+import { mismoSchema } from '../scripts/schema-compat.mjs';
+
 const {
   FORBIDDEN_PHRASES,
+  veredictoDeCompatibilidad,
   HONEST_LIMITS_SCHEMA,
   REQUIREMENTS,
   contractViolations,
@@ -571,3 +574,57 @@ test('FALSIFICACIÓN · borrar el límite del alcance de los self-checks o el de
   const sinHtml = sin('SECURITY.md', 'no ve el HTML que se arma con plantillas del lado del servidor');
   assert.equal(sinHtml.some((i) => /server-side HTML template honest limit/u.test(i)), true);
 });
+
+// --- La fecha de corte de la compatibilidad de nombres -------------------------------------------
+
+test('el gate imprime cuándo vence la compatibilidad de nombres, no sólo cuántos viejos leyó', SOLO_FUENTE, () => {
+  const output = [];
+  assert.equal(main(['check'], repoRoot, (line) => output.push(line), () => {}), 0);
+  assert.match(output.join('\n'), /Vence el \d{4}-\d{2}-\d{2}/u, output.join('\n'));
+});
+
+test('FALSIFICACIÓN · el veredicto del corte rechaza sólo cuando venció Y todavía se leen viejos', () => {
+  // Las cuatro combinaciones, porque las cuatro tienen trato distinto y tres de ellas NO rechazan.
+  // Un gate que rechazara en «por_vencer» no dejaría tiempo de migrar, y uno que rechazara con cero
+  // viejos sería ruido permanente: un gate que siempre rechaza se ignora, y uno ignorado no detecta.
+  assert.equal(veredictoDeCompatibilidad({ estado: 'vigente', legado: 3, dias: 180, corte: '2027-03-15' }).rechaza, false);
+  assert.equal(veredictoDeCompatibilidad({ estado: 'por_vencer', legado: 3, dias: 10, corte: '2027-03-15' }).rechaza, false);
+  assert.equal(veredictoDeCompatibilidad({ estado: 'vencida', legado: 0, dias: -1, corte: '2027-03-15' }).rechaza, false);
+
+  const vencido = veredictoDeCompatibilidad({ estado: 'vencida', legado: 3, dias: -40, corte: '2027-03-15' });
+  assert.equal(vencido.rechaza, true);
+  assert.match(vencido.mensaje, /2027-03-15/u);
+  assert.match(vencido.mensaje, /3/u, 'el mensaje dice cuántos quedan por migrar, no sólo que algo pasa');
+});
+
+test('el veredicto vencido y en cero dice que la tolerancia ya se puede retirar', () => {
+  const r = veredictoDeCompatibilidad({ estado: 'vencida', legado: 0, dias: -1, corte: '2027-03-15' });
+  assert.equal(r.rechaza, false);
+  assert.match(r.mensaje, /se puede retirar/iu);
+});
+
+test('pasada la fecha de corte, este repositorio no lee un solo nombre viejo', SOLO_FUENTE, () => {
+  // El dato, no la regla: si ESTE checkout siguiera produciendo artefactos viejos, el corte lo
+  // encontraría. Hoy sale 0 porque no hay ninguno, y eso es exactamente lo que se quiere comprobar.
+  const output = [];
+  const errores = [];
+  const code = main(['check'], repoRoot, (l) => output.push(l), (l) => errores.push(l), undefined, '2099-01-01');
+  assert.equal(code, 0, errores.join('\n'));
+  assert.match(output.join('\n'), /se puede retirar/iu, output.join('\n'));
+});
+
+// --- ESTA PRUEBA VA ÚLTIMA: sube el contador compartido del proceso -------------------------------
+
+test('EL RECHAZO: vencida la fecha y con nombres viejos todavía en uso, el gate sale 1', SOLO_FUENTE, () => {
+  // El contador es compartido por proceso a propósito —lo que interesa es cuántos leyó el protocolo
+  // entero, no cada gate por separado—, así que comparar un nombre viejo acá lo sube. Es la única
+  // forma de ejercer el camino que hace cumplir la fecha en un repositorio donde ya no queda ninguno.
+  assert.equal(mismoSchema('vcp.receipt/v3', 'ia.receipt/v3'), true, 'la tolerancia sigue aceptando el prefijo viejo');
+  const errores = [];
+  const salida = [];
+  const code = main(['check'], repoRoot, (l) => salida.push(l), (l) => errores.push(l), undefined, '2099-01-01');
+  assert.equal(code, 1, salida.join('\n'));
+  assert.match(errores.join('\n'), /venció el 2027-03-15/u, errores.join('\n'));
+  assert.match(errores.join('\n'), /migralos, no corras la fecha/u);
+});
+

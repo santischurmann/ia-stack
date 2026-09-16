@@ -23,7 +23,7 @@ import test from 'node:test';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'schema-compat.mjs');
-const { LEGADO, PREFIJO, aLegado, contarLegado, leidosConNombreViejo, mismoSchema } = await import(pathToFileURL(script).href);
+const { CORTE, LEGADO, PREFIJO, aLegado, contarLegado, estadoDeCompatibilidad, leidosConNombreViejo, mismoSchema } = await import(pathToFileURL(script).href);
 
 test('los dos prefijos son los que el protocolo declara, y no se adivinan', () => {
   assert.equal(PREFIJO, 'ia.');
@@ -156,4 +156,78 @@ test('el contador COMPARTIDO acumula entre gates, que es el unico numero que sir
   const despues = leidosConNombreViejo();
   assert.equal(despues.total, antes + 2);
   assert.ok(despues.legado >= 1);
+});
+
+// --- La fecha de corte ---------------------------------------------------------------------------
+
+test('la compatibilidad declara una fecha de corte real', () => {
+  // Una tolerancia sin vencimiento es permanente aunque nadie lo haya decidido. La fecha es lo que
+  // convierte «por ahora» en algo que alguien puede comprobar.
+  assert.match(CORTE, /^\d{4}-\d{2}-\d{2}$/u);
+  const d = new Date(`${CORTE}T00:00:00Z`);
+  assert.equal(d.toISOString().slice(0, 10), CORTE, 'la fecha tiene que existir de verdad, no rodar de mes');
+});
+
+test('el estado de la compatibilidad depende del día, y tiene tres valores', () => {
+  assert.equal(estadoDeCompatibilidad('2026-09-16').estado, 'vigente');
+  assert.equal(estadoDeCompatibilidad(CORTE).estado, 'por_vencer', 'el día del corte todavía se acepta: vence DESPUÉS');
+  const [a, m, d] = CORTE.split('-').map(Number);
+  const despues = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+  assert.equal(estadoDeCompatibilidad(despues).estado, 'vencida');
+  assert.equal(typeof estadoDeCompatibilidad('2026-09-16').dias, 'number');
+  assert.equal(estadoDeCompatibilidad('2026-09-16').corte, CORTE);
+});
+
+test('por_vencer empieza a avisar antes del corte, no el mismo día', () => {
+  // Avisar el día del vencimiento no sirve para migrar nada. El aviso tiene que llegar con tiempo.
+  const [a, m, d] = CORTE.split('-').map(Number);
+  const treintaAntes = new Date(Date.UTC(a, m - 1, d - 30)).toISOString().slice(0, 10);
+  assert.equal(estadoDeCompatibilidad(treintaAntes).estado, 'por_vencer');
+  const cienAntes = new Date(Date.UTC(a, m - 1, d - 100)).toISOString().slice(0, 10);
+  assert.equal(estadoDeCompatibilidad(cienAntes).estado, 'vigente');
+});
+
+test('leer el nombre viejo NO deja de funcionar después del corte', () => {
+  // A propósito, y es la decisión que más importa de todo esto: la evidencia sellada de
+  // docs/discovery/** declara el prefijo viejo y es append-only. Un corte que apague la lectura
+  // invalidaría la historia del repositorio un martes cualquiera. Lo que vence es el permiso de
+  // seguir PRODUCIENDO artefactos viejos, y eso lo escala el gate, no el lector.
+  assert.equal(mismoSchema('vcp.receipt/v3', 'ia.receipt/v3'), true);
+});
+
+test('el resumen dice en qué estado está la compatibilidad y hasta cuándo', () => {
+  const c = contarLegado();
+  c.mirar('vcp.receipt/v3', 'ia.receipt/v3');
+  const r = c.resumen('2026-09-16');
+  assert.match(r, new RegExp(CORTE, 'u'), r);
+  const [a, m, d] = CORTE.split('-').map(Number);
+  const despues = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+  assert.match(c.resumen(despues), /venció|vencida/iu);
+});
+
+test('vencida y sin un solo nombre viejo dice que la tolerancia ya se puede retirar', () => {
+  const c = contarLegado();
+  c.mirar('ia.receipt/v3', 'ia.receipt/v3');
+  const [a, m, d] = CORTE.split('-').map(Number);
+  const despues = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+  assert.match(c.resumen(despues), /se puede retirar/iu);
+});
+
+test('en `por_vencer` el resumen dice cuántos días quedan, que es lo único que sirve para migrar', () => {
+  const [a, m, d] = CORTE.split('-').map(Number);
+  const faltan10 = new Date(Date.UTC(a, m - 1, d - 10)).toISOString().slice(0, 10);
+  const c = contarLegado();
+  c.mirar('vcp.receipt/v3', 'ia.receipt/v3');
+  assert.match(c.resumen(faltan10), /quedan 10 día\(s\)/u, c.resumen(faltan10));
+  // Y en cero, el mismo plazo: el aviso no depende de que todavía haya artefactos viejos.
+  const limpio = contarLegado();
+  limpio.mirar('ia.receipt/v3', 'ia.receipt/v3');
+  assert.match(limpio.resumen(faltan10), /quedan 10 día\(s\)/u);
+});
+
+test('leidosConNombreViejo trae el estado además del conteo', () => {
+  const leido = leidosConNombreViejo('2026-09-16');
+  assert.equal(leido.corte, CORTE);
+  assert.equal(leido.estado, 'vigente');
+  assert.equal(typeof leido.dias, 'number');
 });

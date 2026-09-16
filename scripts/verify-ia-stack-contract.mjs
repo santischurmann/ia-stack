@@ -333,7 +333,37 @@ export function contractViolations(read) {
  * INSTALL.md del repositorio de VCP, archivos que el instalador no copia. */
 export const RAIZ_DEL_SCRIPT = dirname(dirname(fileURLToPath(import.meta.url)));
 
-export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, raizDelScript = RAIZ_DEL_SCRIPT) {
+/**
+ * QUE HACER CON EL ESTADO DE LA COMPATIBILIDAD DE NOMBRES. Se separa de `main` porque es la parte
+ * que tiene reglas, y porque el rechazo no se puede provocar corriendo el gate sobre este
+ * repositorio: ningun artefacto de este checkout declara el prefijo viejo, asi que el contador
+ * termina en cero por el motivo correcto. Una prueba de integracion que exigiera ese rechazo
+ * estaria midiendo que la prueba esta mal escrita.
+ *
+ * TRES ESTADOS Y CUATRO TRATOS, y tres de los cuatro NO rechazan:
+ *
+ *   vigente               se imprime y listo.
+ *   por_vencer            se imprime con los dias que quedan. Un aviso que ya bloquea no es un
+ *                         aviso: es el vencimiento adelantado, y no deja migrar nada.
+ *   vencida, cero viejos  se imprime que la tolerancia ya se puede retirar. No hay nada roto: hay
+ *                         codigo de mas. Rechazar aca seria ruido permanente, y un gate que siempre
+ *                         rechaza se ignora -- y uno ignorado no detecta nada.
+ *   vencida, viejos > 0   RECHAZO. Paso la fecha acordada y se siguen produciendo artefactos con el
+ *                         nombre viejo. Correr la fecha seria exactamente lo mismo que no haberla
+ *                         puesto nunca.
+ */
+export function veredictoDeCompatibilidad({ estado, legado, dias, corte }) {
+  if (estado !== 'vencida') return { rechaza: false, mensaje: '' };
+  if (legado === 0) {
+    return { rechaza: false, mensaje: `la compatibilidad de nombres venció el ${corte} y esta corrida no leyó ninguno: se puede retirar.` };
+  }
+  return {
+    rechaza: true,
+    mensaje: `la compatibilidad de nombres venció el ${corte} hace ${Math.abs(dias)} día(s) y esta corrida todavía leyó ${legado} schema(s) con el prefijo viejo: migralos, no corras la fecha. Una fecha que se mueve cada vez que llega es lo mismo que no tener fecha.`,
+  };
+}
+
+export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, raizDelScript = RAIZ_DEL_SCRIPT, hoy = undefined) {
   if (args.length !== 1 || args[0] !== 'check') {
     writeError(USAGE);
     return 2;
@@ -365,7 +395,15 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   // EL DATO QUE PERMITE RETIRAR LA COMPATIBILIDAD ALGUN DIA. Sin un numero, una tolerancia que se
   // promete transitoria se queda para siempre: nadie puede decir si todavia sirve. Es una foto de
   // ESTA corrida, no un historico, y el mensaje lo dice asi.
-  write(leidosConNombreViejo().resumen);
+  const compat = leidosConNombreViejo(hoy);
+  write(compat.resumen);
+  // La fecha se hace cumplir aca. Imprimir no es un gate.
+  const veredicto = veredictoDeCompatibilidad(compat);
+  if (veredicto.rechaza) {
+    writeError(`REJECTED: ${veredicto.mensaje}`);
+    return 1;
+  }
+  if (veredicto.mensaje !== '') write(veredicto.mensaje);
   return 0;
 }
 
