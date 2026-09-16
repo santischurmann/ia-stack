@@ -5,6 +5,15 @@
     {
       "directory": "scripts",
       "why": "Son los gates que el protocolo ejecuta y de los que depende cada veredicto. verify-ia-stack-coverage.mjs exige que toda funcion y toda rama de estos archivos las haya ejecutado algun proceso de la suite."
+    },
+    {
+      "files": [
+        "research/verify-full-evidence-pass.mjs",
+        "research/verify-semantic-deep-evidence.mjs",
+        "research/verify-semantic-functional-ledger.mjs",
+        "research/verify-semantic-review-index.mjs"
+      ],
+      "why": "Los cuatro verificadores de research/ que el protocolo manda correr en su fase de verificacion. Estaban excluidos y declarados como DEUDA desde el 2026-09-01 porque eran scripts imperativos de nivel superior: leian sus insumos al importarse, asi que no se podian probar sin versionar cientos de megas de corpus. El 2026-09-16 se les separo la logica de la entrada/salida -- una funcion pura que recibe los artefactos ya leidos, y un main que cablea -- y con eso la deuda se pago: 86 pruebas propias. Entran por archivo y no por directorio porque el RESTO de research/ sigue siendo de un solo uso y sigue afuera."
     }
   ],
   "excluded": [
@@ -15,9 +24,9 @@
     },
     {
       "directory": "research",
-      "why": "Herramientas de un solo uso que produjeron el expediente ya sellado y verificado. Leen archivos que .gitignore deja afuera por tamano, asi que medirlas exigiria versionar cientos de megas de corpus o construir fixtures que no representan la entrada real.",
-      "debt": true,
-      "debt_detail": "DEUDA DECLARADA, no cobertura. Cuatro de estos archivos NO son de un solo uso: verify-semantic-functional-ledger.mjs, verify-semantic-deep-evidence.mjs, verify-full-evidence-pass.mjs y verify-semantic-review-index.mjs son verificadores que el protocolo manda correr en su fase de verificacion, y ninguno tiene prueba propia. Lo unico probado de research/ es require-artifact.mjs, en tests/require-artifact.test.mjs. Medido el 2026-09-01: sobre un clon limpio, tres de esos cuatro reventaban con un stack trace de node:fs en vez de rechazar; eso se arreglo, pero el resto de su logica sigue sin prueba."
+      "why": "Herramientas de un solo uso que produjeron el expediente ya sellado y verificado. Leen archivos que .gitignore deja afuera por tamano, asi que medirlas exigiria versionar cientos de megas de corpus o construir fixtures que no representan la entrada real. Los CUATRO verificadores que el protocolo si manda correr salieron de esta exclusion el 2026-09-16 y se miden por nombre en measured: lo que queda aca es el resto.",
+      "debt": false,
+      "debt_settled": "DEUDA PAGADA el 2026-09-16. Decia: cuatro de estos archivos NO son de un solo uso -- verify-semantic-functional-ledger.mjs, verify-semantic-deep-evidence.mjs, verify-full-evidence-pass.mjs y verify-semantic-review-index.mjs son verificadores que el protocolo manda correr en su fase de verificacion, y ninguno tenia prueba propia. Se les separo la logica de la entrada/salida, se les escribieron 86 pruebas y pasaron a measured por nombre, asi que el gate de cobertura los exige al 100% como a cualquier otro. Lo que queda excluido de research/ es lo que siempre fue de un solo uso; require-artifact.mjs tiene prueba propia desde antes, en tests/require-artifact.test.mjs."
     }
   ]
 }

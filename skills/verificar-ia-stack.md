@@ -37,9 +37,11 @@ cuenta igual que una verificada.
 **Qué mide y qué no.** Mide `scripts/`. No mide `tests/` (son el instrumento) ni `research/`
 (herramientas de un solo uso que leen un corpus que no está en git). El recorte está escrito en
 `contracts/coverage-scope.json` con su motivo, y `tests/coverage-scope.test.mjs` rechaza que
-aparezca un directorio con código Node que el contrato no mencione. Ahí también queda declarado
-que cuatro verificadores de `research/` que el protocolo manda correr **no tienen prueba propia**:
-es deuda escrita, no cobertura. Los scripts Bash y PowerShell se validan aparte, con
+aparezca un directorio con código Node que el contrato no mencione. Los cuatro verificadores de `research/` que el
+protocolo manda correr **sí** se miden desde el 2026-09-16: estaban excluidos y declarados como deuda, se les separó la lógica de la entrada/salida, se les escribieron 86 pruebas y entraron al
+denominador por nombre. **Lo que esas pruebas no hacen**: las alimentan con datos sintéticos, así
+que comprueban que cada gate distinga un expediente sano de uno roto, nunca que el expediente
+real esté bien — un clon limpio prueba los cuatro gates y no puede reproducir el expediente, porque el corpus externo no está en git a propósito. Los scripts Bash y PowerShell se validan aparte, con
 `verify-shell-coverage.mjs` y sus fixtures.
 
 <!-- concurrencia: histórico -->

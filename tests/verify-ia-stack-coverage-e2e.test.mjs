@@ -29,6 +29,16 @@ function toyProject(testBody) {
   const root = mkdtempSync(join(tmpdir(), 'vcp-cov-e2e-'));
   mkdirSync(join(root, 'scripts'));
   mkdirSync(join(root, 'tests'));
+  // EL CONTRATO DE ALCANCE ES PARTE DEL PROYECTO, no del gate: desde el 2026-09-16 el denominador
+  // de la cobertura sale de aca y no de un nombre escrito adentro del codigo. Un proyecto sin este
+  // archivo no se puede medir, y el gate lo dice en vez de medir `scripts/` por costumbre.
+  mkdirSync(join(root, 'contracts'));
+  writeFileSync(join(root, 'contracts', 'coverage-scope.json'), JSON.stringify({
+    schema: 'ia.coverage-scope/1',
+    why: 'el proyecto de prueba declara que mide scripts/ y nada más, igual que cualquier instalación',
+    measured: [{ directory: 'scripts', why: 'los gates que este proyecto ejecuta' }],
+    excluded: [{ directory: 'tests', why: 'son las pruebas mismas: medirlas sería medir el instrumento con el instrumento', debt: false }],
+  }, null, 2), 'utf8');
   writeFileSync(join(root, 'scripts', 'demo.mjs'), DEMO, 'utf8');
   writeFileSync(join(root, 'tests', 'demo.test.mjs'), suite(testBody), 'utf8');
   return root;

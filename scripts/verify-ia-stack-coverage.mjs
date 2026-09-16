@@ -52,8 +52,34 @@ export const UNREADABLE_COVERAGE = 'COVERAGE_UNREADABLE';
  * nivel. Comprobado el 2026-09-04 creando uno: la sonda daba OK sin exigir nada. Se evitaba por
  * convencion -- todo plano -- y una convencion no es una regla; es la misma familia del agujero del
  * prefijo `verify-` que este repositorio cerro el 2026-08-28. */
-export function listMjsScripts(cwd = repoRoot, readDirectory = readdirSync) {
-  const encontrados = [];
+/**
+ * QUE SE MIDE, SEGUN EL CONTRATO Y NO SEGUN UN NOMBRE ESCRITO ACA ADENTRO. Hasta el 2026-09-16 este
+ * gate tenia 'scripts' literal en el codigo mientras `contracts/coverage-scope.json` declaraba lo
+ * mismo por su cuenta: dos fuentes para un solo hecho, que se separan sin que nada avise. Cuando se
+ * separan, el contrato pasa a describir algo que no ocurre -- peor que no tenerlo, porque alguien
+ * lo lee y le cree.
+ *
+ * DOS FORMAS, porque research/ es mitad y mitad: `directory` para un arbol entero y `files` para
+ * archivos sueltos. Los cuatro verificadores de research/ que el protocolo manda correr ya tienen
+ * prueba propia y se miden; el resto de research/ son herramientas de un solo uso que leen cientos
+ * de megas de corpus fuera de git y quedan afuera. Solo con directorios habria que elegir entre
+ * medir todo o no medir nada.
+ */
+export function alcanceMedido(cwd = repoRoot, readFile = readFileSync) {
+  const contrato = JSON.parse(readFile(`${cwd}/contracts/coverage-scope.json`, 'utf8'));
+  const medido = Array.isArray(contrato.measured) ? contrato.measured : [];
+  const directorios = medido.map((entrada) => entrada.directory).filter((d) => typeof d === 'string' && d !== '');
+  const archivos = [...new Set(medido.flatMap((entrada) => (Array.isArray(entrada.files) ? entrada.files : [])))].sort();
+  // UN DENOMINADOR VACIO DARIA COBERTURA PERFECTA SOBRE NADA. Se rechaza en vez de devolver [].
+  if (directorios.length === 0 && archivos.length === 0) {
+    throw new Error('contracts/coverage-scope.json no declara ningún alcance medido: measured tiene que traer al menos un directory o un files. Un denominador vacío daría 100% sobre cero archivos.');
+  }
+  return { directorios, archivos };
+}
+
+export function listMjsScripts(cwd = repoRoot, readDirectory = readdirSync, alcance = undefined) {
+  const { directorios, archivos } = alcance ?? alcanceMedido(cwd);
+  const encontrados = [...archivos];
   const bajar = (relativo) => {
     for (const entry of readDirectory(`${cwd}/${relativo}`, { withFileTypes: true })) {
       // `isDirectory` puede no existir en un doble de pruebas viejo: sin el, no se baja, que es el
@@ -62,7 +88,7 @@ export function listMjsScripts(cwd = repoRoot, readDirectory = readdirSync) {
       else if (typeof entry.isDirectory === 'function' && entry.isDirectory()) bajar(`${relativo}/${entry.name}`);
     }
   };
-  bajar('scripts');
+  for (const directorio of directorios) bajar(directorio);
   return encontrados.sort();
 }
 
@@ -246,15 +272,19 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
   }
 
   let expectedScripts;
+  let alcance;
   try {
-    expectedScripts = listMjsScripts(cwd, io.readScriptsDir);
+    // EL DENOMINADOR SALE DEL CONTRATO. Un proyecto sin contrato de alcance no se puede medir, y eso
+    // se dice: medir `scripts/` por costumbre seria inventar un denominador que nadie declaro.
+    alcance = io.alcance ?? alcanceMedido(cwd, io.readContract);
+    expectedScripts = listMjsScripts(cwd, io.readScriptsDir, alcance);
   } catch (error) {
     writeError(`Unable to inventory scripts/*.mjs: ${error.message}`);
     return 1;
   }
 
   // Ligadas al proyecto medido: `main` recibe un cwd y la huella tiene que hablar de ESE arbol.
-  const listarParaHuella = io.list ?? (() => listMjsScripts(cwd, io.readScriptsDir));
+  const listarParaHuella = io.list ?? (() => listMjsScripts(cwd, io.readScriptsDir, alcance));
   const leerParaHuella = io.read ?? ((name) => readFileSync(join(cwd, name), 'utf8'));
 
   // Un script que desaparece o se vuelve ilegible mientras corre la medicion es exactamente el

@@ -46,12 +46,28 @@ test('el contrato declara su esquema y una razón real por cada directorio', () 
   const todos = [...contract.measured, ...contract.excluded];
   assert.ok(todos.length > 0, 'un contrato vacío declara un denominador vacío');
   for (const entrada of todos) {
-    assert.match(entrada.directory, /^[a-z][a-z0-9-]*$/u, `directorio con forma inesperada: ${entrada.directory}`);
+    // DOS FORMAS desde el 2026-09-16: un árbol entero por `directory`, o archivos sueltos por
+    // `files`. La segunda existe porque research/ es mitad y mitad, y sin ella habría que elegir
+    // entre medirlo todo o no medir nada. Las dos exigen lo mismo: una forma válida y un motivo.
+    const nombre = entrada.directory ?? (entrada.files ?? []).join(', ');
+    if (entrada.directory === undefined) {
+      assert.ok(Array.isArray(entrada.files) && entrada.files.length > 0, `entrada sin directory tiene que traer files: ${JSON.stringify(entrada)}`);
+      for (const archivo of entrada.files) {
+        assert.match(archivo, /^[a-z][a-z0-9-]*\/[^\\]+\.mjs$/u, `archivo con forma inesperada: ${archivo}`);
+      }
+    } else {
+      assert.match(entrada.directory, /^[a-z][a-z0-9-]*$/u, `directorio con forma inesperada: ${entrada.directory}`);
+    }
     assert.ok(typeof entrada.why === 'string' && entrada.why.trim().length >= MIN_REASON,
-      `${entrada.directory}: la razón es demasiado corta para ser una razón`);
+      `${nombre}: la razón es demasiado corta para ser una razón`);
   }
-  const nombres = todos.map((entrada) => entrada.directory);
+  const nombres = todos.map((entrada) => entrada.directory).filter(Boolean);
   assert.equal(new Set(nombres).size, nombres.length, 'un directorio no puede estar medido y excluido a la vez');
+  // Un archivo suelto medido NO puede estar dentro de un directorio ya medido: se contaría dos veces.
+  const medidosDir = new Set(contract.measured.map((e) => e.directory).filter(Boolean));
+  for (const archivo of contract.measured.flatMap((e) => e.files ?? [])) {
+    assert.equal(medidosDir.has(archivo.split('/')[0]), false, `${archivo} ya está cubierto por su directorio medido`);
+  }
 });
 
 test('cada exclusión con deuda la escribe, y ninguna sin deuda la finge', () => {
@@ -78,13 +94,25 @@ test('ningún archivo Node del repositorio queda fuera del contrato', SOLO_FUENT
 
 test('lo que el gate inventaría es exactamente lo que el contrato declara medido', SOLO_FUENTE, () => {
   // Si el inventario y el contrato se separan, el contrato pasa a describir algo que no ocurre.
-  const medidos = new Set(contract.measured.map((entrada) => entrada.directory));
+  // Desde el 2026-09-16 el contrato habla de directorios Y de archivos sueltos, porque los cuatro
+  // verificadores de research/ se miden y el resto de research/ no.
+  const dirs = new Set(contract.measured.map((entrada) => entrada.directory).filter(Boolean));
+  const sueltos = new Set(contract.measured.flatMap((entrada) => entrada.files ?? []));
   const inventario = listMjsScripts(repoRoot);
   assert.ok(inventario.length > 0, 'el inventario del gate salió vacío');
   for (const archivo of inventario) {
-    assert.ok(medidos.has(archivo.split('/')[0]), `el gate mide ${archivo}, que el contrato no declara medido`);
+    assert.ok(dirs.has(archivo.split('/')[0]) || sueltos.has(archivo), `el gate mide ${archivo}, que el contrato no declara medido`);
   }
-  const delRepoMedidos = repoMjs().filter((archivo) => medidos.has(archivo.split('/')[0]));
+  const delRepoMedidos = repoMjs().filter((archivo) => dirs.has(archivo.split('/')[0]) || sueltos.has(archivo));
   assert.deepEqual(inventario.slice().sort(), delRepoMedidos.slice().sort(),
     'el gate y git no ven el mismo conjunto de archivos medidos');
+});
+
+test('cada archivo suelto que el contrato declara medido existe de verdad', SOLO_FUENTE, () => {
+  // Un contrato que nombra un archivo que no esta deja el denominador mas chico de lo que dice, y
+  // eso sube la cobertura sin que nadie escriba una prueba.
+  const sueltos = contract.measured.flatMap((entrada) => entrada.files ?? []);
+  assert.ok(sueltos.length > 0, 'el contrato no declara ningún archivo suelto medido');
+  const enGit = new Set(repoMjs());
+  for (const archivo of sueltos) assert.ok(enGit.has(archivo), `${archivo} está declarado medido y git no lo tiene`);
 });

@@ -6,7 +6,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+
+// Self-check del repositorio: lee contracts/coverage-scope.json de la raiz del checkout, que el
+// instalador no copia al proyecto de otra persona. Alla no aplica y ademas fallaria.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
+  : {};
 const coverageGate = join(repoRoot, 'scripts', 'verify-ia-stack-coverage.mjs');
 const {
   DEFAULT_TEST_CONCURRENCY,
@@ -18,6 +26,7 @@ const {
   fingerprintScripts,
   innermostCount,
   lineAt,
+  alcanceMedido,
   listMjsScripts,
   main,
   resolveTestConcurrency,
@@ -174,13 +183,55 @@ test('runCoverage corre la suite con NODE_V8_COVERAGE apuntando al directorio qu
   assert.equal(llamadas[0].options.env.NODE_V8_COVERAGE, '/cobertura');
 });
 
+/** El alcance que estas pruebas usan cuando le inyectan un lector de directorios falso. */
+const SOLO_SCRIPTS = { directorios: ['scripts'], archivos: [] };
+
+test('el alcance medido sale del contrato, no de un nombre escrito adentro del gate', () => {
+  // Una declaracion que nadie lee es documentacion. `contracts/coverage-scope.json` decia que se
+  // mide scripts/ y el gate lo tenia escrito aparte: dos fuentes para un solo hecho.
+  const leido = alcanceMedido('/project', () => JSON.stringify({
+    measured: [{ directory: 'scripts' }, { files: ['research/uno.mjs', 'research/dos.mjs'] }],
+  }));
+  assert.deepEqual(leido, { directorios: ['scripts'], archivos: ['research/dos.mjs', 'research/uno.mjs'] });
+});
+
+test('FALSIFICACIÓN · un contrato sin nada medido no deja al gate midiendo cero en silencio', () => {
+  // Cero archivos medidos darian cobertura perfecta sobre nada. Es el verde falso mas barato que
+  // existe, y se cierra rechazando en vez de devolviendo una lista vacia.
+  for (const roto of [{ measured: [] }, { measured: 'no es una lista' }, {}]) {
+    assert.throws(() => alcanceMedido('/project', () => JSON.stringify(roto)), /alcance|measured/iu, JSON.stringify(roto));
+  }
+});
+
+test('el inventario incluye los archivos sueltos que el contrato declara medidos', () => {
+  // Grano de archivo y no solo de directorio: los cuatro verificadores de research/ con prueba
+  // propia entran, y el resto de research/ -- de un solo uso, lee el corpus -- se queda afuera.
+  const entries = [{ name: 'verify-one.mjs', isFile: () => true, isDirectory: () => false }];
+  const inventario = listMjsScripts('/project', () => entries, { directorios: ['scripts'], archivos: ['research/verify-x.mjs'] });
+  assert.deepEqual(inventario, ['research/verify-x.mjs', 'scripts/verify-one.mjs']);
+});
+
+test('EL DATO: el contrato de este repositorio mide los cuatro verificadores de research', SOLO_FUENTE, () => {
+  const inventario = listMjsScripts(repoRoot);
+  for (const archivo of [
+    'research/verify-semantic-functional-ledger.mjs',
+    'research/verify-semantic-deep-evidence.mjs',
+    'research/verify-full-evidence-pass.mjs',
+    'research/verify-semantic-review-index.mjs',
+  ]) {
+    assert.ok(inventario.includes(archivo), `${archivo} no entra en la medición: ${inventario.filter((a) => a.startsWith('research/')).join(', ')}`);
+  }
+  // Y el resto de research/ sigue afuera: son de un solo uso y leen el corpus.
+  assert.equal(inventario.filter((a) => a.startsWith('research/')).length, 4);
+});
+
 test('listMjsScripts includes only executable Node files from its explicit inventory', () => {
   const entries = [
     { name: 'verify-one.mjs', isFile: () => true },
     { name: 'notes.md', isFile: () => true },
     { name: 'nested', isFile: () => false },
   ];
-  assert.deepEqual(listMjsScripts('/project', () => entries), ['scripts/verify-one.mjs']);
+  assert.deepEqual(listMjsScripts('/project', () => entries, SOLO_SCRIPTS), ['scripts/verify-one.mjs']);
   assert.ok(listMjsScripts(repoRoot).includes('scripts/verify-ia-stack-coverage.mjs'));
 });
 
@@ -208,6 +259,9 @@ function correrMain(overrides = {}) {
     mkdtemp: () => '/cov',
     rmdir: () => {},
     readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    // El alcance se inyecta porque el fixture declara su propio arbol: sin esto, el gate leeria el
+    // contrato REAL del repositorio y mediria cinco archivos sobre un proyecto que declara uno.
+    alcance: { directorios: ['scripts'], archivos: [] },
     list: () => ['scripts/demo.mjs'],
     read: () => FUENTE,
     listCoverage: () => ['coverage-1.json'],
@@ -387,6 +441,16 @@ test('el gate mide contra un proyecto real de punta a punta', () => {
   try {
     mkdirSync(join(raiz, 'scripts'));
     mkdirSync(join(raiz, 'tests'));
+    // El contrato de alcance es parte del proyecto medido: desde el 2026-09-16 el denominador sale
+    // de ahi. Un proyecto sin este archivo no se puede medir, y el gate lo dice en vez de medir
+    // scripts/ por costumbre.
+    mkdirSync(join(raiz, 'contracts'));
+    writeFileSync(join(raiz, 'contracts', 'coverage-scope.json'), JSON.stringify({
+      schema: 'ia.coverage-scope/1',
+      why: 'el proyecto de prueba declara que mide scripts/ y nada más, igual que cualquier instalación',
+      measured: [{ directory: 'scripts', why: 'los gates que este proyecto ejecuta' }],
+      excluded: [{ directory: 'tests', why: 'son las pruebas mismas: medirlas sería medir el instrumento con el instrumento', debt: false }],
+    }, null, 2), 'utf8');
     writeFileSync(join(raiz, 'scripts', 'demo.mjs'), 'export function demo(x) {\n  if (x) return 1;\n  return 2;\n}\n');
     writeFileSync(join(raiz, 'tests', 'demo.test.mjs'), [
       "import assert from 'node:assert/strict';",
@@ -440,7 +504,7 @@ test('listMjsScripts baja a los subdirectorios: un script anidado no escapa a la
     '/project/scripts/sub/hondo': [{ name: 'mas-hondo.mjs', isFile: () => true, isDirectory: () => false }],
   };
   const leer = (ruta) => arbol[String(ruta).split(String.fromCharCode(92)).join('/')] ?? [];
-  assert.deepEqual(listMjsScripts('/project', leer), [
+  assert.deepEqual(listMjsScripts('/project', leer, SOLO_SCRIPTS), [
     'scripts/sub/hondo/mas-hondo.mjs',
     'scripts/sub/oculto.mjs',
     'scripts/verify-one.mjs',
