@@ -514,8 +514,11 @@ test('listMjsScripts baja a los subdirectorios: un script anidado no escapa a la
 
 // --- Fusionar la cobertura de dos plataformas -----------------------------------------------------
 
-const RAIZ_WIN = 'file:///C:/Users/alguien/proyecto';
-const RAIZ_LINUX = 'file:///home/runner/work/ia-stack/ia-stack';
+// Dos raices que no se parecen en nada, que es lo unico que la fusion necesita distinguir. NO se
+// escriben con forma de directorio personal: el gate de repositorio limpio las rechaza, y tiene
+// razon -- una ruta de casa en un repositorio publico lleva adentro el nombre de quien lo escribio.
+const RAIZ_WIN = 'file:///D:/trabajo/proyecto';
+const RAIZ_LINUX = 'file:///opt/ci/trabajo/proyecto';
 
 test('la raíz de un archivo de cobertura se deriva de sus urls y del inventario', () => {
   // UNA VEZ POR ARCHIVO, no por entrada: con la raíz conocida, todo lo demás vuelve a ser el match

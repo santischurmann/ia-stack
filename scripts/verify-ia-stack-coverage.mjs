@@ -171,8 +171,9 @@ export function uncoveredRanges(processes, source) {
  *
  * POR QUE HACE FALTA. El match era por URL ABSOLUTA EXACTA, armada con el `cwd` local. Eso alcanza
  * mientras todo se mida en la misma maquina, y deja de alcanzar apenas se quiere fusionar lo medido
- * en dos plataformas: `file:///C:/Users/...` contra `file:///home/runner/...`. Sin esto, la mitad de
- * los archivos no matchea nada y la cobertura sale a la mitad, en silencio.
+ * en dos plataformas: la misma url lleva adentro la raiz del checkout de cada una, y esas raices no
+ * se parecen en nada. Sin esto, la mitad de los archivos no matchea y la cobertura sale a la mitad,
+ * en silencio.
  *
  * UNA VEZ POR ARCHIVO, NO POR ENTRADA. Se resuelve una sola ambiguedad por documento en vez de N, y
  * con la raiz conocida todo lo demas vuelve a ser el match exacto que ya existia: la logica que
