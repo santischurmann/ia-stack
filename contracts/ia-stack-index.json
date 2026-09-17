@@ -1519,6 +1519,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-receipt-check-v3.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-receipt-commit.test.mjs",
       "class": "prueba"
     },

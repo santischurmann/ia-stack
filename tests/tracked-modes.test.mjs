@@ -13,6 +13,22 @@
 // Y LA LISTA NO SE ESCRIBE A MANO: se deriva grepeando qué scripts invoca la documentación por
 // ruta. Una lista escrita a mano sólo encuentra lo que ya pensó quien la escribió, y se queda vieja
 // el día que aparezca un script nuevo publicado como comando.
+//
+// LA SEGUNDA HERIDA, 2026-09-17: esta regla estaba verde y `verify-red.sh` seguía en `100644`. El
+// barrido derivaba bien, pero reconocía UNA sola forma de invocar —la del prefijo `./`— y los
+// documentos usan dos. La otra es la del runtime instalado, que es la que más se publica:
+//
+//     .vibe/ia-stack-runtime/scripts/verify-red.sh "<literal-test-file>" "node --test"
+//
+// Doce apariciones de esa forma para `verify-red.sh` y cinco para `vibe-memory.sh`, ninguna vista.
+// Y no es un script cualquiera: es el gate de LAW 1, «sin test rojo visible no hay implementación»,
+// publicado con un comando que en Linux y macOS devuelve `permission denied`.
+//
+// Lo encontró el CI —Ubuntu, primera corrida en que las pruebas de shell dejaron de saltearse ahí—
+// y no esta prueba, que es la que existía para eso. Derivar de los documentos era lo correcto; lo
+// que faltaba era que el patrón cubriera las formas que los documentos de verdad usan. El arreglo va
+// acá y no en una prueba nueva al lado: dos reglas sobre lo mismo son dos reglas que se
+// desincronizan.
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -28,7 +44,12 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
   ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
   : {};
 
-const INVOCACION = /\.\/(scripts\/[a-z0-9-]+\.sh)/gu;
+// DOS FORMAS, NO UNA. `./scripts/x.sh` es el checkout; `.vibe/<runtime>/scripts/x.sh` es la copia
+// instalada, que es la misma copia y necesita el mismo bit. Las dos exigen un prefijo de directorio:
+// lo que las separa de una mención es justamente eso. `scripts/x.sh` a secas queda afuera a
+// propósito —la mitad de las veces es prosa, y la otra mitad es `bash scripts/x.sh`, que no necesita
+// el bit porque el intérprete va adelante—.
+const INVOCACION = /(?:\.\/|\.vibe\/[A-Za-z0-9._-]+\/)(scripts\/[a-z0-9-]+\.sh)/gu;
 export const MODO_EJECUTABLE = '100755';
 
 /** Qué scripts de shell publica un documento como comando a correr, por ruta. */
@@ -74,6 +95,26 @@ test('FALSIFICACIÓN · el barrido lee las invocaciones por ruta y no cualquier 
   assert.deepEqual(invocadosPorRuta('corré `./scripts/install.sh --project x`'), ['scripts/install.sh']);
   assert.deepEqual(invocadosPorRuta('el archivo scripts/install.sh existe'), [], 'nombrarlo no es invocarlo');
   assert.deepEqual(invocadosPorRuta('./scripts/a.sh y ./scripts/a.sh'), ['scripts/a.sh'], 'sin duplicados');
+});
+
+test('FALSIFICACIÓN · la invocación del runtime instalado también cuenta, y es la que faltaba', () => {
+  // La forma que se le escapó al patrón original durante nueve días, con `verify-red.sh` en 100644.
+  assert.deepEqual(
+    invocadosPorRuta('.vibe/ia-stack-runtime/scripts/verify-red.sh "x.test.mjs" "node --test"'),
+    ['scripts/verify-red.sh'],
+    'el runtime instalado es una copia del mismo archivo: necesita el mismo bit',
+  );
+  assert.deepEqual(
+    invocadosPorRuta('.vibe/vcp-runtime/scripts/verify-red.sh "x"'),
+    ['scripts/verify-red.sh'],
+    'el nombre viejo del runtime sigue publicado y también invoca',
+  );
+  assert.deepEqual(
+    invocadosPorRuta('.vibe/a/scripts/x.sh y ./scripts/x.sh'),
+    ['scripts/x.sh'],
+    'la misma ruta por las dos formas es un solo script',
+  );
+  assert.deepEqual(invocadosPorRuta('bash scripts/verify-red.sh x'), [], 'con el intérprete adelante el bit no hace falta');
 });
 
 test('FALSIFICACIÓN · el lector de modos entiende la salida de git y descarta la basura', () => {
