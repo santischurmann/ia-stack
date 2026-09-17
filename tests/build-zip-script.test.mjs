@@ -6,9 +6,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { resolveBash } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'build-zip.sh');
-const bash = process.platform === 'win32' ? 'C:\\Program Files\\Git\\bin\\bash.exe' : 'bash';
+// `resolveBash` y no una constante propia: en Windows prefiere Git Bash sobre el shim de WSL, y
+// fuera de Windows devuelve `bash` a secas. Antes esto se comparaba con `existsSync`, y en Linux
+// `existsSync('bash')` da false —es un nombre del PATH, no una ruta—, así que las cuatro pruebas de
+// este archivo se salteaban enteras justo en la plataforma donde el `.sh` es EL camino.
+const bash = resolveBash();
+const hayBash = process.platform !== 'win32' || existsSync(bash);
 
 function run(args) {
   const result = spawnSync(bash, args, { cwd: repoRoot, encoding: 'utf8' });
@@ -23,7 +30,7 @@ function runAt(args, cwd, env = process.env) {
 }
 
 test('build-zip shell script parses and rejects traversal-shaped version input before it can remove or create output', (t) => {
-  if (!existsSync(bash)) t.skip('Git Bash is unavailable on this Windows host');
+  if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const syntax = run(['-n', script]);
   assert.equal(syntax.status, 0, syntax.output);
   const invalid = run([script, '../outside']);
@@ -35,7 +42,7 @@ test('build-zip shell script parses and rejects traversal-shaped version input b
 // blanca de arriba, que no dice nada de lo que hay ADENTRO de cada directorio. Ahora afirma lo que
 // de verdad comprueba: que fuera de la lista blanca no entra nada, ni siquiera si está versionado.
 test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquete, aunque esté versionado', (t) => {
-  if (!existsSync(bash)) t.skip('Git Bash is unavailable on this Windows host');
+  if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-'));
   try {
     const packageDir = join(root, 'VCP');
@@ -104,7 +111,7 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
 // La prueba vieja afirmaba "nunca estado local ni el arbol entero" mirando solo esa lista blanca.
 
 test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado no viaja al release', (t) => {
-  if (!existsSync(bash)) t.skip('Git Bash is unavailable on this Windows host');
+  if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-git-'));
   try {
     const packageDir = join(root, 'VCP');
@@ -149,7 +156,7 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
 });
 
 test('el empaquetador falla cerrado si no puede saber que esta versionado', (t) => {
-  if (!existsSync(bash)) t.skip('Git Bash is unavailable on this Windows host');
+  if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-nogit-'));
   try {
     const packageDir = join(root, 'VCP');

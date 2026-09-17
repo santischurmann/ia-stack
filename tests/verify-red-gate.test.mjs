@@ -5,10 +5,15 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { resolveBash, soloEnWindows } from './_entorno.mjs';
+
 const repoRoot = new URL('..', import.meta.url).pathname.replace(/^\/(.:)/, '$1');
 const psGate = join(repoRoot, 'scripts', 'verify-red.ps1');
 const shGate = join(repoRoot, 'scripts', 'verify-red.sh');
-const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+// `resolveBash` y no la ruta de Git Bash a mano: en Linux `existsSync` de una ruta de Windows da
+// false, asi que la variante de shell del gate de LAW 1 -- la regla mas dura del protocolo -- no
+// corria ahi. `verify-red.sh` es el gate de shell: Linux es su plataforma, no su excepcion.
+const gitBash = resolveBash();
 const isWindows = process.platform === 'win32';
 
 function write(root, relativePath, content) {
@@ -90,13 +95,22 @@ function fixture() {
   return root;
 }
 
+// Cada variante trae SUS opciones de salteo, no un booleano, porque los dos salteos no son la misma
+// cosa. El de PowerShell es de plataforma y va DECLARADO en `contracts/platform-scope.json`: en el
+// runner de Ubuntu `powershell.exe` no existe —PowerShell Core se llama `pwsh` y no acepta los
+// mismos parámetros—. El de Git Bash es de host: en Linux bash está siempre, y sólo se saltea en un
+// Windows sin Git Bash instalado, que es una máquina concreta y no una plataforma.
+//
+// Y EL NOMBRE VA ENTERO Y LITERAL, no armado con `${label}`: `verify-platform-scope` comprueba que
+// el título declarado exista en el archivo, y un nombre interpolado no está escrito en ningún lado.
+// Una declaración que no se puede confrontar contra el árbol es una declaración que nadie revisa.
 const runners = [
-  ['PowerShell', psStatus, isWindows],
-  ['Git Bash', bashStatus, isWindows && existsSync(gitBash)],
+  ['PowerShell: classifies genuine RED evidence and known false positives', psStatus, soloEnWindows('la variante PowerShell del gate de LAW 1 no se comprueba: verify-red.ps1 queda sin correr, y con ella la rama que clasifica la evidencia ROJA para quien trabaja en Windows')],
+  ['Git Bash: classifies genuine RED evidence and known false positives', bashStatus, isWindows && !existsSync(gitBash) ? { skip: 'este host de Windows no tiene Git Bash instalado' } : {}],
 ];
 
-for (const [label, run, available] of runners) {
-  test(`${label}: classifies genuine RED evidence and known false positives`, { skip: !available }, () => {
+for (const [nombre, run, opciones] of runners) {
+  test(nombre, opciones, () => {
     const root = fixture();
     try {
       for (const [pattern, command, expected, label] of [

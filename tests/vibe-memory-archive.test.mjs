@@ -6,8 +6,15 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
+import { resolveBash } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+// `resolveBash` y no la ruta de Git Bash escrita a mano: esa constante es una ruta de Windows, y
+// `existsSync` sobre ella da false en Linux, así que las tres pruebas de este archivo se salteaban
+// enteras ahí. `vibe-memory.sh` es un script de shell: Linux es su plataforma principal, no la
+// excepción. Lo encontró `verify-platform-scope simetria` comparando la matriz del CI.
+const gitBash = resolveBash();
+const hayBash = process.platform !== 'win32' || existsSync(gitBash);
 const memoryScript = join(repoRoot, 'scripts', 'vibe-memory.sh');
 
 function toGitBashPath(path) {
@@ -25,7 +32,7 @@ function runMemory(root, ...args) {
   return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
 }
 
-test('init creates the durable handoffs directory with the rest of .vibe state', { skip: !existsSync(gitBash) }, () => {
+test('init creates the durable handoffs directory with the rest of .vibe state', { skip: !hayBash }, () => {
   const root = mkdtempSync(join(tmpdir(), 'vcp-memory-init-'));
   try {
     const result = runMemory(root, 'init');
@@ -37,7 +44,7 @@ test('init creates the durable handoffs directory with the rest of .vibe state',
   }
 });
 
-test('archive preserves the old feature identity and resets SESSION.md to an unassigned template', { skip: !existsSync(gitBash) }, () => {
+test('archive preserves the old feature identity and resets SESSION.md to an unassigned template', { skip: !hayBash }, () => {
   const root = mkdtempSync(join(tmpdir(), 'vcp-memory-archive-'));
   const vibe = join(root, '.vibe');
   mkdirSync(join(vibe, 'sessions'), { recursive: true });
@@ -60,7 +67,7 @@ test('archive preserves the old feature identity and resets SESSION.md to an una
   }
 });
 
-test('FALSIFICACIÓN · archiving the same topic twice preserves both snapshots', { skip: !existsSync(gitBash) }, () => {
+test('FALSIFICACIÓN · archiving the same topic twice preserves both snapshots', { skip: !hayBash }, () => {
   const root = mkdtempSync(join(tmpdir(), 'vcp-memory-archive-twice-'));
   const vibe = join(root, '.vibe');
   mkdirSync(join(vibe, 'sessions'), { recursive: true });

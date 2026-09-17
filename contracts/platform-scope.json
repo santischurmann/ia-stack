@@ -1,6 +1,6 @@
 {
   "schema": "ia.platform-scope/1",
-  "why": "El CI de este repositorio corrio por primera vez fuera de la maquina del autor el 2026-09-16 y nueve pruebas salieron rojas: la suite asumia Windows y el runner era Ubuntu. No era una regresion, era el estreno. Una prueba que no corre en una plataforma tiene que decirlo, y el salteo no puede vivir adentro de la prueba que se saltea: ahi no lo revisa nadie, y una prueba que se saltea en todos lados se ve igual que una que corre. Aca se declara, y el gate lo comprueba en los dos sentidos.",
+  "why": "El CI de este repositorio corrio por primera vez fuera de la maquina del autor el 2026-09-16 y nueve pruebas salieron rojas: la suite asumia Windows y el runner era Ubuntu. No era una regresion, era el estreno. Una prueba que no corre en una plataforma tiene que decirlo, y el salteo no puede vivir adentro de la prueba que se saltea: ahi no lo revisa nadie, y una prueba que se saltea en todos lados se ve igual que una que corre. Aca se declara, y el gate lo comprueba en los dos sentidos. Y el 2026-09-17 el subcomando `simetria` encontro la otra mitad del mismo problema: diez pruebas se salteaban en Ubuntu y CORRIAN en Windows sin declararlo. Nueve eran defectos -- comparaban `existsSync` contra una ruta de Git Bash de Windows, que en Linux da false, apagando justo las pruebas de shell en la plataforma donde el shell es EL camino -- y una sola era de plataforma de verdad. Un salteo sin declarar dentro de una plataforma no se ve; comparando las dos, si.",
   "solo_en": [
     {
       "plataforma": "win32",
@@ -15,6 +15,13 @@
       "prueba": "resolveBash evita el shim WSL roto cuando hay Git Bash disponible",
       "por_que": "Afirma que `resolveBash` devuelve `C:/custom/bash.exe`, y esa afirmacion solo vale donde una ruta con letra de unidad es una ruta. Medido el 2026-09-16 en el runner de Ubuntu: devuelve `bash`.",
       "que_queda_sin_verificar": "La eleccion del interprete no se comprueba fuera de Windows: el shim roto de WSL, Git Bash y la variable que permite apuntar a un Bash propio solo existen ahi, asi que en las demas plataformas nadie comprueba que el gate no termine corriendo el interprete equivocado."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/verify-red-gate.test.mjs",
+      "prueba": "PowerShell: classifies genuine RED evidence and known false positives",
+      "por_que": "Invoca `powershell.exe` por nombre para correr `verify-red.ps1`. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
+      "que_queda_sin_verificar": "La variante PowerShell del gate de LAW 1 -- la regla mas dura del protocolo, «sin test rojo visible no hay implementacion» -- no se comprueba fuera de Windows. Que la variante de shell clasifique bien la evidencia roja no dice nada sobre la otra: son dos implementaciones distintas del mismo criterio."
     }
   ]
 }

@@ -6,12 +6,12 @@
 // tiene que seguir contando.
 
 import assert from 'node:assert/strict';
-import { existsSync, rmSync } from 'node:fs';
+import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertRuntime, fixture, gitBash, installSh, run, toBash } from './_install-fixture.mjs';
+import { assertRuntime, fixture, gitBash, hayBash, installSh, run, toBash } from './_install-fixture.mjs';
 
-test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !existsSync(gitBash) }, () => {
+test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
   try {
     const command = `'${toBash(installSh)}' --target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(project)}'`;

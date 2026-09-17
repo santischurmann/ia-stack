@@ -513,8 +513,8 @@
       "args": [
         "listar"
       ],
-      "expect": "empty",
-      "why": "Sobre un directorio vacio no hay carpetas de prueba viejas que limpiar, y eso no es un incumplimiento: escribe VACIO y sale 0. Importa que sea VACIO y no OK porque esta herramienta BORRA cuando se lo piden, y un verde sobre una carpeta que no miro seria la peor forma de invitar a correrla con --borrar."
+      "expect": "machine",
+      "why": "NO MIRA EL DIRECTORIO QUE SE LE PASA: lista las carpetas de prueba viejas del TEMP DEL SISTEMA. Su respuesta habla de la maquina, no del directorio, asi que sobre uno vacio puede escribir VACIO o puede escribir OK con lo que encontro -- y las dos son correctas --. Estuvo declarado `empty` y pasaba, pero pasaba porque esta maquina tenia el TEMP limpio: el 2026-09-17 aparecio una carpeta de 9 h de las propias corridas del dia y la sonda salio roja sin que cambiara una linea. Es el mismo defecto que este repositorio ya arreglo cuatro veces: un verde que pertenecia a una maquina y no al repositorio. Lo que `machine` SI exige es que salga 0: si sobre un directorio vacio rechazara o pidiera argumentos, eso seguiria siendo un defecto. Importa ademas que no escriba un OK liso, porque esta herramienta BORRA cuando se lo piden."
     },
     {
       "script": "verify-lock-vivo.mjs",

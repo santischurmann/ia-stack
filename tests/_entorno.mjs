@@ -28,6 +28,18 @@ import { esRuntimeInstalado } from '../scripts/verify-runtime-sync.mjs';
 
 export { esRuntimeInstalado };
 
+// EL BASH DEL SISTEMA, por el mismo motivo: no se resuelve dos veces. `resolveBash` ya elige bien en
+// las dos plataformas -- en Windows prefiere Git Bash sobre el shim de WSL, que puede existir sin
+// distro; fuera de Windows devuelve `bash` a secas, que está en el PATH --.
+//
+// ESTO NO ES COSMETICO. Nueve pruebas comprobaban `existsSync('C:\\Program Files\\Git\\bin\\bash.exe')`
+// para decidir si correr, y en Linux eso da false: se salteaban enteras. El instalador de bash, el
+// empaquetador y el gestor de memoria -- todo lo que es shell, y que en Linux es EL camino, no el
+// alternativo -- nunca corrieron ahí. Lo encontró `verify-platform-scope simetria` el 2026-09-17, en
+// su primera corrida sobre la matriz, comparando qué saltea cada plataforma contra lo que la otra
+// corre. Un salteo simétrico no rompe nada; uno asimétrico es un hueco que sólo una plataforma tiene.
+export { resolveBash } from '../scripts/verify-shell-coverage.mjs';
+
 // Lo que el instalador SI deja en la raiz del runtime. Cualquier otra cosa que una prueba lea desde
 // la raiz solo existe en el checkout fuente. La lista vive aca y en `COPIED_DIRECTORIES` de
 // scripts/verify-runtime-sync.mjs; tests/self-checks.test.mjs falla si se separan.

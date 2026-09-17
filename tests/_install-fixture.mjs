@@ -20,8 +20,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
+import { resolveBash } from './_entorno.mjs';
+
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-export const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+
+// `resolveBash` y no la ruta de Git Bash escrita a mano. La constante vieja era una ruta de Windows,
+// y la prueba de bash se salteaba con `!existsSync(esa ruta)`: en Linux eso da false y la prueba NO
+// CORRÍA — justo en la plataforma donde `install.sh` es el único instalador que existe. Windows tenía
+// las dos ramas cubiertas y Linux ninguna. Lo encontró `verify-platform-scope simetria` el
+// 2026-09-17, en su primera corrida sobre la matriz del CI.
+export const gitBash = resolveBash();
+export const hayBash = process.platform !== 'win32' || existsSync(gitBash);
 export const installSh = join(repoRoot, 'scripts', 'install.sh');
 export const installPs = join(repoRoot, 'scripts', 'install.ps1');
 
