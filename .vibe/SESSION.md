@@ -34,9 +34,11 @@ suite paso de 2150 a 2126 y esos 25 no se dejaron pasar.
 1. **El numero del runner.** `contracts/slowest-test.json` declara 32 s medidos en esta maquina. El
    que manda es el del CI y todavia no se leyo: mirar la corrida de `ffbf4c5` y, si difiere mas de
    1,5 veces, actualizar el contrato con SU numero. El gate ya escribe `RECONCILIAR` en ese caso.
-2. **La ablacion.** T4 espera que Santi corra el prompt en `quant-workflow` (solo-lectura). T6 para
-   Investo quedo sin armar. T3/T5/T7/T8 esperan a que Jarvis se libere.
-3. **El gate de `dist/` contra el arbol de fuentes**, en el repositorio de Jarvis. Sin empezar.
+2. **La ablacion.** Es una investigacion sobre repositorios del operador ajenos a este protocolo, y
+   por eso no se nombran aca: T4 espera que el operador corra su prompt en solo-lectura, T6 quedo
+   sin armar, y el resto espera a que se libere el repositorio donde corren.
+3. **Un gate de artefactos publicados contra su arbol de fuentes**, en otro repositorio del
+   operador. Sin empezar.
 
 **NO queda pendiente** el hueco del gate de plataforma: los diez salteos se resolvieron en `9a0a711`
 — nueve eran defectos y se arreglaron, uno era de plataforma de verdad y quedo declarado.
