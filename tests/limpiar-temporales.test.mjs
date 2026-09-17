@@ -418,3 +418,24 @@ test('si lo que se tira no es un Error, el mensaje igual dice qué pasó', () =>
   );
 });
 
+test('el overlay local agrega sus extensiones, y no depende de que el archivo exista', () => {
+  // SE INYECTA, NO SE LEE DEL DISCO. El overlay vive en `.claude/`, gitignorado a propósito: en la
+  // máquina del autor existe y en un clon limpio no. Depender de él hacía que esta rama se
+  // ejecutara sólo acá — la cobertura daba 100% en esta máquina y rechazaba en el runner, que es la
+  // misma clase de verde que este flujo ya encontró con una carpeta ignorada.
+  const overlay = {
+    del_proyecto: [{ extension: '.propia', why: 'una extensión que sólo este proyecto considera irreemplazable' }],
+  };
+  const re = intocablesDe(CONTRATO, overlay);
+  assert.equal(re.test('algo.propia'), true, 'lo del overlay cuenta');
+  assert.equal(re.test('clave.key'), true, 'y los universales siguen contando');
+
+  // Y un overlay que no trae `del_proyecto`, o que no es un objeto, no rompe nada: no tenerlo es lo
+  // normal, y tenerlo vacío también.
+  for (const raro of [null, {}, { del_proyecto: 'no es una lista' }, { del_proyecto: [] }]) {
+    const sola = intocablesDe(CONTRATO, raro);
+    assert.equal(sola.test('clave.key'), true, JSON.stringify(raro));
+    assert.equal(sola.test('algo.propia'), false, JSON.stringify(raro));
+  }
+});
+
