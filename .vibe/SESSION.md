@@ -1,5 +1,46 @@
 # Session — 2026-09-14
 
+
+---
+
+## 2026-09-17 — el tope de TAP tenia una regla que nadie comprobaba, y el CI encontro el resto
+
+**Estado**: 2151 pruebas / 0 fallas / 2 salteadas · cobertura 100% sobre **65** scripts · publicado
+en `ffbf4c5`. Cuatro commits: `e452f07`, `d3233a6`, `9a0a711`, `ffbf4c5`.
+
+**LA CADENA, y cada eslabon lo destapo el anterior.**
+
+| # | Que se encontro | Como |
+|---|---|---|
+| 1 | La duracion se media DESDE ADENTRO de la suite, asi que medía contencion | 96 s solo contra 224 s desde adentro, factor 2,3x |
+| 2 | `install-runtime` oscilaba entre 96 y 111 s contra un tope de 120 | Lo dijo el gate nuevo en su primera corrida. Partido en dos, una prueba por instalador |
+| 3 | **`TAP_TIMEOUT_MS` se escribio con su regla al lado y la regla vivia en un comentario** | «deja mas del triple sobre el mas lento», con el mas lento en 40 s el 2026-09-05. El 2026-09-17 ese archivo medía 101 s contra el mismo tope de 120: por debajo del tope, con la regla rota por 2,5, y nada en rojo |
+| 4 | Esta maquina no puede medir: el mismo archivo dio 54, 89, 101, 112, 116 y 247 s en una tarde | La CPU al 100% con procesos ajenos al repositorio. Tercer estado `RECONCILIAR` |
+| 5 | **Diez pruebas se salteaban en Ubuntu y CORRIAN en Windows sin declararlo** | Lo dijo `verify-platform-scope simetria` en su primera corrida sobre la matriz. NUEVE eran defectos: comparaban `existsSync` contra una ruta de Git Bash de Windows |
+| 6 | **`verify-red.sh` y `vibe-memory.sh` versionados en 100644** | Lo dijo el CI de Ubuntu cuando esas nueve dejaron de saltearse: `permission denied` sobre el gate de LAW 1, publicado como comando en `skills/caveman-tdd.md` |
+| 7 | El guarda de ese bit YA EXISTIA y era angosto | `tracked-modes.test.mjs` reconocia `./scripts/x.sh` y no `.vibe/<runtime>/scripts/x.sh`, que es la forma mas publicada. Nueve dias en verde con el defecto adentro |
+
+**Lo que cambio de fondo**: el gate de duracion juzga **la regla** (tope ≥ 3 × el mas lento) y no el
+numero; el tope paso a 600_000; y hay un tercer estado para cuando la maquina no deja medir. **El
+arbitro es el runner, no la maquina de trabajo.**
+
+**Un error mio, dicho**: el script que partio `verify-receipt-gate` escribio
+`tests/verify-receipt-v3.test.mjs` sin mirar si existia, y existia — 25 pruebas. Estaba en git y se
+restituyo intacto; la mitad partida se llama `verify-receipt-check-v3.test.mjs`. Se vio porque la
+suite paso de 2150 a 2126 y esos 25 no se dejaron pasar.
+
+**DONDE RETOMAR**
+
+1. **El numero del runner.** `contracts/slowest-test.json` declara 32 s medidos en esta maquina. El
+   que manda es el del CI y todavia no se leyo: mirar la corrida de `ffbf4c5` y, si difiere mas de
+   1,5 veces, actualizar el contrato con SU numero. El gate ya escribe `RECONCILIAR` en ese caso.
+2. **La ablacion.** T4 espera que Santi corra el prompt en `quant-workflow` (solo-lectura). T6 para
+   Investo quedo sin armar. T3/T5/T7/T8 esperan a que Jarvis se libere.
+3. **El gate de `dist/` contra el arbol de fuentes**, en el repositorio de Jarvis. Sin empezar.
+
+**NO queda pendiente** el hueco del gate de plataforma: los diez salteos se resolvieron en `9a0a711`
+— nueve eran defectos y se arreglaron, uno era de plataforma de verdad y quedo declarado.
+
 ---
 
 ## 2026-09-16 — tres límites honestos cerrados, y el gate que castigaba el arreglo
