@@ -1,6 +1,51 @@
 # Session — 2026-09-14
 
 
+
+---
+
+## 2026-09-17 (segunda tanda) — el resto del rename, y una filtracion que el CI no podia ver
+
+**Estado**: 2155 pruebas / 0 fallas / 2 salteadas · cobertura 100% sobre 65 scripts · 122 limites
+honestos · CI verde en las dos plataformas.
+
+**EL RESTO DEL RENAME.** Por dentro se habia hecho el 2026-09-15; la prosa quedo. 82 sitios en 53
+archivos de codigo: banners de los instaladores, el limite de verify-deploy, el rechazo de
+verify-runtime-sync, y el motivo de salteo copiado a mano en 35 archivos de prueba. Nadie lo vio
+porque un rename se revisa por su diff y esas cadenas no estaban en el diff de nada; lo encontro una
+salida real.
+
+La lista **se deriva** en `tests/nombre-anterior.test.mjs`, y lo que NO se toca vive en
+`contracts/nombre-anterior.json` con que se rompe si alguien lo «completa». **Cai en esa misma trampa
+mientras la describia**: el barrido cambio el valor de `SKILL_ALIAS` en los dos instaladores y dejo
+de escribirse el archivo que sostiene el comando de barra anterior. Lo cazo una prueba que ya
+existia. Las dos lineas quedan declaradas textuales.
+
+**LA FILTRACION, y es lo mas importante de esta tanda.** El checkpoint anterior nombraba al operador
+y tres de sus repositorios privados. Lo escribi yo y lo pushee sin correr `verify-repo-clean`
+**despues** de editar el archivo. Y el CI no podia verlo: ese gate detecta la identidad de LA MAQUINA
+QUE LO CORRE, y en el runner el usuario se llama `runner`. **Un CI verde no reemplaza correr ese gate
+aca.** La cadena sigue en el historial de 2afcd1a, que ya esta publicado: sacarla es reescribir
+historia de un repositorio publico y es decision del operador.
+
+**UN LIMITE HONESTO NUEVO**: `verify-runtime-sync` necesita el checkout fuente al lado. Quien solo
+tiene su proyecto no puede responder si su runtime quedo viejo, y la copia vieja del gate que vive
+adentro de ese runtime tampoco: un runtime desactualizado no puede detectar que lo esta.
+
+**DONDE RETOMAR**
+
+1. **Sello de version en el runtime instalado** — evaluado, NO implementado, esperando decision. La
+   idea: que el instalador deje en el runtime desde que commit y en que fecha se instalo, para que un
+   proyecto vea que quedo viejo sin tener la fuente al lado. Cierra la mitad util del problema. Tres
+   cosas a resolver antes: hay que escribirlo en los DOS instaladores; `verify-runtime-sync` compara
+   byte a byte contra el checkout y un archivo que existe solo en el runtime le da rojo, asi que hay
+   que excluirlo con motivo escrito; y desde un zip de release no hay commit del que sacar el sello.
+   Y no dice «estoy viejo», dice «me instale tal dia»: la conclusion la saca un humano.
+2. **La ablacion** — investigacion sobre repositorios del operador ajenos a este protocolo, por eso
+   no se nombran. T4 espera que el operador corra su prompt en solo-lectura; T6 sin armar; el resto
+   espera a que se libere el repositorio donde corren.
+3. **Un gate de artefactos publicados contra su arbol de fuentes**, en otro repositorio del operador.
+
 ---
 
 ## 2026-09-17 — el tope de TAP tenia una regla que nadie comprobaba, y el CI encontro el resto
