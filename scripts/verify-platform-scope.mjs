@@ -63,6 +63,56 @@ export function salteosEnElArbol(archivos, leer) {
   return encontrados;
 }
 
+/**
+ * LO QUE REALMENTE SE SALTEO, leido de la salida TAP de la corrida.
+ *
+ * El barrido del arbol solo ve la forma que este protocolo inventa -- `soloEnWindows(` -- y hay
+ * otras dos: `{ skip: motivo }` en las opciones de la prueba, y `t.skip(motivo)` desde adentro.
+ * Las tres emiten la misma linea en TAP, asi que leer la corrida las ve a todas. Medido el
+ * 2026-09-16 sobre una corrida verde: Linux salteo 12 pruebas que Windows corrio, y el gate
+ * informaba que ninguna se salteaba sin declarar.
+ */
+export function salteosDeTap(texto) {
+  const salteadas = new Set();
+  // `ok 2 - nombre de la prueba # SKIP motivo`. El `not ok` no cuenta: una que falla no se salteo.
+  const PATRON = /^ok\s+\d+\s+-\s+(.*?)\s+#\s*SKIP\b/gmu;
+  for (const m of String(texto).matchAll(PATRON)) salteadas.add(m[1]);
+  return salteadas;
+}
+
+/**
+ * LA ASIMETRIA, que es lo que de verdad importa. No el salteo.
+ *
+ * En este arbol hay 55 salteos y casi todos son correctos: los self-checks del repositorio se
+ * saltean en las dos plataformas y eso no deja nada sin verificar en una que la otra si verifique.
+ * Lo que rompe la simetria es una prueba que se saltea en UNA y corre en la OTRA -- ahi una
+ * plataforma tiene un hueco que la otra no, y tiene que estar declarado.
+ *
+ * Y una declaracion MUERTA tambien se rechaza: si ya no corresponde a ningun salteo, oculta cuanto
+ * se esta salteando de verdad, y el dia que el salteo vuelva nadie lo va a mirar.
+ */
+export function asimetriaDeSalteos(a, b, declaradas) {
+  const soloEnA = [...a.salteos].filter((t) => !b.salteos.has(t));
+  const soloEnB = [...b.salteos].filter((t) => !a.salteos.has(t));
+  const asimetricas = [
+    ...soloEnA.map((t) => [t, a.plataforma, b.plataforma]),
+    ...soloEnB.map((t) => [t, b.plataforma, a.plataforma]),
+  ];
+  const sinDeclarar = asimetricas
+    .filter(([t]) => !declaradas.has(t))
+    .map(([t, salteo, corrio]) => `${JSON.stringify(t)} se saltea en ${salteo} y CORRE en ${corrio}, y no está declarada: esa plataforma tiene un hueco que la otra no`);
+  const vivas = new Set(asimetricas.map(([t]) => t));
+  const declaracionesMuertas = [...declaradas]
+    .filter((t) => !vivas.has(t))
+    .map((t) => `${JSON.stringify(t)} está declarada como salteo de plataforma y ya no se saltea en ninguna: una declaración muerta oculta cuánto se está salteando de verdad`);
+  return {
+    sinDeclarar,
+    declaracionesMuertas,
+    asimetricas: asimetricas.length,
+    resumen: `${a.plataforma} salteó ${a.salteos.size}, ${b.plataforma} salteó ${b.salteos.size}; ${asimetricas.length} rompe(n) la simetría`,
+  };
+}
+
 /** Los pares archivo/prueba que el contrato declara. */
 export function declaracionesDeclaradas(contrato) {
   const lista = esObjeto(contrato) && Array.isArray(contrato.solo_en) ? contrato.solo_en : [];
@@ -125,10 +175,53 @@ function archivosDePrueba(cwd, listar = readdirSync) {
     .sort();
 }
 
+/**
+ * COMPARAR LO QUE CADA PLATAFORMA SALTEO DE VERDAD. El otro subcomando mira el arbol y ve el
+ * mecanismo que este protocolo inventa; este mira la CORRIDA y ve todos los salteos, incluidos los
+ * que una prueba decide por su cuenta. Necesita el dato de las dos plataformas, asi que corre donde
+ * estan las dos: en el trabajo que junta los artefactos, igual que la cobertura.
+ */
+function simetria(rutaA, rutaB, cwd, options, write, writeError) {
+  const leer = options.leer ?? ((ruta) => readFileSync(join(cwd, ruta), 'utf8'));
+
+  let contrato;
+  try {
+    contrato = JSON.parse(leer(CONTRATO));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      write(`${EMPTY}: no hay ${CONTRATO}. Ninguna prueba declara plataforma acá, así que no hay nada contra qué comparar.`);
+      return 0;
+    }
+    writeError(`REJECTED: ${CONTRATO} existe pero no se puede leer: ${error?.message ?? error}.`);
+    return 1;
+  }
+
+  const corridas = [];
+  for (const ruta of [rutaA, rutaB]) {
+    try {
+      corridas.push({ plataforma: ruta, salteos: salteosDeTap(leer(ruta)) });
+    } catch (error) {
+      writeError(`REJECTED: no se pudo leer ${ruta} (${error?.message ?? error}): sin las dos corridas no se puede comparar qué salteó cada una, y suponerlo sería inventarlo.`);
+      return 1;
+    }
+  }
+
+  const declaradas = new Set(declaracionesDeclaradas(contrato).map(([, prueba]) => prueba));
+  const r = asimetriaDeSalteos(corridas[0], corridas[1], declaradas);
+  if (r.sinDeclarar.length > 0 || r.declaracionesMuertas.length > 0) {
+    for (const m of [...r.sinDeclarar, ...r.declaracionesMuertas]) writeError(`REJECTED: ${m}`);
+    return 1;
+  }
+  write(`OK: ${r.resumen}, y cada una de esas está declarada en ${CONTRATO} con lo que queda sin verificar.`);
+  write('LÍMITE: compara los NOMBRES de las pruebas salteadas, así que dos pruebas homónimas en archivos distintos se ven como una. Y sólo ve las plataformas que se le pasan: un salteo en una tercera no lo puede saber. Tampoco juzga si el motivo del salteo es cierto.');
+  return 0;
+}
+
 export function main(args = process.argv.slice(2), options = {}) {
   const write = options.write ?? console.log;
   const writeError = options.writeError ?? console.error;
-  if (args.length !== 1 || args[0] !== 'check') {
+  const esSimetria = args.length === 3 && args[0] === 'simetria' && args[1] !== '' && args[2] !== '';
+  if (!esSimetria && (args.length !== 1 || args[0] !== 'check')) {
     writeError(USAGE);
     return 2;
   }
@@ -136,6 +229,7 @@ export function main(args = process.argv.slice(2), options = {}) {
   // gate como omision, correrlo parado en un directorio vacio seguia midiendo ESTE repositorio y
   // contestaba OK sobre un proyecto que no tiene ni un archivo: la sonda de vacio lo encontro.
   const cwd = options.cwd ?? process.cwd();
+  if (esSimetria) return simetria(args[1], args[2], cwd, options, write, writeError);
   const leer = options.leer ?? ((ruta) => readFileSync(join(cwd, ruta), 'utf8'));
 
   let contrato;

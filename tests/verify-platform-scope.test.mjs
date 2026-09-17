@@ -26,8 +26,10 @@ import {
   PLATAFORMAS,
   SCHEMA,
   USAGE,
+  asimetriaDeSalteos,
   declaracionesDeclaradas,
   main,
+  salteosDeTap,
   salteosEnElArbol,
   violaciones,
 } from '../scripts/verify-platform-scope.mjs';
@@ -274,3 +276,233 @@ test('lo que se tira sin ser un Error igual se reporta, no se traga', () => {
     assert.match(dicho, /es un Error/u, donde);
   }
 });
+
+// --- Lo que REALMENTE se salteó, leído de la corrida ----------------------------------------------
+
+const TAP = [
+  'TAP version 13',
+  '# Subtest: una que corre',
+  'ok 1 - una que corre',
+  '# Subtest: una salteada por opciones',
+  'ok 2 - una salteada por opciones # SKIP porque sí, con motivo',
+  '# Subtest: una salteada desde adentro',
+  'ok 3 - una salteada desde adentro # SKIP motivo condicional',
+  'ok 4 - otra que corre',
+  'not ok 5 - una que falla',
+  '1..5',
+  '# skipped 2',
+].join('\n');
+
+test('los salteos se leen de la salida real de la corrida, no del código', () => {
+  // Las dos formas de saltear —por opciones y desde adentro de la prueba— emiten el mismo `# SKIP`,
+  // así que leer la corrida las ve a las dos. Mirar el código sólo veía la que yo inventé.
+  const s = salteosDeTap(TAP);
+  assert.deepEqual([...s].sort(), ['una salteada desde adentro', 'una salteada por opciones']);
+});
+
+test('una prueba que corre, o que falla, no cuenta como salteada', () => {
+  const s = salteosDeTap(TAP);
+  assert.equal(s.has('una que corre'), false);
+  assert.equal(s.has('una que falla'), false);
+});
+
+test('un TAP vacío o sin salteos da un conjunto vacío, no un error', () => {
+  assert.equal(salteosDeTap('').size, 0);
+  assert.equal(salteosDeTap('TAP version 13\nok 1 - sola\n1..1').size, 0);
+});
+
+// --- La asimetría, que es lo que de verdad importa ------------------------------------------------
+
+test('una prueba salteada en LAS DOS plataformas no es un problema de plataforma', () => {
+  // Los self-checks del repositorio se saltean en todos lados: eso no deja nada sin verificar en una
+  // plataforma que la otra sí verifique.
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set(['self-check del repo']) },
+    { plataforma: 'win32', salteos: new Set(['self-check del repo']) },
+    new Set(),
+  );
+  assert.deepEqual(r.sinDeclarar, []);
+});
+
+test('FALSIFICACIÓN · una prueba salteada en UNA sola plataforma y sin declarar se rechaza', () => {
+  // El caso real: 10 pruebas que Linux salteó y Windows corrió, ninguna declarada.
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set(['la del shim de WSL']) },
+    { plataforma: 'win32', salteos: new Set() },
+    new Set(),
+  );
+  assert.equal(r.sinDeclarar.length, 1);
+  assert.match(r.sinDeclarar[0], /la del shim de WSL/u);
+  assert.match(r.sinDeclarar[0], /linux/u, 'tiene que decir en cuál se salteó');
+  assert.match(r.sinDeclarar[0], /win32/u, 'y en cuál corrió');
+});
+
+test('declarada, esa misma prueba pasa', () => {
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set(['la del shim de WSL']) },
+    { plataforma: 'win32', salteos: new Set() },
+    new Set(['la del shim de WSL']),
+  );
+  assert.deepEqual(r.sinDeclarar, []);
+});
+
+test('FALSIFICACIÓN · una declaración que ya no corresponde a ningún salteo también se rechaza', () => {
+  // Una declaración muerta oculta cuánto se está salteando de verdad: parece que hay un hueco
+  // controlado donde ya no hay ninguno, y el día que vuelva a aparecer nadie lo va a mirar.
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set() },
+    { plataforma: 'win32', salteos: new Set() },
+    new Set(['una que ya no se saltea']),
+  );
+  assert.equal(r.declaracionesMuertas.length, 1);
+  assert.match(r.declaracionesMuertas[0], /una que ya no se saltea/u);
+});
+
+test('el resumen dice cuántas se saltearon en cada una y cuántas rompen la simetría', () => {
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set(['a', 'b', 'comun']) },
+    { plataforma: 'win32', salteos: new Set(['comun']) },
+    new Set(['a', 'b']),
+  );
+  assert.match(r.resumen, /linux/u);
+  assert.match(r.resumen, /win32/u);
+  assert.deepEqual(r.sinDeclarar, []);
+  assert.equal(r.asimetricas, 2, 'a y b rompen la simetría, comun no');
+});
+
+// --- El subcomando que compara las dos corridas ---------------------------------------------------
+
+const tapCon = (...nombres) => ['TAP version 13', ...nombres.map((n, i) => `ok ${i + 1} - ${n} # SKIP motivo`), '1..' + nombres.length].join('\n');
+
+test('simetria sale 0 cuando lo asimétrico está declarado', () => {
+  const salida = [];
+  const code = main(['simetria', 'tap-linux.txt', 'tap-windows.txt'], {
+    cwd: repoRoot,
+    leer: (ruta) => {
+      const r = String(ruta);
+      if (r.includes('platform-scope.json')) return JSON.stringify(contrato([entrada({ prueba: 'la de Windows' })]));
+      if (r.includes('linux')) return tapCon('la de Windows', 'una comun');
+      return tapCon('una comun');
+    },
+    write: (l) => salida.push(l),
+    writeError: () => {},
+  });
+  assert.equal(code, 0, salida.join('\n'));
+  assert.match(salida.join('\n'), /^OK: /mu);
+  assert.match(salida.join('\n'), /LÍMITE: /mu);
+});
+
+test('FALSIFICACIÓN · simetria sale 1 cuando una prueba se saltea en una sola y no está declarada', () => {
+  const errores = [];
+  const code = main(['simetria', 'tap-linux.txt', 'tap-windows.txt'], {
+    cwd: repoRoot,
+    leer: (ruta) => {
+      const r = String(ruta);
+      if (r.includes('platform-scope.json')) return JSON.stringify(contrato([]));
+      if (r.includes('linux')) return tapCon('la que nadie declaró');
+      return tapCon();
+    },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), /la que nadie declaró/u);
+  assert.match(errores.join('\n'), /tap-linux/u, 'tiene que decir en cuál se salteó');
+});
+
+test('FALSIFICACIÓN · simetria con un archivo que no se puede leer lo dice, no revienta', () => {
+  const errores = [];
+  const code = main(['simetria', 'no-existe-a.txt', 'no-existe-b.txt'], {
+    cwd: repoRoot,
+    leer: (ruta) => {
+      if (String(ruta).includes('platform-scope.json')) return JSON.stringify(contrato([]));
+      throw new Error('ENOENT: no such file');
+    },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), /no se pudo leer/u);
+});
+
+test('FALSIFICACIÓN · simetria con argumentos de más o de menos sale 2', () => {
+  const errores = [];
+  for (const args of [['simetria'], ['simetria', 'a'], ['simetria', 'a', 'b', 'c']]) {
+    assert.equal(main(args, { write: () => {}, writeError: (l) => errores.push(l) }), 2, args.join(' '));
+  }
+});
+
+test('la asimetría se ve igual venga del lado que venga', () => {
+  // Todas las demás ponen el salteo del lado A. Si sólo mirara ese lado, una prueba salteada en la
+  // segunda plataforma pasaría sin que nadie la viera — y es exactamente el mismo hueco.
+  const r = asimetriaDeSalteos(
+    { plataforma: 'linux', salteos: new Set() },
+    { plataforma: 'win32', salteos: new Set(['la de Windows']) },
+    new Set(),
+  );
+  assert.equal(r.sinDeclarar.length, 1);
+  assert.match(r.sinDeclarar[0], /se saltea en win32 y CORRE en linux/u);
+});
+
+test('simetria sin contrato dice VACÍO: no hay nada contra qué comparar', () => {
+  const salida = [];
+  const code = main(['simetria', 'a.tap', 'b.tap'], {
+    cwd: repoRoot,
+    leer: () => { const e = new Error('ENOENT'); e.code = 'ENOENT'; throw e; },
+    write: (l) => salida.push(l),
+    writeError: () => {},
+  });
+  assert.equal(code, 0);
+  assert.match(salida.join('\n'), /^VACÍO: /u);
+});
+
+test('simetria con un contrato ilegible es un defecto, no una ausencia', () => {
+  const errores = [];
+  const code = main(['simetria', 'a.tap', 'b.tap'], {
+    cwd: repoRoot,
+    leer: () => { throw new SyntaxError('Unexpected token }'); },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), /no se puede leer/u);
+});
+
+test('simetria: lo que se tira sin ser un Error igual se reporta', () => {
+  const errores = [];
+  const code = main(['simetria', 'a.tap', 'b.tap'], {
+    cwd: repoRoot,
+    leer: (ruta) => {
+      if (String(ruta).includes('platform-scope.json')) return JSON.stringify(contrato([]));
+      throw 'el disco dijo que no';
+    },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.doesNotMatch(errores.join('\n'), /undefined/u);
+  assert.match(errores.join('\n'), /el disco dijo que no/u);
+});
+
+test('simetria sin lector inyectado va al disco de verdad', () => {
+  // El camino que corre en el CI. Los archivos no están acá, así que contesta que no se pudieron
+  // leer — que es lo correcto y lo que hay que ver: no revienta.
+  const errores = [];
+  const code = main(['simetria', 'no-existe-a.tap', 'no-existe-b.tap'], { cwd: repoRoot, write: () => {}, writeError: (l) => errores.push(l) });
+  assert.equal(code, 1);
+  assert.match(errores.join('\n'), /no se pudo leer/u);
+});
+
+test('simetria: un contrato ilegible que no tira un Error igual se reporta', () => {
+  const errores = [];
+  const code = main(['simetria', 'a.tap', 'b.tap'], {
+    cwd: repoRoot,
+    leer: () => { throw 'algo que no es un Error'; },
+    write: () => {},
+    writeError: (l) => errores.push(l),
+  });
+  assert.equal(code, 1);
+  assert.doesNotMatch(errores.join('\n'), /undefined/u);
+  assert.match(errores.join('\n'), /no es un Error/u);
+});
+
