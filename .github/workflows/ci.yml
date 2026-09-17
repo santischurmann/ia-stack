@@ -94,6 +94,17 @@ jobs:
       - name: El runtime instalado es el del checkout
         run: node scripts/verify-runtime-sync.mjs check
 
+      # EL TOPE DE TAP DEJA EL TRIPLE SOBRE EL ARCHIVO MAS LENTO. Es un paso propio y no una prueba
+      # de la suite a proposito: adentro de la suite medía contencion y no duracion -- 96 s solo
+      # contra 224 s desde adentro, factor 2,3x sobre el tope de entonces --. Aca corre solo.
+      #
+      # Y ESTE PASO ES EL QUE DECIDE DE VERDAD. El mismo gate corrido en una maquina de trabajo da
+      # numeros que no significan nada -- el 2026-09-17 el mismo archivo dio 89, 101, 116 y 247 s en
+      # una tarde, con la CPU al 100% por procesos ajenos al repositorio --, y ahi escribe
+      # RECONCILIAR y sale 0 en vez de inventar un veredicto. El runner esta quieto: aca juzga.
+      - name: El tope de TAP deja el triple sobre el archivo de pruebas mas lento
+        run: node scripts/verify-test-duration.mjs
+
       # CADA PLATAFORMA MIDE LO SUYO Y LO SUBE. El veredicto no se toma aca: se toma sobre la UNION,
       # en el trabajo de abajo. Medir por separado y exigir 100% en cada uno seria pedirle a Linux
       # que ejecute ramas que solo existen en Windows.
@@ -105,7 +116,13 @@ jobs:
         shell: bash
         run: |
           rm -rf cobertura && mkdir -p cobertura
-          NODE_V8_COVERAGE=cobertura node --test
+          # DOS REPORTERS A LA VEZ, y el TAP sale de ESTA corrida y no de la primera: este paso
+          # borra el directorio, asi que un TAP escrito antes se perderia. `spec` a la consola
+          # -- lo que alguien lee en el log -- y `tap` al archivo que la fusion necesita para
+          # saber QUE salteo cada plataforma. No agrega una corrida: esta ya existia.
+          NODE_V8_COVERAGE=cobertura node --test \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=tap --test-reporter-destination=cobertura/salteos.tap
 
       - name: Subir la cobertura cruda
         uses: actions/upload-artifact@v7
@@ -168,3 +185,16 @@ jobs:
       # solo en Windows dejaba las ramas de Linux sin comprobar por nadie.
       - name: Cobertura de cada script inventariado, sobre la union
         run: node scripts/verify-ia-stack-coverage.mjs --coverage-dir cobertura
+
+      # LO QUE CADA PLATAFORMA SALTEO DE VERDAD. Un salteo en las DOS no rompe nada -- los
+      # self-checks del repositorio se saltean en todos lados --; lo que importa es una prueba que se
+      # saltea en una y CORRE en la otra, porque ahi una plataforma tiene un hueco que la otra no.
+      # Medido el 2026-09-16 sobre una corrida verde: Linux salteo 12 que Windows corrio, y solo 2
+      # estaban declaradas. El gate informaba que ninguna se salteaba sin declarar.
+      - name: Ninguna plataforma saltea algo que la otra corre sin declararlo
+        shell: bash
+        run: |
+          a=$(ls cobertura-bajada/*/salteos.tap | head -1)
+          b=$(ls cobertura-bajada/*/salteos.tap | tail -1)
+          test "$a" != "$b" || (echo "no llegaron los dos TAP: sin las dos corridas no se puede comparar" && exit 1)
+          node scripts/verify-platform-scope.mjs simetria "$a" "$b"

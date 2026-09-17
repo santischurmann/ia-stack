@@ -4,7 +4,7 @@
   "solo_en": [
     {
       "plataforma": "win32",
-      "archivo": "tests/install-runtime.test.mjs",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
       "prueba": "fresh PowerShell installation produces the same project-local runtime",
       "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
       "que_queda_sin_verificar": "El instalador de PowerShell no se comprueba fuera de Windows: `install.ps1` queda sin correr, y con el la rama de instalacion entera. Que `install.sh` pase no dice nada sobre la otra."

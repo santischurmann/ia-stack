@@ -1,9 +1,10 @@
 {
   "schema": "ia.slowest-test/1",
   "why": "Cual es el archivo de pruebas mas lento del repositorio, y desde cuando se sabe. La prueba del tope lo necesita para comprobar que ninguno se acerque al limite de TAP: vincular un requisito a un archivo mas lento lo marcaria TIMEOUT por lento y no por roto. Vivia escrito a mano adentro de la prueba y quedo viejo sin que nadie se enterara -- el 2026-09-16 apuntaba a un archivo que ya se habia partido en dos, mientras protocolo-e2e tardaba 131 s contra un tope de 120 y pasaba sin que nada lo mirara. Aca la declaracion es visible, y lleva la fecha en que se midio.",
-  "archivo": "install-runtime.test.mjs",
-  "medido": "2026-09-16",
-  "segundos": 96,
-  "why_ese": "Instala el runtime completo -- por bash y por PowerShell -- en varios proyectos temporales, y cada instalacion copia el arbol entero. Es el que define el margen contra el tope de TAP. Las mediciones de ese dia: install-runtime 96 s, protocolo-e2e-via-corta 41 s, verify-receipt-gate 56 s, verify-receipt-commit 33 s, protocolo-e2e 22 s.",
-  "como_se_remide": "node --test tests/<archivo> y se mira duration_ms; se corre uno por uno, no la suite entera."
+  "archivo": "verify-receipt-gate.test.mjs",
+  "medido": "2026-09-17",
+  "segundos": 116,
+  "why_ese": "Levanta un repositorio de Git de verdad por prueba -- 33 pruebas, cada una con su init, sus commits y sus invocaciones al gate del recibo -- y eso no se paraleliza adentro de un archivo. Paso a ser el mas lento cuando install-runtime se partio en dos: sus dos ramas tardaban juntas 96 s el 2026-09-16, y separadas dan 30 s (bash) y 20 s (PowerShell). Las mediciones del 2026-09-17, una por una: protocolo-e2e-via-corta 72 s, verify-receipt-commit 53 s, protocolo-e2e 30 s, install-runtime 30 s, install-runtime-powershell 20 s.",
+  "como_se_remide": "node --test tests/<archivo> y se mira duration_ms; se corre uno por uno, no la suite entera, y se declara la lectura MAS LENTA de varias corridas. Si la maquina tiene otra cosa corriendo, la medicion no vale: mirar lo que da el CI, que corre sobre un runner quieto.",
+  "medicion_no_confiable": "ESTE NUMERO SALIO DE UNA MAQUINA QUE NO SE PUDO AQUIETAR, y se declara alto a proposito. El mismo archivo, sin que cambiara una linea, dio 54, 89, 101, 112, 116 y 247 s el 2026-09-17, con la CPU al 100% por procesos ajenos al repositorio durante toda la tarde: una dispersion de 4,6 veces. Se declaran los 116 s, que es alto dentro de esa nube y deja el veredicto del lado conservador. EL NUMERO QUE MANDA ES EL DEL RUNNER, y todavia no se conoce: la primera corrida del CI con este gate lo dice. Si el runner da algo mas de 1,5 veces esto, el gate escribe RECONCILIAR en vez de inventar un veredicto, y entonces se actualiza este contrato con SU numero."
 }

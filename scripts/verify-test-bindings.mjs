@@ -11,19 +11,38 @@ import { fileURLToPath } from 'node:url';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
-/** Tope de tiempo para cada `test_ref`. MEDIDO, no elegido: el 30_000 original salio de la
- * intuicion, y quedo POR DEBAJO del archivo de prueba mas lento del propio repositorio.
+/** Tope de tiempo para cada `test_ref`. MEDIDO, no elegido, y con una REGLA: tiene que dejar al
+ * menos el TRIPLE del archivo de prueba mas lento del repositorio.
  *
- * Los datos, tomados el 2026-09-05 sin instrumentacion: verify-receipt-gate.test.mjs tarda entre 35
- * y 40 s, y protocolo-e2e.test.mjs 28,8 s. Con el tope viejo, vincular un requisito a cualquiera de
- * esos dos lo marcaba TIMEOUT -- y el fallo no habria hablado del test sino de su duracion. Bajo la
- * instrumentacion de cobertura, que multiplica los tiempos, eso ya paso una vez ese mismo dia.
+ * El tope existe para atrapar una prueba COLGADA -- un bucle infinito, una espera que nunca llega --,
+ * no para juzgar si una prueba de punta a punta es lenta. Esa distincion es la que se pierde cuando
+ * el numero queda corto: el fallo deja de hablar del test y pasa a hablar de su duracion.
  *
- * 120 s deja mas del triple de margen sobre el mas lento medido. El tope existe para atrapar una
- * prueba COLGADA -- un bucle infinito, una espera que nunca llega --, no para juzgar si una prueba
- * de punta a punta es lenta: esa distincion es la que el numero viejo perdia. Una prueba de la suite
- * compara el tope contra la duracion real y se pone roja si el margen se come. */
-export const TAP_TIMEOUT_MS = 120_000;
+ * TRES VALORES, Y CADA UNO SE QUEDO CORTO POR EL MISMO MOTIVO. El 30_000 original salio de la
+ * intuicion, y quedo POR DEBAJO del archivo de prueba mas lento del propio repositorio -- esa frase
+ * se deja literal: `docs/mejoras/2026-09-05-3.json` la cita, y una cita que no resuelve parece
+ * evidencia sin serlo. El 2026-09-05 se midio y se subio a 120_000,
+ * con la regla del triple escrita al lado: el mas lento era verify-receipt-gate.test.mjs con 35-40 s.
+ * El 2026-09-17 ese mismo archivo mide 89-101 s: el tope quedo en 1,2 veces el mas lento, con la
+ * regla rota por un factor de 2,5, y sin que nada se pusiera rojo. LA REGLA VIVIA EN ESTE COMENTARIO
+ * Y NADIE LA COMPROBABA -- solo se comprobaba «por debajo del tope», y por debajo del tope cabe un
+ * margen de 19 s que cualquier maquina cargada se come.
+ *
+ * SE DIMENSIONA CONTRA LA PEOR LECTURA, NO CONTRA LA MEJOR: asi se rompio la vez anterior. El
+ * mismo archivo, sin que cambiara una linea, dio 89, 101 y 116 s en una sola tarde del 2026-09-17, y
+ * 56 s el dia anterior. Tomar el mejor numero y multiplicarlo por tres deja un tope que la proxima
+ * tarde no cumple su propia regla. 600_000 deja 5,2 veces los 116 s peores medidos, y sigue dejando
+ * el triple si esa medicion se va a 200 s.
+ *
+ * LO QUE CUESTA: una prueba genuinamente colgada tarda 10 minutos en morir en vez de 2. Es el precio
+ * de que el tope sea un detector de colgadas y no un limite de velocidad disfrazado -- y es la
+ * distincion que los dos numeros anteriores perdian.
+ *
+ * Y desde ahora `scripts/verify-test-duration.mjs` NO comprueba el numero sino la regla: mide el
+ * archivo que el repositorio declara mas lento y rechaza si el tope no deja el triple, aunque entre.
+ * Una prueba de la suite comprueba la otra mitad, que es barata y no mide nada: que el tope deje el
+ * triple sobre lo que el contrato DECLARA. La regla dejo de ser un comentario. */
+export const TAP_TIMEOUT_MS = 600_000;
 export const USAGE = 'usage: verify-test-bindings.mjs check';
 
 function failed(code, message = code) {

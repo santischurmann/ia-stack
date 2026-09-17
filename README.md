@@ -210,6 +210,60 @@ pasa en verde. Y no corre nada, así que no sabe si esa prueba pasaría en la pl
 
 ---
 
+## Ningún archivo de pruebas se acerca al tope de TAP
+
+`verify-test-bindings` vincula cada requisito a una prueba y espera su resultado en la salida TAP,
+con un tope de tiempo. **Un archivo más lento que ese tope se marca TIMEOUT**: el requisito queda sin
+verificar, y el motivo que se lee es «lento», no «roto». Es un hueco silencioso.
+
+Esto **es un gate y no una prueba**, y ésa es toda la gracia. Vivía adentro de la suite, rodeado de
+noventa archivos compitiendo por la CPU, así que medía contención y no duración. Medido el
+2026-09-17 sobre `install-runtime.test.mjs`: tardaba **96 s solo** y **224 s** medido desde adentro —
+factor 2,3x contra el tope de entonces, 120 s. Con eso, cualquier archivo de más de unos 52 s
+reventaba el tope sin estar roto.
+
+Partir los archivos más lentos ayudó —131 s a 41, 116 s a 56— y **no alcanzó**: el problema no es el
+tamaño, es dónde se mide.
+
+### El tope no es un número, es una regla
+
+`TAP_TIMEOUT_MS` se escribió con su regla al lado: **tiene que dejar al menos el triple del archivo
+más lento**. En 2026-09-05 el más lento tardaba 40 s y el tope quedó en 120. La regla vivía en un
+comentario, así que se rompió sola cuando la suite creció: el 2026-09-17 ese mismo archivo medía
+101 s contra el mismo tope de 120 —1,2 veces, con la regla rota por un factor de 2,5— y nada se puso
+rojo, porque lo único que se comprobaba era «por debajo del tope». Por debajo del tope cabe un margen
+de 19 s que cualquier máquina cargada se come.
+
+Ahora el gate juzga **la regla**, no el número, y el tope quedó en 600 s: 5 veces el más lento
+medido. Subirlo no afloja nada — el tope existe para atrapar una prueba **colgada**, no para juzgar
+si una prueba de punta a punta es lenta; lo que cuesta es que una colgada tarda 10 minutos en morir
+en vez de 2. Una prueba de la suite comprueba la otra mitad, que es barata y no mide nada: que el
+tope deje el triple sobre lo que el contrato **declara**.
+
+### Tres estados, porque «no pude medir» no es «está bien»
+
+El 2026-09-17, en una sola tarde y sin que cambiara una línea, el mismo archivo dio **89, 101, 116 y
+247 s**. La causa se midió, no se supuso: la CPU al 100% con procesos ajenos al repositorio.
+
+Las dos salidas posibles eran destructivas. Aprobar taparía una regresión de verdad; rechazar pondría
+en rojo un gate por la carga de la máquina y no por el código — el rojo que no dice nada, que es como
+se aprende a ignorar los rojos. Así que hay un tercero: si la medición se va más de **1,5 veces** por
+encima de lo declarado, el gate escribe `RECONCILIAR:` y sale 0. No aprueba y no rechaza. **El
+árbitro es el runner, no tu máquina de trabajo**: en un runner quieto la medición cae dentro de la
+tolerancia y el gate juzga con todo su rigor.
+
+```bash
+node scripts/verify-test-duration.mjs
+```
+
+**Lo que no puede hacer:** mide el archivo que `contracts/slowest-test.json` **declara** como el más
+lento, no descubre cuál es — correr los noventa duplicaría la suite. La declaración lleva la fecha en
+que se midió para que una vieja se vea, y ya pasó: estuvo once días apuntando a un archivo partido en
+dos mientras otro reventaba el tope. Y mide **una** corrida en **esta** máquina: por eso existe el
+tercer estado, y por eso `RECONCILIAR:` no cuenta como verde.
+
+---
+
 ## El tablero
 
 Un comando genera una página local con lo que pasó: proyectos, sesiones, turnos, tokens y horas.

@@ -1,71 +1,15 @@
+// La rama bash del instalador. La de PowerShell vive en `install-runtime-powershell.test.mjs`.
+//
+// Las dos comparten `_install-fixture.mjs`, y en particular `assertRuntime`, que es lo que hace que
+// las dos ramas tengan que producir el MISMO runtime. Están en archivos separados porque juntas
+// rozaban el tope de TAP —96 a 111 s contra 120, corriendo solas—, y porque si una se rompe la otra
+// tiene que seguir contando.
+
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { existsSync, rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { soloEnWindows } from './_entorno.mjs';
-
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const gitBash = 'C:\\Program Files\\Git\\bin\\bash.exe';
-const installSh = join(repoRoot, 'scripts', 'install.sh');
-const installPs = join(repoRoot, 'scripts', 'install.ps1');
-
-function run(command, args, options = {}) {
-  const env = { ...process.env, ...options.env };
-  delete env.NODE_TEST_CONTEXT;
-  const result = spawnSync(command, args, { cwd: options.cwd, encoding: 'utf8', env });
-  assert.equal(result.error, undefined, result.error?.message);
-  return { status: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` };
-}
-
-function toBash(path) {
-  return path.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`);
-}
-
-function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'vcp-install-runtime-'));
-  const project = join(root, 'project');
-  mkdirSync(project);
-  writeFileSync(join(project, 'package.json'), '{}\n');
-  return { root, project, target: join(root, 'skills'), runtime: join(root, 'runtime') };
-}
-
-function assertRuntime(project, target, runtime) {
-  assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
-  assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
-  assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-core.mjs')), true, 'runtime needs the I1 immutable Discovery verifier');
-  assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-views.mjs')), true, 'runtime needs the I1.5 deterministic Discovery view verifier');
-  assert.equal(existsSync(join(runtime, 'scripts', 'verify-scope-diff.mjs')), true, 'runtime needs the scope-vs-diff gate');
-  assert.equal(existsSync(join(runtime, 'contracts', 'discovery-requirements.json')), true, 'runtime needs the Discovery inventory contract');
-  assert.equal(existsSync(join(runtime, 'contracts', 'discovery-phase-plan.json')), true, 'runtime needs the Discovery phase plan');
-  assert.equal(existsSync(join(runtime, 'tests', 'verify-discovery-requirements.test.mjs')), true, 'runtime carries its I0 self-tests');
-  assert.equal(existsSync(join(runtime, 'tests', 'verify-discovery-requirements-selftest.mjs')), true, 'runtime carries the non-recursive I0 gate self-test');
-  assert.equal(existsSync(join(runtime, 'SECURITY.md')), true, 'runtime docs must carry the native security contract they reference');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'pretooluse-red.mjs')), true);
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'verify-discovery-core.mjs')), true, 'project runtime needs the I1 immutable Discovery verifier');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'verify-discovery-views.mjs')), true, 'project runtime needs the I1.5 deterministic Discovery view verifier');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'verify-scope-diff.mjs')), true, 'project runtime needs the scope-vs-diff gate');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'contracts', 'discovery-requirements.json')), true);
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'tests', 'verify-test-bindings.test.mjs')), true);
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'SECURITY.md')), true);
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'templates', 'vibe', 'COMPANY.md')), true);
-  assert.equal(existsSync(join(runtime, 'scripts', 'scripts')), false, 'runtime must not nest scripts on reinstall');
-  assert.equal(existsSync(join(runtime, 'contracts', 'contracts')), false, 'runtime must not nest contracts on reinstall');
-  assert.equal(existsSync(join(runtime, 'tests', 'tests')), false, 'runtime must not nest tests on reinstall');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'scripts')), false, 'project runtime must not nest scripts on reinstall');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'contracts', 'contracts')), false, 'project runtime must not nest contracts on reinstall');
-  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'tests', 'tests')), false, 'project runtime must not nest tests on reinstall');
-  const check = run(process.execPath, ['.vibe/ia-stack-runtime/scripts/verify-red-node.mjs'], { cwd: project });
-  assert.equal(check.status, 2, check.output);
-  const discovery = run(process.execPath, ['.vibe/ia-stack-runtime/scripts/verify-discovery-requirements.mjs', 'check', '--completed-phase', 'I0'], { cwd: project });
-  assert.equal(discovery.status, 0, discovery.output);
-  const sourceOnlyDiff = run(process.execPath, ['.vibe/ia-stack-runtime/scripts/verify-discovery-requirements.mjs', 'check', '--diff-against', 'HEAD'], { cwd: project });
-  assert.equal(sourceOnlyDiff.status, 1, sourceOnlyDiff.output);
-  assert.match(sourceOnlyDiff.output, /DISCOVERY_DIFF_RUNTIME_UNTRACKED/u);
-}
+import { assertRuntime, fixture, gitBash, installSh, run, toBash } from './_install-fixture.mjs';
 
 test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !existsSync(gitBash) }, () => {
   const { root, project, target, runtime } = fixture();
@@ -75,20 +19,6 @@ test('fresh Bash installation produces a project-local runtime whose gate comman
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /project runtime/);
     const repeat = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
-    assert.equal(repeat.status, 0, repeat.output);
-    assertRuntime(project, target, runtime);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('fresh PowerShell installation produces the same project-local runtime', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
-  const { root, project, target, runtime } = fixture();
-  try {
-    const result = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
-    assert.equal(result.status, 0, result.output);
-    assert.match(result.output, /project runtime/);
-    const repeat = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
     assert.equal(repeat.status, 0, repeat.output);
     assertRuntime(project, target, runtime);
   } finally {

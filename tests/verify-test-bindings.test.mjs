@@ -242,54 +242,19 @@ test('binding CLI reads the real inventory by default and catches unreadable inj
   assert.match(errors.at(-1), /broken JSON/u);
 });
 
-// --- El tope de tiempo, contra la medición ------------------------------------------------------
+// LA MEDICION DE DURACION SE FUE A SU PROPIO GATE: `scripts/verify-test-duration.mjs`.
 //
-// El gate corre cada `test_ref` con un tope, y ese número estaba por DEBAJO del archivo de prueba
-// más lento del repositorio. Medido el 2026-09-05, sin instrumentación:
-// `verify-receipt-gate.test.mjs` 39,7 s y `protocolo-e2e.test.mjs` 28,8 s, contra un tope de 30 s.
+// Vivia aca y no podia funcionar: corria rodeada de noventa archivos compitiendo por la CPU, asi que
+// medir cuanto tarda uno medía contención. Medido el 2026-09-17 sobre install-runtime: tardaba 96 s
+// solo y 224 s medido desde adentro de la suite -- factor 2,3x contra un tope de 120 --. Con eso,
+// cualquier archivo de mas de unos 52 s reventaba el tope sin estar roto.
 //
-// Ninguno de los dos está hoy en el inventario, así que no estaba roto — era una bomba con la mecha
-// medida: el día que alguien vincule un requisito a uno de esos archivos, el gate lo marca TIMEOUT
-// y el fallo no habla del test sino de su duración. Bajo la instrumentación de cobertura, que
-// multiplica los tiempos, ya explotó una vez ese mismo día.
+// Partir los archivos mas lentos ayudo -- 131 s a 41, 116 s a 56 -- y no alcanzo: el problema no es
+// el tamano, es donde se mide. Como gate propio corre solo y mide lo que dice medir.
 //
-// Esta prueba no fija un número: fija la RELACIÓN. Si mañana una prueba legítima se vuelve más lenta
-// que el tope, se pone roja y obliga a mirar cuál de las dos cosas hay que cambiar.
-
-test('el tope de tiempo del gate deja margen sobre la prueba más lenta que el propio repositorio corre', SOLO_FUENTE, (t) => {
-  // NO VALE MEDIR DURACION MIENTRAS LA SUITE ENTERA CORRE EN PARALELO. El gate de cobertura lanza
-  // todos los archivos a la vez, y este mide cuanto tarda uno: con noventa procesos compitiendo por
-  // la CPU se mide contencion, no el archivo. Medido el 2026-09-15: 121 y 126 s bajo cobertura
-  // contra 111 s en una corrida normal, con el tope en 120. Se saltea diciendolo, porque un pase
-  // silencioso se leeria como «el tope tiene margen» y lo cierto es que no se pudo medir.
-  if (process.env.NODE_V8_COVERAGE !== undefined) {
-    t.skip('bajo la corrida de cobertura la suite entera compite por la CPU: medir duración acá mide contención, no el archivo');
-    return;
-  }
-  const archivos = readdirSync(join(repoRoot, 'tests')).filter((n) => n.endsWith('.test.mjs'));
-  assert.ok(archivos.length > 50, 'el barrido tiene que ver la suite entera');
-  // No se corren los 90 archivos —eso duplicaría la suite—: se mide el que la medición del
-  // 2026-09-05 señaló como el más lento, que es el que define el margen.
-  // EL NOMBRE SALE DEL CONTRATO, no de una constante escrita aca. Estaba escrita a mano y quedo
-  // vieja: apuntaba a un archivo ya partido en dos mientras otro reventaba el tope sin que nadie lo
-  // mirara. Sigue siendo una declaracion -- correr los 90 archivos duplicaria la suite -- pero es
-  // una declaracion VISIBLE, con la fecha en que se midio.
-  const declarado = declaracionDelMasLento(repoRoot);
-  const masLento = declarado.archivo;
-  assert.ok(archivos.includes(masLento), `${masLento} tiene que existir, o esta prueba mide otra cosa`);
-  const inicio = Date.now();
-  const r = spawnSync(process.execPath, ['--test', join('tests', masLento)], {
-    cwd: repoRoot, encoding: 'utf8', timeout: TAP_TIMEOUT_MS * 3,
-    // NODE_V8_COVERAGE se saca porque el tope gobierna la corrida NORMAL, asi que medir el hijo
-    // instrumentado compararia dos cosas distintas. NO era la causa del rojo que aparecio el
-    // 2026-09-15 -- se saco y siguio fallando, asi que esa hipotesis se descarto midiendo --, pero
-    // se queda porque la comparacion correcta es contra la corrida que el tope gobierna.
-    env: { ...process.env, NODE_TEST_CONTEXT: undefined, NODE_V8_COVERAGE: undefined },
-  });
-  const tardo = Date.now() - inicio;
-  assert.equal(r.status, 0, `${masLento} tiene que pasar, o lo que se mide no es su duración`);
-  assert.ok(tardo < TAP_TIMEOUT_MS, `${masLento} tarda ${Math.round(tardo / 1000)} s y el tope es ${TAP_TIMEOUT_MS / 1000} s: vincular un requisito a ese archivo lo marcaría TIMEOUT por lento, no por roto`);
-});
+// NO LA VUELVAS A ESCRIBIR ACA. El tope sigue siendo el real de TAP y sigue comprobandose; lo unico
+// que cambio es que se comprueba desde afuera de la suite, que es el unico lugar donde el numero
+// significa algo.
 
 // --- El lexer estaba ciego a los literales de expresion regular ---------------------------------
 //

@@ -4,7 +4,7 @@
   "entries": [
     {
       "path": ".agents/skills/ia-stack/SKILL.md",
-      "class": "skill"
+      "class": "documento"
     },
     {
       "path": ".gitattributes",
@@ -919,6 +919,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-test-duration.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-threat-model.mjs",
       "class": "gate"
     },
@@ -1123,6 +1127,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/_install-fixture.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/_receipt-fixture.mjs",
       "class": "prueba"
     },
@@ -1144,6 +1152,10 @@
     },
     {
       "path": "tests/home-intacto.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/install-runtime-powershell.test.mjs",
       "class": "prueba"
     },
     {
@@ -1728,6 +1740,10 @@
     },
     {
       "path": "tests/verify-test-bindings.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-test-duration.test.mjs",
       "class": "prueba"
     },
     {
