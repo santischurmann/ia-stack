@@ -211,6 +211,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/irreplaceable-sources.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/platform-scope.json",
       "class": "contrato"
     },
@@ -228,6 +232,10 @@
     },
     {
       "path": "contracts/shell-coverage.json",
+      "class": "contrato"
+    },
+    {
+      "path": "contracts/slowest-test.json",
       "class": "contrato"
     },
     {
@@ -1107,7 +1115,15 @@
       "class": "plantilla"
     },
     {
+      "path": "tests/_e2e-fixture.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/_entorno.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/_receipt-fixture.mjs",
       "class": "prueba"
     },
     {
@@ -1156,6 +1172,10 @@
     },
     {
       "path": "tests/pretooluse-red.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/protocolo-e2e-via-corta.test.mjs",
       "class": "prueba"
     },
     {
@@ -1484,6 +1504,10 @@
     },
     {
       "path": "tests/verify-receipt-adaptador.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-receipt-commit.test.mjs",
       "class": "prueba"
     },
     {

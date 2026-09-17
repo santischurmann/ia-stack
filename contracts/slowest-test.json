@@ -1,0 +1,9 @@
+{
+  "schema": "ia.slowest-test/1",
+  "why": "Cual es el archivo de pruebas mas lento del repositorio, y desde cuando se sabe. La prueba del tope lo necesita para comprobar que ninguno se acerque al limite de TAP: vincular un requisito a un archivo mas lento lo marcaria TIMEOUT por lento y no por roto. Vivia escrito a mano adentro de la prueba y quedo viejo sin que nadie se enterara -- el 2026-09-16 apuntaba a un archivo que ya se habia partido en dos, mientras protocolo-e2e tardaba 131 s contra un tope de 120 y pasaba sin que nada lo mirara. Aca la declaracion es visible, y lleva la fecha en que se midio.",
+  "archivo": "install-runtime.test.mjs",
+  "medido": "2026-09-16",
+  "segundos": 96,
+  "why_ese": "Instala el runtime completo -- por bash y por PowerShell -- en varios proyectos temporales, y cada instalacion copia el arbol entero. Es el que define el margen contra el tope de TAP. Las mediciones de ese dia: install-runtime 96 s, protocolo-e2e-via-corta 41 s, verify-receipt-gate 56 s, verify-receipt-commit 33 s, protocolo-e2e 22 s.",
+  "como_se_remide": "node --test tests/<archivo> y se mira duration_ms; se corre uno por uno, no la suite entera."
+}

@@ -20,16 +20,32 @@
 //   3. Una carpeta con un fuente del usuario adentro NO se toca, y se nombra. Es la regla dura.
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 
+import { esRuntimeInstalado } from './_entorno.mjs';
+
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(repoRoot, 'scripts', 'limpiar-temporales.mjs');
+
+/**
+ * Lo intocable, para las pruebas que ejercen la regla dura. Se declara acá porque ahora sale de un
+ * contrato y no del código: una prueba que usa una extensión de proyecto tiene que declararla, igual
+ * que la declararía un proyecto de verdad. `.fuente` y `.binario` son inventadas a propósito — el
+ * protocolo público no conoce el stack de nadie.
+ */
+const INTOCABLES_DE_PRUEBA = /\.(?:fuente|binario|env|key|pem)$|(?:^|[\\/])\.(?:fuente|binario|env|key|pem)$/iu;
+
+// Self-check del repositorio: lee contracts/ de la raiz del checkout. Adentro de un runtime
+// instalado no aplica, y se saltea diciendolo.
+const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
+  : {};
 const {
-  HORAS_MINIMAS, SUFIJO_MKDTEMP, USAGE, candidatas, main, prefijosDe,
+  HORAS_MINIMAS, SUFIJO_MKDTEMP, USAGE, candidatas, intocablesDe, leerIntocables, main, prefijosDe,
 } = await import(pathToFileURL(script).href);
 
 /** Un temporal de mentira con las carpetas que se le pidan, envejecidas a gusto. */
@@ -77,7 +93,7 @@ test('SÓLO prefijo + los seis caracteres exactos de mkdtemp', () => {
     'mi-proyecto': {},
   });
   try {
-    assert.deepEqual(candidatas(root, PREFIJOS).map((c) => c.nombre), ['vcp-discovery-core-aB3xY9']);
+    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['vcp-discovery-core-aB3xY9']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -91,17 +107,17 @@ test('UNA CORRIDA EN CURSO NO SE TOCA: sólo lo viejo entra', () => {
     'vcp-task-shape-vvvvvv': { horas: HORAS_MINIMAS + 1 },
   });
   try {
-    assert.deepEqual(candidatas(root, PREFIJOS).map((c) => c.nombre), ['vcp-task-shape-vvvvvv']);
+    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['vcp-task-shape-vvvvvv']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test('LA REGLA DURA · una carpeta con un fuente del usuario adentro no se toca, y se nombra', () => {
-  for (const archivo of ['estrategia.mq5', 'compilado.ex5', '.env', 'clave.key', 'cert.pem']) {
+  for (const archivo of ['estrategia.fuente', 'compilado.binario', '.env', 'clave.key', 'cert.pem']) {
     const root = temporal({ 'vcp-task-shape-aaaaaa': { contiene: archivo } });
     try {
-      const [c] = candidatas(root, PREFIJOS);
+      const [c] = candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA);
       assert.equal(c.intocable, true, archivo);
       assert.match(c.motivo, new RegExp(archivo.replace('.', '\\.'), 'u'));
     } finally {
@@ -114,7 +130,7 @@ test('POR DEFECTO LISTA Y NO BORRA NADA', () => {
   const root = temporal({ 'vcp-discovery-core-aaaaaa': {}, 'vcp-task-shape-bbbbbb': {} });
   try {
     const salida = [];
-    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot], { write: (l) => salida.push(l) }), 0);
+    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
     assert.ok(existsSync(join(root, 'vcp-discovery-core-aaaaaa')), 'listar NO borra');
     assert.match(salida.join('\n'), /2 carpeta/u);
     assert.match(salida.join('\n'), /--borrar/u, 'tiene que decir cómo se borra, para que listar no sea un callejón');
@@ -126,14 +142,14 @@ test('POR DEFECTO LISTA Y NO BORRA NADA', () => {
 test('CON --borrar saca las que coinciden, y SÓLO ésas', () => {
   const root = temporal({
     'vcp-discovery-core-aaaaaa': {},
-    'vcp-task-shape-bbbbbb': { contiene: 'cosa.mq5' },
+    'vcp-task-shape-bbbbbb': { contiene: 'cosa.fuente' },
     'proyecto-de-otro': {},
   });
   try {
     const salida = [];
-    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot, '--borrar'], { write: (l) => salida.push(l) }), 0);
+    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot, '--borrar'], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
     assert.equal(existsSync(join(root, 'vcp-discovery-core-aaaaaa')), false, 'la que coincide se va');
-    assert.equal(existsSync(join(root, 'vcp-task-shape-bbbbbb')), true, 'la que tiene un .mq5 se queda');
+    assert.equal(existsSync(join(root, 'vcp-task-shape-bbbbbb')), true, 'la que tiene un fuente declarado se queda');
     assert.equal(existsSync(join(root, 'proyecto-de-otro')), true, 'lo que no coincide ni se mira');
     assert.match(salida.join('\n'), /1 borrada/u);
     assert.match(salida.join('\n'), /1 intocable|1 sin tocar/u);
@@ -146,7 +162,7 @@ test('sin candidatas no hay nada que limpiar, y eso no es un incumplimiento', ()
   const root = temporal({ 'proyecto-de-otro': {} });
   try {
     const salida = [];
-    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot], { write: (l) => salida.push(l) }), 0);
+    assert.equal(main(['listar', '--temp', root, '--tests', repoRoot], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
     assert.match(salida.at(-1) ?? '', /^VACÍO: /u, salida.join('\n'));
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -200,7 +216,7 @@ test('UNA CARPETA QUE NO SE PUEDE MIRAR ADENTRO es intocable, no inocente', () =
     },
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
-  });
+  }, INTOCABLES_DE_PRUEBA);
   assert.equal(c.intocable, true);
   assert.match(c.motivo, /no se puede leer/u);
 });
@@ -217,7 +233,7 @@ test('una entrada cuyo stat falla se saltea: no se puede fechar, no se toca', ()
   assert.deepEqual(candidatas('/temp', PREFIJOS, {
     listar: () => [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }],
     stat: () => { throw new Error('EBUSY'); },
-  }), []);
+  }, INTOCABLES_DE_PRUEBA), []);
 });
 
 test('un doble que devuelve nombres sueltos en vez de Dirents se entiende igual', () => {
@@ -227,23 +243,23 @@ test('un doble que devuelve nombres sueltos en vez de Dirents se entiende igual'
     listar: (ruta) => (String(ruta) === '/temp' ? ['vcp-task-shape-aaaaaa'] : []),
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
-  });
+  }, INTOCABLES_DE_PRUEBA);
   assert.deepEqual(c.map((x) => x.nombre), ['vcp-task-shape-aaaaaa']);
   assert.equal(c[0].intocable, false);
 });
 
 test('adentro de una carpeta, un doble que devuelve nombres sueltos también se entiende', () => {
-  // Misma razón que arriba, un nivel más abajo: si el barrido asumiera Dirent, un .mq5 devuelto
+  // Misma razón que arriba, un nivel más abajo: si el barrido asumiera Dirent, un fuente devuelto
   // como cadena no se vería y la carpeta se borraría con el fuente adentro.
   const [c] = candidatas('/temp', PREFIJOS, {
     listar: (ruta) => (String(ruta) === '/temp'
       ? [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }]
-      : ['estrategia.mq5']),
+      : ['estrategia.fuente']),
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
-  });
+  }, INTOCABLES_DE_PRUEBA);
   assert.equal(c.intocable, true);
-  assert.match(c.motivo, /estrategia\.mq5/u);
+  assert.match(c.motivo, /estrategia\.fuente/u);
 });
 
 test('una subcarpeta se recorre hasta el fondo buscando lo intocable', () => {
@@ -252,12 +268,12 @@ test('una subcarpeta se recorre hasta el fondo buscando lo intocable', () => {
       const s = String(ruta);
       if (s === '/temp') return [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }];
       if (s.endsWith('aaaaaa')) return [{ name: 'adentro', isDirectory: () => true }];
-      return [{ name: 'estrategia.mq5', isDirectory: () => false }];
+      return [{ name: 'estrategia.fuente', isDirectory: () => false }];
     },
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
-  });
-  assert.equal(c.intocable, true, 'un .mq5 dos niveles abajo cuenta igual');
+  }, INTOCABLES_DE_PRUEBA);
+  assert.equal(c.intocable, true, 'un fuente declarado dos niveles abajo cuenta igual');
 });
 
 test('si borrar falla, la carpeta se cuenta como intacta y el motivo viaja', () => {
@@ -282,7 +298,7 @@ test('sin --temp sale del entorno, y el último recurso es /tmp', () => {
     delete process.env.TMPDIR;
     process.env.TEMP = root;
     const salida = [];
-    assert.equal(main(['listar', '--tests', repoRoot], { write: (l) => salida.push(l) }), 0);
+    assert.equal(main(['listar', '--tests', repoRoot], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
     assert.match(salida.join('\n'), new RegExp(root.replaceAll('\\', '\\\\').replaceAll('.', '\\.'), 'u'));
 
     delete process.env.TEMP;
@@ -295,3 +311,110 @@ test('sin --temp sale del entorno, y el último recurso es /tmp', () => {
     if (previo.TEMP === undefined) delete process.env.TEMP; else process.env.TEMP = previo.TEMP;
   }
 });
+
+// --- Lo intocable sale de un contrato, no del codigo ---------------------------------------------
+
+const CONTRATO = {
+  schema: 'ia.irreplaceable-sources/1',
+  why: 'un motivo escrito de largo suficiente para el contrato de fuentes irreemplazables',
+  universales: [
+    { extension: '.env', why: 'credenciales: no se borran, no se copian y no se citan en ningún reporte' },
+    { extension: '.key', why: 'material criptográfico que no se puede volver a generar igual' },
+    { extension: '.pem', why: 'material criptográfico' },
+  ],
+  del_proyecto: [],
+};
+
+const conDelProyecto = (lista) => ({ ...CONTRATO, del_proyecto: lista });
+
+test('la lista se construye del contrato, y los universales están siempre', () => {
+  const re = intocablesDe(CONTRATO);
+  for (const nombre of ['secreto.key', 'cert.pem', '.env', 'sub/.env']) {
+    assert.equal(re.test(nombre), true, nombre);
+  }
+  // Y lo que el contrato NO declara no es intocable: si lo fuera, el limpiador no limpiaría nada.
+  assert.equal(re.test('salida.log'), false);
+  assert.equal(re.test('cualquiera.fuente'), false, 'el protocolo público no conoce esta extensión');
+});
+
+test('un proyecto agrega las suyas y pasan a ser intocables', () => {
+  // Es lo que reemplaza a tenerlas escritas a mano adentro del código.
+  const re = intocablesDe(conDelProyecto([
+    { extension: '.fuente', why: 'un fuente que este proyecto no versiona por diseño: borrarlo es pérdida total' },
+    { extension: '.binario', why: 'el compilado del anterior, que tampoco está en git' },
+  ]));
+  assert.equal(re.test('estrategia.fuente'), true);
+  assert.equal(re.test('estrategia.binario'), true);
+  assert.equal(re.test('estrategia.FUENTE'), true, 'la extensión no distingue mayúsculas');
+});
+
+test('un nombre que sólo CONTIENE la extensión no cuenta: tiene que terminar en ella', () => {
+  // `notas.fuente.txt` es un texto, no un fuente. Tratarlo como intocable dejaría basura para siempre.
+  const re = intocablesDe(conDelProyecto([{ extension: '.fuente', why: 'un fuente que este proyecto no versiona por diseño' }]));
+  assert.equal(re.test('notas.fuente.txt'), false);
+  assert.equal(re.test('fuente'), false);
+});
+
+test('FALSIFICACIÓN · una extensión sin motivo escrito se rechaza', () => {
+  // Misma disciplina que el resto: declarar algo intocable es una decisión, y va con su porqué.
+  for (const mala of [{ extension: '.fuente' }, { extension: '.fuente', why: 'corto' }, { why: 'sin extensión' }, 'no es un objeto']) {
+    assert.throws(() => intocablesDe(conDelProyecto([mala])), /motivo|extensión|objeto/iu, JSON.stringify(mala));
+  }
+});
+
+test('FALSIFICACIÓN · una extensión mal escrita se rechaza en vez de armar una regex rota', () => {
+  for (const mala of ['fuente', '.', '.fu ente', '.*', '..fuente']) {
+    assert.throws(
+      () => intocablesDe(conDelProyecto([{ extension: mala, why: 'un motivo escrito largo como corresponde' }])),
+      /extensión/iu,
+      mala,
+    );
+  }
+});
+
+test('FALSIFICACIÓN · un contrato sin universales, o ilegible, NO da una lista vacía: rechaza', () => {
+  // Una lista vacía convertiría al limpiador en un barrido sin frenos. Es el mismo criterio que la
+  // guarda de los prefijos: si no se puede construir, no se barre nada.
+  for (const roto of [{ ...CONTRATO, universales: [] }, { ...CONTRATO, universales: 'no es una lista' }, null, 'texto', { schema: 'otra.cosa/1' }]) {
+    assert.throws(() => intocablesDe(roto), /universal|contrato|schema/iu, JSON.stringify(roto));
+  }
+});
+
+test('EL DATO: el contrato de este repositorio no nombra el stack de nadie', SOLO_FUENTE, () => {
+  // Lo que se publica tiene que servirle a cualquiera sin contar a qué se dedica quien lo escribió.
+  const real = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'irreplaceable-sources.json'), 'utf8'));
+  assert.ok(real.universales.length >= 3, 'tienen que estar los universales');
+  assert.deepEqual(real.del_proyecto, [], 'el protocolo público no declara extensiones de ningún proyecto');
+  const texto = JSON.stringify(real);
+  for (const rastro of ['mq5', 'ex5', 'MetaTrader', 'MT5', 'SCalper']) {
+    assert.doesNotMatch(texto, new RegExp(rastro, 'iu'), `el contrato público nombra ${rastro}`);
+  }
+});
+
+test('un contrato sin del_proyecto, o con basura ahi, usa solo los universales', () => {
+  // El campo es opcional: un proyecto que no declara nada propio es lo normal, y no puede reventar.
+  for (const raro of [undefined, null, 'no es una lista', 42]) {
+    const re = intocablesDe({ ...CONTRATO, del_proyecto: raro });
+    assert.equal(re.test('clave.key'), true, String(raro));
+    assert.equal(re.test('cualquiera.fuente'), false, String(raro));
+  }
+});
+
+test('leerIntocables dice qué pasó cuando el contrato no se puede leer, en vez de reventar', () => {
+  // Sin esa lista no se sabe qué no se borra, así que no se barre nada — y el mensaje tiene que
+  // decir cuál archivo falta, no salir por una excepción de node:fs.
+  assert.throws(
+    () => leerIntocables('.', () => { throw new Error('ENOENT: no such file'); }, '/raiz/inventada'),
+    /no se pudo leer .*irreplaceable-sources\.json/u,
+  );
+});
+
+test('si lo que se tira no es un Error, el mensaje igual dice qué pasó', () => {
+  // `throw 'texto'` es legal y no trae `message`. Sin este camino saldría «undefined», y un mensaje
+  // que no dice nada es peor que la excepción cruda: parece que el gate contestó.
+  assert.throws(
+    () => leerIntocables('.', () => { throw 'el disco dijo que no'; }, '/raiz/inventada'),
+    /el disco dijo que no/u,
+  );
+});
+

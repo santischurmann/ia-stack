@@ -1,0 +1,25 @@
+{
+  "schema": "ia.irreplaceable-sources/1",
+  "why": "Que archivos NO se borran nunca, este donde esten. El limpiador de temporales puede barrer una carpeta entera, y una carpeta puede tener adentro un fuente que el repositorio NO versiona: ahi no hay git, no hay papelera y no hay vuelta atras. Esta lista es la unica defensa contra eso. Vivia escrita a mano adentro del script, con extensiones del stack de quien lo escribio; eso protegia igual y de paso contaba a que se dedicaba. Aca se declara: los universales viajan con el protocolo, y cada proyecto agrega los suyos en su archivo local, que no se versiona.",
+  "universales": [
+    {
+      "extension": ".env",
+      "why": "Credenciales. No se borran, no se copian y no se citan en ningun reporte."
+    },
+    {
+      "extension": ".key",
+      "why": "Material criptografico: no se puede volver a generar igual."
+    },
+    {
+      "extension": ".pem",
+      "why": "Material criptografico."
+    },
+    {
+      "extension": ".p12",
+      "why": "Material criptografico: certificado con su clave privada adentro."
+    }
+  ],
+  "del_proyecto": [],
+  "como_agregar_las_tuyas": "Escribi tus extensiones en .claude/irreplaceable-sources.local.json, con el mismo formato -- extension y why -- y la clave `del_proyecto`. Ese archivo NO se versiona, asi que tu stack no viaja con el protocolo. Ejemplo del caso que mas duele: un fuente que tu repositorio no commitea por diseno, porque lleva algo que no puede publicarse. Si lo borras no hay backup.",
+  "overlay_local": ".claude/irreplaceable-sources.local.json"
+}

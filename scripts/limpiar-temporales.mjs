@@ -21,8 +21,9 @@
 //   2. El nombre tiene que ser prefijo + los SEIS caracteres exactos que `mkdtempSync` agrega. Sin
 //      comodines: `vcp-` a secas barrería la carpeta de trabajo de cualquier otra cosa.
 //   3. Una carpeta con un fuente del usuario adentro NO se toca y se nombra. Es la regla dura, y acá
-//      se aplica aunque el nombre coincida: un `.mq5` no está en git, así que borrarlo es pérdida
-//      total e irreversible.
+//      se aplica aunque el nombre coincida: un fuente que el repositorio no versiona no tiene
+//      backup ni papelera, asi que borrarlo es perdida total e irreversible. Que cuenta como fuente
+//      irreemplazable sale de contracts/irreplaceable-sources.json, no de una lista escrita aca.
 //
 // Y UNA CUARTA, que es la que evita el desastre: si no se puede derivar un solo prefijo, **no barre
 // nada** y rechaza. Una lista vacía con un comodín de respaldo borraría el temporal entero.
@@ -33,7 +34,7 @@
 // si el contenido importa — mira nombres de archivo, no lo que dicen.
 
 import { readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const USAGE = 'usage: limpiar-temporales.mjs listar [--temp <carpeta>] [--tests <raiz>] [--borrar]';
@@ -45,8 +46,85 @@ export const SUFIJO_MKDTEMP = 6;
 /** Una corrida en curso no se toca. El umbral es la única defensa contra eso. */
 export const HORAS_MINIMAS = 6;
 
-/** Lo que jamás se borra, esté donde esté. Un `.mq5` no está en git: no hay vuelta. */
-const INTOCABLES = /\.(?:mq5|ex5|key|pem)$|(?:^|[\\/])\.env$/iu;
+/** Donde se declara lo que jamas se borra. El publico trae los universales; el local, los del proyecto. */
+/** La raiz del protocolo: donde vive este script, no donde se lo corre. */
+const RAIZ = dirname(dirname(fileURLToPath(import.meta.url)));
+
+export const CONTRATO_INTOCABLES = 'contracts/irreplaceable-sources.json';
+export const OVERLAY_INTOCABLES = '.claude/irreplaceable-sources.local.json';
+
+const SCHEMA_INTOCABLES = 'ia.irreplaceable-sources/1';
+/** Una extension de verdad: punto y letras o digitos. Ni comodines ni espacios ni puntos de mas. */
+const FORMA_EXTENSION = /^\.[A-Za-z0-9]+$/u;
+const MIN_MOTIVO_INTOCABLE = 20;
+
+/**
+ * LO QUE JAMAS SE BORRA, leido del contrato y no escrito aca adentro.
+ *
+ * Vivia como una constante con extensiones de un stack concreto adentro. Protegia igual -- un fuente
+ * versiona no tiene backup ni papelera -- y de paso contaba a que se dedica quien escribio el
+ * protocolo, en un repositorio publico que tiene que servirle a cualquiera. Los universales viajan
+ * con el protocolo; cada proyecto declara los suyos en `.claude/`, que no se versiona.
+ *
+ * FALLA CERRADO. Sin contrato legible, o sin un solo universal, NO se devuelve una lista vacia: se
+ * rechaza. Una lista vacia convertiria al limpiador en un barrido sin frenos, que es exactamente el
+ * desastre que las otras tres guardas evitan.
+ */
+export function intocablesDe(contrato, overlay = null) {
+  if (typeof contrato !== 'object' || contrato === null || Array.isArray(contrato)) {
+    throw new Error(`${CONTRATO_INTOCABLES}: el contrato tiene que ser un objeto, y sin el no se puede saber qué no se borra`);
+  }
+  if (contrato.schema !== SCHEMA_INTOCABLES) {
+    throw new Error(`${CONTRATO_INTOCABLES}: el schema tiene que ser ${SCHEMA_INTOCABLES}`);
+  }
+  if (!Array.isArray(contrato.universales) || contrato.universales.length === 0) {
+    throw new Error(`${CONTRATO_INTOCABLES}: no declara un solo universal. Una lista vacía dejaría al limpiador sin frenos`);
+  }
+  const declaradas = [
+    ...contrato.universales,
+    ...(Array.isArray(contrato.del_proyecto) ? contrato.del_proyecto : []),
+    ...(overlay !== null && Array.isArray(overlay?.del_proyecto) ? overlay.del_proyecto : []),
+  ];
+  const extensiones = [];
+  for (const entrada of declaradas) {
+    if (typeof entrada !== 'object' || entrada === null || Array.isArray(entrada)) {
+      throw new Error(`${CONTRATO_INTOCABLES}: cada entrada tiene que ser un objeto con extensión y why`);
+    }
+    if (typeof entrada.extension !== 'string' || !FORMA_EXTENSION.test(entrada.extension)) {
+      throw new Error(`${CONTRATO_INTOCABLES}: ${JSON.stringify(entrada.extension)} no es una extensión válida (punto y letras o dígitos, sin comodines)`);
+    }
+    if (typeof entrada.why !== 'string' || entrada.why.trim().length < MIN_MOTIVO_INTOCABLE) {
+      throw new Error(`${CONTRATO_INTOCABLES}: ${entrada.extension} se declara intocable sin un motivo escrito. Declarar algo intocable es una decisión y va con su porqué`);
+    }
+    extensiones.push(entrada.extension.slice(1).toLowerCase());
+  }
+  // Un nombre que EMPIEZA con punto -- `.env` -- es un archivo entero, no una extension: se ancla al
+  // separador para que `notas.env.txt` no cuente y `sub/.env` si.
+  const alternativa = [...new Set(extensiones)].join('|');
+  return new RegExp(`\\.(?:${alternativa})$|(?:^|[\\\\/])\\.(?:${alternativa})$`, 'iu');
+}
+
+/**
+ * El contrato y su overlay local, leidos del disco.
+ *
+ * EL CONTRATO VIAJA CON EL SCRIPT, no con el directorio que se limpia. Los universales son del
+ * protocolo: buscarlos en el cwd hacia que correr esto parado en cualquier otra carpeta reventara
+ * con un stack trace de node:fs en vez de funcionar. El OVERLAY si es del proyecto, y por eso sale
+ * del cwd -- y es opcional: no tenerlo es lo normal.
+ */
+export function leerIntocables(cwd, leer = readFileSync, raizDelProtocolo = RAIZ) {
+  let contrato;
+  try {
+    contrato = JSON.parse(leer(join(raizDelProtocolo, CONTRATO_INTOCABLES), 'utf8'));
+  } catch (error) {
+    // Un contrato ausente o ilegible se dice: es distinto de un contrato que declara mal, y se
+    // arregla distinto. Lo que no puede pasar es salir por una excepcion sin manejar.
+    throw new Error(`no se pudo leer ${CONTRATO_INTOCABLES} desde ${raizDelProtocolo}: ${error?.message ?? error}. Sin esa lista no se sabe que no se borra, y no se barre nada`);
+  }
+  let overlay = null;
+  try { overlay = JSON.parse(leer(join(cwd, OVERLAY_INTOCABLES), 'utf8')); } catch { overlay = null; }
+  return intocablesDe(contrato, overlay);
+}
 
 const MKDTEMP = /mkdtempSync\(\s*join\(\s*tmpdir\(\)\s*,\s*'([^']+)'/gu;
 const FORMA_PREFIJO = /^[A-Za-z0-9][A-Za-z0-9-]*-$/u;
@@ -80,7 +158,7 @@ export function prefijosDe(raiz, io = {}) {
   return [...encontrados].sort();
 }
 
-const tieneIntocable = (dir, listar) => {
+const tieneIntocable = (dir, listar, intocables) => {
   const pendientes = [dir];
   while (pendientes.length > 0) {
     const actual = pendientes.pop();
@@ -98,17 +176,20 @@ const tieneIntocable = (dir, listar) => {
         pendientes.push(ruta);
         continue;
       }
-      if (INTOCABLES.test(nombre)) return nombre;
+      if (intocables.test(nombre)) return nombre;
     }
   }
   return null;
 };
 
 /** Las carpetas del temporal que coinciden EXACTO con un prefijo de prueba y ya están frías. */
-export function candidatas(temp, prefijos, io = {}) {
+export function candidatas(temp, prefijos, io = {}, intocables = undefined) {
   const listar = io.listar ?? readdirSync;
   const stat = io.stat ?? statSync;
   const ahora = io.ahora ?? Date.now();
+  // La lista de lo intocable sale del contrato. Si nadie la pasa se lee del disco: falla cerrado, y
+  // un contrato ilegible revienta ACA, antes de mirar una sola carpeta.
+  const noSeTocan = intocables ?? leerIntocables(io.raiz ?? ".", io.leerContrato);
   if (prefijos.length === 0) return [];
 
   let entradas;
@@ -135,7 +216,7 @@ export function candidatas(temp, prefijos, io = {}) {
     }
     if (horas < HORAS_MINIMAS) continue;
 
-    const intocable = tieneIntocable(ruta, listar);
+    const intocable = tieneIntocable(ruta, listar, noSeTocan);
     salida.push({
       nombre,
       ruta,
@@ -180,7 +261,9 @@ export function main(args = process.argv.slice(2), options = {}) {
     return 1;
   }
 
-  const encontradas = candidatas(temp, prefijos, options);
+  // La lista de lo intocable se inyecta igual que el resto de los insumos. En produccion nadie la
+  // pasa y sale del contrato; en una prueba se declara la del caso, como la declararia un proyecto.
+  const encontradas = candidatas(temp, prefijos, options, options.intocables);
   if (encontradas.length === 0) {
     write(`${EMPTY}: no hay carpetas de prueba viejas en ${temp} (se buscaron ${prefijos.length} prefijo(s), con más de ${HORAS_MINIMAS} hora(s)). Nada que limpiar.`);
     return 0;

@@ -82,5 +82,9 @@ node scripts/limpiar-temporales.mjs listar --borrar
 **El primer comando no borra nada**: lista. El segundo saca sólo lo que la lista mostró. Medido el
 2026-09-15: 198 carpetas de un solo prefijo, todas del mismo día. No faltaba ningún `rmSync` — el
 delta de una suite completa es cero—: salen de corridas matadas, y un proceso que muere nunca
-ejecuta su `finally`. Una carpeta con un `.mq5`, `.ex5`, `.env`, `.key` o `.pem` adentro **no se
-toca**, aunque el nombre coincida.
+ejecuta su `finally`. Una carpeta con un fuente irreemplazable adentro **no se
+toca**, aunque el nombre coincida. Qué cuenta como irreemplazable lo declara
+`contracts/irreplaceable-sources.json`: los universales —credenciales y material criptográfico—
+viajan con el protocolo, y cada proyecto agrega los suyos en `.claude/`, que no se versiona. Estaba
+escrito a mano adentro del script, con extensiones de un stack concreto: protegía igual y de paso
+contaba a qué se dedicaba quien lo escribió.

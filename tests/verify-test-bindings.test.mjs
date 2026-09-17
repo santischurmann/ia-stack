@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -45,6 +45,34 @@ function row(overrides = {}) {
     test_name: 'REQ-I01 · binding verde aislado',
     ...overrides,
   };
+}
+
+
+/** La declaracion del archivo mas lento, leida del contrato. */
+export function declaracionDelMasLento(raiz, leer = readFileSync) {
+  const d = JSON.parse(leer(join(raiz, 'contracts', 'slowest-test.json'), 'utf8'));
+  return validarDeclaracion(d, (a) => existsSync(join(raiz, 'tests', a)));
+}
+
+/** Lo que una declaracion tiene que traer para que la medicion signifique algo. */
+export function validarDeclaracion(d, existe) {
+  if (typeof d !== 'object' || d === null || Array.isArray(d)) throw new Error('la declaración del archivo más lento tiene que ser un objeto');
+  if (typeof d.archivo !== 'string' || !/\.test\.mjs$/u.test(d.archivo)) throw new Error(`archivo inválido: ${JSON.stringify(d.archivo)}`);
+  if (!existe(d.archivo)) throw new Error(`${d.archivo} no existe: la declaración quedó vieja y la prueba estaría midiendo otra cosa`);
+  // `2026-13-45` pasa el patron y revienta al convertirla: `new Date` la rueda o la vuelve invalida,
+  // y `toISOString` tira un RangeError que no dice nada de la declaracion. Se comprueba antes.
+  const comoFecha = typeof d.medido === 'string' ? new Date(`${d.medido}T00:00:00Z`) : null;
+  if (comoFecha === null || !/^\d{4}-\d{2}-\d{2}$/u.test(d.medido) || Number.isNaN(comoFecha.getTime()) || comoFecha.toISOString().slice(0, 10) !== d.medido) {
+    throw new Error(`fecha inválida: ${JSON.stringify(d.medido)}. Sin fecha no se sabe desde cuándo no se remide`);
+  }
+  if (!Number.isFinite(d.segundos) || d.segundos <= 0) throw new Error(`segundos inválido: ${JSON.stringify(d.segundos)}`);
+  if (typeof d.why_ese !== 'string' || d.why_ese.trim().length < 40) throw new Error('falta el motivo de por qué ESE archivo define el margen');
+  return { archivo: d.archivo, medido: d.medido, segundos: d.segundos, why: d.why_ese };
+}
+
+/** Cuantos dias pasaron desde que se midio. No rechaza por vieja: publica el numero. */
+export function diasDesde(fecha, hoy) {
+  return Math.round((Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${fecha}T00:00:00Z`)) / 86_400_000);
 }
 
 test('checkTestBinding accepts an isolated, exact and green Node TAP test', () => {
@@ -242,7 +270,12 @@ test('el tope de tiempo del gate deja margen sobre la prueba más lenta que el p
   assert.ok(archivos.length > 50, 'el barrido tiene que ver la suite entera');
   // No se corren los 90 archivos —eso duplicaría la suite—: se mide el que la medición del
   // 2026-09-05 señaló como el más lento, que es el que define el margen.
-  const masLento = 'verify-receipt-gate.test.mjs';
+  // EL NOMBRE SALE DEL CONTRATO, no de una constante escrita aca. Estaba escrita a mano y quedo
+  // vieja: apuntaba a un archivo ya partido en dos mientras otro reventaba el tope sin que nadie lo
+  // mirara. Sigue siendo una declaracion -- correr los 90 archivos duplicaria la suite -- pero es
+  // una declaracion VISIBLE, con la fecha en que se midio.
+  const declarado = declaracionDelMasLento(repoRoot);
+  const masLento = declarado.archivo;
   assert.ok(archivos.includes(masLento), `${masLento} tiene que existir, o esta prueba mide otra cosa`);
   const inicio = Date.now();
   const r = spawnSync(process.execPath, ['--test', join('tests', masLento)], {
@@ -314,4 +347,47 @@ test('EL DETECTOR DEL DETECTOR · toda declaración real de tests/ la ve el esc�
     }
   }
   assert.deepEqual(invisibles, [], `${invisibles.length} declaración(es) reales que el escáner no ve`);
+});
+
+// --- Cual es el archivo mas lento, y desde cuando se sabe ----------------------------------------
+
+test('el archivo mas lento se declara en un contrato, no se escribe adentro de la prueba', SOLO_FUENTE, () => {
+  // Estaba escrito a mano y quedó viejo: el 2026-09-16 apuntaba a un archivo que ya se había
+  // partido en dos, mientras el que de verdad reventaba el tope pasaba sin que nada lo mirara.
+  const d = declaracionDelMasLento(repoRoot);
+  assert.match(d.archivo, /\.test\.mjs$/u);
+  assert.equal(existsSync(join(repoRoot, 'tests', d.archivo)), true, `${d.archivo} tiene que existir, o la prueba mide otra cosa`);
+  assert.match(d.medido, /^\d{4}-\d{2}-\d{2}$/u, 'la medición lleva fecha: sin eso no se sabe desde cuándo no se remide');
+  assert.equal(Number.isFinite(d.segundos) && d.segundos > 0, true);
+  assert.ok(d.why.length >= 40, 'por qué ESE archivo define el margen');
+});
+
+test('FALSIFICACIÓN · una declaración que apunta a un archivo que ya no existe se rechaza', () => {
+  assert.throws(
+    () => validarDeclaracion({ archivo: 'se-borro.test.mjs', medido: '2026-09-16', segundos: 90, why: 'un motivo escrito de largo suficiente para pasar' }, () => false),
+    /no existe/iu,
+  );
+});
+
+test('FALSIFICACIÓN · una declaración mal formada se rechaza en vez de medir cualquier cosa', () => {
+  const ok = { archivo: 'x.test.mjs', medido: '2026-09-16', segundos: 90, why: 'un motivo escrito de largo suficiente para pasar' };
+  for (const roto of [
+    { ...ok, archivo: 'x.mjs' },
+    { ...ok, medido: 'ayer' },
+    { ...ok, medido: '2026-13-45' },
+    { ...ok, segundos: 0 },
+    { ...ok, segundos: 'noventa' },
+    { ...ok, why: 'corto' },
+    null,
+  ]) {
+    assert.throws(() => validarDeclaracion(roto, () => true), /archivo|fecha|segundos|motivo|declaración/iu, JSON.stringify(roto));
+  }
+});
+
+test('la declaración dice cuántos días pasaron desde que se midió', SOLO_FUENTE, () => {
+  // No rechaza por vieja — remedir cuesta minutos y no siempre hay —, pero el número se publica:
+  // una declaración de hace tres meses tiene que verse, no esconderse.
+  const d = declaracionDelMasLento(repoRoot);
+  assert.equal(Number.isInteger(diasDesde(d.medido, '2099-01-01')), true);
+  assert.ok(diasDesde(d.medido, d.medido) === 0);
 });
