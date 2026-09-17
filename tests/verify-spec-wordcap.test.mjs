@@ -15,7 +15,7 @@ import { esRuntimeInstalado } from './_entorno.mjs';
 // Self-check: mide las plantillas de ESTE checkout. El instalador las copia, pero quien las verifica
 // es el repositorio que las publica.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const VALID_SPEC = `# Spec: billing\n\n## Problem / Problema\nEl cobro falla.\n\n## Discovery / Investigación previa\nSe revisó la evidencia.\n\n## Target Users / Usuarios\nOperadores.\n\n## Acceptance Criteria / Criterios de aceptación\n- [ ] **AC1:** GIVEN un pago pendiente, WHEN se reintenta, THEN se registra un resultado.\n- [ ] **AC2:** THE SYSTEM SHALL conservar el recibo.\n\n## Constraints / Restricciones\n- No dependencias nuevas.\n\n## Non-Goals / No-Goals\n- No se cambia la facturación.\n\n## Stack & Dependencies\n- Node nativo.\n\n## Definition of Done (DoD)\n- [ ] tests verdes\n`;

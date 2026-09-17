@@ -24,7 +24,7 @@ const script = join(repoRoot, 'scripts', 'verify-stack-matrix.mjs');
 const { MAX_AGE_CEILING, MIN_TEXT, esRelleno, main, validateFreshness, validateLimits, validateMatrix } = await import(pathToFileURL(script).href);
 
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const texto = (base) => `${base} — texto real y suficientemente largo para no ser relleno.`;

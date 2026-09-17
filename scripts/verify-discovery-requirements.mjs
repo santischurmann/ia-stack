@@ -433,11 +433,11 @@ function readJson(cwd, relativePath) {
 export function readPreviousInventory(cwd, ref, runtimeRoot = RUNTIME_ROOT) {
   try {
     if (realpathSync(cwd) !== realpathSync(runtimeRoot)) {
-      reject('DISCOVERY_DIFF_RUNTIME_UNTRACKED', '--diff-against is only valid from the VCP source repository that tracks its canonical contracts');
+      reject('DISCOVERY_DIFF_RUNTIME_UNTRACKED', '--diff-against is only valid from the IA Stack source repository that tracks its canonical contracts');
     }
   } catch (error) {
     if (error instanceof DiscoveryError) throw error;
-    reject('DISCOVERY_DIFF_RUNTIME_UNTRACKED', '--diff-against requires a readable VCP source repository root');
+    reject('DISCOVERY_DIFF_RUNTIME_UNTRACKED', '--diff-against requires a readable IA Stack source repository root');
   }
   try {
     execFileSync('git', ['rev-parse', '--verify', `${ref}^{commit}`], { cwd, encoding: 'utf8', stdio: 'pipe' });

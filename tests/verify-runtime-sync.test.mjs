@@ -354,7 +354,7 @@ test('FALSIFICACIÓN · un directorio que no es checkout fuente no se compara en
     installRuntime(source, join(consumer, ...DEFAULT_RUNTIME_PATH.split('/')));
     const result = run(['check'], consumer);
     assert.equal(result.status, 1, result.output);
-    assert.match(result.output, /not a VibeCodeProtocols source checkout/u);
+    assert.match(result.output, /not an IA Stack source checkout/u);
     assert.match(result.output, /scripts\//u);
   } finally {
     rmSync(root, { recursive: true, force: true });

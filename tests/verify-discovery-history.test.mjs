@@ -197,7 +197,7 @@ test('el expediente real de este repositorio sólo creció', (t) => {
   // de VCP. Adentro del runtime instalado de otra persona no hay nada que afirmar, y ademas el
   // instalador gitignora el runtime, asi que git tampoco puede contestar. Se saltea diciendo por que.
   if (esRuntimeInstalado(repoRoot)) {
-    t.skip('runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala');
+    t.skip('runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala');
     return;
   }
   const r = verifyDiscoveryGrowth(repoRoot, 'integridad-verificable');

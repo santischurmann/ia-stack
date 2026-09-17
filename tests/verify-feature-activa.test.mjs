@@ -25,7 +25,7 @@ import {
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const vista = (archivo, slug) => ({ archivo, slug, como: 'x' });

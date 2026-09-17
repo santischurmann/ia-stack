@@ -34,7 +34,7 @@ const script = join(repoRoot, 'scripts', 'verify-empty-probe.mjs');
 // Self-check del repositorio: afirma sobre la ubicacion de ESTE arbol. Adentro del runtime instalado
 // de otra persona la respuesta correcta es la contraria, y no hay nada que probar ahi.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const GATE = { script: 'verify-uno.mjs', args: ['check'], expect: 'reject' };

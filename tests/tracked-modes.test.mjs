@@ -41,7 +41,7 @@ import { esRuntimeInstalado } from './_entorno.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 // DOS FORMAS, NO UNA. `./scripts/x.sh` es el checkout; `.vibe/<runtime>/scripts/x.sh` es la copia

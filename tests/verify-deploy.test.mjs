@@ -37,7 +37,7 @@ function expediente(overrides = {}) {
       manifest: 'package.json',
       lockfile_sha256: 'ninguno — este proyecto no tiene lockfile: es Node nativo sin dependencias',
       count: 0,
-      audited_by: 'ninguno — VCP no trae SCA y su límite está declarado; nadie auditó esto',
+      audited_by: 'ninguno — IA Stack no trae SCA y su límite está declarado; nadie auditó esto',
     },
     ignored_sensitive: [],
     service: { declared: false, start_command: [], base_url: '', health: [] },

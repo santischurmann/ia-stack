@@ -192,7 +192,7 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
   }
   const absent = missingSourceRoots(cwd, stat);
   if (absent.length > 0) {
-    writeError(`REJECTED: this directory is not a VibeCodeProtocols source checkout (missing: ${absent.join(', ')}) — run the gate from the checkout the runtime was installed from, or point --runtime at the project runtime from there.`);
+    writeError(`REJECTED: this directory is not an IA Stack source checkout (missing: ${absent.join(', ')}) — run the gate from the checkout the runtime was installed from, or point --runtime at the project runtime from there.`);
     return 1;
   }
   let result;

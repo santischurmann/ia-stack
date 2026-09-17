@@ -21,7 +21,7 @@ function gitFixture() {
   const root = mkdtempSync(join(tmpdir(), 'vcp-ratchet-'));
   spawnSync('git', ['init', '-q'], { cwd: root });
   spawnSync('git', ['config', 'user.email', 'vcp-tests@example.invalid'], { cwd: root });
-  spawnSync('git', ['config', 'user.name', 'VCP ratchet tests'], { cwd: root });
+  spawnSync('git', ['config', 'user.name', 'IA Stack ratchet tests'], { cwd: root });
   return root;
 }
 

@@ -30,7 +30,7 @@ case "$cmd" in
       touch "$VIBE_DIR/PROJECT.md" "$VIBE_DIR/DECISIONS.md" \
             "$VIBE_DIR/PATTERNS.md" "$VIBE_DIR/SESSION.md" "$VIBE_DIR/DEBT.md" \
             "$VIBE_DIR/RETRO.md" "$VIBE_DIR/LESSONS.md" "$VIBE_DIR/AUDIT.md"
-      echo "⚠ templates/vibe/ not found next to this script — .vibe/ created with empty files only, no COMPANY.md (org chart). Run from inside the VibeCodeProtocols repo, or copy templates/vibe/COMPANY.md manually."
+      echo "⚠ templates/vibe/ not found next to this script — .vibe/ created with empty files only, no COMPANY.md (org chart). Run from inside the IA Stack repo, or copy templates/vibe/COMPANY.md manually."
     fi
     PROJECT=$(basename "$(pwd)")
     sed -i "s/(fill in)/$PROJECT/1" "$VIBE_DIR/PROJECT.md" 2>/dev/null || true

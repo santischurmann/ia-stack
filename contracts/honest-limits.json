@@ -581,7 +581,7 @@
       "limit_id": "deploy-does-not-audit-dependencies",
       "file": "skills/gates.md",
       "phrase": "No audita dependencias",
-      "why": "VCP no trae SCA y ese limite ya estaba declarado. El expediente de despliegue exige DECLARAR quien audito, y ninguno con motivo es una respuesta valida. Sin esta frase un verde se lee como dependencias auditadas, que es exactamente la promesa que el protocolo no puede cumplir."
+      "why": "IA Stack no trae SCA y ese limite ya estaba declarado. El expediente de despliegue exige DECLARAR quien audito, y ninguno con motivo es una respuesta valida. Sin esta frase un verde se lee como dependencias auditadas, que es exactamente la promesa que el protocolo no puede cumplir."
     },
     {
       "limit_id": "deploy-health-is-local-never-remote",
@@ -726,6 +726,12 @@
       "file": "skills/gates.md",
       "phrase": "un segundo no es cero",
       "why": "El hueco grande se cerro: la hora de arranque del proceso se lee en las tres plataformas y un numero que el sistema le dio a otro programa ahora sale MUERTO en vez de VIVO. Lo que queda es la precision. `ps -o lstart=` devuelve la fecha con grano de un segundo, asi que dos procesos con el mismo pid que arrancaron dentro del mismo segundo son indistinguibles: la ventana paso de todo el arranque de la maquina a un segundo, y achicarla no es cerrarla. Sin esta frase, «distingue un PID reusado» se lee como garantia y nadie sabe que todavia hay una ventana. Los otros dos bordes tambien se declaran donde pasan: un candado anterior al 2026-09-16 no trae el campo y lo dice en su motivo, y una plataforma que no sabe contestar da reconcile_required."
+    },
+    {
+      "limit_id": "runtime-sync-needs-the-source-checkout",
+      "file": "skills/gates.md",
+      "phrase": "Necesita el checkout fuente al lado",
+      "why": "El gate compara la copia instalada CONTRA el checkout, asi que sin el checkout no hay contra que comparar y sale 1 pidiendolo. Quien solo tiene su proyecto -- que es el caso normal de quien instala el protocolo -- no puede responder la pregunta que mas le importa: si su runtime quedo viejo. YA PASO, y es el motivo por el que este limite se escribe: el 2026-09-17 se encontro un proyecto con un runtime anterior al 2026-09-15 que llevaba dias rechazando recibos por un prefijo de schema que el runtime nuevo acepta, y nadie se entero. La copia vieja del gate que vive adentro de ese runtime tampoco lo detecta: un runtime desactualizado no puede detectar que esta desactualizado, porque el gate que lo detectaria es una copia adentro de el mismo. Falla cerrado, que es lo correcto, pero fallar cerrado no es responder."
     }
   ]
 }

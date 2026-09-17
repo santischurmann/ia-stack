@@ -210,8 +210,8 @@ function scanText(filePath, text, language) {
   const relevanceTerms = `${filePath}\n${text}`.match(/\b(?:protocol|workflow|gate|receipt|evidence|test|security|research|agent|orchestrat|memory|checkpoint|manifest|graph|obsidian|spec|plan|review|learn|failure|rollback|audit)\w*/giu) || [];
   const relevance = relevanceTerms.length >= 2 ? 'ADOPT' : 'DEFER';
   const reason = relevance === 'ADOPT'
-    ? `Señal observable: ${relevanceTerms.slice(0, 8).join(', ')}; candidato a revisión VCP, no adopción automática.`
-    : 'No hay evidencia textual suficiente de una capacidad directamente portable a VCP; queda diferido sin inventar utilidad.';
+    ? `Señal observable: ${relevanceTerms.slice(0, 8).join(', ')}; candidato a revisión IA Stack, no adopción automática.`
+    : 'No hay evidencia textual suficiente de una capacidad directamente portable a IA Stack; queda diferido sin inventar utilidad.';
   const purpose = heading
     ? `Archivo ${role} (${languageLabel}); título observado: ${heading.text}.`
     : `Archivo ${role} (${languageLabel}); no se encontró un título explícito, por lo que sólo se reportan señales observables.`;

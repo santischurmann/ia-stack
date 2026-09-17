@@ -121,7 +121,7 @@ const md = [
     return `### ${group}\n${items}`;
   }), '',
   '## Regla de uso', '',
-  'Cada candidato útil debe entrar en un ciclo VCP propio: SPEC → PLAN → 🔵 elección → RED → BUILD → TRIANGULATE → VERIFY → seguridad → receipt → 🔵 publicación. El presente informe no salta ningún gate.', '',
+  'Cada candidato útil debe entrar en un ciclo IA Stack propio: SPEC → PLAN → 🔵 elección → RED → BUILD → TRIANGULATE → VERIFY → seguridad → receipt → 🔵 publicación. El presente informe no salta ningún gate.', '',
   `Huella del insumo: \`${summary.input_sha256}\`.`, '',
 ].join('\n');
 fs.writeFileSync(outputMd, `${md}\n`, 'utf8');

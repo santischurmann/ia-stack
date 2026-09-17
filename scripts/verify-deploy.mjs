@@ -48,7 +48,7 @@ export const REQUIRE_INPUTS_FLAG = '--require-inputs';
 // El nombre anterior de la variable se sigue leyendo: quien ya la tenia puesta no se entera del
 // cambio de nombre del protocolo por un timeout distinto. Se prefiere el nuevo.
 export const PROBE_TIMEOUT_MS = Number(process.env.IA_STACK_DEPLOY_TIMEOUT_MS ?? process.env.VCP_DEPLOY_TIMEOUT_MS ?? 5000);
-export const LIMIT_LINE = 'LÍMITE: no audita dependencias —VCP no trae SCA y ese límite está declarado—, comprueba que el servicio responde en esta máquina y nunca que un despliegue remoto esté sano, y verifica el registro de la reversión, no la reversión.';
+export const LIMIT_LINE = 'LÍMITE: no audita dependencias —IA Stack no trae SCA y ese límite está declarado—, comprueba que el servicio responde en esta máquina y nunca que un despliegue remoto esté sano, y verifica el registro de la reversión, no la reversión.';
 
 /** La misma prohibición que la fase 9 ya tiene escrita: la vuelta atrás MUEVE de vuelta, nunca
  * elimina. Un rollback que borra convierte el plan de emergencia en el segundo accidente. */

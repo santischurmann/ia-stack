@@ -215,6 +215,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/nombre-anterior.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/platform-scope.json",
       "class": "contrato"
     },
@@ -1164,6 +1168,10 @@
     },
     {
       "path": "tests/limpiar-temporales.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/nombre-anterior.test.mjs",
       "class": "prueba"
     },
     {

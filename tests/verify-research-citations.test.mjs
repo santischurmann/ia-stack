@@ -29,7 +29,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
 // el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const script = join(repoRoot, 'scripts', 'verify-research-citations.mjs');

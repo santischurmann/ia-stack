@@ -375,7 +375,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
   // Adentro del runtime instalado de otra persona no hay nada que verificar, y eso NO es un OK:
   // es VACIO. Antes rechazaba siempre, con violaciones que hablaban del repositorio de VCP.
   if (esRuntimeInstalado(cwd) || esRuntimeInstalado(raizDelScript)) {
-    write(`${EMPTY_PREFIX}este contrato verifica los documentos de VCP, que el instalador no copia: adentro de un runtime instalado no hay nada que comparar`);
+    write(`${EMPTY_PREFIX}este contrato verifica los documentos de IA Stack, que el instalador no copia: adentro de un runtime instalado no hay nada que comparar`);
     return 0;
   }
   const read = (path) => readFileSync(join(cwd, path), 'utf8');

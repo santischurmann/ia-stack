@@ -12,7 +12,7 @@ import { esRuntimeInstalado } from './_entorno.mjs';
 
 // Self-check: mide la duracion de una prueba de ESTE checkout contra el tope del gate.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 const script = join(repoRoot, 'scripts', 'verify-test-bindings.mjs');
 const {

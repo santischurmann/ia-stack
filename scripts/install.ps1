@@ -27,7 +27,7 @@ function Copy-Runtime([string]$Destination) {
   Copy-Item "$PackageDir\AGENTS.md" "$Destination\AGENTS.md" -Force
 }
 
-Write-Host '=== VibeCodeProtocols Installer ===' -ForegroundColor Cyan
+Write-Host '=== IA Stack Installer ===' -ForegroundColor Cyan
 Write-Host "Source:  $PackageDir"
 Write-Host "Skills:  $TargetDir"
 Write-Host "Runtime: $RuntimeDir"
@@ -63,7 +63,7 @@ if ($ProjectDir) {
   $IgnoreFile = Join-Path $ProjectDir '.gitignore'
   $ArchiveRule = '.claude-archive/'
   if (-not (Test-Path -LiteralPath $IgnoreFile) -or -not ((Get-Content -LiteralPath $IgnoreFile) -contains $ArchiveRule)) {
-    Add-Content -LiteralPath $IgnoreFile -Value "`n# VibeCodeProtocols PHASE 9: lo que la limpieza archiva, nunca se commitea`n$ArchiveRule"
+    Add-Content -LiteralPath $IgnoreFile -Value "`n# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea`n$ArchiveRule"
     Write-Output "OK: $ArchiveRule agregado a .gitignore"
   }
   $ignoreFile = Join-Path $ProjectDir '.gitignore'
@@ -77,7 +77,7 @@ if ($ProjectDir) {
   $ignoreRule = '.vibe/ia-stack-runtime/'
   $yaEsta = (Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $ignoreRule)
   if (-not $yaEsta) {
-    Add-Content -Path $ignoreFile -Value '# VibeCodeProtocols: copia del runtime, no es codigo del proyecto'
+    Add-Content -Path $ignoreFile -Value '# IA Stack: copia del runtime, no es codigo del proyecto'
     Add-Content -Path $ignoreFile -Value $ignoreRule
     Write-Host "OK: $ignoreRule agregado a .gitignore" -ForegroundColor Green
   }

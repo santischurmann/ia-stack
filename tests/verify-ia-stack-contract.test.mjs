@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
 // el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const script = join(repoRoot, 'scripts', 'verify-ia-stack-contract.mjs');
@@ -33,7 +33,7 @@ const {
 
 function completeReadBase(path) {
   const requirement = REQUIREMENTS.find(([candidate]) => candidate === path);
-  return `VCP ayuda a una IA\n.vibe/ia-stack-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nEl sello lo registra el protocolo, no Graphify\ncommit → graphify → record → check\nModelo de seguridad y límites\nResearch: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs\n## PHASE 1 — BOOTSTRAP
+  return `IA Stack ayuda a una IA\n.vibe/ia-stack-runtime/scripts/\n--project <project-root>\n-ProjectDir <project-root>\n.vibe/ia-stack-runtime/scripts/verify-plan-conflicts.mjs\nverify-security-baseline.mjs\nverify-backup-state.mjs\nEl sello lo registra el protocolo, no Graphify\ncommit → graphify → record → check\nModelo de seguridad y límites\nResearch: investigar antes de especificar\ndato no confiable\nno hace taint analysis\nconfiguraciones peligrosas de GitHub Actions\nno una frontera de confianza\nno autentica a quien\nRegla dura sobre \`acceptance_criteria\`: \`terminal_state: "approved"\` exige TODOS los AC\nnunca re-ejecuta el comando ni prueba criptográficamente\nno lo llames "el scope\nreal del plan"\nscope.declared_paths sigue siendo un writer set verify-scope-diff.mjs\n.vibe/ia-stack-runtime/scripts/verify-spec-wordcap.mjs\n## PHASE 1 — BOOTSTRAP
 ## PHASE 2 — RESEARCH
 ## PHASE 3 — SPEC
 ## PHASE 4 — PLAN
@@ -136,7 +136,7 @@ test('FALSIFICACIÓN · contract rejects the backup seal ownership or its record
 });
 
 test('FALSIFICACIÓN · contract rejects unreadable, missing and stale-policy documentation', () => {
-  const missing = contractViolations((path) => path === 'README.md' ? 'VCP ayuda a una IA\nat least 90%' : completeRead(path));
+  const missing = contractViolations((path) => path === 'README.md' ? 'IA Stack ayuda a una IA\nat least 90%' : completeRead(path));
   assert.equal(missing.some((item) => /README\.md: missing project-local runtime/u.test(item)), true);
   assert.equal(missing.some((item) => /stale 90%/u.test(item)), true);
   const unreadable = contractViolations(() => { throw new Error('ENOENT'); });
@@ -546,7 +546,7 @@ test('el contrato escribe VACÍO cuando el script vive en un runtime instalado, 
   assert.match(salidas.join('\n'), /^VACÍO: /u);
 });
 
-test('FALSIFICACIÓN · desde un checkout de VCP el gate sigue verificando de verdad', SOLO_FUENTE, () => {
+test('FALSIFICACIÓN · desde un checkout de IA Stack el gate sigue verificando de verdad', SOLO_FUENTE, () => {
   // Si esta prueba se pone verde por la guarda, el gate quedó apagado para todos.
   const salidas = [];
   const code = main(['check'], repoRoot, (l) => salidas.push(l), () => {}, join(repoRoot, 'scripts'));

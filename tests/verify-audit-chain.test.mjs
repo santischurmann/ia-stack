@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
 // proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const script = join(repoRoot, 'scripts', 'verify-audit-chain.mjs');

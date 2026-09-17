@@ -17,7 +17,7 @@ OUTPUT_NAME="vibecodeprotocols-${VERSION}"
 OUTPUT_ARCHIVE="${OUTPUT_NAME}.zip"
 CHECKSUM_FILE="${OUTPUT_NAME}.sha256"
 
-echo "=== VibeCodeProtocols Package Builder ==="
+echo "=== IA Stack Package Builder ==="
 echo "Version: $VERSION"
 echo "Source:  $PACKAGE_DIR"
 echo ""

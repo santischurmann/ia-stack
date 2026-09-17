@@ -53,7 +53,7 @@ export function existeEnRuntimeInstalado(rutaRelativa) {
 // Marca una prueba como self-check del repositorio. Devuelve true si hay que cortar.
 export function saltarSiEsRuntimeInstalado(t, root, que) {
   if (!esRuntimeInstalado(root)) return false;
-  t.skip(`runtime instalado: «${que}» es un self-check del repositorio de VCP, no del proyecto de quien instala`);
+  t.skip(`runtime instalado: «${que}» es un self-check del repositorio de IA Stack, no del proyecto de quien instala`);
   return true;
 }
 

@@ -58,7 +58,7 @@ test('FALSIFICACIÓN · la tolerancia va en UNA sola dirección', () => {
 });
 
 test('FALSIFICACIÓN · un prefijo parecido no es el prefijo', () => {
-  for (const impostor of ['vcpx.receipt/v3', 'ia-stack.receipt/v3', 'xvcp.receipt/v3', 'VCP.receipt/v3', 'IA.receipt/v3']) {
+  for (const impostor of ['vcpx.receipt/v3', 'ia-stack.receipt/v3', 'xvcp.receipt/v3', 'IA Stack.receipt/v3', 'IA.receipt/v3']) {
     assert.equal(mismoSchema(impostor, 'ia.receipt/v3'), false, impostor);
   }
 });

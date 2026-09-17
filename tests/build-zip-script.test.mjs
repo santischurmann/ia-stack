@@ -45,7 +45,7 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
   if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-'));
   try {
-    const packageDir = join(root, 'VCP');
+    const packageDir = join(root, 'IAStack');
     const scriptsDir = join(packageDir, 'scripts');
     const binDir = join(root, 'bin');
     mkdirSync(scriptsDir, { recursive: true });
@@ -63,7 +63,7 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
     const git = (...args) => spawnSync('git', ['-C', packageDir, ...args], { encoding: 'utf8' });
     git('init', '--quiet');
     git('config', 'user.email', 'tests@example.test');
-    git('config', 'user.name', 'VCP tests');
+    git('config', 'user.name', 'IAStack tests');
     writeFileSync(join(packageDir, '.vibe', 'estado.json'), '{}\n');
     writeFileSync(join(packageDir, 'graphify-out', 'graph.json'), '{}\n');
     git('add', '-A');
@@ -85,17 +85,17 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
     // Los directorios del fixture estan vacios y git no versiona directorios vacios, asi que lo
     // unico versionado dentro de la lista blanca son los seis documentos de raiz mas el script.
     assert.deepEqual(archiveArgs.slice(2).sort(), [
-      'VCP/CHANGELOG.md', 'VCP/INSTALL.md', 'VCP/LICENSE', 'VCP/README.md', 'VCP/SECURITY.md', 'VCP/SKILL.md',
-      'VCP/scripts/build-zip.sh',
+      'IAStack/CHANGELOG.md', 'IAStack/INSTALL.md', 'IAStack/LICENSE', 'IAStack/README.md', 'IAStack/SECURITY.md', 'IAStack/SKILL.md',
+      'IAStack/scripts/build-zip.sh',
     ].sort());
-    assert.equal(archiveArgs.some((item) => item.includes('.env') || item.includes('.vibe') || item.includes('graphify-out') || item === 'VCP'), false);
+    assert.equal(archiveArgs.some((item) => item.includes('.env') || item.includes('.vibe') || item.includes('graphify-out') || item === 'IAStack'), false);
     assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.zip')), true);
     assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.sha256')), true);
     // FALSIFICACIÓN: the printed recipient instructions must `cd` into the package's REAL
-    // directory case ("VCP" here — mixed case on purpose), never a hardcoded lowercase literal
+    // directory case ("IAStack" here — mixed case on purpose), never a hardcoded lowercase literal
     // that breaks the instructions verbatim on a case-sensitive filesystem (the primary target,
     // since scripts/install.sh is the Linux/macOS installer).
-    assert.match(result.output, /cd VCP && \.\/scripts\/install\.sh/u);
+    assert.match(result.output, /cd IAStack && \.\/scripts\/install\.sh/u);
     assert.equal(result.output.includes('cd vibecodeprotocols'), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -114,7 +114,7 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
   if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-git-'));
   try {
-    const packageDir = join(root, 'VCP');
+    const packageDir = join(root, 'IAStack');
     const scriptsDir = join(packageDir, 'scripts');
     const binDir = join(root, 'bin');
     mkdirSync(scriptsDir, { recursive: true });
@@ -130,7 +130,7 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
     const git = (...args) => spawnSync('git', ['-C', packageDir, ...args], { encoding: 'utf8' });
     git('init', '--quiet');
     git('config', 'user.email', 'tests@example.test');
-    git('config', 'user.name', 'VCP tests');
+    git('config', 'user.name', 'IAStack tests');
     git('add', '-A');
     git('commit', '--quiet', '-m', 'fixture');
 
@@ -147,9 +147,9 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
     });
     assert.equal(result.status, 0, result.output);
     const args = readFileSync(argsFile, 'utf8').trim().split(/\r?\n/u);
-    assert.equal(args.includes('VCP/tests/real.test.mjs'), true, `el archivo versionado tiene que viajar: ${args.join(' ')}`);
+    assert.equal(args.includes('IAStack/tests/real.test.mjs'), true, `el archivo versionado tiene que viajar: ${args.join(' ')}`);
     assert.equal(args.some((a) => a.includes('secreto.local')), false, 'un archivo ignorado no puede viajar al release');
-    assert.equal(args.some((a) => a === 'VCP/tests'), false, 'pasar el directorio suelto se lleva lo ignorado adentro');
+    assert.equal(args.some((a) => a === 'IAStack/tests'), false, 'pasar el directorio suelto se lleva lo ignorado adentro');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -159,7 +159,7 @@ test('el empaquetador falla cerrado si no puede saber que esta versionado', (t) 
   if (!hayBash) t.skip('Git Bash is unavailable on this Windows host');
   const root = mkdtempSync(join(tmpdir(), 'vcp-build-zip-nogit-'));
   try {
-    const packageDir = join(root, 'VCP');
+    const packageDir = join(root, 'IAStack');
     const scriptsDir = join(packageDir, 'scripts');
     mkdirSync(scriptsDir, { recursive: true });
     for (const name of ['README.md', 'SECURITY.md', 'INSTALL.md', 'SKILL.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(join(packageDir, name), `${name}\n`);

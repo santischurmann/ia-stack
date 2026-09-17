@@ -13,7 +13,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
 // proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const script = join(repoRoot, 'scripts', 'verify-discovery-requirements.mjs');
@@ -396,7 +396,7 @@ test('CLI parser, main and registry use only fixed checks and reject Git ref fai
   try {
     git(sourceWithoutInventory, ['init', '--quiet']);
     git(sourceWithoutInventory, ['config', 'user.email', 'tests@example.test']);
-    git(sourceWithoutInventory, ['config', 'user.name', 'VCP tests']);
+    git(sourceWithoutInventory, ['config', 'user.name', 'IA Stack tests']);
     writeFileSync(join(sourceWithoutInventory, 'README.md'), 'no inventory in this historical commit\n');
     git(sourceWithoutInventory, ['add', 'README.md']);
     git(sourceWithoutInventory, ['commit', '--quiet', '-m', 'fixture']);

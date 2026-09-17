@@ -36,7 +36,7 @@ import {
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-check: barre los HTML versionados de ESTE checkout.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const turno = (id, salida, ts, extra = {}) => ({

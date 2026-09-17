@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-checks del repositorio: leen archivos de la raiz del checkout que el instalador NO copia al
 // proyecto de otra persona. Alla no aplican y ademas fallarian. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const RUTA = 'docs/ablation.json';
@@ -1561,7 +1561,7 @@ test('el README nombra el repositorio en el que vive', SOLO_FUENTE, (t) => {
   // Self-check del repositorio de VCP. Dentro del runtime instalado de otra persona no aplica, y
   // preguntarlo ahi seria leer el remote de esa persona. Se salta DICIENDO por que, no en silencio.
   if (esRuntimeInstalado(repoRoot)) {
-    t.skip('runtime instalado: este self-check es del repositorio de VCP, no del proyecto de quien instala');
+    t.skip('runtime instalado: este self-check es del repositorio de IA Stack, no del proyecto de quien instala');
     return;
   }
   const { nombre } = repoRemoto();
@@ -1876,7 +1876,7 @@ test('C1 · las tres sondas contra un repositorio de git REAL, con un borrado re
   try {
     if (git('init', '-q').status !== 0) return; // sin git no hay nada que medir
     git('config', 'user.email', 'vcp@example.invalid');
-    git('config', 'user.name', 'VCP');
+    git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
     writeFileSync(archivo, 'la version que se archivo\n');
@@ -1935,7 +1935,7 @@ test('C1 · SONDA B corre cuando la huella es idéntica, y descarta un renombrad
   try {
     if (git('init', '-q').status !== 0) return;
     git('config', 'user.email', 'vcp@example.invalid');
-    git('config', 'user.name', 'VCP');
+    git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
     const contenido = 'exactamente el mismo contenido, byte a byte\n';
@@ -1992,7 +1992,7 @@ test('C1 · FALSIFICACIÓN · un `git mv` NO enciende la sonda de historia', () 
   try {
     if (git('init', '-q').status !== 0) return;
     git('config', 'user.email', 'vcp@example.invalid');
-    git('config', 'user.name', 'VCP');
+    git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
     const contenido = 'contenido suficientemente largo como para que git lo detecte como renombrado y no como borrado mas alta\n'.repeat(4);

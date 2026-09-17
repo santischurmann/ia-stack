@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-check: mide las plantillas de ESTE checkout. El instalador las copia, pero quien las verifica
 // es el repositorio que las publica.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const ORDER = ['intake', 'research'];

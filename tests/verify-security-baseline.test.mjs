@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // Self-check del repositorio de VCP: lee un archivo de scripts/ del checkout. El instalador SI copia
 // scripts/, pero el que afirma sobre el generador propio es el repositorio que lo publica.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 const gate = join(repoRoot, 'scripts', 'verify-security-baseline.mjs');
 const {
@@ -39,7 +39,7 @@ function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'vcp-security-baseline-'));
   git(root, 'init', '-q');
   git(root, 'config', 'user.email', 'vcp-tests@example.invalid');
-  git(root, 'config', 'user.name', 'VCP security tests');
+  git(root, 'config', 'user.name', 'IA Stack security tests');
   writeFileSync(join(root, 'baseline.js'), 'export const clean = true;\n');
   git(root, 'add', '-A');
   git(root, 'commit', '-qm', 'baseline');

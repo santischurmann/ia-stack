@@ -33,7 +33,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // `SKILL.md` SÍ viaja al runtime instalado, pero el README no. La comprobación cruzada sólo tiene
 // sentido en el checkout fuente.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 /** Las fases tal como las declara el canónico: `## PHASE <n> — <NOMBRE>`. No hay lista escrita a

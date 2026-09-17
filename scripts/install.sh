@@ -46,7 +46,7 @@ copy_runtime() {
   cp "$PACKAGE_DIR/AGENTS.md" "$destination/AGENTS.md"
 }
 
-echo "=== VibeCodeProtocols Installer ==="
+echo "=== IA Stack Installer ==="
 echo "Source:  $PACKAGE_DIR"
 echo "Skills:  $TARGET_DIR"
 echo "Runtime: $RUNTIME_DIR"
@@ -87,7 +87,7 @@ if [ -n "$PROJECT_DIR" ]; then
   ARCHIVE_RULE=".claude-archive/"
   if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$ARCHIVE_RULE" "$IGNORE_FILE"; then
     [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
-    printf '# VibeCodeProtocols PHASE 9: lo que la limpieza archiva, nunca se commitea
+    printf '# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea
 %s
 ' "$ARCHIVE_RULE" >> "$IGNORE_FILE"
     echo "OK: $ARCHIVE_RULE agregado a .gitignore"
@@ -104,7 +104,7 @@ if [ -n "$PROJECT_DIR" ]; then
   IGNORE_RULE=".vibe/ia-stack-runtime/"
   if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
     [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
-    printf '# VibeCodeProtocols: copia del runtime, no es codigo del proyecto
+    printf '# IA Stack: copia del runtime, no es codigo del proyecto
 %s
 ' "$IGNORE_RULE" >> "$IGNORE_FILE"
     echo "OK: $IGNORE_RULE agregado a .gitignore"

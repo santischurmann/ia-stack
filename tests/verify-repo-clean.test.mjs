@@ -31,7 +31,7 @@ const {
 import { esRuntimeInstalado } from './_entorno.mjs';
 
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const motivo = (base) => `${base}, y por eso queda declarado en vez de borrado.`;

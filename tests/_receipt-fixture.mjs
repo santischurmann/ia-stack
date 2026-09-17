@@ -22,7 +22,7 @@ export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
 // el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
 export const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 export const receiptGate = join(repoRoot, 'scripts', 'verify-receipt.mjs');
@@ -92,7 +92,7 @@ export function fixture({ sha256 = false } = {}) {
     return null;
   }
   gitOk(root, 'config', 'user.email', 'vcp-tests@example.invalid');
-  gitOk(root, 'config', 'user.name', 'VCP receipt tests');
+  gitOk(root, 'config', 'user.name', 'IA Stack receipt tests');
   writeFileSync(join(root, 'tracked.txt'), 'baseline\n');
   writeFileSync(join(root, 'orig.txt'), 'rename baseline\n');
   writeFileSync(join(root, 'asset.bin'), Buffer.from([0x00, 0xff, 0x10, 0x80]));

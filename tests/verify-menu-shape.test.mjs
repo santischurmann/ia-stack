@@ -14,7 +14,7 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // runtime instalado de otra persona no tienen nada que afirmar -- y ademas el instalador gitignora
 // el runtime, asi que git no puede contestar. Se saltean DICIENDO por que.
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
-  ? { skip: 'runtime instalado: self-check del repositorio de VCP, no del proyecto de quien instala' }
+  ? { skip: 'runtime instalado: self-check del repositorio de IA Stack, no del proyecto de quien instala' }
   : {};
 
 const RUTA = 'doc.md';
@@ -42,7 +42,7 @@ function corrida(texto, args = ['check', RUTA]) {
 
 // --- Falso rojo: los documentos reales del protocolo tienen que pasar --------------------------
 
-test('los documentos reales de VCP pasan: un gate que obliga a escribir mal es peor que ninguno', SOLO_FUENTE, () => {
+test('los documentos reales de IA Stack pasan: un gate que obliga a escribir mal es peor que ninguno', SOLO_FUENTE, () => {
   const docs = ['SKILL.md', 'README.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
   const rojos = [];
   for (const doc of docs) {

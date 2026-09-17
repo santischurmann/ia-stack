@@ -34,7 +34,7 @@ function fixture() {
   mkdirSync(join(root, 'test'));
   git(root, 'init', '-q');
   git(root, 'config', 'user.email', 'vcp@example.invalid');
-  git(root, 'config', 'user.name', 'VCP test');
+  git(root, 'config', 'user.name', 'IA Stack test');
   writeFileSync(join(root, 'src', 'a.js'), 'export const a = 1;\n');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'fixture');
