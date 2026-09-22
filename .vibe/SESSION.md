@@ -2,6 +2,35 @@
 
 
 
+
+---
+
+## 2026-09-22 — tres hallazgos de un proyecto instalado, medidos antes de tocar
+
+**Estado**: 2162 pruebas / 0 fallas / 2 salteadas · cobertura 100% sobre 65 scripts · 123 limites
+honestos.
+
+Un proyecto que usa el protocolo reporto tres cosas. Se midieron las tres contra la fuente antes de
+tocar nada, y **ninguna era exactamente como vino**:
+
+| # | Lo reportado | Lo medido |
+|---|---|---|
+| 1 | El hash de cada criterio lee bytes crudos | **Real, y arreglado en `fdca26d`**. Con autocrlf el mismo test daba «the test changed». Este repositorio ya se habia comido esta clase el 2026-09-01 y la arreglo con un `.gitattributes`... para si mismo |
+| 2 | Recibos con hashes que no son de ningun commit | **Real, pero no es un defecto de `commit`**: la prueba que se proponia ya existe y esta verde (AC9). Entra por el camino manual que el protocolo publica como valido: `check --require-clean-worktree` y despues `git commit` a mano |
+| 3 | El instalador copia y no poda | **Real en los dos instaladores**: `cp -R` y `Copy-Item -Force` copian encima, y un gate retirado sobrevive a la reinstalacion |
+
+**DONDE RETOMAR — las tres son decisiones del operador, no defectos a arreglar solos:**
+
+1. **Recomprobar un recibo contra git despues de commitear.** Hoy nada lo hace: una vez commiteado,
+   el recibo no se vuelve a mirar contra el blob del test que quedo en el commit. Es lo que hubo que
+   hacer a mano para encontrar el hallazgo 2. Es una capacidad nueva -- un subcomando --, no un
+   arreglo.
+2. **Que `commit` sea el unico camino para el recibo final**, en vez de "preferible". Cierra el
+   hallazgo 2 de raiz, pero cambia el flujo publicado de la fase 8.
+3. **Que el instalador pode lo que sobra.** Va junto con el sello de version: los dos cambian lo que
+   el instalador hace adentro del proyecto de cada persona. Y la poda tendria que MOVER, no borrar,
+   como ya hace con la carpeta del nombre anterior.
+
 ---
 
 ## 2026-09-17 (segunda tanda) — el resto del rename, y una filtracion que el CI no podia ver
