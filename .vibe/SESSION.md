@@ -26,11 +26,19 @@ tocar nada, y **ninguna era exactamente como vino**:
 2. **El instalador aparta lo que sobra y sella el runtime del proyecto** (`INSTALADO.json`). Mueve,
    no borra. La copia global no se poda ni se sella, y queda declarado.
 
+**DESPUES, el mismo dia:**
+
+- **La poda de PowerShell vacio el runtime entero en el CI** (`80068e4`): en el runner el temporal
+  usa un nombre corto 8.3, y la ruta relativa salia de restar dos formas distintas de la misma
+  ruta. Arreglado con `-Name`, y con una red de seguridad en los dos instaladores: si la poda fuera
+  a mover mas de la mitad del runtime, no mueve nada.
+- **Finales de linea mezclados, rechazados antes de sellar** (`cf63e29`), por decision del operador.
+  El limite que decia «es raro» aparecio ese mismo dia en un proyecto real.
+
 **DONDE RETOMAR**
 
-- La cobertura de shell de `install.sh` quedo en 65,1% contra un piso de 65: las ramas que faltan
-  (paquete sin git, un `mv` que falla) no se pueden fabricar desde el arnes, porque el script corre
-  siempre desde este checkout.
+- La cobertura de shell de `install.sh` quedo en 69% contra un piso de 65, con escenarios de verdad.
+  Las ramas que faltan (paquete sin git, un `mv` que falla) no se pueden fabricar desde el arnes.
 - La copia global del runtime aparece como carpeta sin trackear en el repositorio de configuracion
   de la maquina del autor. Ya pasaba antes de hoy; es decision del operador si se ignora ahi.
 
