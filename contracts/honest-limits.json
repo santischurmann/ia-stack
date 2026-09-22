@@ -737,7 +737,7 @@
       "limit_id": "receipt-ac-hash-mixed-line-endings",
       "file": "skills/receipt.md",
       "phrase": "Un test con finales de linea mezclados",
-      "why": "El hash de cada criterio acepta el mismo contenido en tres formas -- crudo, LF y CRLF -- porque en Windows con autocrlf el mismo test tiene bytes distintos segun quien lo escribio ultimo, y el gate acusaba «el test cambio» sobre un test identico. Lo que queda: un test con finales de linea MEZCLADOS, sellado asi, solo coincide consigo mismo byte a byte. Cuando pasa por git sale uniforme, y ninguna de las tres formas reproduce la mezcla original: ese recibo no se puede recomprobar desde un clon. Es raro en un archivo de pruebas, y por eso se declara en vez de agregar una cuarta forma que nadie usaria."
+      "why": "Un test con finales de linea MEZCLADOS, sellado asi, no se puede recomprobar desde un clon: git lo guarda uniforme y ninguna de las tres formas reproduce la mezcla. Se declaro como limite el 2026-09-22 diciendo que era raro, y ese mismo dia aparecio en un proyecto real -- dos archivos, escritos por un script que reemplazaba texto con un salto de linea crudo sobre archivos en CRLF --: la rareza no estaba medida. El operador decidio pagarlo, y ahora check y commit rechazan un test mezclado ANTES de sellar. Lo que queda: los recibos sellados antes de esa fecha sobre un test mezclado siguen sin poder recomprobarse -- recheck los marca, y no tienen arreglo porque la evidencia sellada no se reescribe --, y un CR suelto no cuenta como fin de linea, asi que un archivo con finales de Mac clasicos mezclados con LF no se detecta."
     },
     {
       "limit_id": "receipt-recheck-compares-last-commit",

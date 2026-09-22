@@ -385,6 +385,21 @@ export function formasDeFinDeLinea(contenido) {
   return formas;
 }
 
+/** Si un archivo mezcla finales de linea: algun CRLF y algun LF suelto. Un CR suelto no cuenta -- es
+ * contenido, igual que en `formasDeFinDeLinea` --.
+ *
+ * POR QUE SE RECHAZA ANTES DE SELLAR. Decidido por el operador el 2026-09-22 sobre un caso real: un
+ * test con 208 lineas CRLF y una LF, escrito por un script que reemplazaba texto con un salto de
+ * linea crudo sobre un archivo que git habia materializado en CRLF. El recibo se sello con el hash de
+ * esos bytes, `check` y `commit` pasaron porque comparan contra el disco, y git guardo el archivo
+ * UNIFORME: ninguna de las tres formas reproduce la mezcla, asi que ese recibo no se puede
+ * recomprobar desde un clon. Rechazarlo en `check` cuesta un minuto; despues del commit ya esta
+ * sellado, y solo lo ve `recheck`. */
+export function tieneFinesMezclados(contenido) {
+  const texto = (Buffer.isBuffer(contenido) ? contenido : Buffer.from(String(contenido))).toString('latin1');
+  return texto.includes('\r\n') && /(^|[^\r])\n/u.test(texto);
+}
+
 /** El contenido de un archivo tal como quedo en un commit, en BYTES; null si ese commit no lo tiene.
  *
  * Bytes y no texto a proposito: el helper `git()` de este archivo normaliza CRLF en su salida, que
@@ -480,7 +495,14 @@ export function validateAcceptanceCriterion(ac, cwd, {
   } catch (error) {
     return { ok: false, reason: `${label}: test_file is unsafe: ${error.message}` };
   }
-  const coincide = formasDeFinDeLinea(readFile(file)).some((forma) => hashOf(forma) === ac.test_hash_sha256);
+  const contenido = readFile(file);
+  // Medido el 2026-09-22 con git 2.55: despues de un `git add`, git ya cuenta el archivo mezclado como
+  // igual al indice y `git checkout --` no lo reescribe. Por eso el mensaje dice que el checkout NO
+  // alcanza: sugerirlo mandaria a hacer algo que no arregla nada.
+  if (tieneFinesMezclados(contenido)) {
+    return { ok: false, reason: `${label}: ${ac.test_file} mezcla finales de linea CRLF y LF, y un recibo sobre ese archivo no se puede recomprobar desde un clon: git lo guarda uniforme y ninguna forma reproduce la mezcla. Reescribilo entero con un solo tipo de fin de linea (todo LF o todo CRLF) y regenera el hash del criterio. git checkout -- <archivo> no alcanza: despues de un git add, git ya lo cuenta igual al indice y no lo reescribe.` };
+  }
+  const coincide = formasDeFinDeLinea(contenido).some((forma) => hashOf(forma) === ac.test_hash_sha256);
   if (!coincide) {
     return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk, in any line-ending form (raw, LF or CRLF) — the test changed since this AC was verified, regenerate the AC entry` };
   }

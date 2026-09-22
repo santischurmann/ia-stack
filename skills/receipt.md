@@ -86,8 +86,14 @@ después de escribir el AC, `check` rechaza (mismo modelo que el hash de test de
 contenido en crudo, en LF o en CRLF, porque en Windows con `core.autocrlf=true` el mismo test
 tiene bytes distintos según quién lo escribió último, y el gate acusaba «el test cambió» sobre un
 test idéntico. Un cambio de una sola letra sigue rechazando en las tres.
-**Un test con finales de linea mezclados**, sellado así, sólo coincide consigo mismo byte a
-byte: cuando pasa por git sale uniforme, y ese recibo ya no se puede recomprobar desde un clon.
+**Un test con finales de linea mezclados** —algún CRLF y algún LF suelto— **se rechaza antes de
+sellar**: git lo guarda uniforme, así que ninguna forma reproduce la mezcla y el recibo no se podría
+recomprobar desde un clon. Pasó en un proyecto real, escrito por un script que reemplazaba texto
+con un salto de línea crudo sobre un archivo en CRLF. Se arregla reescribiéndolo entero con un solo
+tipo de fin de línea; `git checkout --` no alcanza, porque después de un `git add` git ya lo cuenta
+igual al índice. Lo que queda: los recibos **sellados antes del 2026-09-22** sobre un test mezclado
+siguen sin poder recomprobarse — `recheck` los marca, y no tienen arreglo porque están sellados —,
+y un CR suelto no cuenta como fin de línea.
 `test_file` (y cada entrada de `scope.declared_paths`) debe ser project-local, un archivo regular, sin symlinks ni junctions que escapen del checkout —
 `verify-receipt.mjs` lo rechaza con el mismo `safeRegularFile` que ya protege el resto del gate.
 
