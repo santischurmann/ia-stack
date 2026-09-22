@@ -46,6 +46,28 @@ tocar nada, y **ninguna era exactamente como vino**:
 - La copia global del runtime aparece como carpeta sin trackear en el repositorio de configuracion
   de la maquina del autor. Ya pasaba antes de hoy; es decision del operador si se ignora ahi.
 
+**LO PRIMERO AL RETOMAR: MAIN ESTA EN ROJO, y no se resolvio antes del reinicio.**
+
+El CI de `d863dd2` fallo en windows-latest (run 35783126977); ubuntu quedo verde y la fusion se
+salteo. Falla UN archivo de 2193 pruebas: `tests/verify-menu-shape.test.mjs`, y falla a nivel
+ARCHIVO -- `test at tests/verify-menu-shape.test.mjs:1:1`, con `'test failed'` y sin una sola
+asercion en el log --, adentro del paso que mide cobertura. El paso «Suite completa», sin
+instrumentacion, habia pasado en esa misma corrida.
+
+LO MEDIDO ANTES DE IRSE, para que nadie empiece por donde ya se busco:
+
+- Corrido aca CON instrumentacion de cobertura: 53 de 53 en verde, en 349 ms. En el CI el mismo
+  archivo tardo 367 ms, asi que alla tambien corrio entero: lo que fallo no fue una asercion.
+- El commit `d863dd2` toca UN archivo, `.vibe/SESSION.md`, seis lineas. Ese test NO lo lee -- lee
+  SKILL.md, README.md, CHANGELOG.md, AGENTS.md y el puntero de Codex --, asi que el commit no
+  puede ser la causa. El commit anterior, `007a22d`, quedo verde en las dos plataformas.
+- Queda como hipotesis viva que sea INTERMITENTE en Windows bajo cobertura, con el archivo
+  marcado en rojo por el codigo de salida del proceso y no por una prueba. Se pidio una
+  re-corrida del trabajo fallido sobre el mismo commit: si sale verde, es intermitente y hay que
+  cazar por que; si vuelve a fallar, es reproducible y hay por donde agarrarlo.
+- **No se lo declaro verde ni se lo dio por resuelto.** El estado de arriba dice CI verde y es
+  verdad para `cf63e29` y `31fa4dc`; para `d863dd2` NO.
+
 **DECISIONES DEL OPERADOR QUE SIGUEN ABIERTAS**
 
 1. El zip de release se sigue llamando con el nombre anterior del protocolo. Es el nombre del
