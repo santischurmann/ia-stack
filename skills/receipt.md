@@ -82,8 +82,13 @@ borrador/evidencia de trabajo en progreso, pero nunca habilita commit ni publica
 `COMPLIANT` exige `test_file`+`test_hash_sha256`+`command`+`result`+`scenario` no vacíos, y el
 hash debe coincidir con el archivo real en disco al momento de `check` — si el test cambió
 después de escribir el AC, `check` rechaza (mismo modelo que el hash de test de
-`pretooluse-red.mjs`). `test_file` (y cada entrada de `scope.declared_paths`) debe ser
-project-local, un archivo regular, sin symlinks ni junctions que escapen del checkout —
+`pretooluse-red.mjs`). **Los finales de línea no cuentan como cambio**: se acepta el mismo
+contenido en crudo, en LF o en CRLF, porque en Windows con `core.autocrlf=true` el mismo test
+tiene bytes distintos según quién lo escribió último, y el gate acusaba «el test cambió» sobre un
+test idéntico. Un cambio de una sola letra sigue rechazando en las tres.
+**Un test con finales de linea mezclados**, sellado así, sólo coincide consigo mismo byte a
+byte: cuando pasa por git sale uniforme, y ese recibo ya no se puede recomprobar desde un clon.
+`test_file` (y cada entrada de `scope.declared_paths`) debe ser project-local, un archivo regular, sin symlinks ni junctions que escapen del checkout —
 `verify-receipt.mjs` lo rechaza con el mismo `safeRegularFile` que ya protege el resto del gate.
 
 **Límite honesto — no sobreactuar lo que el schema puede probar:** `command`, `result`,

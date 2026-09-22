@@ -347,6 +347,42 @@ export function invocaAdaptadorDeRed(comando) {
   return /\bverify-red(?:-[a-z0-9-]+)?\.(?:mjs|sh|ps1)\b/u.test(String(comando ?? ''));
 }
 
+/** Las formas de fin de linea de un mismo contenido: tal como esta, en LF y en CRLF, sin repetir.
+ *
+ * POR QUE EXISTE. `test_hash_sha256` se comparaba contra los bytes crudos del disco, y en Windows con
+ * `core.autocrlf=true` el MISMO test tiene bytes distintos segun quien lo escribio ultimo: git lo
+ * materializa en CRLF, una herramienta lo reescribe en LF. El gate decia «the test changed» sobre un
+ * test identico, y recomprobar un recibo en otra maquina -- o en Linux -- fallaba solo por eso.
+ * Medido en un proyecto real el 2026-09-22: de los hashes que coincidieron en su punto de sellado,
+ * veinte necesitaron la forma CRLF.
+ *
+ * Este repositorio ya se habia comido esta misma clase el 2026-09-01 y la arreglo con un
+ * `.gitattributes` que materializa todo en LF -- para si mismo. El protocolo corre en repositorios
+ * ajenos, que no lo tienen. Y la asimetria estaba a la vista: el fingerprint del arbol usa
+ * `git hash-object`, que ya normaliza; solo el hash de cada criterio leia bytes crudos.
+ *
+ * LO QUE NO SE AFLOJA. Son tres formas del MISMO contenido y ninguna otra: un cambio de una letra
+ * rechaza en cualquiera de las tres. Y solo la secuencia CRLF es un fin de linea -- un CR suelto es
+ * contenido, y normalizarlo convertiria dos archivos distintos en el mismo.
+ *
+ * La primera forma es la cruda, tal cual la devolvio el lector y sin convertir: quien comparaba bytes
+ * iguales sigue comparando exactamente lo mismo. Se trabaja en latin1, que es biyectivo con los bytes,
+ * asi que ninguna conversion toca la codificacion del archivo. */
+export function formasDeFinDeLinea(contenido) {
+  const bytes = Buffer.isBuffer(contenido) ? contenido : Buffer.from(String(contenido));
+  const soloLf = Buffer.from(bytes.toString('latin1').replaceAll('\r\n', '\n'), 'latin1');
+  const conCrlf = Buffer.from(soloLf.toString('latin1').replaceAll('\n', '\r\n'), 'latin1');
+  const formas = [contenido];
+  const vistas = [bytes];
+  for (const forma of [soloLf, conCrlf]) {
+    if (!vistas.some((v) => v.equals(forma))) {
+      formas.push(forma);
+      vistas.push(forma);
+    }
+  }
+  return formas;
+}
+
 /** One acceptance-criteria entry. `verdict !== 'COMPLIANT'` blocks by itself — a receipt with any
  * UNTESTED/PARTIAL/FAILING AC can exist as a draft, but never reaches an approved `check`. */
 export function validateAcceptanceCriterion(ac, cwd, {
@@ -371,9 +407,9 @@ export function validateAcceptanceCriterion(ac, cwd, {
   } catch (error) {
     return { ok: false, reason: `${label}: test_file is unsafe: ${error.message}` };
   }
-  const actualHash = hashOf(readFile(file));
-  if (actualHash !== ac.test_hash_sha256) {
-    return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk — the test changed since this AC was verified, regenerate the AC entry` };
+  const coincide = formasDeFinDeLinea(readFile(file)).some((forma) => hashOf(forma) === ac.test_hash_sha256);
+  if (!coincide) {
+    return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk, in any line-ending form (raw, LF or CRLF) — the test changed since this AC was verified, regenerate the AC entry` };
   }
 
   // AC8 · Con que adaptador se obtuvo ESTE verde. La regla es condicional y mecanica: sólo aplica a

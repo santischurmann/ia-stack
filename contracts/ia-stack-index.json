@@ -1535,6 +1535,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-receipt-fin-de-linea.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-receipt-gate.test.mjs",
       "class": "prueba"
     },

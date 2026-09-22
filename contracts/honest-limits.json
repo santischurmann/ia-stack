@@ -732,6 +732,12 @@
       "file": "skills/gates.md",
       "phrase": "Necesita el checkout fuente al lado",
       "why": "El gate compara la copia instalada CONTRA el checkout, asi que sin el checkout no hay contra que comparar y sale 1 pidiendolo. Quien solo tiene su proyecto -- que es el caso normal de quien instala el protocolo -- no puede responder la pregunta que mas le importa: si su runtime quedo viejo. YA PASO, y es el motivo por el que este limite se escribe: el 2026-09-17 se encontro un proyecto con un runtime anterior al 2026-09-15 que llevaba dias rechazando recibos por un prefijo de schema que el runtime nuevo acepta, y nadie se entero. La copia vieja del gate que vive adentro de ese runtime tampoco lo detecta: un runtime desactualizado no puede detectar que esta desactualizado, porque el gate que lo detectaria es una copia adentro de el mismo. Falla cerrado, que es lo correcto, pero fallar cerrado no es responder."
+    },
+    {
+      "limit_id": "receipt-ac-hash-mixed-line-endings",
+      "file": "skills/receipt.md",
+      "phrase": "Un test con finales de linea mezclados",
+      "why": "El hash de cada criterio acepta el mismo contenido en tres formas -- crudo, LF y CRLF -- porque en Windows con autocrlf el mismo test tiene bytes distintos segun quien lo escribio ultimo, y el gate acusaba «el test cambio» sobre un test identico. Lo que queda: un test con finales de linea MEZCLADOS, sellado asi, solo coincide consigo mismo byte a byte. Cuando pasa por git sale uniforme, y ninguna de las tres formas reproduce la mezcla original: ese recibo no se puede recomprobar desde un clon. Es raro en un archivo de pruebas, y por eso se declara en vez de agregar una cuarta forma que nadie usaria."
     }
   ]
 }
