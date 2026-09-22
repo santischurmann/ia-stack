@@ -7,8 +7,12 @@
 
 ## 2026-09-22 — tres hallazgos de un proyecto instalado, medidos antes de tocar
 
-**Estado**: 2162 pruebas / 0 fallas / 2 salteadas · cobertura 100% sobre 65 scripts · 123 limites
-honestos.
+**Estado AL CIERRE del dia**: 2192 pruebas / 0 fallas / 1 salteada · cobertura 100% sobre 65 scripts ·
+125 limites honestos · 131 promesas de contrato · CI verde en las dos plataformas y en la fusion.
+Codigo en `cf63e29`; el registro, despues. (A mitad del dia esta linea decia 2162 y 123: se corrige
+en vez de dejarla, porque un registro de cierre con numeros de hace cuatro horas no sirve para
+retomar. La salteada bajo de 2 a 1 porque la otra sesion regenero el grafo en este repositorio y la
+prueba del manifiesto, que se saltea sin grafo, paso a correr.)
 
 Un proyecto que usa el protocolo reporto tres cosas. Se midieron las tres contra la fuente antes de
 tocar nada, y **ninguna era exactamente como vino**:
