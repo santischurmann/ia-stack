@@ -15,6 +15,10 @@
             "git -c user.email=t@t -c user.name=t commit -q -m inicial"
           ],
           "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
             "--project",
             "{DIR}"
           ]
@@ -23,7 +27,12 @@
           "setup": [
             "git init -q ."
           ],
-          "args": []
+          "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt"
+          ]
         },
         {
           "why": "Reinstalar sobre un runtime que tiene un archivo que el protocolo ya no tiene. Sin este escenario el cuerpo de la poda no corre nunca: los otros instalan sobre un proyecto limpio, donde no sobra nada, y la cobertura de install.sh bajo del piso el 2026-09-22 al agregarla. El sobrante se planta antes de instalar, igual que en las pruebas de instalacion.",
@@ -33,11 +42,46 @@
             "printf '// un gate retirado\n' > .vibe/ia-stack-runtime/scripts/gate-retirado.mjs"
           ],
           "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
+            "--project",
+            "{DIR}"
+          ]
+        },
+        {
+          "why": "La ayuda: `usage` y la salida limpia.",
+          "setup": [],
+          "args": [
+            "--help"
+          ]
+        },
+        {
+          "why": "Una opcion que no existe: `usage` y salida 2. El arnes no mira el codigo de salida, solo la traza.",
+          "setup": [],
+          "args": [
+            "--nope"
+          ]
+        },
+        {
+          "why": "La red de seguridad de la poda: mas sobrantes que archivos tiene el paquete, asi que apartarlos moveria mas de la mitad del runtime y el instalador no mueve nada. Mil y no un numero derivado: aca solo se mide cobertura de lineas; la prueba de COMPORTAMIENTO, que si deriva el numero del paquete, vive en tests/install-runtime.test.mjs.",
+          "setup": [
+            "git init -q .",
+            "mkdir -p .vibe/ia-stack-runtime/scripts/de-mas",
+            "for i in $(seq 1 1000); do : > .vibe/ia-stack-runtime/scripts/de-mas/s-$i.mjs; done"
+          ],
+          "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
             "--project",
             "{DIR}"
           ]
         }
-      ]
+      ],
+      "why_aislado": "Todos los escenarios instalan adentro de su carpeta temporal, con --target-dir y --runtime-dir. Hasta el 2026-09-22 dos no lo hacian, y como el arnes no aisla HOME, medir la cobertura instalaba la skill y el runtime en el directorio de configuracion REAL de quien corria el gate. Una medicion que escribe en la configuracion de quien mide no es una medicion."
     },
     {
       "script": "scripts/verify-red.sh",

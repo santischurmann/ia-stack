@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertApartado, assertRuntime, assertSellado, fixture, gitBash, hayBash, installSh, plantarSobrante, run, toBash } from './_install-fixture.mjs';
+import { assertApartado, assertNadaApartado, assertRuntime, assertSellado, fixture, gitBash, hayBash, installSh, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
 
 test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -24,6 +24,23 @@ test('fresh Bash installation produces a project-local runtime whose gate comman
     assertRuntime(project, target, runtime);
     assertApartado(project);
     assertSellado(project);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// LA RED DE SEGURIDAD de la poda: si moveria mas de la mitad del runtime, es un defecto y no mueve
+// nada. Existe desde el 2026-09-22, cuando la version de PowerShell vacio el runtime entero en el CI.
+// Los sobrantes se plantan ANTES de la unica instalacion: el instalador copia el paquete encima y
+// despues poda, asi que alcanza con una.
+test('una poda desproporcionada no mueve nada: es un defecto, no una limpieza', { skip: !hayBash }, () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    const cuantos = plantarSobrantesDeMas(project);
+    const command = `'${toBash(installSh)}' --target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(project)}'`;
+    const r = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
+    assert.equal(r.status, 0, r.output);
+    assertNadaApartado(project, cuantos, r.output);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

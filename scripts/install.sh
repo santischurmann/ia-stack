@@ -55,8 +55,26 @@ copy_runtime() {
 # protocolo no existe rm. Solo recorre las carpetas que copy_runtime copia -- nunca la raiz del
 # runtime, donde vive el sello --. Y el archivo lleva fecha Y hora: con fecha sola, dos reinstalaciones
 # el mismo dia harian que el segundo mv pise al primero, y pisar tambien es borrar.
+#
+# Y UNA RED DE SEGURIDAD: una poda que moveria MAS DE LA MITAD del runtime no es una limpieza, es un
+# defecto, y no mueve nada. El 2026-09-22 la version de PowerShell vacio el runtime entero en el CI por
+# una ruta corta 8.3; aca `find` devuelve el prefijo tal cual se le pasa y ese defecto no existe, pero
+# la red es la misma en los dos instaladores porque lo que protege no es una causa sino un resultado.
+# Dos pasadas y no un array: con `set -u`, expandir un array vacio rompe en el bash 3.2 de macOS.
 apartar_sobrantes() {
-  local runtime="$1" archivo="$2" apartados=0 dir f rel
+  local runtime="$1" archivo="$2" total=0 sobran=0 apartados=0 dir f rel
+  for dir in scripts contracts tests templates skills .agents; do
+    [ -d "$runtime/$dir" ] || continue
+    while IFS= read -r -d '' f; do
+      total=$((total + 1))
+      rel="${f#"$runtime"/}"
+      [ -e "$PACKAGE_DIR/$rel" ] || sobran=$((sobran + 1))
+    done < <(find "$runtime/$dir" -type f -print0)
+  done
+  if [ $((sobran * 2)) -gt "$total" ]; then
+    echo "AVISO: la poda iba a apartar $sobran de los $total archivos del runtime, mas de la mitad, y eso no es una limpieza: es un defecto. No se movio nada." >&2
+    return 0
+  fi
   for dir in scripts contracts tests templates skills .agents; do
     [ -d "$runtime/$dir" ] || continue
     while IFS= read -r -d '' f; do

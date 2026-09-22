@@ -80,6 +80,32 @@ export function assertApartado(project) {
   );
 }
 
+/** Mas sobrantes que archivos tiene el paquete: una poda que los moviera apartaria mas de la mitad
+ * del runtime. El numero SE DERIVA del paquete y no se escribe: fijo, el dia que el protocolo creciera
+ * la prueba pasaria a verde por el motivo equivocado -- la poda dejaria de ser desproporcionada --. */
+export function plantarSobrantesDeMas(project) {
+  let enElPaquete = 0;
+  const contar = (dir) => {
+    for (const entrada of readdirSync(dir, { withFileTypes: true })) {
+      if (entrada.isDirectory()) contar(join(dir, entrada.name));
+      else enElPaquete += 1;
+    }
+  };
+  for (const dir of ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']) contar(join(repoRoot, dir));
+  const destino = join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'de-mas');
+  mkdirSync(destino, { recursive: true });
+  const cuantos = enElPaquete + 1;
+  for (let i = 0; i < cuantos; i += 1) writeFileSync(join(destino, `sobrante-${i}.mjs`), '');
+  return cuantos;
+}
+
+export function assertNadaApartado(project, cuantos, salida) {
+  const destino = join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'de-mas');
+  assert.match(salida, /AVISO: la poda iba a apartar/u, 'tiene que decir por que no podo');
+  assert.equal(readdirSync(destino).length, cuantos, 'la red de seguridad no tiene que mover NADA');
+  assert.equal(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'pretooluse-red.mjs')), true, 'y el runtime sigue entero');
+}
+
 export function assertSellado(project) {
   const ruta = join(project, '.vibe', 'ia-stack-runtime', 'INSTALADO.json');
   assert.equal(existsSync(ruta), true, 'el runtime del proyecto tiene que quedar sellado');

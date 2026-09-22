@@ -22,6 +22,20 @@
       "prueba": "PowerShell: classifies genuine RED evidence and known false positives",
       "por_que": "Invoca `powershell.exe` por nombre para correr `verify-red.ps1`. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
       "que_queda_sin_verificar": "La variante PowerShell del gate de LAW 1 -- la regla mas dura del protocolo, «sin test rojo visible no hay implementacion» -- no se comprueba fuera de Windows. Que la variante de shell clasifique bien la evidencia roja no dice nada sobre la otra: son dos implementaciones distintas del mismo criterio."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "la poda no vacia el runtime cuando el proyecto llega por una ruta corta 8.3",
+      "por_que": "Los nombres cortos 8.3 son de Windows: la prueba le pide a Windows el nombre corto de una carpeta y se lo pasa al instalador de PowerShell, que tampoco existe fuera de Windows.",
+      "que_queda_sin_verificar": "Nada que exista en otra plataforma: fuera de Windows no hay rutas 8.3 ni powershell.exe. La poda del instalador de bash se comprueba aparte, en install-runtime.test.mjs, y ahi `find` devuelve el prefijo tal cual se le pasa, asi que ese defecto no existe."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "una poda desproporcionada no mueve nada, tampoco en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "La red de seguridad del instalador de PowerShell no se comprueba fuera de Windows. La de bash si: su prueba corre en las dos plataformas."
     }
   ]
 }

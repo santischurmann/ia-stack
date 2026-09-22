@@ -33,26 +33,47 @@ function Copy-Runtime([string]$Destination) {
 #
 # El elemento del bucle se llama $item y no $archivo A PROPOSITO: PowerShell no distingue mayusculas
 # en los nombres de variable, asi que $archivo SERIA $Archivo, el destino, y el bucle lo pisaria.
+#
+# LA RUTA RELATIVA LA DA -Name, NO UNA RESTA. La primera version hacia `FullName.Substring(raiz)` y
+# el 2026-09-22 vacio el runtime entero en el CI: en el runner el nombre de usuario del temporal es `RUNNER~1`,
+# un nombre corto 8.3, y medido aca `Resolve-Path` CONSERVA el nombre corto mientras `Get-ChildItem`
+# devuelve `FullName` con el LARGO. La resta cortaba en otro lugar, ninguna ruta «existia en el
+# paquete», y todo se aparto. `-Name` devuelve la ruta relativa a la carpeta recorrida: no hay dos
+# formas de la misma ruta que comparar.
+#
+# Y UNA RED DE SEGURIDAD, que es lo que hubiera frenado eso: una poda que moveria MAS DE LA MITAD del
+# runtime no es una limpieza, es un defecto. No mueve nada y lo dice. Mismo principio que el limpiador
+# de temporales -- si no se puede derivar nada, no se barre --. La mitad y no «todo»: un defecto que
+# rompiera solo algunas rutas pasaria por «todo». Una poda legitima es chica -- la que motivo esto
+# fueron 15 archivos de unos 300 --, y un aborto falso cuesta poco: no se mueve nada y se avisa.
 function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
-  $raiz = (Resolve-Path -LiteralPath $Runtime).Path.TrimEnd('\', '/')
-  $apartados = 0
+  $total = 0
+  $candidatos = @()
   foreach ($dir in @('scripts', 'contracts', 'tests', 'templates', 'skills', '.agents')) {
-    $base = Join-Path $raiz $dir
+    $base = Join-Path $Runtime $dir
     if (-not (Test-Path -LiteralPath $base)) { continue }
     # Se junta la lista ANTES de mover: moviendo mientras se recorre, el recorrido ve una carpeta
     # que cambia debajo suyo.
-    foreach ($item in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force)) {
-      $rel = $item.FullName.Substring($raiz.Length + 1)
-      if (Test-Path -LiteralPath (Join-Path $PackageDir $rel)) { continue }
-      $destino = Join-Path $Archivo $rel
-      New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destino) | Out-Null
-      try {
-        Move-Item -LiteralPath $item.FullName -Destination $destino -ErrorAction Stop
-        $apartados++
-        Write-Output "APARTADO: $rel ya no existe en el protocolo. Se MOVIO a $destino; vuelve con Move-Item."
-      } catch {
-        Write-Output "AVISO: no se pudo apartar $($item.FullName). Es una copia vieja de un gate: sacala a mano."
-      }
+    foreach ($nombre in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force -Name)) {
+      $total++
+      $rel = Join-Path $dir $nombre
+      if (-not (Test-Path -LiteralPath (Join-Path $PackageDir $rel))) { $candidatos += $rel }
+    }
+  }
+  if ($candidatos.Count * 2 -gt $total) {
+    Write-Output "AVISO: la poda iba a apartar $($candidatos.Count) de los $total archivos del runtime, mas de la mitad, y eso no es una limpieza: es un defecto. No se movio nada."
+    return
+  }
+  $apartados = 0
+  foreach ($rel in $candidatos) {
+    $destino = Join-Path $Archivo $rel
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destino) | Out-Null
+    try {
+      Move-Item -LiteralPath (Join-Path $Runtime $rel) -Destination $destino -ErrorAction Stop
+      $apartados++
+      Write-Output "APARTADO: $rel ya no existe en el protocolo. Se MOVIO a $destino; vuelve con Move-Item."
+    } catch {
+      Write-Output "AVISO: no se pudo apartar $rel. Es una copia vieja de un gate: sacala a mano."
     }
   }
   if ($apartados -gt 0) { Write-Output "OK: $apartados archivo(s) de una instalacion anterior apartado(s), no borrados." }
