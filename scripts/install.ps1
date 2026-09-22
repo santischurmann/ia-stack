@@ -27,6 +27,65 @@ function Copy-Runtime([string]$Destination) {
   Copy-Item "$PackageDir\AGENTS.md" "$Destination\AGENTS.md" -Force
 }
 
+# LO QUE SOBRA SE APARTA, NO SE BORRA. Ver el comentario equivalente en install.sh: Copy-Runtime copia
+# encima y nunca podaba, y un archivo que el protocolo ya no tiene es un gate que se sigue pudiendo
+# ejecutar. Se mueve conservando la ruta, y solo dentro de las carpetas que Copy-Runtime copia.
+#
+# El elemento del bucle se llama $item y no $archivo A PROPOSITO: PowerShell no distingue mayusculas
+# en los nombres de variable, asi que $archivo SERIA $Archivo, el destino, y el bucle lo pisaria.
+function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
+  $raiz = (Resolve-Path -LiteralPath $Runtime).Path.TrimEnd('\', '/')
+  $apartados = 0
+  foreach ($dir in @('scripts', 'contracts', 'tests', 'templates', 'skills', '.agents')) {
+    $base = Join-Path $raiz $dir
+    if (-not (Test-Path -LiteralPath $base)) { continue }
+    # Se junta la lista ANTES de mover: moviendo mientras se recorre, el recorrido ve una carpeta
+    # que cambia debajo suyo.
+    foreach ($item in @(Get-ChildItem -LiteralPath $base -Recurse -File -Force)) {
+      $rel = $item.FullName.Substring($raiz.Length + 1)
+      if (Test-Path -LiteralPath (Join-Path $PackageDir $rel)) { continue }
+      $destino = Join-Path $Archivo $rel
+      New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destino) | Out-Null
+      try {
+        Move-Item -LiteralPath $item.FullName -Destination $destino -ErrorAction Stop
+        $apartados++
+        Write-Output "APARTADO: $rel ya no existe en el protocolo. Se MOVIO a $destino; vuelve con Move-Item."
+      } catch {
+        Write-Output "AVISO: no se pudo apartar $($item.FullName). Es una copia vieja de un gate: sacala a mano."
+      }
+    }
+  }
+  if ($apartados -gt 0) { Write-Output "OK: $apartados archivo(s) de una instalacion anterior apartado(s), no borrados." }
+}
+
+# EL SELLO: cuando y desde que se instalo este runtime. Ver install.sh. Dos cuidados propios de
+# PowerShell 5.1: con 'Stop' cualquier linea de stderr de un comando nativo se vuelve excepcion -- un
+# warning de git dejaria el sello a medias --, asi que adentro de esta funcion se baja a 'Continue';
+# y el JSON se escribe SIN BOM, porque `-Encoding utf8` lo antepone y JSON.parse no lo acepta. La hora
+# va con cultura invariante: el separador ':' de una cadena de formato depende de la cultura.
+function Set-Sello([string]$Runtime) {
+  $ErrorActionPreference = 'Continue'
+  $desde = 'paquete'; $commit = $null; $limpio = $null
+  if (Test-Path -LiteralPath (Join-Path $PackageDir '.git')) {
+    $sha = & git -C $PackageDir rev-parse HEAD 2>$null
+    if ($LASTEXITCODE -eq 0 -and $sha) {
+      $desde = 'checkout'
+      $commit = "$sha".Trim()
+      $pendientes = & git -C $PackageDir status --porcelain 2>$null | Out-String
+      if ($LASTEXITCODE -eq 0) { $limpio = [string]::IsNullOrWhiteSpace($pendientes) }
+    }
+  }
+  $sello = [ordered]@{
+    schema       = 'ia.runtime-instalado/1'
+    instalado    = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd'T'HH':'mm':'ss'Z'", [System.Globalization.CultureInfo]::InvariantCulture)
+    desde        = $desde
+    commit       = $commit
+    arbol_limpio = $limpio
+  }
+  $json = ($sello | ConvertTo-Json) + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $Runtime 'INSTALADO.json'), $json, (New-Object System.Text.UTF8Encoding $false))
+}
+
 Write-Host '=== IA Stack Installer ===' -ForegroundColor Cyan
 Write-Host "Source:  $PackageDir"
 Write-Host "Skills:  $TargetDir"
@@ -117,6 +176,9 @@ if ($ProjectDir) {
       Write-Output "AVISO: no se pudo mover $VibeDir\vcp-runtime. Sacala a mano: es una copia vieja de los gates."
     }
   }
+  # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira.
+  Move-Sobrantes "$VibeDir\ia-stack-runtime" (Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format "yyyy-MM-dd'T'HHmmss") + "\ia-stack-runtime"))
+  Set-Sello "$VibeDir\ia-stack-runtime"
   Write-Host "OK: project runtime -> $VibeDir\ia-stack-runtime" -ForegroundColor Green
 } else {
   Write-Host 'NOTE: no project initialized. Re-run with -ProjectDir <project-root>.' -ForegroundColor Yellow

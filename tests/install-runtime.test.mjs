@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertRuntime, fixture, gitBash, hayBash, installSh, run, toBash } from './_install-fixture.mjs';
+import { assertApartado, assertRuntime, assertSellado, fixture, gitBash, hayBash, installSh, plantarSobrante, run, toBash } from './_install-fixture.mjs';
 
 test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -18,9 +18,12 @@ test('fresh Bash installation produces a project-local runtime whose gate comman
     const result = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /project runtime/);
+    plantarSobrante(project);
     const repeat = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
     assert.equal(repeat.status, 0, repeat.output);
     assertRuntime(project, target, runtime);
+    assertApartado(project);
+    assertSellado(project);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

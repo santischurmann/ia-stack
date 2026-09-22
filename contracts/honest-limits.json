@@ -731,13 +731,25 @@
       "limit_id": "runtime-sync-needs-the-source-checkout",
       "file": "skills/gates.md",
       "phrase": "Necesita el checkout fuente al lado",
-      "why": "El gate compara la copia instalada CONTRA el checkout, asi que sin el checkout no hay contra que comparar y sale 1 pidiendolo. Quien solo tiene su proyecto -- que es el caso normal de quien instala el protocolo -- no puede responder la pregunta que mas le importa: si su runtime quedo viejo. YA PASO, y es el motivo por el que este limite se escribe: el 2026-09-17 se encontro un proyecto con un runtime anterior al 2026-09-15 que llevaba dias rechazando recibos por un prefijo de schema que el runtime nuevo acepta, y nadie se entero. La copia vieja del gate que vive adentro de ese runtime tampoco lo detecta: un runtime desactualizado no puede detectar que esta desactualizado, porque el gate que lo detectaria es una copia adentro de el mismo. Falla cerrado, que es lo correcto, pero fallar cerrado no es responder."
+      "why": "El gate compara la copia instalada CONTRA el checkout, asi que sin el checkout no puede comparar y sale 1. Lo que se pago el 2026-09-22: el instalador deja un sello con la fecha y el commit de origen, y sin el checkout el gate lo lee y dice la EDAD del runtime -- o que no tiene sello, que es la cota de su edad --. Lo que queda: la edad no es la comparacion. Un runtime de hace tres dias puede estar viejo si el protocolo cambio ayer, y uno de hace tres meses puede estar al dia. Quien solo tiene su proyecto sabe cuando se instalo, no si quedo viejo. El motivo por el que se escribio sigue en pie: un proyecto real llevaba dias con un runtime anterior al 2026-09-15, rechazando recibos que el runtime nuevo acepta, y nadie se entero."
     },
     {
       "limit_id": "receipt-ac-hash-mixed-line-endings",
       "file": "skills/receipt.md",
       "phrase": "Un test con finales de linea mezclados",
       "why": "El hash de cada criterio acepta el mismo contenido en tres formas -- crudo, LF y CRLF -- porque en Windows con autocrlf el mismo test tiene bytes distintos segun quien lo escribio ultimo, y el gate acusaba «el test cambio» sobre un test identico. Lo que queda: un test con finales de linea MEZCLADOS, sellado asi, solo coincide consigo mismo byte a byte. Cuando pasa por git sale uniforme, y ninguna de las tres formas reproduce la mezcla original: ese recibo no se puede recomprobar desde un clon. Es raro en un archivo de pruebas, y por eso se declara en vez de agregar una cuarta forma que nadie usaria."
+    },
+    {
+      "limit_id": "receipt-recheck-compares-last-commit",
+      "file": "skills/receipt.md",
+      "phrase": "No vuelve a correr el test",
+      "why": "recheck compara el hash de cada criterio contra el blob del test en el commit que lleva el recibo, y con eso detecta un recibo que certifica una version que nunca se guardo -- que es como se encontraron seis recibos de un proyecto real el 2026-09-22 --. Pero no vuelve a correr el test ni prueba que pase: que el archivo sea el mismo no dice que el verde siga siendo verde. Y compara contra el ULTIMO commit que toco el recibo: si alguien lo edito despues de sellarlo, recomprueba esa edicion y no la original."
+    },
+    {
+      "limit_id": "install-global-runtime-not-pruned",
+      "file": "INSTALL.md",
+      "phrase": "La copia global no se poda ni se sella",
+      "why": "Reinstalar aparta lo que sobra y sella solo el runtime del PROYECTO, que es el que corren los gates. La copia global de referencia vive en el directorio de configuracion de quien instala, que puede ser un repositorio de git suyo: medido el 2026-09-22 en la maquina del autor, esa copia aparece como una carpeta sin trackear en ese repositorio. Apartar ahi escribiria archivos en un repositorio ajeno al proyecto. Asi que esa copia sigue acumulando lo que el protocolo retira, y nada lo avisa."
     }
   ]
 }

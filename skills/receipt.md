@@ -91,6 +91,24 @@ byte: cuando pasa por git sale uniforme, y ese recibo ya no se puede recomprobar
 `test_file` (y cada entrada de `scope.declared_paths`) debe ser project-local, un archivo regular, sin symlinks ni junctions que escapen del checkout —
 `verify-receipt.mjs` lo rechaza con el mismo `safeRegularFile` que ya protege el resto del gate.
 
+**Recomprobar un recibo ya guardado: `recheck`.** Una vez commiteado, nada volvía a mirar el
+recibo contra git. Medido en un proyecto real el 2026-09-22: seis recibos con diez criterios cuyo
+hash no correspondía a **ninguna** versión commiteada del test. No era un defecto de `commit`: entra
+por el otro camino válido, `check --require-clean-worktree` y después `git commit` a mano — si entre
+los dos alguien cambia el test y lo vuelve a stagear, el recibo certifica una versión que nunca se
+guardó.
+
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs recheck .vibe/receipts/<feature-slug>-<fecha>.json
+```
+
+Lee el recibo y cada test **del mismo commit** —el último que tocó el recibo—, no del disco, y
+compara en las tres formas de fin de línea. `OK:` nombra el commit; `REJECTED:` nombra el criterio;
+`VACIO:` cuando no hay nada guardado que mirar (el recibo sin commitear, un formato archivístico, o
+un v3 sin ningún criterio con hash — recomprobar nada no es aprobar). **No vuelve a correr el test**
+ni prueba que pase: que el archivo sea el mismo no dice que el verde siga siendo verde. Y si el
+recibo se editó después de sellarlo, recomprueba esa edición y no la original.
+
 **Límite honesto — no sobreactuar lo que el schema puede probar:** `command`, `result`,
 `measurements` y `reproduction` son evidencia **estructurada y revisable**, escrita por quien
 generó el receipt — el gate mecánico nunca re-ejecuta el comando ni prueba criptográficamente

@@ -30,6 +30,22 @@ El instalador hace dos copias distintas:
 No se inicializa `.vibe/` por accidente en el clone de IA Stack: tenés que pasar el proyecto de forma
 explícita.
 
+**Reinstalar actualiza el runtime del proyecto, y aparta lo que el protocolo ya no tiene.** Un
+archivo que quedó de una instalación anterior —un gate que se retiró, por ejemplo— se **mueve** a
+`.vibe/ia-stack-archive/<fecha-y-hora>/ia-stack-runtime/` conservando la ruta, y no se borra:
+vuelve con un `mv` si algo se rompe. Esa carpeta queda ignorada por git, así que apartar no ensucia
+tu árbol. Antes el instalador copiaba encima y nunca podaba, y un gate retirado se podía seguir
+ejecutando desde la copia vieja.
+
+Además deja un **sello** en `.vibe/ia-stack-runtime/INSTALADO.json`: cuándo se instaló y desde qué
+commit, o que vino de un paquete sin git. Sin el repositorio de IA Stack al lado no se puede comparar
+tu runtime contra el protocolo, pero con el sello `verify-runtime-sync` te dice por lo menos **cuántos
+días tiene**. Un runtime sin sello se instaló antes del 2026-09-22.
+
+**La copia global no se poda ni se sella.** Sólo el runtime del proyecto, que es el que usan los
+gates. La copia global vive en tu directorio de configuración, que puede ser un repositorio tuyo, y
+apartar ahí escribiría archivos en un repositorio que no es el del proyecto.
+
 ## Después
 
 1. Reiniciá Claude Code.

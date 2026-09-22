@@ -10,7 +10,7 @@ import { rmSync } from 'node:fs';
 import test from 'node:test';
 
 import { soloEnWindows } from './_entorno.mjs';
-import { assertRuntime, fixture, installPs, run } from './_install-fixture.mjs';
+import { assertApartado, assertRuntime, assertSellado, fixture, installPs, plantarSobrante, run } from './_install-fixture.mjs';
 
 test('fresh PowerShell installation produces the same project-local runtime', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();
@@ -18,9 +18,12 @@ test('fresh PowerShell installation produces the same project-local runtime', so
     const result = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
     assert.equal(result.status, 0, result.output);
     assert.match(result.output, /project runtime/);
+    plantarSobrante(project);
     const repeat = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
     assert.equal(repeat.status, 0, repeat.output);
     assertRuntime(project, target, runtime);
+    assertApartado(project);
+    assertSellado(project);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

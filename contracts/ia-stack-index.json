@@ -1543,6 +1543,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-receipt-recheck.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-receipt-v3.test.mjs",
       "class": "prueba"
     },

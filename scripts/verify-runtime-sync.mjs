@@ -68,6 +68,65 @@ export function esRuntimeInstalado(root) {
 export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents'];
 export const COPIED_FILES = ['SKILL.md', 'SECURITY.md', 'AGENTS.md'];
 
+// EL SELLO DE INSTALACION. Decidido por el operador el 2026-09-22: el instalador deja en la raiz del
+// runtime del proyecto la fecha y el commit desde el que se instalo. Existe por el limite que este
+// gate ya declaraba -- compara CONTRA el checkout, asi que sin el checkout no puede comparar --, y por
+// lo que ese limite costo: un proyecto real llevaba dias con un runtime anterior al 2026-09-15,
+// rechazando recibos por un prefijo de schema que el runtime nuevo acepta, y nadie se entero.
+//
+// No entra en la comparacion y no hace falta excluirlo: `readInventory` recorre solo lo que el
+// instalador COPIA, y el sello no se copia, se escribe. Tampoco lo toca la poda, que recorre solo las
+// carpetas copiadas.
+export const SELLO = 'INSTALADO.json';
+export const SCHEMA_SELLO = 'ia.runtime-instalado/1';
+/** Desde cuando existe el sello: un runtime sin sello se instalo antes, y eso es la cota de su edad. */
+export const SELLO_DESDE = '2026-09-22';
+const DIA_MS = 86_400_000;
+
+/** Lo que dice el sello del runtime, en tres estados: ausente, valido o ilegible. Un error de lectura
+ * que no es «no existe» NO se confunde con un runtime sin sello: seria decir «es viejo» sobre algo
+ * que no se pudo mirar. */
+export function leerSello(runtimeRoot, io = {}) {
+  const read = io.read ?? readFileSync;
+  let texto;
+  try {
+    texto = read(join(runtimeRoot, SELLO), 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') return { estado: 'ausente' };
+    return { estado: 'ilegible', motivo: error?.message ?? String(error) };
+  }
+  let sello;
+  try {
+    // Sin BOM: PowerShell 5.1 lo antepone con `-Encoding utf8`, y JSON.parse no lo acepta.
+    sello = JSON.parse(String(texto).replace(/^\uFEFF/u, ''));
+  } catch (error) {
+    return { estado: 'ilegible', motivo: `no es JSON: ${error.message}` };
+  }
+  if (sello?.schema !== SCHEMA_SELLO) {
+    return { estado: 'ilegible', motivo: `declara ${JSON.stringify(sello?.schema)} y se esperaba ${SCHEMA_SELLO}` };
+  }
+  if (typeof sello.instalado !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u.test(sello.instalado)) {
+    return { estado: 'ilegible', motivo: `la fecha de instalacion no es una fecha: ${JSON.stringify(sello.instalado)}` };
+  }
+  return { estado: 'valido', sello };
+}
+
+/** El sello, dicho en una frase. Dice la EDAD del runtime, nunca si quedo viejo: eso pide comparar. */
+export function describirSello(lectura, ahora) {
+  if (lectura.estado === 'ausente') {
+    return `Runtime sin sello de instalacion: se instalo antes del ${SELLO_DESDE}, cuando el sello empezo a existir, o se copio a mano. Es por lo menos tan viejo como eso: reinstalalo.`;
+  }
+  if (lectura.estado === 'ilegible') {
+    return `El sello de instalacion del runtime esta ilegible (${lectura.motivo}): no se puede decir cuando se instalo.`;
+  }
+  const { sello } = lectura;
+  const dias = Math.floor((ahora - Date.parse(sello.instalado)) / DIA_MS);
+  const origen = sello.desde === 'paquete' || typeof sello.commit !== 'string'
+    ? 'desde un paquete sin git, asi que no hay commit que nombrar'
+    : `desde el commit ${sello.commit.slice(0, 7)}${sello.arbol_limpio === false ? ', con cambios sin commitear en el checkout: ese commit no describe la copia del todo' : ''}`;
+  return `El runtime de este proyecto se instalo el ${sello.instalado.slice(0, 10)}, hace ${dias} ${dias === 1 ? 'dia' : 'dias'}, ${origen}. Eso es su edad, no si quedo viejo: para compararlo hace falta el checkout.`;
+}
+
 export function parseArguments(args) {
   const requireInputs = args.at(-1) === REQUIRE_INPUTS_FLAG;
   const rest = requireInputs ? args.slice(0, -1) : args;
@@ -193,6 +252,9 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
   const absent = missingSourceRoots(cwd, stat);
   if (absent.length > 0) {
     writeError(`REJECTED: this directory is not an IA Stack source checkout (missing: ${absent.join(', ')}) — run the gate from the checkout the runtime was installed from, or point --runtime at the project runtime from there.`);
+    // Sin el checkout no hay comparacion, y por eso sigue saliendo 1. Pero lo que antes era solo
+    // «no puedo» ahora dice la edad del runtime: es lo unico que se puede saber desde aca.
+    writeError(describirSello(leerSello(runtimeRoot, io), (io.ahora ?? Date.now)()));
     return 1;
   }
   let result;
@@ -206,14 +268,15 @@ export function main(args = process.argv.slice(2), cwd = '.', io = {}, write = c
     if (result.differing.length > 0) writeError(`REJECTED: installed runtime files that differ from this source: ${result.differing.join(', ')}`);
     if (result.missing.length > 0) writeError(`REJECTED: source files absent from the installed runtime: ${result.missing.join(', ')}`);
     if (result.extra.length > 0) writeError(`REJECTED: installed runtime files this source no longer has: ${result.extra.join(', ')}`);
-    // EL CONSEJO MENTIA PARA UNA DE LAS TRES DIVERGENCIAS. Comprobado el 2026-09-15 sobre la
-    // instalacion real: se borro un archivo del checkout, se reinstalo exactamente como esta linea
-    // indicaba, y el archivo SIGUIO en la copia instalada. El instalador copia y nunca poda, asi que
-    // reinstalar arregla `differing` y `missing` y no hace nada por `extra`. Un gate que rechaza y da
-    // un comando que no arregla lo que rechaza deja a quien lo lee corriendo lo mismo dos veces.
+    // EL CONSEJO MENTIA PARA UNA DE LAS TRES DIVERGENCIAS, y despues cambio lo que hace el instalador.
+    // Comprobado el 2026-09-15: se borro un archivo del checkout, se reinstalo como esta linea
+    // indicaba, y el archivo SIGUIO en la copia -- el instalador copiaba y nunca podaba --. Se agrego
+    // el aviso de sacarlos a mano. El 2026-09-22 el operador decidio que el instalador los APARTE, y
+    // ese aviso paso a mandar a borrar a mano lo que ya se aparta solo: un consejo que manda a hacer
+    // algo destructivo que no hace falta es peor que ninguno.
     writeError('Fix: reinstall the runtime from this checkout — scripts/install.sh --project <project-root> (PowerShell: scripts/install.ps1 -ProjectDir <project-root>).');
     if (result.extra.length > 0) {
-      writeError('Aviso: el instalador copia, no borra — reinstalar NO saca los archivos de mas de arriba. Borralos a mano del runtime instalado, uno por uno y mirando cada ruta: un archivo que el origen ya no tiene es un gate retirado que se sigue ejecutando desde la copia.');
+      writeError('Aviso: reinstalar con --project APARTA los archivos de mas del runtime del proyecto: los mueve a .vibe/ia-stack-archive/<fecha>/ia-stack-runtime/ conservando la ruta, y no los borra — vuelven con un mv si algo se rompio. Un runtime nombrado con --runtime fuera de un proyecto no se poda: ahi hay que sacarlos a mano, mirando cada ruta.');
     }
     return 1;
   }

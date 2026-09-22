@@ -16,7 +16,9 @@ const {
   COPIED_FILES,
   DEFAULT_RUNTIME_PATH,
   RUTAS_DE_RUNTIME,
+  SELLO,
   USAGE,
+  leerSello,
   compareInventories,
   esRuntimeInstalado,
   main,
@@ -413,8 +415,14 @@ test('el consejo de arreglo distingue lo que reinstalar arregla de lo que no', (
     assert.equal(main(['check'], source, {}, () => {}, (line) => errors.push(line)), 1);
     const salida = errors.join('\n');
     assert.match(salida, /verify-gate-retirado\.mjs/u);
-    assert.match(salida, /reinstalar no (los )?(borra|saca|elimina)|el instalador copia, no borra/iu,
-      `el consejo tiene que decir que reinstalar no saca un archivo de mas: ${salida}`);
+    // EL CONSEJO CAMBIO EL 2026-09-22, porque cambio lo que hace el instalador. Antes decia «el
+    // instalador copia, no borra: borralos a mano», y era verdad. Desde que reinstalar con
+    // --project APARTA lo que sobra, ese consejo mandaria a borrar a mano lo que el instalador ya
+    // aparta solo -- y un consejo que manda a hacer algo destructivo que no hace falta es peor que
+    // ninguno. Tiene que decir que reinstalar lo aparta, adonde, y que no lo borra.
+    assert.match(salida, /ia-stack-archive/u, `el consejo tiene que decir adonde va lo apartado: ${salida}`);
+    assert.match(salida, /no (los )?borra/iu, `y que apartar no es borrar: ${salida}`);
+    assert.doesNotMatch(salida, /borralos a mano/iu, 'el consejo viejo manda a borrar a mano lo que ya se aparta solo');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -545,15 +553,52 @@ export function fueraDeLaSuperficie(rutas, directorios = COPIED_DIRECTORIES, arc
   return rutas.filter((r) => !directorios.includes(r.split('/')[0]) && !archivos.includes(r)).sort();
 }
 
+/** Rutas del paquete que el instalador solo PREGUNTA si existen —`[ -e "$PACKAGE_DIR/x" ]`— y nunca
+ * lee ni copia.
+ *
+ * LLEGO CON EL SELLO DE INSTALACION, el 2026-09-22: el instalador pregunta si hay `$PACKAGE_DIR/.git`
+ * para saber si puede nombrar un commit, y esta regla lo acuso como una lectura que no se copia. No
+ * rompe el punto fijo: reinstalar desde una copia del runtime cae justo en la rama de «no hay .git»,
+ * que dice «paquete sin git» y funciona.
+ *
+ * Y NO ES UNA LISTA BLANCA con `.git` adentro, que taparia el dia en que alguien haga
+ * `cp -R "$PACKAGE_DIR/.git"`. Una ruta cuenta como sonda solo si TODAS sus apariciones son
+ * preguntas de existencia: una sola lectura la vuelve una dependencia, y la regla la vuelve a acusar. */
+export function sondasDeExistencia(texto) {
+  const apariciones = new Map();
+  for (const m of texto.matchAll(/\$PACKAGE_DIR\/([A-Za-z0-9_.\-/]+)/gu)) {
+    const cuenta = apariciones.get(m[1]) ?? { total: 0, preguntas: 0 };
+    cuenta.total += 1;
+    apariciones.set(m[1], cuenta);
+  }
+  for (const m of texto.matchAll(/\[ -[edf] "\$PACKAGE_DIR\/([A-Za-z0-9_.\-/]+)" \]/gu)) {
+    apariciones.get(m[1]).preguntas += 1;
+  }
+  return [...apariciones].filter(([, c]) => c.total === c.preguntas).map(([ruta]) => ruta);
+}
+
 test('todo lo que el instalador lee del paquete está en la superficie que copia', () => {
   const sh = readFileSync(join(repoRoot, 'scripts', 'install.sh'), 'utf8');
   const rutas = leidoDelPaquete(sh);
   assert.ok(rutas.length > 0, 'no se pudo leer ninguna ruta de $PACKAGE_DIR: la comprobación no midió nada');
+  const sondas = sondasDeExistencia(sh);
   assert.deepEqual(
-    fueraDeLaSuperficie(rutas),
+    fueraDeLaSuperficie(rutas.filter((ruta) => !sondas.includes(ruta))),
     [],
     'el instalador lee esto del paquete pero no lo copia: un runtime instalado no puede reinstalarse',
   );
+});
+
+test('FALSIFICACIÓN · una sonda de existencia deja de serlo en cuanto la ruta se lee una sola vez', () => {
+  assert.deepEqual(sondasDeExistencia('[ -e "$PACKAGE_DIR/.git" ] && x'), ['.git']);
+  assert.deepEqual(sondasDeExistencia('[ -d "$PACKAGE_DIR/cache" ] || y'), ['cache']);
+  // La trampa que la regla existe para no tapar: preguntar y despues copiar.
+  assert.deepEqual(
+    sondasDeExistencia('[ -e "$PACKAGE_DIR/.git" ] && cp -R "$PACKAGE_DIR/.git" dst'),
+    [],
+    'si la ruta se copia en algun lado ya es una dependencia, aunque tambien se pregunte',
+  );
+  assert.deepEqual(sondasDeExistencia('cp "$PACKAGE_DIR/AGENTS.md" x'), [], 'una copia no es una pregunta');
 });
 
 test('FALSIFICACIÓN · la regla del punto fijo distingue copiado de leído-y-no-copiado', () => {
@@ -639,6 +684,123 @@ test('con LAS DOS carpetas, gana la nueva y la vieja se acusa como sobrante', ()
     assert.equal(code, 1, salida.join('\n'));
     assert.match(salida.join('\n'), /vcp-runtime/u);
     assert.match(salida.join('\n'), /borr|saca|elimin/iu, 'tiene que decir qué hacer con la vieja');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// --- EL SELLO DE INSTALACION, decidido por el operador el 2026-09-22 ------------------------------
+//
+// Este gate compara la copia instalada CONTRA el checkout fuente, asi que sin el checkout no puede
+// comparar y sale 1 pidiendolo. Quien solo tiene su proyecto -- el caso normal de quien instala --
+// no podia responder «¿mi runtime esta viejo?». YA PASO: un proyecto real llevaba dias con un runtime
+// anterior al 2026-09-15, rechazando recibos por un prefijo que el runtime nuevo acepta, y nadie se
+// entero. Ahora el instalador deja un sello con la fecha y el commit de origen, y este gate lo lee
+// justo donde antes solo podia decir «no puedo».
+//
+// Sigue saliendo 1: sin el checkout no hay comparacion, y decir cuando se instalo no es comparar.
+
+function proyectoConRuntime(sello) {
+  const root = mkdtempSync(join(tmpdir(), 'vcp-runtime-sync-sello-'));
+  const runtime = join(root, ...DEFAULT_RUNTIME_PATH.split('/'));
+  mkdirSync(join(runtime, 'scripts'), { recursive: true });
+  if (sello !== undefined) writeFileSync(join(runtime, SELLO), typeof sello === 'string' ? sello : JSON.stringify(sello));
+  return root;
+}
+
+const SELLO_DE_PRUEBA = {
+  schema: 'ia.runtime-instalado/1',
+  instalado: '2026-09-01T00:00:00Z',
+  desde: 'checkout',
+  commit: 'c'.repeat(40),
+  arbol_limpio: true,
+};
+const DIA_22 = Date.parse('2026-09-22T00:00:00Z');
+
+test('sin el checkout al lado, el rechazo dice CUANDO se instalo el runtime y desde que commit', () => {
+  const root = proyectoConRuntime(SELLO_DE_PRUEBA);
+  try {
+    const errors = [];
+    const code = main(['check'], root, { ahora: () => DIA_22 }, () => {}, (l) => errors.push(l));
+    assert.equal(code, 1, 'decir cuando se instalo no es comparar: sigue rechazando');
+    const salida = errors.join(' | ');
+    assert.match(salida, /2026-09-01/u);
+    assert.match(salida, /c{7}/u, 'nombra el commit de origen');
+    assert.match(salida, /21 d[ií]as/u, 'y cuanto hace');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un runtime SIN sello tambien es un dato: se instalo antes de que el sello existiera', () => {
+  const root = proyectoConRuntime(undefined);
+  try {
+    const errors = [];
+    assert.equal(main(['check'], root, {}, () => {}, (l) => errors.push(l)), 1);
+    assert.match(errors.join(' | '), /sin sello/iu);
+    assert.match(errors.join(' | '), /2026-09-22/u, 'dice desde cuando existe el sello, que es la cota de su edad');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un sello de un paquete sin git lo dice, en vez de inventar un commit', () => {
+  const root = proyectoConRuntime({ ...SELLO_DE_PRUEBA, desde: 'paquete', commit: null, arbol_limpio: null });
+  try {
+    const errors = [];
+    assert.equal(main(['check'], root, { ahora: () => DIA_22 }, () => {}, (l) => errors.push(l)), 1);
+    assert.match(errors.join(' | '), /paquete/u);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un checkout con cambios sin commitear al instalar se dice: el commit no describe la copia', () => {
+  const root = proyectoConRuntime({ ...SELLO_DE_PRUEBA, arbol_limpio: false });
+  try {
+    const errors = [];
+    main(['check'], root, { ahora: () => DIA_22 }, () => {}, (l) => errors.push(l));
+    assert.match(errors.join(' | '), /sin commitear/iu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('FALSIFICACION · un sello ilegible no tumba el gate ni se lee como una fecha', () => {
+  for (const roto of ['{ no es json', JSON.stringify({ schema: 'otra.cosa/1' }), JSON.stringify({ ...SELLO_DE_PRUEBA, instalado: 'ayer' })]) {
+    const root = proyectoConRuntime(roto);
+    try {
+      const errors = [];
+      assert.equal(main(['check'], root, { ahora: () => DIA_22 }, () => {}, (l) => errors.push(l)), 1);
+      assert.match(errors.join(' | '), /ilegible/iu, roto);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('leerSello distingue ausente, valido e ilegible', () => {
+  const root = proyectoConRuntime(SELLO_DE_PRUEBA);
+  try {
+    const runtime = join(root, ...DEFAULT_RUNTIME_PATH.split('/'));
+    assert.equal(leerSello(runtime).estado, 'valido');
+    assert.equal(leerSello(join(root, 'no-existe')).estado, 'ausente');
+    assert.equal(leerSello(runtime, { read: () => { throw new Error('permiso denegado'); } }).estado, 'ilegible',
+      'un error que no es «no existe» no se confunde con un runtime sin sello');
+    const raro = leerSello(runtime, { read: () => { throw 'algo que no es un Error'; } });
+    assert.equal(raro.estado, 'ilegible');
+    assert.match(raro.motivo, /no es un Error/u, 'lo que se tira sin ser un Error igual se reporta, no sale «undefined»');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un dia se dice en singular: la frase se lee, no se descifra', () => {
+  const root = proyectoConRuntime(SELLO_DE_PRUEBA);
+  try {
+    const errors = [];
+    main(['check'], root, { ahora: () => Date.parse('2026-09-02T00:00:00Z') }, () => {}, (l) => errors.push(l));
+    assert.match(errors.join(' | '), /hace 1 dia,/u);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

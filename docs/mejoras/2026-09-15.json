@@ -24,7 +24,12 @@
       "por_que": "Se corrigio hoy el mensaje del gate, que mandaba a reinstalar para arreglar algo que reinstalar no arregla: se comprobo borrando un archivo del checkout, corriendo install.sh exactamente como la linea indicaba, y viendo el archivo seguir ahi. Pero eso arregla el AVISO, no la causa. Un archivo que el origen ya no tiene y sobrevive en la copia instalada es un gate retirado que alguien puede seguir ejecutando, y la unica defensa hoy es que una persona lea el aviso y borre a mano. Podar automaticamente es borrar archivos, asi que no se hizo sin pedirlo: la propuesta es decidirlo, no hacerlo de callado. Una salida intermedia es que el instalador MUEVA lo que sobra a una carpeta con fecha en vez de borrarlo, que es la regla que este repositorio ya usa para el junk.",
       "cita": {
         "archivo": "scripts/verify-runtime-sync.mjs",
-        "texto_literal": "el instalador copia, no borra"
+        "texto_literal": "el instalador copia, no borra",
+        "corregida": {
+          "fecha": "2026-09-22",
+          "donde": "scripts/install.sh, scripts/install.ps1 y scripts/verify-runtime-sync.mjs",
+          "que_cambio": "La propuesta pedia decidirlo y no hacerlo de callado, y el 2026-09-22 el operador lo decidio con la salida intermedia que la propia propuesta nombraba: el instalador MUEVE lo que sobra en el runtime del proyecto a .vibe/ia-stack-archive/<fecha-y-hora>/ia-stack-runtime/ conservando la ruta, y no borra nada. Fecha y hora, no fecha sola: dos reinstalaciones el mismo dia harian que el segundo mv pise al primero. La frase citada era el aviso que describia el defecto, asi que dejo de ser verdad y se cambio: el gate ahora dice que reinstalar APARTA lo que sobra y adonde. Lo que decidio el caso fue un proyecto real con 15 archivos de mas tras reinstalar, uno de ellos un gate retirado con el que despues se sello un indice. Queda un limite escrito en INSTALL.md: la copia global no se poda ni se sella, porque vive en el directorio de configuracion de quien instala y apartar ahi escribiria en un repositorio ajeno al proyecto."
+        }
       }
     },
     {

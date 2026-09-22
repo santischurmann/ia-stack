@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// verify-receipt.mjs — mechanical receipt gate for VibeCodeProtocols Phase 8.1
+// verify-receipt.mjs — mechanical receipt gate for IA Stack Phase 8.1
 // Cross-platform (Node, no npm deps), works on Windows/macOS/Linux identically since it only
-// shells out to `git` and uses node:crypto/node:fs. Three commands:
+// shells out to `git` and uses node:crypto/node:fs. The three that decide a commit are below;
+// `recheck` and `custody` look at a receipt that is ALREADY committed, and `inspect-legacy`
+// reads the archival formats. The three that decide:
 //
 //   node verify-receipt.mjs fingerprint [receipt-path-to-exclude]
 //       print {git_head, tree_fingerprint} for the current evaluated state.
@@ -381,6 +383,77 @@ export function formasDeFinDeLinea(contenido) {
     }
   }
   return formas;
+}
+
+/** El contenido de un archivo tal como quedo en un commit, en BYTES; null si ese commit no lo tiene.
+ *
+ * Bytes y no texto a proposito: el helper `git()` de este archivo normaliza CRLF en su salida, que
+ * esta bien para leer plumbing y esta mal para hashear un blob. Y `git show` de un blob devuelve lo
+ * guardado, sin la conversion de fin de linea que se aplica recien al materializarlo en disco. */
+export function leerDelCommit(commit, ruta, cwd = '.', ejecutar = execFileSync) {
+  try {
+    return ejecutar('git', ['-C', cwd, 'show', `${commit}:./${toGitPath(ruta)}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch {
+    return null;
+  }
+}
+
+export const RECHECK_LIMIT = 'LIMIT: recomprueba que el test commiteado sea el que el recibo certifica, en cualquier forma de fin de linea. No vuelve a correr el test ni prueba que pase, y no mira la firma: para eso esta custody. Compara contra el ULTIMO COMMIT que toco el recibo, asi que si el recibo se edito despues de sellarlo, compara contra esa edicion.';
+
+/** Recomprobar un recibo YA COMMITEADO contra lo que quedo en ese mismo commit.
+ *
+ * POR QUE EXISTE. Medido en un proyecto real el 2026-09-22: seis recibos v3 con diez criterios cuyo
+ * hash no correspondia a NINGUNA version commiteada del test. No era un defecto de `commit`, que
+ * re-hashea el disco en el momento de escribir y exige arbol limpio: entraba por el otro camino que
+ * el protocolo publica como valido -- `check --require-clean-worktree` y despues `git commit` a
+ * mano --. Si entre los dos alguien cambia el test y lo vuelve a stagear, el recibo certifica una
+ * version que nunca se guardo. Y una vez commiteado, NADA volvia a mirarlo contra git: hubo que
+ * hacerlo a mano para encontrarlo.
+ *
+ * El recibo y los tests se leen del MISMO commit -- el ultimo que toco el recibo --, no del disco:
+ * lo que se recomprueba es lo guardado. Tres estados, como el resto del protocolo: `vacio` cuando no
+ * hay nada guardado que mirar, `rechazo` con el criterio y el motivo, `ok` nombrando el commit. */
+export function recomprobarRecibo(ruta, cwd = '.', { run = git, leer = leerDelCommit } = {}) {
+  const firma = readSignature(ruta, cwd, run);
+  if (firma === null) {
+    return { estado: 'vacio', lineas: [`${ruta} todavia no esta en ningun commit: no hay nada guardado que recomprobar.`] };
+  }
+  const corto = firma.commit.slice(0, 7);
+  const crudo = leer(firma.commit, ruta, cwd);
+  if (crudo === null) {
+    return { estado: 'vacio', lineas: [`el ultimo commit que toca ${ruta} (${corto}) lo borra: no hay recibo guardado que recomprobar.`] };
+  }
+  let recibo;
+  try {
+    recibo = JSON.parse(Buffer.from(crudo).toString('utf8'));
+  } catch (error) {
+    return { estado: 'rechazo', lineas: [`${ruta} en ${corto} no es JSON: ${error.message}`] };
+  }
+  if (mismoSchema(recibo?.schema, V1_SCHEMA) || mismoSchema(recibo?.schema, V2_SCHEMA)) {
+    return { estado: 'vacio', lineas: [`${ruta} es ${recibo.schema}, un formato archivistico sin criterios con hash: se lee con inspect-legacy, no se recomprueba.`] };
+  }
+  if (!mismoSchema(recibo?.schema, V3_SCHEMA)) {
+    return { estado: 'rechazo', lineas: [`${ruta} en ${corto} declara un schema desconocido: ${recibo?.schema}`] };
+  }
+  const criterios = (Array.isArray(recibo.acceptance_criteria) ? recibo.acceptance_criteria : [])
+    .filter((ac) => ac && nonEmptyString(ac.test_file) && SHA256_HEX.test(ac.test_hash_sha256 ?? ''));
+  if (criterios.length === 0) {
+    return { estado: 'vacio', lineas: [`${ruta} en ${corto} no tiene ningun criterio con test y hash: recomprobar nada no es aprobar.`] };
+  }
+  const malas = [];
+  for (const ac of criterios) {
+    const test = leer(firma.commit, ac.test_file, cwd);
+    if (test === null) {
+      malas.push(`${ac.ac_id}: ${ac.test_file} no esta en ${corto}, el commit que lleva el recibo — el recibo certifica un test que no se commiteo.`);
+      continue;
+    }
+    const coincide = formasDeFinDeLinea(test).some((forma) => createHash('sha256').update(forma).digest('hex') === ac.test_hash_sha256);
+    if (!coincide) {
+      malas.push(`${ac.ac_id}: ${ac.test_file} en ${corto} no es el test que el recibo certifica, en ninguna forma de fin de linea — cambio entre la validacion y el commit, y el recibo quedo certificando una version que nunca se guardo.`);
+    }
+  }
+  if (malas.length > 0) return { estado: 'rechazo', lineas: malas };
+  return { estado: 'ok', lineas: [`${criterios.length} criterio(s) de ${ruta}: el test de cada uno es, en ${corto}, exactamente el que el recibo certifica.`] };
 }
 
 /** One acceptance-criteria entry. `verdict !== 'COMPLIANT'` blocks by itself — a receipt with any
@@ -856,6 +929,32 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     process.exit(0);
   }
 
+  // `recheck <receipt.json>` — ver `recomprobarRecibo`. Exit 2 ante un uso invalido, igual que
+  // custody: un argumento mal puesto es un error de quien llama, nunca un veredicto sobre el recibo.
+  if (cmd === 'recheck') {
+    const RECHECK_USAGE = 'usage: verify-receipt.mjs recheck <receipt.json>';
+    if (!arg || process.argv.length > 4) { console.error(RECHECK_USAGE); process.exit(2); }
+    let resultado;
+    try {
+      resultado = recomprobarRecibo(arg, '.');
+    } catch (error) {
+      fail(`no se puede leer la historia de git para recomprobar ${arg}: ${error.message.trim()}`);
+    }
+    if (resultado.estado === 'vacio') {
+      console.log(`VACIO: ${resultado.lineas.join(' ')}`);
+      console.log(RECHECK_LIMIT);
+      process.exit(0);
+    }
+    if (resultado.estado === 'rechazo') {
+      for (const linea of resultado.lineas) console.error(`REJECTED: RECEIPT_RECHECK: ${linea}`);
+      console.error(RECHECK_LIMIT);
+      process.exit(1);
+    }
+    console.log(`OK: ${resultado.lineas.join(' ')}`);
+    console.log(RECHECK_LIMIT);
+    process.exit(0);
+  }
+
   if (cmd === 'inspect-legacy') {
     if (!arg) fail('usage: verify-receipt.mjs inspect-legacy <receipt.json>');
     const receipt = readReceiptSafely(arg);
@@ -918,6 +1017,6 @@ if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
     process.exit(0);
   }
 
-  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> [--require-clean-worktree] | commit <receipt.json> --message "<message>" | inspect-legacy <receipt.json>');
+  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> [--require-clean-worktree] | commit <receipt.json> --message "<message>" | recheck <receipt.json> | custody <receipt.json> [--require-signature] | inspect-legacy <receipt.json>');
   process.exit(2);
 }

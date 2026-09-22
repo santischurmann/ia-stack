@@ -46,6 +46,52 @@ copy_runtime() {
   cp "$PACKAGE_DIR/AGENTS.md" "$destination/AGENTS.md"
 }
 
+# LO QUE SOBRA SE APARTA, NO SE BORRA. Decidido por el operador el 2026-09-22. copy_runtime copia
+# ENCIMA y nunca podaba: en un proyecto real quedaron 15 archivos de mas tras reinstalar, y uno era
+# un gate retirado con el que despues se sello un indice. Un archivo que el protocolo ya no tiene es
+# un gate que se sigue pudiendo ejecutar desde la copia.
+#
+# Se MUEVE conservando la ruta, como la carpeta del nombre anterior mas abajo: en una limpieza de este
+# protocolo no existe rm. Solo recorre las carpetas que copy_runtime copia -- nunca la raiz del
+# runtime, donde vive el sello --. Y el archivo lleva fecha Y hora: con fecha sola, dos reinstalaciones
+# el mismo dia harian que el segundo mv pise al primero, y pisar tambien es borrar.
+apartar_sobrantes() {
+  local runtime="$1" archivo="$2" apartados=0 dir f rel
+  for dir in scripts contracts tests templates skills .agents; do
+    [ -d "$runtime/$dir" ] || continue
+    while IFS= read -r -d '' f; do
+      rel="${f#"$runtime"/}"
+      [ -e "$PACKAGE_DIR/$rel" ] && continue
+      mkdir -p "$archivo/$(dirname "$rel")"
+      if mv "$f" "$archivo/$rel"; then
+        apartados=$((apartados + 1))
+        echo "APARTADO: $rel ya no existe en el protocolo. Se MOVIO a $archivo/$rel; vuelve con mv."
+      else
+        echo "AVISO: no se pudo apartar $runtime/$rel. Es una copia vieja de un gate: sacala a mano." >&2
+      fi
+    done < <(find "$runtime/$dir" -type f -print0)
+  done
+  [ "$apartados" -eq 0 ] || echo "OK: $apartados archivo(s) de una instalacion anterior apartado(s), no borrados."
+}
+
+# EL SELLO: cuando y desde que se instalo este runtime. Sin el, un proyecto no tenia forma de saber
+# que su copia era vieja sin el checkout al lado -- y un proyecto real llevo dias con un runtime
+# anterior al 2026-09-15 sin que nadie se enterara --. Un paquete sin git no tiene commit que nombrar,
+# y eso se dice en vez de inventarlo. Un checkout con cambios sin commitear tambien se dice: ahi el
+# commit no describe la copia del todo.
+sellar_runtime() {
+  local runtime="$1" desde="paquete" commit="null" limpio="null" sha pendientes
+  if [ -e "$PACKAGE_DIR/.git" ] && sha="$(git -C "$PACKAGE_DIR" rev-parse HEAD 2>/dev/null)"; then
+    desde="checkout"
+    commit="\"$sha\""
+    if pendientes="$(git -C "$PACKAGE_DIR" status --porcelain 2>/dev/null)"; then
+      if [ -z "$pendientes" ]; then limpio="true"; else limpio="false"; fi
+    fi
+  fi
+  printf '{\n  "schema": "ia.runtime-instalado/1",\n  "instalado": "%s",\n  "desde": "%s",\n  "commit": %s,\n  "arbol_limpio": %s\n}\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$desde" "$commit" "$limpio" > "$runtime/INSTALADO.json"
+}
+
 echo "=== IA Stack Installer ==="
 echo "Source:  $PACKAGE_DIR"
 echo "Skills:  $TARGET_DIR"
@@ -146,6 +192,10 @@ if [ -n "$PROJECT_DIR" ]; then
       echo "AVISO: no se pudo mover $VIBE_DIR/vcp-runtime. Sacala a mano: es una copia vieja de los gates." >&2
     fi
   fi
+  # Despues de copiar y despues de ignorar el archivo: lo apartado cae en una carpeta que git ya no ve,
+  # asi que podar no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --.
+  apartar_sobrantes "$VIBE_DIR/ia-stack-runtime" "$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%dT%H%M%S)/ia-stack-runtime"
+  sellar_runtime "$VIBE_DIR/ia-stack-runtime"
   echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"
 else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."

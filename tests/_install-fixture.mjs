@@ -14,7 +14,7 @@
 // por qué caer juntas: si el instalador de PowerShell se rompe, el de bash sigue contando.
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,6 +52,44 @@ export function fixture() {
   mkdirSync(project);
   writeFileSync(join(project, 'package.json'), '{}\n');
   return { root, project, target: join(root, 'skills'), runtime: join(root, 'runtime') };
+}
+
+// --- LA PODA Y EL SELLO, decididos por el operador el 2026-09-22 ---------------------------------
+//
+// El instalador copiaba encima y nunca podaba: en un proyecto real quedaron 15 archivos de mas tras
+// reinstalar, y uno era un gate retirado con el que despues se sello un indice. Ahora reinstalar
+// APARTA lo que el protocolo ya no tiene -- lo mueve al archivo, no lo borra -- y deja un sello con
+// la fecha y el commit de origen. Las dos pruebas de instalacion ya instalan dos veces: el sobrante
+// se planta entre las dos, asi que esto no agrega una sola instalacion.
+
+export const SOBRANTE = join('scripts', 'gate-retirado-por-la-prueba.mjs');
+
+/** Un archivo que una instalacion anterior dejo y el protocolo ya no tiene. */
+export function plantarSobrante(project) {
+  writeFileSync(join(project, '.vibe', 'ia-stack-runtime', SOBRANTE), '// un gate que el protocolo ya retiro\n');
+}
+
+export function assertApartado(project) {
+  const runtime = join(project, '.vibe', 'ia-stack-runtime');
+  assert.equal(existsSync(join(runtime, SOBRANTE)), false, 'reinstalar tiene que sacar del runtime lo que el protocolo ya no tiene');
+  const archivo = join(project, '.vibe', 'ia-stack-archive');
+  const fechas = existsSync(archivo) ? readdirSync(archivo) : [];
+  assert.ok(
+    fechas.some((fecha) => existsSync(join(archivo, fecha, 'ia-stack-runtime', SOBRANTE))),
+    `y tiene que MOVERLO al archivo conservando la ruta, no borrarlo. En ${archivo}: ${fechas.join(', ') || '(nada)'}`,
+  );
+}
+
+export function assertSellado(project) {
+  const ruta = join(project, '.vibe', 'ia-stack-runtime', 'INSTALADO.json');
+  assert.equal(existsSync(ruta), true, 'el runtime del proyecto tiene que quedar sellado');
+  const sello = JSON.parse(readFileSync(ruta, 'utf8').replace(/^\uFEFF/u, ''));
+  assert.equal(sello.schema, 'ia.runtime-instalado/1');
+  assert.match(sello.instalado, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u, `fecha ISO en UTC: ${sello.instalado}`);
+  // Se instala desde ESTE repositorio, que es un checkout: tiene que nombrar su commit.
+  assert.equal(sello.desde, 'checkout');
+  assert.match(sello.commit, /^[0-9a-f]{40,64}$/u, `el commit de origen: ${sello.commit}`);
+  assert.equal(typeof sello.arbol_limpio, 'boolean', 'y si el checkout tenia cambios sin commitear');
 }
 
 export function assertRuntime(project, target, runtime) {

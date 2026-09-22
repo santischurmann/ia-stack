@@ -1640,6 +1640,15 @@ que resuelve.
 puede escribir en ese instante. La confirmación posterior demuestra que el commit contiene el
 índice revisado; no demuestra que no hubo una escritura concurrente.
 
+**Si cerraste por el camino manual** —`check --require-clean-worktree` y `git commit` a mano—,
+recomprobá después que lo commiteado sea lo que el recibo certifica:
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs recheck .vibe/receipts/<feature-slug>-<fecha>.json
+```
+Lee el recibo y cada test del commit que lleva el recibo, no del disco. Existe porque en un proyecto
+real aparecieron recibos que certificaban versiones del test que nunca se guardaron. Detalle y
+límites en `skills/receipt.md`.
+
 Exit 0 **únicamente** si `schema: ia.receipt/v3` Y `terminal_state: approved` Y **todos** los
 `acceptance_criteria` son `COMPLIANT` (con hash de test vigente) Y el fingerprint matchea el
 estado evaluado actual Y `evidence`/`reproduction`/`not_reviewed`/`limits`/`regressions`/`support`/

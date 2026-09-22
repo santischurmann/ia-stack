@@ -14,11 +14,28 @@
             "git add -A",
             "git -c user.email=t@t -c user.name=t commit -q -m inicial"
           ],
-          "args": ["--project", "{DIR}"]
+          "args": [
+            "--project",
+            "{DIR}"
+          ]
         },
         {
-          "setup": ["git init -q ."],
+          "setup": [
+            "git init -q ."
+          ],
           "args": []
+        },
+        {
+          "why": "Reinstalar sobre un runtime que tiene un archivo que el protocolo ya no tiene. Sin este escenario el cuerpo de la poda no corre nunca: los otros instalan sobre un proyecto limpio, donde no sobra nada, y la cobertura de install.sh bajo del piso el 2026-09-22 al agregarla. El sobrante se planta antes de instalar, igual que en las pruebas de instalacion.",
+          "setup": [
+            "git init -q .",
+            "mkdir -p .vibe/ia-stack-runtime/scripts",
+            "printf '// un gate retirado\n' > .vibe/ia-stack-runtime/scripts/gate-retirado.mjs"
+          ],
+          "args": [
+            "--project",
+            "{DIR}"
+          ]
         }
       ]
     },
@@ -26,7 +43,10 @@
       "script": "scripts/verify-red.sh",
       "floor": 50,
       "scenarios": [
-        { "setup": [], "args": [] }
+        {
+          "setup": [],
+          "args": []
+        }
       ]
     },
     {
