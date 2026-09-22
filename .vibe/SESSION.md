@@ -19,17 +19,20 @@ tocar nada, y **ninguna era exactamente como vino**:
 | 2 | Recibos con hashes que no son de ningun commit | **Real, pero no es un defecto de `commit`**: la prueba que se proponia ya existe y esta verde (AC9). Entra por el camino manual que el protocolo publica como valido: `check --require-clean-worktree` y despues `git commit` a mano |
 | 3 | El instalador copia y no poda | **Real en los dos instaladores**: `cp -R` y `Copy-Item -Force` copian encima, y un gate retirado sobrevive a la reinstalacion |
 
-**DONDE RETOMAR — las tres son decisiones del operador, no defectos a arreglar solos:**
+**DECIDIDO el mismo dia por el operador, y hecho en `e87f961`:**
 
-1. **Recomprobar un recibo contra git despues de commitear.** Hoy nada lo hace: una vez commiteado,
-   el recibo no se vuelve a mirar contra el blob del test que quedo en el commit. Es lo que hubo que
-   hacer a mano para encontrar el hallazgo 2. Es una capacidad nueva -- un subcomando --, no un
-   arreglo.
-2. **Que `commit` sea el unico camino para el recibo final**, en vez de "preferible". Cierra el
-   hallazgo 2 de raiz, pero cambia el flujo publicado de la fase 8.
-3. **Que el instalador pode lo que sobra.** Va junto con el sello de version: los dos cambian lo que
-   el instalador hace adentro del proyecto de cada persona. Y la poda tendria que MOVER, no borrar,
-   como ya hace con la carpeta del nombre anterior.
+1. **`verify-receipt.mjs recheck`** recomprueba un recibo guardado contra el commit que lo lleva.
+   Se eligio esto y NO volver obligatorio `commit`.
+2. **El instalador aparta lo que sobra y sella el runtime del proyecto** (`INSTALADO.json`). Mueve,
+   no borra. La copia global no se poda ni se sella, y queda declarado.
+
+**DONDE RETOMAR**
+
+- La cobertura de shell de `install.sh` quedo en 65,1% contra un piso de 65: las ramas que faltan
+  (paquete sin git, un `mv` que falla) no se pueden fabricar desde el arnes, porque el script corre
+  siempre desde este checkout.
+- La copia global del runtime aparece como carpeta sin trackear en el repositorio de configuracion
+  de la maquina del autor. Ya pasaba antes de hoy; es decision del operador si se ignora ahi.
 
 ---
 
