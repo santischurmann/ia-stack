@@ -42,6 +42,24 @@ tocar nada, y **ninguna era exactamente como vino**:
 - La copia global del runtime aparece como carpeta sin trackear en el repositorio de configuracion
   de la maquina del autor. Ya pasaba antes de hoy; es decision del operador si se ignora ahi.
 
+**DECISIONES DEL OPERADOR QUE SIGUEN ABIERTAS**
+
+1. El zip de release se sigue llamando con el nombre anterior del protocolo. Es el nombre del
+   archivo que la gente descarga, asi que renombrarlo es una decision de producto.
+2. La filtracion del checkpoint sigue en el historial de `2afcd1a`, ya publicado. Sacarla es
+   reescribir historia de un repositorio publico.
+3. Que el runtime global se ignore o no en el repositorio de configuracion de quien instala.
+
+**FUERA DE GIT, y que un reinicio NO se lleva** (son archivos en disco, o estan publicados):
+
+- La pagina publicada del protocolo, en su version 5, armada sobre la v4 de la otra sesion. Vive
+  en el servidor, no en esta maquina.
+- `.vibe/ia-stack-runtime/` (306 archivos) y `graphify-out/` (4359): los dos ignorados por git y
+  los dos regenerables -- reinstalar y volver a correr el grafo --.
+- `.vibe/ia-stack-archive/` NO existe: la poda nueva no tuvo nada que apartar en este repositorio.
+- Lo unico que se pierde con un reinicio es el contexto de la conversacion. Todo lo que hace falta
+  para retomar esta en este archivo y en git.
+
 ---
 
 ## 2026-09-17 (segunda tanda) — el resto del rename, y una filtracion que el CI no podia ver
