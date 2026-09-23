@@ -70,6 +70,15 @@ LO MEDIDO, para que la sesion que retome no empiece por donde ya se busco:
   Windows -- la escritura del archivo de cobertura al terminar, un handle que queda abierto -- y no
   una asercion.
 
+- CUANTAS VECES SE VIO: una sola, hasta donde el historial deja ver. Se revisaron las tres corridas
+  fallidas de esta sesion -- 5e7faaf, 9a0a711 y d3233a6 -- y ninguna menciona este archivo; sus causas
+  eran otras y estan arregladas. Otra sesion lo llamo «el intermitente conocido»: eso NO esta medido
+  aca, y si es cierto la evidencia esta en otro lado.
+- Y UN DATO QUE CAMBIA COMO SE CUENTAN: volver a correr un trabajo SOBRESCRIBE el veredicto de la
+  corrida. Despues del reintento, `d863dd2` figura como exitosa en `gh run list` y el rojo desaparece
+  de esa lista; queda solo en el historial de intentos de esa corrida. O sea que contar intermitentes
+  con `gh run list` las cuenta de menos, y esta ya se hubiera perdido si no quedaba escrito aca.
+
 **NO SE DA POR CERRADO, aunque este verde.** Por el criterio de este mismo repositorio, un rojo que
 aparece y desaparece es un defecto: un rojo que no dice nada es como se aprende a ignorar los rojos.
 Lo que se sabe esta escrito arriba; lo que falta es el motivo.
