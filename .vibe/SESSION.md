@@ -72,8 +72,10 @@ LO MEDIDO, para que la sesion que retome no empiece por donde ya se busco:
 
 - CUANTAS VECES SE VIO: una sola, hasta donde el historial deja ver. Se revisaron las tres corridas
   fallidas de esta sesion -- 5e7faaf, 9a0a711 y d3233a6 -- y ninguna menciona este archivo; sus causas
-  eran otras y estan arregladas. Otra sesion lo llamo «el intermitente conocido»: eso NO esta medido
-  aca, y si es cierto la evidencia esta en otro lado.
+  eran otras y estan arregladas. Otra sesion lo llamo «el intermitente conocido» y se le pidio la
+  evidencia: era una sola entrada de su registro, sobre ESTE MISMO commit. O sea, el mismo evento
+  contado dos veces. Lo confirmo y lo corrigio: no hay patron, hay una observacion. No busques
+  historia vieja de este archivo, porque no la hay.
 - Y UN DATO QUE CAMBIA COMO SE CUENTAN: volver a correr un trabajo SOBRESCRIBE el veredicto de la
   corrida. Despues del reintento, `d863dd2` figura como exitosa en `gh run list` y el rojo desaparece
   de esa lista; queda solo en el historial de intentos de esa corrida. O sea que contar intermitentes
