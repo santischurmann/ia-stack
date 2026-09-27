@@ -1,6 +1,6 @@
 ---
 name: ia-stack
-description: "TDD methodology for Claude Code: the orchestrator runs VCP's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
+description: "TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
 ---
 
 # IA Stack — caveman edition
@@ -18,7 +18,7 @@ comunicación— durante toda la sesión. Las tareas de construcción van a Sonn
 
 ## INTERNAL ORCHESTRATION CONTRACT (self-contained, always active)
 
-Para esto no hace falta ninguna skill externa, ni se invoca ninguna. El piso nativo de VCP, siempre
+Para esto no hace falta ninguna skill externa, ni se invoca ninguna. El piso nativo de IA Stack, siempre
 activo:
 
 - **Ejecutar con autonomía**: no frenar a narrar cada paso; hacer, y reportar el resultado.
@@ -126,7 +126,7 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
 ## PHASE 1 — BOOTSTRAP
 
 1. **Contrato de orquestación activo** (§ CONTRATO INTERNO DE ORQUESTACIÓN, arriba, siempre). Se
-   usan los papeles, gates y reglas de evidencia nativos de VCP. **No se invoca ni se exige otra
+   usan los papeles, gates y reglas de evidencia nativos de IA Stack. **No se invoca ni se exige otra
    skill** para ensanchar, reemplazar o autorizar una fase.
 1b. **Runtime sync check — antes de correr cualquier otro gate.** Todo lo que sigue se ejecuta desde
    `.vibe/ia-stack-runtime/`, una copia que `install.sh` dejó una vez y que envejece sola. Correr el
@@ -179,7 +179,7 @@ línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario 
    `docs/spec.md` y `.vibe/SESSION.md` tienen que nombrar la **misma** feature. Con menos de dos
    declarantes escribe `VACÍO:` y sale `0`: no hay dos nombres que comparar. **Detecta el desacuerdo,
    no lo resuelve** — cuál de los dos tiene razón lo decidís vos. Medido en el propio repositorio de
-   VCP el 2026-09-04: los documentos daban tres respuestas distintas a «¿en qué estamos trabajando?»
+   IA Stack el 2026-09-04: los documentos daban tres respuestas distintas a «¿en qué estamos trabajando?»
    y nada las comparaba.
 
    Salir con `0` es el **único** resultado de identidad que permite retomar. Recién ahí se
@@ -516,7 +516,7 @@ antes de comprometer tareas de implementación.
    que sacarla, y el costo de mantenerla no aparece en ningún lado.
 
 6. **Superficie de ataque:** el artefacto que faltaba, y el único momento en que se puede escribir.
-   Toda la seguridad de VCP era **posterior al código** —6.2 escanea un delta ya escrito, la lente
+   Toda la seguridad de IA Stack era **posterior al código** —6.2 escanea un delta ya escrito, la lente
    Riesgo revisa un diff ya escrito—, así que nada declaraba **qué hay que proteger** antes de
    construir. Y `skills/security-baseline.md` dice textualmente que los huecos de **authz no están
    cubiertos** por el escáner: fue lo peor que apareció en la corrida real que motivó esto.
@@ -583,7 +583,7 @@ node .vibe/ia-stack-runtime/scripts/verify-discovery-views.mjs check --feature <
 
 Un verde acá prueba que el Markdown se regenera byte a byte desde el JSON, no que la vista alcance para decidir. **La vista no muestra motivos de skip, override ni el texto de los claims.** Para juzgar una decisión hay que abrir el JSON, no el resumen.
 
-Al evolucionar el propio VCP, el inventario de requisitos Discovery también se comprueba contra la
+Al evolucionar el propio IA Stack, el inventario de requisitos Discovery también se comprueba contra la
 fase que se pretende cerrar; no se declara una fase active sólo porque sus tests existan:
 
 ```bash
@@ -1448,7 +1448,7 @@ comprueba corriendo: cada gate se ejecuta en una carpeta vacía y se compara lo 
 que declaró. **Un gate nuevo tiene que declarar qué hace cuando no hay nada que verificar**; si no
 figura en el contrato, la sonda lo rechaza. Los cinco comportamientos posibles son `reject` (sale
 distinto de 0), `usage` (le faltan argumentos), `empty` (sale 0 y escribe `VACÍO:`), `self` (sale 0
-con `OK:` legítimo porque mira el propio checkout de VCP, no el proyecto) y `skip` (no se corre).
+con `OK:` legítimo porque mira el propio checkout de IA Stack, no el proyecto) y `skip` (no se corre).
 Los dos últimos exigen motivo escrito, y la salida dice cuántos hay de cada uno.
 
 ```bash
@@ -1560,7 +1560,7 @@ Este es el único momento en que se escanea el estado que efectivamente se va a 
 El expediente `docs/deploy/<feature-slug>.json` (plantilla: `templates/deploy.json`) declara tres
 cosas que no estaban en ningún lado:
 
-- **Dependencias: se declara el inventario, no se auditan.** VCP no tiene SCA y ese límite está
+- **Dependencias: se declara el inventario, no se auditan.** IA Stack no tiene SCA y ese límite está
   pineado en `contracts/honest-limits.json`; proponer uno acá sería romper la promesa o mentir. Lo
   que se exige es que quede escrito **quién auditó** — y `"ninguno — <motivo>"` es una respuesta
   válida, mientras el silencio no lo sea. Misma doctrina que `VACÍO:` ≠ `OK:`.
@@ -1675,7 +1675,7 @@ modifica nada, y **nunca** habilita un commit/publish — `check` sigue siendo l
 ninguno de estos permite un 🔵 de cierre, aunque el receipt mecánico pase:
 - Una ronda de fixes cuya última tanda no se volvió a revisar (6.3 corrió antes del último fix,
   no después).
-- Un gate propio del target-project (no de VCP) escrito pero nunca falsificado a propósito
+- Un gate propio del target-project (no de IA Stack) escrito pero nunca falsificado a propósito
   (ver el ritual en Phase 6.1 arriba).
 Decirlo en el reporte de cierre cuesta menos que el usuario descubriéndolo después. (Un AC
 `UNTESTED`/`PARTIAL`/`FAILING` ya no es "una señal a mostrar antes de cerrar" — con el schema v2,
@@ -1728,7 +1728,7 @@ cualquiera que tenga un clon previo o el remoto.
 node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs custody .vibe/receipts/<feature-slug>-<fecha>.json
 ```
 
-VCP no puede crear ni guardar claves, pero **sí puede dejar de callarse**: git ya trae firma de
+IA Stack no puede crear ni guardar claves, pero **sí puede dejar de callarse**: git ya trae firma de
 commits y este comando la lee. Una firma rota siempre rechaza — es peor que ninguna. No firmar
 sólo rechaza con `--require-signature`, porque no firmar es lo normal, no una violación.
 
@@ -1885,7 +1885,7 @@ recuerda** — la fecha de la última corrida vive en `docs/ablation.json`:
 node .vibe/ia-stack-runtime/scripts/verify-ablation.mjs due docs/ablation.json
 ```
 
-Si nunca se limpió, dice que toca. VCP te lo ofrece con un menú y **nunca mueve un archivo sin tu
+Si nunca se limpió, dice que toca. IA Stack te lo ofrece con un menú y **nunca mueve un archivo sin tu
 click**.
 
 **Cuando lo archivado volvió a su lugar, el gate lo distingue — y cómo.** Hasta el 2026-09-08 un
@@ -2231,7 +2231,7 @@ producto: el gate verifica consistencia, no que el orden elegido sea el correcto
 | File | When | What |
 |---|---|---|
 | `SESSION.md` | cada fase y cada gate | 1 línea por gate — el registro para retomar |
-| Engram `mem_save` (si el tool está presente) | mismos momentos que la fila de arriba | duplicado opcional, `topic_key: vcp/<project>/<feature-slug>/gate-state` (upsert — nunca acumula), `type: config` |
+| Engram `mem_save` (si el tool está presente) | mismos momentos que la fila de arriba | duplicado opcional, `topic_key: vcp/<project>/<feature-slug>/gate-state` (upsert — nunca acumula), `type: config`. El prefijo de esa clave es el del nombre anterior y **se queda a propósito**: es la clave con la que ya están guardadas las memorias de cada instalación, y cambiarla las dejaría sin encontrar |
 | `DECISIONS.md` | choosing between approaches | decision + reasoning |
 | `PATTERNS.md` | al descubrir una convención del proyecto | patrón + ejemplo + cuándo aplica |
 | `DEBT.md` | deferring cleanup, or 6.2 medium/low findings | what, where, severity, why deferred |

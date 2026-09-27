@@ -33,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { prefijosDe } from '../scripts/limpiar-temporales.mjs';
+import { COPIED_DIRECTORIES, COPIED_FILES } from '../scripts/verify-runtime-sync.mjs';
 import { esRuntimeInstalado } from './_entorno.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -79,13 +80,14 @@ export function compilarExcepcion(e) {
 }
 
 /** Los sitios de un archivo donde el nombre anterior sobrevive. Una aparición queda exenta SÓLO si
- * cae entera adentro de lo que reconoce la forma de una excepción que vale para ese archivo. */
-export function residuos(texto, exentos, archivo = '') {
+ * cae entera adentro de lo que reconoce la forma de una excepción que vale para ese archivo. En un
+ * documento no hay comentarios: una línea que empieza con `#` es un título, y se lee. */
+export function residuos(texto, exentos, archivo = '', { comentarios = true } = {}) {
   const formas = exentos.map(compilarExcepcion).filter((e) => archivo.startsWith(e.en));
   const encontrados = [];
   for (const [i, linea] of texto.split(/\r?\n/u).entries()) {
-    if (esComentario(linea)) continue;
-    const resto = sinComentarioDeCola(linea);
+    if (comentarios && esComentario(linea)) continue;
+    const resto = comentarios ? sinComentarioDeCola(linea) : linea;
     const cubierto = formas.flatMap(({ forma }) => [...resto.matchAll(forma)].map((m) => [m.index, m.index + m[0].length]));
     const libre = [...resto.matchAll(TODAS)].some((m) => !cubierto.some(([a, b]) => a <= m.index && m.index + m[0].length <= b));
     if (libre) encontrados.push({ linea: i + 1, texto: linea.trim().slice(0, 100) });
@@ -131,6 +133,36 @@ test('ninguna cadena de código versionado publica todavía el nombre anterior',
     }
   }
   assert.deepEqual(sobran, [], `${sobran.length} sitio(s) siguen publicando el nombre anterior. Si alguno es un identificador atado a algo que ya existe afuera, declaralo en ${CONTRATO} con qué se rompe si se toca`);
+});
+
+// LOS DOCUMENTOS QUE VIAJAN AL RUNTIME, desde el 2026-09-27. El barrido de arriba mira código, y
+// la revisión del 2026-09-26 encontró la sigla anterior como nombre del producto en lo que el
+// instalador copia a cada proyecto: el título de SECURITY.md, la descripción de la skill, los
+// punteros para Codex, las sub-skills. Se barren con la MISMA máquina y el MISMO contrato; lo único
+// distinto es que en Markdown una línea con `#` es un título y no un comentario. README, INSTALL y
+// CHANGELOG quedan afuera: no viajan al runtime y cuentan, a propósito, la historia del rename.
+export function documentosEntregados(listados) {
+  return listados.filter((f) => f.endsWith('.md')
+    && (COPIED_FILES.includes(f) || COPIED_DIRECTORIES.includes(f.split('/')[0])));
+}
+
+test('los documentos que el instalador copia no usan el nombre anterior como nombre del producto', SOLO_FUENTE, () => {
+  const formas = leerContrato().excepciones.filter((e) => e.forma);
+  const documentos = documentosEntregados(execFileSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' }).split('\n').map((l) => l.trim()));
+  assert.ok(documentos.length > 10, `sólo ${documentos.length} documentos entregados: el barrido no midió nada`);
+  const sobran = [];
+  for (const archivo of documentos) {
+    for (const { linea, texto } of residuos(readFileSync(join(repoRoot, archivo), 'utf8'), formas, archivo, { comentarios: false })) {
+      sobran.push(`${archivo}:${linea}  ${texto}`);
+    }
+  }
+  assert.deepEqual(sobran, [], `${sobran.length} sitio(s) de documentos entregados usan el nombre anterior`);
+});
+
+test('FALSIFICACIÓN · en un documento, un título con el nombre anterior se marca', () => {
+  assert.deepEqual(residuos(`# Seguridad de ${CORTO}`, []), [], 'en código es un comentario');
+  assert.equal(residuos(`# Seguridad de ${CORTO}`, [], 'SECURITY.md', { comentarios: false }).length, 1, 'en un documento es un título');
+  assert.deepEqual(documentosEntregados(['SKILL.md', 'README.md', 'skills/a.md', 'skills/a.mjs', 'docs/x.md', '.agents/skills/b/SKILL.md']), ['SKILL.md', 'skills/a.md', '.agents/skills/b/SKILL.md']);
 });
 
 // La excepción de los temporales se justifica por el limpiador: `scripts/limpiar-temporales.mjs`

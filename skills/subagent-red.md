@@ -1,12 +1,12 @@
 ---
-name: vcp-subagent-red
+name: ia-stack-subagent-red
 description: |
   ES: Subagente RED — escribe tests que fallan. Prohibido tocar implementación.
   EN: RED subagent — writes failing tests only. Implementation is forbidden.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# VCP Subagent — RED (Tester)
+# IA Stack Subagent — RED (Tester)
 
 **Your only job: write tests that FAIL. Do NOT touch implementation files.**
 

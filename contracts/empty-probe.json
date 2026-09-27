@@ -5,7 +5,7 @@
     "reject": "sale distinto de 0 porque no hay entradas y lo dice",
     "usage": "sale 2 porque le faltan argumentos obligatorios; exige motivo escrito, porque un gate que siempre sale 2 no se prueba",
     "empty": "sale 0 y escribe VACIO: no habia nada que comparar y no se disfraza de verde",
-    "self": "sale 0 y escribe OK legitimamente porque verifica el propio checkout de VCP, no el directorio de trabajo",
+    "self": "sale 0 y escribe OK legitimamente porque verifica el propio checkout de IA Stack, no el directorio de trabajo",
     "machine": "sale 0 pero NO mira el directorio: lee el estado de la maquina, asi que puede escribir VACIO o OK y ninguna de las dos dice nada sobre el directorio vacio. Exige motivo escrito, porque es una renuncia a comprobar. Lo que si exige es salir 0: si rechaza o pide argumentos, eso habla del gate.",
     "skip": "no se corre; exige motivo escrito y se cuenta en la salida"
   },
@@ -130,7 +130,7 @@
         "check"
       ],
       "expect": "self",
-      "why": "Valida el inventario de 68 requisitos que vive en el propio checkout (RUNTIME_ROOT derivado de import.meta.url), no en el directorio de trabajo. Su OK dice que el inventario de VCP es coherente, y eso es cierto se corra desde donde se corra."
+      "why": "Valida el inventario de 68 requisitos que vive en el propio checkout (RUNTIME_ROOT derivado de import.meta.url), no en el directorio de trabajo. Su OK dice que el inventario de IA Stack es coherente, y eso es cierto se corra desde donde se corra."
     },
     {
       "script": "verify-discovery-views.mjs",
@@ -217,7 +217,7 @@
         "SKILL.md"
       ],
       "expect": "empty",
-      "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo VCP. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
+      "why": "Sobre un directorio vacio no hay ningun documento del protocolo que revisar, y eso no es un incumplimiento: es un proyecto que todavia no instalo IA Stack. El gate escribe VACIO y sale 0. Escribir OK ahi venderia por revisados menus que no existen."
     },
     {
       "script": "verify-obsidian-export.mjs",
@@ -386,7 +386,7 @@
         "check"
       ],
       "expect": "self",
-      "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de VCP siguen apuntando a pruebas que existen."
+      "why": "Resuelve los test_ref del inventario Discovery contra el propio checkout (RUNTIME_ROOT), no contra el directorio de trabajo. Su OK dice que las 70 ataduras de IA Stack siguen apuntando a pruebas que existen."
     },
     {
       "script": "verify-threat-model.mjs",
@@ -414,7 +414,7 @@
       ],
       "expect": "reject",
       "expect_runtime": "empty",
-      "why_runtime": "Este contrato verifica los documentos de VCP -- README.md, INSTALL.md, SKILL.md -- y el instalador no copia los dos primeros. Adentro del runtime instalado en el proyecto de otra persona no hay nada que comparar, y eso es VACIO, no un rechazo. Medido el 2026-09-04 sobre una instalacion real: corrido desde la raiz del proyecto daba 113 rechazos, todos nombrando archivos del repositorio de VCP que ese proyecto no tiene ni tiene por que tener."
+      "why_runtime": "Este contrato verifica los documentos de IA Stack -- README.md, INSTALL.md, SKILL.md -- y el instalador no copia los dos primeros. Adentro del runtime instalado en el proyecto de otra persona no hay nada que comparar, y eso es VACIO, no un rechazo. Medido el 2026-09-04 sobre una instalacion real: corrido desde la raiz del proyecto daba 113 rechazos, todos nombrando archivos del repositorio de IA Stack que ese proyecto no tiene ni tiene por que tener."
     },
     {
       "script": "verify-ia-stack-coverage.mjs",

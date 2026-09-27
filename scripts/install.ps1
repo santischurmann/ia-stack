@@ -163,10 +163,10 @@ if ($ProjectDir) {
   }
   # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
   # .codex/skills/, y sus instrucciones solo en AGENTS.md -- verificado ejecutando. Sin estos dos
-  # punteros, VCP existe en el proyecto pero Codex no ve nada de el. Son punteros, no copias.
+  # punteros, IA Stack existe en el proyecto pero Codex no ve nada de el. Son punteros, no copias.
   $CodexSkillDir = Join-Path $ProjectDir '.agents\skills\ia-stack'
   New-Item -ItemType Directory -Force -Path $CodexSkillDir | Out-Null
-  # Instalar VCP dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen
+  # Instalar IA Stack dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen
   # y destino son el mismo archivo. No es un error, es que ya esta donde tiene que estar.
   $CodexSkillSrc = "$PackageDir\.agents\skills\ia-stack\SKILL.md"
   $CodexSkillDst = Join-Path $CodexSkillDir 'SKILL.md'

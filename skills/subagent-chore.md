@@ -1,12 +1,12 @@
 ---
-name: vcp-subagent-chore
+name: ia-stack-subagent-chore
 description: |
   ES: Subagente CHORE — lint, typecheck, CI, dependencias, build, zip distribuible.
   EN: CHORE subagent — lint, typecheck, CI, dependencies, build, distributable zip.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# VCP Subagent — CHORE (CI / Build / Lint)
+# IA Stack Subagent — CHORE (CI / Build / Lint)
 
 **Your job: enforce quality tooling, fix lint/typecheck issues, maintain CI, produce build artifacts.**
 

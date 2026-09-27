@@ -1,12 +1,12 @@
 ---
-name: vcp-caveman-tdd
+name: ia-stack-caveman-tdd
 description: |
   ES: Reglas hard gate de TDD Caveman. Sin test rojo visible, no hay implementación. Sin excepciones.
   EN: Caveman TDD hard gate rules. No visible red test, no implementation. Zero exceptions.
 allowed-tools: Read, Bash
 ---
 
-# VCP Caveman TDD — Hard Gate Rules
+# IA Stack Caveman TDD — Hard Gate Rules
 
 **Caveman say: test fail first. Then make pass. Then make clean. In that order. Always.**
 

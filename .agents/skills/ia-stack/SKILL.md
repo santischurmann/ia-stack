@@ -6,10 +6,10 @@ description: Protocolo de once fases con gates mecánicos para investigar, dise�
 # IA Stack
 
 **Leé el protocolo entero antes de operar**: son once fases encadenadas por gates que se ejecutan, y
-saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó VCP acá:
+saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó IA Stack acá:
 
-- `SKILL.md` en la raíz — este es el repositorio de VCP.
-- `.vibe/ia-stack-runtime/SKILL.md` — VCP está instalado como herramienta en este proyecto.
+- `SKILL.md` en la raíz — este es el repositorio de IA Stack.
+- `.vibe/ia-stack-runtime/SKILL.md` — IA Stack está instalado como herramienta en este proyecto.
 
 Este archivo es un **puntero, no una copia**. Codex descubre skills de repositorio sólo en
 `.agents/skills/<nombre>/SKILL.md` y en `.codex/skills/<nombre>/SKILL.md` — verificado ejecutando:

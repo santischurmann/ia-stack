@@ -60,6 +60,14 @@
       "no_cubre": "spawnSync('git', ['config', 'user.email', 'vcp-tests@example.invalid'], { cwd: root });"
     },
     {
+      "forma": "\\bvcp/<project>/",
+      "clase": "clave de memoria externa (Engram)",
+      "por_que": "La clave con la que SKILL.md y skills/vibe-memory.md mandan a guardar y a buscar el estado de cada gate en Engram: `vcp/<project>/<feature-slug>/gate-state`, con upsert. Las memorias ya escritas por cada instalacion viven bajo esa clave. Esta en documentos, que el guarda no barre: la entrada deja escrita la decision del 2026-09-27, y el dia que el guarda lea los .md, es la que tiene que estar.",
+      "que_pasa_si_se_toca": "El agente empieza a guardar y a buscar bajo otra clave: las memorias viejas quedan huerfanas, y la recuperacion opcional deja de encontrar nada sin un solo error, porque buscar y no encontrar es un resultado valido.",
+      "ejemplo": "`topic_key: vcp/<project>/<feature-slug>/gate-state`",
+      "no_cubre": "`topic_key: vcp/config`"
+    },
+    {
       "archivo": "tests/nombre-anterior.test.mjs",
       "clase": "el propio guarda",
       "por_que": "La prueba que deriva esta comprobacion tiene que nombrar lo que busca. Se excluye a si misma o se acusaria sola, cada vez.",

@@ -1,12 +1,12 @@
 ---
-name: vcp-deploy
+name: ia-stack-deploy
 description: |
   ES: Sub-paso opcional de Phase 8.2 — build versionado, dist.zip+checksums, CHANGELOG, tag. Solo si el proyecto distribuye artefacto.
   EN: Optional Phase 8.2 sub-step — versioned build, dist.zip+checksums, CHANGELOG, tag. Only if the project ships a distributable artifact.
 allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
-# VCP Deploy — artifact sub-step (Phase 8.2)
+# IA Stack Deploy — artifact sub-step (Phase 8.2)
 
 **Precondition:** Phases 6.1 a 8.1 already done (verify+simplify+security+adversarial+tests+commit green). This file does NOT re-verify — it packages.
 

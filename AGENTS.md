@@ -1,8 +1,8 @@
 # IA Stack
 
 **Leé el protocolo entero antes de operar**: son once fases con gates mecánicos, y saltarse uno
-invalida el resto. Está en `SKILL.md` si este es el repositorio de VCP, o en
-`.vibe/ia-stack-runtime/SKILL.md` si VCP está instalado acá como herramienta.
+invalida el resto. Está en `SKILL.md` si este es el repositorio de IA Stack, o en
+`.vibe/ia-stack-runtime/SKILL.md` si IA Stack está instalado acá como herramienta.
 
 Reglas que no dependen de la fase:
 

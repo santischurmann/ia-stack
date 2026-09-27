@@ -1,12 +1,12 @@
 ---
-name: vcp-spec-plan-templates
+name: ia-stack-spec-plan-templates
 description: |
   ES: Templates embebidos para spec.md, plan.md, tasks.json y ADRs. Config menus en SKILL.md Phase 3/2.
   EN: Embedded templates for spec.md, plan.md, tasks.json, ADRs. Config menus live in SKILL.md Phase 3/2.
 allowed-tools: Read, Write, Edit
 ---
 
-# VCP Templates
+# IA Stack Templates
 
 Use verbatim. Replace `<placeholders>`. Config menu (Phase 3 SPEC / Phase 4 PLAN, `SKILL.md`) picks detail level + granularity before you fill these — minimal spec skips Non-Goals+Risk Notes, exhaustive keeps everything.
 

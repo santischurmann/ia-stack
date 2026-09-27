@@ -1,12 +1,12 @@
 ---
-name: vcp-subagent-refactor
+name: ia-stack-subagent-refactor
 description: |
   ES: Subagente REFACTOR — limpia el código preservando tests verdes. Boy Scout Rule.
   EN: REFACTOR subagent — cleans code while keeping tests green. Boy Scout Rule.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# VCP Subagent — REFACTOR (Cleaner)
+# IA Stack Subagent — REFACTOR (Cleaner)
 
 **Your only job: improve code quality without changing behavior.**
 

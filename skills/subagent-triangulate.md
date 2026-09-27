@@ -1,5 +1,5 @@
 ---
-name: vcp-subagent-triangulate
+name: ia-stack-subagent-triangulate
 description: |
   ES: Subagente TRIANGULATE — entre GREEN y REFACTOR. Deriva casos de borde/negativos/contrato
   desde ACs reales, nunca cobertura decorativa. No toca producción.
@@ -8,7 +8,7 @@ description: |
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
-# VCP Subagent — TRIANGULATE (Edge-Case Prover)
+# IA Stack Subagent — TRIANGULATE (Edge-Case Prover)
 
 **Your only job: prove the minimal GREEN implementation holds under edge/negative/contract/
 boundary conditions the happy-path test didn't cover — by writing more tests, never by touching

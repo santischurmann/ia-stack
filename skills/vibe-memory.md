@@ -1,12 +1,12 @@
 ---
-name: vcp-memory
+name: ia-stack-memory
 description: |
   ES: Protocolo de memoria persistente en .vibe/ — qué guardar, cuándo, en qué archivo.
   EN: Persistent memory protocol in .vibe/ — what to save, when, in which file.
 allowed-tools: Read, Write, Edit, Bash
 ---
 
-# VCP Memory Protocol — .vibe/
+# IA Stack Memory Protocol — .vibe/
 
 Zero dependencies. All memory is plain Markdown files versioned with the project.
 Engram (external MCP memory, if the tool is present in session) is an optional mirror for
@@ -100,7 +100,7 @@ Show user a 3-5 line summary of what the memory contains.
 | Starting a feature (before its first gate) | `SESSION.md` | Set the single `**Feature slug:** <lowercase-kebab-case>` declaration |
 | Role/phase handoff that recommends advancing | `handoffs/<feature-slug>-<task-id>-<gate>.md` | Exact report with one `NOT_REVIEWED:` declaration; run `verify-handoff-report.mjs` before transition |
 | Passing/failing a gate (RED/GREEN/coverage) | `SESSION.md` | One line: `T<id> <gate> <result>` — resume checkpoint |
-| Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` |
+| Passing/failing a gate — duplicado opcional | Engram `mem_save` si el tool está presente | mismo contenido que la fila de arriba; `topic_key: vcp/<project>/<feature-slug>/gate-state` (prefijo del nombre anterior, a propósito: es la clave de las memorias ya guardadas) |
 | Finding debt but deferring | `DEBT.md` | What, where, severity, why deferred |
 | native security gate Medium/Low finding (Phase 6.2) | `DEBT.md` | Finding + category + severity + why not fixed now |
 | Session end | `sessions/` | Archive SESSION.md with date prefix |
@@ -232,7 +232,7 @@ desactiva el primer día**.
 ## LESSONS PROTOCOL — confirm-gated, deduped, never silently deleted
 
 Source of the "learn from own errors across projects" goal. Runs at Phase 8.3 (Reflect) and on
-demand (`/vibe-lessons` or user asks "qué aprendimos"). Applies equally when VCP is reused on a
+demand (`/vibe-lessons` or user asks "qué aprendimos"). Applies equally when IA Stack is reused on a
 different project — `LESSONS.md` in the *global* `.vibe/` equivalent (or a project-local copy
 promoted manually) is what makes an error learned once stop repeating on the next project.
 
@@ -248,13 +248,13 @@ lessons using the schema above. Cap at 15 — force prioritization over dumping 
 keywords. **Normalize first** (lowercase both the candidate and existing entries, collapse
 repeated whitespace) before comparing — a duplicate with trivial formatting differences (extra
 space, different case) must still match (source: engram's `hashNormalized`, verified portable —
-no DB/index needed, VCP compares against a human-sized file). Match found → don't draft a new
+no DB/index needed, IA Stack compares against a human-sized file). Match found → don't draft a new
 entry, instead prepare a note `[overlaps with: LESSON-<n>]` for the confirm step (annotate,
 never silently merge/drop).
 
 **Sensitive-content pre-check.** Before showing a candidate in the confirm gate, grep its text
 for `token|authorization|cookie|secret|hash|password|bearer` (source: engram's fail-closed
-audit-metadata rejector, adapted — VCP has human confirmation already, so this warns instead of
+audit-metadata rejector, adapted — IA Stack has human confirmation already, so this warns instead of
 auto-rejecting, since a keyword match alone can't prove something is genuinely sensitive). A
 match doesn't block the candidate, it flags it: `⚠ possible sensitive content`.
 

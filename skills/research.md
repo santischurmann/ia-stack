@@ -5,7 +5,7 @@ minutos sin dejar de ser la superficie donde los contratos están clavados.
 
 **No se borró ninguna ancla:** cada frase que un contrato exige sigue existiendo, con su campo
 `file` apuntando acá.
-Para un cambio que no sea claramente trivial, VCP no empieza escribiendo código ni una spec a
+Para un cambio que no sea claramente trivial, IA Stack no empieza escribiendo código ni una spec a
 ciegas. Primero hace una pasada de **Discovery**. Su salida es la evidencia que alimenta la spec;
 no es un reporte decorativo al final.
 
@@ -44,7 +44,7 @@ verdad: se regeneran y se comparan byte a byte.
 El corpus externo puede auditarse con `research/build-complete-review-index.mjs`: abre y hashea
 cada entrada materializada, y registra señales estructurales sin confundirlas con comprensión
 semántica. El ledger profundo mantiene separado lo que fue leído funcionalmente de lo que sólo fue
-revisado estáticamente; VCP nunca presenta un barrido automático como lectura humana.
+revisado estáticamente; IA Stack nunca presenta un barrido automático como lectura humana.
 
 Los lotes de lectura profunda se validan con `research/verify-semantic-deep-evidence.mjs`: cada fila
 debe conservar el commit, SHA-256 y cantidad de líneas del manifest, y sus citas deben apuntar a
@@ -58,7 +58,7 @@ semántica funcional.
 
 ### Diagnóstico antes de construir
 
-Después de entender qué quiere construir la persona, pero antes de escribir la Spec, VCP guarda
+Después de entender qué quiere construir la persona, pero antes de escribir la Spec, IA Stack guarda
 seis piezas de Discovery en `docs/discovery/<feature>/diagnostics/`: CAIO (proceso roto), mapa de
 bucle (hoy y objetivo), PRD, plan de implementación, plan de adopción y plan de recurrencia. Son
 la entrada de la Spec: obligan a declarar quién decide, qué se mide, qué se construye, cómo se

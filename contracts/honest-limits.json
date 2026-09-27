@@ -23,7 +23,7 @@
       "limit_id": "vcp-does-not-replace-specialist-review",
       "file": "SECURITY.md",
       "phrase": "no reemplaza una revisión especializada",
-      "why": "VCP vuelve el trabajo más verificable; no vuelve seguro un proyecto inseguro. Sin esta frase, pasar los gates se lee como una auditoría de seguridad ya hecha, que es la lectura que deja al proyecto sin revisión real."
+      "why": "IA Stack vuelve el trabajo más verificable; no vuelve seguro un proyecto inseguro. Sin esta frase, pasar los gates se lee como una auditoría de seguridad ya hecha, que es la lectura que deja al proyecto sin revisión real."
     },
     {
       "limit_id": "red-node-evidence-is-not-test-quality",
@@ -197,7 +197,7 @@
       "limit_id": "empty-probe-self-is-a-human-claim",
       "file": "skills/gates.md",
       "phrase": "`self` es una declaración humana, no una comprobación",
-      "why": "La sonda acepta que un gate salga OK sobre un directorio vacio si el contrato dice que ese gate mira el propio checkout de VCP. No verifica que sea cierto. Escrita sobre un gate que si mira el proyecto, esa etiqueta devuelve el verde vacio al lugar donde estaba, y encima con apariencia de estar justificado."
+      "why": "La sonda acepta que un gate salga OK sobre un directorio vacio si el contrato dice que ese gate mira el propio checkout de IA Stack. No verifica que sea cierto. Escrita sobre un gate que si mira el proyecto, esa etiqueta devuelve el verde vacio al lugar donde estaba, y encima con apariencia de estar justificado."
     },
     {
       "limit_id": "audit-chain-anchor-is-git-history-not-a-notary",
@@ -209,7 +209,7 @@
       "limit_id": "receipt-custody-signs-with-whatever-key-is-reachable",
       "file": "skills/gates.md",
       "phrase": "si el agente puede correr `git commit -S`, firma como vos",
-      "why": "El gate informa el estado de firma del commit que lleva el recibo, que es real y portable: git ya lo trae. Pero VCP no custodia claves. Si la clave esta al alcance del proceso que escribe el recibo, la firma prueba que alguien con acceso firmo, no quien. Vale exactamente hasta donde la clave exija presencia humana: una passphrase que no este en el disco, una llave de hardware que haya que tocar."
+      "why": "El gate informa el estado de firma del commit que lleva el recibo, que es real y portable: git ya lo trae. Pero IA Stack no custodia claves. Si la clave esta al alcance del proceso que escribe el recibo, la firma prueba que alguien con acceso firmo, no quien. Vale exactamente hasta donde la clave exija presencia humana: una passphrase que no este en el disco, una llave de hardware que haya que tocar."
     },
     {
       "limit_id": "phase-decision-deliberation-detects-impossible-not-dishonest",

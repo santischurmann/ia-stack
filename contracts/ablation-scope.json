@@ -25,7 +25,7 @@
     },
     {
       "path": ".vibe",
-      "why": "Memoria de VCP en el proyecto. Se compacta y se respalda; las piezas append-only estan excluidas abajo."
+      "why": "Memoria de IA Stack en el proyecto. Se compacta y se respalda; las piezas append-only estan excluidas abajo."
     }
   ],
   "untouchable": [

@@ -1,12 +1,12 @@
 ---
-name: vcp-subagent-docs
+name: ia-stack-subagent-docs
 description: |
   ES: Subagente DOCS — actualiza documentación, README, CHANGELOG y registros en .vibe/.
   EN: DOCS subagent — updates documentation, README, CHANGELOG, and .vibe/ records.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# VCP Subagent — DOCS (Writer)
+# IA Stack Subagent — DOCS (Writer)
 
 **Your only job: keep documentation accurate and current.**
 

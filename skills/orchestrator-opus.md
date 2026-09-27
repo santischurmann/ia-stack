@@ -1,14 +1,14 @@
 ---
-name: vcp-orchestrator-opus
+name: ia-stack-orchestrator-opus
 description: |
   ES: Referencia técnica del orquestador — protocolo de delegación, DoD, flujo de subagentes y contrato interno nativo.
   EN: Orchestrator technical reference — delegation protocol, DoD, subagent flow and native internal orchestration contract.
 allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite, Skill
 ---
 
-# VCP Orchestrator Reference
+# IA Stack Orchestrator Reference
 
-Orchestrator = single responsible agent, runs under the internal VCP orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 1 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 5 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
+Orchestrator = single responsible agent, runs under the internal IA Stack orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 1 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 5 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
 
 ---
 

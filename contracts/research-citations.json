@@ -103,7 +103,7 @@
     }
   ],
   "sweep": {
-    "why": "El informe leyó 320 archivos de 15581. Este barrido corrió seis sondas sobre los 14421 legibles, o sea el 100 % de lo que se puede leer como texto, para contestar una pregunta que la lectura parcial no podía: las soluciones que VCP derivó trabajando, ¿estaban en el corpus sin que nadie las viera?",
+    "why": "El informe leyó 320 archivos de 15581. Este barrido corrió seis sondas sobre los 14421 legibles, o sea el 100 % de lo que se puede leer como texto, para contestar una pregunta que la lectura parcial no podía: las soluciones que IA Stack derivó trabajando, ¿estaban en el corpus sin que nadie las viera?",
     "limit": "Barrer no es leer. Cada sonda es una expresión regular: una idea escrita con palabras que el patrón no contiene es invisible, y un cero significa que el patrón no encontró nada, no que no esté.",
     "scanned": 14421,
     "skipped": 1160,

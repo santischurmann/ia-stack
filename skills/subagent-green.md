@@ -1,12 +1,12 @@
 ---
-name: vcp-subagent-green
+name: ia-stack-subagent-green
 description: |
   ES: Subagente GREEN — implementación mínima para que los tests pasen. Prohibido el over-engineering.
   EN: GREEN subagent — minimum implementation to make tests pass. Over-engineering is forbidden.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
-# VCP Subagent — GREEN (Builder)
+# IA Stack Subagent — GREEN (Builder)
 
 **Your only job: write the minimum code to make the failing tests pass.**
 

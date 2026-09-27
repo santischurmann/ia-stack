@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VibeCodeProtocols installer. It installs a co-located runtime into each chosen project so
+# IA Stack installer. It installs a co-located runtime into each chosen project so
 # every command in SKILL.md resolves from that project, not from the package clone.
 set -euo pipefail
 
@@ -181,7 +181,7 @@ if [ -n "$PROJECT_DIR" ]; then
   mkdir -p "$PROJECT_DIR/.agents/skills/ia-stack"
   CODEX_SKILL_SRC="$PACKAGE_DIR/.agents/skills/ia-stack/SKILL.md"
   CODEX_SKILL_DST="$PROJECT_DIR/.agents/skills/ia-stack/SKILL.md"
-  # Instalar VCP dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen y
+  # Instalar IA Stack dentro de su propio repo es el caso normal para refrescar el runtime: ahi origen y
   # destino son el mismo archivo y `cp` falla. No es un error, es que ya esta donde tiene que estar.
   if [ "$CODEX_SKILL_SRC" != "$CODEX_SKILL_DST" ]; then
     cp "$CODEX_SKILL_SRC" "$CODEX_SKILL_DST"

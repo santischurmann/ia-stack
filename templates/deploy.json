@@ -6,7 +6,7 @@
     "manifest": "El archivo que declara las dependencias, o «ninguno — <motivo>».",
     "lockfile_sha256": "La huella del lockfile, o «ninguno — <motivo>».",
     "count": 0,
-    "audited_by": "Qué herramienta las auditó, o «ninguno — <motivo>». VCP no trae SCA: que nadie haya auditado es una respuesta válida, el silencio no."
+    "audited_by": "Qué herramienta las auditó, o «ninguno — <motivo>». IA Stack no trae SCA: que nadie haya auditado es una respuesta válida, el silencio no."
   },
   "ignored_sensitive": [
     { "path": ".env", "why": "Por qué está bien que este archivo ignorado por Git exista acá. Se nombra, no se lee." }

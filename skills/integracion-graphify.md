@@ -1,10 +1,10 @@
 # Integración opcional con un grafo externo
 
-**Esto NO es parte del camino obligatorio del protocolo.** VCP cierra la fase 8 sin ninguna
+**Esto NO es parte del camino obligatorio del protocolo.** IA Stack cierra la fase 8 sin ninguna
 herramienta de grafo: para eso está `verify-ia-stack-index.mjs`, que es Node y git y nada más.
 
 Durante un tiempo estos pasos estaban en la fase 8.2 **sin marcarse como opcionales**, y encima un
-gate estaba cableado a la salida de esa CLI. Quien instalara VCP sin ella no podía cerrar la fase,
+gate estaba cableado a la salida de esa CLI. Quien instalara IA Stack sin ella no podía cerrar la fase,
 y el documento no se lo decía. Eso era una dependencia no declarada presentada como requisito.
 
 Si tenés la herramienta y la querés usar, los pasos son estos.

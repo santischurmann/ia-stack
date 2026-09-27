@@ -1,4 +1,4 @@
-# Verificar el propio VCP
+# Verificar el propio IA Stack
 
 Este documento vivía adentro del README. Se mudó para que el README pueda enseñar en cinco
 minutos sin dejar de ser la superficie donde los contratos están clavados.

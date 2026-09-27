@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-19
 **Version:** 1.0
-**Author:** Opus (VibeCodeProtocols)
+**Author:** Opus (IA Stack)
 **Status:** Approved
 
 ---
