@@ -104,14 +104,24 @@ export function leerContrato(cwd = repoRoot, leer = (r) => readFileSync(join(cwd
     assert.ok(String(e.por_que ?? '').length > 40, `la excepción ${nombre} no dice por qué se queda`);
     assert.ok(String(e.que_pasa_si_se_toca ?? '').length > 40, `la excepción ${nombre} no dice qué se rompe si se toca`);
     if (e.archivo !== undefined) continue;
-    // La forma se prueba contra sus dos ejemplos: uno que tiene que cubrir y uno, del mismo aspecto,
-    // que no. Sin el segundo, una forma demasiado ancha pasa igual que una justa —que es lo que pasó.
+    // La forma se prueba contra sus ejemplos: uno que tiene que cubrir, y UNO POR CADA BORDE que no:
+    // con un solo contraejemplo, sacar un borde de la forma la dejaba más ancha y el contrato
+    // cargaba igual. Lo encontró la revisión del 2026-09-27.
     const donde = `${e.en ?? ''}ejemplo.mjs`;
+    const noCubre = typeof e.no_cubre === 'string' ? [e.no_cubre] : e.no_cubre;
     assert.equal(typeof e.ejemplo, 'string', `la excepción ${nombre} no trae un ejemplo de lo que cubre`);
-    assert.equal(typeof e.no_cubre, 'string', `la excepción ${nombre} no trae un ejemplo de lo que NO cubre`);
+    assert.ok(Array.isArray(noCubre) && noCubre.length > 0 && noCubre.every((x) => typeof x === 'string'), `la excepción ${nombre} no trae un ejemplo de lo que NO cubre`);
+    // Un ejemplo sin ninguna aparición que el guarda detecte no prueba nada: la forma lo «cubre» gratis.
+    assert.ok(NOMBRE_ANTERIOR.test(e.ejemplo), `el ejemplo de ${nombre} no tiene ninguna aparición que el guarda detecte`);
     assert.ok(new RegExp(e.forma, 'u').test(e.ejemplo), `la forma de ${nombre} no reconoce su propio ejemplo`);
     assert.deepEqual(residuos(e.ejemplo, [e], donde), [], `la excepción ${nombre} no cubre su propio ejemplo`);
-    assert.equal(residuos(e.no_cubre, [e], donde).length, 1, `la excepción ${nombre} cubre lo que dice que no cubre`);
+    for (const caso of noCubre) {
+      assert.equal(residuos(caso, [e], donde).length, 1, `la excepción ${nombre} cubre lo que dice que no cubre: ${caso}`);
+    }
+  }
+  for (const x of d.documentados ?? []) {
+    assert.ok(String(x.por_que ?? '').length > 40, `lo documentado ${x.identificador} no dice por qué se queda`);
+    assert.ok(String(x.que_pasa_si_se_toca ?? '').length > 40, `lo documentado ${x.identificador} no dice qué se rompe si se toca`);
   }
   return d;
 }
@@ -175,7 +185,13 @@ test('la excepción de los temporales reconoce los mismos prefijos que deriva el
   const forma = compilarExcepcion(excepcion).forma;
   const reconocidos = new Set();
   const carpeta = join(repoRoot, excepcion.en);
-  for (const nombre of readdirSync(carpeta).filter((n) => n.endsWith('.mjs'))) {
+  // Sobre TODO lo que el guarda perdona -- la carpeta entera, a cualquier profundidad, y cada
+  // extensión que barre --, no sólo sobre lo que lee el limpiador, que son los .mjs del primer nivel.
+  // Un mkdtemp con el prefijo viejo en una subcarpeta o en un .sh quedaría perdonado por el guarda
+  // sin que el limpiador lo derive: el motivo de la excepción no valdría para él, y acá se ve.
+  const perdonables = readdirSync(carpeta, { recursive: true }).map(String).filter((n) => EXTENSIONES.some((ext) => n.endsWith(ext)));
+  assert.ok(perdonables.length > 50, `sólo ${perdonables.length} archivos bajo ${excepcion.en}: la comparación no mide nada`);
+  for (const nombre of perdonables) {
     for (const m of readFileSync(join(carpeta, nombre), 'utf8').matchAll(forma)) reconocidos.add(m[0].match(/'([^']*)'$/u)[1]);
   }
   const derivados = prefijosDe(repoRoot).filter((p) => NOMBRE_ANTERIOR.test(p));
@@ -207,6 +223,9 @@ test('FALSIFICACIÓN · una excepción cubre sólo lo que cae ENTERO adentro de 
   assert.equal(residuos(`const r = mkdtempSync(join(tmpdir(), 'vcp-a-')); log('${CORTO}');`, [temporales], 'tests/x.test.mjs').length, 1);
   // Y la forma vale donde dice que vale: el mismo mkdtemp en scripts/ no lo deriva el limpiador.
   assert.equal(residuos("const r = mkdtempSync(join(tmpdir(), 'vcp-a-'));", [temporales], 'scripts/x.mjs').length, 1);
+  // SOLAPAMIENTO PARCIAL: una forma que cubre el comienzo del nombre no perdona el nombre entero.
+  assert.equal(residuos(`const d = '${LARGO}';`, [LARGO.slice(0, 8)]).length, 1, 'cubrir una parte no es cubrir la aparición');
+  assert.deepEqual(residuos(`const d = '${LARGO}';`, [LARGO]), [], 'y cubrirla entera, sí');
 });
 
 test('FALSIFICACIÓN · una excepción sin motivo, sin ejemplos, o con una forma más ancha de lo que dice, no es una excepción', () => {
@@ -220,9 +239,17 @@ test('FALSIFICACIÓN · una excepción sin motivo, sin ejemplos, o con una forma
     [{ que_pasa_si_se_toca: 'nada' }, /no dice qué se rompe/u],
     [{ ejemplo: undefined }, /no trae un ejemplo de lo que cubre/u],
     [{ no_cubre: undefined }, /no trae un ejemplo de lo que NO cubre/u],
-    [{ ejemplo: "const p = 'otra cosa';" }, /no reconoce su propio ejemplo/u],
+    [{ ejemplo: "const p = 'otra cosa';" }, /ninguna aparición que el guarda detecte/u],
+    [{ ejemplo: "const p = 'VCP' + 'x';" }, /no reconoce su propio ejemplo/u],
+    // Una forma que reconoce la línea del ejemplo pero no cubre la aparición entera.
+    [{ forma: "p = '" }, /no cubre su propio ejemplo/u],
+    // Un ejemplo sin nada que el guarda vea: la sigla pegada a otra palabra no es una aparición.
+    [{ forma: 'VCPLINE:', ejemplo: "const p = 'VCPLINE:';" }, /ninguna aparición que el guarda detecte/u],
     // La forma demasiado ancha: `VCP` cubre también lo que el ejemplo negativo dice que no cubre.
     [{ forma: 'VCP' }, /cubre lo que dice que no cubre/u],
+    // Con una lista, basta UN contraejemplo cubierto para rechazar.
+    [{ no_cubre: ["const p = 'VCP';", "const p = 'VCP:';"] }, /cubre lo que dice que no cubre: const p = 'VCP:';/u],
+    [{ no_cubre: [] }, /no trae un ejemplo de lo que NO cubre/u],
     [{ archivo: 'x.mjs' }, /una forma o un archivo, una sola/u],
   ]) {
     const excepcion = { ...bien, ...cambio };
