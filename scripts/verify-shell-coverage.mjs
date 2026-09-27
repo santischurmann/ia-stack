@@ -34,11 +34,11 @@ const COMMENT_OR_BLANK = /^\s*(?:#.*)?$/u;
 /** Prefer a real Bash on Windows: System32\bash.exe can be a WSL shim whose distro is absent. */
 export function resolveBash(env = process.env, exists = existsSync, platform = process.platform) {
   if (platform !== 'win32') return 'bash';
-  // Las dos, prefiriendo la nueva.
-  const declarado = env.IA_STACK_BASH_PATH ?? env.IA_STACK_BASH_PATH;
-  const configured = typeof declarado === 'string' && declarado.trim() !== ''
-    ? declarado
-    : WINDOWS_GIT_BASH;
+  // Las dos, prefiriendo la nueva: gana la primera que no este vacia. El rename de 45c6172 habia
+  // cambiado el nombre en los dos lados y leia la nueva dos veces (cuarta revision, 2026-09-27).
+  const declarado = [env.IA_STACK_BASH_PATH, env.VCP_BASH_PATH]
+    .find((ruta) => typeof ruta === 'string' && ruta.trim() !== '');
+  const configured = declarado ?? WINDOWS_GIT_BASH;
   return exists(configured) ? configured : 'bash';
 }
 

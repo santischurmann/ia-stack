@@ -113,10 +113,19 @@ test('resolveBash evita el shim WSL roto cuando hay Git Bash disponible', soloEn
   else assert.equal(resolveBash({}), existsSync(WINDOWS_GIT_BASH) ? WINDOWS_GIT_BASH : 'bash');
   assert.equal(resolveBash({}, () => true, 'linux'), 'bash');
   assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
-  // EL NOMBRE VIEJO SE SIGUE LEYENDO: quien ya lo tenia puesto no se entera del cambio de nombre
-  // del protocolo por un Bash que de golpe no se encuentra.
-  assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/custom/bash.exe' }, (path) => path === 'C:/custom/bash.exe'), 'C:/custom/bash.exe');
   assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/missing/bash.exe' }, () => false), 'bash');
+});
+
+// EL NOMBRE ANTERIOR DE LA VARIABLE SE SIGUE LEYENDO, y ahora de verdad. El rename de 45c6172 cambió
+// el nombre en los DOS lados del `??` y dejó la variable nueva leída dos veces; la prueba de arriba
+// decía «el nombre viejo se sigue leyendo» y volvía a probar la nueva. Un verde falso, que encontró
+// la cuarta revisión del 2026-09-27. Sin depender de la plataforma: se le pasa 'win32'.
+test('IA_STACK_BASH_PATH manda, y el nombre anterior de la variable se sigue leyendo', () => {
+  const hay = (ruta) => (path) => path === ruta;
+  assert.equal(resolveBash({ VCP_BASH_PATH: 'C:/viejo/bash.exe' }, hay('C:/viejo/bash.exe'), 'win32'), 'C:/viejo/bash.exe', 'la del nombre anterior, sola, vale');
+  assert.equal(resolveBash({ IA_STACK_BASH_PATH: 'C:/nuevo/bash.exe', VCP_BASH_PATH: 'C:/viejo/bash.exe' }, () => true, 'win32'), 'C:/nuevo/bash.exe', 'con las dos, gana la nueva');
+  assert.equal(resolveBash({ IA_STACK_BASH_PATH: '  ', VCP_BASH_PATH: 'C:/viejo/bash.exe' }, () => true, 'win32'), 'C:/viejo/bash.exe', 'la nueva en blanco no tapa la anterior');
+  assert.equal(resolveBash({}, hay(WINDOWS_GIT_BASH), 'win32'), WINDOWS_GIT_BASH, 'sin ninguna, Git Bash');
 });
 
 test('runScenario sustituye el directorio temporal en setup y args', () => {
