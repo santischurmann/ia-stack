@@ -86,8 +86,14 @@ Lo que las revisiones dejaron abierto está en el CHANGELOG, «Conocido, y abier
 
 **DONDE RETOMAR**
 
-1. CI de la rama en las dos plataformas → revisión del otro par → el «sí» del operador **en ese
-   momento** → commit de versión + tag en un solo push. Subir el tag es publicar.
+1. **La 3.0.0 está publicada**, con el «sí» del operador en esta sesión, en el momento. Un solo push
+   atómico: `main` y el tag anotado `v3.0.0`, los dos en `bdbd9fd`. La release «IA Stack 3.0.0» la
+   armó GitHub desde el tag y la probó instalándola antes de publicarla; trae `ia-stack-3.0.0.zip` y
+   su `.sha256`, y sus notas son la sección [3.0.0] del CHANGELOG. Verificada después desde afuera,
+   bajándola: checksum OK, 313 archivos bajo `ia-stack/` y ninguno fuera, `SKILL.md` dice 3.0.0, y
+   la instalación desde el zip sale bien y deja el runtime sellado. El CI de `main` y el del tag sobre `bdbd9fd`, en verde: 2213 pruebas y 0 fallas en Windows y en Linux, cobertura 100% sobre los 65 scripts sobre la unión, y la prueba de la etiqueta pasa porque el tag llegó en el mismo push.
+   Lo que sigue es de otras sesiones: reinstalar el runtime en cada proyecto que usa el protocolo,
+   al cierre de su fase.
 2. Diferido a 3.0.1: la sigla pegada a guion bajo (BAJO 1) y los `existsSync` que filtran en vez de
    afirmar (BAJO 2). La carpeta vacía con el nombre anterior que el instalador de bash dejó en el
    directorio GLOBAL de skills de esta máquina, entre el 15-09 y esta versión, ya no está: el operador
