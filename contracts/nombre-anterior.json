@@ -19,7 +19,7 @@
       "que_pasa_si_se_toca": "Lo mismo que arriba: se rompe la memoria muscular de quien ya lo usa, a cambio de nada.",
       "ejemplo": "echo \"Next: invoke /ia-stack (/VibeCodeProtocols sigue andando)\"",
       "no_cubre": [
-        "const raiz = join(base, 'Desktop/VibeCodeProtocols/scripts');",
+        "const raiz = join(base, 'checkouts/VibeCodeProtocols/scripts');",
         "const d = '~/VibeCodeProtocols';",
         "const d = \"C:/VibeCodeProtocols\";",
         "cd ${HOME}/VibeCodeProtocols",

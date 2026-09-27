@@ -31,8 +31,8 @@ versión sobre un test mezclado no tienen arreglo, porque la evidencia sellada n
 ### Lo que encontró la revisión antes de etiquetar
 
 La 3.0.0 no se etiquetó el día que se escribió esta sección: una revisión independiente de los
-últimos commits encontró un defecto alto y tres medios, y cada uno se arregló con su prueba roja
-primero.
+últimos commits encontró un defecto alto y tres medios, y una segunda revisión, sobre esos mismos
+arreglos, dos medios más. Cada uno se arregló con su prueba roja primero.
 
 - **El zip de la release no instalaba.** Le faltaban `AGENTS.md` y `.agents/`, que los dos
   instaladores copian sin condición: quien descomprimía y corría `./scripts/install.sh` caía en
@@ -50,16 +50,22 @@ primero.
   skills, en cada instalación. Y la poda de `.vibe/vcp-runtime` —la carpeta del runtime de antes del
   rename— no la había ejercitado nunca ninguna prueba; ahora las dos ramas del instalador la
   plantan y exigen que quede entera en el archivo.
+- **Esa poda dejaba roto el puntero de Codex que apuntaba a la carpeta vieja**, y Codex veía dos
+  skills del protocolo, una rota. Ahora el puntero viejo va al mismo archivo que la carpeta, y todo
+  lo que una corrida aparta lleva un solo sello con fecha y hora: con la fecha sola, una segunda
+  poda el mismo día anidaba.
 - **El guarda del nombre anterior tapaba 196 sitios con una sola excepción.** Borraba el texto de
   cada excepción de la línea entera, y `vcp-`, declarada para los prefijos de temporales, se comía
   cualquier cosa que empezara igual. Ahora cada excepción es una **forma** con un ejemplo que cubre y
   uno que no, y el guarda barre también los documentos que viajan al runtime: 49 sitios de código y
   61 de documentos, renombrados. La clave de Engram `vcp/<project>/…` **se queda**, declarada: es la
-  clave de las memorias ya guardadas.
+  clave de las memorias ya guardadas. La segunda revisión encontró que esas formas seguían siendo
+  más anchas de lo que decían —`~/`, `C:/` o una URL pasaban—: ahora cada forma tiene bordes, y un
+  contraejemplo por cada borde.
 - **Una prueba leía el entorno real** (`7798b34`): afirmaba la concurrencia por defecto del gate de
   cobertura, y usar la perilla que ese gate documenta para máquinas con poca memoria la ponía roja.
-  Y nada fijaba cuál de sus dos nombres gana si están los dos: ahora gana el nuevo,
-  `IA_STACK_TEST_CONCURRENCY`, y el anterior sigue andando solo.
+  Y nada fijaba cuál de sus dos nombres gana si están los dos: ahora gana el primero que valga,
+  empezando por el nuevo, `IA_STACK_TEST_CONCURRENCY`; el anterior sigue andando solo.
 
 ### Tres hallazgos de un proyecto instalado, medidos antes de tocar
 
@@ -142,6 +148,8 @@ force push público.
   etiqueta un commit que ya pasó el CI en las dos plataformas, y subir el tag es publicar.
 - El guarda del nombre anterior no barre README, INSTALL, CHANGELOG ni los `.json`, no ve los
   comentarios del código, y no ve la sigla pegada a un guion bajo.
+- Lo que el instalador de bash dejó en el directorio **global** de skills antes de esta versión —una
+  carpeta vacía con el nombre anterior— no se aparta: lo global no se poda.
 
 ### Lo anterior de esta versión, del 2026-09-08 al 2026-09-16
 

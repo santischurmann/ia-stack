@@ -15,8 +15,10 @@ una revisión independiente de los últimos cuatro commits encontró un ALTO y t
 verificados contra el código antes de tocar.
 
 **Estado**: la suite completa y la cobertura se miden en el CI de la rama y no acá: la máquina está
-compartida y la memoria la necesita otra sesión. Acá, de a un archivo: cada prueba tocada o que lee
-algo de lo tocado, en verde, y los gates de índice, repositorio limpio, contrato, sonda vacía y menús.
+compartida y la memoria la necesita otra sesión. CI de la rama sobre `79383ed`: 2204 pruebas y 0
+fallas en Windows y en Linux, cobertura 100% sobre los 65 scripts, sobre la unión de las dos. Acá, de
+a un archivo: cada prueba tocada o que lee algo de lo tocado, en verde, y los gates de índice,
+repositorio limpio, contrato, sonda vacía, menús y seguridad sobre el delta entero.
 
 **DECISIÓN DEL OPERADOR, con el dato corregido**: el zip lo arma GitHub al subir el tag. Se le había
 preguntado sobre una premisa falsa —que el zip no se podía armar en esta máquina; el empaquetador cae
@@ -32,6 +34,17 @@ a bsdtar de Windows— y se le volvió a preguntar con el dato bien. Eligió lo 
 | `0d52fbe` | El guarda del nombre anterior: una sola excepción tapaba 196 sitios. Contrato v2, cada excepción es una forma con ejemplo y contraejemplo | 49 sitios de código |
 | `0326d0c` | El mismo guarda, sobre los documentos que viajan al runtime. La clave de Engram se queda, declarada | 61 sitios en 20 documentos, sobre los blobs del commit anterior |
 | `757de5f` | Nada fijaba cuál de los dos nombres de la perilla de concurrencia gana si están los dos | Falsificada invirtiendo el `??` |
+| `79383ed` | El gate de seguridad sobre el delta entero marcó dos adaptadores que sólo habían entrado por un renombre: `RegExp.prototype.exec`, que el escáner léxico confunde con ejecución. Refutado y reescrito con `match` | Los dos HIGH, antes de subir |
+| `a0f331d` | El README decía cómo correr el instalador y no de dónde sacar el paquete | — (documento) |
+
+**LA SEGUNDA REVISIÓN**, sobre esos seis commits: ningún ALTO, dos MEDIO y siete BAJO. Los MEDIO y
+seis BAJO, arreglados antes del commit de versión:
+
+| Commit | Qué | El rojo |
+|---|---|---|
+| `8ad1baa` | Las formas del contrato eran más anchas de lo que decían: `~/`, `C:/` y `${HOME}/` pasaban por el comando; un sufijo o prefijo pegado, por la carpeta; una URL, por el schema. Ahora cada forma tiene bordes y un contraejemplo por borde | 11 casos, listados sin cortar en el primero |
+| `ba0ab67` | La poda del runtime viejo dejaba roto el puntero de Codex que apuntaba a él: Codex veía dos skills del protocolo, una rota. Y el archivo llevaba la fecha sola | El puntero, en las dos ramas; después, la fecha sin hora |
+| `dc7f2a2` | Si la perilla nueva estaba vacía o mal escrita, ganaba el default aunque la anterior valiera | «la nueva vacía no tapa la anterior» |
 
 **LO QUE QUEDÓ ESCRITO PARA NO REPETIRLO:**
 
@@ -46,11 +59,14 @@ a bsdtar de Windows— y se le volvió a preguntar con el dato bien. Eligió lo 
 1. CI de la rama en las dos plataformas → revisión del otro par → el «sí» del operador **en ese
    momento** → commit de versión + tag en un solo push. Subir el tag es publicar.
 2. Diferido a 3.0.1: la sigla pegada a guion bajo (BAJO 1) y los `existsSync` que filtran en vez de
-   afirmar (BAJO 2).
+   afirmar (BAJO 2). Y es del operador: apartar la carpeta vacía con el nombre anterior que el
+   instalador de bash dejó en el directorio GLOBAL de skills entre el 15-09 y esta versión. Lo global
+   está declarado como «no se poda», y cambiar eso es cambiar un límite.
 3. Hallazgo aparte, sin tocar: `ci.yml` usa acciones con etiqueta móvil y el gate de seguridad lo
    marca sobre un delta. Ese flujo sólo lee.
-4. Propuestas diferidas, sin implementar: que `release.yml` exija un CI verde del commit del tag, y
-   que compare el tag con la versión de `SKILL.md`.
+4. Para llevarle al operador en la 3.0.1, sin implementar: que `release.yml` exija un CI verde del
+   commit del tag, que la versión del tag sea la sección MÁS NUEVA del CHANGELOG (hoy alcanza con que
+   exista), y que la compare con la de `SKILL.md`.
 5. T6 de la ablación sigue siendo del operador. La intermitente de `verify-menu-shape` bajo
    cobertura en Windows (una vez, el 22-09) sigue sin explicar.
 
@@ -335,7 +351,7 @@ Se registran acá porque se respondieron durante la planificación, antes de que
 `docs/phase-decisions.json` para este ciclo. Las que correspondan a una fase se sellan en su cierre.
 
 - Identidad: IA Stack v1.0.1 **evoluciona este repositorio**, no es un proyecto nuevo. La carpeta
-  `Desktop\Claude\ia-stack` está vacía y no se usa.
+  local con el nombre nuevo está vacía y no se usa.
 - Versionado de dos relojes: el protocolo sigue su cuenta (próximo release 2.1.0); «IA Stack 1.0.1»
   nombra la capa nueva de elección de stack.
 - Research: los cuatro ejes — web + límites reales del plan gratuito, adaptadores de test rojo,
