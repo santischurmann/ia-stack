@@ -62,7 +62,14 @@ function temporal(carpetas) {
   return root;
 }
 
-const PREFIJOS = ['vcp-discovery-core-', 'vcp-task-shape-'];
+const PREFIJOS = ['ia-stack-discovery-core-', 'ia-stack-task-shape-'];
+
+// Los prefijos REALES, para las pruebas que corren `main` sobre este árbol: se LEEN del archivo que
+// los usa y no se escriben acá, porque conservan el nombre anterior por la excepción de temporales de
+// contracts/nombre-anterior.json. `PREFIJOS`, arriba, es de mentira y alcanza para `candidatas`; con
+// `main` no, porque deriva los suyos del árbol y una carpeta de ejemplo que no coincide da VACÍO.
+const [DISCOVERY_REAL] = prefijosDe(repoRoot, { listar: () => ['verify-discovery-core.test.mjs'] });
+const [TASK_SHAPE_REAL] = prefijosDe(repoRoot, { listar: () => ['verify-task-shape.test.mjs'] });
 
 test('un uso inválido sale 2 y no se confunde con un rechazo', () => {
   const errores = [];
@@ -78,22 +85,24 @@ test('LOS PREFIJOS SALEN DEL ÁRBOL, no de una lista escrita a mano', () => {
   // deja afuera lo que se agregue después, y nadie se entera.
   const p = prefijosDe(repoRoot);
   assert.ok(p.length > 50, `sólo ${p.length} prefijos: se esperaba que saliera de los ~50 archivos con mkdtempSync`);
-  assert.ok(p.includes('vcp-discovery-core-'), 'el prefijo que más carpetas dejó tiene que estar');
+  // El prefijo que más carpetas dejó, leído de su propio archivo (ver `DISCOVERY_REAL`).
+  assert.ok(DISCOVERY_REAL, 'no se pudo leer el prefijo de verify-discovery-core.test.mjs');
+  assert.ok(p.includes(DISCOVERY_REAL), 'el prefijo que más carpetas dejó tiene que estar');
   assert.ok(p.every((x) => /^[A-Za-z0-9][A-Za-z0-9-]*-$/u.test(x)), `un prefijo con forma rara: ${JSON.stringify(p.filter((x) => !/^[A-Za-z0-9][A-Za-z0-9-]*-$/u.test(x)))}`);
 });
 
 test('SÓLO prefijo + los seis caracteres exactos de mkdtemp', () => {
   assert.equal(SUFIJO_MKDTEMP, 6);
   const root = temporal({
-    'vcp-discovery-core-aB3xY9': {},
-    'vcp-discovery-core-corta': {},
-    'vcp-discovery-core-demasiado-larga': {},
-    'vcp-discovery-core': {},
+    'ia-stack-discovery-core-aB3xY9': {},
+    'ia-stack-discovery-core-corta': {},
+    'ia-stack-discovery-core-demasiado-larga': {},
+    'ia-stack-discovery-core': {},
     'otra-cosa-aB3xY9': {},
     'mi-proyecto': {},
   });
   try {
-    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['vcp-discovery-core-aB3xY9']);
+    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['ia-stack-discovery-core-aB3xY9']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -103,11 +112,11 @@ test('UNA CORRIDA EN CURSO NO SE TOCA: sólo lo viejo entra', () => {
   // Sin el umbral, correr esto mientras la suite trabaja le borraría el piso a la corrida.
   assert.ok(HORAS_MINIMAS >= 1);
   const root = temporal({
-    'vcp-task-shape-rrrrrr': { horas: 0 },
-    'vcp-task-shape-vvvvvv': { horas: HORAS_MINIMAS + 1 },
+    'ia-stack-task-shape-rrrrrr': { horas: 0 },
+    'ia-stack-task-shape-vvvvvv': { horas: HORAS_MINIMAS + 1 },
   });
   try {
-    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['vcp-task-shape-vvvvvv']);
+    assert.deepEqual(candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA).map((c) => c.nombre), ['ia-stack-task-shape-vvvvvv']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -115,7 +124,7 @@ test('UNA CORRIDA EN CURSO NO SE TOCA: sólo lo viejo entra', () => {
 
 test('LA REGLA DURA · una carpeta con un fuente del usuario adentro no se toca, y se nombra', () => {
   for (const archivo of ['estrategia.fuente', 'compilado.binario', '.env', 'clave.key', 'cert.pem']) {
-    const root = temporal({ 'vcp-task-shape-aaaaaa': { contiene: archivo } });
+    const root = temporal({ 'ia-stack-task-shape-aaaaaa': { contiene: archivo } });
     try {
       const [c] = candidatas(root, PREFIJOS, {}, INTOCABLES_DE_PRUEBA);
       assert.equal(c.intocable, true, archivo);
@@ -127,11 +136,11 @@ test('LA REGLA DURA · una carpeta con un fuente del usuario adentro no se toca,
 });
 
 test('POR DEFECTO LISTA Y NO BORRA NADA', () => {
-  const root = temporal({ 'vcp-discovery-core-aaaaaa': {}, 'vcp-task-shape-bbbbbb': {} });
+  const root = temporal({ [`${DISCOVERY_REAL}aaaaaa`]: {}, [`${TASK_SHAPE_REAL}bbbbbb`]: {} });
   try {
     const salida = [];
     assert.equal(main(['listar', '--temp', root, '--tests', repoRoot], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
-    assert.ok(existsSync(join(root, 'vcp-discovery-core-aaaaaa')), 'listar NO borra');
+    assert.ok(existsSync(join(root, `${DISCOVERY_REAL}aaaaaa`)), 'listar NO borra');
     assert.match(salida.join('\n'), /2 carpeta/u);
     assert.match(salida.join('\n'), /--borrar/u, 'tiene que decir cómo se borra, para que listar no sea un callejón');
   } finally {
@@ -141,15 +150,15 @@ test('POR DEFECTO LISTA Y NO BORRA NADA', () => {
 
 test('CON --borrar saca las que coinciden, y SÓLO ésas', () => {
   const root = temporal({
-    'vcp-discovery-core-aaaaaa': {},
-    'vcp-task-shape-bbbbbb': { contiene: 'cosa.fuente' },
+    [`${DISCOVERY_REAL}aaaaaa`]: {},
+    [`${TASK_SHAPE_REAL}bbbbbb`]: { contiene: 'cosa.fuente' },
     'proyecto-de-otro': {},
   });
   try {
     const salida = [];
     assert.equal(main(['listar', '--temp', root, '--tests', repoRoot, '--borrar'], { write: (l) => salida.push(l), intocables: INTOCABLES_DE_PRUEBA }), 0);
-    assert.equal(existsSync(join(root, 'vcp-discovery-core-aaaaaa')), false, 'la que coincide se va');
-    assert.equal(existsSync(join(root, 'vcp-task-shape-bbbbbb')), true, 'la que tiene un fuente declarado se queda');
+    assert.equal(existsSync(join(root, `${DISCOVERY_REAL}aaaaaa`)), false, 'la que coincide se va');
+    assert.equal(existsSync(join(root, `${TASK_SHAPE_REAL}bbbbbb`)), true, 'la que tiene un fuente declarado se queda');
     assert.equal(existsSync(join(root, 'proyecto-de-otro')), true, 'lo que no coincide ni se mira');
     assert.match(salida.join('\n'), /1 borrada/u);
     assert.match(salida.join('\n'), /1 intocable|1 sin tocar/u);
@@ -172,13 +181,13 @@ test('sin candidatas no hay nada que limpiar, y eso no es un incumplimiento', ()
 test('FALSIFICACIÓN · sin prefijos derivables NO barre nada, en vez de barrer todo', () => {
   // El modo de falla que convertiría esta herramienta en un desastre: si `tests/` no se puede leer,
   // una lista vacía de prefijos con un comodín de respaldo borraría el temporal entero.
-  const root = temporal({ 'vcp-discovery-core-aaaaaa': {} });
+  const root = temporal({ 'ia-stack-discovery-core-aaaaaa': {} });
   try {
     const errores = [];
     assert.equal(main(['listar', '--temp', root, '--tests', join(root, 'no-existe'), '--borrar'], {
       write: () => {}, writeError: (l) => errores.push(l),
     }), 1);
-    assert.equal(existsSync(join(root, 'vcp-discovery-core-aaaaaa')), true, 'no se tocó una sola carpeta');
+    assert.equal(existsSync(join(root, 'ia-stack-discovery-core-aaaaaa')), true, 'no se tocó una sola carpeta');
     assert.match(errores.join('\n'), /prefijo/u);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -196,10 +205,10 @@ test('un archivo de prueba ilegible no frena la derivación: se saltea y los dem
     listar: () => ['a.test.mjs', 'b.test.mjs'],
     leer: (ruta) => {
       if (String(ruta).endsWith('a.test.mjs')) throw new Error('EACCES');
-      return "mkdtempSync(join(tmpdir(), 'vcp-desde-b-'))";
+      return "mkdtempSync(join(tmpdir(), 'ia-stack-desde-b-'))";
     },
   });
-  assert.deepEqual(p, ['vcp-desde-b-']);
+  assert.deepEqual(p, ['ia-stack-desde-b-']);
 });
 
 test('sin carpeta tests/ no hay prefijos, y eso NO es una lista vacía que autorice barrer', () => {
@@ -211,7 +220,7 @@ test('UNA CARPETA QUE NO SE PUEDE MIRAR ADENTRO es intocable, no inocente', () =
   // versión de esta herramienta -- borrar justo lo que no pudo revisar.
   const [c] = candidatas('/temp', PREFIJOS, {
     listar: (ruta) => {
-      if (String(ruta) === '/temp') return [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }];
+      if (String(ruta) === '/temp') return [{ name: 'ia-stack-task-shape-aaaaaa', isDirectory: () => true }];
       throw new Error('EPERM');
     },
     stat: () => ({ mtimeMs: 0 }),
@@ -231,7 +240,7 @@ test('sin prefijos no hay candidatas, aunque el temporal esté lleno', () => {
 
 test('una entrada cuyo stat falla se saltea: no se puede fechar, no se toca', () => {
   assert.deepEqual(candidatas('/temp', PREFIJOS, {
-    listar: () => [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }],
+    listar: () => [{ name: 'ia-stack-task-shape-aaaaaa', isDirectory: () => true }],
     stat: () => { throw new Error('EBUSY'); },
   }, INTOCABLES_DE_PRUEBA), []);
 });
@@ -240,11 +249,11 @@ test('un doble que devuelve nombres sueltos en vez de Dirents se entiende igual'
   // `verify-empty-probe.mjs` ya declara este caso: un doble de pruebas puede devolver cadenas, y
   // asumir Dirent haría que el barrido no viera nada y dijera que está todo limpio.
   const c = candidatas('/temp', PREFIJOS, {
-    listar: (ruta) => (String(ruta) === '/temp' ? ['vcp-task-shape-aaaaaa'] : []),
+    listar: (ruta) => (String(ruta) === '/temp' ? ['ia-stack-task-shape-aaaaaa'] : []),
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
   }, INTOCABLES_DE_PRUEBA);
-  assert.deepEqual(c.map((x) => x.nombre), ['vcp-task-shape-aaaaaa']);
+  assert.deepEqual(c.map((x) => x.nombre), ['ia-stack-task-shape-aaaaaa']);
   assert.equal(c[0].intocable, false);
 });
 
@@ -253,7 +262,7 @@ test('adentro de una carpeta, un doble que devuelve nombres sueltos también se 
   // como cadena no se vería y la carpeta se borraría con el fuente adentro.
   const [c] = candidatas('/temp', PREFIJOS, {
     listar: (ruta) => (String(ruta) === '/temp'
-      ? [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }]
+      ? [{ name: 'ia-stack-task-shape-aaaaaa', isDirectory: () => true }]
       : ['estrategia.fuente']),
     stat: () => ({ mtimeMs: 0 }),
     ahora: Date.now(),
@@ -266,7 +275,7 @@ test('una subcarpeta se recorre hasta el fondo buscando lo intocable', () => {
   const [c] = candidatas('/temp', PREFIJOS, {
     listar: (ruta) => {
       const s = String(ruta);
-      if (s === '/temp') return [{ name: 'vcp-task-shape-aaaaaa', isDirectory: () => true }];
+      if (s === '/temp') return [{ name: 'ia-stack-task-shape-aaaaaa', isDirectory: () => true }];
       if (s.endsWith('aaaaaa')) return [{ name: 'adentro', isDirectory: () => true }];
       return [{ name: 'estrategia.fuente', isDirectory: () => false }];
     },
@@ -277,7 +286,7 @@ test('una subcarpeta se recorre hasta el fondo buscando lo intocable', () => {
 });
 
 test('si borrar falla, la carpeta se cuenta como intacta y el motivo viaja', () => {
-  const root = temporal({ 'vcp-task-shape-aaaaaa': {} });
+  const root = temporal({ [`${TASK_SHAPE_REAL}aaaaaa`]: {} });
   try {
     const salida = [];
     assert.equal(main(['listar', '--temp', root, '--tests', repoRoot, '--borrar'], {

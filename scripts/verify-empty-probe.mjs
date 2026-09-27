@@ -170,7 +170,7 @@ export const RAIZ_DE_ESTE_ARBOL = dirname(SCRIPTS_DIR);
 
 /** Corre un gate con su directorio vacío propio, para que ninguno vea lo que dejó otro. */
 export function runInEmptyDirectory(script, args, spawn = spawnSync) {
-  const directory = mkdtempSync(join(tmpdir(), 'vcp-empty-probe-'));
+  const directory = mkdtempSync(join(tmpdir(), 'ia-stack-empty-probe-'));
   try {
     // Si el spawn falla del todo -- el binario de node no está, se acabaron los descriptores -- no hay
     // salida que leer y `status` es null. Eso se clasifica como "reject", nunca como verificación.

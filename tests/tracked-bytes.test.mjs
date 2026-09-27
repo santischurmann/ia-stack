@@ -54,7 +54,7 @@ function rematerialize(attributes) {
     cpSync(join(repoRoot, HASHED_TREE), join(dir, HASHED_TREE), { recursive: true });
     git(dir, 'init', '-q');
     git(dir, 'config', 'core.autocrlf', 'true');
-    git(dir, 'config', 'user.email', 'gate@vcp.local');
+    git(dir, 'config', 'user.email', 'gate@ia-stack.local');
     git(dir, 'config', 'user.name', 'ia-stack');
     git(dir, 'add', '-A');
     git(dir, 'commit', '-qm', 'seed');

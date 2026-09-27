@@ -74,7 +74,7 @@ export function coverageOf(executable, traced) {
 
 /** Corre un escenario en un directorio temporal propio y devuelve la traza que bash escribió. */
 export function runScenario(scriptPath, scenario, run = spawnSync) {
-  const dir = mkdtempSync(join(tmpdir(), 'vcp-shell-cov-'));
+  const dir = mkdtempSync(join(tmpdir(), 'ia-stack-shell-cov-'));
   const bash = resolveBash();
   try {
     for (const paso of scenario.setup ?? []) {

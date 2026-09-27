@@ -182,7 +182,7 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
 
   // El reporte va FUERA del proyecto: así no ensucia el árbol que el protocolo sella.
-  const destino = options.destino ?? join(tmpdir(), `vcp-red-vitest-${process.pid}-${Date.now()}.json`);
+  const destino = options.destino ?? join(tmpdir(), `ia-stack-red-vitest-${process.pid}-${Date.now()}.json`);
   const run = options.run ?? spawnSync;
   const argumentos = [
     binario, 'run',

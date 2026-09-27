@@ -159,7 +159,7 @@ test('sin modelo inyectado lo construye de la raíz de proyectos, igual que buil
   // prueba mide un camino que ningún usuario toma. Se le pasa una raíz que no existe para que el
   // modelo salga vacío sin leer nada de la máquina donde corre la suite.
   const { estado, crear } = servidorFalso();
-  const codigo = main(['serve'], () => {}, () => {}, { crear, raizProyectos: join(tmpdir(), 'vcp-no-existe-jamas') });
+  const codigo = main(['serve'], () => {}, () => {}, { crear, raizProyectos: join(tmpdir(), 'ia-stack-no-existe-jamas') });
   assert.equal(codigo, 0);
   const escrito = { estado: null, cuerpo: '' };
   estado.manejador({ url: '/', method: 'GET' }, { writeHead(e) { escrito.estado = e; }, end(c) { escrito.cuerpo = c; } });
@@ -174,7 +174,7 @@ test('la página servida dice cuándo se armó, no «(sin fecha)»', () => {
   const { estado, crear } = servidorFalso();
   main(['serve'], () => {}, () => {}, {
     crear,
-    raizProyectos: join(tmpdir(), 'vcp-no-existe-jamas'),
+    raizProyectos: join(tmpdir(), 'ia-stack-no-existe-jamas'),
   });
   const escrito = { cuerpo: '' };
   estado.manejador({ url: '/', method: 'GET' }, { writeHead() {}, end(c) { escrito.cuerpo = c; } });

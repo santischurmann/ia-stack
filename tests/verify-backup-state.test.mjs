@@ -29,7 +29,7 @@ function git(root, ...args) {
 function fixture({ commit = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'vcp-backup-state-'));
   git(root, 'init', '-q');
-  git(root, 'config', 'user.email', 'vcp-tests@example.invalid');
+  git(root, 'config', 'user.email', 'ia-stack-tests@example.invalid');
   git(root, 'config', 'user.name', 'IA Stack backup tests');
   writeFileSync(join(root, 'tracked.txt'), 'baseline\n');
   let head = null;

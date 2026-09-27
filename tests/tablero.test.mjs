@@ -148,7 +148,7 @@ test('main sin argumentos válidos imprime el uso y sale 2', () => {
 test('build dice VACÍO cuando no hay transcripciones, en vez de inventar una página', () => {
   // `hay` tiene que decir NO al `.git` también: si no, la búsqueda de repositorio contenedor cree
   // que todo destino está adentro de uno y el rechazo tapa lo que esta prueba quiere medir.
-  const r = correr(['build', '--out', join(tmpdir(), 'vcp-no-existe')], { hay: (p) => !String(p).includes('.claude') && !String(p).includes('.git'), casa: '/casa' });
+  const r = correr(['build', '--out', join(tmpdir(), 'ia-stack-no-existe')], { hay: (p) => !String(p).includes('.claude') && !String(p).includes('.git'), casa: '/casa' });
   assert.equal(r.codigo, 0);
   assert.match(r.salidas.join(' '), /^VACÍO:/u);
 });

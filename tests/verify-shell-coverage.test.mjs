@@ -125,7 +125,7 @@ test('runScenario sustituye el directorio temporal en setup y args', () => {
   runScenario('/x.sh', { setup: ['echo ' + DIR_TOKEN], args: ['--project', DIR_TOKEN] }, falso);
   assert.equal(vistos.length, 2);
   assert.ok(!vistos.join(' ').includes(DIR_TOKEN), 'el marcador tiene que quedar reemplazado por la ruta real');
-  assert.match(vistos[1], /vcp-shell-cov-/u);
+  assert.match(vistos[1], /ia-stack-shell-cov-/u);
 });
 
 test('runScenario tolera un escenario sin setup ni args, y una corrida sin stderr', () => {

@@ -91,7 +91,7 @@ export function fixture({ sha256 = false } = {}) {
     rmSync(root, { recursive: true, force: true });
     return null;
   }
-  gitOk(root, 'config', 'user.email', 'vcp-tests@example.invalid');
+  gitOk(root, 'config', 'user.email', 'ia-stack-tests@example.invalid');
   gitOk(root, 'config', 'user.name', 'IA Stack receipt tests');
   writeFileSync(join(root, 'tracked.txt'), 'baseline\n');
   writeFileSync(join(root, 'orig.txt'), 'rename baseline\n');

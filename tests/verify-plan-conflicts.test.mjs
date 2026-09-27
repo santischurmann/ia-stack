@@ -186,7 +186,7 @@ test('rejects malformed write declarations and CLI misuse', () => {
     assert.equal(run(['check', plan]).status, 1);
   });
 
-  for (const args of [[], ['other'], ['check'], ['check', join(tmpdir(), 'vcp-plan-conflicts-does-not-exist.json')], ['check', 'tasks.json', 'unexpected']]) {
+  for (const args of [[], ['other'], ['check'], ['check', join(tmpdir(), 'ia-stack-plan-conflicts-does-not-exist.json')], ['check', 'tasks.json', 'unexpected']]) {
     const result = run(args);
     assert.equal(result.status, 2, `${args.join(' ')}\n${result.output}`);
     assert.match(result.output, /usage:/i);

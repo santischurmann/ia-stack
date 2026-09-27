@@ -76,7 +76,7 @@ function fixture() {
     "test('ReferenceError is a test bug', () => missingTestHelper());",
     '',
   ].join('\n'));
-  write(root, 'test/bare-package.test.cjs', "require('vcp-missing-third-party-package');\n");
+  write(root, 'test/bare-package.test.cjs', "require('ia-stack-missing-third-party-package');\n");
   // Same reasoning as sut-runtime.test.js above: a bare failing import is no longer accepted;
   // assert.doesNotReject turns the same missing-module failure into a genuine assertion RED.
   write(root, 'test/local-module.test.js', [

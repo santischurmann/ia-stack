@@ -85,7 +85,7 @@ test('changedProjectPaths reúne diff tracked y untracked con Git real', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  expectError(() => changedProjectPaths('C:/missing-vcp-project', 'HEAD', () => { throw new Error('boom'); }), /unable to inspect Git diff/u);
+  expectError(() => changedProjectPaths('C:/missing-ia-stack-project', 'HEAD', () => { throw new Error('boom'); }), /unable to inspect Git diff/u);
   const injected = changedProjectPaths('C:/unused', 'HEAD', (_command, args) => args.includes('diff') ? 'M\0src/a.js\0' : null);
   assert.deepEqual([...injected], ['src/a.js']);
 });

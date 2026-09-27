@@ -184,7 +184,7 @@ export function main(args = process.argv.slice(2), options = {}) {
 
   // El reporte se escribe FUERA del proyecto a propósito: así no ensucia el árbol que el protocolo
   // sella, y no hay forma de que quede committeado por accidente.
-  const destino = options.destino ?? join(tmpdir(), `vcp-red-pytest-${process.pid}-${Date.now()}.xml`);
+  const destino = options.destino ?? join(tmpdir(), `ia-stack-red-pytest-${process.pid}-${Date.now()}.xml`);
   const run = options.run ?? spawnSync;
   const argumentos = [
     '-m', 'pytest',

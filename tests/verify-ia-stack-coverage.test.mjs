@@ -129,7 +129,7 @@ test('collectScriptCoverage indexa por la URL exacta del archivo del proyecto', 
     }));
     writeFileSync(join(directorio, 'coverage-2.json'), JSON.stringify({
       result: [
-        { url: 'file:///C:/Temp/vcp-e2e-XXXX/.vibe/ia-stack-runtime/scripts/demo.mjs', functions: [fn('f', [rango(0, 10, 0)])] },
+        { url: 'file:///C:/Temp/ia-stack-e2e-XXXX/.vibe/ia-stack-runtime/scripts/demo.mjs', functions: [fn('f', [rango(0, 10, 0)])] },
         { url },
       ],
     }));
@@ -371,7 +371,7 @@ test('main crea y borra su propio directorio de cobertura cuando nadie se lo iny
     readCoverage: () => '{}',
   });
   assert.equal(code, 1);
-  assert.ok(visto.includes('vcp-coverage-'), 'el directorio sale de mkdtemp, no de una ruta fija');
+  assert.ok(visto.includes('ia-stack-coverage-'), 'el directorio sale de mkdtemp, no de una ruta fija');
   assert.throws(() => readdirSync(visto), { code: 'ENOENT' }, 'y se borra aunque la corrida haya fallado');
 });
 

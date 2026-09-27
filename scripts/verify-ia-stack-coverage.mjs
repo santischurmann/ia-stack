@@ -375,7 +375,7 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
   const makeDirectory = io.mkdtemp ?? ((prefix) => mkdtempSync(prefix));
   const removeDirectory = io.rmdir ?? ((path) => rmSync(path, { recursive: true, force: true }));
   // Con `--coverage-dir` no se crea nada y no se borra nada: el directorio es de quien lo paso.
-  const directory = yaMedido ?? makeDirectory(join(tmpdir(), 'vcp-coverage-'));
+  const directory = yaMedido ?? makeDirectory(join(tmpdir(), 'ia-stack-coverage-'));
   try {
     if (yaMedido === null) {
       const result = run(spawnSync, cwd, directory);

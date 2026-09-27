@@ -38,7 +38,7 @@ function git(root, ...args) {
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'vcp-security-baseline-'));
   git(root, 'init', '-q');
-  git(root, 'config', 'user.email', 'vcp-tests@example.invalid');
+  git(root, 'config', 'user.email', 'ia-stack-tests@example.invalid');
   git(root, 'config', 'user.name', 'IA Stack security tests');
   writeFileSync(join(root, 'baseline.js'), 'export const clean = true;\n');
   git(root, 'add', '-A');

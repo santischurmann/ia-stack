@@ -1,67 +1,88 @@
 {
-  "schema": "ia.nombre-anterior/1",
-  "why": "El protocolo se llamaba VibeCodeProtocols (VCP) y ahora se llama IA Stack. El rename de fondo se hizo el 2026-09-15 en 45c6172, pero quedaron cadenas visibles con el nombre anterior: mensajes que los gates imprimen, banners de los instaladores y motivos de salteo copiados a mano en 35 archivos de prueba. Lo encontro el mensaje de rechazo de verify-runtime-sync -- «this directory is not a VibeCodeProtocols source checkout» -- leido en una salida real el 2026-09-17.\n\nESTE CONTRATO NO ES LA LISTA DE LO QUE FALTA RENOMBRAR: es la lista de lo que NO se renombra nunca, y por que. La lista de lo que falta se DERIVA del arbol, en tests/nombre-anterior.test.mjs, porque una lista escrita a mano solo encuentra lo que ya penso quien la escribio.\n\nLA DISTINCION QUE IMPORTA: prosa contra identificador. Una cadena que solo describe -- «el repositorio de VCP» -- se cambia y no pasa nada. Un identificador con el nombre viejo esta ATADO a algo que ya existe afuera: una carpeta en el disco de otra persona, un comando que alguien tiene en la memoria muscular, un artefacto ya escrito. Cambiar uno de esos no completa el rename: rompe instalaciones.",
+  "schema": "ia.nombre-anterior/2",
+  "why": "El protocolo se llamaba VibeCodeProtocols (VCP) y ahora se llama IA Stack. El rename de fondo se hizo el 2026-09-15 en 45c6172, pero quedaron cadenas visibles con el nombre anterior: mensajes que los gates imprimen, banners de los instaladores y motivos de salteo copiados a mano en 35 archivos de prueba. Lo encontro el mensaje de rechazo de verify-runtime-sync -- «this directory is not a VibeCodeProtocols source checkout» -- leido en una salida real el 2026-09-17.\n\nESTE CONTRATO NO ES LA LISTA DE LO QUE FALTA RENOMBRAR: es la lista de lo que NO se renombra nunca, y por que. La lista de lo que falta se DERIVA del arbol, en tests/nombre-anterior.test.mjs, porque una lista escrita a mano solo encuentra lo que ya penso quien la escribio.\n\nLA DISTINCION QUE IMPORTA: prosa contra identificador. Una cadena que solo describe -- «el repositorio de VCP» -- se cambia y no pasa nada. Un identificador con el nombre viejo esta ATADO a algo que ya existe afuera: una carpeta en el disco de otra persona, un comando que alguien tiene en la memoria muscular, un artefacto ya escrito. Cambiar uno de esos no completa el rename: rompe instalaciones.\n\nVERSION 2, del 2026-09-27: CADA EXCEPCION ES UNA FORMA, NO UNA CADENA. La version 1 borraba el texto de cada excepcion de la linea entera antes de buscar, y `vcp-` -- declarada para los prefijos de mkdtempSync -- tapaba cualquier cosa que empezara igual: la carpeta `vcp-skills` que el instalador de bash seguia creando, cuatro mails de fixtures, un paquete falso, nombres de prueba. Medido, esa sola excepcion tapaba 196 sitios. Ahora una aparicion queda exenta solo si cae ENTERA adentro de lo que reconoce la `forma` -- una expresion regular, sensible a mayusculas --, en esa linea, y solo en los archivos que empiezan con `en` cuando esta dicho. Y cada excepcion trae un `ejemplo` que tiene que cubrir y un `no_cubre`, del mismo aspecto, que no: sin el segundo, una forma demasiado ancha pasa igual que una justa, que es exactamente lo que paso.",
   "excepciones": [
     {
-      "patron": "VibeCodeProtocols.md",
+      "forma": "VibeCodeProtocols\\.md",
       "clase": "archivo de skill",
       "por_que": "Es el archivo que el instalador escribe en el directorio de skills, y su nombre ES el comando. Se conservo a proposito para que `/VibeCodeProtocols` siga funcionando en las instalaciones que ya existen.",
-      "que_pasa_si_se_toca": "Todo el que tenga el protocolo instalado pierde el comando de barra sin aviso, y no hay forma de que se entere hasta que lo tipea."
+      "que_pasa_si_se_toca": "Todo el que tenga el protocolo instalado pierde el comando de barra sin aviso, y no hay forma de que se entere hasta que lo tipea.",
+      "ejemplo": "assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);",
+      "no_cubre": "const d = join(base, 'VibeCodeProtocols', 'notas.md');"
     },
     {
-      "patron": "/VibeCodeProtocols",
+      "forma": "(?<![\\w/.-])/VibeCodeProtocols(?![\\w/.-])",
       "clase": "alias de comando",
-      "por_que": "El comando de barra anterior. Sigue publicado en la documentacion junto al nuevo, con el nuevo primero.",
-      "que_pasa_si_se_toca": "Lo mismo que arriba: se rompe la memoria muscular de quien ya lo usa, a cambio de nada."
+      "por_que": "El comando de barra anterior. Sigue publicado en la documentacion junto al nuevo, con el nuevo primero. La forma es la del COMANDO: una barra que no sigue a una palabra ni a otra barra. Un segmento de ruta con el nombre anterior -- la carpeta de un checkout -- no es el comando, y no se perdona.",
+      "que_pasa_si_se_toca": "Lo mismo que arriba: se rompe la memoria muscular de quien ya lo usa, a cambio de nada.",
+      "ejemplo": "echo \"Next: invoke /ia-stack (/VibeCodeProtocols sigue andando)\"",
+      "no_cubre": "const raiz = join(base, 'Desktop/VibeCodeProtocols/scripts');"
     },
     {
-      "patron": "VCPLINE:",
+      "forma": "VCPLINE:",
       "clase": "prefijo de traza",
-      "por_que": "El prefijo con el que `verify-shell-coverage` marca cada linea ejecutada en la traza de bash. Es un formato de datos, no un texto para leer.",
-      "que_pasa_si_se_toca": "Cualquier traza ya escrita deja de poder leerse, y la cobertura de shell de una corrida vieja pasa a medir cero sin decir por que."
+      "por_que": "El prefijo con el que `verify-shell-coverage` marca cada linea ejecutada en la traza de bash. Es un formato de datos, no un texto para leer. Hoy el guarda no lo detecta -- no hay frontera de palabra entre la sigla y LINE --, y se declara igual: el 2026-09-17 quedo fijado como uno de los tres identificadores que no se tocan, y el dia que el guarda mire adentro de las palabras, esta es la excepcion que tiene que estar.",
+      "que_pasa_si_se_toca": "Cualquier traza ya escrita deja de poder leerse, y la cobertura de shell de una corrida vieja pasa a medir cero sin decir por que.",
+      "ejemplo": "const PREFIJO = 'VCPLINE:';",
+      "no_cubre": "const PREFIJO = 'VCP:';"
     },
     {
-      "patron": ".vibe/vcp-runtime",
+      "forma": "\\bvcp-runtime\\b",
       "clase": "carpeta instalada",
-      "por_que": "La carpeta del runtime con el nombre anterior. `scripts/install.sh` la PODA -- la mueve a un archivo, no la borra -- y `verify-runtime-sync` la sigue reconociendo como runtime valido, con un AVISO que dice que se reinstale.",
-      "que_pasa_si_se_toca": "Las instalaciones anteriores al rename dejan de migrarse y dejan de reconocerse: el gate de sincronia diria VACIO sobre un runtime que si esta, que es el peor resultado posible -- un verde sobre nada."
+      "por_que": "La carpeta del runtime con el nombre anterior, `.vibe/vcp-runtime` en cada proyecto que lo instalo antes del rename. `scripts/install.sh` y `scripts/install.ps1` la PODAN -- la mueven a un archivo, no la borran -- y `verify-runtime-sync` la sigue reconociendo como runtime valido, con un AVISO que dice que se reinstale. La version 1 la declaraba como `.vibe/vcp-runtime` literal, y los instaladores la escriben `$VIBE_DIR/vcp-runtime` y `$VibeDir\\vcp-runtime`: no las cubria esta excepcion sino `vcp-`, que era demasiado ancha. La forma ahora es el nombre de la carpeta, en cualquier ruta.",
+      "que_pasa_si_se_toca": "Las instalaciones anteriores al rename dejan de migrarse y dejan de reconocerse: el gate de sincronia diria VACIO sobre un runtime que si esta, que es el peor resultado posible -- un verde sobre nada.",
+      "ejemplo": "if [ -d \"$VIBE_DIR/vcp-runtime\" ]; then",
+      "no_cubre": "mkdir -p \"$TARGET_DIR/vcp-skills\""
     },
     {
-      "patron": "vcp.",
+      "forma": "\\bvcp\\.(?:[a-z][a-z0-9-]*[/.]v?[0-9]+|(?=['\"`]))",
       "clase": "prefijo de schema",
-      "por_que": "El prefijo de schema anterior. `scripts/schema-compat.mjs` lo acepta en una sola direccion -- el nombre viejo pasa por el gate nuevo, el nuevo NO pasa por el viejo -- y la evidencia sellada de docs/discovery lo declara. La lectura del prefijo viejo no vence nunca.",
-      "que_pasa_si_se_toca": "Todo artefacto ya escrito por este repositorio o por cualquier instalacion se vuelve invalido, y la evidencia sellada, que es append-only, no se puede reescribir para que cierre."
+      "por_que": "El prefijo de schema anterior. `scripts/schema-compat.mjs` lo acepta en una sola direccion -- el nombre viejo pasa por el gate nuevo, el nuevo NO pasa por el viejo -- y la evidencia sellada de docs/discovery lo declara. La lectura del prefijo viejo no vence nunca. La forma es la de un SCHEMA: el prefijo seguido de un nombre y una version, o el prefijo solo cerrando una cadena. Un dominio como `algo@vcp.local` tiene el mismo comienzo y no es un schema.",
+      "que_pasa_si_se_toca": "Todo artefacto ya escrito por este repositorio o por cualquier instalacion se vuelve invalido, y la evidencia sellada, que es append-only, no se puede reescribir para que cierre.",
+      "ejemplo": "assert.equal(mismoSchema('vcp.receipt/v3', 'ia.receipt/v3'), true);",
+      "no_cubre": "git(dir, 'config', 'user.email', 'gate@vcp.local');"
     },
     {
-      "patron": "vcp-",
+      "forma": "vcp\\\\\\.",
+      "clase": "prefijo de schema, escrito como expresion regular",
+      "por_que": "Es el mismo prefijo de schema anterior, escrito con la barra de una expresion regular: tests/schema-compat.test.mjs lo usa para BUSCAR en el codigo los literales de schema con el prefijo viejo. Aparecio el 2026-09-26, cuando el guarda dejo de distinguir mayusculas y paso a ver la sigla en minuscula.",
+      "que_pasa_si_se_toca": "La prueba deja de encontrar los literales viejos que existe para encontrar, y un schema escrito con el prefijo anterior pasaria sin que nadie lo vea.",
+      "ejemplo": "for (const [literal] of fuente.matchAll(/'vcp\\.[a-z0-9-]+\\/[a-z0-9]+'/gu)) {",
+      "no_cubre": "const prefijo = 'vcp';"
+    },
+    {
+      "forma": "mkdtempSync\\(\\s*join\\(\\s*tmpdir\\(\\)\\s*,\\s*'vcp-[^']*'",
+      "en": "tests/",
       "clase": "prefijo de directorio temporal",
-      "por_que": "El prefijo que las pruebas le pasan a `mkdtempSync`. `scripts/limpiar-temporales.mjs` DERIVA los prefijos leyendo cada `mkdtempSync` de tests/, asi que renombrarlos se propagaria solo... y por eso mismo dejaria de reconocer las carpetas que ya estan en el disco: el 2026-09-15 se contaron 280 sobre 105 prefijos distintos.",
-      "que_pasa_si_se_toca": "Las carpetas temporales ya escritas quedan huerfanas para siempre: el limpiador no las ve y nadie las barre."
+      "por_que": "El prefijo que las pruebas le pasan a `mkdtempSync`. `scripts/limpiar-temporales.mjs` DERIVA los prefijos leyendo cada `mkdtempSync` de tests/, asi que renombrarlos se propagaria solo... y por eso mismo dejaria de reconocer las carpetas que ya estan en el disco: el 2026-09-15 se contaron 280 sobre 105 prefijos distintos. La forma es la misma expresion con la que el limpiador los deriva, y vale solo en tests/, que es lo unico que el limpiador lee; una prueba exige que la forma y el limpiador reconozcan los mismos prefijos.",
+      "que_pasa_si_se_toca": "Las carpetas temporales ya escritas quedan huerfanas para siempre: el limpiador no las ve y nadie las barre.",
+      "ejemplo": "const root = mkdtempSync(join(tmpdir(), 'vcp-ratchet-'));",
+      "no_cubre": "spawnSync('git', ['config', 'user.email', 'vcp-tests@example.invalid'], { cwd: root });"
     },
     {
-      "patron": "tests/nombre-anterior.test.mjs",
+      "archivo": "tests/nombre-anterior.test.mjs",
       "clase": "el propio guarda",
       "por_que": "La prueba que deriva esta comprobacion tiene que nombrar lo que busca. Se excluye a si misma o se acusaria sola, cada vez.",
       "que_pasa_si_se_toca": "Nada: es la unica excepcion que no protege a un tercero, solo evita que el guarda se muerda la cola."
     },
     {
-      "patron": "SKILL_ALIAS=\"VibeCodeProtocols\"",
+      "forma": "SKILL_ALIAS=\"VibeCodeProtocols\"",
+      "en": "scripts/install.sh",
       "clase": "valor del alias de skill",
       "por_que": "Es el VALOR del alias de skill: el instalador copia SKILL.md a `<skills>/$SKILL_ALIAS.md`, asi que esta linea es la que crea `VibeCodeProtocols.md` y sostiene el comando `/VibeCodeProtocols`. Se declara TEXTUAL, con su sintaxis, y no como `VibeCodeProtocols` a secas: el alias se escribe sin extension y sin barra, asi que las otras dos excepciones no lo cubren.",
-      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso."
+      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso.",
+      "ejemplo": "SKILL_ALIAS=\"VibeCodeProtocols\"",
+      "no_cubre": "SKILL_NAME=\"VibeCodeProtocols\""
     },
     {
-      "patron": "$SkillAlias = 'VibeCodeProtocols'",
+      "forma": "\\$SkillAlias = 'VibeCodeProtocols'",
+      "en": "scripts/install.ps1",
       "clase": "valor del alias de skill",
       "por_que": "Es el VALOR del alias de skill: el instalador copia SKILL.md a `<skills>/$SKILL_ALIAS.md`, asi que esta linea es la que crea `VibeCodeProtocols.md` y sostiene el comando `/VibeCodeProtocols`. Se declara TEXTUAL, con su sintaxis, y no como `VibeCodeProtocols` a secas: el alias se escribe sin extension y sin barra, asi que las otras dos excepciones no lo cubren.",
-      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso."
-    },
-    {
-      "patron": "vcp\\.",
-      "clase": "prefijo de schema, escrito como expresion regular",
-      "por_que": "Es el mismo prefijo de schema anterior que ya esta declarado mas arriba, escrito con la barra de una expresion regular: tests/schema-compat.test.mjs lo usa para BUSCAR en el codigo los literales de schema con el prefijo viejo. Aparecio el 2026-09-26, cuando el guarda dejo de distinguir mayusculas y paso a ver la sigla en minuscula.",
-      "que_pasa_si_se_toca": "La prueba deja de encontrar los literales viejos que existe para encontrar, y un schema escrito con el prefijo anterior pasaria sin que nadie lo vea."
+      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso.",
+      "ejemplo": "$SkillAlias = 'VibeCodeProtocols'",
+      "no_cubre": "$SkillName = 'VibeCodeProtocols'"
     }
   ],
-  "limite_honesto": "Mira los archivos de CODIGO versionados -- .mjs, .sh, .ps1 --, no la documentacion. En los .md el nombre anterior aparece a proposito decenas de veces, contando la historia del rename, y un guarda que los mirara exigiria borrar esa historia. La contracara es que un documento puede volver a publicar un comando con el nombre viejo sin que nadie lo vea. Y mira lineas que no son comentarios: un comentario que menciona el nombre anterior es historia, no residuo."
+  "limite_honesto": "Mira los archivos de CODIGO versionados -- .mjs, .sh, .ps1 --, no la documentacion. En los .md el nombre anterior aparece a proposito decenas de veces, contando la historia del rename, y un guarda que los mirara exigiria borrar esa historia. La contracara es que un documento puede volver a publicar un comando con el nombre viejo sin que nadie lo vea. Mira lineas que no son comentarios: un comentario que menciona el nombre anterior es historia, no residuo, y por eso tampoco ve un comentario que lo usa como nombre del producto. Y busca la sigla con frontera de palabra: pegada a un guion bajo -- una variable de entorno con el prefijo viejo -- o adentro de otra palabra, no la ve."
 }

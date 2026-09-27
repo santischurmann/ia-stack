@@ -69,7 +69,7 @@ test('FALSIFICACIÓN · placeholders and malformed none claims cannot hide what 
 });
 
 test('CLI rejects missing or unreadable report arguments as usage', () => {
-  for (const args of [[], ['other'], ['check'], ['check', join(tmpdir(), 'vcp-handoff-report-does-not-exist.md')]]) {
+  for (const args of [[], ['other'], ['check'], ['check', join(tmpdir(), 'ia-stack-handoff-report-does-not-exist.md')]]) {
     const result = run(args);
     assert.equal(result.status, 2, `${args.join(' ')}\n${result.output}`);
     assert.match(result.output, /usage:/i);

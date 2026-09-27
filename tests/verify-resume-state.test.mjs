@@ -82,7 +82,7 @@ test('FALSIFICACIÓN · CLI rejects malformed arguments and unreadable session s
     ['check', '--feature', 'billing-fix'],
     ['check', '--session', 'x', '--session', 'y', '--feature', 'billing-fix'],
     ['check', '--session', 'x', '--feature', 'billing-fix', '--feature', 'auth-refactor'],
-    ['check', '--session', join(tmpdir(), 'vcp-missing-session-does-not-exist.md'), '--feature', 'billing-fix'],
+    ['check', '--session', join(tmpdir(), 'ia-stack-missing-session-does-not-exist.md'), '--feature', 'billing-fix'],
   ]) {
     const result = runArgs(args);
     assert.equal(result.status, 2, `${args.join(' ')}\n${result.output}`);
