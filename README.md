@@ -34,12 +34,21 @@ La regla dura, la que ordena todo lo demás:
 
 ## Cómo se instala
 
-Desde un clon de este repositorio, o desde el zip de la última release —la página *Releases* de
-GitHub—, que trae su `.sha256` al lado y se descomprime en una carpeta `ia-stack/`:
+Desde un clon de este repositorio, o desde la última release, en la página *Releases* de GitHub.
+Ahí bajá el archivo **`ia-stack-<versión>.zip`** y su **`.sha256`**. No uses el «Source code (zip)»
+que GitHub agrega solo: se llama igual y abre en otra carpeta. Verificalo y descomprimilo en una
+carpeta vacía. Sobre una carpeta `ia-stack/` que ya existe se mezclarían dos versiones, y la poda
+del instalador no lo arregla.
 
 ```bash
-sha256sum -c ia-stack-<versión>.sha256
+sha256sum -c ia-stack-<versión>.sha256        # en macOS: shasum -a 256 -c ia-stack-<versión>.sha256
 unzip ia-stack-<versión>.zip && cd ia-stack
+```
+
+En PowerShell, el checksum se compara con el del archivo, y tiene que dar `True`:
+
+```powershell
+(Get-FileHash ia-stack-<versión>.zip -Algorithm SHA256).Hash -eq ((Get-Content ia-stack-<versión>.sha256) -split '\s+')[0]
 ```
 
 Adentro, el instalador:

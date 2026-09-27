@@ -151,8 +151,9 @@ force push público.
   etiqueta un commit que ya pasó el CI en las dos plataformas, y subir el tag es publicar.
 - El guarda del nombre anterior no barre README, INSTALL, CHANGELOG ni los `.json`, no ve los
   comentarios del código, y no ve la sigla pegada a un guion bajo.
-- Lo que el instalador de bash dejó en el directorio **global** de skills antes de esta versión —una
-  carpeta vacía con el nombre anterior— no se aparta: lo global no se poda.
+- Lo que los instaladores anteriores dejaron en lo **global** con el nombre anterior no se aparta: el
+  runtime global y la carpeta de sub-skills del directorio de skills —con su contenido si se
+  instaló antes del 2026-09-15; vacía si fue con el instalador de bash después—. Lo global no se poda.
 
 ### Lo anterior de esta versión, del 2026-09-08 al 2026-09-16
 

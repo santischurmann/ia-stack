@@ -46,6 +46,18 @@ seis BAJO, arreglados antes del commit de versión:
 | `ba0ab67` | La poda del runtime viejo dejaba roto el puntero de Codex que apuntaba a él: Codex veía dos skills del protocolo, una rota. Y el archivo llevaba la fecha sola | El puntero, en las dos ramas; después, la fecha sin hora |
 | `dc7f2a2` | Si la perilla nueva estaba vacía o mal escrita, ganaba el default aunque la anterior valiera | «la nueva vacía no tapa la anterior» |
 
+**LA TERCERA REVISIÓN**, sobre el delta hasta `345665b`: ningún ALTO; un MEDIO mío, uno que decidió el
+operador y tres BAJO.
+
+| Commit | Qué | El rojo |
+|---|---|---|
+| `e5b84ea` | El CHANGELOG prometía un contraejemplo por borde y no era cierto. Ahora una prueba saca cada carácter de cada borde y exige que algún ejemplo lo note; el comando ya no perdona una ruta tras una comilla. Y la licencia, por decisión del operador, dice `ia-stack`: el guarda barre LICENSE y los `.yml` | 14 caracteres sin ejemplo, más la comilla; «LICENSE:3» |
+| `bab9968` | Una instalación anterior versionada: el borrado del puntero viejo se avisa, y el AGENTS.md viejo también | «y se avisa que moverlo deja un borrado en git» |
+
+Y en documentos: el README nombra el asset —el «Source code (zip)» de GitHub se llama igual—, pide
+una carpeta vacía y da el checksum de macOS y de PowerShell, probado con un archivo bueno y uno
+alterado; el CHANGELOG dice todo lo global que los instaladores viejos dejaron.
+
 **LO QUE QUEDÓ ESCRITO PARA NO REPETIRLO:**
 
 - **El orden del release importa.** `verify-ablation.test.mjs` exige que la etiqueta que `SKILL.md`
