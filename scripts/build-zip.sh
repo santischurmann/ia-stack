@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
 # build-zip.sh — IA Stack distributable package builder
-# Run from the ia-stack/ directory
-# Output: ia-stack-<version>.zip + ia-stack-<version>.sha256
+# Corre desde cualquier carpeta: las rutas salen de donde vive el script, no del directorio actual.
+# Output, al lado de la carpeta del checkout: ia-stack-<version>.zip + ia-stack-<version>.sha256
+# Adentro del zip todo cuelga de ia-stack/, se llame como se llame la carpeta del checkout.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
+OUTPUT_DIR="$(dirname "$PACKAGE_DIR")"
 VERSION="${1:-$(date +%Y.%m.%d)}"
 if [[ ! "$VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$ || "$VERSION" == *..* ]]; then
   echo "REJECTED: version must be 1-64 safe alphanumeric/._- characters, without '..'" >&2
   exit 2
 fi
-PACKAGE_NAME="$(basename "$PACKAGE_DIR")"
+# La raiz FIJA de cada entrada del zip. Antes salia de `basename "$PACKAGE_DIR"`, el nombre de la
+# carpeta donde alguien clono: la de este repositorio todavia tiene el nombre anterior del protocolo,
+# asi que la release lo iba a llevar en cada entrada, y las instrucciones de abajo mandaban a hacer
+# `cd` a una carpeta que en la maquina de quien descarga no existe.
+ARCHIVE_ROOT="ia-stack"
 OUTPUT_NAME="ia-stack-${VERSION}"
 OUTPUT_ARCHIVE="${OUTPUT_NAME}.zip"
 CHECKSUM_FILE="${OUTPUT_NAME}.sha256"
@@ -23,27 +29,23 @@ echo "Source:  $PACKAGE_DIR"
 echo ""
 
 # Work from parent directory
-cd "$(dirname "$PACKAGE_DIR")"
+cd "$OUTPUT_DIR"
 
 # Package only the distributable runtime surface. Do not zip the entire working tree: local
 # .env files, .vibe state, Graphify/Obsidian artifacts, research caches and editor files may be
 # ignored by Git but still present on disk. An allowlist avoids leaking them into a release.
-INCLUDE=(
-  "$PACKAGE_NAME/README.md"
-  "$PACKAGE_NAME/SECURITY.md"
-  "$PACKAGE_NAME/INSTALL.md"
-  "$PACKAGE_NAME/SKILL.md"
-  "$PACKAGE_NAME/CHANGELOG.md"
-  "$PACKAGE_NAME/LICENSE"
-  "$PACKAGE_NAME/scripts"
-  "$PACKAGE_NAME/contracts"
-  "$PACKAGE_NAME/tests"
-  "$PACKAGE_NAME/skills"
-  "$PACKAGE_NAME/templates"
-  "$PACKAGE_NAME/examples"
+#
+# UNA sola lista, para comprobar que existe y para enumerar lo versionado. Eran dos copias escritas a
+# mano y a las dos les faltaba lo mismo: AGENTS.md y .agents/, que los dos instaladores copian sin
+# condicion. Un zip sin ellos instalaba a medias -- `cp: cannot stat` bajo `set -euo pipefail` --.
+# tests/build-zip-script.test.mjs la compara contra la superficie que el gate de sincronia deriva de
+# los instaladores, asi que si un instalador empieza a copiar algo nuevo, esa prueba se pone roja.
+ALLOWLIST=(
+  README.md SECURITY.md INSTALL.md SKILL.md CHANGELOG.md LICENSE AGENTS.md
+  scripts contracts tests skills templates examples .agents
 )
-for path in "${INCLUDE[@]}"; do
-  if [ ! -e "$path" ]; then
+for path in "${ALLOWLIST[@]}"; do
+  if [ ! -e "$PACKAGE_DIR/$path" ]; then
     echo "REJECTED: required distribution path is missing: $path" >&2
     exit 1
   fi
@@ -75,34 +77,47 @@ fi
 echo "Archiver: $ARCHIVER"
 
 # La lista blanca de arriba acota el nivel superior y nada mas: `zip -r` sobre un directorio se
-# lleva TODO lo que haya adentro, versionado o no. Que hoy esos seis directorios esten limpios es
+# lleva TODO lo que haya adentro, versionado o no. Que hoy esos directorios esten limpios es
 # una propiedad accidental, no un gate. Se enumera lo que git tiene versionado y se empaqueta eso.
 if ! git -C "$PACKAGE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "REJECTED: $PACKAGE_DIR is not a Git work tree, so tracked files cannot be told apart from local state" >&2
   exit 1
 fi
-TRACKED=()
+RELATIVE=()
 while IFS= read -r -d '' rel; do
-  TRACKED+=("$PACKAGE_NAME/$rel")
-done < <(git -C "$PACKAGE_DIR" ls-files -z -- \
-  README.md SECURITY.md INSTALL.md SKILL.md CHANGELOG.md LICENSE \
-  scripts contracts tests skills templates examples)
-if [ "${#TRACKED[@]}" -eq 0 ]; then
+  RELATIVE+=("$rel")
+done < <(git -C "$PACKAGE_DIR" ls-files -z -- "${ALLOWLIST[@]}")
+if [ "${#RELATIVE[@]}" -eq 0 ]; then
   echo "REJECTED: no tracked file matched the distribution allowlist" >&2
   exit 1
 fi
+TRACKED=()
+for rel in "${RELATIVE[@]}"; do
+  TRACKED+=("$ARCHIVE_ROOT/$rel")
+done
+
+# El prefijo fijo necesita los archivos en disco bajo `ia-stack/`: ni zip ni bsdtar renombran rutas
+# de la misma forma. Se arma una copia en un temporal PROPIO -- lo crea mktemp en esta corrida, y es
+# lo unico que el trap borra -- con `git checkout-index`, que escribe el contenido del INDICE. La
+# lista y el contenido salen del mismo lugar: un cambio local que no paso por `git add` no viaja,
+# igual que no viaja un archivo sin versionar.
+STAGE="$(mktemp -d)"
+trap 'rm -rf -- "$STAGE"' EXIT
+printf '%s\0' "${RELATIVE[@]}" | git -C "$PACKAGE_DIR" checkout-index --prefix="$STAGE/$ARCHIVE_ROOT/" -z --stdin
 
 # Clean only names this invocation owns; never delete a generic checksums.txt in the parent.
 rm -f "$OUTPUT_ARCHIVE" "$CHECKSUM_FILE"
 
-# Create zip — archivos versionados, uno por uno, nunca un directorio suelto.
+# Create zip — archivos versionados, uno por uno, nunca un directorio suelto. Desde el temporal, en
+# una subshell: el directorio de trabajo de este script no cambia.
 if [ "$ARCHIVER" = "zip" ]; then
-  zip -r "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
+  (cd "$STAGE" && zip -r "$OUTPUT_DIR/$OUTPUT_ARCHIVE" "${TRACKED[@]}")
 else
-  "$ARCHIVER" -a -c -f "$OUTPUT_ARCHIVE" "${TRACKED[@]}"
+  (cd "$STAGE" && "$ARCHIVER" -a -c -f "$OUTPUT_DIR/$OUTPUT_ARCHIVE" "${TRACKED[@]}")
 fi
 
-# Generate checksums
+# Generate checksums. Con el nombre solo, sin ruta: `sha256sum -c` se corre al lado del zip
+# descargado, donde la ruta de la maquina que lo armo no existe.
 sha256sum "$OUTPUT_ARCHIVE" > "$CHECKSUM_FILE"
 
 SIZE=$(du -sh "$OUTPUT_ARCHIVE" | cut -f1)
@@ -114,7 +129,7 @@ echo ""
 echo "=== Distribute ==="
 echo ""
 echo "Option A — Direct download (share the .zip file)"
-echo "  Recipient: unzip ${OUTPUT_NAME}.zip && cd ${PACKAGE_NAME} && ./scripts/install.sh"
+echo "  Recipient: unzip ${OUTPUT_NAME}.zip && cd ${ARCHIVE_ROOT} && ./scripts/install.sh"
 echo ""
 echo "Option B — Git clone"
-echo "  git clone <your-repo-url> && cd ${PACKAGE_NAME} && ./scripts/install.sh"
+echo "  git clone <your-repo-url> ${ARCHIVE_ROOT} && cd ${ARCHIVE_ROOT} && ./scripts/install.sh"
