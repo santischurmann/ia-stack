@@ -183,6 +183,9 @@ test('main informa el número, cuenta los excluidos y dice que mide líneas, no 
   assert.match(salida[0], /scripts\/x\.sh 50% \(1\/2\)/u);
   assert.match(salida[0], /1 script\(s\) sin escenario declarado/u);
   assert.match(salida[0], /no ramas/u, 'el límite viaja en la salida, no sólo en la documentación');
+  // Y el otro límite, el que explica por qué un script no llega al 100% aunque todo corra: sin él,
+  // el número de la salida se lee como comportamiento sin probar (cuarta revisión, 2026-09-27).
+  assert.match(salida[0], /la traza de bash no informa/u, 'que cuenta líneas que la traza no puede informar, también en la salida');
 });
 
 test('el CLI real mide los scripts de shell de este repo', () => {

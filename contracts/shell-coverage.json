@@ -4,7 +4,7 @@
   "scripts": [
     {
       "script": "scripts/install.sh",
-      "floor": 65,
+      "floor": 72,
       "scenarios": [
         {
           "setup": [
@@ -113,7 +113,8 @@
           ]
         }
       ],
-      "why_aislado": "Todos los escenarios instalan adentro de su carpeta temporal, con --target-dir y --runtime-dir. Hasta el 2026-09-22 dos no lo hacian, y como el arnes no aisla HOME, medir la cobertura instalaba la skill y el runtime en el directorio de configuracion REAL de quien corria el gate. Una medicion que escribe en la configuracion de quien mide no es una medicion."
+      "why_aislado": "Todos los escenarios instalan adentro de su carpeta temporal, con --target-dir y --runtime-dir. Hasta el 2026-09-22 dos no lo hacian, y como el arnes no aisla HOME, medir la cobertura instalaba la skill y el runtime en el directorio de configuracion REAL de quien corria el gate. Una medicion que escribe en la configuracion de quien mide no es una medicion.",
+      "why_piso": "Un punto por debajo de lo medido el 2026-09-27: 73% (135/185). Estaba en 65 desde el 22-09, con 73 medido, asi que unas catorce lineas podian dejar de correr sin que el gate lo notara (cuarta revision). No es 73 exacto porque nada compara todavia la traza de bash de Linux con la de Windows: con piso justo, una linea de diferencia entre plataformas pondria rojo el CI de una sola. Por que no es 100%: el limite «la traza de bash no informa», en skills/gates.md."
     },
     {
       "script": "scripts/verify-red.sh",

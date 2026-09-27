@@ -163,7 +163,7 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     for (const bajo of bajos) writeError(`REJECTED: SHELL_COVERAGE_BELOW_FLOOR: ${bajo}`);
     return 1;
   }
-  write(`OK: ${medidos.join(' · ')}; ${excluidos} script(s) sin escenario declarado, con motivo escrito. Mide líneas ejecutadas, no ramas.`);
+  write(`OK: ${medidos.join(' · ')}; ${excluidos} script(s) sin escenario declarado, con motivo escrito. Mide líneas ejecutadas, no ramas, y cuenta líneas que la traza de bash no informa —fi, done, else, llaves, continuaciones—: un script no llega al 100% aunque cada sentencia corra.`);
   return 0;
 }
 
