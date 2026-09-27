@@ -423,6 +423,15 @@ test('resolveTestConcurrency usa 32 por defecto y sólo acepta un override enter
   assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: 4 }), '32', 'un número no es un string de entorno');
 });
 
+test('la perilla con el nombre nuevo manda, y la del nombre anterior sigue andando', () => {
+  // El nombre que se documenta es IA_STACK_TEST_CONCURRENCY; el anterior queda para quien ya lo
+  // tenía puesto. La prueba de arriba sólo usaba el anterior, así que nada fijaba cuál gana si una
+  // máquina tiene los dos: un orden al revés en el `??` pasaba igual. Lo pidió la revisión del 26-09.
+  assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: '2' }), '2');
+  assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: '2', VCP_TEST_CONCURRENCY: '8' }), '2', 'con las dos puestas, gana la del nombre nuevo');
+  assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '8' }), '8', 'la del nombre anterior sola sigue valiendo');
+});
+
 test('fingerprintScripts sin inyecciones lee el inventario y el contenido reales del proyecto', () => {
   // Sus lectores por defecto son los que corren en producción: si sólo se los ejercita inyectados,
   // el camino que de verdad se usa nunca se ejecuta y el gate no lo sabe.
