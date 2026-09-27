@@ -36,6 +36,13 @@
       "prueba": "una poda desproporcionada no mueve nada, tampoco en PowerShell",
       "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
       "que_queda_sin_verificar": "La red de seguridad del instalador de PowerShell no se comprueba fuera de Windows. La de bash si: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "una instalación anterior versionada, también en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "Fuera de Windows no se comprueba que el instalador de PowerShell avise el borrado de un puntero viejo versionado ni el AGENTS.md que apunta a la carpeta vieja. Los mismos avisos del de bash si se comprueban: su prueba corre en las dos plataformas."
     }
   ]
 }
