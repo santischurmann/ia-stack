@@ -5,7 +5,7 @@ description: "TDD methodology for Claude Code: the orchestrator runs IA Stack's 
 
 # IA Stack — caveman edition
 
-**Versión:** 2.0.0 · etiquetada como `v2.0.0` en git.
+**Versión:** 3.0.0 · etiquetada como `v3.0.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 

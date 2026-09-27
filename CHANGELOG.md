@@ -9,7 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ---
 
-## [3.0.0] — 2026-09-26
+## [3.0.0] — 2026-09-27
 
 **Salto mayor por una razón concreta, no por acumulación: un recibo que antes aprobaba ahora puede
 rechazarse.** `verify-receipt.mjs check` —y por lo tanto `commit`, que valida lo mismo— **rechaza un
