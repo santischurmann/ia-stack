@@ -80,6 +80,29 @@ export function assertApartado(project) {
   );
 }
 
+// LA CARPETA DEL NOMBRE ANTERIOR, como la tiene todo proyecto que instalo antes del 2026-09-15. Los
+// dos instaladores la mueven al archivo desde entonces, y ninguna prueba la habia plantado nunca: la
+// rama que la poda no habia corrido una sola vez. Lo pidio la revision del 2026-09-26, con un
+// proyecto real que todavia la tiene. Se planta entre las dos instalaciones que la prueba ya hace.
+export const RUNTIME_ANTERIOR = join('.vibe', 'vcp-runtime');
+export const HUELLA_ANTERIOR = join('scripts', 'gate-de-una-instalacion-anterior.mjs');
+
+export function plantarRuntimeAnterior(project) {
+  mkdirSync(join(project, RUNTIME_ANTERIOR, 'scripts'), { recursive: true });
+  writeFileSync(join(project, RUNTIME_ANTERIOR, HUELLA_ANTERIOR), '// un gate de una instalacion anterior al rename\n');
+}
+
+export function assertRuntimeAnteriorApartado(project, salida) {
+  assert.equal(existsSync(join(project, RUNTIME_ANTERIOR)), false, 'la carpeta del nombre anterior tiene que salir de .vibe');
+  const archivo = join(project, '.vibe', 'ia-stack-archive');
+  const fechas = existsSync(archivo) ? readdirSync(archivo) : [];
+  assert.ok(
+    fechas.some((fecha) => existsSync(join(archivo, fecha, 'vcp-runtime', HUELLA_ANTERIOR))),
+    `y tiene que MOVERSE al archivo, entera y con su contenido. En ${archivo}: ${fechas.join(', ') || '(nada)'}`,
+  );
+  assert.match(salida, /PODADO: /u, 'y tiene que decir que la movio');
+}
+
 /** Mas sobrantes que archivos tiene el paquete: una poda que los moviera apartaria mas de la mitad
  * del runtime. El numero SE DERIVA del paquete y no se escribe: fijo, el dia que el protocolo creciera
  * la prueba pasaria a verde por el motivo equivocado -- la poda dejaria de ser desproporcionada --. */
@@ -120,6 +143,13 @@ export function assertSellado(project) {
 
 export function assertRuntime(project, target, runtime) {
   assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
+  // EL DIRECTORIO DE SKILLS, ENTERO: la skill, su alias y las sub-skills, y nada mas. El instalador
+  // de bash creaba ademas una carpeta vacia con el nombre anterior en cada instalacion, y ninguna
+  // prueba lo veia: miraban que estuviera lo esperado, no que no hubiera nada de mas. El guarda del
+  // nombre anterior tampoco, porque su excepcion para los temporales tapaba cualquier cosa que
+  // empezara igual. Lo encontro la revision del 2026-09-26. El de PowerShell nunca la creo.
+  assert.deepEqual(readdirSync(target).sort(), ['VibeCodeProtocols.md', 'ia-stack-skills', 'ia-stack.md'].sort(), 'el directorio de skills tiene algo de mas o de menos');
+  assert.ok(readdirSync(join(target, 'ia-stack-skills')).length > 0, 'las sub-skills tienen que quedar en ia-stack-skills');
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-core.mjs')), true, 'runtime needs the I1 immutable Discovery verifier');
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-views.mjs')), true, 'runtime needs the I1.5 deterministic Discovery view verifier');

@@ -115,7 +115,7 @@ echo "Source:  $PACKAGE_DIR"
 echo "Skills:  $TARGET_DIR"
 echo "Runtime: $RUNTIME_DIR"
 
-mkdir -p "$TARGET_DIR" "$TARGET_DIR/vcp-skills"
+mkdir -p "$TARGET_DIR" "$TARGET_DIR/ia-stack-skills"
 cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_NAME.md"
 cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_ALIAS.md"
 cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/ia-stack-skills/"
