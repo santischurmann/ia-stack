@@ -85,6 +85,18 @@
           ]
         },
         {
+          "why": "Un proyecto que no existe: el instalador lo rechaza y sale 1. Sin este escenario el rechazo no corria nunca; lo mostro el listado de lineas sin ejecutar del 2026-09-27. Instala la copia global y el runtime adentro de su carpeta temporal, como los demas, antes de mirar el proyecto.",
+          "setup": [],
+          "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
+            "--project",
+            "{DIR}/no-existe"
+          ]
+        },
+        {
           "why": "La red de seguridad de la poda: mas sobrantes que archivos tiene el paquete, asi que apartarlos moveria mas de la mitad del runtime y el instalador no mueve nada. Mil y no un numero derivado: aca solo se mide cobertura de lineas; la prueba de COMPORTAMIENTO, que si deriva el numero del paquete, vive en tests/install-runtime.test.mjs.",
           "setup": [
             "git init -q .",
