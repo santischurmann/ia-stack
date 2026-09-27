@@ -128,6 +128,20 @@ export function assertInstalacionAnteriorAvisada(project, salida) {
   assert.match(salida, /AGENTS\.md apunta a [^\n]*vcp-runtime/u, 'pero se avisa que apunta a la carpeta del nombre anterior');
 }
 
+// UN .gitignore SIN SALTO DE LINEA FINAL, que ya tiene la primera regla del instalador y termina en
+// `.env`. El instalador de PowerShell pegaba el comentario de la regla siguiente a esa ultima linea:
+// quedaba «.env# IA Stack: ...» y `.env` dejaba de ignorarse, sin aviso. El de bash ya miraba el
+// ultimo byte. Lo encontro la cuarta revision del 2026-09-27; ninguna prueba armaba este archivo.
+export function plantarGitignoreSinSaltoFinal(project) {
+  writeFileSync(join(project, '.gitignore'), 'node_modules/\n.claude-archive/\n.env');
+}
+
+export function assertGitignoreIntacto(project) {
+  const lineas = readFileSync(join(project, '.gitignore'), 'utf8').split(/\r?\n/u);
+  assert.ok(lineas.includes('.env'), `la ultima regla del usuario tiene que seguir siendo una linea propia: ${JSON.stringify(lineas)}`);
+  assert.ok(lineas.includes('.vibe/ia-stack-archive/') && lineas.includes('.vibe/ia-stack-runtime/'), `y las reglas del instalador, las suyas: ${JSON.stringify(lineas)}`);
+}
+
 function listado(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile())

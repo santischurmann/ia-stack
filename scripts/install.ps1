@@ -79,6 +79,19 @@ function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
   if ($apartados -gt 0) { Write-Output "OK: $apartados archivo(s) de una instalacion anterior apartado(s), no borrados." }
 }
 
+# UNA REGLA NUEVA EN EL .gitignore DEL PROYECTO, con su comentario. Si el archivo no termina en salto
+# de linea, primero se termina la ultima: Add-Content pega lo que agrega a esa linea, y con `.env` al
+# final quedaba «.env# IA Stack: ...» y `.env` dejaba de ignorarse, sin aviso. install.sh ya miraba el
+# ultimo byte; aca faltaba. Lo encontro la cuarta revision del 2026-09-27.
+function Add-ReglaIgnorada([string]$Archivo, [string]$Comentario, [string]$Regla) {
+  if (Test-Path -LiteralPath $Archivo) {
+    $texto = Get-Content -LiteralPath $Archivo -Raw
+    if ($texto -and -not $texto.EndsWith("`n")) { Add-Content -LiteralPath $Archivo -Value '' }
+  }
+  Add-Content -LiteralPath $Archivo -Value $Comentario
+  Add-Content -LiteralPath $Archivo -Value $Regla
+}
+
 # SI UNA RUTA ESTA COMMITEADA EN EL PROYECTO: moverla deja un borrado en su git, y eso se avisa. Con la
 # preferencia de errores en Continue, como Set-Sello: si git no esta o el proyecto no es un
 # repositorio, la respuesta es «no», no una excepcion.
@@ -163,15 +176,13 @@ if ($ProjectDir) {
   # Lo que la poda mueve es una copia del runtime, igual que el runtime: tampoco se versiona.
   $runtimeArchiveRule = '.vibe/ia-stack-archive/'
   if (-not ((Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $runtimeArchiveRule))) {
-    Add-Content -Path $ignoreFile -Value '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto'
-    Add-Content -Path $ignoreFile -Value $runtimeArchiveRule
+    Add-ReglaIgnorada $ignoreFile '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto' $runtimeArchiveRule
     Write-Host "OK: $runtimeArchiveRule agregado a .gitignore" -ForegroundColor Green
   }
   $ignoreRule = '.vibe/ia-stack-runtime/'
   $yaEsta = (Test-Path $ignoreFile) -and ((Get-Content $ignoreFile) -contains $ignoreRule)
   if (-not $yaEsta) {
-    Add-Content -Path $ignoreFile -Value '# IA Stack: copia del runtime, no es codigo del proyecto'
-    Add-Content -Path $ignoreFile -Value $ignoreRule
+    Add-ReglaIgnorada $ignoreFile '# IA Stack: copia del runtime, no es codigo del proyecto' $ignoreRule
     Write-Host "OK: $ignoreRule agregado a .gitignore" -ForegroundColor Green
   }
   # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
