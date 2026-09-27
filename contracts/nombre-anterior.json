@@ -55,6 +55,12 @@
       "clase": "valor del alias de skill",
       "por_que": "Es el VALOR del alias de skill: el instalador copia SKILL.md a `<skills>/$SKILL_ALIAS.md`, asi que esta linea es la que crea `VibeCodeProtocols.md` y sostiene el comando `/VibeCodeProtocols`. Se declara TEXTUAL, con su sintaxis, y no como `VibeCodeProtocols` a secas: el alias se escribe sin extension y sin barra, asi que las otras dos excepciones no lo cubren.",
       "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso."
+    },
+    {
+      "patron": "vcp\\.",
+      "clase": "prefijo de schema, escrito como expresion regular",
+      "por_que": "Es el mismo prefijo de schema anterior que ya esta declarado mas arriba, escrito con la barra de una expresion regular: tests/schema-compat.test.mjs lo usa para BUSCAR en el codigo los literales de schema con el prefijo viejo. Aparecio el 2026-09-26, cuando el guarda dejo de distinguir mayusculas y paso a ver la sigla en minuscula.",
+      "que_pasa_si_se_toca": "La prueba deja de encontrar los literales viejos que existe para encontrar, y un schema escrito con el prefijo anterior pasaria sin que nadie lo vea."
     }
   ],
   "limite_honesto": "Mira los archivos de CODIGO versionados -- .mjs, .sh, .ps1 --, no la documentacion. En los .md el nombre anterior aparece a proposito decenas de veces, contando la historia del rename, y un guarda que los mirara exigiria borrar esa historia. La contracara es que un documento puede volver a publicar un comando con el nombre viejo sin que nadie lo vea. Y mira lineas que no son comentarios: un comentario que menciona el nombre anterior es historia, no residuo."

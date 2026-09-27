@@ -81,7 +81,7 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
     });
     assert.equal(result.status, 0, result.output);
     const archiveArgs = readFileSync(argsFile, 'utf8').trim().split(/\r?\n/u);
-    assert.deepEqual(archiveArgs.slice(0, 2), ['-r', 'vibecodeprotocols-security-test.zip']);
+    assert.deepEqual(archiveArgs.slice(0, 2), ['-r', 'ia-stack-security-test.zip']);
     // Los directorios del fixture estan vacios y git no versiona directorios vacios, asi que lo
     // unico versionado dentro de la lista blanca son los seis documentos de raiz mas el script.
     assert.deepEqual(archiveArgs.slice(2).sort(), [
@@ -89,14 +89,14 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
       'IAStack/scripts/build-zip.sh',
     ].sort());
     assert.equal(archiveArgs.some((item) => item.includes('.env') || item.includes('.vibe') || item.includes('graphify-out') || item === 'IAStack'), false);
-    assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.zip')), true);
-    assert.equal(existsSync(join(root, 'vibecodeprotocols-security-test.sha256')), true);
+    assert.equal(existsSync(join(root, 'ia-stack-security-test.zip')), true);
+    assert.equal(existsSync(join(root, 'ia-stack-security-test.sha256')), true);
     // FALSIFICACIÓN: the printed recipient instructions must `cd` into the package's REAL
     // directory case ("IAStack" here — mixed case on purpose), never a hardcoded lowercase literal
     // that breaks the instructions verbatim on a case-sensitive filesystem (the primary target,
     // since scripts/install.sh is the Linux/macOS installer).
     assert.match(result.output, /cd IAStack && \.\/scripts\/install\.sh/u);
-    assert.equal(result.output.includes('cd vibecodeprotocols'), false);
+    assert.equal(result.output.includes('cd ia-stack'), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -184,7 +184,7 @@ test('el empaquetador falla cerrado si no puede saber que esta versionado', (t) 
     });
     assert.notEqual(result.status, 0);
     assert.match(result.output, /REJECTED: .*not a Git work tree/u);
-    assert.equal(existsSync(join(root, 'vibecodeprotocols-sin-git.zip')), false);
+    assert.equal(existsSync(join(root, 'ia-stack-sin-git.zip')), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

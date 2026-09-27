@@ -1875,7 +1875,7 @@ test('C1 · las tres sondas contra un repositorio de git REAL, con un borrado re
   const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
   try {
     if (git('init', '-q').status !== 0) return; // sin git no hay nada que medir
-    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.email', 'ia-stack@example.invalid');
     git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
@@ -1934,7 +1934,7 @@ test('C1 · SONDA B corre cuando la huella es idéntica, y descarta un renombrad
   const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
   try {
     if (git('init', '-q').status !== 0) return;
-    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.email', 'ia-stack@example.invalid');
     git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');
@@ -1991,7 +1991,7 @@ test('C1 · FALSIFICACIÓN · un `git mv` NO enciende la sonda de historia', () 
   const git = (...args) => spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
   try {
     if (git('init', '-q').status !== 0) return;
-    git('config', 'user.email', 'vcp@example.invalid');
+    git('config', 'user.email', 'ia-stack@example.invalid');
     git('config', 'user.name', 'IA Stack');
     mkdirSync(join(repo, 'skills', 'cyber'), { recursive: true });
     const archivo = join(repo, 'skills', 'cyber', 'SKILL.md');

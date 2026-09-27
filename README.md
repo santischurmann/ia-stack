@@ -23,7 +23,7 @@ entender -> decidir -> test rojo -> cambio chico -> casos borde -> revisión -> 
 Una IA que programa puede decirte «lo probé y anda» sin haber corrido nada. No miente a propósito:
 no tiene forma de distinguir lo que ejecutó de lo que supone.
 
-VCP le saca esa ambigüedad. Cada afirmación importante tiene detrás **un comando que la respalda**,
+IA Stack le saca esa ambigüedad. Cada afirmación importante tiene detrás **un comando que la respalda**,
 y si el comando no corrió, el protocolo lo dice en vez de seguir.
 
 La regla dura, la que ordena todo lo demás:
@@ -88,7 +88,7 @@ Qué responde cada una, en una línea:
 Son las mismas que declara `SKILL.md`. Una prueba lo comprueba: si los dos documentos se separan,
 la suite se pone roja.
 
-Cuando una decisión cambia alcance, costo, riesgo o publicación, VCP muestra opciones 🔵. El agente
+Cuando una decisión cambia alcance, costo, riesgo o publicación, IA Stack muestra opciones 🔵. El agente
 recomienda una, explica el motivo y espera la decisión humana; no elige por silencio.
 
 ---
@@ -101,7 +101,7 @@ ya no aprueba un commit**. Los viejos no se borran ni se reescriben — se leen 
 
 Cuatro cambios, los cuatro salidos de correr el protocolo dos días sobre un proyecto real:
 
-- **La superficie de ataque se declara antes de construir.** Toda la seguridad de VCP era posterior
+- **La superficie de ataque se declara antes de construir.** Toda la seguridad de IA Stack era posterior
   al código: el escáner mira un diff ya escrito. Ahora Discovery declara qué hay que proteger, por
   dónde entra dato ajeno y **qué criterio de aceptación prueba cada control** — y de ahí lo arrastra
   el aparato que ya existía. Un control de autorización declarado y no probado frena la publicación.
@@ -124,7 +124,7 @@ de un 404 tampoco los tiene.
 
 ## La memoria entre sesiones
 
-Una IA arranca cada sesión sin recordar la anterior. VCP no intenta arreglar eso con más contexto:
+Una IA arranca cada sesión sin recordar la anterior. IA Stack no intenta arreglar eso con más contexto:
 lo escribe en disco, en `.vibe/`, y lo vuelve a leer al arrancar.
 
 ```mermaid
@@ -302,7 +302,7 @@ nombre del modelo, nunca una tarifa. Traer una de internet sería afirmar un nú
 Cada chequeo declara **qué NO puede detectar**, y esas frases están guardadas como datos revisables
 en `contracts/honest-limits.json`. No son letra chica: si alguien borra una, el contrato lo rechaza.
 
-La aclaración que vale para todo VCP: **los chequeos prueban forma, cadena y estado, nunca
+La aclaración que vale para todo IA Stack: **los chequeos prueban forma, cadena y estado, nunca
 verdad.** Pueden decirte que una decisión quedó registrada de forma coherente; no pueden decirte que
 sea la decisión correcta, ni que la persona la haya entendido.
 
@@ -314,11 +314,11 @@ sea la decisión correcta, ni que la persona la haya entendido.
 |---|---|
 | **gate** | Un chequeo automático que deja pasar o frena. Un programa que responde sí o no, no una opinión. |
 | **verde / rojo** | Verde = pasó. Rojo = frenó. |
-| **verde vacío** | Un chequeo que pasó **sin haber comparado nada**, porque el archivo que tenía que mirar no existía. VCP lo escribe distinto: `VACÍO:` en vez de `OK:`. |
+| **verde vacío** | Un chequeo que pasó **sin haber comparado nada**, porque el archivo que tenía que mirar no existía. IA Stack lo escribe distinto: `VACÍO:` en vez de `OK:`. |
 | **hash** | Una huella del contenido: un número largo que cambia si cambia un solo carácter. |
 | **cadena de hashes** | Cada línea guarda la huella de la anterior. Editar una vieja rompe las que siguen. |
 | **receipt** | Dónde queda escrito qué se verificó, con qué comando y qué dio. Evidencia para revisar, no prueba criptográfica. |
-| **runtime** | La copia de VCP que vive **dentro** de tu proyecto. Es la herramienta, no tu código. |
+| **runtime** | La copia de IA Stack que vive **dentro** de tu proyecto. Es la herramienta, no tu código. |
 | **RED / GREEN** | RED = escribir la prueba primero y **verla fallar**. GREEN = recién ahí, el código que la hace pasar. |
 | **límite honesto** | Una frase que dice qué **no** detecta un chequeo, guardada como dato para que nadie la borre sin que se note. |
 | **slug** | El nombre corto de una feature: `integridad-verificable`. |
@@ -332,7 +332,7 @@ sea la decisión correcta, ni que la persona la haya entendido.
 | **[`SKILL.md`](SKILL.md)** | El protocolo completo, fase por fase. Es lo que lee el agente. |
 | **[`skills/gates.md`](skills/gates.md)** | Todos los chequeos, qué comprueba cada uno y qué **no** puede comprobar. |
 | **[`skills/research.md`](skills/research.md)** | **Research: investigar antes de especificar** — la pasada de Discovery. |
-| **[`skills/verificar-ia-stack.md`](skills/verificar-ia-stack.md)** | Cómo verificar el propio repositorio de VCP. |
+| **[`skills/verificar-ia-stack.md`](skills/verificar-ia-stack.md)** | Cómo verificar el propio repositorio de IA Stack. |
 | **[`SECURITY.md`](SECURITY.md)** | **Modelo de seguridad y límites**. |
 | **[`INSTALL.md`](INSTALL.md)** | Instalación y desinstalación en detalle. |
 

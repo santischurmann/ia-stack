@@ -5,19 +5,19 @@ entradas de RED; el runtime no instala dependencias globales.
 
 ## Instalación recomendada
 
-Cloná VCP y apuntá al proyecto donde lo vas a usar:
+Cloná IA Stack y apuntá al proyecto donde lo vas a usar:
 
 ```bash
-git clone <repo-url> vibecodeprotocols
-cd vibecodeprotocols
+git clone <repo-url> ia-stack
+cd ia-stack
 ./scripts/install.sh --project /ruta/a/mi-proyecto
 ```
 
 Windows PowerShell:
 
 ```powershell
-git clone <repo-url> vibecodeprotocols
-cd vibecodeprotocols
+git clone <repo-url> ia-stack
+cd ia-stack
 .\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto
 ```
 

@@ -49,7 +49,7 @@ test('matches() handles ** and single-segment * globs', () => {
 });
 
 test('FALSIFICACIÓN · project containment rejects the checkout root, its direct parent and another volume', () => {
-  const root = 'C:\\vcp\\project';
+  const root = 'C:\\proyecto\\project';
   assert.equal(isWithin(root, root), false);
   assert.equal(isWithin(root, dirname(root)), false);
   assert.equal(isWithin(root, 'Z:\\outside'), false);

@@ -55,7 +55,7 @@ function rematerialize(attributes) {
     git(dir, 'init', '-q');
     git(dir, 'config', 'core.autocrlf', 'true');
     git(dir, 'config', 'user.email', 'gate@vcp.local');
-    git(dir, 'config', 'user.name', 'vcp');
+    git(dir, 'config', 'user.name', 'ia-stack');
     git(dir, 'add', '-A');
     git(dir, 'commit', '-qm', 'seed');
     for (const file of walk(join(dir, HASHED_TREE))) rmSync(file);

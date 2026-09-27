@@ -33,7 +33,7 @@ function fixture() {
   mkdirSync(join(root, 'src'));
   mkdirSync(join(root, 'test'));
   git(root, 'init', '-q');
-  git(root, 'config', 'user.email', 'vcp@example.invalid');
+  git(root, 'config', 'user.email', 'ia-stack@example.invalid');
   git(root, 'config', 'user.name', 'IA Stack test');
   writeFileSync(join(root, 'src', 'a.js'), 'export const a = 1;\n');
   git(root, 'add', '.');

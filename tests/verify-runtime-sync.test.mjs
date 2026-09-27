@@ -38,7 +38,7 @@ const SOURCE_FILES = [
   ['SECURITY.md', '# security\n'],
   // Los punteros de Codex: el instalador los LEE del paquete, asi que tienen que viajar con el
   // runtime o una reinstalacion desde el runtime falla con "cannot stat".
-  ['.agents/skills/vibecodeprotocols/SKILL.md', '# puntero\n'],
+  ['.agents/skills/ia-stack/SKILL.md', '# puntero\n'],
   ['AGENTS.md', '# agents\n'],
 ];
 

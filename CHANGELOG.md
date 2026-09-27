@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to VibeCodeProtocols are documented here.
+All notable changes to IA Stack are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ---

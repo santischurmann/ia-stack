@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# build-zip.sh — VibeCodeProtocols distributable package builder
-# Run from the vibecodeprotocols/ directory
-# Output: vibecodeprotocols-<version>.zip + vibecodeprotocols-<version>.sha256
+# build-zip.sh — IA Stack distributable package builder
+# Run from the ia-stack/ directory
+# Output: ia-stack-<version>.zip + ia-stack-<version>.sha256
 
 set -euo pipefail
 
@@ -13,7 +13,7 @@ if [[ ! "$VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$ || "$VERSION" == *..* ]]
   exit 2
 fi
 PACKAGE_NAME="$(basename "$PACKAGE_DIR")"
-OUTPUT_NAME="vibecodeprotocols-${VERSION}"
+OUTPUT_NAME="ia-stack-${VERSION}"
 OUTPUT_ARCHIVE="${OUTPUT_NAME}.zip"
 CHECKSUM_FILE="${OUTPUT_NAME}.sha256"
 

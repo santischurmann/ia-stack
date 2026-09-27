@@ -38,7 +38,11 @@ export const EXTENSIONES = ['.mjs', '.sh', '.ps1'];
 // La excepción de abajo lo cubre igual; esto es que no dependa sólo de ella.
 const LARGO = ['Vibe', 'Code', 'Protocols'].join('');
 const CORTO = 'VCP';
-export const NOMBRE_ANTERIOR = new RegExp(`${LARGO}|\\b${CORTO}\\b`, 'u');
+// SIN DISTINGUIR MAYUSCULAS, desde el 2026-09-26. Con la bandera `u` sola, la forma en minuscula le
+// era invisible, y por ahi se escapo el nombre del zip de la release —`vibecodeprotocols-<version>.zip`—
+// durante once dias despues de declarar terminado el rename. Un guarda que busca un nombre tiene que
+// buscarlo en las formas en que se escribe, no en la que uso quien lo escribio primero.
+export const NOMBRE_ANTERIOR = new RegExp(`${LARGO}|\\b${CORTO}\\b`, 'iu');
 
 /** Una línea que es sólo un comentario es historia, no residuo. */
 export function esComentario(linea) {
@@ -122,4 +126,11 @@ test('FALSIFICACIÓN · una excepción sin motivo, o sin decir qué rompe, no es
 test('el nombre CORTO se busca con frontera de palabra, o marcaría cualquier palabra que lo contenga', () => {
   assert.equal(residuos(`const s = 'MIVCPX';`, []).length, 0, 'adentro de otra palabra no es el nombre');
   assert.equal(residuos(`const s = 'el ${CORTO} nuevo';`, []).length, 1);
+});
+
+test('FALSIFICACIÓN · la forma en minúscula también es el nombre anterior', () => {
+  // La que se escapó: el nombre del zip de la release, en minúscula, en un script de shell.
+  assert.equal(residuos(`OUTPUT_NAME="${LARGO.toLowerCase()}-1.0.0"`, []).length, 1);
+  assert.equal(residuos(`const d = '.agents/skills/${LARGO.toLowerCase()}/SKILL.md';`, []).length, 1);
+  assert.equal(residuos(`const s = '${CORTO.toLowerCase()}';`, []).length, 1, 'la sigla en minúscula, como palabra suelta');
 });
