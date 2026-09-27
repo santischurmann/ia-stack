@@ -4,6 +4,56 @@
 
 
 
+
+---
+
+## 2026-09-27 — la revisión antes del tag: un ALTO, tres MEDIO y lo que faltaba probar
+
+**Contexto**: un corte de luz reinició la máquina a mitad de la sesión. Árbol verificado antes de seguir:
+`HEAD` = `origin/main` = `3cfb681`, sin cambios, `git fsck` limpio. La 3.0.0 NO se etiquetó el 26-09:
+una revisión independiente de los últimos cuatro commits encontró un ALTO y tres MEDIO, todos
+verificados contra el código antes de tocar.
+
+**Estado**: la suite completa y la cobertura se miden en el CI de la rama y no acá: la máquina está
+compartida y la memoria la necesita otra sesión. Acá, de a un archivo: cada prueba tocada o que lee
+algo de lo tocado, en verde, y los gates de índice, repositorio limpio, contrato, sonda vacía y menús.
+
+**DECISIÓN DEL OPERADOR, con el dato corregido**: el zip lo arma GitHub al subir el tag. Se le había
+preguntado sobre una premisa falsa —que el zip no se podía armar en esta máquina; el empaquetador cae
+a bsdtar de Windows— y se le volvió a preguntar con el dato bien. Eligió lo mismo.
+
+**LOS ARREGLOS, cada uno con su rojo primero:**
+
+| Commit | Qué | El rojo |
+|---|---|---|
+| `b3e22a8` | El zip no llevaba `AGENTS.md` ni `.agents/`: instalar desde el zip se cortaba con `cp: cannot stat`. Y su raíz era la carpeta del checkout. Ahora una sola lista, raíz fija `ia-stack/`, contenido desde el índice | Reproducido punta a punta antes de tocar; la prueba nueva acusaba exactamente esos dos |
+| `6c4d7d0` | `release.yml`: arma en un trabajo de sólo lectura y lo prueba INSTALÁNDOLO; publica en otro, el único con escritura. Acciones fijadas a SHA | El archivo no existía |
+| `6c963ee` | Bash creaba una carpeta vacía con el nombre anterior en cada instalación. Y la poda de `.vibe/vcp-runtime` no la había ejercitado nunca ninguna prueba | La carpeta de más, nombrada; la poda, falsificada apagándola en cada instalador |
+| `0d52fbe` | El guarda del nombre anterior: una sola excepción tapaba 196 sitios. Contrato v2, cada excepción es una forma con ejemplo y contraejemplo | 49 sitios de código |
+| `0326d0c` | El mismo guarda, sobre los documentos que viajan al runtime. La clave de Engram se queda, declarada | 61 sitios en 20 documentos, sobre los blobs del commit anterior |
+| `757de5f` | Nada fijaba cuál de los dos nombres de la perilla de concurrencia gana si están los dos | Falsificada invirtiendo el `??` |
+
+**LO QUE QUEDÓ ESCRITO PARA NO REPETIRLO:**
+
+- **El orden del release importa.** `verify-ablation.test.mjs` exige que la etiqueta que `SKILL.md`
+  dice tener exista en git. El cambio a «3.0.0 · etiquetada como v3.0.0» no puede pasar por el CI de
+  una rama antes del tag: va solo, al final, y sube a main **junto con** el tag.
+- **Un `sed -i` sobre un `.ps1` no aplicó el reemplazo** (las barras invertidas) y no avisó. Los
+  reemplazos con barras se hacen con un script de reemplazo literal que cuenta apariciones.
+
+**DONDE RETOMAR**
+
+1. CI de la rama en las dos plataformas → revisión del otro par → el «sí» del operador **en ese
+   momento** → commit de versión + tag en un solo push. Subir el tag es publicar.
+2. Diferido a 3.0.1: la sigla pegada a guion bajo (BAJO 1) y los `existsSync` que filtran en vez de
+   afirmar (BAJO 2).
+3. Hallazgo aparte, sin tocar: `ci.yml` usa acciones con etiqueta móvil y el gate de seguridad lo
+   marca sobre un delta. Ese flujo sólo lee.
+4. Propuestas diferidas, sin implementar: que `release.yml` exija un CI verde del commit del tag, y
+   que compare el tag con la versión de `SKILL.md`.
+5. T6 de la ablación sigue siendo del operador. La intermitente de `verify-menu-shape` bajo
+   cobertura en Windows (una vez, el 22-09) sigue sin explicar.
+
 ---
 
 ## 2026-09-26 — las tres decisiones abiertas, y la release 3.0.0

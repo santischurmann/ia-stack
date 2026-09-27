@@ -28,6 +28,39 @@ archivo ya stageado git lo cuenta igual al índice y no lo reescribe. Los recibo
 versión sobre un test mezclado no tienen arreglo, porque la evidencia sellada no se reescribe;
 `recheck` los marca.
 
+### Lo que encontró la revisión antes de etiquetar
+
+La 3.0.0 no se etiquetó el día que se escribió esta sección: una revisión independiente de los
+últimos commits encontró un defecto alto y tres medios, y cada uno se arregló con su prueba roja
+primero.
+
+- **El zip de la release no instalaba.** Le faltaban `AGENTS.md` y `.agents/`, que los dos
+  instaladores copian sin condición: quien descomprimía y corría `./scripts/install.sh` caía en
+  `cp: cannot stat` con la instalación a medias. Reproducido punta a punta antes de tocar. La lista
+  del empaquetador estaba escrita dos veces a mano; ahora es una, y una prueba la compara con lo que
+  el gate de sincronía deriva de los instaladores.
+- **La raíz del zip era el nombre de la carpeta donde alguien clonó.** Ahora es siempre `ia-stack/`,
+  y las instrucciones impresas hacen `cd ia-stack`. El contenido sale del **índice** de git: un
+  cambio local que no pasó por `git add` no viaja, igual que un archivo sin versionar.
+- **La release la arma GitHub, desde el tag.** `.github/workflows/release.yml` arma el zip en un
+  trabajo de sólo lectura y lo **prueba instalándolo** —checksum, descomprimir, bit de ejecución,
+  instalar sobre un proyecto vacío—; otro trabajo, el único con permiso de escritura del
+  repositorio, sólo crea la release. Cada acción fijada a un SHA completo.
+- **El instalador de bash creaba una carpeta vacía con el nombre anterior** en el directorio de
+  skills, en cada instalación. Y la poda de `.vibe/vcp-runtime` —la carpeta del runtime de antes del
+  rename— no la había ejercitado nunca ninguna prueba; ahora las dos ramas del instalador la
+  plantan y exigen que quede entera en el archivo.
+- **El guarda del nombre anterior tapaba 196 sitios con una sola excepción.** Borraba el texto de
+  cada excepción de la línea entera, y `vcp-`, declarada para los prefijos de temporales, se comía
+  cualquier cosa que empezara igual. Ahora cada excepción es una **forma** con un ejemplo que cubre y
+  uno que no, y el guarda barre también los documentos que viajan al runtime: 49 sitios de código y
+  61 de documentos, renombrados. La clave de Engram `vcp/<project>/…` **se queda**, declarada: es la
+  clave de las memorias ya guardadas.
+- **Una prueba leía el entorno real** (`7798b34`): afirmaba la concurrencia por defecto del gate de
+  cobertura, y usar la perilla que ese gate documenta para máquinas con poca memoria la ponía roja.
+  Y nada fijaba cuál de sus dos nombres gana si están los dos: ahora gana el nuevo,
+  `IA_STACK_TEST_CONCURRENCY`, y el anterior sigue andando solo.
+
 ### Tres hallazgos de un proyecto instalado, medidos antes de tocar
 
 Un proyecto que usa el protocolo reinstaló su runtime y auditó sus recibos: 13 válidos, 5 archivados y
@@ -104,6 +137,11 @@ force push público.
 - `recheck` no vuelve a correr el test, y compara contra el último commit que tocó el recibo.
 - La copia global del runtime no se poda ni se sella.
 - Un recibo sellado antes de esta versión sobre un test con finales mezclados no se puede recomprobar.
+- El zip lleva lo que está en el **índice** de git, no el árbol de trabajo.
+- El flujo de release no corre la suite ni compara el tag con la versión que declara `SKILL.md`: se
+  etiqueta un commit que ya pasó el CI en las dos plataformas, y subir el tag es publicar.
+- El guarda del nombre anterior no barre README, INSTALL, CHANGELOG ni los `.json`, no ve los
+  comentarios del código, y no ve la sigla pegada a un guion bajo.
 
 ### Lo anterior de esta versión, del 2026-09-08 al 2026-09-16
 
