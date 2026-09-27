@@ -95,6 +95,71 @@ export function residuos(texto, exentos, archivo = '', { comentarios = true } = 
   return encontrados;
 }
 
+const esLista = (x) => Array.isArray(x) && x.length > 0 && x.every((s) => typeof s === 'string');
+
+/** Una excepción con forma, contra lo que dice cubrir y lo que dice no cubrir. Tira si algo no cierra.
+ *
+ * Las dos cosas son LISTAS, y una cadena suelta se rechaza: con un solo contraejemplo, sacarle un
+ * borde a la forma la dejaba más ancha y el contrato cargaba igual (revisiones del 2026-09-27). */
+export function validarForma(e) {
+  const nombre = e.forma;
+  const donde = `${e.en ?? ''}ejemplo.mjs`;
+  assert.ok(esLista(e.ejemplo), `la excepción ${nombre} no trae un ejemplo de lo que cubre`);
+  assert.ok(esLista(e.no_cubre), `la excepción ${nombre} no trae un ejemplo de lo que NO cubre`);
+  for (const caso of e.ejemplo) {
+    // Un ejemplo sin ninguna aparición que el guarda detecte no prueba nada: la forma lo «cubre» gratis.
+    assert.ok(NOMBRE_ANTERIOR.test(caso), `el ejemplo de ${nombre} no tiene ninguna aparición que el guarda detecte: ${caso}`);
+    assert.ok(new RegExp(e.forma, 'u').test(caso), `la forma de ${nombre} no reconoce su propio ejemplo: ${caso}`);
+    assert.deepEqual(residuos(caso, [e], donde), [], `la excepción ${nombre} no cubre su propio ejemplo: ${caso}`);
+  }
+  for (const caso of e.no_cubre) {
+    assert.equal(residuos(caso, [e], donde).length, 1, `la excepción ${nombre} cubre lo que dice que no cubre: ${caso}`);
+  }
+}
+
+// LOS BORDES DE UNA FORMA: la clase de su lookbehind del comienzo y la de su lookahead del final, más
+// la alternativa de ese lookahead. Sólo los bordes: el cuerpo es lo que la forma reconoce.
+const CLASE = String.raw`((?:\\.|[^\]\\])+)`;
+const BORDE_INICIAL = new RegExp(String.raw`^\(\?<!\[(\^?)` + CLASE + String.raw`\]\)`, 'u');
+const BORDE_FINAL = new RegExp(String.raw`\(\?!\[` + CLASE + String.raw`\](?:\|((?:\\.|[^)\\])+))?\)$`, 'u');
+const elementos = (clase) => [...clase.matchAll(/\\.|./gsu)].map((m) => m[0]);
+
+/** Cada carácter de cada borde, con la forma que queda si se lo saca. */
+export function bordes(forma) {
+  const salida = [];
+  const inicio = forma.match(BORDE_INICIAL);
+  if (inicio) {
+    const [, negada, clase] = inicio;
+    for (const el of elementos(clase)) {
+      const resto = elementos(clase).filter((x) => x !== el).join('');
+      salida.push({ lado: 'antes', el, forma: forma.replace(BORDE_INICIAL, () => `(?<![${negada}${resto}])`) });
+    }
+  }
+  const fin = forma.match(BORDE_FINAL);
+  if (fin) {
+    const [, clase, alternativa] = fin;
+    const cola = alternativa === undefined ? '' : `|${alternativa}`;
+    for (const el of elementos(clase)) {
+      const resto = elementos(clase).filter((x) => x !== el).join('');
+      salida.push({ lado: 'después', el, forma: forma.replace(BORDE_FINAL, () => `(?![${resto}]${cola})`) });
+    }
+    if (alternativa !== undefined) salida.push({ lado: 'después', el: `|${alternativa}`, forma: forma.replace(BORDE_FINAL, () => `(?![${clase}])`) });
+  }
+  return salida;
+}
+
+/** Los caracteres de borde que se pueden sacar sin que ningún ejemplo lo note. */
+export function bordesSinEjemplo(e) {
+  return bordes(e.forma).filter((b) => {
+    try {
+      validarForma({ ...e, forma: b.forma });
+      return true;
+    } catch {
+      return false;
+    }
+  }).map((b) => `${e.forma} · ${b.lado} · ${b.el}`);
+}
+
 export function leerContrato(cwd = repoRoot, leer = (r) => readFileSync(join(cwd, r), 'utf8')) {
   const d = JSON.parse(leer(CONTRATO));
   assert.ok(Array.isArray(d.excepciones) && d.excepciones.length > 0, 'un contrato sin excepciones no declara nada');
@@ -103,21 +168,7 @@ export function leerContrato(cwd = repoRoot, leer = (r) => readFileSync(join(cwd
     assert.ok((typeof e.forma === 'string') !== (typeof e.archivo === 'string'), `cada excepción es una forma o un archivo, una sola de las dos: ${JSON.stringify(nombre)}`);
     assert.ok(String(e.por_que ?? '').length > 40, `la excepción ${nombre} no dice por qué se queda`);
     assert.ok(String(e.que_pasa_si_se_toca ?? '').length > 40, `la excepción ${nombre} no dice qué se rompe si se toca`);
-    if (e.archivo !== undefined) continue;
-    // La forma se prueba contra sus ejemplos: uno que tiene que cubrir, y UNO POR CADA BORDE que no:
-    // con un solo contraejemplo, sacar un borde de la forma la dejaba más ancha y el contrato
-    // cargaba igual. Lo encontró la revisión del 2026-09-27.
-    const donde = `${e.en ?? ''}ejemplo.mjs`;
-    const noCubre = typeof e.no_cubre === 'string' ? [e.no_cubre] : e.no_cubre;
-    assert.equal(typeof e.ejemplo, 'string', `la excepción ${nombre} no trae un ejemplo de lo que cubre`);
-    assert.ok(Array.isArray(noCubre) && noCubre.length > 0 && noCubre.every((x) => typeof x === 'string'), `la excepción ${nombre} no trae un ejemplo de lo que NO cubre`);
-    // Un ejemplo sin ninguna aparición que el guarda detecte no prueba nada: la forma lo «cubre» gratis.
-    assert.ok(NOMBRE_ANTERIOR.test(e.ejemplo), `el ejemplo de ${nombre} no tiene ninguna aparición que el guarda detecte`);
-    assert.ok(new RegExp(e.forma, 'u').test(e.ejemplo), `la forma de ${nombre} no reconoce su propio ejemplo`);
-    assert.deepEqual(residuos(e.ejemplo, [e], donde), [], `la excepción ${nombre} no cubre su propio ejemplo`);
-    for (const caso of noCubre) {
-      assert.equal(residuos(caso, [e], donde).length, 1, `la excepción ${nombre} cubre lo que dice que no cubre: ${caso}`);
-    }
+    if (e.archivo === undefined) validarForma(e);
   }
   for (const x of d.documentados ?? []) {
     assert.ok(String(x.por_que ?? '').length > 40, `lo documentado ${x.identificador} no dice por qué se queda`);
@@ -167,6 +218,33 @@ test('los documentos que el instalador copia no usan el nombre anterior como nom
     }
   }
   assert.deepEqual(sobran, [], `${sobran.length} sitio(s) de documentos entregados usan el nombre anterior`);
+});
+
+// LICENSE Y LOS FLUJOS .yml, desde el 2026-09-27. LICENSE viaja en el zip de la release y nombraba al
+// proyecto con el nombre anterior, y ningún barrido lo miraba: ni es código ni es un .md. Los .yml son
+// los flujos de CI y de release, que GitHub muestra tal cual. Se barren ENTEROS, comentarios
+// incluidos: en un flujo publicado, un comentario también se lee. Lo decidió el operador sobre la
+// tercera revisión.
+export function otrosPublicados(listados) {
+  return listados.filter((f) => f === 'LICENSE' || /\.ya?ml$/u.test(f));
+}
+
+test('LICENSE y los flujos .yml no usan el nombre anterior', SOLO_FUENTE, () => {
+  const formas = leerContrato().excepciones.filter((e) => e.forma);
+  const archivos = otrosPublicados(execFileSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' }).split('\n').map((l) => l.trim()));
+  assert.ok(archivos.includes('LICENSE') && archivos.some((f) => /\.ya?ml$/u.test(f)), `no están LICENSE o los flujos: ${archivos.join(', ') || '(nada)'} — el barrido no mediría nada`);
+  const sobran = [];
+  for (const archivo of archivos) {
+    for (const { linea, texto } of residuos(readFileSync(join(repoRoot, archivo), 'utf8'), formas, archivo, { comentarios: false })) {
+      sobran.push(`${archivo}:${linea}  ${texto}`);
+    }
+  }
+  assert.deepEqual(sobran, [], `${sobran.length} sitio(s) de LICENSE o de un flujo usan el nombre anterior`);
+});
+
+test('FALSIFICACIÓN · LICENSE y los flujos entran al barrido, y un comentario de un flujo se lee', () => {
+  assert.deepEqual(otrosPublicados(['LICENSE', 'docs/LICENSE.md', '.github/workflows/ci.yml', 'x.yaml', 'a.json', 'README.md']), ['LICENSE', '.github/workflows/ci.yml', 'x.yaml']);
+  assert.equal(residuos(`# flujo de ${CORTO}`, [], '.github/workflows/ci.yml', { comentarios: false }).length, 1);
 });
 
 test('FALSIFICACIÓN · en un documento, un título con el nombre anterior se marca', () => {
@@ -228,10 +306,40 @@ test('FALSIFICACIÓN · una excepción cubre sólo lo que cae ENTERO adentro de 
   assert.deepEqual(residuos(`const d = '${LARGO}';`, [LARGO]), [], 'y cubrirla entera, sí');
 });
 
+// UN CONTRAEJEMPLO POR CADA CARÁCTER DE CADA BORDE, y no por borde: la segunda revisión del
+// 2026-09-27 sacó, de a uno, caracteres de los bordes —la letra pegada después, el punto antes— y el
+// contrato seguía cargando. Una lista escrita a mano de «qué caso falta» vuelve a olvidarse alguno;
+// esta prueba saca cada carácter y exige que algún ejemplo lo note.
+test('FALSIFICACIÓN · cada carácter de cada borde tiene un ejemplo que lo necesita', () => {
+  const formas = leerContrato().excepciones.filter((e) => e.forma);
+  for (const e of formas) {
+    // Un borde que esta prueba no sabe leer no se puede falsificar: se exige poder leerlo.
+    if (e.forma.startsWith('(?<!')) assert.ok(BORDE_INICIAL.test(e.forma), `no se pudo leer el borde inicial de ${e.forma}`);
+    if (e.forma.includes('(?![')) assert.ok(BORDE_FINAL.test(e.forma), `no se pudo leer el borde final de ${e.forma}`);
+  }
+  assert.ok(formas.filter((e) => bordes(e.forma).length > 0).length >= 5, 'casi ninguna forma tiene bordes: la prueba no mediría nada');
+  assert.deepEqual(formas.flatMap(bordesSinEjemplo), [], 'estos caracteres de borde se pueden sacar sin que ningún ejemplo lo note');
+});
+
+test('FALSIFICACIÓN · la prueba de bordes ve un carácter que ningún ejemplo necesita', () => {
+  assert.deepEqual(bordes('(?<![^\\s(])/x(?![\\w/-]|\\.\\w)').map((b) => `${b.lado} ${b.el} ${b.forma}`), [
+    'antes \\s (?<![^(])/x(?![\\w/-]|\\.\\w)',
+    'antes ( (?<![^\\s])/x(?![\\w/-]|\\.\\w)',
+    'después \\w (?<![^\\s(])/x(?![/-]|\\.\\w)',
+    'después / (?<![^\\s(])/x(?![\\w-]|\\.\\w)',
+    'después - (?<![^\\s(])/x(?![\\w/]|\\.\\w)',
+    'después |\\.\\w (?<![^\\s(])/x(?![\\w/-])',
+  ]);
+  const base = { forma: '(?<![.-])VCP:', ejemplo: ["const p = 'VCP:';"], no_cubre: ["const p = 'x.VCP:';"] };
+  assert.deepEqual(bordesSinEjemplo(base), ['(?<![.-])VCP: · antes · -'], 'el guion antes no tiene quién lo necesite');
+  assert.deepEqual(bordesSinEjemplo({ ...base, no_cubre: [...base.no_cubre, "const p = 'x-VCP:';"] }), [], 'con su contraejemplo, sí');
+  assert.deepEqual(bordes('VCP:'), [], 'una forma sin bordes no tiene nada que sacar');
+});
+
 test('FALSIFICACIÓN · una excepción sin motivo, sin ejemplos, o con una forma más ancha de lo que dice, no es una excepción', () => {
   const motivo = 'un motivo escrito de largo más que suficiente para pasar el umbral de cuarenta';
   const rompe = 'lo que se rompe, también escrito de largo más que suficiente para el umbral';
-  const bien = { forma: 'VCP:', ejemplo: "const p = 'VCP:';", no_cubre: "const p = 'VCP';", por_que: motivo, que_pasa_si_se_toca: rompe };
+  const bien = { forma: 'VCP:', ejemplo: ["const p = 'VCP:';"], no_cubre: ["const p = 'VCP';"], por_que: motivo, que_pasa_si_se_toca: rompe };
   // La referencia pasa: si no pasara, lo de abajo fallaría por el motivo equivocado.
   assert.doesNotThrow(() => leerContrato(repoRoot, () => JSON.stringify({ excepciones: [bien] })));
   for (const [cambio, motivoDelRechazo] of [
@@ -239,12 +347,15 @@ test('FALSIFICACIÓN · una excepción sin motivo, sin ejemplos, o con una forma
     [{ que_pasa_si_se_toca: 'nada' }, /no dice qué se rompe/u],
     [{ ejemplo: undefined }, /no trae un ejemplo de lo que cubre/u],
     [{ no_cubre: undefined }, /no trae un ejemplo de lo que NO cubre/u],
-    [{ ejemplo: "const p = 'otra cosa';" }, /ninguna aparición que el guarda detecte/u],
-    [{ ejemplo: "const p = 'VCP' + 'x';" }, /no reconoce su propio ejemplo/u],
+    // Una cadena suelta ya no es una lista: se rechaza, para que nadie vuelva a un solo caso.
+    [{ ejemplo: "const p = 'VCP:';" }, /no trae un ejemplo de lo que cubre/u],
+    [{ no_cubre: "const p = 'VCP';" }, /no trae un ejemplo de lo que NO cubre/u],
+    [{ ejemplo: ["const p = 'otra cosa';"] }, /ninguna aparición que el guarda detecte/u],
+    [{ ejemplo: ["const p = 'VCP' + 'x';"] }, /no reconoce su propio ejemplo/u],
     // Una forma que reconoce la línea del ejemplo pero no cubre la aparición entera.
     [{ forma: "p = '" }, /no cubre su propio ejemplo/u],
     // Un ejemplo sin nada que el guarda vea: la sigla pegada a otra palabra no es una aparición.
-    [{ forma: 'VCPLINE:', ejemplo: "const p = 'VCPLINE:';" }, /ninguna aparición que el guarda detecte/u],
+    [{ forma: 'VCPLINE:', ejemplo: ["const p = 'VCPLINE:';"] }, /ninguna aparición que el guarda detecte/u],
     // La forma demasiado ancha: `VCP` cubre también lo que el ejemplo negativo dice que no cubre.
     [{ forma: 'VCP' }, /cubre lo que dice que no cubre/u],
     // Con una lista, basta UN contraejemplo cubierto para rechazar.

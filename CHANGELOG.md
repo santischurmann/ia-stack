@@ -60,8 +60,11 @@ arreglos, dos medios más. Cada uno se arregló con su prueba roja primero.
   uno que no, y el guarda barre también los documentos que viajan al runtime: 49 sitios de código y
   61 de documentos, renombrados. La clave de Engram `vcp/<project>/…` **se queda**, declarada: es la
   clave de las memorias ya guardadas. La segunda revisión encontró que esas formas seguían siendo
-  más anchas de lo que decían —`~/`, `C:/` o una URL pasaban—: ahora cada forma tiene bordes, y un
-  contraejemplo por cada borde.
+  más anchas de lo que decían —`~/`, `C:/` o una URL pasaban—, y la tercera, que un contraejemplo
+  por borde tampoco alcanzaba: se podía sacar un carácter de un borde y el contrato seguía cargando.
+  Ahora una prueba saca cada carácter de cada borde, de a uno, y exige que algún ejemplo lo note.
+- **La licencia nombraba al proyecto con el nombre anterior**, y viaja en el zip. Ahora dice
+  `ia-stack`, y el guarda barre también `LICENSE` y los flujos `.yml`, enteros.
 - **Una prueba leía el entorno real** (`7798b34`): afirmaba la concurrencia por defecto del gate de
   cobertura, y usar la perilla que ese gate documenta para máquinas con poca memoria la ponía roja.
   Y nada fijaba cuál de sus dos nombres gana si están los dos: ahora gana el primero que valga,
