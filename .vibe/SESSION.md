@@ -58,6 +58,24 @@ Y en documentos: el README nombra el asset —el «Source code (zip)» de GitHub
 una carpeta vacía y da el checksum de macOS y de PowerShell, probado con un archivo bueno y uno
 alterado; el CHANGELOG dice todo lo global que los instaladores viejos dejaron.
 
+Después, dos cosas más. El límite de la cobertura de `install.sh` no estaba escrito (`615ec27`). Y un
+CI rojo mío: una prueba nueva de PowerShell que se saltea fuera de Windows no estaba declarada en
+`contracts/platform-scope.json` (`7e741fd`). Lo corrido de a uno no la veía, porque esa prueba lee el
+árbol entero.
+
+**LA CUARTA REVISIÓN**, sobre el delta hasta `7e741fd` con el CI verde: un MEDIO de seguridad y cuatro
+BAJO, todos cerrados con su rojo.
+
+| Commit | Qué | El rojo |
+|---|---|---|
+| `d6bc5a1` | PowerShell pegaba su comentario a la última regla de un `.gitignore` sin salto final: con `.env` al final, dejaba de ignorarse | `.env# IA Stack: …` |
+| `2697298` | La carpeta del runtime viejo también puede estar versionada: una semana de agosto se escribía sin regla de ignore | «y se avisa su borrado igual que el del puntero» |
+| `e3cf82f` | La forma del schema recupera su borde de palabra: su cuerpo podía tapar otra aparición | `avcp.vcp-x/1` quedaba cubierto |
+| `2ea57b1` | La variable del nombre anterior para el Bash no se leía, y la prueba daba verde | «la del nombre anterior, sola, vale» |
+| `328482f` | El piso de `install.sh` sube a lo medido, y la salida OK dice por qué no llega al 100% | la frase, exigida antes de estar |
+
+Lo que las revisiones dejaron abierto está en el CHANGELOG, «Conocido, y abierto para la 3.0.1».
+
 **LO QUE QUEDÓ ESCRITO PARA NO REPETIRLO:**
 
 - **El orden del release importa.** `verify-ablation.test.mjs` exige que la etiqueta que `SKILL.md`

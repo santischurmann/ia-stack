@@ -69,6 +69,14 @@ arreglos, dos medios más. Cada uno se arregló con su prueba roja primero.
   cobertura, y usar la perilla que ese gate documenta para máquinas con poca memoria la ponía roja.
   Y nada fijaba cuál de sus dos nombres gana si están los dos: ahora gana el primero que valga,
   empezando por el nuevo, `IA_STACK_TEST_CONCURRENCY`; el anterior sigue andando solo.
+- **El instalador de PowerShell podía dejar de ignorar `.env`.** Agregaba sus reglas al `.gitignore`
+  sin mirar si el archivo terminaba en salto de línea: con `.env` como última línea sin salto,
+  quedaba `.env# IA Stack: …` y `.env` dejaba de ignorarse, sin aviso. El de bash ya lo miraba. Lo
+  encontró la cuarta revisión; ahora los dos terminan la última línea antes de agregar.
+- **La variable del nombre anterior para indicar el Bash no se leía.** El rename cambió el nombre en
+  los dos lados de la comparación, y la prueba que decía leerla probaba la nueva dos veces. Ahora se
+  lee, y la nueva manda. Y el piso de cobertura de `install.sh` sube a lo medido: estaba 8 puntos
+  abajo, y unas catorce líneas podían dejar de correr sin que nadie lo notara.
 
 ### Tres hallazgos de un proyecto instalado, medidos antes de tocar
 
@@ -154,6 +162,26 @@ force push público.
 - Lo que los instaladores anteriores dejaron en lo **global** con el nombre anterior no se aparta: el
   runtime global y la carpeta de sub-skills del directorio de skills —con su contenido si se
   instaló antes del 2026-09-15; vacía si fue con el instalador de bash después—. Lo global no se poda.
+
+### Conocido, y abierto para la 3.0.1
+
+Lo encontraron las revisiones de esta versión y no se cerró acá. Se escribe para que nadie lo tome
+por cerrado:
+
+- **La prueba de bordes del guarda del nombre anterior no es exhaustiva.** Lee el borde inicial y el
+  final de cada forma, no los lookaheads del cuerpo (el que cierra la forma del schema); su control de
+  legibilidad no ve `\b`, `(?=` ni `(?<=`; y si al sacar un carácter la forma deja de compilar, lo
+  cuenta como si un ejemplo lo hubiera notado.
+- **Viajan en el zip sin guarda** `templates/*.json` y `examples/`. Hoy no tienen ninguna aparición del
+  nombre anterior; nada lo impide.
+- **Quedan identificadores con la sigla anterior sin documentar como excepción:** el `limit_id` de un
+  límite honesto y tres rutas de `research/` en el índice.
+- **La cobertura de shell cuenta líneas que la traza de bash no puede informar.** Está escrito como
+  límite; la causa de fondo es de la sonda, que toma como ejecutable toda línea que no es comentario.
+- **Lo que las revisiones dejaron para después:** la sigla pegada a un guion bajo no se ve; algunas
+  pruebas filtran con `existsSync` en vez de afirmar; `release.yml` no exige un CI verde del commit
+  del tag ni que su versión sea la sección más nueva del CHANGELOG; y `ci.yml` usa acciones con
+  etiqueta móvil —ese flujo sólo lee—.
 
 ### Lo anterior de esta versión, del 2026-09-08 al 2026-09-16
 
