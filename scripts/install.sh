@@ -210,10 +210,19 @@ if [ -n "$PROJECT_DIR" ]; then
   # carpeta que ya existia, y `mv` anidaba adentro. Lo encontro la revision del 2026-09-27.
   ARCHIVO_DIR="$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%dT%H%M%S)"
   if [ -d "$VIBE_DIR/vcp-runtime" ]; then
+    # Entre el 2026-08-23 y el 08-28 el instalador la escribia sin regla de ignore: un proyecto de esa
+    # semana puede tenerla commiteada, y moverla deja un borrado en su git. Se pregunta ANTES.
+    RUNTIME_VERSIONADO=""
+    if git -C "$PROJECT_DIR" ls-files --error-unmatch -- "$VIBE_DIR/vcp-runtime" >/dev/null 2>&1; then
+      RUNTIME_VERSIONADO=1
+    fi
     mkdir -p "$ARCHIVO_DIR"
     if mv "$VIBE_DIR/vcp-runtime" "$ARCHIVO_DIR/vcp-runtime"; then
       echo "PODADO: $VIBE_DIR/vcp-runtime era del nombre anterior y ya no se actualizaba."
       echo "        Se MOVIO a $ARCHIVO_DIR/vcp-runtime. No se borro nada: si algo se rompe, vuelve con mv."
+      if [ -n "$RUNTIME_VERSIONADO" ]; then
+        echo "AVISO: $VIBE_DIR/vcp-runtime estaba versionada en el proyecto: moverla deja un borrado en su git. Commitealo." >&2
+      fi
     else
       echo "AVISO: no se pudo mover $VIBE_DIR/vcp-runtime. Sacala a mano: es una copia vieja de los gates." >&2
     fi
@@ -240,8 +249,9 @@ if [ -n "$PROJECT_DIR" ]; then
     fi
   fi
   # Despues de copiar y despues de ignorar el archivo: lo apartado cae en una carpeta que git ya no ve,
-  # asi que podar el runtime no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --. La
-  # unica excepcion es el puntero viejo de Codex si estaba commiteado: ahi el borrado es real, y se avisa.
+  # asi que podar el runtime no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --. Las
+  # excepciones son la carpeta del runtime viejo y su puntero de Codex, si estaban commiteados: ahi el
+  # borrado es real, y se avisa.
   apartar_sobrantes "$VIBE_DIR/ia-stack-runtime" "$ARCHIVO_DIR/ia-stack-runtime"
   sellar_runtime "$VIBE_DIR/ia-stack-runtime"
   echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"

@@ -220,11 +220,14 @@ if ($ProjectDir) {
   # y -Force podia pisar lo que ya hubiera en el destino. Lo encontro la revision del 2026-09-27.
   $archivoDir = Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format "yyyy-MM-dd'T'HHmmss"))
   if (Test-Path -LiteralPath "$VibeDir\vcp-runtime" -PathType Container) {
+    # Un proyecto de la semana del 2026-08-23 al 08-28 puede tenerla commiteada: ver install.sh.
+    $runtimeVersionado = Test-Versionado $ProjectDir "$VibeDir\vcp-runtime"
     New-Item -ItemType Directory -Force -Path $archivoDir | Out-Null
     try {
       Move-Item -LiteralPath "$VibeDir\vcp-runtime" -Destination (Join-Path $archivoDir 'vcp-runtime') -ErrorAction Stop
       Write-Output "PODADO: $VibeDir\vcp-runtime era del nombre anterior y ya no se actualizaba."
       Write-Output "        Se MOVIO a $archivoDir\vcp-runtime. No se borro nada: si algo se rompe, vuelve con Move-Item."
+      if ($runtimeVersionado) { Write-Output "AVISO: $VibeDir\vcp-runtime estaba versionada en el proyecto: moverla deja un borrado en su git. Commitealo." }
     } catch {
       Write-Output "AVISO: no se pudo mover $VibeDir\vcp-runtime. Sacala a mano: es una copia vieja de los gates."
     }
@@ -246,8 +249,9 @@ if ($ProjectDir) {
       Write-Output "AVISO: no se pudo mover $punteroAnterior. Sacalo a mano: Codex ve dos skills del protocolo, y esa apunta a una carpeta que ya no esta."
     }
   }
-  # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira. La unica
-  # excepcion es el puntero viejo de Codex si estaba commiteado: ahi el borrado es real, y se avisa.
+  # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira. Las
+  # excepciones son la carpeta del runtime viejo y su puntero de Codex, si estaban commiteados: ahi
+  # el borrado es real, y se avisa.
   Move-Sobrantes "$VibeDir\ia-stack-runtime" (Join-Path $archivoDir 'ia-stack-runtime')
   Set-Sello "$VibeDir\ia-stack-runtime"
   Write-Host "OK: project runtime -> $VibeDir\ia-stack-runtime" -ForegroundColor Green

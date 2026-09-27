@@ -113,6 +113,10 @@ export const AGENTS_ANTERIOR = 'Leé el protocolo en `.vibe/vcp-runtime/SKILL.md
 export function plantarInstalacionAnteriorVersionada(project) {
   const git = (...args) => spawnSync('git', ['-C', project, ...args], { encoding: 'utf8' });
   git('init', '-q');
+  // El runtime viejo, commiteado: entre ee7d747 y a0ffaa8 (2026-08-23 a 08-28) el instalador lo
+  // escribia sin regla de ignore, asi que un proyecto de esa semana puede tenerlo en su git.
+  mkdirSync(join(project, RUNTIME_ANTERIOR), { recursive: true });
+  writeFileSync(join(project, RUNTIME_ANTERIOR, 'SKILL.md'), '// el protocolo, instalado antes del rename\n');
   mkdirSync(join(project, PUNTERO_ANTERIOR), { recursive: true });
   writeFileSync(join(project, PUNTERO_ANTERIOR, 'SKILL.md'), 'El protocolo vive en `.vibe/vcp-runtime/SKILL.md`.\n');
   writeFileSync(join(project, 'AGENTS.md'), AGENTS_ANTERIOR);
@@ -123,7 +127,9 @@ export function plantarInstalacionAnteriorVersionada(project) {
 
 export function assertInstalacionAnteriorAvisada(project, salida) {
   assert.equal(existsSync(join(project, PUNTERO_ANTERIOR)), false, 'el puntero viejo se aparta aunque este versionado');
-  assert.match(salida, /versionado/u, 'y se avisa que moverlo deja un borrado en git, para commitearlo');
+  assert.match(salida, /puntero estaba versionado/u, 'y se avisa que moverlo deja un borrado en git, para commitearlo');
+  assert.equal(existsSync(join(project, RUNTIME_ANTERIOR)), false, 'la carpeta del runtime viejo se aparta aunque este versionada');
+  assert.match(salida, /vcp-runtime estaba versionada/u, 'y se avisa su borrado igual que el del puntero');
   assert.equal(readFileSync(join(project, 'AGENTS.md'), 'utf8'), AGENTS_ANTERIOR, 'AGENTS.md no se toca');
   assert.match(salida, /AGENTS\.md apunta a [^\n]*vcp-runtime/u, 'pero se avisa que apunta a la carpeta del nombre anterior');
 }
@@ -163,6 +169,8 @@ export function assertRuntimeAnteriorApartado(project, salida) {
   assert.deepEqual(listado(join(archivo, donde, 'vcp-runtime')), [...PLANTADO_ANTERIOR].sort(), 'la carpeta tiene que quedar entera, con sus dos niveles');
   assert.equal(existsSync(join(archivo, donde, PUNTERO_ANTERIOR, 'SKILL.md')), true, 'el puntero viejo va al mismo archivo, conservando su ruta');
   assert.match(salida, /PODADO: /u, 'y tiene que decir que la movio');
+  // El caso negativo: este proyecto no es un repositorio, asi que no hay borrado en git que avisar.
+  assert.doesNotMatch(salida, /versionad/u, 'sin repositorio, avisar un borrado en git seria inventarlo');
 }
 
 /** Mas sobrantes que archivos tiene el paquete: una poda que los moviera apartaria mas de la mitad
