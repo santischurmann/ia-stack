@@ -34,6 +34,16 @@ La regla dura, la que ordena todo lo demás:
 
 ## Cómo se instala
 
+Desde un clon de este repositorio, o desde el zip de la última release —la página *Releases* de
+GitHub—, que trae su `.sha256` al lado y se descomprime en una carpeta `ia-stack/`:
+
+```bash
+sha256sum -c ia-stack-<versión>.sha256
+unzip ia-stack-<versión>.zip && cd ia-stack
+```
+
+Adentro, el instalador:
+
 ```bash
 ./scripts/install.sh --project /ruta/a/mi-proyecto
 ```
@@ -106,7 +116,8 @@ criterio. `git checkout -- <archivo>` no alcanza: con el archivo ya stageado, gi
 
 Lo demás son agregados: `verify-receipt.mjs recheck` recomprueba un recibo ya guardado contra el commit
 que lo lleva, el instalador aparta lo que sobra de una instalación anterior —lo mueve, no lo borra— y
-deja un sello con su fecha, y el CI corre en Windows y en Linux. El detalle, con cada hallazgo y su
+deja un sello con su fecha, y el CI corre en Windows y en Linux. Y la release la arma GitHub desde
+el tag: el zip se prueba **instalándolo** antes de publicarse. El detalle, con cada hallazgo y su
 límite, está en el [CHANGELOG](CHANGELOG.md).
 
 ## Qué cambió en la 2.0.0
