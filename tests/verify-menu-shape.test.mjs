@@ -304,6 +304,17 @@ test('FR-5 · pero un encabezado de sección sí cierra un menú sin línea de e
   assert.deepEqual({ cerrado: bloque.closed, absorbio: bloque.body.some((r) => r.text.includes('esto es prosa')) }, { cerrado: false, absorbio: false });
 });
 
+/** Los documentos cuyos menús se barren. Una sola lista para las dos pruebas que la usan: dos copias
+ * se desincronizan, y la que quedara vieja dejaría de mirar un archivo sin avisar. */
+function documentosDelBarrido() {
+  const punteros = existsSync(join(repoRoot, '.agents', 'skills'))
+    ? readdirSync(join(repoRoot, '.agents', 'skills')).map((d) => `.agents/skills/${d}/SKILL.md`)
+    : [];
+  return ['SKILL.md', 'README.md', 'AGENTS.md', ...punteros,
+    ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)]
+    .filter((doc) => existsSync(join(repoRoot, doc)));
+}
+
 test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido', SOLO_FUENTE, () => {
   // La prueba de "los documentos reales pasan" sólo miraba el exit code, así que un menú que
   // DESAPARECIERA del barrido la dejaba verde: el gate contaba menos y decía OK. Acá se fija la
@@ -311,9 +322,7 @@ test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido'
   // Sólo los documentos que existen: el runtime instalado no lleva README.md ni AGENTS.md, así que
   // leerlos a ciegas rompía la prueba en una instalación limpia — el mismo error que este proyecto
   // ya cometió una vez, verificar desde el repo de origen en vez de desde el destino.
-  const docs = ['SKILL.md', 'README.md', 'AGENTS.md', '.agents/skills/vibecodeprotocols/SKILL.md',
-    ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)]
-    .filter((doc) => existsSync(join(repoRoot, doc)));
+  const docs = documentosDelBarrido();
   const desajustes = [];
   let total = 0;
   for (const doc of docs) {
@@ -324,6 +333,26 @@ test('CONTR-2 · ningún menú de los documentos reales se pierde en el barrido'
     if (titulos !== reconocidos) desajustes.push(`${doc}: ${titulos} títulos contra ${reconocidos} bloques`);
   }
   assert.deepEqual({ desajustes, hayMenus: total > 0 }, { desajustes: [], hayMenus: true });
+});
+
+// EL PUNTERO DE CODEX NO SE REVISABA DESDE EL 2026-09-15, y la prueba de arriba seguía verde. Su
+// lista escribía a mano `.agents/skills/vibecodeprotocols/SKILL.md`; el rename movió la carpeta a
+// `ia-stack/`, y el `existsSync` que filtra la lista —puesto para que una instalación limpia sin
+// README no rompiera la prueba, con toda razón— descartó en silencio la ruta vieja. Once días sin
+// mirar un documento que Codex lee, con la prueba diciendo que miraba todos.
+//
+// El arreglo no es escribir la ruta nueva: es no escribir ninguna. Se deriva del árbol.
+test('FALSIFICACIÓN · todo puntero de skill que el repositorio versiona entra al barrido de menús', SOLO_FUENTE, () => {
+  const punteros = existsSync(join(repoRoot, '.agents', 'skills'))
+    ? readdirSync(join(repoRoot, '.agents', 'skills'))
+      .map((d) => `.agents/skills/${d}/SKILL.md`)
+      .filter((doc) => existsSync(join(repoRoot, doc)))
+    : [];
+  assert.ok(punteros.length > 0, 'no hay un solo puntero de skill: la comprobación no midió nada');
+  const barridos = documentosDelBarrido();
+  for (const puntero of punteros) {
+    assert.ok(barridos.includes(puntero), `${puntero} existe y el barrido de menús no lo mira`);
+  }
 });
 
 test('FALSIFICACIÓN · un menú con el 🔵 sin negrita no se escapa del barrido', () => {
