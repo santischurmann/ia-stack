@@ -1,0 +1,127 @@
+# La release se arma en GitHub, desde el tag, y no en la maquina de nadie.
+#
+# Decidido por el operador el 2026-09-26 y confirmado el 2026-09-27, con el dato corregido de que el
+# zip tambien se podia armar localmente: un artefacto armado en una maquina de trabajo depende de lo
+# que esa maquina tenga, y el que se arma aca depende solo del tag.
+#
+# ES EL UNICO FLUJO CON PERMISO DE ESCRITURA DEL REPOSITORIO, y por eso esta partido en dos:
+#
+#   armar     -- solo lectura. Trae el tag, arma el zip, y lo prueba INSTALANDOLO: checksum,
+#                descomprimir, correr el instalador que viene adentro sobre un proyecto vacio. Es la
+#                prueba que faltaba el 2026-09-26, cuando el zip salia sin lo que el instalador lee y
+#                nada lo habia instalado nunca desde el zip.
+#   publicar  -- escribe, y solo crea la release con lo que el otro trabajo armo. No trae el codigo
+#                ni ejecuta nada del repositorio: el token que puede escribir nunca esta en el mismo
+#                proceso que el codigo que se esta publicando.
+#
+# CADA ACCION FIJADA A UN SHA COMPLETO, con la version al lado. Una etiqueta como `@v5` la puede
+# mover quien controla esa accion, y aca el token escribe. `ci.yml` usa etiquetas moviles y el gate
+# de seguridad las marca; ese flujo solo puede leer, y queda como hallazgo aparte.
+#
+# tests/release-workflow.test.mjs fija estas reglas; cambiarlas es cambiar esa prueba.
+#
+# LO QUE ESTE FLUJO NO HACE, dicho para que nadie lo suponga:
+#   - No corre la suite. Se etiqueta un commit que ya paso el CI en las dos plataformas; subir el tag
+#     tambien dispara `ci.yml`, pero la release no lo espera.
+#   - No compara el tag con la version que declaran SKILL.md y el CHANGELOG, salvo que las notas salen
+#     de la seccion del CHANGELOG con esa version y, si no existe, no se publica.
+#   - La decision de publicar es humana y ocurre ANTES: subir el tag es publicar.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Nada por omision: cada trabajo pide lo suyo.
+permissions: {}
+
+jobs:
+  armar:
+    name: Armar el zip desde el tag y probar que instala
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      # En una subcarpeta a proposito: el empaquetador deja el zip al lado de la carpeta del
+      # checkout, que asi es la raiz del espacio de trabajo.
+      - name: Traer el codigo del tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          path: ia-stack
+          persist-credentials: false
+
+      - name: Armar el zip
+        env:
+          TAG: ${{ github.ref_name }}
+        run: ./ia-stack/scripts/build-zip.sh "${TAG#v}"
+
+      # Lo que se publica es lo que se prueba: el mismo archivo, descomprimido como lo haria quien lo
+      # descarga, con el instalador que viene adentro. El HOME apunta a un temporal para que la copia
+      # global tambien caiga ahi.
+      - name: Lo que se publica instala
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          sha256sum -c "ia-stack-${VERSION}.sha256"
+          mkdir -p prueba "$RUNNER_TEMP/usuario" "$RUNNER_TEMP/proyecto"
+          unzip -q "ia-stack-${VERSION}.zip" -d prueba
+          test -x prueba/ia-stack/scripts/install.sh
+          HOME="$RUNNER_TEMP/usuario" prueba/ia-stack/scripts/install.sh \
+            --target-dir "$RUNNER_TEMP/usuario/skills" \
+            --runtime-dir "$RUNNER_TEMP/usuario/runtime" \
+            --project "$RUNNER_TEMP/proyecto"
+          test -f "$RUNNER_TEMP/proyecto/.vibe/ia-stack-runtime/INSTALADO.json"
+
+      - name: Las notas salen del CHANGELOG
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          awk -v encabezado="## [${VERSION}]" '
+            index($0, encabezado) == 1 { dentro = 1; next }
+            dentro && /^## \[/ { exit }
+            dentro { print }
+          ' ia-stack/CHANGELOG.md > notas.md
+          if ! grep -q '[^[:space:]-]' notas.md; then
+            echo "CHANGELOG.md no tiene una seccion [${VERSION}] con contenido: sin notas no se publica"
+            exit 1
+          fi
+
+      - name: Guardar lo que se publica
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release
+          path: |
+            ia-stack-*.zip
+            ia-stack-*.sha256
+            notas.md
+          if-no-files-found: error
+          retention-days: 1
+
+  publicar:
+    name: Publicar la release
+    needs: armar
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Traer lo que se armo
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release
+
+      # `gh release create` falla si ya hay una release con ese tag: no pisa una publicada.
+      - name: Crear la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          gh release create "$TAG" "ia-stack-${VERSION}.zip" "ia-stack-${VERSION}.sha256" \
+            --verify-tag --title "IA Stack ${VERSION}" --notes-file notas.md

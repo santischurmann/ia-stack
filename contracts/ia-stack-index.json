@@ -15,6 +15,10 @@
       "class": "otro"
     },
     {
+      "path": ".github/workflows/release.yml",
+      "class": "otro"
+    },
+    {
       "path": ".gitignore",
       "class": "otro"
     },
@@ -1208,6 +1212,10 @@
     },
     {
       "path": "tests/readme-comandos.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/release-workflow.test.mjs",
       "class": "prueba"
     },
     {
