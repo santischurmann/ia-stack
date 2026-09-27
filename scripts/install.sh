@@ -199,9 +199,12 @@ if [ -n "$PROJECT_DIR" ]; then
   #
   # AHORA SE PODA, Y SE PODA MOVIENDO. Es la regla de oro del propio protocolo -- en una limpieza NO
   # EXISTE rm: todo se mueve conservando la ruta -- y aca vale igual. La carpeta vieja va al lado, a
-  # la vista, con fecha, y vuelve con un mv si algo se rompio.
+  # la vista, con fecha y hora, y vuelve con un mv si algo se rompio.
+  # UN SOLO SELLO, CON FECHA Y HORA, para todo lo que esta corrida aparta: la carpeta vieja, su puntero
+  # y los sobrantes quedan juntos. Con la fecha sola, una segunda poda el mismo dia caia en una
+  # carpeta que ya existia, y `mv` anidaba adentro. Lo encontro la revision del 2026-09-27.
+  ARCHIVO_DIR="$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%dT%H%M%S)"
   if [ -d "$VIBE_DIR/vcp-runtime" ]; then
-    ARCHIVO_DIR="$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%d)"
     mkdir -p "$ARCHIVO_DIR"
     if mv "$VIBE_DIR/vcp-runtime" "$ARCHIVO_DIR/vcp-runtime"; then
       echo "PODADO: $VIBE_DIR/vcp-runtime era del nombre anterior y ya no se actualizaba."
@@ -210,9 +213,22 @@ if [ -n "$PROJECT_DIR" ]; then
       echo "AVISO: no se pudo mover $VIBE_DIR/vcp-runtime. Sacala a mano: es una copia vieja de los gates." >&2
     fi
   fi
+  # EL PUNTERO DE CODEX DEL NOMBRE ANTERIOR, tambien. Los instaladores de antes del rename dejaban en
+  # cada proyecto uno que apunta a la carpeta de arriba: moverla sin moverlo dejaba a Codex con dos
+  # skills del protocolo, una rota. Lo encontro la revision del 2026-09-27 en un proyecto real.
+  PUNTERO_ANTERIOR="$PROJECT_DIR/.agents/skills/vibecodeprotocols"
+  if [ -d "$PUNTERO_ANTERIOR" ]; then
+    mkdir -p "$ARCHIVO_DIR/.agents/skills"
+    if mv "$PUNTERO_ANTERIOR" "$ARCHIVO_DIR/.agents/skills/"; then
+      echo "PODADO: $PUNTERO_ANTERIOR era el puntero de Codex del nombre anterior, y apuntaba a una carpeta que ya no esta."
+      echo "        Se MOVIO a $ARCHIVO_DIR/.agents/skills/. Codex ve una sola skill del protocolo."
+    else
+      echo "AVISO: no se pudo mover $PUNTERO_ANTERIOR. Sacalo a mano: Codex ve dos skills del protocolo, y esa apunta a una carpeta que ya no esta." >&2
+    fi
+  fi
   # Despues de copiar y despues de ignorar el archivo: lo apartado cae en una carpeta que git ya no ve,
   # asi que podar no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --.
-  apartar_sobrantes "$VIBE_DIR/ia-stack-runtime" "$VIBE_DIR/ia-stack-archive/$(date +%Y-%m-%dT%H%M%S)/ia-stack-runtime"
+  apartar_sobrantes "$VIBE_DIR/ia-stack-runtime" "$ARCHIVO_DIR/ia-stack-runtime"
   sellar_runtime "$VIBE_DIR/ia-stack-runtime"
   echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"
 else

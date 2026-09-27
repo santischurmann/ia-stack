@@ -42,6 +42,19 @@
       ]
     },
     {
+      "forma": "(?<![\\w.-])\\.agents[\\\\/]skills[\\\\/]vibecodeprotocols(?![\\w-]|\\.\\w)",
+      "clase": "puntero de Codex de una instalacion anterior",
+      "por_que": "La carpeta que los instaladores anteriores al rename escribian en cada proyecto para que Codex viera el protocolo, con un SKILL.md que apunta a `.vibe/vcp-runtime/SKILL.md`. Los dos instaladores la apartan al archivo junto con el runtime viejo desde el 2026-09-27, y para encontrarla tienen que nombrarla. La forma es la ruta entera, con cualquiera de los dos separadores y sin nada pegado delante ni detras.",
+      "que_pasa_si_se_toca": "Los instaladores dejan de encontrar el puntero que ya existe en los proyectos instalados antes del rename: Codex sigue viendo dos skills del protocolo, y una apunta a una carpeta que ya no esta.",
+      "ejemplo": "PUNTERO_ANTERIOR=\"$PROJECT_DIR/.agents/skills/vibecodeprotocols\"",
+      "no_cubre": [
+        "const d = 'skills/vibecodeprotocols';",
+        "const d = '.agents/skills/vibecodeprotocols-otro';",
+        "const d = '.agents/skills/vibecodeprotocols.md';",
+        "const d = 'x.agents/skills/vibecodeprotocols';"
+      ]
+    },
+    {
       "forma": "(?<![\\w/@.-])vcp\\.(?:[a-z][a-z0-9-]*[/.]v?[0-9]+|(?=['\"`]))",
       "clase": "prefijo de schema",
       "por_que": "El prefijo de schema anterior. `scripts/schema-compat.mjs` lo acepta en una sola direccion -- el nombre viejo pasa por el gate nuevo, el nuevo NO pasa por el viejo -- y la evidencia sellada de docs/discovery lo declara. La lectura del prefijo viejo no vence nunca. La forma es la de un SCHEMA: el prefijo seguido de un nombre y una version, o el prefijo solo cerrando una cadena. Un correo como `algo@vcp.local`, una URL como `https://vcp.dev/v1` o un nombre con punto delante tienen el mismo comienzo y no son un schema: la forma exige que el prefijo no siga a una palabra, a una barra, a una arroba, a un punto ni a un guion.",

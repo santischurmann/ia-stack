@@ -16,7 +16,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -85,21 +85,44 @@ export function assertApartado(project) {
 // rama que la poda no habia corrido una sola vez. Lo pidio la revision del 2026-09-26, con un
 // proyecto real que todavia la tiene. Se planta entre las dos instalaciones que la prueba ya hace.
 export const RUNTIME_ANTERIOR = join('.vibe', 'vcp-runtime');
-export const HUELLA_ANTERIOR = join('scripts', 'gate-de-una-instalacion-anterior.mjs');
+// Dos niveles y la raiz: la prueba exige la carpeta ENTERA, y con un solo archivo no lo podia saber.
+const PLANTADO_ANTERIOR = ['SKILL.md', 'scripts/gate-de-una-instalacion-anterior.mjs', 'contracts/viejo/contrato.json'];
+
+// EL PUNTERO DE CODEX DEL NOMBRE ANTERIOR. Los instaladores de antes del rename dejaban en cada
+// proyecto `.agents/skills/<nombre anterior>/SKILL.md`, apuntando a `.vibe/vcp-runtime/SKILL.md`.
+// Mover el runtime sin moverlo dejaba a Codex con dos skills del protocolo, una rota. Lo encontro la
+// revision del 2026-09-27, en el disco de un proyecto real que todavia tiene la instalacion vieja.
+export const PUNTERO_ANTERIOR = '.agents/skills/vibecodeprotocols';
 
 export function plantarRuntimeAnterior(project) {
-  mkdirSync(join(project, RUNTIME_ANTERIOR, 'scripts'), { recursive: true });
-  writeFileSync(join(project, RUNTIME_ANTERIOR, HUELLA_ANTERIOR), '// un gate de una instalacion anterior al rename\n');
+  for (const rel of PLANTADO_ANTERIOR) {
+    mkdirSync(dirname(join(project, RUNTIME_ANTERIOR, rel)), { recursive: true });
+    writeFileSync(join(project, RUNTIME_ANTERIOR, rel), `// ${rel}, de una instalacion anterior al rename\n`);
+  }
+  mkdirSync(join(project, PUNTERO_ANTERIOR), { recursive: true });
+  writeFileSync(join(project, PUNTERO_ANTERIOR, 'SKILL.md'), 'El protocolo vive en `.vibe/vcp-runtime/SKILL.md`.\n');
+}
+
+function listado(dir) {
+  return readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile())
+    .map((e) => relative(dir, join(e.parentPath, e.name)).split(sep).join('/'))
+    .sort();
 }
 
 export function assertRuntimeAnteriorApartado(project, salida) {
   assert.equal(existsSync(join(project, RUNTIME_ANTERIOR)), false, 'la carpeta del nombre anterior tiene que salir de .vibe');
+  assert.equal(existsSync(join(project, PUNTERO_ANTERIOR)), false, 'y el puntero de Codex que apuntaba a ella tambien: si no, Codex ve dos skills del protocolo, una rota');
+  assert.deepEqual(readdirSync(join(project, '.agents', 'skills')), ['ia-stack'], 'Codex tiene que ver una sola skill del protocolo');
   const archivo = join(project, '.vibe', 'ia-stack-archive');
   const fechas = existsSync(archivo) ? readdirSync(archivo) : [];
-  assert.ok(
-    fechas.some((fecha) => existsSync(join(archivo, fecha, 'vcp-runtime', HUELLA_ANTERIOR))),
-    `y tiene que MOVERSE al archivo, entera y con su contenido. En ${archivo}: ${fechas.join(', ') || '(nada)'}`,
-  );
+  const donde = fechas.find((fecha) => existsSync(join(archivo, fecha, 'vcp-runtime')));
+  assert.ok(donde, `la carpeta tiene que MOVERSE al archivo. En ${archivo}: ${fechas.join(', ') || '(nada)'}`);
+  // Con fecha Y hora, como los sobrantes: con la fecha sola, una segunda poda el mismo dia caia en
+  // una carpeta que ya existia, y mover adentro de ella anidaba.
+  assert.match(donde, /^\d{4}-\d{2}-\d{2}T\d{6}$/u, `el archivo tiene que llevar fecha y hora, no ${donde}`);
+  assert.deepEqual(listado(join(archivo, donde, 'vcp-runtime')), [...PLANTADO_ANTERIOR].sort(), 'la carpeta tiene que quedar entera, con sus dos niveles');
+  assert.equal(existsSync(join(archivo, donde, PUNTERO_ANTERIOR, 'SKILL.md')), true, 'el puntero viejo va al mismo archivo, conservando su ruta');
   assert.match(salida, /PODADO: /u, 'y tiene que decir que la movio');
 }
 

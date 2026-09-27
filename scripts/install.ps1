@@ -185,20 +185,38 @@ if ($ProjectDir) {
   # alguien podia ejecutar sin darse cuenta. Avisar no alcanzaba: el aviso se lee una vez.
   #
   # AHORA SE PODA MOVIENDO, que es la regla de oro del propio protocolo: en una limpieza no existe
-  # rm. La carpeta vieja va al lado, con fecha, y vuelve con un Move-Item si algo se rompio.
-  if (Test-Path "$VibeDir\vcp-runtime") {
-    $archivoDir = Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format 'yyyy-MM-dd'))
+  # rm. La carpeta vieja va al lado, con fecha y hora, y vuelve con un Move-Item si algo se rompio.
+  #
+  # UN SOLO SELLO, CON FECHA Y HORA, para todo lo que esta corrida aparta: ver install.sh. Y la carpeta
+  # vieja se pregunta como CARPETA y se mueve sin -Force: un archivo con ese nombre no es el runtime,
+  # y -Force podia pisar lo que ya hubiera en el destino. Lo encontro la revision del 2026-09-27.
+  $archivoDir = Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format "yyyy-MM-dd'T'HHmmss"))
+  if (Test-Path -LiteralPath "$VibeDir\vcp-runtime" -PathType Container) {
     New-Item -ItemType Directory -Force -Path $archivoDir | Out-Null
     try {
-      Move-Item -LiteralPath "$VibeDir\vcp-runtime" -Destination (Join-Path $archivoDir 'vcp-runtime') -Force -ErrorAction Stop
+      Move-Item -LiteralPath "$VibeDir\vcp-runtime" -Destination (Join-Path $archivoDir 'vcp-runtime') -ErrorAction Stop
       Write-Output "PODADO: $VibeDir\vcp-runtime era del nombre anterior y ya no se actualizaba."
       Write-Output "        Se MOVIO a $archivoDir\vcp-runtime. No se borro nada: si algo se rompe, vuelve con Move-Item."
     } catch {
       Write-Output "AVISO: no se pudo mover $VibeDir\vcp-runtime. Sacala a mano: es una copia vieja de los gates."
     }
   }
+  # EL PUNTERO DE CODEX DEL NOMBRE ANTERIOR, tambien: ver install.sh. Moverlo a una carpeta que ya
+  # existe lo deja adentro de ella, con su nombre.
+  $punteroAnterior = Join-Path $ProjectDir '.agents\skills\vibecodeprotocols'
+  if (Test-Path -LiteralPath $punteroAnterior -PathType Container) {
+    $destinoPuntero = Join-Path $archivoDir '.agents\skills'
+    New-Item -ItemType Directory -Force -Path $destinoPuntero | Out-Null
+    try {
+      Move-Item -LiteralPath $punteroAnterior -Destination $destinoPuntero -ErrorAction Stop
+      Write-Output "PODADO: $punteroAnterior era el puntero de Codex del nombre anterior, y apuntaba a una carpeta que ya no esta."
+      Write-Output "        Se MOVIO a $destinoPuntero. Codex ve una sola skill del protocolo."
+    } catch {
+      Write-Output "AVISO: no se pudo mover $punteroAnterior. Sacalo a mano: Codex ve dos skills del protocolo, y esa apunta a una carpeta que ya no esta."
+    }
+  }
   # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira.
-  Move-Sobrantes "$VibeDir\ia-stack-runtime" (Join-Path $VibeDir ("ia-stack-archive\" + (Get-Date -Format "yyyy-MM-dd'T'HHmmss") + "\ia-stack-runtime"))
+  Move-Sobrantes "$VibeDir\ia-stack-runtime" (Join-Path $archivoDir 'ia-stack-runtime')
   Set-Sello "$VibeDir\ia-stack-runtime"
   Write-Host "OK: project runtime -> $VibeDir\ia-stack-runtime" -ForegroundColor Green
 } else {

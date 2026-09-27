@@ -51,6 +51,23 @@
           ]
         },
         {
+          "why": "Una instalacion anterior al rename: la carpeta del runtime con el nombre viejo y el puntero de Codex que apunta a ella. Sin este escenario las dos podas no corren nunca: el 2026-09-27 se agrego la del puntero y ninguna de las dos tenia escenario, asi que las lineas nuevas bajaban la cobertura en vez de medirse.",
+          "setup": [
+            "git init -q .",
+            "mkdir -p .vibe/vcp-runtime/scripts .agents/skills/vibecodeprotocols",
+            "printf '// un gate de antes del rename\\n' > .vibe/vcp-runtime/scripts/gate.mjs",
+            "printf 'puntero viejo\\n' > .agents/skills/vibecodeprotocols/SKILL.md"
+          ],
+          "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
+            "--project",
+            "{DIR}"
+          ]
+        },
+        {
           "why": "La ayuda: `usage` y la salida limpia.",
           "setup": [],
           "args": [
