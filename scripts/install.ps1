@@ -79,6 +79,19 @@ function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
   if ($apartados -gt 0) { Write-Output "OK: $apartados archivo(s) de una instalacion anterior apartado(s), no borrados." }
 }
 
+# SI UNA RUTA ESTA COMMITEADA EN EL PROYECTO: moverla deja un borrado en su git, y eso se avisa. Con la
+# preferencia de errores en Continue, como Set-Sello: si git no esta o el proyecto no es un
+# repositorio, la respuesta es «no», no una excepcion.
+function Test-Versionado([string]$Proyecto, [string]$Ruta) {
+  $ErrorActionPreference = 'Continue'
+  try {
+    & git -C $Proyecto ls-files --error-unmatch -- $Ruta 2>$null | Out-Null
+    return ($LASTEXITCODE -eq 0)
+  } catch {
+    return $false
+  }
+}
+
 # EL SELLO: cuando y desde que se instalo este runtime. Ver install.sh. Dos cuidados propios de
 # PowerShell 5.1: con 'Stop' cualquier linea de stderr de un comando nativo se vuelve excepcion -- un
 # warning de git dejaria el sello a medias --, asi que adentro de esta funcion se baja a 'Continue';
@@ -179,6 +192,10 @@ if ($ProjectDir) {
     Write-Output "OK: AGENTS.md creado -> Codex ya ve el protocolo"
   } else {
     Write-Output "NOTE: $ProjectAgents ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
+    # El que escribio el instalador viejo apunta a la carpeta del nombre anterior: ver install.sh.
+    if (Select-String -LiteralPath $ProjectAgents -Pattern 'vcp-runtime' -SimpleMatch -Quiet) {
+      Write-Output "AVISO: $ProjectAgents apunta a .vibe/vcp-runtime/SKILL.md, la carpeta del nombre anterior. No se toca: cambia esa ruta a mano por .vibe/ia-stack-runtime/SKILL.md."
+    }
   }
     # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15. Hasta entonces el instalador copiaba y nunca podaba,
   # asi que una instalacion anterior quedaba con las dos y la vieja era una copia de los gates que
@@ -205,17 +222,21 @@ if ($ProjectDir) {
   # existe lo deja adentro de ella, con su nombre.
   $punteroAnterior = Join-Path $ProjectDir '.agents\skills\vibecodeprotocols'
   if (Test-Path -LiteralPath $punteroAnterior -PathType Container) {
+    # Si el proyecto lo tenia commiteado, moverlo deja un borrado en su git: se pregunta ANTES.
+    $versionado = Test-Versionado $ProjectDir $punteroAnterior
     $destinoPuntero = Join-Path $archivoDir '.agents\skills'
     New-Item -ItemType Directory -Force -Path $destinoPuntero | Out-Null
     try {
       Move-Item -LiteralPath $punteroAnterior -Destination $destinoPuntero -ErrorAction Stop
       Write-Output "PODADO: $punteroAnterior era el puntero de Codex del nombre anterior, y apuntaba a una carpeta que ya no esta."
       Write-Output "        Se MOVIO a $destinoPuntero. Codex ve una sola skill del protocolo."
+      if ($versionado) { Write-Output "AVISO: ese puntero estaba versionado en el proyecto: moverlo deja un borrado en su git. Commitealo." }
     } catch {
       Write-Output "AVISO: no se pudo mover $punteroAnterior. Sacalo a mano: Codex ve dos skills del protocolo, y esa apunta a una carpeta que ya no esta."
     }
   }
-  # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira.
+  # Despues de copiar y despues de ignorar el archivo: lo apartado cae donde git ya no mira. La unica
+  # excepcion es el puntero viejo de Codex si estaba commiteado: ahi el borrado es real, y se avisa.
   Move-Sobrantes "$VibeDir\ia-stack-runtime" (Join-Path $archivoDir 'ia-stack-runtime')
   Set-Sello "$VibeDir\ia-stack-runtime"
   Write-Host "OK: project runtime -> $VibeDir\ia-stack-runtime" -ForegroundColor Green

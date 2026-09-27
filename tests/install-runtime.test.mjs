@@ -9,7 +9,20 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertApartado, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+import { assertApartado, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+
+test('una instalación anterior versionada: el puntero viejo se aparta avisando el borrado, y AGENTS.md no se toca pero se avisa', { skip: !hayBash }, () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    plantarInstalacionAnteriorVersionada(project);
+    const command = `'${toBash(installSh)}' --target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(project)}'`;
+    const result = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
+    assert.equal(result.status, 0, result.output);
+    assertInstalacionAnteriorAvisada(project, result.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('fresh Bash installation produces a project-local runtime whose gate command resolves', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();

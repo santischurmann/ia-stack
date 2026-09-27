@@ -12,7 +12,19 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { soloEnWindows } from './_entorno.mjs';
-import { assertApartado, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, installPs, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
+import { assertApartado, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, installPs, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
+
+test('una instalación anterior versionada, también en PowerShell', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    plantarInstalacionAnteriorVersionada(project);
+    const result = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
+    assert.equal(result.status, 0, result.output);
+    assertInstalacionAnteriorAvisada(project, result.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test('fresh PowerShell installation produces the same project-local runtime', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();

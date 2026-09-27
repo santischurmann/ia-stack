@@ -191,6 +191,11 @@ if [ -n "$PROJECT_DIR" ]; then
     echo "OK: AGENTS.md creado -> Codex ya ve el protocolo"
   else
     echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
+    # El que escribio el instalador viejo apunta a la carpeta del nombre anterior, que este mismo
+    # instalador aparta mas abajo: el aviso generico de arriba no lo dice (revision del 2026-09-27).
+    if grep -q 'vcp-runtime' "$PROJECT_DIR/AGENTS.md"; then
+      echo "AVISO: $PROJECT_DIR/AGENTS.md apunta a .vibe/vcp-runtime/SKILL.md, la carpeta del nombre anterior. No se toca: cambia esa ruta a mano por .vibe/ia-stack-runtime/SKILL.md." >&2
+    fi
   fi
   # LA CARPETA CAMBIO DE NOMBRE el 2026-09-15, cuando el protocolo paso a llamarse IA Stack. Hasta
   # entonces el instalador COPIABA Y NUNCA PODABA, asi que una instalacion anterior quedaba con las
@@ -218,16 +223,25 @@ if [ -n "$PROJECT_DIR" ]; then
   # skills del protocolo, una rota. Lo encontro la revision del 2026-09-27 en un proyecto real.
   PUNTERO_ANTERIOR="$PROJECT_DIR/.agents/skills/vibecodeprotocols"
   if [ -d "$PUNTERO_ANTERIOR" ]; then
+    # Si el proyecto lo tenia commiteado, moverlo deja un borrado en su git: se pregunta ANTES.
+    VERSIONADO=""
+    if git -C "$PROJECT_DIR" ls-files --error-unmatch -- "$PUNTERO_ANTERIOR" >/dev/null 2>&1; then
+      VERSIONADO=1
+    fi
     mkdir -p "$ARCHIVO_DIR/.agents/skills"
     if mv "$PUNTERO_ANTERIOR" "$ARCHIVO_DIR/.agents/skills/"; then
       echo "PODADO: $PUNTERO_ANTERIOR era el puntero de Codex del nombre anterior, y apuntaba a una carpeta que ya no esta."
       echo "        Se MOVIO a $ARCHIVO_DIR/.agents/skills/. Codex ve una sola skill del protocolo."
+      if [ -n "$VERSIONADO" ]; then
+        echo "AVISO: ese puntero estaba versionado en el proyecto: moverlo deja un borrado en su git. Commitealo." >&2
+      fi
     else
       echo "AVISO: no se pudo mover $PUNTERO_ANTERIOR. Sacalo a mano: Codex ve dos skills del protocolo, y esa apunta a una carpeta que ya no esta." >&2
     fi
   fi
   # Despues de copiar y despues de ignorar el archivo: lo apartado cae en una carpeta que git ya no ve,
-  # asi que podar no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --.
+  # asi que podar el runtime no ensucia el arbol del proyecto -- ni su `commit` con arbol limpio --. La
+  # unica excepcion es el puntero viejo de Codex si estaba commiteado: ahi el borrado es real, y se avisa.
   apartar_sobrantes "$VIBE_DIR/ia-stack-runtime" "$ARCHIVO_DIR/ia-stack-runtime"
   sellar_runtime "$VIBE_DIR/ia-stack-runtime"
   echo "OK: project runtime -> $VIBE_DIR/ia-stack-runtime"

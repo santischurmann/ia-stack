@@ -103,6 +103,31 @@ export function plantarRuntimeAnterior(project) {
   writeFileSync(join(project, PUNTERO_ANTERIOR, 'SKILL.md'), 'El protocolo vive en `.vibe/vcp-runtime/SKILL.md`.\n');
 }
 
+// UNA INSTALACION ANTERIOR, VERSIONADA. La tercera revision del 2026-09-27 encontro dos cosas que la
+// prueba de arriba no ve, porque su proyecto no es un repositorio: si el puntero viejo estaba
+// commiteado, moverlo deja un borrado en git -- y el instalador decia que podar no ensucia el arbol --;
+// y el AGENTS.md que escribio el instalador viejo sigue apuntando a la carpeta que la poda acaba de
+// mover, y solo se imprimia el aviso generico de «ya existe».
+export const AGENTS_ANTERIOR = 'Leé el protocolo en `.vibe/vcp-runtime/SKILL.md` antes de operar.\n';
+
+export function plantarInstalacionAnteriorVersionada(project) {
+  const git = (...args) => spawnSync('git', ['-C', project, ...args], { encoding: 'utf8' });
+  git('init', '-q');
+  mkdirSync(join(project, PUNTERO_ANTERIOR), { recursive: true });
+  writeFileSync(join(project, PUNTERO_ANTERIOR, 'SKILL.md'), 'El protocolo vive en `.vibe/vcp-runtime/SKILL.md`.\n');
+  writeFileSync(join(project, 'AGENTS.md'), AGENTS_ANTERIOR);
+  git('add', '-A');
+  const commit = git('-c', 'user.email=t@t.invalid', '-c', 'user.name=t', 'commit', '-q', '-m', 'instalacion anterior');
+  assert.equal(commit.status, 0, `el fixture no pudo commitear la instalacion anterior: ${commit.stderr}`);
+}
+
+export function assertInstalacionAnteriorAvisada(project, salida) {
+  assert.equal(existsSync(join(project, PUNTERO_ANTERIOR)), false, 'el puntero viejo se aparta aunque este versionado');
+  assert.match(salida, /versionado/u, 'y se avisa que moverlo deja un borrado en git, para commitearlo');
+  assert.equal(readFileSync(join(project, 'AGENTS.md'), 'utf8'), AGENTS_ANTERIOR, 'AGENTS.md no se toca');
+  assert.match(salida, /AGENTS\.md apunta a [^\n]*vcp-runtime/u, 'pero se avisa que apunta a la carpeta del nombre anterior');
+}
+
 function listado(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile())

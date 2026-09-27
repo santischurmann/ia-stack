@@ -51,12 +51,15 @@
           ]
         },
         {
-          "why": "Una instalacion anterior al rename: la carpeta del runtime con el nombre viejo y el puntero de Codex que apunta a ella. Sin este escenario las dos podas no corren nunca: el 2026-09-27 se agrego la del puntero y ninguna de las dos tenia escenario, asi que las lineas nuevas bajaban la cobertura en vez de medirse.",
+          "why": "Una instalacion anterior al rename: la carpeta del runtime con el nombre viejo y el puntero de Codex que apunta a ella. Sin este escenario las dos podas no corren nunca: el 2026-09-27 se agrego la del puntero y ninguna de las dos tenia escenario, asi que las lineas nuevas bajaban la cobertura en vez de medirse. Versionada y con el AGENTS.md del instalador viejo: asi corren tambien el aviso de que el puntero estaba commiteado y el de que AGENTS.md apunta a la carpeta vieja (tercera revision del 2026-09-27).",
           "setup": [
             "git init -q .",
             "mkdir -p .vibe/vcp-runtime/scripts .agents/skills/vibecodeprotocols",
             "printf '// un gate de antes del rename\\n' > .vibe/vcp-runtime/scripts/gate.mjs",
-            "printf 'puntero viejo\\n' > .agents/skills/vibecodeprotocols/SKILL.md"
+            "printf 'puntero viejo\\n' > .agents/skills/vibecodeprotocols/SKILL.md",
+            "printf 'Lee .vibe/vcp-runtime/SKILL.md antes de operar\\n' > AGENTS.md",
+            "git add -A",
+            "git -c user.email=t@t -c user.name=t commit -q -m anterior"
           ],
           "args": [
             "--target-dir",
