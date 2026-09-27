@@ -59,9 +59,11 @@ seis BAJO, arreglados antes del commit de versión:
 1. CI de la rama en las dos plataformas → revisión del otro par → el «sí» del operador **en ese
    momento** → commit de versión + tag en un solo push. Subir el tag es publicar.
 2. Diferido a 3.0.1: la sigla pegada a guion bajo (BAJO 1) y los `existsSync` que filtran en vez de
-   afirmar (BAJO 2). Y es del operador: apartar la carpeta vacía con el nombre anterior que el
-   instalador de bash dejó en el directorio GLOBAL de skills entre el 15-09 y esta versión. Lo global
-   está declarado como «no se poda», y cambiar eso es cambiar un límite.
+   afirmar (BAJO 2). La carpeta vacía con el nombre anterior que el instalador de bash dejó en el
+   directorio GLOBAL de skills de esta máquina, entre el 15-09 y esta versión, ya no está: el operador
+   decidió que la apartara a mano la otra sesión —movida, no borrada— sin cambiar la regla del
+   instalador. En cualquier otra máquina que instaló con bash en esas fechas sigue ahí, y por eso el
+   CHANGELOG lo conserva como límite: lo global no se poda.
 3. Hallazgo aparte, sin tocar: `ci.yml` usa acciones con etiqueta móvil y el gate de seguridad lo
    marca sobre un delta. Ese flujo sólo lee.
 4. Para llevarle al operador en la 3.0.1, sin implementar: que `release.yml` exija un CI verde del
