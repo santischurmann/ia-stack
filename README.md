@@ -93,6 +93,22 @@ recomienda una, explica el motivo y espera la decisión humana; no elige por sil
 
 ---
 
+## Qué cambió en la 3.0.0
+
+Es un salto **mayor** por una razón concreta: **un recibo que antes aprobaba ahora puede
+rechazarse.** `verify-receipt.mjs check` —y `commit`, que valida lo mismo— rechaza un test de criterio
+con **finales de línea mezclados**: algún CRLF y algún LF suelto en el mismo archivo. Git guarda ese
+archivo uniforme, así que ningún clon puede volver a producir los bytes que el recibo selló.
+
+**Si te pasa:** reescribí el test entero con un solo tipo de fin de línea y regenerá el hash del
+criterio. `git checkout -- <archivo>` no alcanza: con el archivo ya stageado, git lo cuenta igual al
+índice y no lo reescribe.
+
+Lo demás son agregados: `verify-receipt.mjs recheck` recomprueba un recibo ya guardado contra el commit
+que lo lleva, el instalador aparta lo que sobra de una instalación anterior —lo mueve, no lo borra— y
+deja un sello con su fecha, y el CI corre en Windows y en Linux. El detalle, con cada hallazgo y su
+límite, está en el [CHANGELOG](CHANGELOG.md).
+
 ## Qué cambió en la 2.0.0
 
 Es un salto **mayor** por una razón concreta y no por acumulación: **un receipt del schema anterior

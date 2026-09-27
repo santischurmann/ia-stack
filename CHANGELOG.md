@@ -7,6 +7,106 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+---
+
+## [3.0.0] — 2026-09-26
+
+**Salto mayor por una razón concreta, no por acumulación: un recibo que antes aprobaba ahora puede
+rechazarse.** `verify-receipt.mjs check` —y por lo tanto `commit`, que valida lo mismo— **rechaza un
+test de criterio con finales de línea mezclados**: algún CRLF y algún LF suelto en el mismo archivo.
+Antes lo aceptaba si el hash coincidía con el disco. Quien actualice puede ver fallar un recibo que le
+andaba.
+
+**Por qué se rompe a propósito.** Pasó en un proyecto real: un script insertó una línea LF en un test
+que git había materializado en CRLF, y el recibo selló esos bytes. Git guarda el archivo **uniforme**,
+así que ninguna forma de fin de línea reproduce la mezcla: ese recibo no se puede volver a comprobar
+desde ningún clon. Rechazarlo al sellar cuesta un minuto; después ya está sellado.
+
+**Cómo se migra.** Reescribí el test entero con un solo tipo de fin de línea —todo LF o todo CRLF— y
+regenerá el hash del criterio. `git checkout -- <archivo>` **no alcanza**: medido con git 2.55, con el
+archivo ya stageado git lo cuenta igual al índice y no lo reescribe. Los recibos sellados antes de esta
+versión sobre un test mezclado no tienen arreglo, porque la evidencia sellada no se reescribe;
+`recheck` los marca.
+
+### Tres hallazgos de un proyecto instalado, medidos antes de tocar
+
+Un proyecto que usa el protocolo reinstaló su runtime y auditó sus recibos: 13 válidos, 5 archivados y
+**6 con hashes que no coincidían con ningún commit**. Se midieron los tres reportes contra la fuente
+antes de cambiar una línea, y **ninguno era exactamente como vino**.
+
+- **El hash de cada criterio leía bytes crudos.** Con `core.autocrlf=true` el mismo test tiene bytes
+  distintos según quién lo escribió último, y el gate acusaba «el test cambió» sobre un test idéntico.
+  Ahora coincide con el mismo contenido en crudo, en LF o en CRLF; una letra distinta sigue rechazando
+  en las tres. Y la asimetría estaba a la vista: la huella del árbol ya usaba `git hash-object`, que
+  normaliza; sólo el hash del criterio leía crudo. Este repositorio ya se había comido esta clase el
+  01-09 y la arregló con un `.gitattributes`… para sí mismo. Las instalaciones no lo tienen.
+- **`verify-receipt.mjs recheck`, nuevo.** Nada volvía a mirar un recibo contra git después de
+  commitearlo. Lee el recibo y cada test **del commit que guardó el recibo**, no del disco. Existe por
+  el camino manual que el protocolo publica como válido —`check --require-clean-worktree` y después
+  `git commit` a mano—: si entre los dos alguien cambia el test, el recibo certifica una versión que
+  nunca se guardó. No vuelve a correr el test.
+- **El instalador aparta lo que sobra, y sella el runtime.** Copiaba encima y nunca podaba: en ese
+  proyecto quedaron 15 archivos de más, uno de ellos un gate retirado con el que después se selló un
+  índice. Ahora reinstalar **mueve** lo que el protocolo ya no tiene a
+  `.vibe/ia-stack-archive/<fecha-y-hora>/`, sin borrar nada, y deja `INSTALADO.json` con la fecha y el
+  commit de origen. Con eso `verify-runtime-sync`, sin el checkout al lado, dice la **edad** del
+  runtime en vez de sólo «no puedo». La copia global no se poda ni se sella, y queda declarado.
+- **La poda vació el runtime entero en el CI de Windows.** En el runner el temporal usa un nombre corto
+  8.3, y la ruta relativa salía de restar dos formas distintas de la misma ruta. No se perdió nada
+  —mueve, no borra—, pero el proyecto quedaba sin gates. Arreglado sacando la resta, con **una red de
+  seguridad en los dos instaladores**: una poda que movería más de la mitad del runtime no mueve nada.
+
+### El tope de tiempo de los vínculos no era un número: era una regla que nadie comprobaba
+
+`TAP_TIMEOUT_MS` se escribió con su regla al lado —«más del triple sobre el archivo más lento»—, con el
+más lento en 40 s. La regla vivía en un comentario y se rompió sola cuando la suite creció: el mismo
+archivo pasó a 101 s contra el mismo tope de 120, **por debajo del tope y con la regla rota por 2,5**.
+`verify-test-duration.mjs`, nuevo, juzga la regla y no el número, y el tope pasa a 600 s. Corre el
+archivo solo, porque adentro de la suite medía contención: 96 s solo contra 224 s desde adentro.
+
+Y tiene **tres estados**. El mismo archivo dio 54, 89, 101, 112, 116 y 247 s en una tarde, con la CPU al
+100% por procesos ajenos: aprobar taparía una regresión, rechazar pondría rojo un gate por la carga. Si
+la medición se va más de 1,5 veces por encima de lo declarado, escribe `RECONCILIAR:` y sale 0. El
+árbitro es el runner, no la máquina de trabajo.
+
+### Verde en una sola plataforma no es verde
+
+- **Matriz Windows + Linux en el CI**, y la cobertura al 100% pasa a ser **sobre la unión** de las dos.
+- **`verify-platform-scope simetria`, nuevo**: compara qué saltea cada plataforma contra lo que la otra
+  corre. En su primera corrida encontró diez salteos sin declarar; **nueve eran defectos**, no
+  plataforma: comparaban una ruta de Git Bash de Windows, que en Linux da falso, y se apagaban enteras.
+  El instalador de shell, el empaquetador y el gate de LAW 1 nunca habían corrido en Linux.
+- **El comando más publicado del protocolo daba `permission denied` en Linux y macOS.** `verify-red.sh`
+  y `vibe-memory.sh` estaban versionados sin bit de ejecución. El guarda de eso existía, pero reconocía
+  una sola forma de invocar, y la más publicada era la otra.
+
+### El resto del rename
+
+La prosa quedó cuando el rename se hizo por dentro: 82 sitios en 53 archivos. La lista **se deriva** del
+árbol en `tests/nombre-anterior.test.mjs`, y lo que **no** se toca vive en
+`contracts/nombre-anterior.json`, con qué se rompe si alguien lo «completa». El guarda pasó a **no
+distinguir mayúsculas** en esta versión: la forma en minúscula le era invisible, y por ahí se había
+escapado el nombre del zip, que ahora es **`ia-stack-<versión>.zip`**. Destapó además que la prueba de
+menús no revisaba el puntero de Codex desde el 15-09: su ruta vieja se descartaba en silencio.
+
+### Una filtración, y la decisión de no reescribir la historia
+
+Un checkpoint publicado nombraba al operador y a tres repositorios suyos; se sacó del árbol. **La
+historia no se reescribe**, por decisión del operador tomada sobre la medición: reescribir ese commit
+sacaba una sola palabra —el nombre del operador ya es público como autor de los commits, y dos de esos
+nombres siguen declarados en la evidencia sellada—, a cambio de 18 commits con otro identificador y un
+force push público.
+
+### Límites nuevos, declarados
+
+- `verify-runtime-sync` necesita el checkout al lado para **comparar**; sin él dice la edad, que no es la
+  comparación.
+- `recheck` no vuelve a correr el test, y compara contra el último commit que tocó el recibo.
+- La copia global del runtime no se poda ni se sella.
+- Un recibo sellado antes de esta versión sobre un test con finales mezclados no se puede recomprobar.
+
+### Lo anterior de esta versión, del 2026-09-08 al 2026-09-16
+
 - **Tres límites honestos cerrados, y los tres dejaron uno más chico escrito en su lugar.** Un
   límite no se borra cuando se paga: se reemplaza por el que queda, o el gate queda en verde sobre
   algo que sigue sin poder probar.

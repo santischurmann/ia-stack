@@ -3,6 +3,44 @@
 
 
 
+
+---
+
+## 2026-09-26 — las tres decisiones abiertas, y la release 3.0.0
+
+**Estado**: 2194 pruebas / 0 fallas / 1 salteada · cobertura 100% sobre 65 scripts, medida con
+concurrencia 2 para no sacarle memoria a otras sesiones · 125 limites honestos.
+
+**LAS DECISIONES QUE SEGUIAN ABIERTAS, tomadas por el operador en esta sesion con el dato medido:**
+
+| Punto | Decision | Por que |
+|---|---|---|
+| Reescribir la historia de `2afcd1a` | **NO** | Se media antes: la reescritura sacaba UNA palabra. El nombre del operador es publico como autor de los 272 commits, y dos de los tres nombres siguen en `.vibe/AUDIT.md` por la decision sellada del 16-09. Costo: 18 commits con otro identificador, 9 referencias rotas, force push publico. 0 forks, 0 PR. Queda agregado a `AUDIT.md` |
+| Los tres nombres en la evidencia sellada | **Siguen declarados** | Sacarlos exige re-sellar la cadena entera, que es la propiedad que la cadena existe para dar |
+| El nombre del zip | **`ia-stack-<version>.zip`** | Y el guarda del nombre anterior deja de distinguir mayusculas: por eso se habia escapado |
+| La version de la release | **3.0.0** | Rompe el contrato hacia afuera: un recibo con un test de finales mezclados pasaba y ahora se rechaza |
+
+**LO QUE APARECIO EN EL CAMINO, cada uno con su commit:**
+
+- **La prueba de menus no revisaba el puntero de Codex desde el 15-09** (`381667b`). La lista tenia la
+  ruta vieja y un `existsSync` la descartaba en silencio. Ahora se deriva del arbol.
+- **Una prueba leia el entorno real** (`7798b34`): afirmaba la concurrencia por defecto, y usar la perilla
+  que el gate documenta para maquinas con poca memoria la ponia en rojo. La encontro la corrida de
+  cobertura pedida justamente con esa perilla.
+- **El CHANGELOG no tenia una sola linea desde el 16-09**: 23 commits de codigo, incluida la ruptura que
+  hace que esto sea una 3.0.0. Escrito antes de publicar, con la ruptura primero y como se migra.
+- **Un error mio, dicho**: el vigilante de RAM de la primera corrida de cobertura no funciono —
+  PowerShell escribe los decimales con coma y la comparacion no entendia el numero—. El umbral se
+  respeto (minimo 3,23 GB libres), pero por suerte. La segunda corrida compara kilobytes enteros.
+
+**DONDE RETOMAR**
+
+1. La release 3.0.0: el tag y el zip se publican despues de que la otra sesion revise los commits y el
+   CI este verde. Si esta sesion se corto antes, el CHANGELOG ya dice `[3.0.0] — 2026-09-26`.
+2. T6 de la ablacion sigue siendo del operador.
+3. La intermitente de `verify-menu-shape` bajo cobertura en Windows (vista una vez, el 22-09) sigue sin
+   explicar.
+
 ---
 
 ## 2026-09-22 — tres hallazgos de un proyecto instalado, medidos antes de tocar
