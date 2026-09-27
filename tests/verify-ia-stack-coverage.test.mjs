@@ -171,12 +171,17 @@ test('evaluateCoverage separa el hueco real del script que nadie midió', () => 
   assert.match(limpio.message, /1 script\(s\)/u);
 });
 
+// EL ENTORNO VA INYECTADO, y vacío: la prueba afirma el valor POR DEFECTO de la concurrencia. Hasta el
+// 2026-09-26 leía el entorno real, así que usar la perilla que este mismo gate documenta para máquinas
+// con poca memoria —`IA_STACK_TEST_CONCURRENCY`— ponía la suite en rojo: la corrida de cobertura con
+// concurrencia 2, pedida para no quitarle RAM a otras sesiones, falló justo acá. Un verde que depende
+// de que nadie use la opción que existe.
 test('runCoverage corre la suite con NODE_V8_COVERAGE apuntando al directorio que le dan', () => {
   const llamadas = [];
   runCoverage((command, args, options) => {
     llamadas.push({ command, args, options });
     return { status: 0 };
-  }, '/proyecto', '/cobertura');
+  }, '/proyecto', '/cobertura', {});
   assert.equal(llamadas.length, 1);
   assert.equal(llamadas[0].command, process.execPath);
   assert.deepEqual(llamadas[0].args, ['--test', '--test-concurrency=32']);
@@ -666,4 +671,15 @@ test('FALSIFICACIÓN · con --coverage-dir el gate NO borra el directorio que le
   // Y el temporal que SÍ crea se sigue borrando, que es para lo que existe la limpieza.
   main([], () => ({ status: 0, stdout: '', stderr: '' }), () => {}, () => {}, repoRoot, { ...comun, mkdtemp: () => '/temporal-propio' });
   assert.deepEqual(borrados, ['/temporal-propio']);
+});
+
+test('FALSIFICACIÓN · la perilla de concurrencia llega de verdad al comando que corre la suite', () => {
+  // La otra mitad de la prueba de arriba: que el valor por defecto se afirme con un entorno vacío no
+  // dice nada de si la perilla funciona. Se la ejercita de punta a punta, hasta el argumento.
+  const llamadas = [];
+  runCoverage((command, args) => {
+    llamadas.push(args);
+    return { status: 0 };
+  }, '/proyecto', '/cobertura', { IA_STACK_TEST_CONCURRENCY: '2' });
+  assert.deepEqual(llamadas[0], ['--test', '--test-concurrency=2']);
 });
