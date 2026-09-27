@@ -63,7 +63,7 @@ export function ultimaLineaDelCuerpo(cuerpo) {
 }
 
 const atributo = (texto, nombre) => {
-  const m = new RegExp(`${nombre}="([^"]*)"`, 'u').exec(texto);
+  const m = String(texto).match(new RegExp(`${nombre}="([^"]*)"`, 'u'));
   return m ? m[1] : null;
 };
 
@@ -75,7 +75,7 @@ const atributo = (texto, nombre) => {
 export function clasificarXml(bruto) {
   if (bruto === null || bruto === undefined) return { clase: 'ausente' };
   const texto = String(bruto);
-  const suite = /<testsuite\b[^>]*>/u.exec(texto);
+  const suite = texto.match(/<testsuite\b[^>]*>/u);
   if (!suite) return { clase: 'ilegible', motivo: 'el XML no trae un <testsuite>' };
 
   const tests = Number(atributo(suite[0], 'tests'));
@@ -87,8 +87,8 @@ export function clasificarXml(bruto) {
 
   if (tests === 0) return { clase: 'sin-pruebas', tests, errores, fallos };
   if (errores > 0) {
-    const caso = /<testcase\b([^>]*)>([\s\S]*?)<\/testcase>/u.exec(texto);
-    const cuerpo = /<error\b[^>]*>([\s\S]*?)<\/error>/u.exec(texto);
+    const caso = texto.match(/<testcase\b([^>]*)>([\s\S]*?)<\/testcase>/u);
+    const cuerpo = texto.match(/<error\b[^>]*>([\s\S]*?)<\/error>/u);
     return {
       clase: 'error',
       tests,
@@ -100,7 +100,7 @@ export function clasificarXml(bruto) {
   }
   if (fallos === 0) return { clase: 'sin-fallo', tests, errores, fallos };
 
-  const cuerpo = /<failure\b[^>]*>([\s\S]*?)<\/failure>/u.exec(texto);
+  const cuerpo = texto.match(/<failure\b[^>]*>([\s\S]*?)<\/failure>/u);
   if (!cuerpo) return { clase: 'ilegible', motivo: `el XML declara failures="${fallos}" pero no trae ningún <failure>` };
   return { clase: 'fallo', tests, errores, fallos, ultima: ultimaLineaDelCuerpo(cuerpo[1]) };
 }
@@ -236,7 +236,7 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
 
   const ultima = clasificado.ultima;
-  const forma = FORMA_ULTIMA_LINEA.exec(ultima ?? '');
+  const forma = (ultima ?? '').match(FORMA_ULTIMA_LINEA);
   if (!forma) {
     writeError(`REJECTED: la última línea del <failure> no tiene la forma <archivo>:<línea>: <Excepción>: ${JSON.stringify(ultima)}. Sin esa forma no se puede saber qué excepción fue ni dónde.`);
     return 1;

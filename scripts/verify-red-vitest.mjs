@@ -98,7 +98,7 @@ export function clasificarReporte(bruto) {
 
 /** La primera referencia `archivo:línea:columna` del stack, que es donde vitest señala el fallo. */
 export function ubicacionDelStack(mensaje) {
-  const m = /at\s+(?:.*?\()?([^\s()]+?):(\d+):(\d+)\)?/u.exec(String(mensaje ?? ''));
+  const m = String(mensaje ?? '').match(/at\s+(?:.*?\()?([^\s()]+?):(\d+):(\d+)\)?/u);
   return m ? { archivo: m[1], linea: Number(m[2]) } : null;
 }
 
