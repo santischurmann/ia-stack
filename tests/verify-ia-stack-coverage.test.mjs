@@ -430,6 +430,12 @@ test('la perilla con el nombre nuevo manda, y la del nombre anterior sigue andan
   assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: '2' }), '2');
   assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: '2', VCP_TEST_CONCURRENCY: '8' }), '2', 'con las dos puestas, gana la del nombre nuevo');
   assert.equal(resolveTestConcurrency({ VCP_TEST_CONCURRENCY: '8' }), '8', 'la del nombre anterior sola sigue valiendo');
+  // Gana la primera VÁLIDA, no la primera puesta: una variable nueva vacía o mal escrita no puede
+  // tirar a la basura la anterior, que sí es válida, y volver al default. Lo encontró la revisión
+  // del 2026-09-27.
+  assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: '', VCP_TEST_CONCURRENCY: '8' }), '8', 'la nueva vacía no tapa la anterior');
+  assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: 'ocho', VCP_TEST_CONCURRENCY: '8' }), '8', 'la nueva inválida no tapa la anterior');
+  assert.equal(resolveTestConcurrency({ IA_STACK_TEST_CONCURRENCY: 'ocho', VCP_TEST_CONCURRENCY: 'cuatro' }), '32', 'con las dos inválidas, el default');
 });
 
 test('fingerprintScripts sin inyecciones lee el inventario y el contenido reales del proyecto', () => {

@@ -288,11 +288,12 @@ export const DEFAULT_TEST_CONCURRENCY = '32';
 
 export function resolveTestConcurrency(env = process.env) {
   // Las dos, prefiriendo la nueva: bajar la concurrencia es lo que hace una maquina con pocos
-  // nucleos, y perder ese ajuste por un cambio de nombre deja la suite inestable sin motivo.
-  const requested = env.IA_STACK_TEST_CONCURRENCY ?? env.VCP_TEST_CONCURRENCY;
-  return typeof requested === 'string' && /^[1-9][0-9]*$/u.test(requested)
-    ? requested
-    : DEFAULT_TEST_CONCURRENCY;
+  // nucleos, y perder ese ajuste por un cambio de nombre deja la suite inestable sin motivo. Gana la
+  // primera VALIDA, no la primera puesta: una nueva vacia o mal escrita no tira a la basura la
+  // anterior, que si vale (revision del 2026-09-27).
+  const valida = [env.IA_STACK_TEST_CONCURRENCY, env.VCP_TEST_CONCURRENCY]
+    .find((requested) => typeof requested === 'string' && /^[1-9][0-9]*$/u.test(requested));
+  return valida ?? DEFAULT_TEST_CONCURRENCY;
 }
 
 export function runCoverage(run = spawnSync, cwd = repoRoot, directory = '', env = process.env) {
