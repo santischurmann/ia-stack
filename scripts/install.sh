@@ -13,20 +13,44 @@ PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
 TARGET_DIR="$HOME/.claude/skills"
 RUNTIME_DIR="$HOME/.claude/ia-stack-runtime"
 PROJECT_DIR=""
+# `--project-only` (decidido por el operador el 2026-10-05): instalar en UN proyecto sin escribir nada
+# fuera de el. Antes, `--project` igual copiaba la skill y el runtime GLOBALES a ~/.claude, asi que
+# probar el instalador en una carpeta no era aislamiento. El comportamiento por defecto no cambia.
+PROJECT_ONLY=0
+TARGET_EXPLICIT=0
+RUNTIME_EXPLICIT=0
 
 usage() {
-  echo "Usage: install.sh [--target-dir <dir>] [--runtime-dir <dir>] [--project <project-root>]" >&2
+  echo "Usage: install.sh [--target-dir <dir>] [--runtime-dir <dir>] [--project <project-root>] [--project-only]" >&2
 }
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --target-dir) TARGET_DIR="${2:?--target-dir needs a path}"; shift 2 ;;
-    --runtime-dir) RUNTIME_DIR="${2:?--runtime-dir needs a path}"; shift 2 ;;
+    --target-dir) TARGET_DIR="${2:?--target-dir needs a path}"; TARGET_EXPLICIT=1; shift 2 ;;
+    --runtime-dir) RUNTIME_DIR="${2:?--runtime-dir needs a path}"; RUNTIME_EXPLICIT=1; shift 2 ;;
     --project) PROJECT_DIR="${2:?--project needs a path}"; shift 2 ;;
+    --project-only) PROJECT_ONLY=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 2 ;;
   esac
 done
+
+# Las contradicciones se rechazan ANTES de escribir nada: un modo que promete no tocar lo global no
+# puede aceptar, ademas, un destino global.
+if [ "$PROJECT_ONLY" -eq 1 ]; then
+  if [ -z "$PROJECT_DIR" ]; then
+    echo "REJECTED: --project-only exige --project: sin un proyecto no hay nada que instalar." >&2
+    exit 2
+  fi
+  if [ "$TARGET_EXPLICIT" -eq 1 ]; then
+    echo "REJECTED: --project-only contradice --target-dir: uno promete no escribir fuera del proyecto y el otro pide un destino global." >&2
+    exit 2
+  fi
+  if [ "$RUNTIME_EXPLICIT" -eq 1 ]; then
+    echo "REJECTED: --project-only contradice --runtime-dir: uno promete no escribir fuera del proyecto y el otro pide un destino global." >&2
+    exit 2
+  fi
+fi
 
 copy_runtime() {
   local destination="$1"
@@ -112,16 +136,21 @@ sellar_runtime() {
 
 echo "=== IA Stack Installer ==="
 echo "Source:  $PACKAGE_DIR"
-echo "Skills:  $TARGET_DIR"
-echo "Runtime: $RUNTIME_DIR"
+if [ "$PROJECT_ONLY" -eq 1 ]; then
+  echo "Skills:  (omitido: --project-only)"
+  echo "Runtime: (omitido: --project-only)"
+else
+  echo "Skills:  $TARGET_DIR"
+  echo "Runtime: $RUNTIME_DIR"
 
-mkdir -p "$TARGET_DIR" "$TARGET_DIR/ia-stack-skills"
-cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_NAME.md"
-cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_ALIAS.md"
-cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/ia-stack-skills/"
-copy_runtime "$RUNTIME_DIR"
-chmod +x "$RUNTIME_DIR/scripts/"*.sh
-echo "OK: skill, sub-skills, and self-contained runtime installed."
+  mkdir -p "$TARGET_DIR" "$TARGET_DIR/ia-stack-skills"
+  cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_NAME.md"
+  cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_ALIAS.md"
+  cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/ia-stack-skills/"
+  copy_runtime "$RUNTIME_DIR"
+  chmod +x "$RUNTIME_DIR/scripts/"*.sh
+  echo "OK: skill, sub-skills, and self-contained runtime installed."
+fi
 
 if [ -n "$PROJECT_DIR" ]; then
   if [ ! -d "$PROJECT_DIR" ]; then
@@ -259,4 +288,8 @@ else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."
 fi
 
-echo "Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando)."
+if [ "$PROJECT_ONLY" -eq 1 ]; then
+  echo "NOTE: --project-only: no se instalo la skill global ni el runtime global, asi que /ia-stack no existe en Claude Code hasta instalarlos; Codex si ve el puntero del proyecto."
+else
+  echo "Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando)."
+fi

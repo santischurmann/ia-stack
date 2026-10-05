@@ -111,6 +111,50 @@
             "--project",
             "{DIR}"
           ]
+        },
+        {
+          "why": "El modo --project-only (decidido el 2026-10-05): instala el runtime en el proyecto y omite lo global. Sin este escenario las lineas del modo nuevo bajaban la cobertura de install.sh en vez de medirse. Todo escribe SOLO adentro de {DIR}: este escenario no pasa --target-dir ni --runtime-dir, y el modo que prueba existe justamente para no tocar nada global.",
+          "setup": [
+            "git init -q ."
+          ],
+          "args": [
+            "--project-only",
+            "--project",
+            "{DIR}"
+          ]
+        },
+        {
+          "why": "Los tres rechazos del modo nuevo: sin --project, y contradiciendo --target-dir o --runtime-dir. Salen 2 antes de escribir nada.",
+          "setup": [],
+          "args": [
+            "--project-only"
+          ]
+        },
+        {
+          "why": "Ver el escenario anterior: --project-only contra --target-dir.",
+          "setup": [
+            "mkdir -p {DIR}/p"
+          ],
+          "args": [
+            "--project-only",
+            "--project",
+            "{DIR}/p",
+            "--target-dir",
+            "{DIR}/skills"
+          ]
+        },
+        {
+          "why": "Ver el escenario anterior: --project-only contra --runtime-dir.",
+          "setup": [
+            "mkdir -p {DIR}/p"
+          ],
+          "args": [
+            "--project-only",
+            "--project",
+            "{DIR}/p",
+            "--runtime-dir",
+            "{DIR}/rt"
+          ]
         }
       ],
       "why_aislado": "Todos los escenarios instalan adentro de su carpeta temporal, con --target-dir y --runtime-dir. Hasta el 2026-09-22 dos no lo hacian, y como el arnes no aisla HOME, medir la cobertura instalaba la skill y el runtime en el directorio de configuracion REAL de quien corria el gate. Una medicion que escribe en la configuracion de quien mide no es una medicion.",

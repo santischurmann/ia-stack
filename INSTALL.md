@@ -84,6 +84,28 @@ de Bash.
 `--runtime-dir`/`-RuntimeDir` guarda además una copia global de referencia. El runtime que usa el
 proyecto es siempre `.vibe/ia-stack-runtime`; no depende de esa ruta global.
 
+### Instalar solo en un proyecto, sin tocar nada fuera de él
+
+Con `--project`/`-ProjectDir` el instalador escribe **igual** la skill y el runtime globales, por
+defecto en `~/.claude`: probarlo en una carpeta no es aislamiento. Para instalar en un proyecto sin
+escribir nada fuera de él:
+
+```bash
+./scripts/install.sh --project-only --project /ruta/a/proyecto
+```
+
+```powershell
+.\scripts\install.ps1 -ProjectOnly -ProjectDir C:\ruta\proyecto
+```
+
+`--project-only`/`-ProjectOnly` exige `--project`/`-ProjectDir` y **rechaza**, antes de escribir
+nada, combinarse con `--target-dir`/`-TargetDir` o `--runtime-dir`/`-RuntimeDir`: uno promete no
+tocar lo global y el otro pide un destino global. El comportamiento por defecto no cambia.
+
+**Límite:** en este modo no se instala la skill global, así que `/ia-stack` **no existe** en Claude
+Code hasta que corras el instalador sin él; Codex sí ve el puntero del proyecto. Y esto prueba que el
+instalador no escribe fuera del proyecto, no que lo que ya hay en tu `~/.claude` esté al día.
+
 ## Problemas comunes
 
 - **El skill no aparece:** reiniciá Claude Code y verificá

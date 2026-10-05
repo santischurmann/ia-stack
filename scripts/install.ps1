@@ -2,7 +2,9 @@
 param(
   [string]$TargetDir = "$HOME\.claude\skills",
   [string]$RuntimeDir = "$HOME\.claude\ia-stack-runtime",
-  [string]$ProjectDir
+  [string]$ProjectDir,
+  # Decidido por el operador el 2026-10-05: instalar en UN proyecto sin escribir nada fuera de el. Ver install.sh.
+  [switch]$ProjectOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -11,6 +13,14 @@ $SkillName = 'ia-stack'
 $SkillAlias = 'VibeCodeProtocols'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PackageDir = Split-Path -Parent $ScriptDir
+
+# Las contradicciones se rechazan ANTES de escribir nada: un modo que promete no tocar lo global no
+# puede aceptar, ademas, un destino global.
+if ($ProjectOnly) {
+  if (-not $ProjectDir) { throw 'REJECTED: -ProjectOnly exige -ProjectDir: sin un proyecto no hay nada que instalar.' }
+  if ($PSBoundParameters.ContainsKey('TargetDir')) { throw 'REJECTED: -ProjectOnly contradice -TargetDir: uno promete no escribir fuera del proyecto y el otro pide un destino global.' }
+  if ($PSBoundParameters.ContainsKey('RuntimeDir')) { throw 'REJECTED: -ProjectOnly contradice -RuntimeDir: uno promete no escribir fuera del proyecto y el otro pide un destino global.' }
+}
 
 function Copy-Runtime([string]$Destination) {
   New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills", "$Destination\.agents" | Out-Null
@@ -135,15 +145,20 @@ function Set-Sello([string]$Runtime) {
 
 Write-Host '=== IA Stack Installer ===' -ForegroundColor Cyan
 Write-Host "Source:  $PackageDir"
-Write-Host "Skills:  $TargetDir"
-Write-Host "Runtime: $RuntimeDir"
+if ($ProjectOnly) {
+  Write-Host 'Skills:  (omitido: -ProjectOnly)'
+  Write-Host 'Runtime: (omitido: -ProjectOnly)'
+} else {
+  Write-Host "Skills:  $TargetDir"
+  Write-Host "Runtime: $RuntimeDir"
 
-New-Item -ItemType Directory -Force -Path $TargetDir, "$TargetDir\ia-stack-skills" | Out-Null
-Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillName.md" -Force
-Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillAlias.md" -Force
-Copy-Item "$PackageDir\skills\*" "$TargetDir\ia-stack-skills" -Recurse -Force
-Copy-Runtime $RuntimeDir
-Write-Host 'OK: skill, sub-skills, and self-contained runtime installed.' -ForegroundColor Green
+  New-Item -ItemType Directory -Force -Path $TargetDir, "$TargetDir\ia-stack-skills" | Out-Null
+  Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillName.md" -Force
+  Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillAlias.md" -Force
+  Copy-Item "$PackageDir\skills\*" "$TargetDir\ia-stack-skills" -Recurse -Force
+  Copy-Runtime $RuntimeDir
+  Write-Host 'OK: skill, sub-skills, and self-contained runtime installed.' -ForegroundColor Green
+}
 
 if ($ProjectDir) {
   if (-not (Test-Path -LiteralPath $ProjectDir -PathType Container)) {
@@ -259,4 +274,8 @@ if ($ProjectDir) {
   Write-Host 'NOTE: no project initialized. Re-run with -ProjectDir <project-root>.' -ForegroundColor Yellow
 }
 
-Write-Host 'Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando).'
+if ($ProjectOnly) {
+  Write-Host '-ProjectOnly: no se instalo la skill global ni el runtime global, asi que /ia-stack no existe en Claude Code hasta instalarlos; Codex si ve el puntero del proyecto.'
+} else {
+  Write-Host 'Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando).'
+}

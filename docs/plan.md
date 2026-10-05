@@ -146,9 +146,18 @@ token. Los symlinks de archivo no se probaron en Windows (exigen privilegio); lo
 
 ### Lote 4 — instalador aislado (C4) — espera P1
 
-Las tareas dependen de la respuesta. Con la opción **A**: un rojo que lanza el instalador con el modo
-nuevo sobre un `HOME` temporal y verifica que no aparezca ningún archivo fuera del proyecto; después
-el modo; después la paridad bash/PowerShell. **Ninguna corrida contra el `HOME` real del operador.**
+**Hecho con la opción A (P1, elegida por el operador el 2026-10-05):** `--project-only` en `install.sh` y
+`-ProjectOnly` en `install.ps1`. Exigen `--project`/`-ProjectDir`, rechazan antes de escribir nada
+combinarse con un destino global (`--target-dir`/`--runtime-dir`), y el comportamiento por defecto no
+cambió (una prueba lo fija). Rojo primero, con `HOME` apuntado a un temporal en toda corrida; el
+`~/.claude` real se miró antes y después y no cambió. Cobertura de shell de `install.sh`: 72,6 % contra su
+piso de 72 %, con cuatro escenarios nuevos declarados. Paridad bash/PowerShell por prueba.
+
+Límites escritos en `INSTALL.md`: en este modo `/ia-stack` **no existe** en Claude Code hasta instalar lo
+global, y el modo prueba que el instalador no escribe fuera del proyecto, no que lo que ya hay en
+`~/.claude` esté al día. Las dos pruebas de PowerShell se declararon en `contracts/platform-scope.json`:
+no corren fuera de Windows. `AppData` lo crea el propio PowerShell en un `USERPROFILE` nuevo y se tolera
+sólo ese nombre. **Ninguna corrida contra el `HOME` real del operador.**
 
 ## Fuera de este plan
 
