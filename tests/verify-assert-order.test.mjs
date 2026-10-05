@@ -12,7 +12,7 @@
 // POR QUE NACE EN MODO AVISO Y NO BLOQUEANDO. Este repositorio ya midió qué pasa cuando un
 // detector se shipea sin medir su tasa de falsos: cinco diseños dieron 43, 26, 6, 5 y 3 hallazgos,
 // TODOS falsos, sin un solo verdadero positivo en 210 archivos ni en 191 commits
-// (ronda de automejora del 2026-09-04). Un gate que grita en falso se ignora, y un gate ignorado no
+// (una ronda de automejora anterior). Un gate que grita en falso se ignora, y un gate ignorado no
 // detecta nada. Sale 0 siempre hasta que la medición lo justifique.
 
 import assert from 'node:assert/strict';

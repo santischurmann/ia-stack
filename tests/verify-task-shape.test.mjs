@@ -477,7 +477,7 @@ test('LA PLANTILLA que el protocolo entrega pasa su propia comprobación, contra
   // Antes esta prueba leía el plan interno del repositorio, que no se publica: en un clon limpio no
   // existe y el gate contesta «no hay plan», con lo que la prueba medía otra cosa. Lo que se entrega
   // a quien instala es la pareja `templates/tasks.json` + `templates/spec.md`: esa sí viaja.
-  const proyecto = mkdtempSync(join(tmpdir(), 'vcp-task-shape-plantilla-'));
+  const proyecto = mkdtempSync(join(tmpdir(), 'ia-stack-task-shape-plantilla-'));
   try {
     mkdirSync(join(proyecto, 'docs'), { recursive: true });
     cpSync(join(repoRoot, 'templates', 'tasks.json'), join(proyecto, 'docs', 'tasks.json'));
