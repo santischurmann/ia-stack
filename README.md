@@ -210,7 +210,7 @@ texto en ese archivo**. Sin eso, una propuesta es una opinión con formato de ha
 
 ```bash
 node scripts/verify-sereno.mjs due              # ¿toca una ronda?
-node scripts/verify-sereno.mjs check docs/mejoras/2026-09-04.json
+node scripts/verify-sereno.mjs check docs/mejoras/2026-09-05.json
 ```
 
 **Lo que no puede hacer:** comprueba que la propuesta tenga origen, no que valga la pena. Y que el

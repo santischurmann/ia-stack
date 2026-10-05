@@ -21,7 +21,7 @@
 // pasa cuando un detector se publica sin medir su tasa de falsos: cinco diseños de reglas de
 // seguridad dieron 43, 26, 6, 5 y 3 hallazgos, TODOS falsos, sin un solo verdadero positivo en 210
 // archivos ni en 191 commits, y se eligió declarar el límite en vez de shipear un gate que grita
-// en falso (docs/mejoras/2026-09-04.json). Un gate que grita en falso se ignora, y un gate
+// en falso (ronda de automejora del 2026-09-04). Un gate que grita en falso se ignora, y un gate
 // ignorado no detecta nada. CRITERIO DE PROMOCION, escrito de antemano: pasa a rechazar sólo
 // cuando una corrida sobre un corpus real dé cero falsos positivos, y ese número quede registrado.
 //

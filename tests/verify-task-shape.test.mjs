@@ -473,14 +473,26 @@ test('con una spec que no declara NINGUN criterio, el rechazo lo dice en vez de 
   assert.ok(v.some((x) => /no nombra ningún AC/u.test(x) && /ninguno/u.test(x)), v.join(' | '));
 });
 
-test('EL PLAN REAL de este repositorio pasa su propia comprobación', () => {
-  const salida = [];
-  const errores = [];
-  const code = main(['check', 'docs/tasks.json'], {
-    cwd: repoRoot,
-    write: (l) => salida.push(l),
-    writeError: (l) => errores.push(l),
-  });
-  assert.equal(code, 0, errores.join('\n'));
-  assert.ok(salida.some((l) => /^LIMITE: /u.test(l)), 'el gate tiene que declarar qué NO comprueba');
+test('LA PLANTILLA que el protocolo entrega pasa su propia comprobación, contra la spec que entrega', () => {
+  // Antes esta prueba leía el plan interno del repositorio, que no se publica: en un clon limpio no
+  // existe y el gate contesta «no hay plan», con lo que la prueba medía otra cosa. Lo que se entrega
+  // a quien instala es la pareja `templates/tasks.json` + `templates/spec.md`: esa sí viaja.
+  const proyecto = mkdtempSync(join(tmpdir(), 'vcp-task-shape-plantilla-'));
+  try {
+    mkdirSync(join(proyecto, 'docs'), { recursive: true });
+    cpSync(join(repoRoot, 'templates', 'tasks.json'), join(proyecto, 'docs', 'tasks.json'));
+    cpSync(join(repoRoot, 'templates', 'spec.md'), join(proyecto, 'docs', 'spec.md'));
+    const salida = [];
+    const errores = [];
+    const code = main(['check', 'docs/tasks.json'], {
+      cwd: proyecto,
+      write: (l) => salida.push(l),
+      writeError: (l) => errores.push(l),
+    });
+    assert.equal(code, 0, errores.join('\n'));
+    assert.match(salida.join('\n'), /contra los \d+ criterio\(s\) de docs\/spec\.md/u, 'tiene que comprobar contra la spec, no saltearla');
+    assert.ok(salida.some((l) => /^LIMITE: /u.test(l)), 'el gate tiene que declarar qué NO comprueba');
+  } finally {
+    rmSync(proyecto, { recursive: true, force: true });
+  }
 });

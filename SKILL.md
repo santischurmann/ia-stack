@@ -935,7 +935,7 @@ node .vibe/ia-stack-runtime/scripts/verify-assert-order.mjs check tests
 **Sale 0 siempre: es un aviso, todavía no un gate.** Nace así por una medición propia — cinco
 diseños de detectores de seguridad de este repositorio dieron 43, 26, 6, 5 y 3 hallazgos, **todos
 falsos, sin un solo verdadero positivo en 210 archivos ni en 191 commits**, y se declaró el límite
-en vez de publicar un gate que grita en falso (`docs/mejoras/2026-09-04.json`). Un gate que grita
+en vez de publicar un gate que grita en falso (ronda de automejora del 2026-09-04). Un gate que grita
 en falso se ignora, y un gate ignorado no detecta nada. **Criterio de promoción, escrito de
 antemano**: pasa a rechazar sólo cuando una corrida sobre un corpus real dé cero falsos positivos y
 ese número quede registrado.
@@ -1260,7 +1260,7 @@ El motivo está medido dos veces. En una corrida real sobre un proyecto ajeno, s
 propusieron 60 hallazgos de seguridad y sobrevivieron 18: **el 70% era ruido**, y un informe de
 seguridad con hallazgos falsos hace que nadie lea el siguiente. Y en este mismo repositorio, cinco
 diseños de detectores dieron 43, 26, 6, 5 y 3 hallazgos, **todos falsos, sin un solo verdadero
-positivo en 210 archivos ni en 191 commits** (`docs/mejoras/2026-09-04.json`). Un escáner de
+positivo en 210 archivos ni en 191 commits** (ronda de automejora del 2026-09-04). Un escáner de
 patrones sin refutación produce trabajo, no seguridad.
 
 Un hallazgo **crítico o alto** corroborado se arregla antes de seguir, y después se vuelve a escanear. Un

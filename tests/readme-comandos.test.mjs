@@ -15,7 +15,7 @@
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -80,7 +80,10 @@ test('todo comando que el protocolo publica corre: ninguno muere por uso incorre
       // Sólo lo que no escribe: `check`, `due` e `history`. Correr un `append` o un `record` desde
       // una prueba tocaría el árbol de verdad, y una prueba que muta lo que mide no mide nada.
       if (args.length > 0 && !/^(check|due|history)$/u.test(args[0])) continue;
-      const r = spawnSync(process.execPath, [join(repoRoot, script), ...args], { cwd: repoRoot, encoding: 'utf8' });
+      // El documento escribe `docs/tasks.json`, que es la ruta correcta en el proyecto de quien lo lee. Este
+      // repositorio no publica su propio plan, así que el barrido usa la plantilla que sí entrega.
+      const conPlantilla = args.map((a) => (a === 'docs/tasks.json' && !existsSync(join(repoRoot, a)) ? 'templates/tasks.json' : a));
+      const r = spawnSync(process.execPath, [join(repoRoot, script), ...conPlantilla], { cwd: repoRoot, encoding: 'utf8' });
       if (r.status === USO_INCORRECTO) rotos.push(`${documento} → ${script} ${args.join(' ')}: ${(r.stderr || r.stdout).split('\n')[0]}`);
     }
   }

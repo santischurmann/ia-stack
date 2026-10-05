@@ -896,12 +896,20 @@ test('el árbol de trabajo también puede declarar su propio corte', () => {
   assert.equal(verifyGrowth(versions, `otra cosa\n${REWRITE_DECLARATION}\n`).ok, true);
 });
 
-test('la traza real de este repositorio pasa history con su reescritura declarada', SOLO_FUENTE, () => {
-  const salida = [];
-  const errores = [];
-  const code = historyCommand(['history', '.vibe/AUDIT.md'], { cwd: repoRoot }, (l) => salida.push(l), (l) => errores.push(l));
-  assert.deepEqual({ code, errores }, { code: 0, errores: [] });
-  assert.match(salida.join('\n'), /reescritura/iu);
+test('una traza con una reescritura declarada pasa history y el OK lo dice', () => {
+  // Antes esta prueba leía la traza interna del repositorio, que no se publica: en un clon limpio no
+  // existe. Lo que importa es el comportamiento, y se prueba sobre un repo propio con un corte declarado.
+  const { root } = repoConHistoria([L2, `otra cosa\n${REWRITE_DECLARATION} del 2026-01-01\n`]);
+  try {
+    const salida = [];
+    const errores = [];
+    const code = historyCommand(['history', 'AUDIT.md'], { cwd: root }, (l) => salida.push(l), (l) => errores.push(l));
+    assert.deepEqual({ code, errores }, { code: 0, errores: [] });
+    assert.match(salida.join('\n'), /1 corte\(s\) declarado\(s\)/u);
+    assert.match(salida.join('\n'), /reescritura/iu);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 // --- El tope de largo, y por que va SOLO hacia adelante ------------------------------------------
@@ -923,15 +931,22 @@ test('sellar una línea más larga que el tope se rechaza, con el motivo escrito
   assert.equal(sealLineFor('', 'x'.repeat(MAX_LINE_CHARS)).ok, true);
 });
 
-test('FALSIFICACIÓN · el tope no toca hacia atrás: la traza real sigue verificando entera', SOLO_FUENTE, () => {
+test('FALSIFICACIÓN · el tope no toca hacia atrás: una traza con la línea más larga ya medida sigue verificando entera', () => {
   // La prueba que protege el ancla. El tope se eligio POR ENCIMA de lo ya escrito -- maximo medido
-  // 2736 caracteres el 2026-09-04 -- justamente para que esto no dependa de suerte. Si se pone
-  // roja, el tope se aplico hacia atras y el diseño esta muerto.
-  const contenido = readFileSync(join(repoRoot, '.vibe', 'AUDIT.md'), 'utf8');
+  // 2736 caracteres de texto el 2026-09-04 -- justamente para que esto no dependa de suerte. Si se
+  // pone roja, el tope se aplico hacia atras y el diseño esta muerto. La traza se arma sellando, con
+  // el sellador de verdad, líneas del largo histórico; no depende de ningún archivo que no se publica.
+  const LARGO_HISTORICO = 2736;
+  let contenido = '';
+  for (const n of [100, LARGO_HISTORICO, 1300]) {
+    const r = sealLineFor(contenido, 'x'.repeat(n));
+    assert.equal(r.ok, true, `el sellador tiene que aceptar una línea de ${n} caracteres`);
+    contenido += r.append;
+  }
   assert.equal(verifyChain(contenido).ok, true);
   const largos = contenido.split('\n').filter((l) => l.trim() !== '').map((l) => l.length);
   assert.ok(largos.some((n) => n > 1200), 'la traza tiene líneas largas: si no, esta prueba no prueba nada');
-  assert.ok(Math.max(...largos) <= MAX_LINE_CHARS, `el tope ${MAX_LINE_CHARS} quedó por debajo del máximo ya sellado (${Math.max(...largos)}): sería una alarma rota el día uno`);
+  assert.ok(Math.max(...largos) <= MAX_LINE_CHARS, `el tope ${MAX_LINE_CHARS} quedó por debajo del largo ya sellado (${Math.max(...largos)}): sería una alarma rota el día uno`);
 });
 
 // --- La marca de reescritura era de ARCHIVO, no de acto ------------------------------------------
