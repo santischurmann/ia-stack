@@ -159,6 +159,46 @@ global, y el modo prueba que el instalador no escribe fuera del proyecto, no que
 no corren fuera de Windows. `AppData` lo crea el propio PowerShell en un `USERPROFILE` nuevo y se tolera
 sólo ese nombre. **Ninguna corrida contra el `HOME` real del operador.**
 
+### Lote 5 — autolimpieza para todos los proyectos
+
+**Aprobado por el operador el 2026-10-05, en su sesión** (confirmado con su propia respuesta, no por un mensaje
+relayado), con push a `main` por fase verde. Se agregó al plan después de los lotes 1 a 4.
+
+**Lo que ya existe y se extiende, no se duplica:** `limpiar-temporales.mjs` (lista por defecto, borra sólo con
+`--borrar`, respeta `contracts/irreplaceable-sources.json` y su overlay local), la FASE 9 del protocolo (cada 7
+días, archiva en vez de borrar) y la poda del instalador (mueve, no borra).
+
+**Reglas de diseño.** Salen de las reglas duras del operador, no se inventan:
+
+1. **Nada se borra de entrada.** Todo candidato pasa primero por una cuarentena: se **mueve** conservando la ruta,
+   con un manifiesto (ruta original, bytes, sha256, fecha, categoría, motivo).
+2. **Lista blanca positiva.** Sólo es candidato lo que cae en una categoría declarada en el contrato; todo lo
+   demás es intocable. Encima, un veto: lo que `irreplaceable-sources` nombra no se mueve ni se purga **nunca**,
+   tampoco desde la cuarentena.
+3. **Cuándo.** Cada categoría declara su edad mínima; la cuarentena declara su retención; la purga definitiva sólo
+   toca lo vencido y sólo desde la cuarentena.
+4. **Log sellado.** Cada acción (cuarentena, restauración, purga) es una línea de `.vibe/LIMPIEZA.md` escrita con
+   `verify-audit-chain.mjs append`: editar una línea vieja rompe la cadena.
+5. **Por defecto lista.** Aplicar y purgar piden una bandera explícita; sin ella no se mueve nada.
+6. **El verificador juzga el registro**: contrato bien formado; cada purga del log tiene su cuarentena previa y su
+   retención cumplida; la cuarentena coincide con sus manifiestos (archivo presente, sha256 igual); nada del log
+   cae fuera de la lista blanca.
+
+**Supuestos que son decisión del operador** (valores del contrato, editables, **no certezas mías**): retención en
+cuarentena de **30 días**, edad mínima por categoría (la de `limpiar-temporales` ya es de 6 horas) y la cuarentena
+en `.vibe/cuarentena/`, fuera de git. Cambiarlos es editar el contrato; el verificador exige que estén declarados,
+no que valgan eso.
+
+| fase | Qué construye | Sale a `main` cuando |
+|---|---|---|
+| `5A` | `contracts/autolimpieza.json` y `verify-autolimpieza.mjs check`: forma del contrato e invariantes sobre log y cuarentena. Sin ejecutor. | rojo visto, batería completa del CI en verde |
+| `5B` | `autolimpieza.mjs`: `listar` (default), `aplicar`, `purgar`, `restaurar`, sobre el contrato y con el log sellado | ídem |
+| `5C` | Cableado en la FASE 9, las categorías del propio IA Stack, filas de gates y límites | ídem |
+
+**Límites que el diseño no cierra, escritos de antemano:** el verificador prueba que el registro es consistente, no
+que lo movido fuera lo correcto ni que su contenido no importara; algo borrado por fuera del ejecutor no aparece en
+el log; y una cuarentena en el mismo disco no protege de un fallo del disco.
+
 ## Fuera de este plan
 
 Los otros conflictos de la sección 25 —contadores de fallos repartidos por tarea o sesión, riesgo
