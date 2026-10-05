@@ -79,7 +79,10 @@ respuesta.
 
 ## Preguntas para el operador
 
-**P1 — instalador y aislamiento** (bloquea el lote 4)
+**Respondidas por el operador el 2026-10-05 en su sesión: P1 = A, P2 = A.** Quedan abajo como registro.
+Responderlas no aprueba la implementación: eso sigue pendiente (ver Status).
+
+**P1 — instalador y aislamiento** (bloquea el lote 4) — **elegida: A**
 
 - **A)** Agregar un modo explícito (`-ProjectOnly` en PowerShell y su par en bash) que garantiza no
   escribir fuera del proyecto; el comportamiento por defecto no cambia. *(recomendado: no rompe a
@@ -87,7 +90,7 @@ respuesta.
 - **B)** Cambiar el default: con `-ProjectDir` y sin un destino global explícito, no se toca nada global.
 - **C)** No tocar el instalador en este plan; el piloto usa un `HOME` temporal y lo verifica desde afuera.
 
-**P2 — cobertura en las instrucciones globales** (no bloquea los lotes 1 y 3)
+**P2 — cobertura en las instrucciones globales** (no bloquea los lotes 1 y 3) — **elegida: A**
 
 - **A)** El repo pasa a Q2 en el lote 2 y el operador actualiza después su copia global. *(recomendado:
   es lo que Q2 decidió, y la copia global es suya)*
