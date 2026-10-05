@@ -9,6 +9,42 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ---
 
+## [3.2.0] — 2026-10-05
+
+**Versión menor: agrega, y lo que ya existía sigue andando.** La autolimpieza y el gate de nombres
+privados son nuevos y no cambian lo que ya corría. Lo que sí cambia es la puerta: el README es otro,
+más corto, y el título del protocolo deja de decir «caveman edition».
+
+- **Autolimpieza para todos los proyectos.** `contracts/autolimpieza.json` declara la regla (lista blanca,
+  retención, edad mínima) y `scripts/verify-autolimpieza.mjs` la verifica. `scripts/autolimpieza.mjs`
+  la ejecuta con `listar`, `aplicar`, `purgar` y `restaurar`: **nada se borra de entrada**, todo pasa
+  por una cuarentena en `.vibe/cuarentena/` y queda en un registro sellado. No actúa sobre un registro
+  que el verificador rechaza, y `aplicar` se niega si git versionaría la cuarentena. Los pisos son
+  retención de al menos 7 días y edad de al menos 6 horas; los valores 30 días y 720 horas del contrato
+  que se entrega son supuestos del plan, no una medición. **Límite:** no hay exclusión entre dos
+  corridas simultáneas. La FASE 9 de `SKILL.md` la documenta.
+- **Un gate que rechaza nombres de una lista privada.** `scripts/verify-private-names.mjs` cierra el
+  límite que `verify-repo-clean.mjs` ya declaraba: los nombres propios no se detectaban. La lista no vive
+  en ningún archivo versionado: llega por `IA_STACK_NOMBRES_PRIVADOS` (en CI, un secreto) y por
+  `.claude/nombres-privados.local.txt`. Nunca repite un nombre: dice archivo, línea y «nombre #N». Sin
+  lista dice `VACÍO`, o rechaza con `--require-inputs`. **Límite:** un nombre que nadie anotó no se
+  detecta, y el historial ya publicado no se mira.
+- **README corto y guía completa aparte.** El README pasa de 433 a unas 220 líneas, con diagramas
+  Mermaid y tablas: qué es, cómo se instala, las once fases, el bucle de automejora, qué garantiza y qué
+  no, y el diccionario. La memoria entre sesiones, la autolimpieza, el tablero, las reglas de la suite y lo
+  que cambió en 2.0 y 3.0 pasaron sin cambiar palabras a `docs/guia-completa.md`. La guía vive en GitHub:
+  el zip no trae `docs/`.
+- **Título y presentación.** `SKILL.md` se llama «IA Stack», sin «caveman edition», y se presenta como
+  un harness descargable con bucle de automejora para webs, PWA y aplicaciones de escritorio. El modo
+  telegráfico queda como opción, en `skills/caveman-tdd.md`.
+- **El repositorio publicado ya no lleva el registro interno del mantenedor.** Salen de `main` los recibos,
+  la traza de auditoría, las notas de sesión, el plan y la spec internos y una ronda de automejora; quedan
+  en el disco de quien los escribió. Cinco pruebas que los leían usan ahora la plantilla entregada o datos
+  armados por la propia prueba. **Límite:** sacar un archivo de `main` no lo despublica: el historial, los
+  clones y las bifurcaciones que ya lo tienen lo conservan, y el historial no se reescribió.
+
+---
+
 ## [3.1.0] — 2026-10-05
 
 **Versión menor: agrega, y lo que ya existía sigue andando.** El modo continuo, las exenciones de

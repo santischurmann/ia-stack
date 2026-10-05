@@ -10,7 +10,7 @@ automejora, para desarrollar webs, PWA y aplicaciones de escritorio. Comunicaci�
 y completa. El modo telegráfico («caveman», en `skills/caveman-tdd.md`) es una opción, no la forma
 de la herramienta.
 
-**Versión:** 3.1.0 · etiquetada como `v3.1.0` en git.
+**Versión:** 3.2.0 · etiquetada como `v3.2.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
