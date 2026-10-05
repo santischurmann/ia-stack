@@ -486,7 +486,7 @@ function acceptedEntry(overrides = {}) {
     path: 'src/run.js',
     evidence: 'dynamic execution or string-built SQL',
     reason: REVIEWED_REASON,
-    accepted_by: 'santischurmann',
+    accepted_by: 'revisor-ejemplo',
     accepted_at: '2026-08-27',
     ...overrides,
   };

@@ -1571,7 +1571,7 @@ test('el README nombra el repositorio en el que vive', SOLO_FUENTE, (t) => {
 
 test('FALSIFICACIÓN · leer el repo del remote distingue url, y sin remote no da verde', () => {
   const fake = (url) => () => url;
-  assert.deepEqual(repoRemoto(fake('https://github.com/santischurmann/ia-stack.git')), { duenio: 'santischurmann', nombre: 'ia-stack' });
+  assert.deepEqual(repoRemoto(fake('https://github.com/usuario-ejemplo/ia-stack.git')), { duenio: 'usuario-ejemplo', nombre: 'ia-stack' });
   assert.deepEqual(repoRemoto(fake('git@github.com:otro/proyecto')), { duenio: 'otro', nombre: 'proyecto' });
   // Sin remote tiene que DOLER, no pasar en silencio.
   assert.throws(() => repoRemoto(() => { throw new Error('no origin'); }), /NO SE PUDO VERIFICAR/u);

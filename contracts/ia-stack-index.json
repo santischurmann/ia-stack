@@ -23,19 +23,11 @@
       "class": "otro"
     },
     {
-      "path": ".vibe/AUDIT.md",
-      "class": "evidencia"
-    },
-    {
       "path": ".vibe/COMPANY.md",
       "class": "evidencia"
     },
     {
       "path": ".vibe/DEBT.md",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/DECISIONS.md",
       "class": "evidencia"
     },
     {
@@ -51,87 +43,11 @@
       "class": "evidencia"
     },
     {
-      "path": ".vibe/RETRO.md",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/SESSION.md",
-      "class": "evidencia"
-    },
-    {
       "path": ".vibe/counters.json",
       "class": "evidencia"
     },
     {
       "path": ".vibe/handoffs/2026-08-29-sesion-gates-y-diseno.md",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/adopcion-y-recurrencia-completas-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/bloque-a-suite-clon-y-cobertura-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/caio-doce-dimensiones-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/candidatos-de-research-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/conflictos-doble-ronda-2026-10-05.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/discovery-ancla-externa-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/discovery-sources-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/eleccion-de-stack-2026-09-14.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/flake-cobertura-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/gates-comparan-rutas-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/intake-de-producto-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/mapa-de-bucle-completo-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/prd-completo-2026-09-01.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/research-correccion-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/research-revalidacion-2026-08-30.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/sistema-diseno-verificable-2026-08-29.json",
-      "class": "evidencia"
-    },
-    {
-      "path": ".vibe/receipts/triangulate-como-fase-2026-09-01.json",
       "class": "evidencia"
     },
     {
@@ -411,19 +327,7 @@
       "class": "evidencia"
     },
     {
-      "path": "docs/plan.md",
-      "class": "evidencia"
-    },
-    {
       "path": "docs/spec-ia-stack.md",
-      "class": "evidencia"
-    },
-    {
-      "path": "docs/spec.md",
-      "class": "evidencia"
-    },
-    {
-      "path": "docs/tasks.json",
       "class": "evidencia"
     },
     {
@@ -624,10 +528,6 @@
     },
     {
       "path": "research/sources/paperclip.md",
-      "class": "evidencia"
-    },
-    {
-      "path": "research/sources/protocolo-muralla.md",
       "class": "evidencia"
     },
     {

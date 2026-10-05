@@ -31,7 +31,7 @@ const SELLO_B = 'b'.repeat(64);
 
 // --- Límite vs regresión ---------------------------------------------------------------------
 
-const LIMITE = { id: 'L1', what: 'No cubre el import masivo desde CSV', why_acceptable: 'Nunca existió y nadie lo pidió en esta vuelta', owner: 'santi' };
+const LIMITE = { id: 'L1', what: 'No cubre el import masivo desde CSV', why_acceptable: 'Nunca existió y nadie lo pidió en esta vuelta', owner: 'duenio-ejemplo' };
 const REGRESION = {
   id: 'R1',
   what: 'El rol auditor pierde la pantalla de reportes',

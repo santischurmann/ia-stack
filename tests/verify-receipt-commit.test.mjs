@@ -446,7 +446,7 @@ test('FALSIFICACIÓN · v3 rechaza cada campo nuevo mal formado, sobre un solo a
     };
 
     const conBefore = escribir((r) => {
-      r.limits = [{ id: 'L1', what: 'el rol auditor ya no ve reportes', why_acceptable: 'esta documentado en el docstring', owner: 'santi', before: 'el rol auditor veia la pantalla' }];
+      r.limits = [{ id: 'L1', what: 'el rol auditor ya no ve reportes', why_acceptable: 'esta documentado en el docstring', owner: 'duenio-ejemplo', before: 'el rol auditor veia la pantalla' }];
     });
     assert.equal(conBefore.status, 1, 'un limite con estado anterior tiene que rechazar');
     assert.match(conBefore.output, /regressions\[\]/);

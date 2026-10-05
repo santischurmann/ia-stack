@@ -688,7 +688,7 @@ test('LA INVARIANTE QUE IMPORTA · una entrada que toca un activo sin ningun con
 test('una entrada sin control pasa SOLO si alguien la acepta a proposito, con motivo y dueño', () => {
   const aceptada = threat();
   aceptada.controls = [];
-  aceptada.accepted = [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no devuelve ningun dato del activo', owner: 'santi' }];
+  aceptada.accepted = [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no devuelve ningun dato del activo', owner: 'duenio-ejemplo' }];
   aceptada.coverage.authz = { state: 'examined_clean', reason: 'no hay control de authz y esta aceptado a proposito' };
   assert.deepEqual(validateArtifact('threat', aceptada), []);
 });
@@ -775,7 +775,7 @@ test('FALSIFICACIÓN · una entrada sin actores declarados y sin activos alcanza
   );
 
   // Y con la aceptación escrita, pasa: declarar que no hace falta control cuesta un dueño.
-  const aceptada = { ...sinActivos, accepted: [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no toca ningún activo', owner: 'santi' }] };
+  const aceptada = { ...sinActivos, accepted: [{ id: 'X1', entrypoint_id: 'E1', why: 'es un endpoint de salud que no toca ningún activo', owner: 'duenio-ejemplo' }] };
   assert.deepEqual(validateArtifact('threat', aceptada), []);
 });
 
