@@ -175,6 +175,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/autolimpieza.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/capability-matrix.json",
       "class": "contrato"
     },
@@ -732,6 +736,10 @@
     },
     {
       "path": "scripts/verify-audit-chain.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-autolimpieza.mjs",
       "class": "gate"
     },
     {
@@ -1312,6 +1320,18 @@
     },
     {
       "path": "tests/verify-audit-chain.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-autolimpieza-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-autolimpieza-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-autolimpieza.test.mjs",
       "class": "prueba"
     },
     {

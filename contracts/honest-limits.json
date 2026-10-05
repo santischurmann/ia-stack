@@ -780,6 +780,12 @@
       "file": "skills/gates.md",
       "phrase": "el fencing no frena a un proceso que escribe sin presentarlo",
       "why": "El token lo consulta quien quiere: rechaza a un escritor que lo presenta y viejo, no frena a uno que escribe sin presentarlo. Sin este limite un fence OK se lee como 'nadie mas puede escribir', cuando es 'este escritor es el de la asignacion actual'."
+    },
+    {
+      "limit_id": "autolimpieza-proves-the-record-not-the-choice",
+      "file": "skills/gates.md",
+      "phrase": "no que lo movido fuera lo correcto ni que su contenido no importara",
+      "why": "verify-autolimpieza comprueba que el registro de una limpieza es consistente y que la cuarentena coincide con el log, no que lo que se movio fuera lo correcto: el sha256 identifica bytes, no su valor. Sin este limite un verde se lee como \"se limpio bien\", cuando es \"se limpio lo que el log dice, dentro de lo que el contrato permite\"."
     }
   ]
 }

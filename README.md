@@ -246,6 +246,36 @@ pasa en verde. Y no corre nada, así que no sabe si esa prueba pasaría en la pl
 
 ---
 
+## Autolimpieza: nada se borra de entrada
+
+Un proyecto acumula carpetas que nadie ejecuta ni lee: copias viejas, temporales de corridas matadas,
+lo que una poda aparta. Limpiarlas a mano es borrar de más. La regla del protocolo es una sola:
+**nada se borra de entrada**. Todo candidato pasa primero por una **cuarentena** —se mueve, no se
+borra— y sólo una purga posterior, vencida la retención, lo elimina de verdad.
+
+- **Lista blanca positiva.** Sólo es candidato lo que cae en una categoría que el contrato declara, con
+  su raíz, su prefijo, su edad mínima y **cómo se regenera**: sólo se limpia solo lo que se puede volver
+  a generar. Todo lo demás es intocable, y lo que `contracts/irreplaceable-sources.json` nombra no se
+  mueve ni se purga nunca, tampoco desde la cuarentena.
+- **Log sellado.** Cada acción (cuarentena, restauración, purga) es una línea de `.vibe/LIMPIEZA.md` con
+  la cadena de `verify-audit-chain.mjs`: editar una línea vieja rompe la cadena.
+- **Los números son del contrato.** La retención (30 días) y la edad mínima (720 horas) del contrato de
+  este repositorio son **supuestos del plan**, no certezas: se cambian en `contracts/autolimpieza.json`.
+  El verificador exige que estén declarados y que respeten un piso —7 días de retención, 6 horas de
+  edad—, no que valgan eso.
+
+```bash
+node scripts/verify-autolimpieza.mjs check contracts/autolimpieza.json
+```
+
+**Lo que no puede hacer:** comprueba que el **registro** es consistente y que lo que está en la
+cuarentena es lo que el log dice haber movido; **no que lo movido fuera lo correcto ni que su contenido
+no importara**. Algo borrado por fuera del ejecutor no aparece en el log, las fechas las escribe quien
+limpia, y una cuarentena en el mismo disco no protege de un fallo del disco. Esta fase sólo trae el
+verificador: el ejecutor que mueve y purga llega en la siguiente.
+
+---
+
 ## Ningún archivo de pruebas se acerca al tope de TAP
 
 `verify-test-bindings` vincula cada requisito a una prueba y espera su resultado en la salida TAP,

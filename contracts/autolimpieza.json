@@ -1,0 +1,19 @@
+{
+  "schema": "ia.autolimpieza/1",
+  "why": "La regla de autolimpieza de este proyecto: que se limpia, cuando, y con que red. Nada se borra de entrada: todo candidato se MUEVE a una cuarentena con su registro sellado, y solo una purga posterior, vencida la retencion, lo elimina de verdad. Solo es candidato lo que cae en una categoria de esta lista (lista blanca positiva); todo lo demas es intocable, y lo que contracts/irreplaceable-sources.json nombra no se mueve ni se purga nunca. Los numeros de abajo (30 dias de retencion, 720 horas de edad minima) son SUPUESTOS del plan, no certezas: se cambian aca, y el verificador exige que esten declarados y que respeten sus pisos, no que valgan eso.",
+  "cuarentena": {
+    "directorio": ".vibe/cuarentena",
+    "retencion_dias": 30
+  },
+  "log": ".vibe/LIMPIEZA.md",
+  "categorias": [
+    {
+      "id": "archivo-de-la-poda-del-instalador",
+      "que": "Las carpetas fechadas que el instalador de IA Stack aparta a .vibe/ia-stack-archive/ cuando reinstalar poda lo que el protocolo ya no tiene: una copia vieja del runtime, que nadie ejecuta y que ocupa lugar.",
+      "raiz": ".vibe/ia-stack-archive",
+      "prefijo": "20",
+      "edad_minima_horas": 720,
+      "como_se_regenera": "Reinstalando el runtime con scripts/install.sh (o install.ps1): el instalador vuelve a copiar la version vigente. Lo apartado es justamente lo que esa version ya no incluye."
+    }
+  ]
+}
