@@ -832,3 +832,20 @@ igual; el grafo no los representa. Son dos cosas distintas y conviene no confund
   identificadores. Se comprueba recién cuando el ciclo de construcción las escriba.
 - qué reportarían el tablero, el sereno y la ablación: no verificado — los tres chequeos de período
   se difirieron por decisión registrada arriba, así que no se corrieron.
+
+## Fase 16 — los cuatro conflictos de la doble ronda (lotes 1 a 4)
+
+- Plan `docs/plan.md`, aprobado por el operador el 2026-10-05 sobre `fcd22b6`, con P1 = A y P2 = A. Un
+  commit local por lote, sin push (reservado).
+- Lote 1 modo continuo, lote 2 caminos críticos y exenciones (Q2), lote 3 rutas físicas y fencing, lote 4
+  instalador `--project-only`. Cada uno con rojo visible primero y la batería completa verde.
+- Dos correcciones al plan hechas al ejecutar, con evidencia: los locks léxicos estaban en
+  `verify-plan-conflicts` y no en `verify-lock-vivo`, y la hora de arranque del proceso ya existía.
+
+## No verificado (fase 16)
+
+- Que una persona haya dicho que sí: el modo continuo sella contenido, no voluntad.
+- Que el oráculo de un camino crítico sea independiente de quien escribió el código.
+- Symlinks de archivo en Windows (exigen privilegio): sólo se probaron junctions.
+- `install.ps1` fuera de Windows y cualquier corrida del instalador contra el `HOME` real: ninguna se hizo.
+- Que las instrucciones globales del operador (`~/.claude/CLAUDE.md`, LAW 6) estén en Q2: es una copia suya.

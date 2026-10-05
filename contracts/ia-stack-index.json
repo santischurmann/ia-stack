@@ -1163,6 +1163,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/install-project-only.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/install-runtime-powershell.test.mjs",
       "class": "prueba"
     },
@@ -1467,6 +1471,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-ia-stack-coverage-q2.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-ia-stack-coverage.test.mjs",
       "class": "prueba"
     },
@@ -1491,6 +1499,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-lock-vivo-fence.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-lock-vivo.test.mjs",
       "class": "prueba"
     },
@@ -1500,6 +1512,10 @@
     },
     {
       "path": "tests/verify-obsidian-export.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-phase-decisions-authorization.test.mjs",
       "class": "prueba"
     },
     {
@@ -1516,6 +1532,10 @@
     },
     {
       "path": "tests/verify-phase-menu.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-plan-conflicts-physical.test.mjs",
       "class": "prueba"
     },
     {

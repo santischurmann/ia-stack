@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **Los cuatro conflictos de la doble ronda (plan `docs/plan.md`, aprobado por el operador el 2026-10-05).**
+  - **Modo continuo (LAW 7 contra IS1).** `docs/phase-decisions.json` puede declarar una `authorization` —el
+    plan por contenido, fases, rutas, clases de cambio y las siete acciones reservadas que deja afuera— y
+    cerrar las fases incluidas con `status: "authorized"`, sin menú. Rechaza una fase fuera del alcance, un
+    plan editado después de aprobarse, un alcance editado tras cerrar las fases, un cierre anterior a la
+    aprobación, una fila `authorized` con menú y una elección humana dentro de una fase que el plan ya
+    incluía. `verify-phase-menu` verifica la identidad del plan. **Límite:** la aprobación se sella por
+    contenido, no por voluntad; `approval_ref` lo escribe el agente.
+  - **Cobertura por caminos críticos (el 100 % fijo contra Q2).** `contracts/coverage-scope.json` declara
+    `critical_paths` (frontera, script, prueba literal no salteada que nombre el script, dueño) y
+    `exemptions` (dueño, motivo, evidencia). Un rango sin ejecutar sigue siendo rojo salvo exención, el
+    veredicto nombra cada exención, una exención huérfana se rechaza y no se puede aflojar la vara sin
+    haber declarado un camino crítico. LAW 6, `caveman-tdd`, el orquestador y las plantillas pasan a Q2.
+    **Límite:** prueba que la prueba existe y toca el script, no que su oráculo sea independiente.
+  - **Locks físicos.** `verify-plan-conflicts` resuelve rutas contra el archivo físico: un symlink o
+    junction une dos grafías, un directorio declarado es dueño de lo que hay debajo, un enlace que sale del
+    proyecto o está colgado se rechaza. `verify-lock-vivo` gana `fence`: `lock.fence` sube con cada
+    asignación y un escritor con un token viejo o ajeno es rechazado. **Límites:** lo primero es una foto, no
+    una barrera; lo segundo no frena a quien escribe sin presentar el token. El plan ubicó mal dos tareas: los
+    locks léxicos estaban en `verify-plan-conflicts` y la hora de arranque del proceso ya existía.
+  - **Instalador aislado.** `--project-only` / `-ProjectOnly` instala en un proyecto sin escribir nada
+    fuera de él; el default no cambia. **Límite:** en ese modo `/ia-stack` no existe en Claude Code hasta
+    instalar lo global.
+
 ---
 
 ## [3.0.0] — 2026-09-27
