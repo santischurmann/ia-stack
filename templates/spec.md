@@ -85,7 +85,7 @@ El detalle vive en el modelo; acá va el resumen que hace que alguien lo abra.
 
 - [ ] Forcing Questions: 6/6 respondidas, o "skipped(N)" (ambos son estados válidos)
 - [ ] All ACs: unit + integration + e2e tests
-- [ ] Coverage 100% for every metric the runner measures (lines/branches/functions)
+- [ ] Tests for every critical path, contract and real integration; coverage measured on every metric the runner exposes (lines/branches/functions), each unexecuted range covered or exempted with owner, reason and evidence
 - [ ] Lint: 0 errors | Typecheck: 0 errors
 - [ ] README updated (if user-facing)
 - [ ] CHANGELOG entry added

@@ -762,6 +762,12 @@
       "file": "SKILL.md",
       "phrase": "la aprobación se sella por contenido, no por voluntad",
       "why": "El gate compara el plan aprobado contra el que hay en disco y el alcance contra cada fase cerrada; no puede saber si una persona dijo que sí. approval_ref lo escribe el agente. Sin este límite un verde del modo continuo se lee como 'el operador aprobó', cuando un agente puede registrar una aprobación que no existe."
+    },
+    {
+      "limit_id": "coverage-critical-paths-prove-existence-not-oracle-independence",
+      "file": "skills/gates.md",
+      "phrase": "su prueba existe, no está apagada y nombra el script",
+      "why": "El gate comprueba que la prueba declarada exista, no este salteada y mencione el script; no puede saber si su oraculo es independiente de quien escribio el codigo ni si su asercion alcanza, y owner y las exenciones son texto que escribe quien declara. Sin este limite un verde con caminos criticos se lee como 'esta bien probado', cuando es 'hay una prueba con ese nombre que toca ese archivo'."
     }
   ]
 }

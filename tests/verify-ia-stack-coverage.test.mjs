@@ -364,6 +364,8 @@ test('main crea y borra su propio directorio de cobertura cuando nadie se lo iny
     return { status: 3 };
   }, (line) => salida.push(line), (line) => errores.push(line), repoRoot, {
     readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    // El contrato real declara caminos criticos contra el inventario real: este fixture inyecta uno falso.
+    compromisos: { exenciones: [], caminos: [], problemas: [] },
     // La huella se toma sobre el inventario inyectado, asi que la lectura tambien se inyecta: sin
     // esto el fixture medía el repo real por atras y la prueba no hablaba del proyecto que declara.
     read: () => 'contenido de demo',
@@ -384,6 +386,8 @@ test('FALSIFICACIÓN · un script ilegible al tomar la huella se rechaza antes d
   let lanzoLaSuite = false;
   const code = main([], () => { lanzoLaSuite = true; return { status: 0 }; }, () => {}, (line) => errores.push(line), repoRoot, {
     readScriptsDir: () => [{ name: 'fantasma.mjs', isFile: () => true }],
+    // El contrato real declara caminos criticos contra el inventario real: este fixture inyecta uno falso.
+    compromisos: { exenciones: [], caminos: [], problemas: [] },
     read: () => { throw new Error('ENOENT: no such file or directory'); },
     mkdtemp: () => { creoDirectorio = true; return 'no-deberia-crearse'; },
   });
@@ -398,6 +402,8 @@ test('FALSIFICACIÓN · un script que desaparece durante la medición se rechaza
   let lecturas = 0;
   const code = main([], () => ({ status: 0, stdout: '', stderr: '' }), () => {}, (line) => errores.push(line), repoRoot, {
     readScriptsDir: () => [{ name: 'demo.mjs', isFile: () => true }],
+    // El contrato real declara caminos criticos contra el inventario real: este fixture inyecta uno falso.
+    compromisos: { exenciones: [], caminos: [], problemas: [] },
     read: () => {
       lecturas += 1;
       if (lecturas > 1) throw new Error('ENOENT: el script se borró a mitad de la corrida');

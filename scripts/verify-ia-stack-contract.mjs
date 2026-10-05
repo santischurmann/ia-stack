@@ -121,6 +121,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /\*\*Modo continuo\*\*/u, 'continuous mode: one approval per plan version'],
   ['SKILL.md', /PHASE_DECISION_FABRICATED_CHOICE/u, 'continuous mode forbids a fabricated per-phase choice'],
   ['skills/gates.md', /Modo continuo:/u, 'continuous mode documented in the gate reference'],
+  ['SKILL.md', /caminos críticos, contratos e integración real/u, 'coverage policy Q2: critical paths, contracts and real integration'],
+  ['skills/caveman-tdd.md', /caminos críticos, contratos e integración real/u, 'coverage policy Q2 in the TDD gate'],
+  ['skills/gates.md', /exención con dueño, motivo y evidencia/u, 'coverage exemptions need an owner, a reason and evidence'],
   ['templates/diagnostics/caio.json', /ia\.caio\/1/u, 'CAIO diagnostic template schema'],
   ['templates/phase-plan.json', /ia\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por
@@ -194,6 +197,9 @@ export const REQUIREMENTS = [
 // Each entry targets the exact collocation that overclaims what the PreToolUse RED gate proves;
 // see scripts/pretooluse-red.mjs's own header comment for the honest claim these must match.
 export const FORBIDDEN_PHRASES = [
+  ['SKILL.md', /coverage \*\*100% de cada métrica/u, 'fixed 100% coverage policy that Q2 replaced'],
+  ['skills/caveman-tdd.md', /\*\*100% of every metric the runner can measure\*\*/u, 'fixed 100% coverage policy that Q2 replaced'],
+  ['skills/caveman-tdd.md', /coverage 100% de cada métrica medible before/u, 'fixed 100% coverage policy that Q2 replaced'],
   ['SKILL.md', /confirms a genuine RED/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
   ['SKILL.md', /\bgenuine RED\b/iu, 'overclaims RED as genuine instead of accepted/evidence-based'],
   ['SKILL.md', /if Skill `cyber-neo` is present/iu, 'depends on an external security skill'],

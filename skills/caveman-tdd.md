@@ -19,7 +19,7 @@ allowed-tools: Read, Bash
 3. **TRIANGULATE before REFACTOR.** No cleanup on code that only proves the happy path.
 4. **REFACTOR before DOCS.** Document the clean version.
 
-**Hard gate #5, same rank: coverage 100% de cada métrica medible before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
+**Hard gate #5, same rank: caminos críticos probados y cobertura medida sin rangos sin ejecutar ni exentar, before SIMPLIFY/DEPLOY** (commands in COVERAGE GATE below).
 
 **Precedence:** these gates override any speed/convenience heuristic. Definitions elsewhere: `SKILL.md` (phases, Phase 8 Deploy, full DoD), `skills/subagent-{red,green,triangulate,refactor,docs}.md` (executors), `skills/deploy-zip.md` (optional artifact sub-step of 4.7). Gate wording conflicts → this file wins.
 
@@ -126,7 +126,7 @@ These are common excuses to skip RED gate. All rejected.
 
 ## COVERAGE GATE
 
-Required: **100% of every metric the runner can measure** (lines + branches + functions when available). A tool that cannot expose a metric must name that limitation in the evidence; it never becomes an assumed pass.
+Required (decision Q2, replacing the fixed 100%): tests of **todos los caminos críticos, contratos e integración real**, plus coverage **measured** on every metric the runner can expose (lines + branches + functions when available). Every range that did not execute is either covered or exempted with an owner, a reason and evidence — an exemption nobody can justify is a gap. A tool that cannot expose a metric must name that limitation in the evidence; it never becomes an assumed pass, and a language only tested from another one is not covered.
 
 ```bash
 # Node/TS — vitest (don't hide stderr — failures stay visible)
@@ -146,6 +146,6 @@ pytest --cov --cov-branch --cov-fail-under=100 2>&1 | tail -5
 go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out | grep total
 ```
 
-If any measurable coverage metric < 100%: do NOT proceed to Phase 6 (Test: security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
+If any range is neither covered nor exempted with owner, reason and evidence: do NOT proceed to Phase 6 (Test: security/adversarial/deploy). Spawn RED/GREEN cycle for uncovered paths.
 
 Coverage gate ≠ done. Full DoD (SKILL.md Phases 6-8): suite green + lint 0 + typecheck 0 + native security gate clean (`security-baseline.md`) + adversarial pass.

@@ -39,7 +39,7 @@ activo:
 4. El orquestador no escribe ninguna funcionalidad: sólo spec, plan, verificación, simplificación,
    seguridad y publicación.
 5. Every gate → 1 line to `.vibe/SESSION.md` (resume ledger) + matching 1 line to `.vibe/AUDIT.md` (accountability trail, escrita con `verify-audit-chain.mjs append`, nunca a mano — el sello encadena cada línea con la anterior y `check` detecta una edición posterior; ver `skills/vibe-memory.md`). **Solo el orchestrator escribe el ledger — nunca el subagente que hizo el trabajo** (source: `research/sources/protocolo-muralla.md` point #17): si el mismo agente que codeó/revisó también redacta su propia línea de estado, esa línea está contaminada por el sesgo de quien la escribe. Subagentes reportan al orchestrator; el orchestrator decide qué línea entra.
-6. DoD: coverage **100% de cada métrica que el stack mida** (líneas, ramas y funciones cuando existan) + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass + **soporte declarado**. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia.
+6. DoD: pruebas de **todos los caminos críticos, contratos e integración real** + cobertura **medida** (líneas, ramas y funciones cuando existan) donde **cada rango sin ejecutar está cubierto o exento con dueño, motivo y evidencia** + lint 0 + typecheck 0 + docs + .vibe updated + security clean + adversarial pass + **soporte declarado**. Esto sustituye al 100% fijo (decisión Q2 del operador, 2026-10-04): el porcentaje no certifica corrección y un 100% se consigue ejecutando sin afirmar. Si el runner no mide una métrica, registrar la limitación real; nunca declararla cubierta por inferencia, y nunca etiquetar como cubierto un lenguaje que sólo se probó desde otro.
 
    **Soporte declarado** responde una sola pregunta: *si un usuario dice que no le anda, ¿con qué se
    lo diagnostica?* Son cuatro campos —`correlation`, `actor_on_writes`, `failure_visible`,
@@ -1130,7 +1130,7 @@ declarados en 6.3.
 ```bash
 <test_command_with_coverage>
 ```
-Gate: cobertura 100% de cada métrica medible (líneas, ramas, funciones), y que pasen las pruebas
+Gate: pruebas de los caminos críticos y cobertura medida sin rangos sin ejecutar ni exentar (líneas, ramas, funciones), y que pasen las pruebas
 unitarias, de integración y de punta a punta. Si algo falla, se lanza `subagent-chore.md` y se
 vuelve a correr. El porcentaje no reemplaza ACs ni revisión adversarial: mide ejecución, no intención.
 

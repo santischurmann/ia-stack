@@ -227,7 +227,7 @@ After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-s
 | GREEN fails (still red) | Read error. Orchestrator can fix → respawn GREEN w/ diagnosis. Can't → ask user. |
 | TRIANGULATE finds a failing derived case | Not a failure of TRIANGULATE — expected. Handoff to Builder for minimal fix, re-run TRIANGULATE (full case set, regression check). |
 | TRIANGULATE case has no `derived from` justification | Reject the case, do not write it — decorative coverage is forbidden. |
-| Any measurable coverage metric < 100% (Phase 6.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
+| A range neither covered nor exempted with owner, reason and evidence, or a critical path without its test (Phase 6.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
 | Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
 | native security gate finds Critical/High (Phase 6.2) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
 | 4R adversarial finding survives its tier's review (Phase 6.3) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
@@ -267,7 +267,7 @@ para las fases 6, 7 y 8: un quinto vocabulario de fases, del mismo tipo que
 `tests/fases-canonicas.test.mjs` ya fija para los documentos de prosa. Una instrucción que dice
 «volvé al 4.4» no significa nada si ninguna fase se llama así.
 
-- [ ] 6.1 coverage 100% for every metric the runner measures (lines/branches/functions); any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
+- [ ] 6.1 tests for every critical path, contract and real integration, plus coverage measured on every metric the runner exposes (lines/branches/functions) with each unexecuted range covered or exempted with owner, reason and evidence; any unavailable metric is named as a runner limitation, never silently skipped. Lint/typecheck resolved to one of 3 mechanical outcomes (real gate exit 0 / BLOCK if declared-but-missing / N/A with detection-command evidence) — never a silent skip
 - [ ] 6.2 native `security-baseline.md` clean (no open Critical/High). Every Critical/High finding went through the Refutador BEFORE anyone touched it — only `corroborado` gets fixed
 - [ ] 6.3 4R adversarial review at the risk-appropriate intensity (never 0 reviewers): no surviving finding; any fix crossing the 6.3.1 replanning threshold got 🔵 confirm before continuing. From `estandar` up the Refutador is a separate agent, never the reviewer's own `verdict`
 - [ ] 6.4 full suite green (post-fix) + receipt `ia.receipt/v3` written with `git_head`+`tree_fingerprint` (`.vibe/receipts/`)

@@ -59,7 +59,7 @@ El detalle vive en el modelo; acá va el resumen que hace que alguien lo abra.
 ## Definition of Done (DoD)
 - [ ] Forcing Questions: 6/6 (o skipped, con conteo)
 - [ ] All ACs pass (unit+integration+e2e)
-- [ ] Coverage 100% for every metric the runner measures (lines/branches/functions), lint 0, typecheck 0
+- [ ] Tests for every critical path, contract and real integration; coverage measured on every metric the runner exposes (lines/branches/functions), each unexecuted range covered or exempted with owner, reason and evidence, lint 0, typecheck 0
 - [ ] Native security gate clean (`security-baseline.md`, Phase 6.2) + adversarial pass (Phase 6.3)
 - [ ] README/CHANGELOG/.vibe updated
 ```

@@ -28,5 +28,56 @@
       "debt": false,
       "debt_settled": "DEUDA PAGADA el 2026-09-16. Decia: cuatro de estos archivos NO son de un solo uso -- verify-semantic-functional-ledger.mjs, verify-semantic-deep-evidence.mjs, verify-full-evidence-pass.mjs y verify-semantic-review-index.mjs son verificadores que el protocolo manda correr en su fase de verificacion, y ninguno tenia prueba propia. Se les separo la logica de la entrada/salida, se les escribieron 86 pruebas y pasaron a measured por nombre, asi que el gate de cobertura los exige al 100% como a cualquier otro. Lo que queda excluido de research/ es lo que siempre fue de un solo uso; require-artifact.mjs tiene prueba propia desde antes, en tests/require-artifact.test.mjs."
     }
-  ]
+  ],
+  "critical_paths": [
+    {
+      "id": "recibo-no-autoriza-arbol-cambiado",
+      "boundary": "un commit no se escribe si el arbol cambio despues de revisado el recibo",
+      "script": "scripts/verify-receipt.mjs",
+      "test_file": "tests/verify-receipt-commit.test.mjs",
+      "test_name": "FALSIFICACIÓN · AC9 · commit con el árbol cambiado tras el receipt aborta y no deja commit",
+      "owner": "revisor independiente del escritor"
+    },
+    {
+      "id": "firma-rota-rechaza",
+      "boundary": "una firma de commit que no valida rechaza aunque no se haya pedido firma",
+      "script": "scripts/verify-receipt.mjs",
+      "test_file": "tests/verify-receipt-commit.test.mjs",
+      "test_name": "FALSIFICACION · una firma MALA rechaza aunque no se pida firma",
+      "owner": "revisor independiente del escritor"
+    },
+    {
+      "id": "cadena-de-auditoria",
+      "boundary": "una linea ya escrita de la traza no se edita sin que el gate nombre la linea exacta",
+      "script": "scripts/verify-audit-chain.mjs",
+      "test_file": "tests/verify-audit-chain.test.mjs",
+      "test_name": "FALSIFICACIÓN · AC2 · editar una línea ya escrita rompe la cadena y nombra la línea exacta",
+      "owner": "revisor independiente del escritor"
+    },
+    {
+      "id": "cobertura-no-la-tapa-otro-proceso",
+      "boundary": "un proceso que no ejecuto el codigo no puede tapar a uno que si lo ejecuto",
+      "script": "scripts/verify-ia-stack-coverage.mjs",
+      "test_file": "tests/verify-ia-stack-coverage.test.mjs",
+      "test_name": "FALSIFICACIÓN · un proceso que no ejecutó el código no puede tapar al que sí lo ejecutó",
+      "owner": "revisor independiente del escritor"
+    },
+    {
+      "id": "plan-editado-no-hereda-aprobacion",
+      "boundary": "un plan editado despues de aprobado no hereda la aprobacion del modo continuo",
+      "script": "scripts/verify-phase-decisions.mjs",
+      "test_file": "tests/verify-phase-decisions-authorization.test.mjs",
+      "test_name": "FALSIFICACION · L1.3 · un plan editado despues de aprobado no hereda la aprobacion",
+      "owner": "revisor independiente del escritor"
+    },
+    {
+      "id": "seguridad-sql-concatenado",
+      "boundary": "un SQL armado por concatenacion sigue bloqueando el delta",
+      "script": "scripts/verify-security-baseline.mjs",
+      "test_file": "tests/verify-security-baseline.test.mjs",
+      "test_name": "FALSIFICACIÓN · real string-built SQL via \"+\" concatenation is still blocked after the CLI-subcommand fix",
+      "owner": "revisor independiente del escritor"
+    }
+  ],
+  "exemptions": []
 }

@@ -37,12 +37,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { hasLiteralTestDeclaration } from './verify-test-bindings.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const USAGE = 'usage: node scripts/verify-ia-stack-coverage.mjs [--coverage-dir <directorio ya medido>]';
 export const NO_INPUTS_SOURCE_CHANGED = 'COVERAGE_SOURCE_CHANGED';
 export const NO_COVERAGE_DATA = 'COVERAGE_NO_DATA';
 export const UNREADABLE_COVERAGE = 'COVERAGE_UNREADABLE';
+export const EXEMPTION_INVALID = 'COVERAGE_EXEMPTION_INVALID';
+export const EXEMPTION_STALE = 'COVERAGE_EXEMPTION_STALE';
+export const CRITICAL_PATH_INVALID = 'COVERAGE_CRITICAL_PATH_INVALID';
 
 /** Inventory every Node executable we claim line/branch/function coverage for. */
 /** Rutas relativas al proyecto, no nombres sueltos: un ayudante de pruebas homonimo cubria a un
@@ -256,17 +260,133 @@ export function collectScriptCoverage(directory, scripts, cwd = repoRoot, io = {
   return { byScript, unreadable };
 }
 
+const MIN_EXEMPTION_REASON = 20;
+const EXEMPTION_KEYS = ['file', 'line', 'owner', 'reason', 'evidence'];
+const CRITICAL_PATH_KEYS = ['id', 'boundary', 'script', 'test_file', 'test_name', 'owner'];
+const KEBAB = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const TEST_FILE = /^tests\/[A-Za-z0-9._/-]+\.test\.mjs$/u;
+
+const esObjeto = (valor) => Boolean(valor) && typeof valor === 'object' && !Array.isArray(valor);
+const hayTexto = (valor) => typeof valor === 'string' && valor.trim() !== '';
+const exactas = (valor, claves) => esObjeto(valor) && Object.keys(valor).length === claves.length && claves.every((clave) => clave in valor);
+/** Una ruta que se puede leer sin salirse del proyecto: relativa, con barras normales y sin `..`. */
+const rutaDelProyecto = (valor) => hayTexto(valor) && !valor.startsWith('/') && !/^[A-Za-z]:/u.test(valor)
+  && !valor.includes(String.fromCharCode(92)) && !valor.split('/').includes('..');
+
+/**
+ * Q2 SUSTITUYE EL 100 % FIJO, NO LO ABOLE. Un rango sin ejecutar sigue siendo rojo salvo que el
+ * contrato lo exima con dueño, motivo y evidencia, y el veredicto NOMBRA lo eximido. Dos candados
+ * contra la trampa obvia: una exención que ya no corresponde a ningún hueco es un rechazo (si no,
+ * el contrato acumula permisos muertos que mañana tapan otra cosa), y no se puede aflojar la vara
+ * sin haber declarado antes qué caminos críticos sí se prueban.
+ */
+export function validarExenciones(contrato) {
+  const lista = contrato?.exemptions;
+  if (lista === undefined) return [];
+  if (!Array.isArray(lista)) return ['exemptions debe ser una lista'];
+  const problemas = [];
+  const vistos = new Set();
+  for (const [i, exencion] of lista.entries()) {
+    const en = `exemptions[${i}]`;
+    if (!exactas(exencion, EXEMPTION_KEYS)) {
+      problemas.push(`${en}: debe declarar exactamente ${EXEMPTION_KEYS.join(', ')}`);
+      continue;
+    }
+    if (!rutaDelProyecto(exencion.file)) problemas.push(`${en}: file debe ser una ruta relativa dentro del proyecto`);
+    if (!Number.isInteger(exencion.line) || exencion.line < 1) problemas.push(`${en}: line debe ser un entero desde 1`);
+    if (!hayTexto(exencion.owner)) problemas.push(`${en}: falta el dueño de la exención`);
+    if (!hayTexto(exencion.evidence)) problemas.push(`${en}: falta la evidencia de que ese camino no se puede ejercer`);
+    if (!hayTexto(exencion.reason) || exencion.reason.trim().length < MIN_EXEMPTION_REASON) {
+      problemas.push(`${en}: reason debe explicar por qué no se puede ejercer, en al menos ${MIN_EXEMPTION_REASON} caracteres`);
+    }
+    const clave = `${exencion.file}:${exencion.line}`;
+    if (vistos.has(clave)) problemas.push(`${en}: ${clave} repetida`);
+    vistos.add(clave);
+  }
+  const caminos = contrato?.critical_paths;
+  if (lista.length > 0 && !(Array.isArray(caminos) && caminos.length > 0)) {
+    problemas.push('hay exenciones y ningún camino crítico declarado: aflojar el 100 % exige declarar antes qué caminos críticos se prueban');
+  }
+  return problemas;
+}
+
+/**
+ * CADA CAMINO CRÍTICO TIENE QUE APUNTAR A UNA PRUEBA QUE EXISTE, QUE NO ESTÁ APAGADA Y QUE TOCA EL
+ * SCRIPT. Una lista de nombres sin esa comprobación es otra frase: se puede declarar "cadena de
+ * auditoría" apuntando a una prueba que no existe o que prueba otra cosa y el gate la daría por
+ * buena. LÍMITE: esto comprueba que la prueba exista y nombre el script, no que su oráculo sea
+ * independiente de quien escribió el código ni que su aserción alcance. `owner` es una declaración.
+ */
+export function validarCaminosCriticos(caminos, inventario, leer) {
+  if (!Array.isArray(caminos)) return ['critical_paths debe ser una lista'];
+  const problemas = [];
+  const ids = new Set();
+  for (const [i, camino] of caminos.entries()) {
+    const en = `critical_paths[${i}]`;
+    if (!exactas(camino, CRITICAL_PATH_KEYS)) {
+      problemas.push(`${en}: debe declarar exactamente ${CRITICAL_PATH_KEYS.join(', ')}`);
+      continue;
+    }
+    const antes = problemas.length;
+    if (!hayTexto(camino.id) || !KEBAB.test(camino.id)) problemas.push(`${en}: id debe ser kebab-case`);
+    else if (ids.has(camino.id)) problemas.push(`${en}: id ${camino.id} repetido`);
+    ids.add(camino.id);
+    if (!hayTexto(camino.boundary)) problemas.push(`${en}: boundary debe decir qué frontera o contrato protege`);
+    if (!hayTexto(camino.owner)) problemas.push(`${en}: falta el dueño del camino`);
+    if (!hayTexto(camino.test_name)) problemas.push(`${en}: falta el nombre exacto de la prueba`);
+    if (!inventario.includes(camino.script)) problemas.push(`${en}: ${camino.script} no está en el inventario medido`);
+    if (!TEST_FILE.test(String(camino.test_file)) || String(camino.test_file).includes('..')) {
+      problemas.push(`${en}: test_file debe ser una ruta tests/**/*.test.mjs`);
+    }
+    if (problemas.length > antes) continue;
+    let fuente;
+    try {
+      fuente = leer(camino.test_file);
+    } catch (error) {
+      problemas.push(`${en}: no se pudo leer ${camino.test_file}: ${error.message}`);
+      continue;
+    }
+    const nombre = camino.test_name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    const apagada = new RegExp(`(?:test|it)\\.(?:skip|todo)\\s*\\(\\s*(['"])${nombre}\\1`, 'u');
+    if (apagada.test(fuente)) problemas.push(`${en}: la prueba "${camino.test_name}" está salteada (skip) o pendiente (todo): no ejerce nada`);
+    else if (!hasLiteralTestDeclaration(fuente, camino.test_name)) problemas.push(`${en}: ${camino.test_file} no declara una prueba literal "${camino.test_name}"`);
+    if (!fuente.includes(camino.script.split('/').at(-1))) problemas.push(`${en}: ${camino.test_file} nunca nombra ${camino.script}: una prueba que no toca el script no ejerce su camino`);
+  }
+  return problemas;
+}
+
+/** Lo que el contrato compromete además del alcance: exenciones y caminos críticos. */
+export function compromisosDeContrato(cwd = repoRoot, readFile = readFileSync) {
+  const contrato = JSON.parse(readFile(`${cwd}/contracts/coverage-scope.json`, 'utf8'));
+  return {
+    exenciones: Array.isArray(contrato.exemptions) ? contrato.exemptions : [],
+    caminos: Array.isArray(contrato.critical_paths) ? contrato.critical_paths : [],
+    problemas: validarExenciones(contrato),
+  };
+}
+
 /** Traduce lo medido en un veredicto. Sin efectos: recibe las fuentes ya leídas. */
-export function evaluateCoverage(byScript, sources) {
+export function evaluateCoverage(byScript, sources, exenciones = []) {
   const sinDatos = [];
   const huecos = [];
+  const eximidos = [];
+  const usadas = new Set();
+  const declaradas = new Map(exenciones.map((exencion) => [`${exencion.file}:${exencion.line}`, exencion]));
   for (const [script, processes] of byScript) {
     if (processes.length === 0) {
       sinDatos.push(script);
       continue;
     }
     for (const gap of uncoveredRanges(processes, sources.get(script) ?? '')) {
-      huecos.push(`${script}:${gap.line} (${gap.kind}${gap.name ? ` ${gap.name}` : ''})`);
+      const clave = `${script}:${gap.line}`;
+      const detalle = `${clave} (${gap.kind}${gap.name ? ` ${gap.name}` : ''})`;
+      const exencion = declaradas.get(clave);
+      if (exencion === undefined) {
+        huecos.push(detalle);
+        continue;
+      }
+      usadas.add(clave);
+      eximidos.push(`${detalle}, dueño ${exencion.owner}: ${exencion.reason}`);
     }
   }
   if (sinDatos.length > 0) {
@@ -275,7 +395,13 @@ export function evaluateCoverage(byScript, sources) {
   if (huecos.length > 0) {
     return { ok: false, code: null, message: `hay ${huecos.length} función(es)/rama(s) que ningún proceso ejecutó: ${huecos.join('; ')}` };
   }
-  return { ok: true, code: null, message: `los ${byScript.size} script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas.` };
+  const huerfanas = [...declaradas.keys()].filter((clave) => !usadas.has(clave));
+  if (huerfanas.length > 0) {
+    return { ok: false, code: EXEMPTION_STALE, message: `${huerfanas.length} exención(es) del contrato ya no corresponden a ningún hueco: ${huerfanas.join(', ')}. Una exención que sobra es un permiso muerto que mañana tapa otra cosa: se borra.` };
+  }
+  const base = `los ${byScript.size} script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas`;
+  if (eximidos.length === 0) return { ok: true, code: null, message: `${base}.` };
+  return { ok: true, code: null, message: `${base}, salvo ${eximidos.length} exenta(s) por contrato: ${eximidos.join('; ')}.` };
 }
 
 /**
@@ -352,6 +478,25 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
     return 1;
   }
 
+  // Con un alcance inyectado no hay contrato en disco que leer: los compromisos vienen vacíos o
+  // inyectados también, y nunca se salta a leer el contrato de otro proyecto.
+  let compromisos;
+  try {
+    compromisos = io.compromisos ?? (io.alcance ? { exenciones: [], caminos: [], problemas: [] } : compromisosDeContrato(cwd, io.readContract));
+  } catch (error) {
+    writeError(`REJECTED: ${EXEMPTION_INVALID}: no se pudo leer el contrato de cobertura: ${error.message}`);
+    return 1;
+  }
+  const leerDelProyecto = io.read ?? ((name) => readFileSync(join(cwd, name), 'utf8'));
+  const problemasDeContrato = [
+    ...compromisos.problemas.map((problema) => `${EXEMPTION_INVALID}: ${problema}`),
+    ...validarCaminosCriticos(compromisos.caminos, expectedScripts, leerDelProyecto).map((problema) => `${CRITICAL_PATH_INVALID}: ${problema}`),
+  ];
+  if (problemasDeContrato.length > 0) {
+    for (const problema of problemasDeContrato) writeError(`REJECTED: ${problema}`);
+    return 1;
+  }
+
   // Ligadas al proyecto medido: `main` recibe un cwd y la huella tiene que hablar de ESE arbol.
   const listarParaHuella = io.list ?? (() => listMjsScripts(cwd, io.readScriptsDir, alcance));
   const leerParaHuella = io.read ?? ((name) => readFileSync(join(cwd, name), 'utf8'));
@@ -403,12 +548,13 @@ export function main(args = process.argv.slice(2), run = runCoverage, write = co
       return 1;
     }
     const sources = new Map(expectedScripts.map((script) => [script, (io.read ?? ((name) => readFileSync(join(cwd, name), 'utf8')))(script)]));
-    const verdict = evaluateCoverage(byScript, sources);
+    const verdict = evaluateCoverage(byScript, sources, compromisos.exenciones);
     if (!verdict.ok) {
       writeError(`REJECTED: ${verdict.code === null ? '' : `${verdict.code}: `}${verdict.message}`);
       return 1;
     }
-    write(`OK: ${verdict.message}`);
+    const caminos = compromisos.caminos.length > 0 ? ` ${compromisos.caminos.length} camino(s) crítico(s) verificado(s) contra su prueba.` : '';
+    write(`OK: ${verdict.message}${caminos}`);
     return 0;
   } finally {
     // SOLO SE BORRA LO QUE ESTE GATE CREO. Con `--coverage-dir` el directorio es de quien lo paso, y

@@ -81,7 +81,7 @@ jobs:
       - name: Typecheck
         run: <typecheck_command>
       - name: Coverage gate
-        run: # fail if any measurable coverage metric is < 100%
+        run: # fail if any range is neither covered nor exempted with owner, reason and evidence
 ```
 
 Create or update as needed.
@@ -121,10 +121,10 @@ echo "Build complete: $(du -sh dist.zip | cut -f1) — $(cat checksums.txt)"
 ```bash
 <test_command_with_coverage_json>
 # Parse coverage percentage from output
-# Fail if any measurable metric is < 100%
+# Fail if any range is neither covered nor exempted with owner, reason and evidence
 ```
 
-If any measurable coverage metric < 100%:
+If any range is neither covered nor exempted with owner, reason and evidence:
 1. Identify uncovered lines/branches
 2. Report which test types are missing (unit/integration/e2e)
 3. Do NOT write tests yourself — report to orchestrator for RED/GREEN cycle

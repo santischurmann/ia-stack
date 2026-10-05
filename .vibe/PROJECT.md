@@ -32,7 +32,7 @@ paga porque hay algo real que perder. `risk_level` por-cambio (Phase 7.1) sigue 
 
 ## Key conventions
 
-- Un gate nuevo no se declara listo sin 100% de líneas, ramas y funciones en `verify-ia-stack-coverage`.
+- Un gate nuevo no se declara listo sin caminos críticos probados y sin que `verify-ia-stack-coverage` no encuentre rango alguno sin ejecutar ni exentar con dueño, motivo y evidencia (decisión Q2).
 - Toda promesa visible al usuario en README/SKILL/SECURITY se fija en `verify-ia-stack-contract.mjs`,
   para que la documentación no pueda derivar en silencio.
 - Los límites honestos se escriben en el header del propio script, no sólo en la documentación.
