@@ -7,6 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+---
+
+## [3.1.0] — 2026-10-05
+
+**Versión menor: agrega, y lo que ya existía sigue andando.** El modo continuo, las exenciones de
+cobertura y `--project-only` son opcionales y el comportamiento por defecto no cambia. Cambia una
+política, no un formato: la cobertura pasa del 100 % fijo a caminos críticos con exenciones
+justificadas (decisión Q2), y los textos del protocolo lo dicen así.
+
 - **Los cuatro conflictos de la doble ronda (plan `docs/plan.md`, aprobado por el operador el 2026-10-05).**
   - **Modo continuo (LAW 7 contra IS1).** `docs/phase-decisions.json` puede declarar una `authorization` —el
     plan por contenido, fases, rutas, clases de cambio y las siete acciones reservadas que deja afuera— y
