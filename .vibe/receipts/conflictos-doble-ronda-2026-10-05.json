@@ -1,0 +1,164 @@
+{
+  "schema": "ia.receipt/v3",
+  "feature": "conflictos-doble-ronda",
+  "task": "T01 — los cuatro conflictos de la seccion 25: modo continuo, cobertura por caminos criticos, locks fisicos e instalador aislado",
+  "date": "2026-10-05",
+  "scope": {
+    "declared_paths": [
+      ".vibe/PROJECT.md",
+      ".vibe/SESSION.md",
+      "CHANGELOG.md",
+      "INSTALL.md",
+      "README.md",
+      "SKILL.md",
+      "contracts/coverage-scope.json",
+      "contracts/honest-limits.json",
+      "contracts/ia-stack-index.json",
+      "contracts/platform-scope.json",
+      "contracts/shell-coverage.json",
+      "docs/plan.md",
+      "scripts/install.ps1",
+      "scripts/install.sh",
+      "scripts/verify-ia-stack-contract.mjs",
+      "scripts/verify-ia-stack-coverage.mjs",
+      "scripts/verify-lock-vivo.mjs",
+      "scripts/verify-phase-decisions.mjs",
+      "scripts/verify-phase-menu.mjs",
+      "scripts/verify-plan-conflicts.mjs",
+      "skills/caveman-tdd.md",
+      "skills/gates.md",
+      "skills/orchestrator-opus.md",
+      "skills/spec-plan-templates.md",
+      "skills/subagent-chore.md",
+      "templates/spec.md",
+      "tests/install-project-only.test.mjs",
+      "tests/verify-ia-stack-contract.test.mjs",
+      "tests/verify-ia-stack-coverage-q2.test.mjs",
+      "tests/verify-ia-stack-coverage.test.mjs",
+      "tests/verify-lock-vivo-fence.test.mjs",
+      "tests/verify-lock-vivo.test.mjs",
+      "tests/verify-phase-decisions-authorization.test.mjs",
+      "tests/verify-plan-conflicts-physical.test.mjs"
+    ]
+  },
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC1",
+      "scenario": "Una fase incluida en un plan aprobado cierra con status authorized sin un menu inventado, y el gate rechaza: fase fuera de alcance, plan editado despues de aprobarse, alcance editado tras cerrar las fases, cierre anterior a la aprobacion, fila authorized con menu, y una eleccion humana dentro de una fase que el plan ya incluia.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-phase-decisions-authorization.test.mjs",
+      "test_hash_sha256": "0cdd99cd8041218122ee44748916b37e22df8351b04a298e67dac6fa25125afb",
+      "command": "node --test tests/verify-phase-decisions-authorization.test.mjs",
+      "result": "23 pruebas en verde; rojo visto antes: 16 de 17 fallaban, la unica verde era el control de compatibilidad hacia atras."
+    },
+    {
+      "ac_id": "AC2",
+      "scenario": "Un rango sin ejecutar sigue siendo rojo salvo exencion con duenio, motivo y evidencia; una exencion huerfana se rechaza; no se afloja la vara sin declarar un camino critico; cada camino critico apunta a una prueba literal no salteada que nombra el script. Seis caminos reales declarados.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-ia-stack-coverage-q2.test.mjs",
+      "test_hash_sha256": "1a27ae319c34dff889ba54a3a078798c747062425f10bd3e815cc7c9e4f1caba",
+      "command": "node --test tests/verify-ia-stack-coverage-q2.test.mjs",
+      "result": "16 pruebas en verde; rojo visto antes: 11 de 13 fallaban. El gate real: OK sobre 65 scripts y 6 caminos criticos."
+    },
+    {
+      "ac_id": "AC3",
+      "scenario": "verify-plan-conflicts resuelve las rutas contra el archivo fisico (junction, directorio contenedor, enlace que sale o colgado) y verify-lock-vivo rechaza a un escritor con un fence viejo o ajeno.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/verify-plan-conflicts-physical.test.mjs",
+      "test_hash_sha256": "629c71cd37f447c3d86e7970abede4bcaeb29d0c304b7e200b09e08f408e1168",
+      "command": "node --test tests/verify-plan-conflicts-physical.test.mjs tests/verify-lock-vivo-fence.test.mjs",
+      "result": "9 + 12 pruebas en verde; rojo visto antes: 7 de 9 y 7 de 9 fallaban, con sus controles verdes."
+    },
+    {
+      "ac_id": "AC4",
+      "scenario": "El instalador tiene un modo --project-only / -ProjectOnly que no escribe nada fuera del proyecto, rechaza combinarse con un destino global antes de escribir, y el default no cambia.",
+      "verdict": "COMPLIANT",
+      "test_file": "tests/install-project-only.test.mjs",
+      "test_hash_sha256": "1fba02273215f138705badce6747a9e1bb156faf9660bb2ec259a66ce1222355",
+      "command": "node --test tests/install-project-only.test.mjs",
+      "result": "5 pruebas en verde con HOME apuntado a un temporal; rojo visto antes: 4 de 5 fallaban. El ~/.claude real no cambio (fecha del runtime global: 2026-09-15 antes y despues)."
+    }
+  ],
+  "review_4r": {
+    "risk": {
+      "finding": "Cuatro cambios a gates que autorizan trabajo posterior: un modo que cierra fases sin menu, una vara de cobertura que ahora admite exenciones, un lock y un instalador. Cada uno puede convertirse en el verde falso que el protocolo persigue.",
+      "mitigation": "Cada uno nacio de un rojo visible, trae el limite escrito donde viaja el verde y esta fijado por el contrato de promesas. El modo continuo rechaza la eleccion fabricada; las exenciones se rechazan si sobran; el instalador no se corrio contra el HOME real."
+    },
+    "readability": {
+      "finding": "El plan ubico mal dos tareas (los locks lexicales y la hora de arranque del proceso), y el motivo de cada decision tiene que leerse sin reconstruirlo.",
+      "mitigation": "La correccion al plan esta escrita en docs/plan.md con su evidencia, y cada gate lleva en su cabecera el mecanismo del defecto y el limite que queda."
+    },
+    "reliability": {
+      "finding": "El gate de cobertura atrapo una rama propia sin ejecutar, y mi bateria inicial no incluia verify-ia-stack-index, que rechazo cinco archivos de prueba sin declarar.",
+      "mitigation": "La rama se cubrio con prueba propia y el indice se corrigio. La bateria final corre todos los pasos del CI que aplican a un checkout sin runtime instalado."
+    },
+    "resilience": {
+      "finding": "Un instalador que escribe en el perfil del usuario es el riesgo mas caro de probar mal.",
+      "mitigation": "Toda corrida del instalador en las pruebas apunta HOME y USERPROFILE a un temporal; se comprobo antes de escribir las pruebas que PowerShell sigue a HOME; los rechazos salen antes de escribir; y se registro el estado del ~/.claude real antes y despues."
+    }
+  },
+  "measurements": [
+    {
+      "metric": "pruebas de la suite",
+      "measured": true,
+      "before": 2213,
+      "after": 2278
+    },
+    {
+      "metric": "caminos criticos declarados en coverage-scope",
+      "measured": true,
+      "before": 0,
+      "after": 6
+    },
+    {
+      "metric": "limites honestos declarados",
+      "measured": true,
+      "before": 126,
+      "after": 130
+    },
+    {
+      "metric": "cobertura de lineas de install.sh en los escenarios declarados contra su piso de 72",
+      "measured": true,
+      "before": 72,
+      "after": 72.6
+    },
+    {
+      "metric": "cuantos proyectos reales usan hoy el modo continuo",
+      "measured": false,
+      "before": -1,
+      "after": -1,
+      "reason": "Ninguno: el modo existe desde este commit y ningun proyecto lo adopto. No hay nada que medir todavia."
+    }
+  ],
+  "reproduction": "Antes de cada cambio, con la prueba nueva sobre el codigo anterior: (1) modo continuo — verify-phase-decisions-authorization.test.mjs: 16 de 17 fallan; (2) Q2 — verify-ia-stack-coverage-q2.test.mjs: 11 de 13 fallan; (3) rutas fisicas — verify-plan-conflicts-physical.test.mjs: 7 de 9 fallan; (4) fencing — verify-lock-vivo-fence.test.mjs: 7 de 9 fallan; (5) instalador — install-project-only.test.mjs: 4 de 5 fallan. Verificacion posterior: node --test --test-concurrency=2 && IA_STACK_TEST_CONCURRENCY=2 node scripts/verify-ia-stack-coverage.mjs && node scripts/verify-ia-stack-contract.mjs check && node scripts/verify-ia-stack-index.mjs check && node scripts/verify-platform-scope.mjs check && node scripts/verify-repo-clean.mjs check && node scripts/verify-empty-probe.mjs check contracts/empty-probe.json && node scripts/verify-gate-docs.mjs check && node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json",
+  "not_reviewed": "No hubo una refutacion independiente de ninguno de los cuatro cambios: los escribio y los reviso el mismo agente, y el rojo previo y la bateria son lo unico que hay. La aprobacion se sella por contenido, no por voluntad: approval_ref lo escribe el agente. El oraculo de un camino critico no se comprueba independiente de quien escribio el codigo. Los symlinks de archivo no se probaron en Windows (exigen privilegio), solo junctions. install.ps1 no se corrio fuera de Windows ni el instalador contra el HOME real. El gate runtime-sync no comparo nada (no hay runtime instalado aca) y verify-graphify-manifest no corrio (graphify-out no existe en este checkout). Las instrucciones globales del operador siguen diciendo 100 %: esa copia es suya. No se hizo push ni se sello AUDIT antes de este recibo.",
+  "evidence": [
+    "node --test --test-concurrency=2 -> tests 2278, pass 2276, fail 0, skipped 2 (las dos de cobertura del grafo)",
+    "node scripts/verify-ia-stack-coverage.mjs -> OK: los 65 script(s) Node inventariado(s) ejecutaron todas sus funciones y todas sus ramas. 6 camino(s) critico(s) verificado(s) contra su prueba.",
+    "node scripts/verify-ia-stack-contract.mjs check -> OK: 146 user-visible protocol contract checks pass; 130 honest limits verified.",
+    "node scripts/verify-ia-stack-index.mjs check -> OK: cubre 453 archivo(s) rastreado(s)",
+    "node scripts/verify-platform-scope.mjs check -> OK: 9 prueba(s) declaran plataforma",
+    "node scripts/verify-repo-clean.mjs check -> OK: 453 archivo(s) versionado(s) sin rastro de la identidad de quien corre ni de rutas personales",
+    "node scripts/verify-shell-coverage.mjs check contracts/shell-coverage.json -> OK: scripts/install.sh 72.6% (piso 72)",
+    "node scripts/verify-empty-probe.mjs check contracts/empty-probe.json -> OK: 59 gate(s)",
+    "node scripts/verify-test-duration.mjs -> OK: protocolo-e2e-via-corta.test.mjs 28 s contra un tope de 600 s"
+  ],
+  "limits": [],
+  "regressions": [],
+  "support": {
+    "correlation": "cada fila authorized lleva authorized_by, el digest de la autorizacion, y cada rechazo del gate nombra el codigo y la decision",
+    "actor_on_writes": "cada commit de la rama lleva su coautor; approval_ref nombra el mensaje humano de donde sale la aprobacion, escrito por el agente",
+    "failure_visible": "el rechazo de cada gate con su codigo (PHASE_DECISION_*, COVERAGE_*, FENCE_*) y la salida de verify-ia-stack-coverage.mjs",
+    "diagnostic_command": "node scripts/verify-phase-decisions.mjs check docs/phase-decisions.json; node scripts/verify-ia-stack-coverage.mjs; node scripts/verify-lock-vivo.mjs fence docs/tasks.json --task <id> --token <n>"
+  },
+  "refutation": {
+    "proposed": 0,
+    "survived": 0,
+    "refuted": 0,
+    "inconclusive": 0,
+    "by_lens": {}
+  },
+  "terminal_state": "approved",
+  "git_head": "fdcf6585b7c4e9b046b0687b1c2a23c2e7a2c62f",
+  "tree_fingerprint": "00e279f7583266d610013688d8bd87d93643c86504e7cc5ece63018a95284ebf"
+}
