@@ -1,8 +1,9 @@
 # Plan: autorización por plan, y los cuatro conflictos de la doble ronda
 
 **Date:** 2026-10-05
-**Status:** propuesto — **no aprobado**. Nada de este plan se implementa hasta que el operador lo
-apruebe en una conversación directa, citando la versión (commit) de este archivo.
+**Status:** aprobado por el operador el 2026-10-05, en su sesión, para los lotes 1 a 4, sobre la versión
+`fcd22b6` de este archivo. Autoriza commits locales por lote; push, merge, deploy e instalaciones
+globales siguen reservados.
 **Fuente:** el prompt maestro de evolución del operador (documento externo al repo, versión del
 2026-10-05), secciones 1, 4, 7, 17 (Q1–Q5), 21 (IS1–IS6) y 25–29.
 **Plan anterior:** `eleccion-de-stack` (2026-09-14), cerrado: el gate `verify-stack-matrix.mjs` y su
