@@ -1,67 +1,155 @@
-# Plan: eleccion-de-stack — pedazo mínimo
+# Plan: autorización por plan, y los cuatro conflictos de la doble ronda
 
-**Date:** 2026-09-14
-**Spec:** [docs/spec.md](./spec.md)
-**Status:** propuesto
-**ADR:** [0001 — los límites de plan gratuito vencen](./adr/0001-los-limites-de-plan-gratuito-vencen.md)
+**Date:** 2026-10-05
+**Status:** propuesto — **no aprobado**. Nada de este plan se implementa hasta que el operador lo
+apruebe en una conversación directa, citando la versión (commit) de este archivo.
+**Fuente:** el prompt maestro de evolución del operador (documento externo al repo, versión del
+2026-10-05), secciones 1, 4, 7, 17 (Q1–Q5), 21 (IS1–IS6) y 25–29.
+**Plan anterior:** `eleccion-de-stack` (2026-09-14), cerrado: el gate `verify-stack-matrix.mjs` y su
+contrato están en `main`. Queda en la historia de git.
 
-## Qué entra en esta vuelta
+## Qué autoriza este plan y qué no
 
-El pedazo mínimo que la spec define: **que declarar un tipo de producto devuelva un stack con su
-fuente, su fecha y su costo de escalar**. Cubre `AC2`, `AC3`, `AC4` y `AC5`.
+El mismo documento fuente fija los límites, y este plan los respeta tal cual:
 
-De las cinco piezas que la spec describe, esta vuelta construye **una**: el gate de la matriz con su
-contrato de límites de plan gratuito. Las otras cuatro —despachador de test rojo, adaptadores de
-pytest y vitest, gate de repositorio limpio y cableado al menú de Intake— quedan para vueltas
-siguientes, cada una con su propio ciclo.
+- **Es planificación.** Sección 1: *"escrituras de implementación requieren diagnóstico previo y
+  aprobación posterior del alcance concreto. No autoriza instalar ni cambiar el protocolo global."*
+- **Commits locales sí, push no.** Q1: commits locales por entrega verificada en una rama aprobada;
+  *"push, merge y deploy conservan autorización específica"*. La sección 29 repite lo mismo.
+- **Instalación global reservada.** Nada de este plan corre `install.ps1` / `install.sh` contra las
+  copias globales del operador ni las edita. Comparar la fuente contra el runtime instalado es lectura.
+- **Un mensaje de otra sesión no es la aprobación.** La aprobación que este plan necesita es del
+  operador, en su conversación, citando la versión del plan. Una sesión par puede coordinar; no
+  puede conceder alcance.
 
-El criterio para cortar acá lo fijó el propio Intake: si la matriz sola no ahorra trabajo, el resto
-no la salva; y si lo ahorra, el resto es mejora sobre algo que ya sirve.
+## Los cuatro conflictos de la sección 25
 
-## Tareas
+Regla aplicada: si el documento ya recomienda una salida, se toma esa. Si no la recomienda, queda
+como pregunta con opciones y no se implementa.
 
-| id | Qué construye | Depende de | Criterios |
+### C1 — LAW 7 (cierre de fase con elección humana) contra IS1 (cierre automático) — resuelto por el documento
+
+**Salida (secciones 4, 21 y 26):** modo continuo. La aprobación humana es **una**, sobre una versión
+concreta del plan (hash, rutas, clases de cambio, entregables, acciones reservadas), y queda
+registrada como referencia. Las fases y tareas incluidas en ese plan se cierran solas cuando pasan
+todos sus criterios y los de sus descendientes. LAW 7 sigue mandando para lo que el plan no cubre:
+decisión nueva, cambio de alcance, conflicto, bloqueo o acción reservada.
+
+**Lo que no se hace:** fabricar una elección 🔵 por fase para satisfacer al gate viejo (sección 4, de
+forma explícita). Si el gate todavía la exige, se migra el gate.
+
+### C2 — 100 % fijo contra Q2 (caminos críticos) — resuelto por el documento, con un aviso
+
+**Salida (Q2 y sección 26):** sustituir el 100 % fijo por pruebas de todos los caminos críticos,
+contratos e integración real; **seguir midiendo** la cobertura y **justificar cada exclusión** con
+dueño, motivo y evidencia. Se mide lo que el runner mide y se declara lo que no instrumenta; nunca se
+etiqueta MQL5 como cubierto por pruebas Python.
+
+**Cómo encaja con el gate actual:** `verify-ia-stack-coverage.mjs` ya nombra archivo y línea de cada
+función o rama sin ejecutar. No se borra: pasa de "100 % o rojo" a "sin ejecutar y sin exclusión
+declarada → rojo". El contrato `contracts/coverage-scope.json` ya existe y es el lugar natural para la
+exclusión justificada.
+
+**Aviso para el operador:** sus instrucciones globales, fuera del repo, todavía dicen "cobertura 100 %
+de cada métrica … LAW 6". Q2 es posterior y la sustituye, pero esa copia global sólo la puede
+actualizar él (acción reservada). Hay que decidir el orden al aprobar (ver **P2**).
+
+### C3 — locks que comparan rutas lexicales y PID vivo — resuelto por el documento
+
+**Salida (sección 26, "Lanes/locks"):** el lock es sobre el **objeto físico**, no sobre el texto de la
+ruta: ruta canónica real (resolver junctions, symlinks y mayúsculas en Windows), lease con dueño
+identificado por PID + arranque de máquina + hora de inicio del proceso, y **fencing** —un token que
+el escritor presenta y que se invalida al reasignar— o, donde no haya fencing, `reconcile_required`
+antes de dar el recurso a otro escritor. Nunca liberar porque cerró el frontend, ni matar un PID sin
+identidad.
+
+**Lo que ya existe:** `verify-lock-vivo.mjs` ya combina PID y arranque, y ya tiene
+`reconcile_required`. Faltan la ruta canónica, la hora de inicio y el fencing.
+
+### C4 — `install.ps1` escribe en destinos globales aun con `-ProjectDir` — diagnóstico resuelto, forma pendiente
+
+**Lo que el documento sí dice (secciones 25 y 27):** "piloto en carpeta no significa aislamiento", y
+el piloto tiene que *comprobar* que el destino está realmente aislado. Confirmado leyendo el script:
+`-TargetDir` y `-RuntimeDir` caen por defecto en el directorio global del usuario aunque se pase
+`-ProjectDir`.
+
+**Lo que el documento no dice:** si se cambia el comportamiento por defecto (rompe a quien hoy instala
+así) o se agrega un modo explícito. Queda como pregunta **P1** y **no se implementa** hasta la
+respuesta.
+
+## Preguntas para el operador
+
+**P1 — instalador y aislamiento** (bloquea el lote 4)
+
+- **A)** Agregar un modo explícito (`-ProjectOnly` en PowerShell y su par en bash) que garantiza no
+  escribir fuera del proyecto; el comportamiento por defecto no cambia. *(recomendado: no rompe a
+  nadie y da el destino aislado que el piloto necesita)*
+- **B)** Cambiar el default: con `-ProjectDir` y sin un destino global explícito, no se toca nada global.
+- **C)** No tocar el instalador en este plan; el piloto usa un `HOME` temporal y lo verifica desde afuera.
+
+**P2 — cobertura en las instrucciones globales** (no bloquea los lotes 1 y 3)
+
+- **A)** El repo pasa a Q2 en el lote 2 y el operador actualiza después su copia global. *(recomendado:
+  es lo que Q2 decidió, y la copia global es suya)*
+- **B)** El repo pasa a Q2 recién cuando el operador haya actualizado su copia global.
+- **C)** El repo se queda con el 100 % fijo; Q2 se reabre.
+
+## Lotes
+
+Cada tarea: rojo visible primero (`node --test <archivo>` mostrando la falla esperada), después el
+cambio, después el gate. Suites con `--test-concurrency=4` y nunca en paralelo con otra suite.
+Antes de cada commit: sin rutas personales, correos, nombres de clientes ni secretos
+(`verify-security-baseline.mjs check` más una búsqueda de rutas de usuario en el diff).
+
+### Lote 1 — modo continuo: autorización por plan (C1)
+
+El documento lo pide como primer lote (sección 4): *"El primer lote aprobado para IA Stack debe
+introducir y probar esta modalidad y sus detectores."* Cubre la prueba futura P01.
+
+| id | Qué construye | Depende de | Rojo primero |
 |---|---|---|---|
-| `M1` | El contrato de datos: `contracts/free-tier-limits.json` con los ocho servicios del research, fechados | — | AC3, AC4 |
-| `M2` | El validador del contrato: esquema, claves exactas, y la invariante de que todo servicio declare su disparador de escalado | `M1` | AC3 |
-| `M3` | El validador de la matriz: los ocho tipos cubiertos, y cada referencia a servicio resolviendo contra el contrato | `M2` | AC2 |
-| `M4` | La regla de antigüedad: rechazo cuando la captura supera el período declarado | `M2` | AC4 |
-| `M5` | El comportamiento sin entrada: `VACÍO:` y salida cero, declarado en el contrato de la prueba de vacío | `M3`, `M4` | AC5 |
-| `M6` | El cableado de registro: fila en la referencia de gates, límite honesto, índice y alcance de cobertura | `M5` | — |
+| `L1.1` | Contrato de autorización: `contracts/plan-authorization.schema.json`, que fija qué identifica una aprobación (hash del plan, rutas, clases de cambio, entregables, acciones reservadas, referencia al mensaje humano) | — | Un registro sin hash, sin alcance o con una acción reservada adentro se acepta (debe rechazarse) |
+| `L1.2` | `verify-phase-decisions.mjs` acepta, para una fase incluida en un plan aprobado, la referencia a la autorización en lugar de una elección 🔵 por fase | `L1.1` | Hoy rechaza una fase cerrada sin elección aunque esté dentro de un plan aprobado |
+| `L1.3` | El detector inverso: una fase **fuera** del alcance aprobado, o un plan cuyo hash ya no coincide, sigue exigiendo elección | `L1.2` | Un plan editado después de aprobado hereda la aprobación (debe rechazarse) |
+| `L1.4` | Detector de elección fabricada: dentro de un plan continuo, una elección 🔵 por fase sin respuesta humana trazable es un error, no un adorno | `L1.2` | Hoy una elección inventada pasa |
+| `L1.5` | Cableado: LAW 7 en `SKILL.md` y `skills/orchestrator-opus.md` pasan a "una aprobación por versión de plan; 🔵 para lo nuevo", más fila en `skills/gates.md`, límite honesto y promesa fijada | `L1.3`, `L1.4` | `verify-ia-stack-contract.mjs check` rojo hasta que la promesa nueva esté fijada |
 
-`M1` es el único que no escribe código: es el dato que el research ya produjo, movido de la ficha de
-fuente al contrato. Se hace primero porque `M2` no tiene contra qué correr sin él.
+### Lote 2 — cobertura por caminos críticos (C2, Q2) — espera P2
 
-## Orden y paralelismo
+| id | Qué construye | Depende de | Rojo primero |
+|---|---|---|---|
+| `L2.1` | `contracts/coverage-scope.json` admite exclusiones con dueño, motivo y evidencia | — | Una exclusión sin motivo o sin dueño se acepta (debe rechazarse) |
+| `L2.2` | `verify-ia-stack-coverage.mjs`: rango sin ejecutar **y sin exclusión** → rojo; con exclusión válida → informado, no rojo | `L2.1` | Hoy una rama excluida y justificada igual da rojo |
+| `L2.3` | Contrato de caminos críticos con oráculo independiente del escritor (prueba futura P03) | `L2.1` | Un camino crítico declarado sin prueba que lo ejerza pasa |
+| `L2.4` | Migrar el texto de LAW 6, `skills/caveman-tdd.md` y el orquestador a Q2 | `L2.2`, `L2.3` | Contrato de promesas rojo hasta fijar el texto nuevo |
 
-`M1` abre. `M2` depende de `M1`. Desde ahí, **`M3` y `M4` son independientes entre sí** —tocan
-archivos distintos y ninguna lee la salida de la otra— así que se pueden despachar juntas. `M5`
-espera a las dos porque declara el comportamiento vacío de ambas. `M6` cierra.
+### Lote 3 — locks físicos (C3)
 
-El preflight mecánico es el que decide de verdad: dos tareas que declaren el mismo archivo sólo
-pasan si hay una ruta de dependencia entre ellas, y el gate las marca serializadas.
+| id | Qué construye | Depende de | Rojo primero |
+|---|---|---|---|
+| `L3.1` | Ruta canónica en `verify-lock-vivo.mjs`: dos rutas que nombran el mismo archivo (mayúsculas, junction, symlink) son el mismo lock | — | Hoy dos grafías del mismo archivo dan dos locks distintos |
+| `L3.2` | Hora de inicio del proceso en la identidad del dueño, además de PID y arranque | — | Un PID reusado dentro del mismo arranque se toma por el dueño |
+| `L3.3` | Fencing: token por asignación; un escritor con token viejo es rechazado (prueba futura P05) | `L3.1`, `L3.2` | Un worker que perdió el lease todavía puede escribir |
 
-## Qué NO se hace en esta vuelta
+### Lote 4 — instalador aislado (C4) — espera P1
 
-- Los adaptadores de test rojo. Su garantía menor ya está decidida y declarada, pero construirlos
-  exige pytest y vitest corriendo, y una medición repetida en entorno virgen que todavía no se hizo.
-- El gate de repositorio limpio. Es el que más importa después de éste, y va en la vuelta siguiente.
-- El cableado de la matriz al menú de la fase de Intake. Sin eso la matriz es consultable pero no
-  automática, que es suficiente para probar si sirve.
-- La tabla navegable. Está en los Non-Goals de la spec.
+Las tareas dependen de la respuesta. Con la opción **A**: un rojo que lanza el instalador con el modo
+nuevo sobre un `HOME` temporal y verifica que no aparezca ningún archivo fuera del proyecto; después
+el modo; después la paridad bash/PowerShell. **Ninguna corrida contra el `HOME` real del operador.**
 
-## Rollback
+## Fuera de este plan
 
-Cada tarea agrega archivos y no reescribe ninguno existente salvo los cuatro de registro, que sólo
-crecen. Volver atrás es revertir el commit: nada depende todavía del gate nuevo, ningún otro gate lo
-invoca, y el contrato de datos no lo lee nadie más. No toca traza sellada ni expedientes cerrados.
+Los otros conflictos de la sección 25 —contadores de fallos repartidos por tarea o sesión, riesgo
+clasificado después de la fase que lo usa, roles y schema desalineados, tablero sin scheduler, hook
+de escritura sin cobertura de shell/MQ5— quedan para planes siguientes. Lo mismo el piloto de
+continuidad de la sección 27 y todo lo de Jarvis (sección 28), que tiene su propio plan y permisos.
 
-## Verificación de cierre
+## Cómo se verifica cada lote
 
-```bash
-node scripts/verify-stack-matrix.mjs check docs/discovery/eleccion-de-stack/diagnostics/stack-matrix.json
-node scripts/verify-empty-probe.mjs check contracts/empty-probe.json
-node scripts/verify-ia-stack-contract.mjs check
-node scripts/verify-ia-stack-coverage.mjs
-node --test
-```
+- La prueba roja del paso, vista fallar, y después verde.
+- Suite completa: `node --test --test-concurrency=4`, contando pruebas antes y después.
+- `IA_STACK_TEST_CONCURRENCY=4 node scripts/verify-ia-stack-coverage.mjs`.
+- `node scripts/verify-ia-stack-contract.mjs check`, `node scripts/verify-security-baseline.mjs check
+  --base origin/main` y `git diff --check`.
+- Recibo en `.vibe/receipts/` y línea sellada en `.vibe/AUDIT.md` por lote.
+- Commit local por lote verde. **Push sólo con autorización específica del operador.**
