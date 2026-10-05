@@ -43,7 +43,7 @@ function corrida(texto, args = ['check', RUTA]) {
 // --- Falso rojo: los documentos reales del protocolo tienen que pasar --------------------------
 
 test('los documentos reales de IA Stack pasan: un gate que obliga a escribir mal es peor que ninguno', SOLO_FUENTE, () => {
-  const docs = ['SKILL.md', 'README.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
+  const docs = ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
   const rojos = [];
   for (const doc of docs) {
     const errores = [];
@@ -310,7 +310,7 @@ function documentosDelBarrido() {
   const punteros = existsSync(join(repoRoot, '.agents', 'skills'))
     ? readdirSync(join(repoRoot, '.agents', 'skills')).map((d) => `.agents/skills/${d}/SKILL.md`)
     : [];
-  return ['SKILL.md', 'README.md', 'AGENTS.md', ...punteros,
+  return ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...punteros,
     ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)]
     .filter((doc) => existsSync(join(repoRoot, doc)));
 }
@@ -424,7 +424,7 @@ test('FR-2 · FALSIFICACIÓN · la marca de ejemplo no tapa el menú siguiente',
 // si está reservado: si se usa para avisos, un aviso correcto se ve como un menú roto.
 
 test('CONTR-1 · ningún documento promete más de lo que el gate comprueba', SOLO_FUENTE, () => {
-  const archivos = ['SKILL.md', 'README.md', 'CHANGELOG.md'];
+  const archivos = ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'CHANGELOG.md'];
   const excepcion = /salvo|excepto|marcad[oa] como ejemplo|declara.{0,20}ejemplo/iu;
   const promesa = /(todo|cada) bloque `?🔵/iu;
   const rotas = [];

@@ -1,0 +1,234 @@
+# IA Stack — guía completa
+
+Lo que no entra en el [README](../README.md): cómo funciona cada pieza por dentro. El README es la puerta;
+esto es el detalle, tal como estaba, para quien quiera leerlo.
+
+---
+
+## Qué cambió en la 3.0.0
+
+Es un salto **mayor** por una razón concreta: **un recibo que antes aprobaba ahora puede
+rechazarse.** `verify-receipt.mjs check` —y `commit`, que valida lo mismo— rechaza un test de criterio
+con **finales de línea mezclados**: algún CRLF y algún LF suelto en el mismo archivo. Git guarda ese
+archivo uniforme, así que ningún clon puede volver a producir los bytes que el recibo selló.
+
+**Si te pasa:** reescribí el test entero con un solo tipo de fin de línea y regenerá el hash del
+criterio. `git checkout -- <archivo>` no alcanza: con el archivo ya stageado, git lo cuenta igual al
+índice y no lo reescribe.
+
+Lo demás son agregados: `verify-receipt.mjs recheck` recomprueba un recibo ya guardado contra el commit
+que lo lleva, el instalador aparta lo que sobra de una instalación anterior —lo mueve, no lo borra— y
+deja un sello con su fecha, y el CI corre en Windows y en Linux. Y la release la arma GitHub desde
+el tag: el zip se prueba **instalándolo** antes de publicarse. El detalle, con cada hallazgo y su
+límite, está en el [CHANGELOG](../CHANGELOG.md).
+
+## Qué cambió en la 2.0.0
+
+Es un salto **mayor** por una razón concreta y no por acumulación: **un receipt del schema anterior
+ya no aprueba un commit**. Los viejos no se borran ni se reescriben — se leen con `inspect-legacy` y
+`check` los rechaza sin excepción, igual que ya pasaba con los de la primera versión.
+
+Cuatro cambios, los cuatro salidos de correr el protocolo dos días sobre un proyecto real:
+
+- **La superficie de ataque se declara antes de construir.** Toda la seguridad de IA Stack era posterior
+  al código: el escáner mira un diff ya escrito. Ahora Discovery declara qué hay que proteger, por
+  dónde entra dato ajeno y **qué criterio de aceptación prueba cada control** — y de ahí lo arrastra
+  el aparato que ya existía. Un control de autorización declarado y no probado frena la publicación.
+- **Un límite y una regresión dejaron de leerse igual.** Lo que el cambio no hace a propósito va en
+  una lista; lo que **antes andaba y ahora no** va en otra, con su resolución. El discriminador no es
+  criterio, es forma: si hay un estado anterior, es una regresión.
+- **El DoD pregunta por el soporte.** Si alguien dice que no le anda, ¿con qué se lo diagnostica?
+  Cuatro campos, cada uno declarado o «ninguno — por qué». Convivía con 100 % de cobertura porque la
+  cobertura mide ejecución del código y esto mide observabilidad del producto.
+- **La fase 8 comprueba que arranque.** Auditoría del estado que se va a commitear, salud por HTTP
+  **sólo contra esta máquina** —el host se resuelve antes de conectar—, y vuelta atrás escrita con la
+  misma prohibición que la limpieza ya tenía: nunca borra.
+
+Y una regla nueva con detector, que es la única de su lista que lo tiene: **toda aserción sobre el
+contenido de una respuesta va precedida por una sobre su estado**. Un test que afirma que ningún
+campo prohibido sale por un endpoint pasa en verde cuando el endpoint devuelve 404, porque el cuerpo
+de un 404 tampoco los tiene.
+
+---
+
+## La memoria entre sesiones
+
+Una IA arranca cada sesión sin recordar la anterior. IA Stack no intenta arreglar eso con más contexto:
+lo escribe en disco, en `.vibe/`, y lo vuelve a leer al arrancar.
+
+```mermaid
+flowchart LR
+    S["sesión de hoy"] --> V[".vibe/"]
+    V --> D["DECISIONS.md · qué se eligió y por qué"]
+    V --> L["LESSONS.md · errores que no se repiten"]
+    V --> A["AUDIT.md · traza sellada por hash"]
+    V --> E["SESSION.md · dónde quedó todo"]
+    D --> M["sesión de mañana"]
+    L --> M
+    A --> M
+    E --> M
+```
+
+Lo que hace a esa memoria distinta de un archivo de notas: **`AUDIT.md` encadena cada línea con la
+huella de la anterior**. Editar algo viejo rompe todo lo que sigue, así que la edición se nota. Y el
+chequeo compara esa traza contra la historia de git, que es un ancla que el archivo no controla.
+
+Esa traza **no se rota ni se recorta**: una línea sellada se queda para siempre. Por eso el sellador
+tiene un tope de largo hacia adelante — rechaza una línea nueva enorme, y no toca ni un byte de lo ya
+escrito.
+
+---
+
+## Una prueba que no corre en tu plataforma
+
+La integración continua de este repositorio corrió por primera vez fuera de la máquina del autor el
+2026-09-16 y **nueve pruebas salieron rojas**: la suite asumía Windows —PowerShell, el shim de WSL,
+junctions, rutas con letra de unidad— y el runner era Ubuntu. No era una regresión: era el estreno.
+
+La salida fácil sería un `if` suelto adentro de cada prueba, y es lo que este gate impide. **Un
+salteo escrito adentro de la prueba que se saltea no lo revisa nadie**: una prueba que se saltea en
+todas las plataformas, o por un motivo que dejó de valer, se ve igual que una que corre. La
+declaración vive en `contracts/platform-scope.json` y se comprueba en los **dos sentidos**: lo
+declarado existe en el árbol, y lo que se saltea está declarado.
+
+Cada entrada trae por qué esa prueba es de esa plataforma y —la mitad que importa— **qué queda sin
+verificar** en las demás. «Esta prueba es de Windows» no dice nada; el hueco es lo otro.
+
+Y se saltea como **`VACÍO`**, nunca como `OK`. Es el vocabulario del propio protocolo: «no había
+nada que comparar» no es «comparé y pasó».
+
+```bash
+node scripts/verify-platform-scope.mjs check
+```
+
+**Lo que no puede hacer:** comprueba que el salteo esté declarado y que la declaración corresponda a
+una prueba real, nunca que el motivo sea cierto: una prueba que declara plataforma sin necesitarla
+pasa en verde. Y no corre nada, así que no sabe si esa prueba pasaría en la plataforma que excluye.
+
+---
+
+## Autolimpieza: nada se borra de entrada
+
+Un proyecto acumula carpetas que nadie ejecuta ni lee: copias viejas, temporales de corridas matadas,
+lo que una poda aparta. Limpiarlas a mano es borrar de más. La regla del protocolo es una sola:
+**nada se borra de entrada**. Todo candidato pasa primero por una **cuarentena** —se mueve, no se
+borra— y sólo una purga posterior, vencida la retención, lo elimina de verdad.
+
+- **Lista blanca positiva.** Sólo es candidato lo que cae en una categoría que el contrato declara, con
+  su raíz, su prefijo, su edad mínima y **cómo se regenera**: sólo se limpia solo lo que se puede volver
+  a generar. Todo lo demás es intocable, y lo que `contracts/irreplaceable-sources.json` nombra no se
+  mueve ni se purga nunca, tampoco desde la cuarentena.
+- **Log sellado.** Cada acción (cuarentena, restauración, purga) es una línea de `.vibe/LIMPIEZA.md` con
+  la cadena de `verify-audit-chain.mjs`: editar una línea vieja rompe la cadena.
+- **Los números son del contrato.** La retención (30 días) y la edad mínima (720 horas) del contrato de
+  este repositorio son **supuestos del plan**, no certezas: se cambian en `contracts/autolimpieza.json`.
+  El verificador exige que estén declarados y que respeten un piso —7 días de retención, 6 horas de
+  edad—, no que valgan eso.
+
+```bash
+node scripts/autolimpieza.mjs listar contracts/autolimpieza.json     # qué se movería y por qué se omite el resto; no escribe nada
+node scripts/autolimpieza.mjs aplicar contracts/autolimpieza.json    # mueve a la cuarentena y sella el log
+node scripts/autolimpieza.mjs purgar contracts/autolimpieza.json     # elimina de verdad lo que cumplió su retención
+node scripts/autolimpieza.mjs restaurar contracts/autolimpieza.json 2026-10-05-001
+node scripts/verify-autolimpieza.mjs check contracts/autolimpieza.json
+```
+
+El ejecutor **no borra de entrada**, no actúa sobre un registro que el verificador rechaza y no toca una
+carpeta con una fuente intocable adentro, ni para moverla ni para purgarla. La edad de una candidata es
+la de **lo más reciente que hay adentro**, no la de su carpeta: una corrida en curso escribe archivos sin
+cambiar la fecha de la carpeta. Se mueve y **después** se sella el log; si sellar falla, lo movido
+vuelve a su lugar.
+
+**Lo que no pueden hacer:** el verificador comprueba que el **registro** es consistente y que lo que está
+en la cuarentena es lo que el log dice haber movido; **no que lo movido fuera lo correcto ni que su
+contenido no importara**. Algo borrado por fuera del ejecutor no aparece en el log, las fechas las
+escribe quien limpia y una cuarentena en el mismo disco no protege de un fallo del disco.
+Además **no hay exclusión entre dos corridas simultáneas**: dos `aplicar` a la vez pueden pisarse.
+
+---
+
+## Ningún archivo de pruebas se acerca al tope de TAP
+
+`verify-test-bindings` vincula cada requisito a una prueba y espera su resultado en la salida TAP,
+con un tope de tiempo. **Un archivo más lento que ese tope se marca TIMEOUT**: el requisito queda sin
+verificar, y el motivo que se lee es «lento», no «roto». Es un hueco silencioso.
+
+Esto **es un gate y no una prueba**, y ésa es toda la gracia. Vivía adentro de la suite, rodeado de
+noventa archivos compitiendo por la CPU, así que medía contención y no duración. Medido el
+2026-09-17 sobre `install-runtime.test.mjs`: tardaba **96 s solo** y **224 s** medido desde adentro —
+factor 2,3x contra el tope de entonces, 120 s. Con eso, cualquier archivo de más de unos 52 s
+reventaba el tope sin estar roto.
+
+Partir los archivos más lentos ayudó —131 s a 41, 116 s a 56— y **no alcanzó**: el problema no es el
+tamaño, es dónde se mide.
+
+### El tope no es un número, es una regla
+
+`TAP_TIMEOUT_MS` se escribió con su regla al lado: **tiene que dejar al menos el triple del archivo
+más lento**. En 2026-09-05 el más lento tardaba 40 s y el tope quedó en 120. La regla vivía en un
+comentario, así que se rompió sola cuando la suite creció: el 2026-09-17 ese mismo archivo medía
+101 s contra el mismo tope de 120 —1,2 veces, con la regla rota por un factor de 2,5— y nada se puso
+rojo, porque lo único que se comprobaba era «por debajo del tope». Por debajo del tope cabe un margen
+de 19 s que cualquier máquina cargada se come.
+
+Ahora el gate juzga **la regla**, no el número, y el tope quedó en 600 s: 5 veces el más lento
+medido. Subirlo no afloja nada — el tope existe para atrapar una prueba **colgada**, no para juzgar
+si una prueba de punta a punta es lenta; lo que cuesta es que una colgada tarda 10 minutos en morir
+en vez de 2. Una prueba de la suite comprueba la otra mitad, que es barata y no mide nada: que el
+tope deje el triple sobre lo que el contrato **declara**.
+
+### Tres estados, porque «no pude medir» no es «está bien»
+
+El 2026-09-17, en una sola tarde y sin que cambiara una línea, el mismo archivo dio **89, 101, 116 y
+247 s**. La causa se midió, no se supuso: la CPU al 100% con procesos ajenos al repositorio.
+
+Las dos salidas posibles eran destructivas. Aprobar taparía una regresión de verdad; rechazar pondría
+en rojo un gate por la carga de la máquina y no por el código — el rojo que no dice nada, que es como
+se aprende a ignorar los rojos. Así que hay un tercero: si la medición se va más de **1,5 veces** por
+encima de lo declarado, el gate escribe `RECONCILIAR:` y sale 0. No aprueba y no rechaza. **El
+árbitro es el runner, no tu máquina de trabajo**: en un runner quieto la medición cae dentro de la
+tolerancia y el gate juzga con todo su rigor.
+
+```bash
+node scripts/verify-test-duration.mjs
+```
+
+**Lo que no puede hacer:** mide el archivo que `contracts/slowest-test.json` **declara** como el más
+lento, no descubre cuál es — correr los noventa duplicaría la suite. La declaración lleva la fecha en
+que se midió para que una vieja se vea, y ya pasó: estuvo once días apuntando a un archivo partido en
+dos mientras otro reventaba el tope. Y mide **una** corrida en **esta** máquina: por eso existe el
+tercer estado, y por eso `RECONCILIAR:` no cuenta como verde.
+
+---
+
+## El tablero
+
+Un comando genera una página local con lo que pasó: proyectos, sesiones, turnos, tokens y horas.
+Se abre con doble clic. Sin servidor, sin puerto, sin nada que quede corriendo.
+
+```bash
+node .vibe/ia-stack-runtime/scripts/tablero.mjs build      # escribe el archivo
+node .vibe/ia-stack-runtime/scripts/tablero-servidor.mjs serve   # o lo servís en localhost
+```
+
+Muestra, por proyecto: sesiones, turnos, tokens, horas **por día**, en qué fase quedó cada uno
+—marcando los que quedaron a medias—, cuántas rondas de mejoras hay y cuáles siguen abiertas, y en
+qué anda la sesión. Un proyecto que no usa el protocolo dice «sin fases declaradas» en vez de
+aparentar estar completo.
+
+El servidor **escucha sólo en `127.0.0.1`**, sirve una sola página armada en memoria y no lee
+archivos del disco. **No autentica a nadie:** cualquier proceso de tu máquina puede leerlo mientras
+corre.
+
+Tres cosas que hace a propósito, y que conviene no "arreglar":
+
+- **Escribe fuera del repositorio** y **se niega** a escribir adentro de uno. Junta datos de todos
+  tus proyectos: ahí adentro los publicaría el próximo commit.
+- **Deduplica los tokens por identificador de mensaje.** Sumar líneas los infla hasta 2,67×, medido:
+  una respuesta ocupa varias líneas y el objeto de uso es idéntico en todas.
+- **Las horas son una banda, no un número**, con el umbral a la vista. No hay valle en la
+  distribución que justifique uno: elegirlo mueve el resultado más que cualquier error de medición.
+
+**Sin tabla de precios no muestra dinero**, y dice por qué: las transcripciones traen tokens y el
+nombre del modelo, nunca una tarifa. Traer una de internet sería afirmar un número que nadie midió.
+

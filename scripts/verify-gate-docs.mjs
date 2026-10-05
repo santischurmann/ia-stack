@@ -51,7 +51,7 @@ export const MIN_TEXTO = 20;
  * tenían su ejemplo en una skill. Exigirlo en `SKILL.md` habría mandado a duplicar documentación
  * que ya estaba bien puesta, y duplicarla es garantizar que las dos copias diverjan.
  */
-export const DOCUMENTOS = Object.freeze(['SKILL.md', 'README.md', 'skills']);
+export const DOCUMENTOS = Object.freeze(['SKILL.md', 'README.md', 'docs/guia-completa.md', 'skills']);
 
 /**
  * TODO script de `scripts/`, sin lista de prefijos. La primera version filtraba por

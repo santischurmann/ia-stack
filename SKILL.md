@@ -1,9 +1,14 @@
 ---
 name: ia-stack
-description: "TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
+description: "Downloadable harness/skill with a self-improvement loop for building webs, PWAs and desktop apps. TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
 ---
 
-# IA Stack — caveman edition
+# IA Stack
+
+**Qué es:** un harness descargable —una skill que se instala dentro del proyecto— con un bucle de
+automejora, para desarrollar webs, PWA y aplicaciones de escritorio. Comunicación por defecto: clara
+y completa. El modo telegráfico («caveman», en `skills/caveman-tdd.md`) es una opción, no la forma
+de la herramienta.
 
 **Versión:** 3.1.0 · etiquetada como `v3.1.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.

@@ -291,6 +291,10 @@
       "class": "evidencia"
     },
     {
+      "path": "docs/guia-completa.md",
+      "class": "documento"
+    },
+    {
       "path": "docs/intake/eleccion-de-stack.json",
       "class": "evidencia"
     },

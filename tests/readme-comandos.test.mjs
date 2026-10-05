@@ -67,14 +67,15 @@ export function comandosPublicados(texto) {
 // el README publica 6. La regla nació mirando sólo el README —el archivo chico— y el grande quedaba
 // sin cubrir: si mañana alguien escribe ahí un comando roto, nadie lo ve. El README tenía 2 de 3
 // rotos justamente porque nadie los miraba.
-const PUBLICAN_COMANDOS = ['README.md', 'SKILL.md'];
+const PUBLICAN_COMANDOS = ['README.md', 'docs/guia-completa.md', 'SKILL.md'];
 
 test('todo comando que el protocolo publica corre: ninguno muere por uso incorrecto', SOLO_FUENTE, () => {
   const rotos = [];
   let vistos = 0;
   for (const documento of PUBLICAN_COMANDOS) {
     const { ejecutables } = comandosPublicados(readFileSync(join(repoRoot, documento), 'utf8'));
-    assert.ok(ejecutables.length >= 3, `${documento}: el barrido tiene que encontrar comandos, o no prueba nada`);
+    // La guía completa es detalle y no puerta: sus comandos se barren si los tiene, pero no se le exige un mínimo.
+    if (documento !== 'docs/guia-completa.md') assert.ok(ejecutables.length >= 3, `${documento}: el barrido tiene que encontrar comandos, o no prueba nada`);
     vistos += ejecutables.length;
     for (const { script, args } of ejecutables) {
       // Sólo lo que no escribe: `check`, `due` e `history`. Correr un `append` o un `record` desde

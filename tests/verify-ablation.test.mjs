@@ -1472,7 +1472,7 @@ test('FALSIFICACIÓN · la tabla tampoco puede nombrar un gate que ya no existe'
 // invalida. Reescribirlos seria falsear el registro; el CHANGELOG lo declara en una linea.
 
 test('todo commit que el README nombra existe de verdad en el repositorio', SOLO_FUENTE, () => {
-  const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8');
+  const readme = ['README.md', 'docs/guia-completa.md'].map((doc) => readFileSync(join(repoRoot, doc), 'utf8')).join(String.fromCharCode(10));
   const shas = [...new Set([...readme.matchAll(/`([0-9a-f]{7,40})`/gu)].map((m) => m[1]))];
   const fantasmas = shas.filter((s) => spawnSync('git', ['cat-file', '-e', s], { cwd: repoRoot }).status !== 0);
   assert.deepEqual(fantasmas, []);
