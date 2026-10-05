@@ -129,11 +129,20 @@ introducir y probar esta modalidad y sus detectores."* Cubre la prueba futura P0
 
 ### Lote 3 — locks físicos (C3)
 
-| id | Qué construye | Depende de | Rojo primero |
+**Corrección hecha al ejecutar, con evidencia:** el plan ubicó mal dos tareas. Los locks "lexicales" no
+están en `verify-lock-vivo.mjs` sino en `verify-plan-conflicts.mjs`, y `L3.2` ya estaba hecha desde el
+2026-09-16 (el candado guarda la hora de arranque del proceso, con su límite declarado). Se leyó el código
+antes de escribirlo; no se re-implementó lo que ya existía.
+
+| id | Qué construye | Depende de | Estado |
 |---|---|---|---|
-| `L3.1` | Ruta canónica en `verify-lock-vivo.mjs`: dos rutas que nombran el mismo archivo (mayúsculas, junction, symlink) son el mismo lock | — | Hoy dos grafías del mismo archivo dan dos locks distintos |
-| `L3.2` | Hora de inicio del proceso en la identidad del dueño, además de PID y arranque | — | Un PID reusado dentro del mismo arranque se toma por el dueño |
-| `L3.3` | Fencing: token por asignación; un escritor con token viejo es rechazado (prueba futura P05) | `L3.1`, `L3.2` | Un worker que perdió el lease todavía puede escribir |
+| `L3.1` | `verify-plan-conflicts.mjs` resuelve las rutas contra el archivo físico: un symlink o junction une `link/x` y `real/x`, un directorio declarado es dueño de lo que hay debajo, un enlace que sale del proyecto o no se puede resolver se rechaza | — | hecha, con rojo primero |
+| `L3.2` | Hora de inicio del proceso en la identidad del dueño | — | **ya existía** (2026-09-16); sin cambios |
+| `L3.3` | Fencing en `verify-lock-vivo.mjs`: `lock.fence` sube con cada asignación y `fence <tasks.json> --task <id> --token <n>` rechaza a un escritor con un token viejo (prueba futura P05) | — | hecha, con rojo primero |
+
+Los dos límites que no se cierran quedaron escritos donde viaja el verde: lo de `L3.1` es una foto del
+momento en que corre y no una barrera, y el fencing no frena a un proceso que escribe sin presentar el
+token. Los symlinks de archivo no se probaron en Windows (exigen privilegio); los junctions sí.
 
 ### Lote 4 — instalador aislado (C4) — espera P1
 

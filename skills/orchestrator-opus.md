@@ -170,7 +170,7 @@ NOTES: <only if STATUS != pass>
 ```
 
 Before spawning: `tasks.json[task.id].owner = "<role>-<timestamp>"`, `locked = true`, and
-`lock = {pid, boot, taken_at}` (atomic checkout, § AI COMPANY LAYER). On gate pass/abort:
+`lock = {pid, boot, start, taken_at, fence}` (atomic checkout, § AI COMPANY LAYER; `fence` sube con cada reasignación y es el token con el que el escritor se identifica). On gate pass/abort:
 `locked = false`, `lock = null`.
 
 **Por qué el `lock` y no sólo el `owner`.** Si la sesión muere en el medio, el candado queda puesto
@@ -183,7 +183,10 @@ candado de hace tres días.
 
 ```bash
 node .vibe/ia-stack-runtime/scripts/verify-lock-vivo.mjs check docs/tasks.json
+node .vibe/ia-stack-runtime/scripts/verify-lock-vivo.mjs fence docs/tasks.json --task <task-id> --token <fence>
 ```
+
+Before accepting a subagent's writes, `fence` rejects a writer whose token is older than the current one: a worker that lost its lease and kept access is not the owner anymore. It does not stop a process that writes without presenting the token.
 
 If a task looks harder mid-build and config allowed override (Phase 5 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
 

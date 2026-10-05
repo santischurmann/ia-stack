@@ -768,6 +768,18 @@
       "file": "skills/gates.md",
       "phrase": "su prueba existe, no está apagada y nombra el script",
       "why": "El gate comprueba que la prueba declarada exista, no este salteada y mencione el script; no puede saber si su oraculo es independiente de quien escribio el codigo ni si su asercion alcanza, y owner y las exenciones son texto que escribe quien declara. Sin este limite un verde con caminos criticos se lee como 'esta bien probado', cuando es 'hay una prueba con ese nombre que toca ese archivo'."
+    },
+    {
+      "limit_id": "plan-conflicts-resolve-a-snapshot-not-a-barrier",
+      "file": "skills/gates.md",
+      "phrase": "Es una foto del momento en que corre, no una barrera",
+      "why": "verify-plan-conflicts resuelve enlaces y directorios con lo que existe cuando se corre. Un enlace creado o cambiado despues de verificar no lo ve. Sin este limite un verde se lee como 'estas dos tareas no se pueden pisar', cuando es 'no se pisaban en el momento en que se miro'."
+    },
+    {
+      "limit_id": "lock-fencing-does-not-stop-a-writer-that-skips-the-token",
+      "file": "skills/gates.md",
+      "phrase": "el fencing no frena a un proceso que escribe sin presentarlo",
+      "why": "El token lo consulta quien quiere: rechaza a un escritor que lo presenta y viejo, no frena a uno que escribe sin presentarlo. Sin este limite un fence OK se lee como 'nadie mas puede escribir', cuando es 'este escritor es el de la asignacion actual'."
     }
   ]
 }

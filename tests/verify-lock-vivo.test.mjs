@@ -102,7 +102,7 @@ test('tomarLock escribe lo que hace falta para poder preguntar después', () => 
   // `start` entra acá el 2026-09-16: sin la hora de arranque DEL PROCESO no hay forma de distinguir
   // un PID que el sistema le dio a otro programa, y ese era el hueco que el límite declaraba.
   const l = tomarLock({ pid: 777, arranque, inicio: () => 'ticks:111', ahora: '2026-09-15T10:00:00.000Z' });
-  assert.deepEqual(Object.keys(l).sort(), ['boot', 'pid', 'start', 'taken_at']);
+  assert.deepEqual(Object.keys(l).sort(), ['boot', 'fence', 'pid', 'start', 'taken_at']);
   assert.equal(l.pid, 777);
   assert.equal(l.boot, arranque);
   assert.equal(l.start, 'ticks:111');

@@ -124,6 +124,9 @@ export const REQUIREMENTS = [
   ['SKILL.md', /caminos críticos, contratos e integración real/u, 'coverage policy Q2: critical paths, contracts and real integration'],
   ['skills/caveman-tdd.md', /caminos críticos, contratos e integración real/u, 'coverage policy Q2 in the TDD gate'],
   ['skills/gates.md', /exención con dueño, motivo y evidencia/u, 'coverage exemptions need an owner, a reason and evidence'],
+  ['skills/gates.md', /El lock es sobre el archivo físico, no sobre el texto de su ruta/u, 'plan conflicts resolve paths to the physical file'],
+  ['skills/gates.md', /verify-lock-vivo\.mjs[\s\S]*\*\*Fencing\*\*/u, 'lock fencing documented in the gate reference'],
+  ['skills/orchestrator-opus.md', /verify-lock-vivo\.mjs fence docs\/tasks\.json --task/u, 'the orchestrator checks the writer fence'],
   ['templates/diagnostics/caio.json', /ia\.caio\/1/u, 'CAIO diagnostic template schema'],
   ['templates/phase-plan.json', /ia\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por

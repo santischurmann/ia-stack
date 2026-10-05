@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { posix } from 'node:path';
+import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { isAbsolute, join, posix, relative, sep } from 'node:path';
 
 const USAGE = 'usage: node scripts/verify-plan-conflicts.mjs check <tasks.json>';
 const WRITE_FIELDS = ['files_to_create', 'files_to_modify', 'test_files'];
@@ -9,7 +9,53 @@ function reject(message) {
   process.exitCode = 1;
 }
 
-function normalizePath(value, taskId, field) {
+/**
+ * EL LOCK ES SOBRE EL ARCHIVO FISICO, NO SOBRE EL TEXTO DE SU RUTA. Hasta el 2026-10-05 este gate
+ * comparaba cadenas: plegaba mayusculas y `./`, pero `link/x` y `real/x` eran dos escritores
+ * distintos aunque `link` sea un junction o symlink a `real`, asi que dos tareas podian declarar
+ * el mismo archivo y pasar como disjuntas. Se resuelve el tramo que existe con `realpath` (que
+ * tambien devuelve la mayuscula real que guarda el sistema) y se le agrega el resto, que todavia no
+ * existe. Un enlace que sale del proyecto o que no se puede resolver se rechaza: no se sabe adonde
+ * escribe, y declarar que dos tareas no se pisan sin saberlo seria el verde que este gate evita.
+ * LIMITE: resuelve lo que existe cuando se corre. Un enlace que se crea DESPUES, o que se cambia
+ * entre la verificacion y la escritura, no lo ve: es una foto, no una barrera.
+ */
+function rutaFisica(relativa, raiz, taskId, field, value) {
+  const partes = relativa.split('/');
+  let existente = raiz;
+  let usadas = 0;
+  for (const parte of partes) {
+    const candidato = join(existente, parte);
+    try {
+      lstatSync(candidato);
+    } catch {
+      break;
+    }
+    existente = candidato;
+    usadas += 1;
+  }
+  let real;
+  try {
+    real = realpathSync(existente);
+  } catch (error) {
+    throw new Error(`${taskId}.${field} usa ${value}, que pasa por un enlace que no se puede resolver: ${error.message}`);
+  }
+  const fisica = relative(realpathSync(raiz), join(real, ...partes.slice(usadas))).split(sep).join('/');
+  if (fisica === '..' || fisica.startsWith('../') || isAbsolute(fisica)) {
+    throw new Error(`${taskId}.${field} contains a non-project path: ${value}`);
+  }
+  return fisica;
+}
+
+function esDirectorioReal(fisica, raiz) {
+  try {
+    return statSync(join(raiz, fisica)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function normalizePath(value, taskId, field, raiz) {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(`${taskId}.${field} contains an empty or non-string path`);
   }
@@ -19,17 +65,21 @@ function normalizePath(value, taskId, field) {
   if (normalized === '' || normalized === '.' || normalized.startsWith('/') || /^[a-zA-Z]:\//.test(normalized) || normalized === '..' || normalized.startsWith('../')) {
     throw new Error(`${taskId}.${field} contains a non-project path: ${value}`);
   }
+  // Una barra final declara un directorio; uno que existe como directorio lo es aunque no la lleve.
+  const declaradoDirectorio = normalized.endsWith('/');
+  const fisica = rutaFisica(normalized.replace(/\/+$/u, ''), raiz, taskId, field, value);
   // Case-fold everywhere: a false serialization is safe; a case-only missed overlap is not.
-  return normalized.toLowerCase();
+  return { path: fisica.toLowerCase(), directorio: declaradoDirectorio || esDirectorioReal(fisica, raiz) };
 }
 
-function validatePlan(plan) {
+function validatePlan(plan, raiz) {
   if (!plan || typeof plan !== 'object' || !Array.isArray(plan.tasks)) {
     throw new Error('tasks.json must contain a tasks array');
   }
 
   const tasksById = new Map();
   const writersByPath = new Map();
+  const directories = new Map();
 
   for (const task of plan.tasks) {
     if (!task || typeof task !== 'object' || typeof task.id !== 'string' || task.id.trim() === '') {
@@ -41,12 +91,15 @@ function validatePlan(plan) {
     }
 
     const taskPaths = new Set();
+    const taskDirectories = new Set();
     for (const field of WRITE_FIELDS) {
       if (!Array.isArray(task[field])) {
         throw new Error(`${id}.${field} must be an array`);
       }
       for (const value of task[field]) {
-        taskPaths.add(normalizePath(value, id, field));
+        const { path, directorio } = normalizePath(value, id, field, raiz);
+        taskPaths.add(path);
+        if (directorio) taskDirectories.add(path);
       }
     }
     if (!Array.isArray(task.depends_on)) {
@@ -57,6 +110,10 @@ function validatePlan(plan) {
     for (const path of taskPaths) {
       if (!writersByPath.has(path)) writersByPath.set(path, new Set());
       writersByPath.get(path).add(id);
+    }
+    for (const path of taskDirectories) {
+      if (!directories.has(path)) directories.set(path, new Set());
+      directories.get(path).add(id);
     }
   }
 
@@ -80,7 +137,7 @@ function validatePlan(plan) {
     }
   }
 
-  return { tasksById, writersByPath };
+  return { tasksById, writersByPath, directories };
 }
 
 function hasDependency(tasksById, taskId, prerequisiteId, visiting = new Set()) {
@@ -117,17 +174,27 @@ function check(planPath) {
 
   let tasksById;
   let writersByPath;
+  let directories;
   try {
-    ({ tasksById, writersByPath } = validatePlan(plan));
+    ({ tasksById, writersByPath, directories } = validatePlan(plan, process.cwd()));
     assertAcyclic(tasksById);
   } catch (error) {
     reject(error.message);
     return;
   }
 
+  // Un directorio declarado como escrito es dueño de todo lo que declare alguien debajo: quien escribe
+  // `scripts/` y quien escribe `scripts/x.mjs` se pisan sin compartir una sola cadena.
+  const efectivos = new Map([...writersByPath].map(([path, ids]) => [path, new Set(ids)]));
+  for (const [directorio, duenos] of directories) {
+    for (const path of writersByPath.keys()) {
+      if (!path.startsWith(`${directorio}/`)) continue;
+      for (const dueno of duenos) efectivos.get(path).add(dueno);
+    }
+  }
   const conflicts = [];
   const serialized = [];
-  for (const [path, writerIds] of [...writersByPath.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+  for (const [path, writerIds] of [...efectivos.entries()].sort(([left], [right]) => left.localeCompare(right))) {
     const ids = [...writerIds].sort();
     for (let left = 0; left < ids.length; left += 1) {
       for (let right = left + 1; right < ids.length; right += 1) {

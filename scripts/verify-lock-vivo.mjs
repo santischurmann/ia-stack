@@ -41,7 +41,7 @@ import { readFileSync } from 'node:fs';
 import { hostname, uptime } from 'node:os';
 import { join } from 'node:path';
 
-export const USAGE = 'usage: verify-lock-vivo.mjs check <tasks.json>';
+export const USAGE = 'usage: verify-lock-vivo.mjs check <tasks.json> | verify-lock-vivo.mjs fence <tasks.json> --task <id> --token <n>';
 export const EMPTY = 'VACÍO';
 
 export const VIVO = 'vivo';
@@ -64,11 +64,19 @@ export function marcaDeArranque(io = {}) {
   return `${nombre}:${Math.round((ahora - segundos * 1000) / GRANO_MS)}`;
 }
 
-/** Lo que hay que escribir al tomar un candado para poder preguntar después. */
-export function tomarLock({ pid = process.pid, arranque = marcaDeArranque(), inicio = inicioDelProceso, ahora = new Date().toISOString() } = {}) {
+/**
+ * Lo que hay que escribir al tomar un candado para poder preguntar después.
+ *
+ * `fence` es el número de esta asignación y sube con cada una: un lease no basta si el worker que
+ * lo perdió conserva acceso, así que quien escribe presenta su número (`fence` en el CLI) y uno más
+ * viejo que el vigente es de un escritor que ya no es el dueño. `anterior` es el candado que se
+ * reemplaza, o su número pelado; sin él, un candado nuevo arranca en 1.
+ */
+export function tomarLock({ pid = process.pid, arranque = marcaDeArranque(), inicio = inicioDelProceso, ahora = new Date().toISOString(), anterior = null } = {}) {
+  const previo = Number.isInteger(anterior) ? anterior : (Number.isInteger(anterior?.fence) ? anterior.fence : 0);
   // `start` puede quedar en null: la plataforma no supo contestar. Se escribe igual, porque la
   // diferencia entre «no habia campo» y «el campo dice que no se pudo» la necesita quien lo lea.
-  return { pid, boot: arranque, start: inicio(pid), taken_at: ahora };
+  return { pid, boot: arranque, start: inicio(pid), taken_at: ahora, fence: previo + 1 };
 }
 
 const esObjeto = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -193,9 +201,60 @@ function parseArgs(args) {
   return { ruta: args[1] };
 }
 
+function parseFence(args) {
+  if (args.length !== 6 || args[0] !== 'fence' || !noVacio(args[1]) || args[2] !== '--task' || !noVacio(args[3]) || args[4] !== '--token' || !/^\d+$/u.test(args[5])) return null;
+  return { ruta: args[1], tarea: args[3], token: Number(args[5]) };
+}
+
+/**
+ * ¿El que dice escribir es el dueño ACTUAL de la tarea? Compara el número que presenta contra el
+ * `fence` del candado. LÍMITE: el token lo consulta quien quiere; no frena a un proceso que escribe
+ * sin presentarlo. Es la mitad que se puede verificar sin controlar el disco.
+ */
+export function juzgarFence(tarea, token) {
+  if (!esObjeto(tarea)) return { codigo: 'FENCE_UNKNOWN_TASK', motivo: 'la tarea no existe en el plan: no hay lock del que ser dueño' };
+  if (tarea.locked !== true || !esObjeto(tarea.lock)) {
+    return { codigo: 'FENCE_NOT_LOCKED', motivo: 'la tarea no está tomada, así que nadie tiene derecho a escribir por ella' };
+  }
+  const vigente = tarea.lock.fence;
+  if (!Number.isInteger(vigente) || vigente < 1) {
+    return { codigo: 'FENCE_UNAVAILABLE', motivo: 'el candado no trae fence (es anterior al fencing), así que no se puede rechazar a un escritor viejo: reasignalo con tomarLock({ anterior }) para que el escritor previo quede con un número menor' };
+  }
+  if (token < vigente) return { codigo: 'FENCE_STALE', motivo: `el escritor presenta el fence ${token} y el vigente es ${vigente}: perdió el lease y otro tomó la tarea después` };
+  if (token > vigente) return { codigo: 'FENCE_FOREIGN', motivo: `el escritor presenta el fence ${token} y este plan sólo llegó a ${vigente}: es de un candado que este plan no tiene, y no se hereda` };
+  return { codigo: null, motivo: `el fence ${token} es el vigente` };
+}
+
+function fenceCommand(args, options, write, writeError) {
+  const parsed = parseFence(args);
+  if (parsed === null) {
+    writeError(USAGE);
+    return 2;
+  }
+  const cwd = options.cwd ?? '.';
+  const leer = options.leer ?? ((ruta) => JSON.parse(readFileSync(join(cwd, ruta), 'utf8')));
+  let doc;
+  try {
+    doc = leer(parsed.ruta);
+  } catch (error) {
+    writeError(`REJECTED: ${parsed.ruta} no se puede leer: ${error?.message ?? error}. Sin plan no hay quien pueda probar que es el dueño.`);
+    return 1;
+  }
+  const tareas = esObjeto(doc) && Array.isArray(doc.tasks) ? doc.tasks : [];
+  const veredicto = juzgarFence(tareas.find((t) => esObjeto(t) && t.id === parsed.tarea), parsed.token);
+  if (veredicto.codigo !== null) {
+    writeError(`REJECTED: ${parsed.tarea}: ${veredicto.codigo} — ${veredicto.motivo}.`);
+    return 1;
+  }
+  write(`OK: el escritor de ${parsed.tarea} presenta el fence ${parsed.token}, que es el vigente.`);
+  write('LIMITE: esto prueba que el token que se presenta es el de la asignación actual, no que un escritor viejo no pueda tocar el disco. El token lo consulta quien quiere: esto no frena a un proceso que escribe sin presentarlo, y para eso hace falta controlar el recurso, no preguntar. Comprueba la identidad del dueño, nunca qué está haciendo.');
+  return 0;
+}
+
 export function main(args = process.argv.slice(2), options = {}) {
   const write = options.write ?? console.log;
   const writeError = options.writeError ?? console.error;
+  if (args[0] === 'fence') return fenceCommand(args, options, write, writeError);
 
   const parsed = parseArgs(args);
   if (parsed === null) {
