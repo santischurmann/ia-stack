@@ -756,6 +756,12 @@
       "file": "INSTALL.md",
       "phrase": "La copia global no se poda ni se sella",
       "why": "Reinstalar aparta lo que sobra y sella solo el runtime del PROYECTO, que es el que corren los gates. La copia global de referencia vive en el directorio de configuracion de quien instala, que puede ser un repositorio de git suyo: medido el 2026-09-22 en la maquina del autor, esa copia aparece como una carpeta sin trackear en ese repositorio. Apartar ahi escribiria archivos en un repositorio ajeno al proyecto. Asi que esa copia sigue acumulando lo que el protocolo retira, y nada lo avisa."
+    },
+    {
+      "limit_id": "continuous-mode-approval-is-sealed-by-content-not-will",
+      "file": "SKILL.md",
+      "phrase": "la aprobación se sella por contenido, no por voluntad",
+      "why": "El gate compara el plan aprobado contra el que hay en disco y el alcance contra cada fase cerrada; no puede saber si una persona dijo que sí. approval_ref lo escribe el agente. Sin este límite un verde del modo continuo se lee como 'el operador aprobó', cuando un agente puede registrar una aprobación que no existe."
     }
   ]
 }

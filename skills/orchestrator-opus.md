@@ -234,6 +234,7 @@ After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-s
 | Session killed / compacted mid-task | RESUME protocol below. Never re-run a passed gate blind, never skip a pending one. Clear stale `locked: true` by re-detecting via evidence, never by trusting the flag. |
 | 3 respawns on same task, no passing gate | Hard stop (§ AI COMPANY LAYER budget policy) — escalate to user, never a silent 4th retry. |
 | Session/phase budget hits 100% (if user set one) | Pause at phase boundary, 🔵 confirm before continuing (§ COMPANY.md budget policy). |
+| A phase the approved plan includes passes all its gates (continuous mode) | Close it as `status: "authorized"` in `docs/phase-decisions.json` with the gate evidence and the `authorized_by` digest — no 🔵 menu, and never a menu built after the fact (`PHASE_DECISION_FABRICATED_CHOICE`). A phase outside the approved scope, or a plan edited after approval, is NOT covered: ask. |
 | Receipt gate rejects (`verify-receipt.mjs check` exit 1) | Never treat as passable via any field — regenerate a fresh receipt against current evaluated state, or (if `escalated`) get explicit 🔵 user approval first and write a NEW `approved` receipt. |
 
 ---

@@ -51,7 +51,7 @@ activo:
    mide **ejecución de tu código**; el soporte mide **observabilidad de tu producto**. Son ejes
    ortogonales, y el DoD tenía uno solo. Medido en una corrida real: sin identificador de petición y
    sin autor en las operaciones, con la cobertura en 100% y todos los gates en verde.
-7. Menús de configuración (modelo, esfuerzo, detalle) al empezar cada fase. Menús de contenido (aprobar, modificar) en cada decisión. Los dos esperan respuesta. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación.
+7. Menús de configuración (modelo, esfuerzo, detalle) al empezar cada fase. Menús de contenido (aprobar, modificar) en cada decisión. Los dos esperan respuesta. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación. **Excepción declarada, con su detector:** dentro de un plan aprobado en modo continuo (§ "Cuándo una fase está terminada"), las fases que el plan incluye se cierran solas con su evidencia y no piden un 🔵 por fase; todo lo que el plan no incluye lo sigue pidiendo.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (8.1). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
 
 **IRON LAW — sin claims de completitud sin evidencia fresca.** Refuerzo textual de "trust what's
@@ -88,6 +88,20 @@ fase, en el orden que declara su propio `phase_order`, encadenadas por hash como
 auditoría— antes de pasar a la fase siguiente. Detector:
 `node .vibe/ia-stack-runtime/scripts/verify-phase-decisions.mjs check docs/phase-decisions.json`.
 Una decisión reemplazada no se borra: se marca `superseded` y se registra la nueva.
+**Modo continuo** (decidido por el operador el 2026-10-04, respuesta IS1): cuando la persona aprueba
+**una versión concreta de un plan** —su hash, las fases, rutas y clases de cambio que cubre, y las
+acciones reservadas que deja afuera: `push`, `merge`, `deploy`, `payment`, `global-install`,
+`license` y `trading`— las fases incluidas se cierran solas apenas pasan sus gates, y se registran
+con `status: "authorized"` en lugar de un menú: una referencia a esa aprobación (`authorized_by`) y
+la evidencia de los gates (`evidence`). No se arma un menú 🔵 por fase para contentar al detector:
+eso sería registrar una elección que nadie hizo, y el gate lo rechaza como
+`PHASE_DECISION_FABRICATED_CHOICE`. El menú 🔵 sigue mandando para todo lo que el plan no incluye:
+una decisión nueva, un cambio de alcance, un conflicto, un bloqueo o una acción reservada. Si el
+plan se edita después de aprobado, o la fase está fuera del alcance, la aprobación **no se hereda**.
+**Límite honesto del modo continuo**: la aprobación se sella por contenido, no por voluntad. El gate
+prueba que el plan que se aprobó es el mismo que hay en disco y que cada fase cerrada estaba dentro
+de su alcance; no prueba que la persona haya dicho que sí. `approval_ref` es una referencia que el
+agente escribe, y un agente puede escribir una que no existe.
 **Límite honesto del gate**: demuestra que la decisión quedó registrada de forma coherente, no
 demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus
 consecuencias — un agente puede registrar decisiones que nadie tomó y el gate las acepta.

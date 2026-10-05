@@ -6,7 +6,7 @@
 // realmente la opción ni que el plan sea el producto correcto.
 
 import { readFileSync } from 'node:fs';
-import { checkDecisions } from './verify-phase-decisions.mjs';
+import { checkDecisions, readPlanIdentity } from './verify-phase-decisions.mjs';
 import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-phase-menu.mjs check <decisions.json> --plan <phase-plan.json>';
@@ -31,10 +31,10 @@ export function checkPlan(plan) {
   return [];
 }
 
-export function checkPhaseMenu(decisions, plan) {
+export function checkPhaseMenu(decisions, plan, { planSha256 } = {}) {
   const planErrors = checkPlan(plan);
   if (planErrors.length > 0) return { ok: false, violations: planErrors, summary: '' };
-  const result = checkDecisions(decisions, { requireComplete: true });
+  const result = checkDecisions(decisions, { requireComplete: true, planSha256 });
   if (!result.ok) return result;
   if (JSON.stringify(decisions.phase_order) !== JSON.stringify(plan.phase_order)) {
     return {
@@ -63,7 +63,11 @@ export function main(args = process.argv.slice(2), write = console.log, writeErr
   if (decisionsRaw.missing || planRaw.missing) {
     writeError(`REJECTED: PHASE_MENU_NO_INPUTS: faltan ${decisionsRaw.missing ? decisionsPath : ''}${decisionsRaw.missing && planRaw.missing ? ' y ' : ''}${planRaw.missing ? planPath : ''}`); return 1;
   }
-  const result = checkPhaseMenu(decisionsRaw.value, planRaw.value);
+  // La identidad del plan APROBADO se lee del proyecto: sin esto una autorizacion presente nunca puede
+  // salir verde, porque nadie comparo el plan contra el sha256 que la aprobacion declara.
+  const aprobado = readPlanIdentity(decisionsRaw.value);
+  if (aprobado.error !== null) { writeError(`REJECTED: PHASE_DECISION_AUTH_PLAN_UNREADABLE: ${aprobado.error}`); return 1; }
+  const result = checkPhaseMenu(decisionsRaw.value, planRaw.value, { planSha256: aprobado.sha256 });
   if (!result.ok) { for (const item of result.violations) writeError(`REJECTED: ${item.code}: ${item.message}`); return 1; }
   write(`OK: ${decisionsPath} ${result.summary}`); return 0;
 }

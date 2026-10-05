@@ -118,6 +118,9 @@ export const REQUIREMENTS = [
   ['skills/gates.md', /verify-phase-decisions\.mjs check/u, 'mechanical phase-decision gate'],
   ['SKILL.md', /verify-phase-menu\.mjs check docs\/phase-decisions\.json --plan docs\/phase-plan\.json/u, 'canonical phase-plan integration gate'],
   ['skills/gates.md', /verify-phase-menu\.mjs check/u, 'canonical phase-plan integration gate'],
+  ['SKILL.md', /\*\*Modo continuo\*\*/u, 'continuous mode: one approval per plan version'],
+  ['SKILL.md', /PHASE_DECISION_FABRICATED_CHOICE/u, 'continuous mode forbids a fabricated per-phase choice'],
+  ['skills/gates.md', /Modo continuo:/u, 'continuous mode documented in the gate reference'],
   ['templates/diagnostics/caio.json', /ia\.caio\/1/u, 'CAIO diagnostic template schema'],
   ['templates/phase-plan.json', /ia\.phase-plan\/1/u, 'canonical phase-plan template schema'],
   // El gate y la regla, otra vez por separado: la sonda detecta el verde vacío, y la regla dice por

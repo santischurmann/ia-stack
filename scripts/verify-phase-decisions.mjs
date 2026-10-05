@@ -31,7 +31,9 @@
 //    sello cubre lo que el parser leyó, no necesariamente lo que un humano lee de arriba hacia abajo.
 // Los tres primeros son los mismos de verify-audit-chain.mjs y exigen un ancla fuera del archivo.
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { chainHashFor } from './verify-audit-chain.mjs';
 import { mismoSchema } from './schema-compat.mjs';
 
@@ -45,6 +47,11 @@ export const SCHEMA = 'ia.phase-decisions/1';
 // nueva, igual que hace el inventario de requisitos con `replaced`. Borrarla dejaría la cadena rota
 // y, peor, el historial sin la decisión que se abandonó.
 export const STATUSES = Object.freeze(['decided', 'superseded']);
+// Una fase incluida en un plan aprobado cierra con `authorized`: la referencia a la aprobación, no un
+// menú. Es un estado aparte y no un `decided` con opciones de relleno porque fabricar el menú es
+// justo lo que el modo continuo prohíbe: un registro de una elección que nadie hizo.
+export const AUTHORIZED = 'authorized';
+const CLOSING_STATUSES = Object.freeze(['decided', AUTHORIZED]);
 // Un menú de una sola opción no es un menú: no hay nada que elegir y la elección no informa nada.
 export const MIN_OPTIONS = 2;
 /** Viaja pegado al verde, como CUSTODY_LIMIT en verify-receipt.mjs: la linea de exito de un gate se
@@ -56,7 +63,15 @@ export const DECISION_LIMIT = 'Límite: esto verifica el registro, no la volunta
 export const MIN_DELIBERATION_MS = 2000;
 export const CONTENT_FIELDS = Object.freeze(['phase_id', 'phase_name', 'options', 'recommendation', 'selected_option', 'reason', 'shown_at', 'timestamp', 'input_hash', 'status']);
 
+export const AUTH_CONTENT_FIELDS = Object.freeze(['phase_id', 'phase_name', 'status', 'authorized_by', 'evidence', 'timestamp']);
+// Lo que una aprobación NO puede incluir, y que tiene que declarar excluido por su nombre: push,
+// merge, deploy, cobros, instalación global, licencias y operación de trading. La aprobación de un
+// plan de ingeniería no es la de ninguna de esas.
+export const RESERVED_ACTIONS = Object.freeze(['push', 'merge', 'deploy', 'payment', 'global-install', 'license', 'trading']);
+const AUTH_KEYS = new Set(['plan_path', 'plan_sha256', 'approved_at', 'approval_ref', 'phases', 'paths', 'change_classes', 'deliverables', 'reserved']);
 const DOCUMENT_KEYS = new Set(['schema', 'phase_order', 'decisions']);
+const OPTIONAL_DOCUMENT_KEYS = new Set(['authorization']);
+const AUTH_ROW_KEYS = new Set([...AUTH_CONTENT_FIELDS, 'previous_hash', 'current_hash']);
 const DECISION_KEYS = new Set([...CONTENT_FIELDS, 'previous_hash', 'current_hash']);
 const SHA256 = /^[0-9a-f]{64}$/u;
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/u;
@@ -108,12 +123,65 @@ function isTimestamp(value) {
   return nonEmpty(value) && ISO_TIMESTAMP.test(value) && !Number.isNaN(Date.parse(value));
 }
 
+/** Una ruta de plan que se puede leer sin salirse del proyecto: relativa, sin `..` y con barras
+ * normales. Es lo único que el gate abre por indicación de un archivo que no escribió él. */
+export function isSafePlanPath(path) {
+  return nonEmpty(path) && !path.startsWith('/') && !/^[A-Za-z]:/u.test(path)
+    && !path.includes(String.fromCharCode(92)) && !path.split('/').includes('..');
+}
+
+/** Identidad de un plan: sha256 de su texto con los finales de línea normalizados a LF, porque el
+ * mismo plan en un checkout de Windows llega con CRLF y no es otro plan. */
+export function planIdentity(text) {
+  return createHash('sha256').update(text.split(String.fromCharCode(13, 10)).join(String.fromCharCode(10)), 'utf8').digest('hex');
+}
+
+function stringList(value) {
+  return Array.isArray(value) && value.length > 0 && value.every(nonEmpty) && new Set(value).size === value.length;
+}
+
+/** La aprobación, como dato: qué plan (por contenido), cuándo, con qué referencia a la persona, qué
+ * fases, rutas y clases de cambio cubre, y qué acciones reservadas deja afuera. Una aprobación sin
+ * alguna de esas piezas no autoriza nada: es una frase. */
+export function validateAuthorization(auth) {
+  if (!isObject(auth) || !hasExactKeys(auth, AUTH_KEYS)) {
+    return [violation('PHASE_DECISION_AUTH_INVALID', `authorization debe declarar exactamente ${[...AUTH_KEYS].join(', ')}`)];
+  }
+  const violations = [];
+  const bad = (message) => violations.push(violation('PHASE_DECISION_AUTH_INVALID', `authorization: ${message}`));
+  if (!isSafePlanPath(auth.plan_path)) bad('plan_path debe ser una ruta relativa dentro del proyecto, con barras normales y sin ..');
+  if (!isDigest(auth.plan_sha256)) bad('plan_sha256 debe ser un sha256 en 64 hex minúsculas');
+  if (!isTimestamp(auth.approved_at)) bad('approved_at debe ser una marca ISO-8601 real');
+  if (!nonEmpty(auth.approval_ref)) bad('approval_ref debe nombrar el mensaje humano de donde sale la aprobación');
+  for (const field of ['phases', 'paths', 'change_classes', 'deliverables']) {
+    if (!stringList(auth[field])) bad(`${field} debe ser una lista no vacía de textos únicos y no vacíos`);
+  }
+  if (Array.isArray(auth.change_classes)) {
+    for (const reserved of RESERVED_ACTIONS.filter((action) => auth.change_classes.includes(action))) {
+      violations.push(violation('PHASE_DECISION_AUTH_RESERVED_INCLUDED', `authorization: la acción reservada "${reserved}" no puede venir dentro del alcance aprobado`));
+    }
+  }
+  const dejadas = Array.isArray(auth.reserved) ? auth.reserved : [];
+  const sinDeclarar = RESERVED_ACTIONS.filter((action) => !dejadas.includes(action));
+  if (sinDeclarar.length > 0) {
+    violations.push(violation('PHASE_DECISION_AUTH_RESERVED_MISSING', `authorization: reserved debe dejar afuera, por su nombre, ${sinDeclarar.join(', ')}`));
+  }
+  return violations;
+}
+
+/** Huella de la aprobación, estable ante el orden de las claves. Cada fila autorizada la lleva en
+ * `authorized_by`, así que editar el alcance después de cerrar las fases rompe todas las filas. */
+export function authorizationDigest(auth) {
+  const canonical = JSON.stringify(Object.keys(auth).sort().map((key) => [key, auth[key]]));
+  return createHash('sha256').update(canonical, 'utf8').digest('hex');
+}
+
 /** Preimagen canónica de una decisión: los nueve campos de contenido en orden fijo, serializados
  * como pares para que el orden de las claves en el archivo no cambie el hash pero su contenido sí.
  * `previous_hash` queda afuera porque entra como semilla del encadenado, igual que en la traza de
  * auditoría; `current_hash` queda afuera porque es el resultado. */
 export function decisionPayload(decision, phaseOrder = null) {
-  const campos = CONTENT_FIELDS.map((field) => [field, decision[field]]);
+  const campos = (decision.status === AUTHORIZED ? AUTH_CONTENT_FIELDS : CONTENT_FIELDS).map((field) => [field, decision[field]]);
   // El prefijo de phase_order hasta la fase de esta decision, inclusive. Sin esto, mover una fase
   // sin decision al final del orden borraba la deteccion de fase salteada y ningun hash cambiaba:
   // reproducido el 2026-08-28. Se toma el prefijo y no la lista entera para que agregar una fase
@@ -130,8 +198,10 @@ export function hashDecision(previousHash, decision, phaseOrder = null) {
 }
 
 export function checkDocument(document) {
-  if (!isObject(document) || !hasExactKeys(document, DOCUMENT_KEYS)) {
-    return [violation('PHASE_DECISION_SCHEMA_INVALID', `el archivo debe declarar exactamente ${[...DOCUMENT_KEYS].join(', ')}`)];
+  const keys = isObject(document) ? Object.keys(document) : [];
+  if (!isObject(document) || ![...DOCUMENT_KEYS].every((key) => keys.includes(key))
+    || !keys.every((key) => DOCUMENT_KEYS.has(key) || OPTIONAL_DOCUMENT_KEYS.has(key))) {
+    return [violation('PHASE_DECISION_SCHEMA_INVALID', `el archivo debe declarar ${[...DOCUMENT_KEYS].join(', ')} y, opcionalmente, ${[...OPTIONAL_DOCUMENT_KEYS].join(', ')}`)];
   }
   if (!mismoSchema(document.schema, SCHEMA)) {
     return [violation('PHASE_DECISION_SCHEMA_INVALID', `el archivo debe declarar schema ${SCHEMA}`)];
@@ -149,7 +219,37 @@ export function checkDocument(document) {
   return [];
 }
 
+function checkAuthorizedRow(decision, position, phaseOrder) {
+  const at = `decisión #${position + 1}`;
+  if (!hasExactKeys(decision, AUTH_ROW_KEYS)) {
+    return [violation('PHASE_DECISION_SCHEMA_INVALID', `${at}: una fila authorized debe declarar exactamente ${[...AUTH_ROW_KEYS].join(', ')} — sin menú ni elección, que serían una decisión humana fabricada`)];
+  }
+  const violations = [];
+  if (!nonEmpty(decision.phase_id) || !nonEmpty(decision.phase_name)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: phase_id y phase_name son obligatorios y no pueden estar vacíos`));
+  } else if (!phaseOrder.includes(decision.phase_id)) {
+    violations.push(violation('PHASE_DECISION_PHASE_UNKNOWN', `${at}: la fase ${decision.phase_id} (${decision.phase_name}) no está declarada en phase_order`));
+  }
+  if (!nonEmpty(decision.evidence)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: evidence debe nombrar qué gates pasaron: una fase se cierra sola por su evidencia, no por la fe de quien la cierra`));
+  }
+  if (!isDigest(decision.authorized_by)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: authorized_by debe ser el digest de la autorización, en 64 hex minúsculas`));
+  }
+  if (!isTimestamp(decision.timestamp)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: timestamp debe ser una marca ISO-8601 real`));
+  }
+  if (decision.previous_hash !== '' && !isDigest(decision.previous_hash)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: previous_hash debe ser un sha256, o "" en la primera decisión`));
+  }
+  if (!isDigest(decision.current_hash)) {
+    violations.push(violation('PHASE_DECISION_FIELD_INVALID', `${at}: current_hash debe ser un sha256 en 64 hex minúsculas`));
+  }
+  return violations;
+}
+
 function checkRow(decision, position, phaseOrder) {
+  if (isObject(decision) && decision.status === AUTHORIZED) return checkAuthorizedRow(decision, position, phaseOrder);
   const at = `decisión #${position + 1}`;
   if (!isObject(decision) || !hasExactKeys(decision, DECISION_KEYS)) {
     return [violation('PHASE_DECISION_SCHEMA_INVALID', `${at}: debe declarar exactamente ${[...DECISION_KEYS].join(', ')}`)];
@@ -232,7 +332,7 @@ function checkSequence(decisions, phaseOrder) {
   const last = new Map();
   for (const decision of decisions) {
     last.set(decision.phase_id, decision);
-    if (decision.status !== 'decided') continue;
+    if (!CLOSING_STATUSES.includes(decision.status)) continue;
     live.set(decision.phase_id, (live.get(decision.phase_id) ?? 0) + 1);
   }
   for (const [phaseId, count] of live) {
@@ -240,7 +340,7 @@ function checkSequence(decisions, phaseOrder) {
     violations.push(violation('PHASE_DECISION_DUPLICATE', `la fase ${phaseId} registra ${count} decisiones vigentes: una decisión reemplazada se marca superseded, no se deja como decided al lado de la nueva`));
   }
   for (const [phaseId, decision] of last) {
-    if (decision.status === 'decided') continue;
+    if (CLOSING_STATUSES.includes(decision.status)) continue;
     violations.push(violation('PHASE_DECISION_NOT_CLOSED', `la fase ${phaseId} (${decision.phase_name}) termina en una decisión ${decision.status} y ninguna la reemplaza: ninguna fase cierra sin una elección registrada`));
   }
 
@@ -271,7 +371,7 @@ function checkComplete(decisions, phaseOrder) {
   const lastByPhase = new Map();
   for (const decision of decisions) lastByPhase.set(decision.phase_id, decision);
   return phaseOrder
-    .filter((phaseId) => lastByPhase.get(phaseId)?.status !== 'decided')
+    .filter((phaseId) => !CLOSING_STATUSES.includes(lastByPhase.get(phaseId)?.status))
     .map((phaseId) => violation(
       'PHASE_DECISION_PHASE_MISSING',
       `la fase ${phaseId} está declarada en phase_order pero no tiene una decisión vigente con menú y elección registrada`,
@@ -294,7 +394,46 @@ function checkChain(decisions, phaseOrder) {
   return [];
 }
 
-export function checkDecisions(document, { requireComplete = false } = {}) {
+/** La aprobación contra lo que el archivo dice haber cerrado. `planSha256` es la identidad del plan
+ * tal como está AHORA en disco: `undefined` es que nadie la miró, y eso no puede salir verde. */
+function checkAuthorization(document, planSha256) {
+  const decisions = document.decisions;
+  const authorized = decisions.filter((decision) => decision.status === AUTHORIZED);
+  const auth = document.authorization;
+  if (auth === undefined) {
+    return authorized.length === 0 ? [] : [violation('PHASE_DECISION_AUTH_MISSING', `${authorized.length} fila(s) authorized y el archivo no declara ninguna authorization: sin aprobación no hay nada que heredar`)];
+  }
+  const shape = validateAuthorization(auth);
+  if (shape.length > 0) return shape;
+  const violations = [];
+  if (planSha256 === undefined) {
+    violations.push(violation('PHASE_DECISION_AUTH_PLAN_UNVERIFIED', 'el archivo declara una authorization y nadie comparó el plan contra su sha256: un verde sin haber mirado el plan no vale'));
+  } else if (planSha256 === null) {
+    violations.push(violation('PHASE_DECISION_AUTH_PLAN_MISSING', `el plan aprobado (${auth.plan_path}) no existe: no se puede comprobar qué se aprobó`));
+  } else if (planSha256 !== auth.plan_sha256) {
+    violations.push(violation('PHASE_DECISION_AUTH_STALE', `el plan ${auth.plan_path} cambió después de aprobarse (sha256 distinto): la aprobación era de otra versión y no se hereda`));
+  }
+  const digest = authorizationDigest(auth);
+  for (const [position, decision] of decisions.entries()) {
+    const at = `decisión #${position + 1}`;
+    if (decision.status === 'decided' && auth.phases.includes(decision.phase_id)) {
+      violations.push(violation('PHASE_DECISION_FABRICATED_CHOICE', `${at}: la fase ${decision.phase_id} ya está incluida en el plan aprobado y registra una elección humana: dentro de un plan continuo se cierra como authorized, no con un menú armado a posteriori`));
+    }
+    if (decision.status !== AUTHORIZED) continue;
+    if (decision.authorized_by !== digest) {
+      violations.push(violation('PHASE_DECISION_AUTH_REF_MISMATCH', `${at}: authorized_by no es el digest de la authorization que el archivo declara ahora — el alcance se editó después de cerrar la fase`));
+    }
+    if (!auth.phases.includes(decision.phase_id)) {
+      violations.push(violation('PHASE_DECISION_AUTH_OUT_OF_SCOPE', `${at}: la fase ${decision.phase_id} (${decision.phase_name}) no está en el alcance aprobado (${auth.phases.join(', ')}): no hereda la aprobación`));
+    }
+    if (Date.parse(decision.timestamp) < Date.parse(auth.approved_at)) {
+      violations.push(violation('PHASE_DECISION_AUTH_BEFORE_APPROVAL', `${at}: se cerró a las ${decision.timestamp}, antes de la aprobación (${auth.approved_at}): nadie pudo heredar algo que todavía no existía`));
+    }
+  }
+  return violations;
+}
+
+export function checkDecisions(document, { requireComplete = false, planSha256 } = {}) {
   const structural = checkDocument(document);
   if (structural.length > 0) return { ok: false, violations: structural, summary: '' };
   const decisions = document.decisions;
@@ -305,13 +444,15 @@ export function checkDecisions(document, { requireComplete = false } = {}) {
   const violations = [
     ...checkSequence(decisions, document.phase_order),
     ...checkChain(decisions, document.phase_order),
+    ...checkAuthorization(document, planSha256),
     ...(requireComplete ? checkComplete(decisions, document.phase_order) : []),
   ];
   const phases = new Set(decisions.map((decision) => decision.phase_id));
+  const autorizadas = decisions.filter((decision) => decision.status === AUTHORIZED).length;
   return {
     ok: violations.length === 0,
     violations,
-    summary: `registra ${decisions.length} decisión(es) encadenadas sobre ${phases.size} fase(s), cada una con su menú, su recomendación, la opción que el registro declara elegida y su motivo.`,
+    summary: `registra ${decisions.length} decisión(es) encadenadas sobre ${phases.size} fase(s)${autorizadas > 0 ? `, ${autorizadas} autorizada(s) por un plan aprobado y el resto` : ', cada una'} con su menú, su recomendación, la opción que el registro declara elegida y su motivo.`,
   };
 }
 
@@ -323,6 +464,20 @@ export function readDecisions(path, readFile) {
     // fallo de lectura es el gate sin poder mirar, y eso sí es un rechazo.
     if (error.code === 'ENOENT') return { content: null, missing: true, error: null };
     return { content: null, missing: false, error: `no se puede leer ${path}: ${error.message}` };
+  }
+}
+
+/** El plan que la autorización declara, leído desde el proyecto y no desde donde el archivo diga:
+ * `undefined` si no hay autorización que verificar, `null` si el plan no existe. */
+export function readPlanIdentity(document, options = {}) {
+  const auth = document?.authorization;
+  if (!isObject(auth) || !isSafePlanPath(auth.plan_path)) return { sha256: undefined, error: null };
+  try {
+    const text = (options.readFile ?? readFileSync)(join(options.cwd ?? '.', auth.plan_path), 'utf8');
+    return { sha256: planIdentity(text), error: null };
+  } catch (error) {
+    if (error.code === 'ENOENT') return { sha256: null, error: null };
+    return { sha256: undefined, error: `no se puede leer ${auth.plan_path}: ${error.message}` };
   }
 }
 
@@ -371,7 +526,12 @@ export function main(args = process.argv.slice(2), options = {}, write = console
     write(`${EMPTY_PREFIX}${message}`);
     return 0;
   }
-  const result = checkDecisions(document, { requireComplete });
+  const planRead = readPlanIdentity(document, options);
+  if (planRead.error !== null) {
+    writeError(`REJECTED: PHASE_DECISION_AUTH_PLAN_UNREADABLE: ${planRead.error}`);
+    return 1;
+  }
+  const result = checkDecisions(document, { requireComplete, planSha256: planRead.sha256 });
   if (!result.ok) {
     for (const item of result.violations) writeError(`REJECTED: ${item.code}: ${item.message}`);
     return 1;
