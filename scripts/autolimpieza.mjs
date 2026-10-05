@@ -30,6 +30,7 @@
 // lo que se quiere). No hay exclusión entre dos corridas simultáneas. Una cuarentena en el mismo disco
 // no protege de un fallo del disco. Y mover un archivo no prueba que su contenido no importaba.
 
+import { spawnSync } from 'node:child_process';
 import { appendFileSync, lstatSync, mkdirSync, readdirSync, renameSync, rmSync, rmdirSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
@@ -114,6 +115,19 @@ export function candidatas(contrato, cwd, ahoraMs, intocables, io = {}) {
   return resultado;
 }
 
+/**
+ * ¿La cuarentena está ignorada por git? Lo que `aplicar` mueve ahí puede ser cualquier cosa del proyecto,
+ * y si git no la ignora, el primer `git add -A` de quien lo use se lleva todo lo que la limpieza apartó.
+ * Se pregunta con una sonda DENTRO de la carpeta, que da lo mismo exista o no todavía. Sin git o fuera de
+ * un repositorio no hay nada que versionar por error, y se deja pasar. Es una guarda de `aplicar` y
+ * nada más: sacar algo de la cuarentena nunca es el riesgo.
+ */
+export function cuarentenaIgnorada(cwd, directorio, correr = spawnSync) {
+  const repo = correr('git', ['-C', cwd, 'rev-parse', '--is-inside-work-tree'], { encoding: 'utf8' });
+  if (repo.error || repo.status !== 0) return true;
+  return correr('git', ['-C', cwd, 'check-ignore', '-q', '--', `${directorio}/.sonda`], { encoding: 'utf8' }).status === 0;
+}
+
 const linea = (hoy, accion, item, categoria, ruta, bytes, sha256) => `[${hoy}] Limpieza | ${accion} | ${item} | ${categoria} | ${ruta} | ${bytes} | ${sha256}`;
 
 export function main(args = process.argv.slice(2), options = {}) {
@@ -176,6 +190,9 @@ export function main(args = process.argv.slice(2), options = {}) {
     if (lista.candidatas.length === 0) {
       write('aplicar: ninguna candidata: nada que mover.');
       return 0;
+    }
+    if (!cuarentenaIgnorada(cwd, contrato.cuarentena.directorio, io.git)) {
+      return rechazar([{ codigo: 'AUTOLIMPIEZA_QUARANTINE_NOT_IGNORED', mensaje: `la cuarentena (${contrato.cuarentena.directorio}/) no está ignorada por git: el primer git add -A de quien use este proyecto se llevaría todo lo que la limpieza aparte. Agregá la regla ${contrato.cuarentena.directorio}/ a .gitignore y volvé a correr` }]);
     }
     let movidas = 0;
     for (const c of lista.candidatas) {

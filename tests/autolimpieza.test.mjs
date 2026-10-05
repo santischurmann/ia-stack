@@ -500,3 +500,65 @@ test('5B · el CLI real usa el directorio actual, la fecha de hoy y el reloj del
     limpiar(raiz);
   }
 });
+
+// ---------------------------------------------------------------- la cuarentena no se versiona
+
+function hacerRepositorio(raiz, gitignore = null) {
+  const git = (...args) => spawnSyncReal('git', args, { cwd: raiz, encoding: 'utf8' });
+  assert.equal(git('init', '-q', '.').status, 0);
+  if (gitignore !== null) writeFileSync(join(raiz, '.gitignore'), gitignore);
+}
+import { spawnSync as spawnSyncReal } from 'node:child_process';
+
+test('FALSIFICACION · 5C · aplicar se niega si la cuarentena no esta ignorada por git, y no mueve nada', () => {
+  const raiz = proyecto();
+  try {
+    hacerRepositorio(raiz);
+    const r = correr(raiz, ['aplicar', C]);
+    assert.equal(r.code, 1);
+    assert.match(r.errores, /AUTOLIMPIEZA_QUARANTINE_NOT_IGNORED.*\.vibe\/cuarentena\/.*\.gitignore/u, 'dice que regla agregar');
+    assert.ok(existsSync(join(raiz, 'tmp', 'run-viejo-1')), 'no se movio nada: el primer git add -A de alguien se llevaria la cuarentena entera');
+    assert.equal(existsSync(join(raiz, '.vibe', 'cuarentena')), false);
+    assert.equal(existsSync(join(raiz, '.vibe', 'LIMPIEZA.md')), false);
+  } finally {
+    limpiar(raiz);
+  }
+});
+
+test('5C · con la cuarentena ignorada, o fuera de un repositorio, aplicar sigue andando', () => {
+  const ignorado = proyecto();
+  try {
+    hacerRepositorio(ignorado, '.vibe/cuarentena/\n');
+    const r = correr(ignorado, ['aplicar', C]);
+    assert.equal(r.code, 0, r.errores);
+    assert.match(r.salida, /2 movida\(s\)/u);
+    assert.equal(spawnSyncReal('git', ['status', '--porcelain', '--', '.vibe/cuarentena'], { cwd: ignorado, encoding: 'utf8' }).stdout.trim(), '', 'git no ve la cuarentena');
+  } finally {
+    limpiar(ignorado);
+  }
+  const sinRepo = proyecto();
+  try {
+    assert.equal(correr(sinRepo, ['aplicar', C]).code, 0, 'sin repositorio no hay nada que versionar por error');
+  } finally {
+    limpiar(sinRepo);
+  }
+});
+
+test('5C · listar, purgar y restaurar no exigen la regla: la guarda es de lo que MUEVE a la cuarentena', () => {
+  const raiz = proyecto();
+  try {
+    assert.equal(correr(raiz, ['aplicar', C]).code, 0);
+    hacerRepositorio(raiz);
+    assert.equal(correr(raiz, ['listar', C]).code, 0);
+    assert.equal(correr(raiz, ['restaurar', C, '2026-10-05-001']).code, 0, 'sacar algo de la cuarentena nunca es el riesgo');
+  } finally {
+    limpiar(raiz);
+  }
+});
+
+test('5C · sin git instalado no hay repositorio que proteger: la guarda deja pasar', () => {
+  assert.equal(gate.cuarentenaIgnorada('.', '.vibe/cuarentena', () => ({ error: new Error('spawn git ENOENT'), status: null })), true);
+  assert.equal(gate.cuarentenaIgnorada('.', '.vibe/cuarentena', () => ({ status: 128 })), true, 'fuera de un repositorio');
+  const respuestas = [{ status: 0 }, { status: 1 }];
+  assert.equal(gate.cuarentenaIgnorada('.', '.vibe/cuarentena', () => respuestas.shift()), false, 'es un repo y la carpeta no esta ignorada');
+});

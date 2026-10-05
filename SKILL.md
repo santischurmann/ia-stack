@@ -1888,6 +1888,35 @@ Las cuatro reglas, y por qué cada una:
 que el texto citado esté ahí, no que signifique lo que la propuesta dice que significa.
 
 
+**9.0.2 La autolimpieza** (mismo período de 7 días, al abrir sesión). Un proyecto acumula carpetas que
+nadie ejecuta ni lee: copias viejas, temporales de corridas matadas, lo que una poda aparta. La regla es
+una sola: **nada se borra de entrada**. Todo candidato se mueve primero a una cuarentena, y sólo una
+purga posterior, vencida la retención, lo elimina de verdad.
+
+```bash
+node .vibe/ia-stack-runtime/scripts/autolimpieza.mjs listar contracts/autolimpieza.json
+node .vibe/ia-stack-runtime/scripts/autolimpieza.mjs aplicar contracts/autolimpieza.json
+node .vibe/ia-stack-runtime/scripts/autolimpieza.mjs purgar contracts/autolimpieza.json
+node .vibe/ia-stack-runtime/scripts/verify-autolimpieza.mjs check contracts/autolimpieza.json
+```
+
+El agente corre `listar` y **le muestra la lista a la persona**: `aplicar` y `purgar` se piden con un menú
+de opciones y nunca en silencio, salvo que el plan aprobado en modo continuo los incluya. Las reglas, y por qué:
+
+- **Lista blanca positiva.** Sólo es candidato lo que cae en una categoría del contrato, con su raíz,
+  su prefijo, su edad mínima y **cómo se regenera**. Lo demás es intocable; y lo que
+  `contracts/irreplaceable-sources.json` nombra no se mueve ni se purga **nunca**, ni desde la cuarentena.
+- **`aplicar` se niega si la cuarentena no está ignorada por git**: lo que se aparta puede ser cualquier
+  cosa del proyecto, y el primer `git add -A` se lo llevaría.
+- **Cada acción queda sellada** en `.vibe/LIMPIEZA.md` con la cadena de `verify-audit-chain.mjs`, y el
+  verificador compara ese registro con lo que hay en disco.
+- **Los números son del contrato**, no del protocolo: la retención y la edad mínima del contrato de este
+  repositorio son **supuestos**, y se cambian ahí.
+
+**Lo que esta fase NO puede hacer:** el verificador comprueba que el registro es consistente, no que lo
+movido fuera lo correcto ni que su contenido no importara. No hay exclusión entre dos corridas
+simultáneas, y una cuarentena en el mismo disco no protege de un fallo del disco.
+
 **Qué es, en una línea.** Cada skill, cada regla y cada hook que tenés configurado se le carga al
 modelo **antes** de que escribas la primera letra. Lo que ya no sirve no es neutral: ocupa lugar y
 compite con lo que sí importa. Esta fase saca lo que sobra **sin perder nada**.
