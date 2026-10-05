@@ -82,12 +82,13 @@ jobs:
       - name: El repositorio no publica la identidad de quien lo escribio
         run: node scripts/verify-repo-clean.mjs check
 
-      # La lista de nombres privados es un secreto del repositorio y no vive en ningun archivo. Sin el
-      # secreto el gate escribe VACIO y no mira nada: cuando exista, agregar --require-inputs.
+      # La lista de nombres privados es un secreto del repositorio y no vive en ningun archivo. Con
+      # --require-inputs un secreto ausente rechaza en vez de escribir VACIO: un verde que no miro no
+      # cuenta. Costo asumido: una bifurcacion que no recibe secretos queda en rojo en este paso.
       - name: El repositorio no nombra nada de la lista privada
         env:
           IA_STACK_NOMBRES_PRIVADOS: ${{ secrets.IA_STACK_NOMBRES_PRIVADOS }}
-        run: node scripts/verify-private-names.mjs check
+        run: node scripts/verify-private-names.mjs check --require-inputs
 
       - name: El indice cubre todo lo rastreado
         run: node scripts/verify-ia-stack-index.mjs check

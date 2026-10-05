@@ -395,7 +395,7 @@ test('EL DATO: el contrato de este repositorio no nombra el stack de nadie', SOL
   assert.ok(real.universales.length >= 3, 'tienen que estar los universales');
   assert.deepEqual(real.del_proyecto, [], 'el protocolo público no declara extensiones de ningún proyecto');
   const texto = JSON.stringify(real);
-  for (const rastro of ['mq5', 'ex5', 'MetaTrader', 'MT5', 'SCalper']) {
+  for (const rastro of ['mq5', 'ex5', 'MetaTrader', 'MT5', 'ProyectoEjemplo']) {
     assert.doesNotMatch(texto, new RegExp(rastro, 'iu'), `el contrato público nombra ${rastro}`);
   }
 });
