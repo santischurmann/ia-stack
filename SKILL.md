@@ -1120,6 +1120,23 @@ clientes, de proyectos privados, de carpetas— porque para el gate son palabras
 De las cuatro filtraciones reales que lo motivaron habría encontrado dos. Esa mitad sigue siendo
 revisión humana, y ningún gate la cierra.
 
+#### Los nombres que ese gate no ve: la lista privada
+
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-private-names.mjs check
+```
+
+Busca, en el contenido y en la ruta de cada archivo versionado, los nombres de una lista que el
+repositorio no conoce. **La lista no vive en ningún archivo versionado**: llega por la variable de
+entorno `IA_STACK_NOMBRES_PRIVADOS` (en CI, un secreto del repositorio) y por el archivo
+`.claude/nombres-privados.local.txt` de tu máquina, que `.gitignore` deja afuera. Un nombre por
+línea; las vacías y las que empiezan con `#` se ignoran; no distingue mayúsculas ni tildes.
+
+Nunca repite un nombre: dice archivo, línea y «nombre #N», la posición en la lista combinada. Sin
+lista dice `VACÍO` y sale 0, o sale 1 con `--require-inputs`: un verde que no miró no se lee como limpio.
+
+**Límite honesto**: un nombre que nadie anotó no se detecta. No ve el historial ya publicado, ni el autor de los commits, ni lo que git no rastrea, ni un nombre escrito de otra forma.
+
 
 Se reafirma el contrato de orquestación (arriba del archivo): esta fase es la que más se apoya en
 abrir varios agentes en paralelo y en la verificación adversarial. **No es una pasada en solitario.**

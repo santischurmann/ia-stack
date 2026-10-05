@@ -792,6 +792,12 @@
       "file": "README.md",
       "phrase": "no hay exclusión entre dos corridas simultáneas",
       "why": "autolimpieza.mjs lee el log, mueve y sella, sin un candado entre corridas: dos aplicar a la vez pueden asignar el mismo identificador o pisarse. Sin este limite se lee como una operacion atomica, y no lo es."
+    },
+    {
+      "limit_id": "private-names-list-is-what-its-writer-remembers",
+      "file": "SKILL.md",
+      "phrase": "un nombre que nadie anotó no se detecta.",
+      "why": "La lista privada es lo que quien la escribe recuerda: el gate compara contra ella y contra nada más. Sin esta frase, el OK de verify-private-names.mjs se lee como que el repositorio no nombra nada privado, cuando lo único probado es que ninguno de los nombres anotados aparece. Un nombre que nadie anotó, o que está escrito de otra forma, pasa en verde."
     }
   ]
 }

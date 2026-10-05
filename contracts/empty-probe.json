@@ -439,6 +439,14 @@
       "why": "Sobre un directorio vacio git no rastrea nada, y una carpeta sin versionar no puede filtrar nada versionado: el gate escribe VACIO y sale 0. La distincion importa porque el modo de falla de este gate es el silencio. Si no encontrar archivos se leyera como OK, un repositorio donde git falla —o donde alguien corre el gate desde la carpeta equivocada— pareceria limpio, y limpio es justo lo que no se puede afirmar sin haber mirado nada."
     },
     {
+      "script": "verify-private-names.mjs",
+      "args": [
+        "check"
+      ],
+      "expect": "empty",
+      "why": "Sobre un directorio vacio no hay lista de nombres privados ni repositorio que revisar, asi que el gate escribe VACIO y sale 0 sin afirmar que algo este limpio. La distincion importa porque el modo de falla de este gate es el silencio: sin lista, o sin poder leer git, un verde se leeria como limpio cuando no se miro nada."
+    },
+    {
       "script": "verify-red.mjs",
       "args": [
         "check",

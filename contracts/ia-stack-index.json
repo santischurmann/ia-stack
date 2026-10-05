@@ -747,6 +747,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-private-names.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-product-diagnostics.mjs",
       "class": "gate"
     },
@@ -1480,6 +1484,10 @@
     },
     {
       "path": "tests/verify-platform-scope.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-private-names.test.mjs",
       "class": "prueba"
     },
     {
