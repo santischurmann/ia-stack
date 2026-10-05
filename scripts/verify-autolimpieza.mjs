@@ -67,7 +67,7 @@ function fechaReal(texto) {
   return fecha.getUTCFullYear() === anio && fecha.getUTCMonth() === mes - 1 && fecha.getUTCDate() === dia;
 }
 
-function diasEntre(desde, hasta) {
+export function diasEntre(desde, hasta) {
   const [a1, m1, d1] = desde.split('-').map(Number);
   const [a2, m2, d2] = hasta.split('-').map(Number);
   return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / DIA_MS);
@@ -199,7 +199,7 @@ export function juzgarRegistro(entradas, contrato, intocables = null) {
     base.estado = e.accion === 'purga' ? 'purgado' : 'restaurado';
     resueltas += 1;
   }
-  const pendientes = [...items.values()].filter((i) => i.estado === 'pendiente').map((i) => ({ item: i.entrada.item, ruta: i.entrada.ruta, sha256: i.entrada.sha256, bytes: i.entrada.bytes, fecha: i.entrada.fecha }));
+  const pendientes = [...items.values()].filter((i) => i.estado === 'pendiente').map((i) => ({ item: i.entrada.item, categoria: i.entrada.categoria, ruta: i.entrada.ruta, sha256: i.entrada.sha256, bytes: i.entrada.bytes, fecha: i.entrada.fecha }));
   return { problemas, pendientes, resueltas };
 }
 
@@ -275,6 +275,73 @@ function vacio(requireInputs, mensaje, write, writeError) {
   return 0;
 }
 
+const hoyPorDefecto = () => new Date().toISOString().slice(0, 10);
+const problema = (codigo, mensaje) => ({ codigo, mensaje });
+
+/**
+ * El contrato leído y validado, con la lista de intocables. Sin efectos: lo comparten el verificador y
+ * el ejecutor, para que los dos juzguen la misma regla con el mismo código. `{ ausente: true }` es que
+ * no hay contrato (un proyecto sin regla no tiene nada que limpiar); `{ errores }` es que hay y no sirve.
+ */
+export function cargarContrato(ruta, cwd = '.', options = {}) {
+  const leer = options.leer ?? ((r) => readFileSync(join(cwd, r), 'utf8'));
+  let crudo;
+  try {
+    crudo = leer(ruta);
+  } catch (error) {
+    if (error.code === 'ENOENT') return { ausente: true };
+    return { errores: [problema('AUTOLIMPIEZA_CONTRACT_INVALID', `no se puede leer ${ruta}: ${error.message}`)] };
+  }
+  let contrato;
+  try {
+    contrato = JSON.parse(crudo);
+  } catch (error) {
+    return { errores: [problema('AUTOLIMPIEZA_CONTRACT_INVALID', `${ruta} no se puede leer como JSON: ${error.message}`)] };
+  }
+  let intocables;
+  try {
+    intocables = (options.leerIntocables ?? leerIntocables)(cwd);
+  } catch (error) {
+    return { errores: [problema('AUTOLIMPIEZA_INTOCABLES_UNREADABLE', `no se pudo saber qué es intocable, y sin esa lista no se juzga una limpieza: ${error.message}`)] };
+  }
+  const malos = validarContrato(contrato, intocables);
+  if (malos.length > 0) return { errores: malos.map((m) => problema('AUTOLIMPIEZA_CONTRACT_INVALID', m)) };
+  return { contrato, intocables };
+}
+
+/**
+ * El registro y la cuarentena de un proyecto contra su contrato. Devuelve `estado`: `vacio` (no hay log o
+ * no tiene acciones: nada que comparar), `ok` o `rechazo`, y con él lo que el ejecutor necesita para
+ * actuar —`pendientes`, las `entradas` ya leídas y el `contenidoLog` para sellar la línea siguiente—.
+ */
+export function juzgarProyecto(contrato, intocables, cwd = '.', options = {}) {
+  const leer = options.leer ?? ((r) => readFileSync(join(cwd, r), 'utf8'));
+  const base = { problemas: [], pendientes: [], resueltas: 0, vencidas: 0, acciones: 0, entradas: [], contenidoLog: '' };
+  let log;
+  try {
+    log = leer(contrato.log);
+  } catch (error) {
+    if (error.code === 'ENOENT') return { ...base, estado: 'vacio', motivo: `el contrato está bien formado y no hay log en ${contrato.log}: ninguna limpieza registrada, nada que comparar.` };
+    return { ...base, estado: 'rechazo', problemas: [problema('AUTOLIMPIEZA_LOG_UNREADABLE', `no se puede leer ${contrato.log}: ${error.message}`)] };
+  }
+  const lineas = parseAuditLines(log);
+  if (lineas.length === 0) return { ...base, estado: 'vacio', motivo: `${contrato.log} no tiene ninguna acción: ninguna limpieza registrada, nada que comparar.`, contenidoLog: log };
+  const cadena = verifyChain(log);
+  if (!cadena.ok) return { ...base, estado: 'rechazo', problemas: [problema('AUTOLIMPIEZA_LOG_BROKEN', `${contrato.log} rompe su cadena en la línea ${cadena.brokenLine}: ${cadena.reason}`)], contenidoLog: log };
+  const sinSello = lineas.find((linea) => linea.chain === null);
+  if (sinSello !== undefined) {
+    return { ...base, estado: 'rechazo', problemas: [problema('AUTOLIMPIEZA_LOG_UNSEALED', `la línea ${sinSello.index} de ${contrato.log} no tiene sello: la limpieza no tiene un pasado anterior que tolerar, así que una línea sin sello es una escrita a mano`)], contenidoLog: log };
+  }
+  const entradas = lineas.map((linea) => ({ ...parsearLinea(linea.text), indice: linea.index }));
+  const registro = juzgarRegistro(entradas, contrato, intocables);
+  const cuarentena = juzgarCuarentena(contrato, registro.pendientes, options.hoy ?? hoyPorDefecto(), cwd, options.io);
+  const problemas = [
+    ...registro.problemas.map((m) => problema('AUTOLIMPIEZA_LOG_INVALID', m)),
+    ...cuarentena.problemas.map((m) => problema('AUTOLIMPIEZA_QUARANTINE_INCONSISTENT', m)),
+  ];
+  return { estado: problemas.length > 0 ? 'rechazo' : 'ok', problemas, pendientes: registro.pendientes, resueltas: registro.resueltas, vencidas: cuarentena.vencidas, acciones: lineas.length, entradas, contenidoLog: log };
+}
+
 export function main(args = process.argv.slice(2), options = {}) {
   const write = options.write ?? console.log;
   const writeError = options.writeError ?? console.error;
@@ -285,62 +352,19 @@ export function main(args = process.argv.slice(2), options = {}) {
   }
   const requireInputs = flags.includes(REQUIRE_INPUTS_FLAG);
   const cwd = options.cwd ?? '.';
-  const leer = options.leer ?? ((ruta) => readFileSync(join(cwd, ruta), 'utf8'));
-  const rechazar = (codigo, mensaje) => {
-    writeError(`REJECTED: ${codigo}: ${mensaje}`);
+  const rechazar = (items) => {
+    for (const item of items) writeError(`REJECTED: ${item.codigo}: ${item.mensaje}`);
     return 1;
   };
 
-  let crudo;
-  try {
-    crudo = leer(args[1]);
-  } catch (error) {
-    if (error.code === 'ENOENT') return vacio(requireInputs, `no hay contrato en ${args[1]}: un proyecto sin regla de limpieza no tiene nada que comparar.`, write, writeError);
-    return rechazar('AUTOLIMPIEZA_CONTRACT_INVALID', `no se puede leer ${args[1]}: ${error.message}`);
-  }
-  let contrato;
-  try {
-    contrato = JSON.parse(crudo);
-  } catch (error) {
-    return rechazar('AUTOLIMPIEZA_CONTRACT_INVALID', `${args[1]} no se puede leer como JSON: ${error.message}`);
-  }
-  let intocables;
-  try {
-    intocables = (options.leerIntocables ?? leerIntocables)(cwd);
-  } catch (error) {
-    return rechazar('AUTOLIMPIEZA_INTOCABLES_UNREADABLE', `no se pudo saber qué es intocable, y sin esa lista no se juzga una limpieza: ${error.message}`);
-  }
-  const malos = validarContrato(contrato, intocables);
-  if (malos.length > 0) {
-    for (const problema of malos) writeError(`REJECTED: AUTOLIMPIEZA_CONTRACT_INVALID: ${problema}`);
-    return 1;
-  }
+  const cargado = cargarContrato(args[1], cwd, options);
+  if (cargado.ausente) return vacio(requireInputs, `no hay contrato en ${args[1]}: un proyecto sin regla de limpieza no tiene nada que comparar.`, write, writeError);
+  if (cargado.errores) return rechazar(cargado.errores);
 
-  let log;
-  try {
-    log = leer(contrato.log);
-  } catch (error) {
-    if (error.code === 'ENOENT') return vacio(requireInputs, `el contrato está bien formado y no hay log en ${contrato.log}: ninguna limpieza registrada, nada que comparar.`, write, writeError);
-    return rechazar('AUTOLIMPIEZA_LOG_UNREADABLE', `no se puede leer ${contrato.log}: ${error.message}`);
-  }
-  const lineas = parseAuditLines(log);
-  if (lineas.length === 0) return vacio(requireInputs, `${contrato.log} no tiene ninguna acción: ninguna limpieza registrada, nada que comparar.`, write, writeError);
-  const cadena = verifyChain(log);
-  if (!cadena.ok) return rechazar('AUTOLIMPIEZA_LOG_BROKEN', `${contrato.log} rompe su cadena en la línea ${cadena.brokenLine}: ${cadena.reason}`);
-  const sinSello = lineas.find((linea) => linea.chain === null);
-  if (sinSello !== undefined) {
-    return rechazar('AUTOLIMPIEZA_LOG_UNSEALED', `la línea ${sinSello.index} de ${contrato.log} no tiene sello: la limpieza no tiene un pasado anterior que tolerar, así que una línea sin sello es una escrita a mano`);
-  }
-
-  const registro = juzgarRegistro(lineas.map((linea) => ({ ...parsearLinea(linea.text), indice: linea.index })), contrato, intocables);
-  const hoy = options.hoy ?? new Date().toISOString().slice(0, 10);
-  const cuarentena = juzgarCuarentena(contrato, registro.pendientes, hoy, cwd, options.io);
-  if (registro.problemas.length + cuarentena.problemas.length > 0) {
-    for (const problema of registro.problemas) writeError(`REJECTED: AUTOLIMPIEZA_LOG_INVALID: ${problema}`);
-    for (const problema of cuarentena.problemas) writeError(`REJECTED: AUTOLIMPIEZA_QUARANTINE_INCONSISTENT: ${problema}`);
-    return 1;
-  }
-  write(`OK: ${args[1]} y ${contrato.log}: ${lineas.length} acción(es) selladas, ${registro.pendientes.length} en cuarentena (${cuarentena.vencidas} vencida(s), ya purgables), ${registro.resueltas} resuelta(s); lo que está en la cuarentena es lo que el log dice haber movido.`);
+  const estado = juzgarProyecto(cargado.contrato, cargado.intocables, cwd, options);
+  if (estado.estado === 'vacio') return vacio(requireInputs, estado.motivo, write, writeError);
+  if (estado.estado === 'rechazo') return rechazar(estado.problemas);
+  write(`OK: ${args[1]} y ${cargado.contrato.log}: ${estado.acciones} acción(es) selladas, ${estado.pendientes.length} en cuarentena (${estado.vencidas} vencida(s), ya purgables), ${estado.resueltas} resuelta(s); lo que está en la cuarentena es lo que el log dice haber movido.`);
   write(LIMITE);
   return 0;
 }

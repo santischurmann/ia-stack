@@ -265,14 +265,24 @@ borra— y sólo una purga posterior, vencida la retención, lo elimina de verda
   edad—, no que valgan eso.
 
 ```bash
+node scripts/autolimpieza.mjs listar contracts/autolimpieza.json     # qué se movería y por qué se omite el resto; no escribe nada
+node scripts/autolimpieza.mjs aplicar contracts/autolimpieza.json    # mueve a la cuarentena y sella el log
+node scripts/autolimpieza.mjs purgar contracts/autolimpieza.json     # elimina de verdad lo que cumplió su retención
+node scripts/autolimpieza.mjs restaurar contracts/autolimpieza.json 2026-10-05-001
 node scripts/verify-autolimpieza.mjs check contracts/autolimpieza.json
 ```
 
-**Lo que no puede hacer:** comprueba que el **registro** es consistente y que lo que está en la
-cuarentena es lo que el log dice haber movido; **no que lo movido fuera lo correcto ni que su contenido
-no importara**. Algo borrado por fuera del ejecutor no aparece en el log, las fechas las escribe quien
-limpia, y una cuarentena en el mismo disco no protege de un fallo del disco. Esta fase sólo trae el
-verificador: el ejecutor que mueve y purga llega en la siguiente.
+El ejecutor **no borra de entrada**, no actúa sobre un registro que el verificador rechaza y no toca una
+carpeta con una fuente intocable adentro, ni para moverla ni para purgarla. La edad de una candidata es
+la de **lo más reciente que hay adentro**, no la de su carpeta: una corrida en curso escribe archivos sin
+cambiar la fecha de la carpeta. Se mueve y **después** se sella el log; si sellar falla, lo movido
+vuelve a su lugar.
+
+**Lo que no pueden hacer:** el verificador comprueba que el **registro** es consistente y que lo que está
+en la cuarentena es lo que el log dice haber movido; **no que lo movido fuera lo correcto ni que su
+contenido no importara**. Algo borrado por fuera del ejecutor no aparece en el log, las fechas las
+escribe quien limpia y una cuarentena en el mismo disco no protege de un fallo del disco.
+Además **no hay exclusión entre dos corridas simultáneas**: dos `aplicar` a la vez pueden pisarse.
 
 ---
 

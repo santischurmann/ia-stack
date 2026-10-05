@@ -786,6 +786,12 @@
       "file": "skills/gates.md",
       "phrase": "no que lo movido fuera lo correcto ni que su contenido no importara",
       "why": "verify-autolimpieza comprueba que el registro de una limpieza es consistente y que la cuarentena coincide con el log, no que lo que se movio fuera lo correcto: el sha256 identifica bytes, no su valor. Sin este limite un verde se lee como \"se limpio bien\", cuando es \"se limpio lo que el log dice, dentro de lo que el contrato permite\"."
+    },
+    {
+      "limit_id": "autolimpieza-has-no-mutual-exclusion",
+      "file": "README.md",
+      "phrase": "no hay exclusión entre dos corridas simultáneas",
+      "why": "autolimpieza.mjs lee el log, mueve y sella, sin un candado entre corridas: dos aplicar a la vez pueden asignar el mismo identificador o pisarse. Sin este limite se lee como una operacion atomica, y no lo es."
     }
   ]
 }

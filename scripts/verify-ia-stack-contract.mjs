@@ -124,6 +124,8 @@ export const REQUIREMENTS = [
   ['skills/gates.md', /verify-autolimpieza\.mjs check/u, 'autocleaning rule verifier in the gate reference'],
   ['README.md', /verify-autolimpieza\.mjs check contracts\/autolimpieza\.json/u, 'autocleaning rule verifier documented with its command'],
   ['README.md', /\*\*nada se borra de entrada\*\*/u, 'autocleaning: nothing is deleted at first, everything goes through quarantine'],
+  ['README.md', /autolimpieza\.mjs listar contracts\/autolimpieza\.json/u, 'autocleaning executor documented with its safe default command'],
+  ['README.md', /no actúa sobre un registro que el verificador rechaza/u, 'autocleaning executor refuses to act on a registry the verifier rejects'],
   ['SKILL.md', /\*\*Modo continuo\*\*/u, 'continuous mode: one approval per plan version'],
   ['SKILL.md', /PHASE_DECISION_FABRICATED_CHOICE/u, 'continuous mode forbids a fabricated per-phase choice'],
   ['skills/gates.md', /Modo continuo:/u, 'continuous mode documented in the gate reference'],

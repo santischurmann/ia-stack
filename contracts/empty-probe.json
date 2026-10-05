@@ -546,6 +546,14 @@
         "contracts/autolimpieza.json"
       ],
       "expect": "empty"
+    },
+    {
+      "script": "autolimpieza.mjs",
+      "args": [
+        "listar",
+        "contracts/autolimpieza.json"
+      ],
+      "expect": "empty"
     }
   ]
 }

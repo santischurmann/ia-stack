@@ -683,6 +683,10 @@
       "class": "evidencia"
     },
     {
+      "path": "scripts/autolimpieza.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/build-zip.sh",
       "class": "gate"
     },
@@ -1152,6 +1156,18 @@
     },
     {
       "path": "tests/_receipt-fixture.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/autolimpieza-bootstrap-cli.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/autolimpieza-bootstrap-falsy.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/autolimpieza.test.mjs",
       "class": "prueba"
     },
     {
