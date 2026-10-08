@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+- **El adaptador de vitest ya no rechaza un rojo válido cuando la ruta del proyecto tiene espacios.**
+  `ubicacionDelStack` de `scripts/verify-red-vitest.mjs` no aceptaba espacios en la ruta del frame ni
+  decodificaba las URL `file://`, así que un proyecto con espacios en la ruta perdía el frame
+  del test, caía en un frame de `node_modules` con la ruta codificada (`%20`) y el rojo se rechazaba
+  (medido en un proyecto real con espacios en la ruta el 08-10-2026). Ahora lee el stack renglón por renglón, toma la
+  ruta completa con o sin paréntesis, convierte `file://` con `fileURLToPath` y sigue devolviendo la primera
+  referencia, o `null` si no hay ninguna. Una URL `file://` inválida (`%zz`, `%2F`, ruta no admitida por la
+  plataforma) ahora devuelve `null` en vez de lanzar, y el gate rechaza explicando el motivo. Lo fijan
+  `tests/verify-red-vitest-rutas.test.mjs` y `tests/verify-red-vitest-rutas-borde.test.mjs`.
+
 ---
 
 ## [3.2.0] — 2026-10-05

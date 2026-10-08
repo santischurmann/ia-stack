@@ -48,6 +48,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { isContainedProjectPath } from './verify-red-node.mjs';
 
@@ -96,10 +97,41 @@ export function clasificarReporte(bruto) {
   };
 }
 
-/** La primera referencia `archivo:línea:columna` del stack, que es donde vitest señala el fallo. */
+/**
+ * La primera referencia `archivo:línea:columna` del stack, que es donde vitest señala el fallo.
+ *
+ * LA RUTA PUEDE TENER ESPACIOS, y la primera versión no lo toleraba: la regex exigía `[^\s()]+` para
+ * la ruta, así que `C:\proj con espacios\...\t.test.ts:5:45` no enganchaba el frame del test, la
+ * búsqueda caía en un frame posterior de `node_modules` con forma `file:///.../proj%20con%20espacios/...`
+ * sin decodificar, y un rojo VÁLIDO de vitest se rechazaba (medido en un proyecto real con espacios en
+ * la ruta el 08-10-2026). Un falso negativo exactamente sobre el rojo que había que aprobar.
+ *
+ * Ahora se lee renglón por renglón: con paréntesis, la ruta es TODO lo de adentro hasta
+ * `:línea:columna`; sin paréntesis, TODO lo que sigue a `at ` hasta `:línea:columna` al final del
+ * renglón. Si la ruta es una URL `file://` se convierte con `fileURLToPath` (decodifica `%20` y
+ * devuelve la ruta de sistema). Devuelve la PRIMERA referencia, o `null` si no hay ninguna.
+ *
+ * UNA URL `file://` QUE NO SE PUEDE CONVERTIR también es `null`: `fileURLToPath` lanza ante un escape
+ * inválido (`%zz`, `URIError`), un `%2F` o un host/ruta que la plataforma no admite
+ * (`ERR_INVALID_FILE_URL_PATH`). Es una referencia inutilizable, no un fallo del gate, y `main` ya
+ * convierte el `null` en un rechazo explicado; dejar escapar el throw sería una excepción cruda sin
+ * motivo. No se salta al frame siguiente: la primera referencia es la que cuenta.
+ */
 export function ubicacionDelStack(mensaje) {
-  const m = String(mensaje ?? '').match(/at\s+(?:.*?\()?([^\s()]+?):(\d+):(\d+)\)?/u);
-  return m ? { archivo: m[1], linea: Number(m[2]) } : null;
+  for (const renglon of String(mensaje ?? '').split('\n')) {
+    const m = renglon.match(/^\s*at\s+(?:.*?\((.+?):(\d+):(\d+)\)|(.+?):(\d+):(\d+))\s*$/u);
+    if (!m) continue;
+    const ruta = m[1] ?? m[4];
+    try {
+      return {
+        archivo: ruta.startsWith('file://') ? fileURLToPath(ruta) : ruta,
+        linea: Number(m[2] ?? m[5]),
+      };
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /** La ruta que entra por la linea de comandos: relativa al proyecto, literal, y adentro. */

@@ -1579,6 +1579,14 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-red-vitest-rutas-borde.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-red-vitest-rutas.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-red-vitest.test.mjs",
       "class": "prueba"
     },
