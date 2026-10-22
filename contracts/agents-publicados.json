@@ -1,0 +1,12 @@
+{
+  "schema": "ia.agents-publicados/1",
+  "why": "El hash de git (blob, sobre el texto con finales LF) de cada AGENTS.md que IA Stack publico. El instalador actualiza un AGENTS.md existente SOLO si su hash esta aca: entonces lo escribio un instalador anterior y nadie lo edito. Cualquier otro es de la persona y no se toca. Sin esta lista, el AGENTS.md que escribia el instalador quedaba congelado para siempre: el 22-10-2026 dos proyectos del operador seguian mandando a leer el protocolo entero y uno a la carpeta del nombre anterior. Lo fija tests/agents-publicados.test.mjs, que exige el hash del AGENTS.md actual y el de cada version de la historia.",
+  "blobs": [
+    "3db922ebac769b5ce02b7aa6e026e68fd97346f5",
+    "f3f5e5cbff01683a86e07f2afb3260a5acae748a",
+    "5a56ad6eeb35420936d203e8c5576f266b13e9b6",
+    "309181366a4ad1a5f77ac3e33880dc13da5bcfa6",
+    "0cc390c6ee72820e1b8e604a28bcc773d1d8ffab",
+    "4bb279567369116823212a096dad9954eac20687"
+  ]
+}

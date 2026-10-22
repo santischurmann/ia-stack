@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertApartado, assertGitignoreIntacto, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+import { assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -19,6 +19,21 @@ test('un .gitignore sin salto de línea final no pierde su última regla', { ski
     const result = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
     assert.equal(result.status, 0, result.output);
     assertGitignoreIntacto(project);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('un AGENTS.md que escribió el instalador se actualiza aunque venga con CRLF, y el .gitignore CRLF no mezcla finales', { skip: !hayBash }, () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    plantarAgentsPublicado(project, 'CRLF');
+    plantarGitignoreCrlf(project);
+    const command = `'${toBash(installSh)}' --target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(project)}'`;
+    const result = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
+    assert.equal(result.status, 0, result.output);
+    assertAgentsActualizado(project, result.output);
+    assertGitignoreSinMezcla(project);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

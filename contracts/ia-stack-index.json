@@ -91,6 +91,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/agents-publicados.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/autolimpieza.json",
       "class": "contrato"
     },
@@ -1068,6 +1072,10 @@
     },
     {
       "path": "tests/_receipt-fixture.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/agents-publicados.test.mjs",
       "class": "prueba"
     },
     {

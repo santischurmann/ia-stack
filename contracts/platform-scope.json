@@ -53,6 +53,13 @@
     },
     {
       "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "un AGENTS.md que escribió el instalador se actualiza, y el .gitignore CRLF no mezcla finales, también en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "Fuera de Windows no se comprueba que el instalador de PowerShell reconozca por su hash un AGENTS.md que el mismo escribio, ni que agregue reglas a un .gitignore CRLF sin mezclar finales. El de bash si se comprueba: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
       "archivo": "tests/install-project-only.test.mjs",
       "prueba": "-ProjectOnly instala el runtime en el proyecto y no escribe nada fuera de el, tambien en PowerShell",
       "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",

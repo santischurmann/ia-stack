@@ -93,13 +93,25 @@ function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
 # de linea, primero se termina la ultima: Add-Content pega lo que agrega a esa linea, y con `.env` al
 # final quedaba «.env# IA Stack: ...» y `.env` dejaba de ignorarse, sin aviso. install.sh ya miraba el
 # ultimo byte; aca faltaba. Lo encontro la cuarta revision del 2026-09-27.
+# CADA REGLA SALE CON EL FINAL DE LINEA QUE EL ARCHIVO YA USA: ver install.sh. `Add-Content` escribia
+# siempre CRLF, asi que un .gitignore LF quedaba con finales mezclados (22-10-2026). Sin BOM y sin
+# depender de la configuracion regional: los bytes se escriben a mano.
 function Add-ReglaIgnorada([string]$Archivo, [string]$Comentario, [string]$Regla) {
+  $eol = "`n"
   if (Test-Path -LiteralPath $Archivo) {
-    $texto = Get-Content -LiteralPath $Archivo -Raw
-    if ($texto -and -not $texto.EndsWith("`n")) { Add-Content -LiteralPath $Archivo -Value '' }
+    $texto = [System.IO.File]::ReadAllText($Archivo)
+    if ($texto.Contains("`r`n")) { $eol = "`r`n" }
+    if ($texto.Length -gt 0 -and -not $texto.EndsWith("`n")) { [System.IO.File]::AppendAllText($Archivo, $eol) }
   }
-  Add-Content -LiteralPath $Archivo -Value $Comentario
-  Add-Content -LiteralPath $Archivo -Value $Regla
+  [System.IO.File]::AppendAllText($Archivo, "$Comentario$eol$Regla$eol")
+}
+
+# El hash de blob de git del texto sin CR: el mismo que `tr -d '\r' < f | git hash-object --stdin`.
+function Get-HashGitLf([string]$Archivo) {
+  $sinCr = [byte[]]@([System.IO.File]::ReadAllBytes($Archivo) | Where-Object { $_ -ne 13 })
+  $cabecera = [System.Text.Encoding]::ASCII.GetBytes("blob $($sinCr.Length)`0")
+  $sha = [System.Security.Cryptography.SHA1]::Create()
+  return (($sha.ComputeHash([byte[]]($cabecera + $sinCr)) | ForEach-Object { $_.ToString('x2') }) -join '')
 }
 
 # SI UNA RUTA ESTA COMMITEADA EN EL PROYECTO: moverla deja un borrado en su git, y eso se avisa. Con la
@@ -184,7 +196,7 @@ if ($ProjectDir) {
   $IgnoreFile = Join-Path $ProjectDir '.gitignore'
   $ArchiveRule = '.claude-archive/'
   if (-not (Test-Path -LiteralPath $IgnoreFile) -or -not ((Get-Content -LiteralPath $IgnoreFile) -contains $ArchiveRule)) {
-    Add-Content -LiteralPath $IgnoreFile -Value "`n# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea`n$ArchiveRule"
+    Add-ReglaIgnorada $IgnoreFile '# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea' $ArchiveRule
     Write-Output "OK: $ArchiveRule agregado a .gitignore"
   }
   $ignoreFile = Join-Path $ProjectDir '.gitignore'
@@ -212,10 +224,19 @@ if ($ProjectDir) {
   if ((Resolve-Path -LiteralPath $CodexSkillSrc).Path -ne $CodexSkillDst) {
     Copy-Item $CodexSkillSrc $CodexSkillDir -Force
   }
+  # UN AGENTS.md QUE ESCRIBIO UN INSTALADOR ANTERIOR Y NADIE EDITO se reconoce por su hash y se
+  # actualiza: ver install.sh y contracts/agents-publicados.json. Cualquier otro no se toca.
   $ProjectAgents = Join-Path $ProjectDir 'AGENTS.md'
+  $PackageAgents = "$PackageDir\AGENTS.md"
+  $Publicados = (Get-Content -LiteralPath "$PackageDir\contracts\agents-publicados.json" -Raw | ConvertFrom-Json).blobs
   if (-not (Test-Path -LiteralPath $ProjectAgents)) {
-    Copy-Item "$PackageDir\AGENTS.md" $ProjectAgents -Force
+    Copy-Item $PackageAgents $ProjectAgents -Force
     Write-Output "OK: AGENTS.md creado -> Codex ya ve el protocolo"
+  } elseif ((Get-FileHash -LiteralPath $PackageAgents).Hash -eq (Get-FileHash -LiteralPath $ProjectAgents).Hash) {
+    # Ya es el de esta version.
+  } elseif ($Publicados -contains (Get-HashGitLf $ProjectAgents)) {
+    Copy-Item $PackageAgents $ProjectAgents -Force
+    Write-Output "ACTUALIZADO: $ProjectAgents era el que escribio un instalador anterior, sin editar; ahora es el de esta version."
   } else {
     Write-Output "NOTE: $ProjectAgents ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
     # El que escribio el instalador viejo apunta a la carpeta del nombre anterior: ver install.sh.

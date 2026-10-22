@@ -11,7 +11,7 @@ agentes, simple hacia la persona**. El modo breve —el «caveman interno», pro
 ningún plugin externo— vive en `skills/modo-breve.md`; `skills/caveman-tdd.md` es otra cosa: las
 reglas del gate TDD.
 
-**Versión:** 3.2.0 · etiquetada como `v3.2.0` en git.
+**Versión:** 3.3.0 · etiquetada como `v3.3.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 

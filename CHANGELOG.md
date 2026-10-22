@@ -7,6 +7,30 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+---
+
+## [3.3.0] — 2026-10-22
+
+**Versión menor: agrega, y lo que ya existía sigue andando.** Cambia cómo se gasta —un push al
+final, un modelo por rol, leer por el mapa— y nada que un proyecto ya tenga deja de pasar. Lo único
+que pide atención al reinstalar: el instalador ahora actualiza un `AGENTS.md` que él mismo escribió.
+
+### El instalador, después de reinstalar en los proyectos del operador (22-10-2026)
+
+- **Un `AGENTS.md` que escribió un instalador anterior, sin editar, ahora se actualiza.** Se
+  reconoce por su hash de git sobre el texto con LF, contra `contracts/agents-publicados.json`, así
+  que también coincide en un checkout CRLF; cualquier otro `AGENTS.md` es de la persona y no se toca.
+  Medido al reinstalar: dos proyectos seguían con el de un instalador viejo, que mandaba a leer el
+  protocolo entero y, en uno, a la carpeta del nombre anterior. Lo fijan
+  `tests/agents-publicados.test.mjs` —el hash del `AGENTS.md` actual y el de cada versión de la
+  historia tienen que estar en la lista— y un caso nuevo en cada instalador.
+- **Las reglas del `.gitignore` salen con el final de línea que el archivo ya usa.** El de bash
+  agregaba LF y el de PowerShell CRLF, sin mirar: tres proyectos quedaron con finales mezclados. Y
+  bash no encontraba una regla ya puesta en una línea CRLF, así que cada reinstalación la iba a
+  duplicar. El de PowerShell, además, agregaba la primera regla por un camino propio.
+
+### Antes, en el mismo ciclo
+
 - **El adaptador de vitest ya no rechaza un rojo válido cuando la ruta del proyecto tiene espacios.**
   `ubicacionDelStack` de `scripts/verify-red-vitest.mjs` no aceptaba espacios en la ruta del frame ni
   decodificaba las URL `file://`, así que un proyecto con espacios en la ruta perdía el frame
@@ -19,7 +43,7 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 - **Una prueba nombraba un proyecto privado, y el gate de nombres pasa a exigir su lista en CI**
   (`d3c2695`, que había quedado afuera de esta lista).
 
-### Gastar menos: un push al final, modelos por rol y modo breve propio (22-10-2026)
+#### Gastar menos: un push al final, modelos por rol y modo breve propio (22-10-2026)
 
 Pedido del operador después de leer «How to be more ambitious» de Felix Rieseberg (13-10-2026) y de
 medir su propio consumo. Pasó por dos rondas de brainstorm y dos de refutación con jueces externos

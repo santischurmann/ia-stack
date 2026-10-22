@@ -177,29 +177,29 @@ if [ -n "$PROJECT_DIR" ]; then
   IGNORE_FILE="$PROJECT_DIR/.gitignore"
   # PHASE 9 archiva configuracion en .claude-archive/. Puede traer rutas, tokens o datos propios:
   # si queda con seguimiento, el primer commit del usuario se lleva todo eso adentro.
+  # CADA REGLA SALE CON EL FINAL DE LINEA QUE EL ARCHIVO YA USA, y se busca sin el CR. Hasta el
+  # 22-10-2026 se agregaba con LF a cualquier archivo: un .gitignore CRLF quedaba con finales mezclados
+  # (git avisaba en cada operacion, medido en tres proyectos del operador), y `grep -x` no encontraba
+  # una regla ya puesta en una linea CRLF, asi que cada reinstalacion la iba a duplicar.
+  agregar_regla() {
+    local comentario="$1" regla="$2" eol=$'\n'
+    if [ -f "$IGNORE_FILE" ] && tr -d '\r' < "$IGNORE_FILE" | grep -qxF "$regla"; then return 1; fi
+    # `tr` y no `grep $'\r'`: el grep de Git Bash abre en modo texto y no ve el CR, medido.
+    if [ -f "$IGNORE_FILE" ] && [ "$(tr -cd '\r' < "$IGNORE_FILE" | wc -c)" -gt 0 ]; then eol=$'\r\n'; fi
+    if [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE" | tr -d '\r')" ]; then printf '%s' "$eol" >> "$IGNORE_FILE"; fi
+    printf '%s%s%s%s' "$comentario" "$eol" "$regla" "$eol" >> "$IGNORE_FILE"
+  }
   ARCHIVE_RULE=".claude-archive/"
-  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$ARCHIVE_RULE" "$IGNORE_FILE"; then
-    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
-    printf '# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea
-%s
-' "$ARCHIVE_RULE" >> "$IGNORE_FILE"
+  if agregar_regla '# IA Stack PHASE 9: lo que la limpieza archiva, nunca se commitea' "$ARCHIVE_RULE"; then
     echo "OK: $ARCHIVE_RULE agregado a .gitignore"
   fi
   # Lo que la poda mueve es una copia del runtime, igual que el runtime: tampoco se versiona.
   RUNTIME_ARCHIVE_RULE=".vibe/ia-stack-archive/"
-  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$RUNTIME_ARCHIVE_RULE" "$IGNORE_FILE"; then
-    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
-    printf '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto
-%s
-' "$RUNTIME_ARCHIVE_RULE" >> "$IGNORE_FILE"
+  if agregar_regla '# IA Stack: lo que el instalador poda del runtime viejo, tampoco es codigo del proyecto' "$RUNTIME_ARCHIVE_RULE"; then
     echo "OK: $RUNTIME_ARCHIVE_RULE agregado a .gitignore"
   fi
   IGNORE_RULE=".vibe/ia-stack-runtime/"
-  if [ ! -f "$IGNORE_FILE" ] || ! grep -qxF "$IGNORE_RULE" "$IGNORE_FILE"; then
-    [ -s "$IGNORE_FILE" ] && [ -n "$(tail -c 1 "$IGNORE_FILE")" ] && echo "" >> "$IGNORE_FILE"
-    printf '# IA Stack: copia del runtime, no es codigo del proyecto
-%s
-' "$IGNORE_RULE" >> "$IGNORE_FILE"
+  if agregar_regla '# IA Stack: copia del runtime, no es codigo del proyecto' "$IGNORE_RULE"; then
     echo "OK: $IGNORE_RULE agregado a .gitignore"
   fi
   # Codex descubre skills de repositorio SOLO en .agents/skills/<nombre>/SKILL.md y en
@@ -215,9 +215,22 @@ if [ -n "$PROJECT_DIR" ]; then
   if [ "$CODEX_SKILL_SRC" != "$CODEX_SKILL_DST" ]; then
     cp "$CODEX_SKILL_SRC" "$CODEX_SKILL_DST"
   fi
+  # UN AGENTS.md QUE ESCRIBIO UN INSTALADOR ANTERIOR Y NADIE EDITO se reconoce por su hash de git
+  # sobre el texto con LF, contra contracts/agents-publicados.json, y se actualiza. Cualquier otro es
+  # de la persona y no se toca. Sin esto quedaba congelado: el 22-10-2026 dos proyectos del operador
+  # seguian mandando a leer el protocolo entero, y uno a la carpeta del nombre anterior.
+  AGENTS_HASH=""
+  if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
+    AGENTS_HASH="$(tr -d '\r' < "$PROJECT_DIR/AGENTS.md" | git hash-object --stdin 2>/dev/null || true)"
+  fi
   if [ ! -f "$PROJECT_DIR/AGENTS.md" ]; then
     cp "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
     echo "OK: AGENTS.md creado -> Codex ya ve el protocolo"
+  elif cmp -s "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"; then
+    :
+  elif [ -n "$AGENTS_HASH" ] && grep -q "\"$AGENTS_HASH\"" "$PACKAGE_DIR/contracts/agents-publicados.json"; then
+    cp "$PACKAGE_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
+    echo "ACTUALIZADO: $PROJECT_DIR/AGENTS.md era el que escribio un instalador anterior, sin editar; ahora es el de esta version."
   else
     echo "NOTE: $PROJECT_DIR/AGENTS.md ya existe y no se toca. Agregale a mano un puntero a .vibe/ia-stack-runtime/SKILL.md."
     # El que escribio el instalador viejo apunta a la carpeta del nombre anterior, que este mismo

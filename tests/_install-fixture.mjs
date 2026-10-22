@@ -19,6 +19,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 import { resolveBash } from './_entorno.mjs';
 
@@ -109,6 +110,60 @@ export function plantarRuntimeAnterior(project) {
 // y el AGENTS.md que escribio el instalador viejo sigue apuntando a la carpeta que la poda acaba de
 // mover, y solo se imprimia el aviso generico de «ya existe».
 export const AGENTS_ANTERIOR = 'Leé el protocolo en `.vibe/vcp-runtime/SKILL.md` antes de operar.\n';
+
+// UN AGENTS.md QUE ESCRIBIO EL INSTALADOR Y NADIE TOCO. Hasta el 22-10-2026 el instalador nunca
+// reescribia un AGENTS.md existente, porque podia ser del usuario; pero la mayoria lo habia escrito
+// el propio instalador, y quedaba congelado: en los proyectos del operador seguia diciendo «leé el
+// protocolo entero» despues de que el protocolo dejara de pedirlo. Ahora lo reconoce por su hash
+// —el de git, sobre el texto con LF, para que un checkout CRLF tambien coincida— contra
+// contracts/agents-publicados.json, y solo entonces lo actualiza. Este es el de la 3.2.0, tal cual.
+export const AGENTS_PUBLICADO_3_2_0 = [
+  '# IA Stack', '',
+  '**Leé el protocolo entero antes de operar**: son once fases con gates mecánicos, y saltarse uno',
+  'invalida el resto. Está en `SKILL.md` si este es el repositorio de IA Stack, o en',
+  '`.vibe/ia-stack-runtime/SKILL.md` si IA Stack está instalado acá como herramienta.', '',
+  'Reglas que no dependen de la fase:', '',
+  '- Cada decisión se presenta como **menú de opciones en lista Markdown**, con una recomendación',
+  '  explícita, y se espera la respuesta antes de seguir. Nunca una pregunta abierta para una',
+  '  decisión de protocolo.',
+  '- Sin test rojo visible no hay implementación.',
+  '- Los gates viven en `scripts/*.mjs`, son Node nativo sin dependencias y se corren, no se narran.', '',
+  '- La limpieza de PHASE 9 **no borra nada**: archiva y deja un comando de vuelta atrás.', '',
+  'Este archivo es un puntero, no una copia: si dice algo distinto del protocolo, manda el protocolo.', '',
+].join('\n');
+
+/** El hash de blob de git del texto con sus finales normalizados a LF: el mismo que da
+ * `tr -d '\r' < archivo | git hash-object --stdin`. */
+export function hashGitLf(texto) {
+  const cuerpo = Buffer.from(String(texto).replaceAll('\r', ''), 'utf8');
+  return createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${cuerpo.length}\0`), cuerpo])).digest('hex');
+}
+
+/** `finales` es 'LF' o 'CRLF': un nombre y no la secuencia, para que ningún shell la interprete. */
+export function plantarAgentsPublicado(project, finales = 'LF') {
+  const eol = finales === 'CRLF' ? '\r\n' : '\n';
+  writeFileSync(join(project, 'AGENTS.md'), AGENTS_PUBLICADO_3_2_0.replaceAll('\n', eol));
+}
+
+export function assertAgentsActualizado(project, salida) {
+  const actual = readFileSync(join(project, 'AGENTS.md'), 'utf8').replaceAll('\r', '');
+  const nuevo = readFileSync(join(repoRoot, 'AGENTS.md'), 'utf8').replaceAll('\r', '');
+  assert.equal(actual, nuevo, 'el AGENTS.md que escribio el instalador se actualiza a la version actual');
+  assert.match(salida, /ACTUALIZADO: [^\n]*AGENTS\.md/u, 'y se dice');
+}
+
+// UN .gitignore CON FINALES CRLF. El instalador de bash agregaba sus reglas con LF y el de PowerShell
+// con CRLF, sin mirar el archivo: en los proyectos del operador quedaban archivos con finales
+// mezclados y git avisaba en cada operacion. Ahora cada regla sale con el final que el archivo ya usa.
+export function plantarGitignoreCrlf(project) {
+  writeFileSync(join(project, '.gitignore'), 'node_modules/\r\n.env\r\n');
+}
+
+export function assertGitignoreSinMezcla(project) {
+  const texto = readFileSync(join(project, '.gitignore'), 'utf8');
+  assert.match(texto, /\.vibe\/ia-stack-runtime\//u);
+  assert.equal(texto.replaceAll('\r\n', '').includes('\n'), false, `quedo un LF suelto en un .gitignore CRLF: ${JSON.stringify(texto)}`);
+}
 
 export function plantarInstalacionAnteriorVersionada(project) {
   const git = (...args) => spawnSync('git', ['-C', project, ...args], { encoding: 'utf8' });
