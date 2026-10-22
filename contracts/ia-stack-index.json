@@ -143,6 +143,10 @@
       "class": "contrato"
     },
     {
+      "path": "contracts/model-routing.json",
+      "class": "contrato"
+    },
+    {
       "path": "contracts/nombre-anterior.json",
       "class": "contrato"
     },
@@ -879,6 +883,10 @@
       "class": "skill"
     },
     {
+      "path": "skills/modo-breve.md",
+      "class": "skill"
+    },
+    {
       "path": "skills/orchestrator-opus.md",
       "class": "skill"
     },
@@ -1079,6 +1087,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/ci-economico.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/coverage-scope.test.mjs",
       "class": "prueba"
     },
@@ -1111,6 +1123,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/model-routing.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/nombre-anterior.test.mjs",
       "class": "prueba"
     },
@@ -1140,6 +1156,10 @@
     },
     {
       "path": "tests/protocolo-e2e.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/protocolo-economico.test.mjs",
       "class": "prueba"
     },
     {

@@ -1,7 +1,9 @@
 # IA Stack
 
-**Leé el protocolo entero antes de operar**: son once fases con gates mecánicos, y saltarse uno
-invalida el resto. Está en `SKILL.md` si este es el repositorio de IA Stack, o en
+**Antes de operar, leé el protocolo por su § MAPA DE LECTURA**: el contrato interno, las leyes,
+el mapa y la sección de la fase en curso. Son once fases con gates mecánicos, y saltarse uno
+invalida el resto; leer todo de una vez cuesta unos 40.000 tokens que después viajan en cada
+mensaje. Está en `SKILL.md` si este es el repositorio de IA Stack, o en
 `.vibe/ia-stack-runtime/SKILL.md` si IA Stack está instalado acá como herramienta.
 
 Reglas que no dependen de la fase:

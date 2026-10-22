@@ -142,7 +142,7 @@ directory-wide ignore to hide undeclared writers.
       "test_files": ["src/__tests__/module.test.ts"],
       "test_types": ["unit", "integration", "e2e"],
       "subagents": ["red", "green", "triangulate", "refactor"],
-      "model_effort": "low",
+      "model_effort": null,
       "depends_on": [],
       "status": "pending",
       "goal": "<project mission> → <spec.md AC this serves> → <plan.md item>",
@@ -161,7 +161,7 @@ directory-wide ignore to hide undeclared writers.
 }
 ```
 
-`model_effort` — from Phase 5 CONFIG (`low` default; bump per-task if orchestrator/user flags it harder mid-build). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs` and `verify-scope-diff.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by either gate. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
+`model_effort` — optional override: `null` (the default) means the effort `contracts/model-routing.json` gives the role; a value may only RAISE it, never lower it, and escalation past effort goes by routing level (top N3 automatic). Status lifecycle: `pending→red→green→triangulate→refactor→done` — this is the resume ledger's cross-check; a killed session recovers from here. `files_to_create`, `files_to_modify`, and `test_files` are the complete declared write set for `verify-plan-conflicts.mjs` and `verify-scope-diff.mjs`; list every file the task may edit, because undeclared writers cannot be made safe by either gate. `not_reviewed` is an append-only array of `{gate, declaration, report_path}` from handoffs that passed `verify-handoff-report.mjs`; an empty array means no handoff has passed yet, not "nothing was omitted". Full field reference: `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL.
 
 ---
 

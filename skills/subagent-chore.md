@@ -69,22 +69,49 @@ Only update dependencies when instructed. When updating:
 
 Check if `.github/workflows/ci.yml` (or equivalent) exists.
 
-Ensure CI includes:
+**CI costs minutes on private repositories** (Windows runners count double). In September 2026 the
+operator's private repos spent 2,573 minutes and a billing cap blocked a run. So the workflow runs
+when there is something to publish, not on every push: `push` only to `main`, pull requests, and a
+manual trigger; one OS; the suite runs once (the coverage run *is* the suite). `cancel-in-progress`
+only for pull requests — a cancelled `main` run can end up tagged without CI.
+
+Ensure CI looks like this (fixed by `tests/ci-economico.test.mjs`):
+<!-- ci-proyecto:inicio -->
 ```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Tests
+      - uses: actions/checkout@v5
+      - name: Tests with coverage
         run: <test_command_with_coverage>
       - name: Lint
         run: <lint_command>
       - name: Typecheck
         run: <typecheck_command>
       - name: Coverage gate
-        run: # fail if any range is neither covered nor exempted with owner, reason and evidence
+        run: <coverage_gate_command>  # fail if any range is neither covered nor exempted with owner, reason and evidence
 ```
+<!-- ci-proyecto:fin -->
 
-Create or update as needed.
+Create it if missing. **Changing an existing workflow's triggers, jobs or OS matrix goes to a 🔵
+menu first** with the before/after: it changes what the operator pays. The orchestrator shows that
+menu *before* spawning this task — CHORE runs on the cheap tier and never decides cost on its own. Other edits (a renamed
+command, a new step inside the same job) don't.
 
 ---
 

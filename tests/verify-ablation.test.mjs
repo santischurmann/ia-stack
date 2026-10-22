@@ -758,6 +758,34 @@ test('F7 · FALSIFICACIÓN · una limpieza sin respaldo previo en graphify y Obs
   }
 });
 
+// Graphify y Obsidian son opcionales (skills/integracion-graphify.md), y hasta la 3.3.0 la fase 9
+// los exigía hechos: quien no usaba alguna de las dos no podía cerrar nunca la limpieza. Ahora un
+// destino que el proyecto no usa se declara `ninguno — <motivo>`, igual que el soporte de LAW 6. Lo
+// que sigue rechazando es callarlo: `done:false` sin ese formato, o `ninguno` a secas.
+test('F7b · un destino que el proyecto no usa se declara «ninguno — motivo» y la limpieza cierra', () => {
+  const contrato = loadScope(JSON.parse(readScope()));
+  const io = { exists: (p) => String(p).includes('.claude-archive') };
+  const conGrafo = { done: true, evidence: 'graphify update . reconstruyo el grafo antes de mover nada' };
+  const sinObsidian = { done: false, evidence: 'ninguno — este proyecto no lleva bóveda de Obsidian' };
+  for (const backup of [
+    { graphify: conGrafo, obsidian: sinObsidian },
+    { graphify: { done: false, evidence: 'ninguno - el proyecto no usa graphify, el indice propio alcanza' }, obsidian: sinObsidian },
+    { graphify: conGrafo, obsidian: { done: false, evidence: 'Ninguno — este proyecto no lleva bóveda de Obsidian' } },
+  ]) {
+    const bueno = registro();
+    bueno.backup = backup;
+    assert.deepEqual(validateAblation(bueno, contrato, io), []);
+  }
+  for (const evidence of ['ninguno', 'ninguno —', 'no se corrio porque no hubo tiempo']) {
+    const malo = registro();
+    malo.backup = { graphify: conGrafo, obsidian: { done: false, evidence } };
+    assert.ok(validateAblation(malo, contrato, io).length > 0, evidence);
+  }
+  const mentiroso = registro();
+  mentiroso.backup = { graphify: conGrafo, obsidian: { done: true, evidence: 'ninguno — no hay bóveda pero digo que respaldé' } };
+  assert.ok(validateAblation(mentiroso, contrato, io).length > 0, 'done:true con «ninguno» se contradice');
+});
+
 test('F9 · FALSIFICACIÓN · el destino tiene que conservar la ruta de origen, no aplanarla', () => {
   const contrato = loadScope(JSON.parse(readScope()));
   const io = { exists: (p) => String(p).includes('.claude-archive') };

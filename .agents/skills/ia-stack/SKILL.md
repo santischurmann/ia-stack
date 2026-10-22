@@ -5,7 +5,8 @@ description: Protocolo de once fases con gates mecánicos para investigar, dise�
 
 # IA Stack
 
-**Leé el protocolo entero antes de operar**: son once fases encadenadas por gates que se ejecutan, y
+**Antes de operar, leé el protocolo por su § MAPA DE LECTURA**: el contrato interno, las leyes,
+el mapa y la sección de la fase en curso. Son once fases encadenadas por gates que se ejecutan, y
 saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó IA Stack acá:
 
 - `SKILL.md` en la raíz — este es el repositorio de IA Stack.
@@ -29,8 +30,8 @@ Si este archivo dice algo distinto de `SKILL.md`, manda `SKILL.md`.
 
 ## Sub-skills
 
-Las doce sub-skills están junto al protocolo, en `skills/*.md` (o `.vibe/ia-stack-runtime/skills/*.md`): los subagentes de cada rol
+Las sub-skills están junto al protocolo, en `skills/*.md` (o `.vibe/ia-stack-runtime/skills/*.md`); entre ellas, los subagentes de cada rol
 (`subagent-red`, `subagent-green`, `subagent-refactor`, `subagent-triangulate`, `subagent-docs`,
 `subagent-chore`), el orquestador (`orchestrator-opus`), las plantillas de spec y plan
 (`spec-plan-templates`), la memoria (`vibe-memory`), la línea base de seguridad
-(`security-baseline`), el empaquetado (`deploy-zip`) y el modo de escritura (`caveman-tdd`).
+(`security-baseline`), el empaquetado (`deploy-zip`), el gate TDD (`caveman-tdd`) y el modo breve, el caveman interno (`modo-breve`). El modelo de cada rol sale de `contracts/model-routing.json`.

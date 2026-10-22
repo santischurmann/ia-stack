@@ -32,9 +32,20 @@
 
 name: CI
 
+# CORRE CUANDO HAY ALGO QUE PUBLICAR, NO CON CADA PUSH (decidido por el operador el 22-10-2026). Un
+# push a una rama de trabajo no dispara nada: el CI llega con el PR o con main. Este repositorio es
+# publico y aca Actions no cobra, pero este flujo es el molde que el agente copia en proyectos
+# privados, donde cada corrida son minutos facturables. `cancel-in-progress` solo vale para PR: un
+# commit de main cancelado a mitad puede terminar etiquetado sin CI. tests/ci-economico.test.mjs.
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Minimo privilegio: este flujo lee el codigo y nada mas. Sin esto, el token por defecto puede
 # escribir en el repositorio, que es mas permiso del que hace falta para correr pruebas.
@@ -73,8 +84,29 @@ jobs:
           test ! -f package.json || (echo "Este protocolo se declara sin dependencias externas y aparecio un package.json" && exit 1)
           node --version
 
-      - name: Suite completa
-        run: node --test
+      # LA SUITE CORRE UNA SOLA VEZ, y ES ESTE PASO. Hasta el 22-10-2026 corria dos veces por sistema:
+      # «Suite completa» y despues la misma suite con NODE_V8_COVERAGE, que propaga el rojo igual. La
+      # segunda ya pasaba en cada corrida verde, asi que la primera solo sumaba minutos. Va PRIMERO a
+      # proposito: si un gate de abajo falla, el trabajo se corta, y una suite puesta al final quedaria
+      # sin correr y su rojo escondido detras del gate.
+      # CADA PLATAFORMA MIDE LO SUYO Y LO SUBE. El veredicto no se toma aca: se toma sobre la UNION,
+      # en el trabajo de abajo. Medir por separado y exigir 100% en cada uno seria pedirle a Linux
+      # que ejecute ramas que solo existen en Windows.
+      # EL DIRECTORIO NO EMPIEZA CON PUNTO, A PROPOSITO. `upload-artifact` ignora los archivos
+      # ocultos por omision: con `.cobertura` el paso salia en VERDE habiendo subido nada, y la
+      # fusion se topaba con cero archivos. `include-hidden-files: true` lo arreglaria igual y
+      # dejaria la trampa armada para el proximo directorio con punto.
+      - name: Medir la cobertura de esta plataforma
+        shell: bash
+        run: |
+          rm -rf cobertura && mkdir -p cobertura
+          # DOS REPORTERS A LA VEZ, y el TAP sale de ESTA corrida y no de una anterior: este paso
+          # borra el directorio, asi que un TAP escrito antes se perderia. `spec` a la consola
+          # -- lo que alguien lee en el log -- y `tap` al archivo que la fusion necesita para
+          # saber QUE salteo cada plataforma. No agrega una corrida: esta ya existia.
+          NODE_V8_COVERAGE=cobertura node --test \
+            --test-reporter=spec --test-reporter-destination=stdout \
+            --test-reporter=tap --test-reporter-destination=cobertura/salteos.tap
 
       - name: Cada prueba que no corre en esta plataforma esta declarada
         run: node scripts/verify-platform-scope.mjs check
@@ -112,25 +144,6 @@ jobs:
       # RECONCILIAR y sale 0 en vez de inventar un veredicto. El runner esta quieto: aca juzga.
       - name: El tope de TAP deja el triple sobre el archivo de pruebas mas lento
         run: node scripts/verify-test-duration.mjs
-
-      # CADA PLATAFORMA MIDE LO SUYO Y LO SUBE. El veredicto no se toma aca: se toma sobre la UNION,
-      # en el trabajo de abajo. Medir por separado y exigir 100% en cada uno seria pedirle a Linux
-      # que ejecute ramas que solo existen en Windows.
-      # EL DIRECTORIO NO EMPIEZA CON PUNTO, A PROPOSITO. `upload-artifact` ignora los archivos
-      # ocultos por omision: con `.cobertura` el paso salia en VERDE habiendo subido nada, y la
-      # fusion se topaba con cero archivos. `include-hidden-files: true` lo arreglaria igual y
-      # dejaria la trampa armada para el proximo directorio con punto.
-      - name: Medir la cobertura de esta plataforma
-        shell: bash
-        run: |
-          rm -rf cobertura && mkdir -p cobertura
-          # DOS REPORTERS A LA VEZ, y el TAP sale de ESTA corrida y no de la primera: este paso
-          # borra el directorio, asi que un TAP escrito antes se perderia. `spec` a la consola
-          # -- lo que alguien lee en el log -- y `tap` al archivo que la fusion necesita para
-          # saber QUE salteo cada plataforma. No agrega una corrida: esta ya existia.
-          NODE_V8_COVERAGE=cobertura node --test \
-            --test-reporter=spec --test-reporter-destination=stdout \
-            --test-reporter=tap --test-reporter-destination=cobertura/salteos.tap
 
       - name: Subir la cobertura cruda
         uses: actions/upload-artifact@v7

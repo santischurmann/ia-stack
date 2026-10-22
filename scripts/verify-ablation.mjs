@@ -99,6 +99,7 @@ const MIN_JUDGED_REASON = 120;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const exactKeys = (v, keys) => isObject(v) && Object.keys(v).length === keys.length && keys.every((k) => Object.hasOwn(v, k));
 const longEnough = (v) => typeof v === 'string' && v.trim().length >= MIN_REASON;
+const NINGUNO = /^ninguno\s+[—-]\s+\S/iu;
 const stripBom = (t) => (typeof t === 'string' && t.charCodeAt(0) === 0xFEFF ? t.slice(1) : t);
 const slashes = (p) => String(p).replaceAll(String.fromCharCode(92), '/');
 
@@ -463,8 +464,13 @@ export function validateAblation(record, scope, io, sinComprobar = []) {
   } else {
     for (const destino of BACKUP_KEYS) {
       const paso = record.backup[destino];
-      if (!isObject(paso) || paso.done !== true || !longEnough(paso.evidence)) {
-        violations.push(`el respaldo en ${destino} no está hecho o no trae evidencia: nada se archiva antes de que su contenido esté en los dos lados`);
+      // Un destino que el proyecto no usa se declara, no se calla: `done:false` con
+      // `ninguno — <motivo>`. Graphify y Obsidian son opcionales y exigirlos hechos dejaba a quien
+      // no los usa sin poder cerrar nunca la fase.
+      const noLoUsa = isObject(paso) && paso.done === false && longEnough(paso.evidence) && NINGUNO.test(paso.evidence);
+      if (noLoUsa) continue;
+      if (!isObject(paso) || paso.done !== true || !longEnough(paso.evidence) || NINGUNO.test(paso.evidence)) {
+        violations.push(`el respaldo en ${destino} no está hecho o no trae evidencia: nada se archiva antes de que su contenido esté en los dos lados. Si el proyecto no usa ${destino}, se declara done:false con «ninguno — <motivo>»`);
       }
     }
   }

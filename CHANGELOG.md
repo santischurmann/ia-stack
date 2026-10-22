@@ -16,6 +16,56 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
   referencia, o `null` si no hay ninguna. Una URL `file://` inválida (`%zz`, `%2F`, ruta no admitida por la
   plataforma) ahora devuelve `null` en vez de lanzar, y el gate rechaza explicando el motivo. Lo fijan
   `tests/verify-red-vitest-rutas.test.mjs` y `tests/verify-red-vitest-rutas-borde.test.mjs`.
+- **Una prueba nombraba un proyecto privado, y el gate de nombres pasa a exigir su lista en CI**
+  (`d3c2695`, que había quedado afuera de esta lista).
+
+### Gastar menos: un push al final, modelos por rol y modo breve propio (22-10-2026)
+
+Pedido del operador después de leer «How to be more ambitious» de Felix Rieseberg (13-10-2026) y de
+medir su propio consumo. Pasó por dos rondas de brainstorm y dos de refutación con jueces externos
+(Codex `gpt-5.6-sol` y un refutador ciego en otro modelo), que tiraron ocho propuestas.
+
+- **LAW 9: publicar es una vez, al terminar.** Un push, un merge a la rama principal o un tag salen
+  una sola vez por trabajo aprobado, al cerrar el plan entero: ni por fase, ni por lote, ni por
+  arreglo, ni para respaldar. GitHub deja de ser el respaldo intermedio: si hace falta uno, es un
+  `git bundle` verificado en otro disco. El modo continuo dice ahora cuándo se pide el push
+  reservado, y el menú de 8.1 recomienda dejar local mientras el plan tenga trabajo pendiente y
+  muestra cuántos commits esperan. Medido: septiembre de 2026, 2.573 minutos de Actions en los
+  repositorios privados del operador, un CI trabado por el tope de facturación y, el 14-10, dos
+  pushes en rojo el mismo día.
+- **CI económico.** El de este repositorio corre en main, en PR y a mano (no con cada push a una
+  rama de trabajo), con `concurrency` que cancela corridas viejas de un PR pero nunca una de main, y
+  la suite corre una vez por sistema y no dos (la corrida con cobertura ya es la suite). El que el
+  protocolo le arma a un proyecto (`skills/subagent-chore.md`, Task D) tiene la misma forma y un
+  solo sistema operativo, y cambiar sus disparadores o su matriz pasa por un menú. Lo fija
+  `tests/ci-economico.test.mjs`.
+- **Ruteo automático de modelos** en `contracts/model-routing.json`: Haiku para leer, documentar y
+  tareas mecánicas, Sonnet para construir, Opus para seguridad, revisión y refutación, y Fable nunca
+  sin un «sí» explícito. Un intento fallido con diagnóstico nuevo sube un nivel, hasta N3, y la
+  tarea siguiente vuelve a su base. El juez nunca corre en el modelo que construyó. El dispatch dejó
+  de escribir `model="sonnet"`, que pisaba cualquier ruteo, y BUILD CONFIG ya no pregunta el
+  esfuerzo: pregunta sólo si una tarea puede escalar. Lo fija `tests/model-routing.test.mjs`.
+- **Leer lo que hace falta.** `AGENTS.md` y el puntero de Codex ya no mandan a leer el protocolo
+  entero (unos 40.000 tokens que viajan en cada mensaje): § MAPA DE LECTURA dice qué sección leer en
+  cada fase. Presupuesto de contexto: sesión nueva pasados unos 200.000 tokens (100.000 en Haiku).
+  Medido entre el 12 y el 15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens
+  de contexto.
+- **Modo breve, el caveman interno** (`skills/modo-breve.md`): breve entre agentes, lenguaje simple
+  hacia la persona, nunca en menús ni en seguridad. Va adentro de la plantilla de cada subagente
+  (`NOTES` hasta 80 palabras, `EVIDENCE` y fallas enteras), y ningún documento vivo invoca un plugin
+  externo. Lo fija `tests/protocolo-economico.test.mjs`.
+- **Profundidad (Felix) en la Fase 3**, sólo con riesgo alto o crítico: el material crudo del que
+  arrancaría el mejor profesional entra como fixture de una prueba, y un juez externo (un comando,
+  no el agente) va como `Verify` de un criterio. Más hondo, no más grande: lo nuevo pasa por un menú.
+- **Commit manual por rutas y mensaje por archivo**: nada de `git add -A`, que mete trabajo de otra
+  sesión, y `git commit -F` en vez de `-m`, porque unas comillas invertidas ejecutaron `label.exe`
+  en Windows el 08-10-2026.
+- **Fase 9:** el respaldo en Graphify u Obsidian acepta `done: false` con `ninguno — <motivo>`. Las
+  dos herramientas son opcionales y la fase exigía las dos hechas: quien no las usaba no podía
+  cerrarla nunca.
+- **Coherencia:** fuera «Sonnet 5» (no quedaba ningún modelo con ese nombre), la numeración vieja
+  3.x/4.x del orquestador y el «commit por tarea» que no existía, el conteo «doce sub-skills», que ya
+  no era cierto y la promesa del frontmatter de saltear el pipeline sola (el menú siempre pregunta).
 
 ---
 

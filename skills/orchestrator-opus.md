@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Bash, Task, Agent, Glob, Grep, TodoWrite, Skil
 
 # IA Stack Orchestrator Reference
 
-Orchestrator = single responsible agent, runs under the internal IA Stack orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 1 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (Sonnet 5, effort per Phase 5 config) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
+Orchestrator = single responsible agent, runs under the internal IA Stack orchestration contract (`SKILL.md` § INTERNAL ORCHESTRATION CONTRACT, Phase 1 → session-long): autonomy, lead-with-outcome comms and evidence-gated actions. Subagents (model and effort per role from `contracts/model-routing.json`) execute atomic tasks — no orchestrator-level contract wrapper on them, they just build.
 
 ---
 
@@ -18,15 +18,15 @@ Named mandate per role — none certifies its own gate, the gate script/test-run
 
 | Role | Phase | Tools | Certifies own gate? |
 |---|---|---|---|
-| Test-Engineer | 3.1 RED | Write (test files only) | No — `verify-red.sh`/`.ps1` does |
-| Builder | 3.2 GREEN | Write/Edit (impl only, never the test) | No — test runner does |
-| Triangulator | 3.3 TRIANGULATE | Write (test files only, never production) | No — test runner does; failing case hands off to Builder, not self-fixed |
-| Refactor-Engineer | 3.4 REFACTOR | Edit (structure only) | No — test runner (must stay green, incl. TRIANGULATE's cases) |
-| Docs | 3.5 (post-task) | Write (`.vibe/`, docs) | N/A, no gate |
-| Chore | 4.1 fixes | Edit (lint/typecheck fixes) | No — linter/tsc does |
-| Security-Officer | 4.3 | Read/Grep only (native `security-baseline.md`, read-only) | No — finding severity is mechanical |
-| 4R Reviewer (adversarial) | 4.4 | Read only | No — reproduction-gated verdict, not self-report; count scales with `risk_level`, never 0 |
-| Orchestrator | all | Read/Write/Edit/Bash/Task — but writes zero feature code | Issues final `terminal_state`, itself gated by receipt evidence (4.5) |
+| Test-Engineer | 5 RED | Write (test files only) | No — `verify-red.sh`/`.ps1` does |
+| Builder | 5 GREEN | Write/Edit (impl only, never the test) | No — test runner does |
+| Triangulator | 5.5 TRIANGULATE | Write (test files only, never production) | No — test runner does; failing case hands off to Builder, not self-fixed |
+| Refactor-Engineer | 5 REFACTOR | Edit (structure only) | No — test runner (must stay green, incl. TRIANGULATE's cases) |
+| Docs | 5 (post-task) | Write (`.vibe/`, docs) | N/A, no gate |
+| Chore | 6.1 fixes | Edit (lint/typecheck fixes) | No — linter/tsc does |
+| Security-Officer | 6.2 | Read/Grep only (native `security-baseline.md`, read-only) | No — finding severity is mechanical |
+| 4R Reviewer (adversarial) | 6.3 | Read only | No — reproduction-gated verdict, not self-report; count scales with `risk_level`, never 0 |
+| Orchestrator | all | Read/Write/Edit/Bash/Task — but writes zero feature code | Issues final `terminal_state`, itself gated by receipt evidence (6.4) |
 
 ## MINIMAL AI-COMPANY TASK MODEL (operable, not just labels)
 
@@ -44,7 +44,7 @@ name pasted on top of the old schema:
 | `not_reviewed` | array of `{gate, declaration, report_path}`, one explicit review boundary per accepted handoff | orchestrator, only after `verify-handoff-report.mjs check` exits 0 |
 | `handoff` | mechanical next step on gate pass — which role spawns next, doing what | fixed per task type, read not improvised |
 | `blocked_reason` | `null`, or why (failed gate 3x, budget hit, ambiguity) | orchestrator, on hard-stop (§ AI COMPANY LAYER budget policy) |
-| `rollback` | `git revert <sha>` once this task's commit lands — how to undo *this task specifically* if it needs reverting later | orchestrator, filled after 4.6 commit, per-task not per-feature |
+| `rollback` | `git revert <sha>` once this task's commit lands — how to undo *this task specifically* if it needs reverting later | orchestrator, filled after the local commit that contains it (8.1), per-task not per-feature |
 
 **Who verifies whom, concretely**: Test-Engineer's RED claim is checked by `verify-red.sh`/`.ps1`
 (script, not a persona — mechanically classifies output, doesn't just trust a nonzero exit).
@@ -144,11 +144,18 @@ For each task in `docs/tasks.json`, read the subagent skill file, spawn with ful
 # Pseudocode — actual delegation via Agent tool
 task = load_task("T01")
 red_instructions = read_file("skills/subagent-red.md")
+route = routing["roles"]["red"]          # contracts/model-routing.json, read once per session
+nivel = route["nivel"]
+if risk in ("alto", "critico") and route.get("con_riesgo_alto"):
+    nivel = route["con_riesgo_alto"]     # planificador: N2 -> N3
+if task.failed_with_new_diagnosis:
+    nivel = min(next_level(nivel), "N3")  # one level per failure, never N4 on its own
+level = routing["niveles"][nivel]
 
 Agent(
   subagent_type="claude",
-  model="sonnet",           # alias, always latest Sonnet
-  effort=config.effort,     # from Phase 5 CONFIG menu — default "low"
+  model=level["modelo"],      # from the contract — never a literal: the call's model overrides every other layer
+  effort=level["esfuerzo"],   # task.model_effort may only RAISE it (see below)
   prompt=f"""
 {red_instructions}
 ---
@@ -160,14 +167,29 @@ Test types required: {task.test_types}
 Implementation files (do NOT create yet): {task.files_to_create}
 Spec: [read docs/spec.md]
 
+## MODO BREVE
+Report terse: no filler, no restating the task, fragments OK. Never compress EVIDENCE,
+NOT_REVIEWED or a failure — those go whole; past 4096 bytes, the tail inline plus the path to the
+full output. Full rules: skills/modo-breve.md (do not read it).
+
 ## OUTPUT FORMAT (end your report with this block)
 STATUS: pass | fail | blocked
 EVIDENCE: <exact command + exact output tail>
 NOT_REVIEWED: <specific omitted surface, or "none — <specific reviewed scope>">
-NOTES: <only if STATUS != pass>
+NOTES: <only if STATUS != pass; at most 80 words>
 """
 )
 ```
+
+**Routing, automatic.** Every spawn takes `model` and `effort` from `contracts/model-routing.json`
+by role (`lector`, `red`, `green`, `triangulate`, `refactor`, `docs`, `chore`, `planificador`,
+`seguridad`, `revisor`, `refutador`). Reading, searching, counting or summarizing state goes to a
+`lector` (N1) instead of the orchestrator's own context. Escalation is mechanical: **one** failed
+attempt with a **new** diagnosis raises that task one level, up to N3; when it resolves, the next
+task starts back at its base. N4 is never automatic (contract field `escalada.N4`). A 429 or a
+quota error is not a model failure. `task.model_effort` in `docs/tasks.json` is an optional
+override that can only raise the contract's effort; absent or `null` means "what the contract
+says". The judge never runs on the builder's model (`juez_distinto_del_constructor`).
 
 Before spawning: `tasks.json[task.id].owner = "<role>-<timestamp>"`, `locked = true`, and
 `lock = {pid, boot, start, taken_at, fence}` (atomic checkout, § AI COMPANY LAYER; `fence` sube con cada reasignación y es el token con el que el escritor se identifica). On gate pass/abort:
@@ -188,7 +210,7 @@ node .vibe/ia-stack-runtime/scripts/verify-lock-vivo.mjs fence docs/tasks.json -
 
 Before accepting a subagent's writes, `fence` rejects a writer whose token is older than the current one: a worker that lost its lease and kept access is not the owner anymore. It does not stop a process that writes without presenting the token.
 
-If a task looks harder mid-build and config allowed override (Phase 5 CONFIG, option B) → bump that task's effort, note why in `.vibe/SESSION.md`.
+If a task fails once with a new diagnosis → raise that task one routing level (contract `escalada`, top N3 automatic), note why in `.vibe/SESSION.md`; the next task starts back at its base.
 
 ---
 
@@ -218,7 +240,7 @@ Task T01:
 
 After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task <task-id> --base <git-ref>`. This compares the complete writer set with tracked and untracked paths in the real checkout; operational files are ignored only by an explicit repeated `--ignore <path>`. A rejection pauses the task and returns it to the 🔵 plan choice; never explain it away as a harmless extra file.
 
-**CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 6.1/4.3 for fixes.
+**CHORE:** after all tasks done (lint, typecheck, coverage) — also reusable inside Phase 6.1/6.2 for fixes.
 
 ---
 
@@ -232,8 +254,8 @@ After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-s
 | TRIANGULATE case has no `derived from` justification | Reject the case, do not write it — decorative coverage is forbidden. |
 | A range neither covered nor exempted with owner, reason and evidence, or a critical path without its test (Phase 6.1) | Identify uncovered ACs, new tasks, RED/GREEN/TRIANGULATE cycle. |
 | Lint/typecheck errors | Spawn CHORE-A/B. Can't fix → show user. |
-| native security gate finds Critical/High (Phase 6.2) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 4.4. |
-| 4R adversarial finding survives its tier's review (Phase 6.3) | Fix, re-verify, re-run that lens. If the fix crosses the 4.4.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
+| native security gate finds Critical/High (Phase 6.2) | Fix before continuing, re-scan. Never defer critical/high. Retroactively bumps `risk_level` to `critico` for 6.3. |
+| 4R adversarial finding survives its tier's review (Phase 6.3) | Fix, re-verify, re-run that lens. If the fix crosses the 6.3.1 replanning threshold (>200 lines / 3+ prod-config files / contract-API-dep-schema expansion) → pause, document, 🔵 confirm before continuing (never silently expand scope). |
 | Session killed / compacted mid-task | RESUME protocol below. Never re-run a passed gate blind, never skip a pending one. Clear stale `locked: true` by re-detecting via evidence, never by trusting the flag. |
 | 3 respawns on same task, no passing gate | Hard stop (§ AI COMPANY LAYER budget policy) — escalate to user, never a silent 4th retry. |
 | Session/phase budget hits 100% (if user set one) | Pause at phase boundary, 🔵 confirm before continuing (§ COMPANY.md budget policy). |

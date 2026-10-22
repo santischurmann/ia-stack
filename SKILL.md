@@ -1,25 +1,88 @@
 ---
 name: ia-stack
-description: "Downloadable harness/skill with a self-improvement loop for building webs, PWAs and desktop apps. TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and Sonnet 5 (low effort default) implements via 5 role-persona subagents (Test-Engineer/Builder/Refactor-Engineer/DOCS/CHORE — none certifies its own gate). Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Auto-routing triage skips full pipeline for trivial changes. .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
+description: "Downloadable harness/skill with a self-improvement loop for building webs, PWAs and desktop apps. TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and role-persona subagents implement (Test-Engineer/Builder/Triangulator/Refactor-Engineer/DOCS/CHORE — none certifies its own gate), each on the model and effort its role gets from contracts/model-routing.json (Haiku for reading and docs, Sonnet for building, Opus for security and adversarial review; Fable only with an explicit yes). Built-in terse mode for internal reports (skills/modo-breve.md), no external plugin. Publishes once, at the end. Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Triage proposes a short path for small changes (the menu always asks; verification is never shortened). .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
 ---
 
 # IA Stack
 
 **Qué es:** un harness descargable —una skill que se instala dentro del proyecto— con un bucle de
-automejora, para desarrollar webs, PWA y aplicaciones de escritorio. Comunicación por defecto: clara
-y completa. El modo telegráfico («caveman», en `skills/caveman-tdd.md`) es una opción, no la forma
-de la herramienta.
+automejora, para desarrollar webs, PWA y aplicaciones de escritorio. Comunicación: **breve entre
+agentes, simple hacia la persona**. El modo breve —el «caveman interno», propio de IA Stack y sin
+ningún plugin externo— vive en `skills/modo-breve.md`; `skills/caveman-tdd.md` es otra cosa: las
+reglas del gate TDD.
 
 **Versión:** 3.2.0 · etiquetada como `v3.2.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
 **El orquestador corre bajo el CONTRATO INTERNO DE ORQUESTACIÓN de abajo durante toda la sesión.
-Las tareas de construcción van a Sonnet 5. Gate duro: primero el test rojo, siempre.**
+Cada subagente corre en el modelo que le toca a su rol. Gate duro: primero el test rojo, siempre.**
 
-Reparto de modelos: el orquestador sos vos, corriendo el contrato de abajo —autonomía, rigor y
-comunicación— durante toda la sesión. Las tareas de construcción van a Sonnet 5, con esfuerzo
-**bajo** por defecto (se configura más abajo).
+**Reparto de modelos, automático.** El orquestador sos vos. Cada vez que lanzás un subagente, el
+`model` y el `effort` salen de `contracts/model-routing.json` según su rol: nunca se escriben a mano
+y nunca se le preguntan a la persona. La meta es gastar el modelo más barato que resuelva bien.
+La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica que digan lo mismo:
+
+<!-- ruteo:inicio -->
+| Rol | Nivel | Modelo | Esfuerzo |
+|---|---|---|---|
+| `lector` | `N1` | `haiku` | `low` |
+| `docs` | `N1` | `haiku` | `low` |
+| `chore` | `N1` | `haiku` | `low` |
+| `red` | `N2` | `sonnet` | `low` |
+| `green` | `N2` | `sonnet` | `low` |
+| `triangulate` | `N2` | `sonnet` | `low` |
+| `refactor` | `N2` | `sonnet` | `low` |
+| `planificador` | `N2` | `sonnet` | `low` |
+| `seguridad` | `N3` | `opus` | `medium` |
+| `revisor` | `N3` | `opus` | `medium` |
+| `refutador` | `N3` | `opus` | `medium` |
+<!-- ruteo:fin -->
+
+- **Leer no es pensar.** Buscar código, leer logs, contar o resumir estado va a un `lector` (N1),
+  no al contexto del orquestador: cada mensaje vuelve a pagar todo lo que el contexto ya tiene.
+- **Riesgo.** El `planificador` sube a N3 cuando el riesgo es `alto` o `critico`. Seguridad,
+  revisión y refutación arrancan en N3 y no bajan.
+- **Escalada mecánica.** **Un** intento fallido con un diagnóstico **nuevo** sube esa tarea un
+  nivel, hasta N3. Al resolver, la tarea siguiente vuelve a su base. N4 (`fable`) **nunca** es
+  automático: se pide con un menú que muestra la falla y los dos diagnósticos anteriores. Un 429 o
+  un error de cupo no es una falla del modelo: se espera o se avisa, no se escala.
+- **El juez nunca es el modelo que construyó.** La revisión y la refutación corren en otro modelo
+  que el de `green` (campo `juez_distinto_del_constructor`). Si el host tiene otro agente
+  instalado —por ejemplo la CLI de Codex—, se puede sumar como juez externo; si no, se declara
+  ausente y alcanza con el modelo distinto.
+- **Presupuesto de contexto.** Pasados unos 200.000 tokens (100.000 si la sesión corre en Haiku), se
+  cierra con la línea de retomar en `.vibe/SESSION.md` y se sigue en una sesión nueva. Medido entre
+  el 12 y el 15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens de
+  contexto. Tampoco se gastan turnos en avisar que algo «sigue corriendo».
+- **Límite honesto.** Un host sin parámetro `model` (por ejemplo, un agente que sólo lee
+  `AGENTS.md`) ignora el ruteo, y el protocolo no puede cambiar el modelo de su propia sesión: eso
+  lo elige la persona. En ese host el orquestador lo dice **una vez**, en el reporte de Bootstrap
+  («sin ruteo: todo corre en el modelo de la sesión»), sin menú.
+
+## MAPA DE LECTURA
+
+No se lee el protocolo entero de una vez: son unos 40.000 tokens que después viajan en cada
+mensaje. Al empezar se leen el § INTERNAL ORCHESTRATION CONTRACT, las leyes y este mapa; después,
+**la sección de la fase en curso**, y las sub-skills sólo cuando esa fase las nombra.
+
+- § PHASE 1 — BOOTSTRAP — al abrir o retomar una sesión.
+- § PHASE 1.5 — INTAKE — qué tipo de producto es y qué stack lleva.
+- § PHASE 2 — RESEARCH — fuentes y Discovery.
+- § PHASE 3 — SPEC — criterios de aceptación; incluye el pase de profundidad.
+- § PHASE 4 — PLAN — tareas y orden.
+- § PHASE 5 — BUILD — rojo, verde y refactor por tarea; plantilla de spawn en `skills/orchestrator-opus.md`.
+- § PHASE 5.5 — TRIANGULATE — casos derivados.
+- § PHASE 6 — TEST — seguridad, revisión adversarial y recibo.
+- § PHASE 7 — SIMPLIFY — simplificar sin cambiar conducta.
+- § PHASE 8 — DEPLOY — commit, la única publicación y respaldos.
+- § PHASE 9 — LIMPIEZA — cada 7 días, al abrir sesión.
+- § CONFIG MENU PROTOCOL — antes de mostrar un menú de configuración.
+- § CONTENT DECISION PROTOCOL — antes de mostrar un menú de decisión.
+- § MEMORY UPDATES — qué archivo de `.vibe/` se toca y cuándo.
+
+Si una sección remite a otra, se lee esa también. Leer de menos no exime de nada: una regla que no
+leíste te sigue obligando.
 
 ## INTERNAL ORCHESTRATION CONTRACT (self-contained, always active)
 
@@ -56,8 +119,22 @@ activo:
    mide **ejecución de tu código**; el soporte mide **observabilidad de tu producto**. Son ejes
    ortogonales, y el DoD tenía uno solo. Medido en una corrida real: sin identificador de petición y
    sin autor en las operaciones, con la cobertura en 100% y todos los gates en verde.
-7. Menús de configuración (modelo, esfuerzo, detalle) al empezar cada fase. Menús de contenido (aprobar, modificar) en cada decisión. Los dos esperan respuesta. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación. **Excepción declarada, con su detector:** dentro de un plan aprobado en modo continuo (§ "Cuándo una fase está terminada"), las fases que el plan incluye se cierran solas con su evidencia y no piden un 🔵 por fase; todo lo que el plan no incluye lo sigue pidiendo.
+7. Menús de configuración sólo donde la respuesta cambia el resultado —el detalle del spec, la granularidad del plan, si una tarea puede escalar—; **el modelo y el esfuerzo nunca se preguntan**: salen de `contracts/model-routing.json` (§ Reparto de modelos, arriba). Menús de contenido (aprobar, modificar) en cada decisión. Los dos esperan respuesta. **Siempre multiple choice 🔵, nunca pregunta abierta de texto libre para una decisión de protocolo — ni "¿está bien así?" ni free-form, siempre A/B/C/D con recomendación explícita.** Fase por fase: nunca combinar el cierre de 2+ fases en un mismo mensaje ni adelantar contenido de la fase siguiente antes de que el usuario responda el 🔵 de la actual — 1 fase, 1 cierre, 1 respuesta, después la próxima. Confianza en la respuesta obvia no exime del 🔵: ni "es trivial" ni "seguro qué vas a elegir A" saltean el menú. **La forma canónica es una lista Markdown** —`- **A)** texto — *(recomendado)*`— porque es la única que se separa en opciones en todo motor de Markdown; un bloque de código colapsa a un solo párrafo y el menú llega como prosa. **Que además sea clickeable depende del host y no es parte del protocolo**: donde el host tenga un selector nativo se dibuja sobre las mismas `options[]`, y donde no, la lista Markdown es la forma completa y no una degradación. **Excepción declarada, con su detector:** dentro de un plan aprobado en modo continuo (§ "Cuándo una fase está terminada"), las fases que el plan incluye se cierran solas con su evidencia y no piden un 🔵 por fase; todo lo que el plan no incluye lo sigue pidiendo.
 8. No receipt `terminal_state: approved` para el estado evaluado actual → no push/merge (8.1). Un receipt `escalated` **bloquea siempre** — el gate mecánico (`verify-receipt.mjs`) lo rechaza sin excepción, `override_note` incluido. Único camino: 🔵 OK explícito del usuario → orchestrator regenera un receipt NUEVO con `terminal_state: "approved"` (con `override_note` + timestamp como metadata de auditoría) → ese receipt nuevo es el que se evalúa. No existe una vía donde `escalated` + un campo lo vuelva pasable.
+9. **Publicar es una vez, al terminar.** Un `push`, un `merge` a la rama principal o un tag salen
+   una sola vez por trabajo aprobado, cuando cerró el plan entero:
+   ni por fase, ni por lote, ni por arreglo, ni «para respaldar». Los commits locales sí, todos los que hagan falta: son reversibles
+   y no cuestan nada. Cada push dispara el CI del proyecto, y en un repositorio privado eso son
+   minutos facturables: en septiembre de 2026 los del operador sumaron 2.573, el tope se pasó el
+   17-09 y trabó otro proyecto, y el 14-10 hubo dos pushes en rojo el mismo día. **GitHub no es el
+   respaldo intermedio.** Si hace falta uno antes del final, se hace sin red:
+   `git bundle create <otro-disco>/<proyecto>-<fecha>.bundle <rama>`, después
+   `git bundle verify` sobre ese archivo, y su sha256 anotado. Va a otro volumen porque una copia en
+   el mismo disco se pierde con él, y respalda commits: lo que no se commiteó no viaja. Para que un
+   push por error tampoco cueste, el CI que arma el protocolo sólo corre en la rama principal y en
+   los PR (`skills/subagent-chore.md`, Task D). **Límite honesto:** ningún gate cuenta cuántas
+   veces se pusheó —el reflog del remoto también registra los fetch, y un hook se saltea con
+   `--no-verify`—; lo sostienen esta ley, el menú de 8.1 y ese CI.
 
 **IRON LAW — sin claims de completitud sin evidencia fresca.** Refuerzo textual de "trust what's
 derived, not narrated" (fuente: gstack `ship/SKILL.md`, verbatim confirmado en investigación).
@@ -103,6 +180,8 @@ eso sería registrar una elección que nadie hizo, y el gate lo rechaza como
 `PHASE_DECISION_FABRICATED_CHOICE`. El menú 🔵 sigue mandando para todo lo que el plan no incluye:
 una decisión nueva, un cambio de alcance, un conflicto, un bloqueo o una acción reservada. Si el
 plan se edita después de aprobado, o la fase está fuera del alcance, la aprobación **no se hereda**.
+Con varias funcionalidades o lotes en el mismo plan, cada una cierra con su commit local y su
+recibo, y **el push se pide una vez, al cerrar el plan entero** (LAW 9): nunca al cerrar un lote.
 **Límite honesto del modo continuo**: la aprobación se sella por contenido, no por voluntad. El gate
 prueba que el plan que se aprobó es el mismo que hay en disco y que cada fase cerrada estaba dentro
 de su alcance; no prueba que la persona haya dicho que sí. `approval_ref` es una referencia que el
@@ -695,6 +774,21 @@ sustantiva tras su respectiva repregunta → cortar ahí, generar spec con lo qu
 `Forcing Questions: N/6 (resto: skipped(count))` en `.vibe/SESSION.md`. Respuestas a 5 y 6
 alimentan directo las secciones Non-Goals/Constraints del spec — no las repreguntes ahí.
 
+**Pase de profundidad** (sólo con riesgo `alto` o `critico`; lo contesta el agente, no la persona).
+Viene de Felix Rieseberg, «How to be more ambitious» (13-10-2026): pedirle a un modelo que actúe
+como profesional cambia el vocabulario y no el método, y un trabajo hondo arranca del material
+crudo y se juzga desde afuera. Antes de escribir los criterios, el agente responde dos cosas:
+
+- **Material crudo**: ¿de qué dato sin digerir arrancaría el mejor profesional del campo? Logs,
+  filas reales, el reporte de la falla, la salida del sistema, nunca un resumen. Ese material entra
+  como fixture de por lo menos una prueba.
+- **Juez externo**: ¿qué —que no sea el agente ni la persona— demostraría que el resultado está
+  bien? Un comando, una herramienta, un dato real. Va como `Verify` de por lo menos un criterio.
+
+Es más hondo, no más grande: lo que aparezca como trabajo nuevo va a un 🔵 como cambio de alcance y
+nunca entra solo. Y si una meta parece imposible, se escribe qué faltaría para alcanzarla en vez de
+rebajarla en silencio.
+
 🔵 **SPEC CONFIG** (una vez, dos preguntas — no son dos opciones de la misma pregunta):
 
 **1. ¿Cuánto detalle?**
@@ -826,20 +920,18 @@ Esperando tu respuesta antes de continuar.
 
 ---
 
-## PHASE 5 — BUILD (Sonnet 5 subagents, per task)
+## PHASE 5 — BUILD (subagentes por tarea, modelo por rol)
 
-🔵 **BUILD CONFIG** (una vez, antes de la primera tarea — dos preguntas, no dos opciones):
+El modelo y el esfuerzo de cada subagente no se preguntan: salen de `contracts/model-routing.json`
+(§ Reparto de modelos). Hasta la 3.2.0 este menú preguntaba el esfuerzo; ahora lo único que cambia
+el resultado, y por eso lo único que se pregunta, es si una tarea puede escalar sola.
 
-**1. ¿Con cuánto esfuerzo trabajan los subagentes?**
+🔵 **BUILD CONFIG** (una vez, antes de la primera tarea):
 
-- **A)** Bajo — rápido y barato, alcanza para la mayoría de las tareas — *(recomendado)*
-- **B)** Estándar
-- **C)** Alto — para lógica complicada
+**¿Una tarea que falla una vez con un diagnóstico nuevo puede subir de nivel sola, hasta N3?**
 
-**2. ¿Puedo subirle el esfuerzo a una tarea suelta si resulta más difícil de lo esperado?**
-
-- **A)** Sí — te aviso y lo subo sólo en esa tarea — *(recomendado)*
-- **B)** No — el mismo esfuerzo para todas
+- **A)** Sí — te aviso en el reporte y vuelve a su nivel en la tarea siguiente — *(recomendado)*
+- **B)** No — si una tarea falla, freno y te pregunto antes de subir
 
 Esperando tu respuesta antes de continuar.
 
@@ -861,7 +953,7 @@ frontera de **quién puede certificar qué**:
 que un subagente diga que pasó: se confía en lo que se deriva, no en lo que se narra.
 
 **5.1 RED** (papel: Test-Engineer) — `skills/subagent-red.md`. Se lanza con
-`model: sonnet, effort: <config>`. Escribe **exactamente una prueba por cada criterio de aceptación
+el `model` y el `effort` del rol `red` en `contracts/model-routing.json`. Escribe **exactamente una prueba por cada criterio de aceptación
 explícito** de `docs/spec.md`. No es "al menos una": cada criterio tiene la suya, y se pueden contar
 sin ejecutar nada. El gate es `.vibe/ia-stack-runtime/scripts/verify-red.sh` (bash) o
 `.vibe/ia-stack-runtime/scripts/verify-red.ps1` (PowerShell), con un archivo de prueba literal y el
@@ -1737,14 +1829,28 @@ mensaje:**
   receipt existente a mano — regenerar desde cero (pasos 6.4 de nuevo) sobre el estado real
   actual.
 ```bash
-git add -A && git commit -m "<type>(<scope>): <what+why>"
+git add -- <cada ruta que la tarea declaró>
+git commit -F "$(git rev-parse --git-path IA_COMMIT_MSG)"
 ```
+**Rutas con nombre, nunca el árbol entero**: un `add` de todo mete en el commit el trabajo de otra
+sesión que comparte la carpeta. **El mensaje va por archivo** (`-F`), escrito con la herramienta de
+edición en la ruta que imprime `git rev-parse --git-path IA_COMMIT_MSG`: en un shell, unas comillas
+invertidas dentro de `-m "..."` se ejecutan —en Windows una corrió `label.exe` el 08-10-2026—, y
+un archivo no se interpreta. Vive adentro de `.git` a propósito: en el árbol sería un archivo sin
+seguimiento y `--require-clean-worktree` rechazaría.
+
 El commit es reversible: se hace. **El push y el merge no: se muestra el comando exacto y se pide confirmación con un menú antes.** Nunca automático, nunca `--force`, nunca salteando hooks.
+Y se piden **una sola vez, al cerrar el plan entero** (LAW 9). Antes del menú se muestra cuántos
+commits locales esperan y qué queda del plan:
+```bash
+git rev-list --count @{u}..HEAD   # sin upstream todavía: escribir «N/A — rama sin publicar»
+```
+
 🔵 **¿Publico?**
 
-- **A)** `git push origin <branch>` — *(recomendado si todos los gates están en verde)*
-- **B)** `git push` y además abrir un PR
-- **C)** Todavía no — dejarlo local
+- **A)** `git push origin <branch>` — *(recomendado cuando el plan entero cerró y los gates están en verde)*
+- **B)** `git push` y además abrir un PR — sólo con el plan entero cerrado
+- **C)** Todavía no — dejarlo local — *(recomendado mientras el plan tenga fases o lotes pendientes)*
 
 Esperando tu respuesta antes de continuar.
 
@@ -1935,7 +2041,7 @@ de opciones y nunca en silencio, salvo que el plan aprobado en modo continuo los
   su prefijo, su edad mínima y **cómo se regenera**. Lo demás es intocable; y lo que
   `contracts/irreplaceable-sources.json` nombra no se mueve ni se purga **nunca**, ni desde la cuarentena.
 - **`aplicar` se niega si la cuarentena no está ignorada por git**: lo que se aparta puede ser cualquier
-  cosa del proyecto, y el primer `git add -A` se lo llevaría.
+  cosa del proyecto, y el primer `git add` del árbol entero se lo llevaría.
 - **Cada acción queda sellada** en `.vibe/LIMPIEZA.md` con la cadena de `verify-audit-chain.mjs`, y el
   verificador compara ese registro con lo que hay en disco.
 - **Los números son del contrato**, no del protocolo: la retención y la edad mínima del contrato de este
@@ -1999,7 +2105,11 @@ historia guarda cuándo el archivo salió del árbol, no cuándo alguien lo puso
 
 Por eso no se pierde nada: cuando algo se saca de en medio, su contenido ya está en dos lugares.
 El respaldo **no es una promesa**: el registro lleva un campo `backup` con la evidencia de los dos
-pasos, y sin él la fase no cierra. Plantilla del registro: `templates/ablation.json`.
+pasos, y sin él la fase no cierra. Plantilla del registro: `templates/ablation.json`. Grafo y
+Obsidian son opcionales (`skills/integracion-graphify.md`): un destino que el proyecto no usa se
+declara con `done: false` y `evidence: "ninguno — <motivo>"`, nunca se calla. Si los dos son
+`ninguno`, lo archivado vive sólo en la cuarentena y en git: es válido, y el reporte de la fase lo
+dice con esas palabras.
 
 ### La regla de oro
 
@@ -2105,7 +2215,7 @@ vacíos; esto es qué significa cada uno:
 | `batches` | Las tandas: qué se archivó, por qué, y cómo salió la medición después. |
 | `survivors` | Cada archivo que quedó, con una frase de por qué. |
 | `totals` | El antes y el después en palabras. Es el número que se puede mostrar. |
-| `backup` | La evidencia de los dos respaldos —grafo y Obsidian—. Sin esto la fase no cierra. |
+| `backup` | La evidencia de los dos respaldos —grafo y Obsidian—, o `ninguno — <motivo>` para el que el proyecto no usa. Sin esto la fase no cierra. |
 
 **`why_representative` es el campo que más se salta y el más importante**: dice por qué esa tarea
 representa tu trabajo. Sin él, el set se elige para que dé bien.

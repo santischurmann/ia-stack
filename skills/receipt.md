@@ -167,13 +167,14 @@ corrió o fue teatro: en la corrida que motivó la regla, de **60 hallazgos prop
 
 **LIFECYCLE DEL RECEIPT — orden exacto, no ambiguo:**
 
-1. **`git add -A` ANTES de generar el fingerprint** — todo lo que va a formar parte del commit
+1. **`git add -- <rutas>` ANTES de generar el fingerprint**, con cada ruta nombrada (nunca el árbol
+   entero: mete el trabajo de otra sesión que comparte la carpeta) — todo lo que va a formar parte del commit
    (incl. los archivos `.vibe/*.md` que esta misma Fase 8 fue actualizando: SESSION.md, AUDIT.md,
    DEBT.md, etc.) queda staged primero. El receipt evalúa el estado que efectivamente se va a
    commitear, no un estado intermedio a medio stagear — de lo contrario un `git add` posterior
    sin cambio de bytes invalidaría el receipt sin razón real de negocio (ver más abajo por qué
    eso SÍ debe invalidar cuando ocurre *después* del receipt).
-2. **Fingerprint se genera DESPUÉS del `git add -A`**, pasándole el path exacto del receipt que
+2. **Fingerprint se genera DESPUÉS de ese `git add`**, pasándole el path exacto del receipt que
    se va a escribir (aunque ese archivo todavía no exista en disco — el flag solo importa para
    la exclusión, no requiere que el archivo ya esté ahí):
    ```bash
@@ -181,8 +182,8 @@ corrió o fue teatro: en la corrida que motivó la regla, de **60 hallazgos prop
    ```
 3. **El receipt se escribe con ese `git_head`+`tree_fingerprint` exactos**, inmediatamente — no
    hay paso intermedio entre calcular el fingerprint y escribir el JSON que lo contiene.
-4. **`git add -A` de nuevo, ahora incluyendo el receipt recién escrito** — el receipt mismo debe
-   quedar staged para el commit de 8.1 (`git add -A && git commit`, el receipt es parte de lo que
+4. **`git add -- <receipt>`, el receipt recién escrito** — el receipt mismo debe
+   quedar staged para el commit de 8.1 (`verify-receipt.mjs commit`, o `git commit -F` por el camino manual; el receipt es parte de lo que
    se commitea, es evidencia permanente en el repo).
 5. **`node .vibe/ia-stack-runtime/scripts/verify-receipt.mjs check <receipt>` (8.1)** — vuelve a calcular el fingerprint
    del estado actual (excluyendo el mismo path del receipt) y lo compara. Si nada cambió entre
