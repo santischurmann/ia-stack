@@ -9,13 +9,21 @@
     "audited_by": "Qué herramienta las auditó, o «ninguno — <motivo>». IA Stack no trae SCA: que nadie haya auditado es una respuesta válida, el silencio no."
   },
   "ignored_sensitive": [
-    { "path": ".env", "why": "Por qué está bien que este archivo ignorado por Git exista acá. Se nombra, no se lee." }
+    {
+      "path": ".env",
+      "why": "Por qué está bien que este archivo ignorado por Git exista acá. Se nombra, no se lee."
+    }
   ],
   "service": {
     "declared": false,
     "start_command": [],
     "base_url": "",
     "health": []
+  },
+  "datos": {
+    "cambia_esquema": false,
+    "respaldo": "Qué copia de los datos se hizo y dónde, antes de tocarlos, o «ninguno — <motivo>». Sólo si el cambio toca datos reales o el esquema; si no, se quita esta clave.",
+    "vuelta_atras": "Cómo se devuelven los datos a como estaban —revertir el commit no devuelve una columna borrada—, o «ninguno — <motivo>»."
   },
   "rollback_command": "El comando exacto que vuelve atrás. No puede contener rm, del, Remove-Item ni git clean.",
   "rollback_tested": {

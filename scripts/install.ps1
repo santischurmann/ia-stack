@@ -9,8 +9,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $SkillName = 'ia-stack'
-# EL NOMBRE ANTERIOR SIGUE ANDANDO: esta escrito en cada proyecto que ya lo instalo.
-$SkillAlias = 'VibeCodeProtocols'
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $PackageDir = Split-Path -Parent $ScriptDir
 
@@ -164,10 +162,19 @@ if ($ProjectOnly) {
   Write-Host "Skills:  $TargetDir"
   Write-Host "Runtime: $RuntimeDir"
 
-  New-Item -ItemType Directory -Force -Path $TargetDir, "$TargetDir\ia-stack-skills" | Out-Null
-  Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillName.md" -Force
-  Copy-Item "$PackageDir\SKILL.md" "$TargetDir\$SkillAlias.md" -Force
-  Copy-Item "$PackageDir\skills\*" "$TargetDir\ia-stack-skills" -Recurse -Force
+  # LA SKILL ES UNA CARPETA CON EL PUNTERO, no el protocolo suelto: ver install.sh. Lo de antes se
+  # aparta al lado del directorio de skills, con fecha y hora, y nunca se borra.
+  New-Item -ItemType Directory -Force -Path $TargetDir | Out-Null
+  $SkillsArchivo = Join-Path (Split-Path -Parent $TargetDir) ("ia-stack-archive\" + (Get-Date -Format 'yyyy-MM-ddTHHmmss') + '\skills')
+  foreach ($viejo in @('ia-stack.md', 'VibeCodeProtocols.md', 'ia-stack-skills')) {
+    $origen = Join-Path $TargetDir $viejo
+    if (-not (Test-Path -LiteralPath $origen)) { continue }
+    New-Item -ItemType Directory -Force -Path $SkillsArchivo | Out-Null
+    Move-Item -LiteralPath $origen -Destination (Join-Path $SkillsArchivo $viejo)
+    Write-Output "APARTADO: $origen era el formato anterior de la skill, que Claude Code no carga. Se MOVIO a $SkillsArchivo\$viejo; vuelve con Move-Item."
+  }
+  New-Item -ItemType Directory -Force -Path "$TargetDir\$SkillName" | Out-Null
+  Copy-Item "$PackageDir\.agents\skills\ia-stack\SKILL.md" "$TargetDir\$SkillName\SKILL.md" -Force
   Copy-Runtime $RuntimeDir
   Write-Host 'OK: skill, sub-skills, and self-contained runtime installed.' -ForegroundColor Green
 }
@@ -221,6 +228,17 @@ if ($ProjectDir) {
   # y destino son el mismo archivo. No es un error, es que ya esta donde tiene que estar.
   $CodexSkillSrc = "$PackageDir\.agents\skills\ia-stack\SKILL.md"
   $CodexSkillDst = Join-Path $CodexSkillDir 'SKILL.md'
+  # Y el mismo puntero para Claude Code, que busca skills de proyecto en .claude\skills: ver install.sh.
+  $ClaudeSkillDir = Join-Path $ProjectDir '.claude\skills\ia-stack'
+  New-Item -ItemType Directory -Force -Path $ClaudeSkillDir | Out-Null
+  Copy-Item $CodexSkillSrc (Join-Path $ClaudeSkillDir 'SKILL.md') -Force
+  # Con un CLAUDE.md, Claude Code no lee AGENTS.md con la configuracion predeterminada: ver install.sh.
+  foreach ($claudeMd in @('CLAUDE.md', 'CLAUDE.local.md', '.claude\CLAUDE.md')) {
+    $rutaClaudeMd = Join-Path $ProjectDir $claudeMd
+    if ((Test-Path -LiteralPath $rutaClaudeMd) -and -not (Select-String -LiteralPath $rutaClaudeMd -Pattern '@AGENTS.md' -SimpleMatch -Quiet)) {
+      Write-Output "AVISO: $rutaClaudeMd existe y no importa @AGENTS.md: con la configuracion predeterminada Claude Code no lee AGENTS.md. Agregale una linea con @AGENTS.md."
+    }
+  }
   if ((Resolve-Path -LiteralPath $CodexSkillSrc).Path -ne $CodexSkillDst) {
     Copy-Item $CodexSkillSrc $CodexSkillDir -Force
   }
@@ -296,7 +314,7 @@ if ($ProjectDir) {
 }
 
 if ($ProjectOnly) {
-  Write-Host '-ProjectOnly: no se instalo la skill global ni el runtime global, asi que /ia-stack no existe en Claude Code hasta instalarlos; Codex si ve el puntero del proyecto.'
+  Write-Host '-ProjectOnly: no se instalo la skill global ni el runtime global. /ia-stack anda en este proyecto por su puntero de .claude/skills, y Codex ve el de .agents/skills.'
 } else {
-  Write-Host 'Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando).'
+  Write-Host 'Next: restart Claude Code, open the project, then invoke /ia-stack.'
 }

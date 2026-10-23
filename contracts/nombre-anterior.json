@@ -5,8 +5,8 @@
     {
       "forma": "(?<![\\w.-])VibeCodeProtocols\\.md(?![\\w-]|\\.\\w)",
       "clase": "archivo de skill",
-      "por_que": "Es el archivo que el instalador escribe en el directorio de skills, y su nombre ES el comando. Se conservo a proposito para que `/VibeCodeProtocols` siga funcionando en las instalaciones que ya existen. La forma es el nombre del archivo entero: nada pegado delante ni detras lo extiende.",
-      "que_pasa_si_se_toca": "Todo el que tenga el protocolo instalado pierde el comando de barra sin aviso, y no hay forma de que se entere hasta que lo tipea.",
+      "por_que": "Es el archivo que las instalaciones anteriores a la 3.4.0 dejaban suelto en el directorio de skills, con la idea de sostener el comando `/VibeCodeProtocols`. Claude Code nunca lo cargo: solo descubre `<skills>/<nombre>/SKILL.md`. Desde la 3.4.0 el instalador lo nombra para APARTARLO, y por eso el nombre sigue apareciendo en el codigo. La forma es el nombre del archivo entero: nada pegado delante ni detras lo extiende.",
+      "que_pasa_si_se_toca": "El instalador deja de reconocer el archivo de una instalacion anterior y lo deja en el directorio de skills, donde ocupa lugar sin cargarse nunca, para siempre.",
       "ejemplo": [
         "assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);"
       ],
@@ -23,8 +23,8 @@
     {
       "forma": "(?<![^\\s(])/VibeCodeProtocols(?![\\w/-]|\\.\\w)",
       "clase": "alias de comando",
-      "por_que": "El comando de barra anterior. Sigue publicado en la documentacion junto al nuevo, con el nuevo primero. La forma es la del COMANDO: una barra que sigue a un espacio, a un parentesis o al comienzo de la linea -- con una comilla delante, `cd \"$HOME\"/...` o `join(base, '/...')` pasaban, y son rutas --, y que no sigue en otra ruta. Un segmento de ruta con el nombre anterior -- `~/`, `C:/`, `${HOME}/` o la carpeta de un checkout -- no es el comando, y no se perdona.",
-      "que_pasa_si_se_toca": "Lo mismo que arriba: se rompe la memoria muscular de quien ya lo usa, a cambio de nada.",
+      "por_que": "El comando de barra anterior, retirado en la 3.4.0: nunca funciono en Claude Code, porque el archivo que lo sostenia era un .md suelto, y su nombre no es valido para una skill, que va en minuscula y con guiones. Se conserva la excepcion porque README, INSTALL y CHANGELOG cuentan esa historia. La forma es la del COMANDO: una barra que sigue a un espacio, a un parentesis o al comienzo de la linea, y que no sigue en otra ruta. Un segmento de ruta con el nombre anterior no es el comando, y no se perdona.",
+      "que_pasa_si_se_toca": "Una linea que cuenta la historia del comando retirado se marcaria como residuo del rename, y la unica salida seria borrar la historia.",
       "ejemplo": [
         "echo \"Next: invoke /ia-stack (/VibeCodeProtocols sigue andando).\"",
         "usá /VibeCodeProtocols si ya lo tenías"
@@ -143,32 +143,6 @@
       "clase": "el propio guarda",
       "por_que": "La prueba que deriva esta comprobacion tiene que nombrar lo que busca. Se excluye a si misma o se acusaria sola, cada vez.",
       "que_pasa_si_se_toca": "Nada: es la unica excepcion que no protege a un tercero, solo evita que el guarda se muerda la cola."
-    },
-    {
-      "forma": "SKILL_ALIAS=\"VibeCodeProtocols\"",
-      "en": "scripts/install.sh",
-      "clase": "valor del alias de skill",
-      "por_que": "Es el VALOR del alias de skill: el instalador copia SKILL.md a `<skills>/$SKILL_ALIAS.md`, asi que esta linea es la que crea `VibeCodeProtocols.md` y sostiene el comando `/VibeCodeProtocols`. Se declara TEXTUAL, con su sintaxis, y no como `VibeCodeProtocols` a secas: el alias se escribe sin extension y sin barra, asi que las otras dos excepciones no lo cubren.",
-      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso.",
-      "ejemplo": [
-        "SKILL_ALIAS=\"VibeCodeProtocols\""
-      ],
-      "no_cubre": [
-        "SKILL_NAME=\"VibeCodeProtocols\""
-      ]
-    },
-    {
-      "forma": "\\$SkillAlias = 'VibeCodeProtocols'",
-      "en": "scripts/install.ps1",
-      "clase": "valor del alias de skill",
-      "por_que": "Es el VALOR del alias de skill: el instalador copia SKILL.md a `<skills>/$SKILL_ALIAS.md`, asi que esta linea es la que crea `VibeCodeProtocols.md` y sostiene el comando `/VibeCodeProtocols`. Se declara TEXTUAL, con su sintaxis, y no como `VibeCodeProtocols` a secas: el alias se escribe sin extension y sin barra, asi que las otras dos excepciones no lo cubren.",
-      "que_pasa_si_se_toca": "Ya paso, el 2026-09-17, en el commit que completo el rename: el barrido cambio esta linea y el instalador dejo de escribir el archivo del alias. Lo cazo `assertRuntime`, que comprueba que exista. Si no existiera esa prueba, todo el que reinstalara perderia el comando anterior sin un solo aviso.",
-      "ejemplo": [
-        "$SkillAlias = 'VibeCodeProtocols'"
-      ],
-      "no_cubre": [
-        "$SkillName = 'VibeCodeProtocols'"
-      ]
     }
   ],
   "limite_honesto": "Mira el codigo versionado -- .mjs, .sh, .ps1 -- y, desde el 2026-09-27, los .md que el instalador copia al runtime, LICENSE -- que viaja en el zip -- y los flujos .yml, estos dos ENTEROS, comentarios incluidos, porque se publican tal cual. NO mira README, INSTALL ni CHANGELOG, que cuentan a proposito la historia del rename, ni los .json de contracts/ y de templates/ ni lo que hay en examples/ -- los dos ultimos viajan en el zip y hoy no tienen ninguna aparicion, pero nada lo impide --, ni los documentos que no viajan: ahi un comando con el nombre viejo puede volver sin que nadie lo vea. En el codigo no mira los comentarios: un comentario que menciona el nombre anterior es historia, no residuo, y por eso tampoco ve uno que lo usa como nombre del producto. Y busca la sigla con frontera de palabra: pegada a un guion bajo -- una variable de entorno con el prefijo viejo -- o adentro de otra palabra, no la ve.",

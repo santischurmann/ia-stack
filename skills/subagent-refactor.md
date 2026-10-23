@@ -38,7 +38,21 @@ Read every file touched by GREEN subagent. Understand the full picture before ed
 
 ### Step 2 — Apply Boy Scout Rule
 
-Leave the code cleaner than you found it. Focus on:
+Leave the code cleaner than you found it. First look for three things, in this order, in the files
+you were given — and in plain words, because the person reading your report may not code:
+
+1. **Código sin usar** — funciones, variables, exports o archivos que nadie llama.
+2. **Lógica repetida** — lo mismo escrito en dos o más lugares.
+3. **Trabajo de más** — una consulta por cada elemento de una lista, traer más datos de los que se
+   usan, un bucle que da vueltas de más.
+
+For every finding, report `archivo:línea`, what it is, and **cómo lo comprobaste** (what you searched
+and what came back — e.g. no caller found anywhere in the repo). A finding you cannot prove is not a
+finding: drop it. Removing unused or repeated code keeps behavior identical, so it happens here with
+the suite green. A fix that **cambia lo que el programa hace** — a query rewritten, a loop changed —
+is not a refactor: report it as a new task that starts with its own red test (LAW 1).
+
+Then:
 
 **Naming:**
 - Variables: intention-revealing (`userCount` not `n`)

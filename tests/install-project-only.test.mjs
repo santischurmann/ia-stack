@@ -29,8 +29,9 @@ function assertInstaladoEnElProyecto(project, salida) {
   assert.ok(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'SKILL.md')), 'el runtime tiene que quedar en el proyecto');
   assert.ok(existsSync(join(project, '.vibe', 'ia-stack-runtime', 'INSTALADO.json')), 'y sellado, como en una instalacion normal');
   assert.ok(existsSync(join(project, '.agents', 'skills', 'ia-stack', 'SKILL.md')), 'y Codex tiene que ver su puntero');
-  assert.match(salida, /project-?only/iu, 'la salida dice que no se instalo lo global, en vez de dejar creer que /ia-stack ya anda');
-  assert.match(salida, /\/ia-stack no existe en Claude Code/u);
+  assert.ok(existsSync(join(project, '.claude', 'skills', 'ia-stack', 'SKILL.md')), 'y Claude Code el suyo, en el proyecto');
+  assert.match(salida, /project-?only/iu, 'la salida dice que no se instalo lo global');
+  assert.match(salida, /\/ia-stack anda en este proyecto/u, 'y que en este proyecto la skill si carga, por su puntero de .claude/skills');
 }
 
 test('--project-only instala el runtime en el proyecto y no escribe nada fuera de el', { skip: !hayBash }, () => {
@@ -74,7 +75,7 @@ test('el comportamiento por defecto no cambia: sin --project-only se sigue insta
     // de lo global: es la forma barata de ver que el orden de siempre sigue siendo el de siempre.
     const r = enBash(root, `--target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(join(root, 'no-existe'))}'`);
     assert.equal(r.status, 1, r.output);
-    assert.ok(existsSync(join(target, 'ia-stack.md')), 'la skill global se instalo antes de rechazar el proyecto');
+    assert.ok(existsSync(join(target, 'ia-stack', 'SKILL.md')), 'la skill global se instalo antes de rechazar el proyecto');
     assert.ok(existsSync(join(runtime, 'SKILL.md')), 'y el runtime global tambien');
     assert.equal(existsSync(join(project, '.vibe')), false);
   } finally {

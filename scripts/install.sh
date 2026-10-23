@@ -4,10 +4,6 @@
 set -euo pipefail
 
 SKILL_NAME="ia-stack"
-# EL NOMBRE ANTERIOR SIGUE ANDANDO. `/VibeCodeProtocols` esta escrito en cada proyecto que ya lo
-# instalo, en notas y en costumbre: quitarlo convertiria un cambio de nombre en una rotura para
-# todos los que ya lo usaban. Se instalan las dos, con el mismo contenido.
-SKILL_ALIAS="VibeCodeProtocols"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
 TARGET_DIR="$HOME/.claude/skills"
@@ -143,10 +139,21 @@ else
   echo "Skills:  $TARGET_DIR"
   echo "Runtime: $RUNTIME_DIR"
 
-  mkdir -p "$TARGET_DIR" "$TARGET_DIR/ia-stack-skills"
-  cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_NAME.md"
-  cp "$PACKAGE_DIR/SKILL.md" "$TARGET_DIR/$SKILL_ALIAS.md"
-  cp -R "$PACKAGE_DIR/skills/." "$TARGET_DIR/ia-stack-skills/"
+  # LA SKILL ES UNA CARPETA CON EL PUNTERO, no el protocolo suelto. Claude Code solo descubre
+  # `<skills>/<nombre>/SKILL.md`: hasta la 3.3.0 se copiaban `ia-stack.md` y `VibeCodeProtocols.md`
+  # sueltos, de 162 KB, y medido el 23-10-2026 `/ia-stack` no aparecia entre las skills de la sesion.
+  # Lo de antes se APARTA al lado del directorio de skills -- adentro se descubriria --, nunca se borra.
+  # El alias `/VibeCodeProtocols` se retira con ellos: no funciono nunca, y su nombre no es valido para
+  # una skill, que va en minuscula y con guiones.
+  SKILLS_ARCHIVO="$(dirname "$TARGET_DIR")/ia-stack-archive/$(date +%Y-%m-%dT%H%M%S)/skills"
+  for viejo in ia-stack.md VibeCodeProtocols.md ia-stack-skills; do
+    [ -e "$TARGET_DIR/$viejo" ] || continue
+    mkdir -p "$SKILLS_ARCHIVO"
+    mv "$TARGET_DIR/$viejo" "$SKILLS_ARCHIVO/$viejo"
+    echo "APARTADO: $TARGET_DIR/$viejo era el formato anterior de la skill, que Claude Code no carga. Se MOVIO a $SKILLS_ARCHIVO/$viejo; vuelve con mv."
+  done
+  mkdir -p "$TARGET_DIR/$SKILL_NAME"
+  cp "$PACKAGE_DIR/.agents/skills/ia-stack/SKILL.md" "$TARGET_DIR/$SKILL_NAME/SKILL.md"
   copy_runtime "$RUNTIME_DIR"
   chmod +x "$RUNTIME_DIR/scripts/"*.sh
   echo "OK: skill, sub-skills, and self-contained runtime installed."
@@ -215,6 +222,19 @@ if [ -n "$PROJECT_DIR" ]; then
   if [ "$CODEX_SKILL_SRC" != "$CODEX_SKILL_DST" ]; then
     cp "$CODEX_SKILL_SRC" "$CODEX_SKILL_DST"
   fi
+  # Y EL MISMO PUNTERO PARA CLAUDE CODE, que busca skills de proyecto en .claude/skills/<nombre>/ y no
+  # en .agents/. Con esto `/ia-stack` anda en el proyecto aunque no se haya instalado nada global.
+  mkdir -p "$PROJECT_DIR/.claude/skills/ia-stack"
+  cp "$CODEX_SKILL_SRC" "$PROJECT_DIR/.claude/skills/ia-stack/SKILL.md"
+  # CON UN CLAUDE.md, CLAUDE CODE NO LEE AGENTS.md con la configuracion predeterminada: lo lee solo si
+  # no hay CLAUDE.md, CLAUDE.local.md ni .claude/CLAUDE.md, o si uno lo importa con `@AGENTS.md` (docs
+  # oficiales, memory, 23-10-2026). Un CLAUDE.md es de la persona: no se reescribe, se avisa.
+  for claude_md in CLAUDE.md CLAUDE.local.md .claude/CLAUDE.md; do
+    [ -f "$PROJECT_DIR/$claude_md" ] || continue
+    if ! grep -q '@AGENTS.md' "$PROJECT_DIR/$claude_md"; then
+      echo "AVISO: $PROJECT_DIR/$claude_md existe y no importa @AGENTS.md: con la configuracion predeterminada Claude Code no lee AGENTS.md. Agregale una linea con @AGENTS.md."
+    fi
+  done
   # UN AGENTS.md QUE ESCRIBIO UN INSTALADOR ANTERIOR Y NADIE EDITO se reconoce por su hash de git
   # sobre el texto con LF, contra contracts/agents-publicados.json, y se actualiza. Cualquier otro es
   # de la persona y no se toca. Sin esto quedaba congelado: el 22-10-2026 dos proyectos del operador
@@ -302,7 +322,7 @@ else
 fi
 
 if [ "$PROJECT_ONLY" -eq 1 ]; then
-  echo "NOTE: --project-only: no se instalo la skill global ni el runtime global, asi que /ia-stack no existe en Claude Code hasta instalarlos; Codex si ve el puntero del proyecto."
+  echo "NOTE: --project-only: no se instalo la skill global ni el runtime global. /ia-stack anda en este proyecto por su puntero de .claude/skills, y Codex ve el de .agents/skills."
 else
-  echo "Next: restart Claude Code, open the project, then invoke /ia-stack (/VibeCodeProtocols sigue andando)."
+  echo "Next: restart Claude Code, open the project, then invoke /ia-stack."
 fi

@@ -1,20 +1,24 @@
 ---
 name: ia-stack
-description: Protocolo de once fases con gates mecánicos para investigar, diseñar, construir, verificar y publicar software con agentes. Sin test rojo visible no hay implementación. Cada decisión se presenta como menú de opciones con recomendación explícita.
+description: Protocolo de once fases con gates que se ejecutan, para construir software con agentes sin romper lo que ya anda. Usalo al empezar o retomar un proyecto, al pedir una funcionalidad o un arreglo, o antes de publicar. Dice dónde está el protocolo completo y qué leer en cada fase.
 ---
 
 # IA Stack
 
 **Antes de operar, leé el protocolo por su § MAPA DE LECTURA**: el contrato interno, las leyes,
 el mapa y la sección de la fase en curso. Son once fases encadenadas por gates que se ejecutan, y
-saltarse uno invalida lo que sigue. Vive en uno de estos dos lugares, según cómo llegó IA Stack acá:
+saltarse uno invalida lo que sigue. Vive en el primero de estos lugares que exista:
 
 - `SKILL.md` en la raíz — este es el repositorio de IA Stack.
 - `.vibe/ia-stack-runtime/SKILL.md` — IA Stack está instalado como herramienta en este proyecto.
+- `~/.claude/ia-stack-runtime/SKILL.md` — la instalación global, para un proyecto que todavía no lo tiene.
 
-Este archivo es un **puntero, no una copia**. Codex descubre skills de repositorio sólo en
-`.agents/skills/<nombre>/SKILL.md` y en `.codex/skills/<nombre>/SKILL.md` — verificado ejecutando:
-un `SKILL.md` suelto en la raíz y los `skills/*.md` le son invisibles. Una copia acá se
+Este archivo es un **puntero, no una copia**, y es el mismo en los tres lugares donde lo deja el
+instalador: `.claude/skills/ia-stack/` (Claude Code), `.agents/skills/ia-stack/` (Codex) y
+`~/.claude/skills/ia-stack/` (global). Cada host descubre skills sólo en `<carpeta>/<nombre>/SKILL.md`:
+un `SKILL.md` suelto en la raíz, los `skills/*.md` o un `.md` suelto en `skills/` le son invisibles.
+Hasta la 3.3.0 el instalador dejaba ahí los 162 KB del protocolo como archivo suelto, y `/ia-stack` nunca
+apareció en Claude Code. Una copia acá se
 desincronizaría del original y ningún gate las mantendría iguales, así que apunta en vez de copiar.
 Si este archivo dice algo distinto de `SKILL.md`, manda `SKILL.md`.
 

@@ -266,15 +266,64 @@ export function assertSellado(project) {
   assert.equal(typeof sello.arbol_limpio, 'boolean', 'y si el checkout tenia cambios sin commitear');
 }
 
+/** El puntero canonico: la unica fuente de las tres copias que instala el instalador. */
+export const PUNTERO = join(repoRoot, '.agents', 'skills', 'ia-stack', 'SKILL.md');
+
+// UNA SKILL QUE CLAUDE CODE CARGA DE VERDAD. Hasta la 3.3.0 el instalador dejaba `ia-stack.md` y
+// `VibeCodeProtocols.md` sueltos en el directorio de skills, y Claude Code solo descubre
+// `<skills>/<nombre>/SKILL.md`: medido el 23-10-2026, en una sesion con los dos archivos instalados
+// `ia-stack` no figuraba entre las skills disponibles. Y si hubiera cargado, metia el protocolo
+// entero —162 KB— de una vez. Ahora cada copia es el puntero de 2 KB, byte a byte.
+export function assertSkillDeClaude(project, target) {
+  const fuente = readFileSync(PUNTERO);
+  if (target !== undefined) {
+    assert.deepEqual(readdirSync(target), ['ia-stack'], 'el directorio de skills global tiene una sola carpeta, la de la skill');
+    assert.deepEqual(readFileSync(join(target, 'ia-stack', 'SKILL.md')), fuente, 'la skill global es el puntero, byte a byte');
+  }
+  assert.deepEqual(readFileSync(join(project, '.claude', 'skills', 'ia-stack', 'SKILL.md')), fuente, 'Claude Code ve el puntero en el proyecto');
+  assert.deepEqual(readFileSync(join(project, '.agents', 'skills', 'ia-stack', 'SKILL.md')), fuente, 'y Codex el mismo');
+}
+
+/** Lo que dejaba una instalacion anterior a la 3.4.0 en el directorio de skills global. */
+export const SKILLS_PLANAS = Object.freeze(['ia-stack.md', 'VibeCodeProtocols.md', 'ia-stack-skills']);
+
+export function plantarSkillsPlanas(target) {
+  mkdirSync(join(target, 'ia-stack-skills'), { recursive: true });
+  writeFileSync(join(target, 'ia-stack.md'), '# protocolo entero, de una instalacion anterior\n');
+  writeFileSync(join(target, 'VibeCodeProtocols.md'), '# el alias, de una instalacion anterior\n');
+  writeFileSync(join(target, 'ia-stack-skills', 'gates.md'), '# sub-skill de una instalacion anterior\n');
+}
+
+/** Lo plano se APARTA al lado del directorio de skills —nunca adentro, o se descubriria—, no se borra. */
+export function assertSkillsPlanasApartadas(target, salida) {
+  for (const nombre of SKILLS_PLANAS) assert.equal(existsSync(join(target, nombre)), false, `${nombre} quedo en el directorio de skills`);
+  const archivo = join(dirname(target), 'ia-stack-archive');
+  assert.equal(existsSync(archivo), true, 'lo apartado vive al lado del directorio de skills');
+  const [sello] = readdirSync(archivo);
+  assert.match(sello, /^\d{4}-\d{2}-\d{2}T\d{6}$/u, `una carpeta por corrida, con fecha y hora: ${sello}`);
+  for (const nombre of SKILLS_PLANAS) assert.equal(existsSync(join(archivo, sello, 'skills', nombre)), true, `${nombre} no se aparto`);
+  assert.match(salida, /APARTADO: [^\n]*ia-stack\.md/u, 'y se dice');
+}
+
+// CON UN CLAUDE.md EN EL PROYECTO, CLAUDE CODE NO LEE AGENTS.md con la configuracion predeterminada
+// (docs oficiales, memory: lo lee solo si no hay CLAUDE.md, CLAUDE.local.md ni .claude/CLAUDE.md, o si
+// uno de ellos lo importa con `@AGENTS.md`). El instalador no reescribe un CLAUDE.md ajeno: avisa.
+export function plantarClaudeMd(project, conImport) {
+  const lineas = ['# reglas del proyecto', ...(conImport ? ['@AGENTS.md'] : []), ''];
+  writeFileSync(join(project, 'CLAUDE.md'), lineas.join('\n'));
+}
+
+export function assertAvisoClaudeMd(salida, avisa) {
+  const re = /AVISO: [^\n]*CLAUDE\.md[^\n]*@AGENTS\.md/u;
+  if (avisa) assert.match(salida, re, 'un CLAUDE.md sin @AGENTS.md se avisa');
+  else assert.doesNotMatch(salida, re, 'sin CLAUDE.md, o con @AGENTS.md, no hay nada que avisar');
+}
+
 export function assertRuntime(project, target, runtime) {
-  assert.equal(existsSync(join(target, 'VibeCodeProtocols.md')), true);
-  // EL DIRECTORIO DE SKILLS, ENTERO: la skill, su alias y las sub-skills, y nada mas. El instalador
-  // de bash creaba ademas una carpeta vacia con el nombre anterior en cada instalacion, y ninguna
-  // prueba lo veia: miraban que estuviera lo esperado, no que no hubiera nada de mas. El guarda del
-  // nombre anterior tampoco, porque su excepcion para los temporales tapaba cualquier cosa que
-  // empezara igual. Lo encontro la revision del 2026-09-26. El de PowerShell nunca la creo.
-  assert.deepEqual(readdirSync(target).sort(), ['VibeCodeProtocols.md', 'ia-stack-skills', 'ia-stack.md'].sort(), 'el directorio de skills tiene algo de mas o de menos');
-  assert.ok(readdirSync(join(target, 'ia-stack-skills')).length > 0, 'las sub-skills tienen que quedar en ia-stack-skills');
+  // EL DIRECTORIO DE SKILLS, ENTERO: una carpeta, la de la skill, y nada mas. El instalador de bash
+  // llego a crear una carpeta vacia con el nombre anterior en cada instalacion, y ninguna prueba lo veia:
+  // miraban que estuviera lo esperado, no que no hubiera nada de mas (revision del 2026-09-26).
+  assertSkillDeClaude(project, target);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-red-node.mjs')), true);
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-core.mjs')), true, 'runtime needs the I1 immutable Discovery verifier');
   assert.equal(existsSync(join(runtime, 'scripts', 'verify-discovery-views.mjs')), true, 'runtime needs the I1.5 deterministic Discovery view verifier');

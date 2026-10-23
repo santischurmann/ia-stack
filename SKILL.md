@@ -1,6 +1,6 @@
 ---
 name: ia-stack
-description: "Downloadable harness/skill with a self-improvement loop for building webs, PWAs and desktop apps. TDD methodology for Claude Code: the orchestrator runs IA Stack's internal contract and role-persona subagents implement (Test-Engineer/Builder/Triangulator/Refactor-Engineer/DOCS/CHORE — none certifies its own gate), each on the model and effort its role gets from contracts/model-routing.json (Haiku for reading and docs, Sonnet for building, Opus for security and adversarial review; Fable only with an explicit yes). Built-in terse mode for internal reports (skills/modo-breve.md), no external plugin. Publishes once, at the end. Paperclip-style AI-company layer: org chart (.vibe/COMPANY.md), goal ancestry per task, atomic task checkout for parallel builds, append-only audit log (.vibe/AUDIT.md), lightweight budget policy w/ 3-retry hard stop. Triage proposes a short path for small changes (the menu always asks; verification is never shortened). .vibe/ persists memory incl. LESSONS.md (Reflexion-schema, confirm-gated, deduped, retire-not-delete cross-project error memory) + optional local mirror. Final phase = native verify+risk-tiered simplify+security+risk-modulated adversarial+tests+receipt-gated commit/push/merge+backups+reflect+lessons-confirm. Hard gate: no red test = no code."
+description: "Protocolo para construir webs, PWA y apps de escritorio con agentes, sin romper lo que ya usa gente real. Sin prueba roja no hay código; cada fase cierra con gates que se ejecutan y un menú con recomendación. Cada subagente corre en el modelo de su rol (contracts/model-routing.json): Haiku lee y documenta, Sonnet construye, Opus revisa y refuta, Fable sólo con un sí explícito. Modo breve propio entre agentes, lenguaje simple hacia la persona. Se publica una sola vez, al terminar. La memoria vive en .vibe/ y la limpieza nunca borra."
 ---
 
 # IA Stack
@@ -11,7 +11,7 @@ agentes, simple hacia la persona**. El modo breve —el «caveman interno», pro
 ningún plugin externo— vive en `skills/modo-breve.md`; `skills/caveman-tdd.md` es otra cosa: las
 reglas del gate TDD.
 
-**Versión:** 3.3.0 · etiquetada como `v3.3.0` en git.
+**Versión:** 3.4.0 · etiquetada como `v3.4.0` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
@@ -135,6 +135,12 @@ activo:
    los PR (`skills/subagent-chore.md`, Task D). **Límite honesto:** ningún gate cuenta cuántas
    veces se pusheó —el reflog del remoto también registra los fetch, y un hook se saltea con
    `--no-verify`—; lo sostienen esta ley, el menú de 8.1 y ese CI.
+   **Cuando un push despliega a producción** (`.vibe/PROJECT.md` § Producción: una rama que, al
+   recibir un push, publica la app sola), publicar son **dos pasos, a propósito**: el trabajo va en
+   otra rama, y la publicación única de esta ley es el push de ESA rama al cerrar el plan, que suele
+   crear la copia de prueba; llevarlo a la rama que despliega es otra cosa, que
+   se pide aparte, con su propio menú (8.1), recién después de mirar esa copia. Son dos corridas de CI en vez de una, y es el
+   precio de que la gente no vea un cambio que nadie miró.
 
 **IRON LAW — sin claims de completitud sin evidencia fresca.** Refuerzo textual de "trust what's
 derived, not narrated" (fuente: gstack `ship/SKILL.md`, verbatim confirmado en investigación).
@@ -344,6 +350,24 @@ Esperando tu respuesta antes de continuar.
    La rigurosidad se paga y solo se paga cuando hay algo que perder — un nivel `A` no debería
    terminar arrastrando el aparato completo de un `C` salvo que un cambio puntual lo dispare por
    `risk_level` propio (Phase 7.1, ortogonal a esto).
+7c. **Producción** — una sola vez por proyecto, si el bloque `## Producción` de `.vibe/PROJECT.md`
+   está vacío. Lo contesta la persona y **nunca se infiere**: un agente que escribe «en vivo: no» en un
+   archivo que nadie lee es la forma más barata de romper una app que usa gente real. Con las
+   respuestas se completa ese bloque, con quién lo declaró y la fecha:
+
+🔵 **¿Tu app ya la usa gente real?**
+
+- **A)** Sí — está publicada y la usa gente — *(recomendado si dudás: tratarla como viva de más no rompe nada, de menos sí)*
+- **B)** No todavía — sólo la uso yo o todavía no está publicada
+
+Esperando tu respuesta antes de continuar.
+
+   Si es **A**, se pregunta además, en palabras simples y una por vez: dónde corre; qué rama, al
+   recibir un push, la publica sola (en Vercel, Railway o Netlify suele ser `main`); si hay una
+   copia de prueba (staging) —una segunda versión publicada donde mirar los cambios antes que la gente—; y
+   si un cambio puede tocar datos reales. Lo que la persona no sepa se escribe `ninguno — no lo sé`,
+   que también es una respuesta. Con la app en vivo, el trabajo nunca se hace en la rama que
+   despliega (LAW 9) y un cambio de datos pide respaldo y vuelta atrás (8.0).
 8. **Confirmar el stack detectado** — el paso 5 lo dedujo; una deducción no es una decisión.
 
 🔵 **¿El stack detectado es el correcto?**
@@ -416,6 +440,12 @@ Esperando tu respuesta antes de continuar.
   leer después.
 
 Esperando tu respuesta antes de continuar.
+
+> **Qué es cada cosa:** el *scavenge* es el relevamiento de lo que ya hay en el código antes de
+> tocarlo; *Discovery*, la investigación de para qué sirve el cambio y quién lo usa; la *spec*, el
+> documento que dice qué tiene que hacer. *Rojo → verde → triangular → refactorizar*: primero una
+> prueba que falla, después el código mínimo que la pasa, después casos de borde, y al final ordenar
+> sin cambiar lo que hace.
 
    **Lo que la vía corta NO saltea, y conviene decirlo porque antes no estaba dicho:** el test rojo,
    la triangulación, la fase 6 completa y el recibo. Lo que se acorta es **el expediente de
@@ -935,6 +965,10 @@ el resultado, y por eso lo único que se pregunta, es si una tarea puede escalar
 
 Esperando tu respuesta antes de continuar.
 
+> **Qué es cada cosa:** los *niveles* son modelos de más barato a más capaz —N1 Haiku, N2 Sonnet, N3
+> Opus—. Un *diagnóstico nuevo* es una explicación distinta de por qué falló: reintentar lo mismo no
+> cuenta. N4 (Fable) nunca se usa sin que digas que sí.
+
 Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`. Si Phase 4
 permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto
 de escritura no serializado; un `SERIALIZED` conserva su orden topológico.
@@ -1254,6 +1288,13 @@ Gate: pruebas de los caminos críticos y cobertura medida sin rangos sin ejecuta
 unitarias, de integración y de punta a punta. Si algo falla, se lanza `subagent-chore.md` y se
 vuelve a correr. El porcentaje no reemplaza ACs ni revisión adversarial: mide ejecución, no intención.
 
+**Si el cambio tiene pantalla, se mira en un navegador real.** Una prueba que pasa no dice que la
+página se vea ni que el botón responda. Se usa el probador de navegador que el proyecto ya tenga
+—Playwright, Cypress u otro; visible si la persona quiere mirar— y no se instala uno nuevo sin
+preguntar. Lo que se vio se vuelve una prueba de punta a punta, o se declara `no automatizado` en el
+reporte, con lo que se miró. Las capturas, videos y trazas que deja la herramienta van a una carpeta
+temporal o ignorada por git, nunca al commit.
+
 **Gate de lint y typecheck — detección mecánica, tres resultados posibles, y ninguno es saltearlo
 en silencio:**
 
@@ -1402,7 +1443,7 @@ reemplazo de las lentes genéricas anteriores de correctitud, seguridad y reprod
   compartido.
 - **Legibilidad** — claridad, dónde termina la responsabilidad de cada parte, mantenibilidad, y si
   el código documenta sus propias decisiones no obvias.
-- **Confiabilidad** — determinismo, manejo de errores, puntos de integración, riesgo de regresión.
+- **Confiabilidad** — determinismo, manejo de errores, puntos de integración, riesgo de regresión, y rendimiento cuando el cambio toca la base de datos, la red o una colección que crece: una consulta por cada elemento de una lista (el problema «N+1»), traer más datos de los que se usan, bucles de más; con la cantidad de viajes o el volumen medido, no supuesto.
 - **Resiliencia** — entrada inválida o mal formada, valores de borde, falla parcial, camino de
   recuperación.
 
@@ -1704,6 +1745,12 @@ cosas que no estaban en ningún lado:
 - **La reversión, con la misma prohibición que la fase 9 ya tiene**: `rollback_command` no puede
   contener `rm`, `del`, `Remove-Item` ni `git clean` —la vuelta atrás mueve de vuelta, nunca
   elimina— y `rollback_tested` trae la evidencia de haberlo corrido una vez.
+- **Los datos, si el cambio los toca** (`.vibe/PROJECT.md` § Producción dice que hay datos reales, o el
+  cambio modifica la forma de la base —el esquema—): el expediente declara `datos` con
+  `cambia_esquema`, el `respaldo` —qué copia de los datos se hizo y dónde, antes de tocarlos— y la
+  `vuelta_atras` de los datos, que no es la del código: revertir un commit no devuelve una columna
+  borrada. Cada uno admite `ninguno — <motivo>`, nunca el silencio. `verify-deploy` lo valida cuando
+  está; un expediente anterior a la 3.4.0, sin `datos`, sigue pasando.
 
 **Nada de esto se escribe de cero.** Sale de lo que ya está declarado y nadie volvía a leer: el
 `rollback` de la tarea en `docs/tasks.json` → `deploy.rollback_command`; los gates de LAW 8 y el
@@ -1851,6 +1898,21 @@ git rev-list --count @{u}..HEAD   # sin upstream todavía: escribir «N/A — ra
 - **A)** `git push origin <branch>` — *(recomendado cuando el plan entero cerró y los gates están en verde)*
 - **B)** `git push` y además abrir un PR — sólo con el plan entero cerrado
 - **C)** Todavía no — dejarlo local — *(recomendado mientras el plan tenga fases o lotes pendientes)*
+
+Esperando tu respuesta antes de continuar.
+
+> **Qué es cada cosa:** *push* es subir los commits a GitHub; un *PR* (pull request) es pedir que esa
+> rama se sume a la principal, para que alguien la mire antes.
+
+Si un push a una rama despliega a producción (LAW 9), lo de arriba publica la rama de trabajo y nada
+llega todavía a la gente. Llevarlo a producción se pregunta aparte, recién cuando la copia de prueba
+se miró. Es la acción reservada `deploy` del modo continuo: nunca se cierra sola.
+
+🔵 **¿Lo llevo a producción?**
+
+- **A)** Todavía no — la copia de prueba no se miró o algo no se vio bien — *(recomendado mientras la copia de prueba no se haya mirado)*
+- **B)** Sí — sumar la rama de trabajo a `<rama que despliega>`; desde ahí la ve la gente
+- **C)** No hay copia de prueba — llevarlo igual, con el riesgo dicho y anotado en `.vibe/SESSION.md`
 
 Esperando tu respuesta antes de continuar.
 

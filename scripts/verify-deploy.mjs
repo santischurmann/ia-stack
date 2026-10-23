@@ -158,6 +158,18 @@ export function validateDeploy(document, { versionados = null } = {}) {
     }
   }
 
+  // LOS DATOS TIENEN SU PROPIA VUELTA ATRAS: revertir un commit no devuelve una columna borrada. Es
+  // opcional para no romper los expedientes de antes de la 3.4.0, pero si esta, se valida entera.
+  if (Object.hasOwn(document, 'datos')) {
+    const datos = document.datos;
+    if (!isObject(datos)) violations.push('datos debe ser un objeto con cambia_esquema, respaldo y vuelta_atras');
+    else {
+      if (typeof datos.cambia_esquema !== 'boolean') violations.push('datos.cambia_esquema debe ser booleano: si el cambio modifica la forma de la base');
+      declaredOrNone(datos.respaldo, 'datos.respaldo', violations);
+      declaredOrNone(datos.vuelta_atras, 'datos.vuelta_atras', violations);
+    }
+  }
+
   if (!nonEmpty(document.rollback_command)) violations.push('rollback_command debe decir cómo se vuelve atrás: un cambio sin vuelta atrás es de una sola dirección');
   else {
     const verbo = DESTRUCTIVE_ROLLBACK.find((v) => new RegExp(`(?:^|\\s)${v.replaceAll(' ', '\\s+')}(?:\\s|$)`, 'iu').test(document.rollback_command));

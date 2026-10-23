@@ -9,6 +9,47 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ---
 
+## [3.4.0] — 2026-10-23
+
+**Versión menor, con un retiro.** Lo nuevo cuida lo que ya usa gente real y hace que la skill cargue
+de verdad. Lo único que se retira es el alias `/VibeCodeProtocols`, que nunca llegó a funcionar.
+Viene del video «nKkmfBYHu_Q» sobre vibe coding ordenado (entornos, contexto corto, skills
+compactas, documentación mínima, subagentes), refutado en dos rondas por Codex `gpt-5.6-sol` y por un
+refutador ciego en otro modelo, que tiraron siete propuestas: el health remoto, bloquear commits por
+nombre de rama, un bloque de entornos en `AGENTS.md`, worktrees con merge de vuelta, tres skills
+instaladas en cada proyecto, y el detector de jerga bloqueante.
+
+- **`/ia-stack` ahora carga en Claude Code.** Hasta la 3.3.0 el instalador dejaba `ia-stack.md` y
+  `VibeCodeProtocols.md` sueltos en `~/.claude/skills/`, y Claude Code sólo descubre
+  `<skills>/<nombre>/SKILL.md`: medido el 23-10-2026, `ia-stack` no figuraba entre las skills de una
+  sesión con los dos archivos instalados. Y si hubiera cargado, metía los 162 KB del protocolo de una
+  vez. Ahora se instala el puntero de 2 KB en `~/.claude/skills/ia-stack/`, y en el proyecto en
+  `.claude/skills/ia-stack/` (Claude Code) y `.agents/skills/ia-stack/` (Codex), byte a byte el mismo.
+  Los archivos sueltos se apartan a `~/.claude/ia-stack-archive/<fecha-y-hora>/`, no se borran.
+- **Aviso si un `CLAUDE.md` no importa `@AGENTS.md`.** Con la configuración predeterminada, Claude Code
+  no lee `AGENTS.md` cuando hay un `CLAUDE.md`, `CLAUDE.local.md` o `.claude/CLAUDE.md`. El instalador
+  no lo reescribe: avisa.
+- **Las descripciones entran en el tope de una skill.** La de `SKILL.md` medía 1315 caracteres contra un
+  máximo de 1024; ahora 539. La del puntero dice cuándo usarla. Lo fija `tests/skill-puntero.test.mjs`.
+- **Producción, declarada por la persona.** Bootstrap pregunta una vez, en palabras simples, si la app
+  ya la usa gente real, qué rama la publica sola, si hay una copia de prueba y si un cambio puede tocar
+  datos reales; se guarda en `.vibe/PROJECT.md` § Producción y nunca se infiere.
+- **LAW 9, cuando un push despliega a producción:** el trabajo va en otra rama, la publicación única es
+  el push de esa rama —que crea la copia de prueba— y llevarlo a la rama que despliega se pide aparte,
+  con su propio menú en 8.1, después de mirar la copia.
+- **Los datos tienen su propia vuelta atrás.** `deploy.json` declara `datos` —si cambia el esquema, el
+  respaldo previo y cómo se devuelven— y `verify-deploy` lo valida cuando está; un expediente anterior,
+  sin `datos`, sigue pasando.
+- **La Fase 7 busca lo que sobra, lo repetido y el trabajo de más**, cada hallazgo con cómo se comprobó;
+  lo que cambia conducta no se toca en verde y vuelve como tarea con su prueba roja. La lente de
+  confiabilidad de 6.3 mira el rendimiento cuando el cambio toca la base, la red o una colección.
+- **Si el cambio tiene pantalla, se mira en un navegador real** con el probador que el proyecto ya
+  tenga; lo que se vio se vuelve prueba o se declara `no automatizado`, y los artefactos no se commitean.
+- **DOCS mantiene `docs/arquitectura.md`** —un diagrama Mermaid— sólo si existe y el cambio lo dejó falso.
+- **Lenguaje simple:** glosas en los menús de vía corta, BUILD CONFIG y publicación.
+
+---
+
 ## [3.3.0] — 2026-10-22
 
 **Versión menor: agrega, y lo que ya existía sigue andando.** Cambia cómo se gasta —un push al

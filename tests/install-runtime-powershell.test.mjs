@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { soloEnWindows } from './_entorno.mjs';
-import { assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
+import { plantarClaudeMd, assertAvisoClaudeMd, assertSkillsPlanasApartadas, plantarSkillsPlanas, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla, tampoco en PowerShell', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();
@@ -35,6 +35,26 @@ test('un AGENTS.md que escribió el instalador se actualiza, y el .gitignore CRL
     assert.equal(result.status, 0, result.output);
     assertAgentsActualizado(project, result.output);
     assertGitignoreSinMezcla(project);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('las skills sueltas de una instalación anterior se apartan y un CLAUDE.md sin @AGENTS.md se avisa, también en PowerShell', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    plantarSkillsPlanas(target);
+    plantarClaudeMd(project, false);
+    const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project];
+    const result = run('powershell.exe', args);
+    assert.equal(result.status, 0, result.output);
+    assertSkillsPlanasApartadas(target, result.output);
+    assertAvisoClaudeMd(result.output, true);
+    plantarClaudeMd(project, true);
+    const otra = run('powershell.exe', args);
+    assert.equal(otra.status, 0, otra.output);
+    assertAvisoClaudeMd(otra.output, false);
+    assertRuntime(project, target, runtime);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

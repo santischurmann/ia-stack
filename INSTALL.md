@@ -23,7 +23,10 @@ cd ia-stack
 
 El instalador hace dos copias distintas:
 
-1. El skill y sus sub-skills en `~/.claude/skills/`, para que Claude Code lo vea.
+1. La skill en `~/.claude/skills/ia-stack/SKILL.md`, para que Claude Code la vea, y el mismo puntero
+   en `<proyecto>/.claude/skills/ia-stack/` y `<proyecto>/.agents/skills/ia-stack/` (Codex). Es un
+   puntero de 2 KB que dice dónde está el protocolo y qué leer en cada fase: el protocolo completo no
+   se carga de una vez.
 2. Un runtime autocontenido en `<proyecto>/.vibe/ia-stack-runtime/`, para que cada comando y template
    exista dentro del proyecto que lo usa.
 
@@ -52,8 +55,15 @@ apartar ahí escribiría archivos en un repositorio que no es el del proyecto.
 2. Abrí el proyecto destino.
 3. Invocá `/ia-stack`.
 
-   `/VibeCodeProtocols` es el nombre anterior y **sigue andando**: el instalador deja las dos,
-   con el mismo contenido, para no romper lo que ya estaba escrito en cada proyecto.
+   Hasta la 3.3.0 el instalador dejaba `ia-stack.md` y `VibeCodeProtocols.md` sueltos en
+   `~/.claude/skills/`, y Claude Code sólo descubre `<skills>/<nombre>/SKILL.md`: **la skill nunca
+   aparecía**. Desde la 3.4.0 esos archivos se apartan a `~/.claude/ia-stack-archive/<fecha-y-hora>/`
+   —no se borran— y el alias `/VibeCodeProtocols` se retira: nunca funcionó, y su nombre no es válido
+   para una skill.
+
+   Si el proyecto tiene `CLAUDE.md`, `CLAUDE.local.md` o `.claude/CLAUDE.md`, el instalador avisa si
+   no importa `@AGENTS.md`: con la configuración predeterminada, Claude Code no lee `AGENTS.md` cuando
+   hay un `CLAUDE.md`. No lo reescribe: es tuyo.
 
 Los comandos de protocolo se ejecutan desde el proyecto:
 
@@ -102,14 +112,15 @@ escribir nada fuera de él:
 nada, combinarse con `--target-dir`/`-TargetDir` o `--runtime-dir`/`-RuntimeDir`: uno promete no
 tocar lo global y el otro pide un destino global. El comportamiento por defecto no cambia.
 
-**Límite:** en este modo no se instala la skill global, así que `/ia-stack` **no existe** en Claude
-Code hasta que corras el instalador sin él; Codex sí ve el puntero del proyecto. Y esto prueba que el
+**Límite:** en este modo no se instala la skill global, así que `/ia-stack` anda sólo en este
+proyecto, por su puntero de `.claude/skills/`; Codex ve el de `.agents/skills/`. Y esto prueba que el
 instalador no escribe fuera del proyecto, no que lo que ya hay en tu `~/.claude` esté al día.
 
 ## Problemas comunes
 
-- **El skill no aparece:** reiniciá Claude Code y verificá
-  `~/.claude/skills/ia-stack.md`.
+- **La skill no aparece:** reiniciá Claude Code y verificá que exista
+  `~/.claude/skills/ia-stack/SKILL.md` (o `.claude/skills/ia-stack/SKILL.md` en el proyecto). Un
+  `.md` suelto en `skills/` no se carga nunca.
 - **Un comando dice “file not found”:** ejecutalo desde el proyecto y usá
   `.vibe/ia-stack-runtime/scripts/...`, no `./scripts/...`.
 - **RED rechaza mi comando:** el adapter incluido acepta sólo `node --test` con un archivo de
@@ -119,10 +130,10 @@ instalador no escribe fuera del proyecto, no que lo que ya hay en tu `~/.claude`
 
 ## Desinstalar
 
-Podés borrar el skill y el runtime global. Conservá `.vibe/` del proyecto: ahí quedan sus
-decisiones y evidencia.
+Apartá la skill y el runtime global, igual que hace la limpieza del protocolo: se mueven, no se
+borran, y vuelven con `mv`. Conservá `.vibe/` del proyecto: ahí quedan sus decisiones y evidencia.
 
 ```bash
-rm ~/.claude/skills/ia-stack.md ~/.claude/skills/VibeCodeProtocols.md
-rm -rf ~/.claude/skills/ia-stack-skills ~/.claude/ia-stack-runtime
+mkdir -p ~/.claude/ia-stack-archive/desinstalado
+mv ~/.claude/skills/ia-stack ~/.claude/ia-stack-runtime ~/.claude/ia-stack-archive/desinstalado/
 ```

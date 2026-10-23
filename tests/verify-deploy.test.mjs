@@ -57,6 +57,26 @@ test('un expediente completo pasa', () => {
   assert.deepEqual(validateDeploy(expediente()), []);
 });
 
+// LOS DATOS TIENEN SU PROPIA VUELTA ATRAS. Revertir un commit no devuelve una columna borrada: con la
+// app en vivo, un cambio que toca datos declara el respaldo previo y como se devuelven. La clave es
+// opcional —un expediente anterior a la 3.4.0 no la tiene y sigue pasando—, pero si esta, se valida.
+test('LOS DATOS · un expediente con datos declarados pasa, y sin datos tambien', () => {
+  const datos = { cambia_esquema: true, respaldo: 'pg_dump de produccion a backups/2026-10-23.sql antes de migrar', vuelta_atras: 'la migracion trae su down, probada contra la copia restaurada' };
+  assert.deepEqual(validateDeploy(expediente({ datos })), []);
+  assert.deepEqual(validateDeploy(expediente({ datos: { cambia_esquema: false, respaldo: 'ninguno — el cambio solo lee datos', vuelta_atras: 'ninguno — no modifica nada' } })), []);
+});
+
+test('LOS DATOS · si se declaran, cada campo tiene que decir algo', () => {
+  const malos = [
+    'no es un objeto',
+    { respaldo: 'pg_dump previo', vuelta_atras: 'down probado' },
+    { cambia_esquema: 'si', respaldo: 'pg_dump previo', vuelta_atras: 'down probado' },
+    { cambia_esquema: true, respaldo: '', vuelta_atras: 'down probado' },
+    { cambia_esquema: true, respaldo: 'pg_dump previo', vuelta_atras: 'ninguno' },
+  ];
+  for (const datos of malos) assert.ok(validateDeploy(expediente({ datos })).some((v) => v.startsWith('datos')), JSON.stringify(datos));
+});
+
 test('LA REGLA · el comando de vuelta atrás no puede borrar', () => {
   assert.ok(DESTRUCTIVE_ROLLBACK.length >= 4, 'la lista de verbos destructivos no puede venir vacía');
   for (const verbo of DESTRUCTIVE_ROLLBACK) {

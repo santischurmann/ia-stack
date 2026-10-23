@@ -8,6 +8,19 @@
 
 ---
 
+## Producción
+
+(Lo declara la persona en Bootstrap, paso 7c; el agente nunca lo infiere ni lo completa solo.)
+
+- **¿La usa gente real?** (sí / no)
+- **¿Dónde corre?** (el servicio donde está publicada, o `ninguno — <motivo>`)
+- **¿Qué rama despliega a producción?** (la rama cuyo push publica la app, o `ninguna — se publica a mano`)
+- **¿Hay una copia de prueba?** (staging o preview: la dirección, o `ninguna — <motivo>`)
+- **¿Toca datos reales?** (sí / no: si un cambio puede modificar o borrar datos de la gente)
+- **Declarado por:** (la persona) · (fecha)
+
+---
+
 ## Architecture notes
 
 (fill in as project evolves)

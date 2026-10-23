@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+import { plantarClaudeMd, assertAvisoClaudeMd, assertSkillsPlanasApartadas, plantarSkillsPlanas, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertInstalacionAnteriorAvisada, assertNadaApartado, assertRuntime, assertRuntimeAnteriorApartado, assertSellado, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarInstalacionAnteriorVersionada, plantarRuntimeAnterior, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -34,6 +34,26 @@ test('un AGENTS.md que escribió el instalador se actualiza aunque venga con CRL
     assert.equal(result.status, 0, result.output);
     assertAgentsActualizado(project, result.output);
     assertGitignoreSinMezcla(project);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('las skills sueltas de una instalación anterior se apartan y un CLAUDE.md sin @AGENTS.md se avisa', { skip: !hayBash }, () => {
+  const { root, project, target, runtime } = fixture();
+  try {
+    plantarSkillsPlanas(target);
+    plantarClaudeMd(project, false);
+    const command = `'${toBash(installSh)}' --target-dir '${toBash(target)}' --runtime-dir '${toBash(runtime)}' --project '${toBash(project)}'`;
+    const result = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
+    assert.equal(result.status, 0, result.output);
+    assertSkillsPlanasApartadas(target, result.output);
+    assertAvisoClaudeMd(result.output, true);
+    plantarClaudeMd(project, true);
+    const otra = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
+    assert.equal(otra.status, 0, otra.output);
+    assertAvisoClaudeMd(otra.output, false);
+    assertRuntime(project, target, runtime);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -62,6 +62,11 @@ If the feature adds user-facing behavior, update:
 
 Do NOT rewrite the whole README. Surgical updates only.
 
+**Architecture diagram.** If the project has `docs/arquitectura.md` — one page with one Mermaid
+diagram of the parts and how they talk — and this change made it false (a new service, a removed
+piece, a new connection), update that diagram. If nothing in it quedó falso, leave it alone. If the
+file does not exist, do not create it: that is the person's call, not a docs task.
+
 ### Step 4 — Update CHANGELOG.md
 
 Add entry under `## [Unreleased]`:

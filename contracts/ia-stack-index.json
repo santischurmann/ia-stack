@@ -1171,6 +1171,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/protocolo-produccion.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/ratchet.test.mjs",
       "class": "prueba"
     },
@@ -1196,6 +1200,10 @@
     },
     {
       "path": "tests/sin-dependencias-externas.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/skill-puntero.test.mjs",
       "class": "prueba"
     },
     {

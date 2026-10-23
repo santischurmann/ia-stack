@@ -17,7 +17,7 @@ export const REQUIREMENTS = [
   ['INSTALL.md', /-ProjectDir\b/u, 'explicit PowerShell project installation'],
   ['INSTALL.md', /--project-only\b/u, 'bash project-only installation that writes nothing global'],
   ['INSTALL.md', /-ProjectOnly\b/u, 'PowerShell project-only installation that writes nothing global'],
-  ['INSTALL.md', /`\/ia-stack` \*\*no existe\*\* en Claude\s+Code/u, 'project-only mode declares that the global skill is not installed'],
+  ['INSTALL.md', /en este modo no se instala la skill global, así que `\/ia-stack` anda sólo en este\s+proyecto/u, 'project-only mode declares that the global skill is not installed and the skill works only in this project'],
   ['SKILL.md', /\.vibe\/ia-stack-runtime\/scripts\/verify-plan-conflicts\.mjs/u, 'runtime plan gate'],
   ['SKILL.md', /verify-security-baseline\.mjs/u, 'mechanical security baseline'],
   ['skills/integracion-graphify.md', /verify-backup-state\.mjs/u, 'verified Graphify backup'],

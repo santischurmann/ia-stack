@@ -27,8 +27,8 @@ entender -> decidir -> test rojo -> cambio chico -> casos borde -> revisión -> 
 ```
 
 > **Se llama IA Stack: el repositorio, el protocolo y la skill.** Hasta el 2026-09-15 el protocolo se
-> llamaba `VibeCodeProtocols`. **`/VibeCodeProtocols` sigue andando**: el instalador deja las dos
-> invocaciones, con el mismo contenido, para no romper a quien ya lo usaba. Una prueba comprueba que
+> llamaba `VibeCodeProtocols`. El comando `/VibeCodeProtocols` se retiró en la 3.4.0: nunca llegó a
+> cargar en Claude Code, porque el instalador lo dejaba como archivo suelto. Una prueba comprueba que
 > este README siga nombrando al repositorio donde vive.
 
 ---
@@ -79,7 +79,7 @@ En Windows PowerShell:
 ```
 
 Queda un runtime completo adentro de tu proyecto, en `.vibe/ia-stack-runtime/`. Reiniciá tu agente,
-abrí el proyecto y usá `/ia-stack` (o `/VibeCodeProtocols`, que sigue andando). Desde ahí los comandos salen de
+abrí el proyecto y usá `/ia-stack`. Desde ahí los comandos salen de
 `.vibe/ia-stack-runtime/scripts/`, nunca del clone original.
 
 ---

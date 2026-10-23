@@ -155,6 +155,25 @@
             "--runtime-dir",
             "{DIR}/rt"
           ]
+        },
+        {
+          "setup": [
+            "git init -q .",
+            "mkdir -p skills/ia-stack-skills",
+            "printf 'protocolo suelto' > skills/ia-stack.md",
+            "printf 'alias suelto' > skills/VibeCodeProtocols.md",
+            "printf 'sub-skill' > skills/ia-stack-skills/gates.md",
+            "printf '# reglas del proyecto' > CLAUDE.md",
+            "printf 'node_modules/\\r\\n' > .gitignore"
+          ],
+          "args": [
+            "--target-dir",
+            "{DIR}/skills",
+            "--runtime-dir",
+            "{DIR}/rt",
+            "--project",
+            "{DIR}"
+          ]
         }
       ],
       "why_aislado": "Todos los escenarios instalan adentro de su carpeta temporal, con --target-dir y --runtime-dir. Hasta el 2026-09-22 dos no lo hacian, y como el arnes no aisla HOME, medir la cobertura instalaba la skill y el runtime en el directorio de configuracion REAL de quien corria el gate. Una medicion que escribe en la configuracion de quien mide no es una medicion.",
