@@ -8,17 +8,17 @@
     "N4": { "modelo": "fable", "esfuerzo": "high", "automatico": false, "para": "sólo cuando N2 y N3 ya fallaron y la persona dijo que sí" }
   },
   "roles": {
-    "lector": { "nivel": "N1", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
-    "docs": { "nivel": "N1", "para": "skills/subagent-docs.md: actualizar .vibe/ y documentación" },
-    "chore": { "nivel": "N1", "para": "skills/subagent-chore.md: configuración, CI, dependencias" },
-    "red": { "nivel": "N2", "para": "skills/subagent-red.md: la prueba roja de cada criterio" },
-    "green": { "nivel": "N2", "para": "skills/subagent-green.md: el código mínimo que la pone en verde" },
-    "triangulate": { "nivel": "N2", "para": "skills/subagent-triangulate.md: casos derivados" },
-    "refactor": { "nivel": "N2", "para": "skills/subagent-refactor.md: simplificar sin cambiar conducta" },
-    "planificador": { "nivel": "N2", "con_riesgo_alto": "N3", "para": "borrador de spec y plan; sube a N3 si el riesgo es alto o crítico" },
-    "seguridad": { "nivel": "N3", "para": "Security-Officer, fase 6.2" },
-    "revisor": { "nivel": "N3", "para": "revisores 4R de la fase 6.3" },
-    "refutador": { "nivel": "N3", "para": "refutación ciega de los hallazgos sobrevivientes" }
+    "lector": { "nivel": "N1", "esfuerzo": "low", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
+    "docs": { "nivel": "N1", "esfuerzo": "low", "para": "skills/subagent-docs.md: actualizar .vibe/ y documentación" },
+    "chore": { "nivel": "N1", "esfuerzo": "low", "para": "skills/subagent-chore.md: configuración, CI, dependencias" },
+    "red": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-red.md: la prueba roja de cada criterio" },
+    "green": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-green.md: el código mínimo que la pone en verde" },
+    "triangulate": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-triangulate.md: casos derivados" },
+    "refactor": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-refactor.md: simplificar sin cambiar conducta" },
+    "planificador": { "nivel": "N2", "esfuerzo": "low", "con_riesgo_alto": "N3", "para": "borrador de spec y plan; sube a N3 si el riesgo es alto o crítico" },
+    "seguridad": { "nivel": "N3", "esfuerzo": "medium", "para": "Security-Officer, fase 6.2" },
+    "revisor": { "nivel": "N3", "esfuerzo": "medium", "para": "revisores 4R de la fase 6.3" },
+    "refutador": { "nivel": "N3", "esfuerzo": "medium", "para": "refutación ciega de los hallazgos sobrevivientes" }
   },
   "juez_distinto_del_constructor": [
     ["refutador", "green"],
@@ -35,8 +35,11 @@
     "no_es_falla": "Un 429 o un error de cupo no es una falla del modelo: se espera o se avisa, no se escala. El rojo buscado del TDD tampoco cuenta."
   },
   "contexto": {
-    "handoff_tokens": 200000,
-    "handoff_tokens_si_la_sesion_es_haiku": 100000,
-    "por_que": "Medido entre el 12 y el 15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens de contexto, porque cada mensaje vuelve a pagar todo lo anterior."
-  }
+    "medido_sobre": "mensajes",
+    "tope_orquestador": 120000,
+    "tope_subsesion": 60000,
+    "aviso_desde": 0.8,
+    "por_que": "Medido el 26-10-2026: una sesión llegó a 910K tokens de contexto y cada sesión arrastra ~80K fijos (conectores, memoria, instrucciones) que no se pueden recortar con el trabajo; una sesión a 910K cuesta ~8× por turno lo que una de 110K, porque cada turno vuelve a pagar todo lo anterior. Por eso el tope se mide sobre los mensajes (sin los ~80K fijos) y se cierra con estado commiteado y resumen antes de llegar, nunca en el autocompact. Antecedente del 12–15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens de contexto."
+  },
+  "regla_haiku": "Haiku sólo en tareas cortas y en subagentes con contexto nuevo. Una sesión que arranca con más de 60K fijos (conectores, memoria grande) arranca en N2 low, no en N1."
 }

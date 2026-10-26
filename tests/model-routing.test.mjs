@@ -122,7 +122,7 @@ test('la tabla de SKILL.md dice exactamente lo que dice el contrato', () => {
   const filas = filasDeLaTabla(leer('SKILL.md'));
   assert.ok(filas, 'SKILL.md no tiene la tabla delimitada por <!-- ruteo:inicio --> / <!-- ruteo:fin -->');
   const esperadas = Object.entries(c.roles)
-    .map(([rol, ruta]) => [rol, ruta.nivel, c.niveles[ruta.nivel].modelo, c.niveles[ruta.nivel].esfuerzo]);
+    .map(([rol, ruta]) => [rol, ruta.nivel, c.niveles[ruta.nivel].modelo, ruta.esfuerzo]);
   assert.deepEqual(filas, esperadas);
 });
 
@@ -130,4 +130,89 @@ test('filasDeLaTabla devuelve null sin delimitadores e ignora lo que no es fila 
   assert.equal(filasDeLaTabla('sin tabla'), null);
   assert.deepEqual(filasDeLaTabla('<!-- ruteo:inicio -->\n| Rol | Nivel |\n|---|---|\n| `red` | N2 | sonnet | low |\n<!-- ruteo:fin -->'),
     [['red', 'N2', 'sonnet', 'low']]);
+});
+
+// ---------------------------------------------------------------------------------------------
+// ia-stack-3-4-1-tokens · AC4 · cada rol que nombran las fases tiene modelo y esfuerzo resolubles,
+// y ninguna plantilla copia la tabla entera.
+//
+// LIMITE HONESTO. Los roles "que nombran las fases" se detectan por tres señales textuales: las filas
+// de la tabla `<!-- ruteo:inicio -->`, las referencias `skills/subagent-<rol>.md` y las frases
+// «rol `x`» / «role `x`» / `roles.x` en SKILL.md, phases/ y skills/. Un rol citado de otra forma no
+// se ve. «Duplica la tabla» = un archivo de templates/ o AGENTS.md con una fila `| `rol` |` por cada
+// rol del contrato; copiar 3 filas no se detecta, a propósito (citar un rol no es duplicar la tabla).
+// El CLAUDE.md global del operador (~/.claude/CLAUDE.md) vive FUERA del repo: esta prueba no puede
+// leerlo, así que no verifica que ahí no se duplique la tabla; el contrato manda y esa copia se
+// revisa a mano.
+// ---------------------------------------------------------------------------------------------
+
+function archivosMd(dir) {
+  const abs = join(repoRoot, dir);
+  if (!existsSync(abs)) return [];
+  return readdirSync(abs, { recursive: true })
+    .map((r) => `${dir}/${String(r).split(String.fromCharCode(92)).join('/')}`)
+    .filter((r) => r.endsWith('.md'));
+}
+
+/** Roles que cita un texto: refs a subagent-<rol>.md, «rol `x`», «role `x`» y `roles.x`. */
+export function rolesCitados(texto) {
+  const hallados = new Set();
+  for (const m of texto.matchAll(/skills\/subagent-([a-z-]+)\.md/gu)) hallados.add(m[1]);
+  for (const m of texto.matchAll(/\b(?:rol|role)\s+`([a-z]+)`/gu)) hallados.add(m[1]);
+  for (const m of texto.matchAll(/`roles\.([a-z]+)`/gu)) hallados.add(m[1]);
+  return [...hallados].sort();
+}
+
+/** Cuántos roles de la lista tienen su fila `| `rol` |` en el texto. */
+export function filasDeRolesEn(texto, roles) {
+  return roles.filter((r) => new RegExp(`^[ \\t]*[|][ \\t]*\u0060${r}\u0060[ \\t]*[|]`, 'mu').test(texto));
+}
+
+test('ia-stack-3-4-1-tokens · AC4 · cada rol del contrato tiene nivel, modelo resoluble y esfuerzo explicito', () => {
+  const c = contrato();
+  for (const [rol, ruta] of Object.entries(c.roles)) {
+    assert.ok(c.niveles[ruta.nivel], `${rol}: nivel sin definir`);
+    assert.ok(MODELOS.includes(c.niveles[ruta.nivel].modelo), `${rol}: sin modelo resoluble`);
+    assert.ok(ESFUERZOS.includes(ruta.esfuerzo), `${rol}: falta esfuerzo explicito en el rol`);
+    assert.equal(ruta.esfuerzo, c.niveles[ruta.nivel].esfuerzo, `${rol}: el esfuerzo del rol difiere del de su nivel`);
+    if (ruta.con_riesgo_alto) assert.ok(c.niveles[ruta.con_riesgo_alto], `${rol}: con_riesgo_alto apunta a un nivel inexistente`);
+  }
+});
+
+test('ia-stack-3-4-1-tokens · AC4 · todo rol que nombran el nucleo, las fases o los skills existe en el contrato', () => {
+  const c = contrato();
+  const docs = ['SKILL.md', ...archivosMd('phases'), ...archivosMd('skills')];
+  const citados = new Set(filasDeLaTabla(leer('SKILL.md'))?.map((f) => f[0]));
+  for (const ruta of docs) for (const rol of rolesCitados(leer(ruta))) citados.add(rol);
+  assert.ok(citados.size >= Object.keys(c.roles).length, 'la deteccion no vio ni los roles de la tabla');
+  for (const rol of citados) {
+    assert.ok(c.roles[rol], `el rol «${rol}» se nombra en los documentos pero no tiene ruta en el contrato`);
+    assert.ok(c.niveles[c.roles[rol].nivel].modelo && c.roles[rol].esfuerzo, `${rol}: sin modelo o sin esfuerzo`);
+  }
+});
+
+test('ia-stack-3-4-1-tokens · AC4 · el contrato declara la regla de Haiku', () => {
+  const r = contrato().regla_haiku;
+  assert.equal(typeof r, 'string');
+  assert.match(r, /tareas cortas/u);
+  assert.match(r, /subagentes con contexto nuevo/u);
+  assert.match(r, /60K/u);
+  assert.match(r, /N2 low/u);
+});
+
+test('ia-stack-3-4-1-tokens · AC4 · ninguna plantilla ni AGENTS.md duplica la tabla completa de roles', () => {
+  const roles = Object.keys(contrato().roles);
+  const candidatos = ['AGENTS.md', ...archivosMd('templates')].filter((r) => existsSync(join(repoRoot, r)));
+  assert.ok(candidatos.length > 1);
+  for (const ruta of candidatos) {
+    const filas = filasDeRolesEn(leer(ruta), roles);
+    assert.ok(filas.length < roles.length, `${ruta} duplica la tabla de ruteo (${filas.length}/${roles.length} filas): que cite contracts/model-routing.json`);
+  }
+});
+
+test('ia-stack-3-4-1-tokens · AC4 · los detectores ven un rol sin ruta y una tabla copiada entera', () => {
+  assert.deepEqual(rolesCitados('ver skills/subagent-red.md; el rol `fantasma`; `roles.docs`'), ['docs', 'fantasma', 'red']);
+  const roles = ['a', 'b'];
+  assert.deepEqual(filasDeRolesEn('| `a` | N1 |\n| `b` | N2 |', roles), ['a', 'b']);
+  assert.deepEqual(filasDeRolesEn('texto `a` y `b`', roles), []);
 });
