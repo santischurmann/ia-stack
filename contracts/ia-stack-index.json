@@ -1167,6 +1167,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/fixtures/gates-3.4.0.json",
+      "class": "prueba"
+    },
+    {
       "path": "tests/home-intacto.test.mjs",
       "class": "prueba"
     },
@@ -1180,6 +1184,10 @@
     },
     {
       "path": "tests/install-runtime.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/inventario-gates.test.mjs",
       "class": "prueba"
     },
     {
