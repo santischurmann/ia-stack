@@ -51,10 +51,12 @@ La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica 
   que el de `green` (campo `juez_distinto_del_constructor`). Si el host tiene otro agente
   instalado —por ejemplo la CLI de Codex—, se puede sumar como juez externo; si no, se declara
   ausente y alcanza con el modelo distinto.
-- **Presupuesto de contexto.** Pasados unos 200.000 tokens (100.000 si la sesión corre en Haiku), se
-  cierra con la línea de retomar en `.vibe/SESSION.md` y se sigue en una sesión nueva. Medido entre
-  el 12 y el 15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens de
-  contexto. Tampoco se gastan turnos en avisar que algo «sigue corriendo».
+- **Presupuesto de contexto.** Se mide sobre los mensajes, sin los ~80K fijos de cada sesión:
+  120.000 tokens el orquestador, 60.000 cada subsesión (`contexto` en el contrato). Al llegar (aviso
+  desde el 80 %), estado commiteado y resumen en `.vibe/SESSION.md` (decisiones, archivos clave,
+  pendientes, cómo retomar), y se compacta o se pasa a una sesión nueva; nunca se espera al
+  autocompact. Haiku sólo en tareas cortas y subagentes con contexto nuevo (`regla_haiku`). Tampoco
+  se gastan turnos en avisar que algo «sigue corriendo».
 - **Límite honesto.** Un host sin parámetro `model` (por ejemplo, un agente que sólo lee
   `AGENTS.md`) ignora el ruteo, y el protocolo no puede cambiar el modelo de su propia sesión: eso
   lo elige la persona. En ese host el orquestador lo dice **una vez**, en el reporte de Bootstrap

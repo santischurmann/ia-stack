@@ -1207,6 +1207,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/presupuesto-contexto.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/pretooluse-red-bootstrap-emit.test.mjs",
       "class": "prueba"
     },
