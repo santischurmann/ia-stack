@@ -39,8 +39,7 @@ export function checkBrief(text) {
   return { ok: true, tokens, archivos: archivos.length };
 }
 
-function usage(message) {
-  if (message) console.error(`usage: ${message}`);
+function usage() {
   console.error('usage: verify-brief-size.mjs check <brief.md>');
   process.exit(2);
 }

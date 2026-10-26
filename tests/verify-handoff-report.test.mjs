@@ -75,3 +75,32 @@ test('CLI rejects missing or unreadable report arguments as usage', () => {
     assert.match(result.output, /usage:/i);
   }
 });
+
+// IA Stack 3.4.1 · AC7: el reporte de un subagente tiene 40 líneas o menos; el detalle va a .vibe/handoffs/.
+function reporteDeLineas(n) {
+  const base = ['STATUS: pass', 'NOT_REVIEWED: Manual browser testing was outside the declared unit-test scope.'];
+  const relleno = Array.from({ length: n - base.length }, (_, i) => `linea ${i + 1}`);
+  return [...base, ...relleno].join('\n');
+}
+
+test('ia-stack-3-4-1-tokens · AC7 · acepta un reporte de 40 líneas, con o sin salto de línea final', () => {
+  withReport(reporteDeLineas(40), (report) => {
+    const result = run(['check', report]);
+    assert.equal(result.status, 0, result.output);
+  });
+  withReport(`${reporteDeLineas(40)}\n`, (report) => {
+    const result = run(['check', report]);
+    assert.equal(result.status, 0, `el salto final no cuenta como línea\n${result.output}`);
+  });
+});
+
+test('ia-stack-3-4-1-tokens · AC7 · rechaza un reporte de 41 líneas y manda el detalle a .vibe/handoffs/', () => {
+  for (const texto of [reporteDeLineas(41), `${reporteDeLineas(41)}\n`]) {
+    withReport(texto, (report) => {
+      const result = run(['check', report]);
+      assert.equal(result.status, 1, result.output);
+      assert.match(result.output, /REJECTED:.*41 líneas.*40/);
+      assert.match(result.output, /\.vibe\/handoffs\//);
+    });
+  }
+});
