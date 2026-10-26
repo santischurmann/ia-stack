@@ -150,5 +150,11 @@
     "verify-threat-model.mjs check": "phases/08-test.md",
     "verify-triangulate.mjs check": "phases/07-triangulate.md"
   },
-  "leyes_extendidas": "phases/00-reglas-extendidas.md"
+  "leyes_extendidas": "phases/00-reglas-extendidas.md",
+  "comandos_nuevos_3.4.1": {
+    "verify-brief-size.mjs check": 1
+  },
+  "fase_de_cada_comando_nuevo": {
+    "verify-brief-size.mjs check": "phases/06-build.md"
+  }
 }

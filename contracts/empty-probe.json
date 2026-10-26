@@ -90,6 +90,15 @@
       "expect": "reject"
     },
     {
+      "script": "verify-brief-size.mjs",
+      "args": [
+        "check",
+        "brief.md"
+      ],
+      "expect": "reject",
+      "why": "Sale 1 porque el brief no existe: un brief ilegible o vacio nunca aprueba por defecto (AC9). Con el brief presente, tests/verify-brief-size.test.mjs ejercita el tope de 4000 tokens y de 3 archivos."
+    },
+    {
       "script": "verify-capability-matrix.mjs",
       "args": [
         "check",

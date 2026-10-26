@@ -715,6 +715,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-brief-size.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-capability-matrix.mjs",
       "class": "gate"
     },
@@ -1364,6 +1368,10 @@
     },
     {
       "path": "tests/verify-backup-state.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-brief-size.test.mjs",
       "class": "prueba"
     },
     {

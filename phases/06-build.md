@@ -21,6 +21,15 @@ Per task, topological order — full delegation pattern: `skills/orchestrator-op
 permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto
 de escritura no serializado; un `SERIALIZED` conserva su orden topológico.
 
+**Antes de lanzar cada subagente**, el brief pasa el tope de tamaño: 4000 tokens estimados
+(`ceil(caracteres/4)`, aproximado; el subgrafo de `graphify query` pegado cuenta) y 3 archivos como
+máximo, declarados en una línea `ARCHIVOS: a, b, c` (`ARCHIVOS: ninguno` = 0). Salida distinta de `0`:
+se parte la tarea, no se lanza. El reporte que vuelve tiene 40 líneas o menos; el detalle va a
+`.vibe/handoffs/` (lo verifica el gate de entrega de más abajo).
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-brief-size.mjs check <brief.md>
+```
+
 Cada subagente tiene un papel con nombre, no es "un subagente cualquiera". Eso endurece la
 frontera de **quién puede certificar qué**:
 

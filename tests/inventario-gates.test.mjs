@@ -24,6 +24,11 @@ import { archivosProtocolo, leerProtocolo } from '../scripts/protocolo.mjs';
 const raiz = dirname(dirname(fileURLToPath(import.meta.url)));
 const leer = (ruta) => readFileSync(join(raiz, ruta), 'utf8');
 const fixture = JSON.parse(leer('tests/fixtures/gates-3.4.0.json'));
+// La 3.4.1 agrega comandos sin tocar los congelados de la 3.4.0: viven en claves propias del fixture.
+const nuevos = fixture['comandos_nuevos_3.4.1'] ?? {};
+const faseNuevos = fixture.fase_de_cada_comando_nuevo ?? {};
+const esperados = { ...fixture.comandos, ...nuevos };
+const faseDe = { ...fixture.fase_de_cada_comando, ...faseNuevos };
 
 const FASES = Object.freeze([
   'phases/01-bootstrap.md', 'phases/02-intake.md', 'phases/03-research.md', 'phases/04-spec.md',
@@ -52,22 +57,31 @@ test('el fixture de la 3.4.0 tiene la forma esperada', () => {
   assert.equal(fixture.leyes_extendidas, 'phases/00-reglas-extendidas.md');
 });
 
+test('los comandos nuevos de la 3.4.1 no pisan los congelados y declaran su fase', () => {
+  assert.deepEqual(Object.keys(nuevos), Object.keys(faseNuevos));
+  for (const k of Object.keys(nuevos)) {
+    assert.ok(!(k in fixture.comandos), `${k} ya estaba en la 3.4.0: no va en comandos_nuevos`);
+    assert.ok(Number.isInteger(nuevos[k]) && nuevos[k] > 0, `${k} necesita un conteo entero positivo`);
+    assert.match(String(faseNuevos[k]), /^phases\/\d\d-[\w-]+\.md$/, `${k} declara una fase invalida`);
+  }
+});
+
 test('SKILL.md pesa 20 KB o menos', () => {
   assert.ok(Buffer.byteLength(leer('SKILL.md'), 'utf8') <= 20480);
 });
 
-test('cada comando de gate suma las mismas ocurrencias que en la 3.4.0', () => {
+test('cada comando de gate suma las ocurrencias de la 3.4.0 mas exactamente los nuevos declarados', () => {
   const total = {};
   for (const f of archivosLeidos()) {
     for (const [k, n] of Object.entries(contar(leer(f)))) total[k] = (total[k] ?? 0) + n;
   }
-  assert.deepEqual(total, fixture.comandos);
+  assert.deepEqual(total, esperados);
 });
 
 test('cada comando aparece solo en los archivos donde vivia', () => {
   for (const f of archivosLeidos()) {
     for (const k of Object.keys(contar(leer(f)))) {
-      const dest = [fixture.fase_de_cada_comando[k]].flat();
+      const dest = [faseDe[k]].flat();
       assert.ok(dest.includes(f), `${k} aparece en ${f} y la 3.4.0 lo declara en ${dest.join(', ')}`);
     }
   }
