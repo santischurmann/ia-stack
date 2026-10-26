@@ -17,9 +17,10 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const leer = (ruta) => readFileSync(join(repoRoot, ruta), 'utf8');
+const leer = (ruta) => (ruta === 'SKILL.md' ? leerProtocolo(repoRoot) : readFileSync(join(repoRoot, ruta), 'utf8'));
 
 /** El texto entre dos marcas literales del documento; null si falta alguna. */
 export function entre(texto, desde, hasta) {
@@ -54,8 +55,10 @@ test('Bootstrap pregunta por produccion una vez, en lenguaje simple, y nunca lo 
 });
 
 test('LAW 9 dice que hacer cuando un push despliega a produccion, sin romper sus frases fijadas', () => {
-  const leyes = entre(leer('SKILL.md'), '## LAWS — non-negotiable', '\n**IRON LAW');
-  assert.ok(leyes);
+  // Las leyes viven en el nucleo (SKILL.md) y su detalle largo en phases/00-reglas-extendidas.md.
+  const nucleo = entre(leer('SKILL.md'), '## LAWS — non-negotiable', '\n**IRON LAW');
+  assert.ok(nucleo);
+  const leyes = `${nucleo}\n${readFileSync(join(repoRoot, 'phases', '00-reglas-extendidas.md'), 'utf8')}`;
   assert.match(leyes, /\*\*Cuando un push despliega a producción\*\*/u);
   assert.match(leyes, /dos pasos, a propósito/u);
   assert.match(leyes, /se pide aparte, con su propio menú/u);

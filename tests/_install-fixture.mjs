@@ -239,7 +239,7 @@ export function plantarSobrantesDeMas(project) {
       else enElPaquete += 1;
     }
   };
-  for (const dir of ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']) contar(join(repoRoot, dir));
+  for (const dir of ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases']) contar(join(repoRoot, dir));
   const destino = join(project, '.vibe', 'ia-stack-runtime', 'scripts', 'de-mas');
   mkdirSync(destino, { recursive: true });
   const cuantos = enElPaquete + 1;

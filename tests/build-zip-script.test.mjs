@@ -60,7 +60,7 @@ test('FALSIFICACIÓN · lo que está fuera de la lista blanca no entra al paquet
     mkdirSync(scriptsDir, { recursive: true });
     mkdirSync(binDir, { recursive: true });
     for (const name of ['README.md', 'SECURITY.md', 'INSTALL.md', 'SKILL.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(join(packageDir, name), `${name}\n`);
-    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples']) mkdirSync(join(packageDir, name));
+    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples', 'phases']) mkdirSync(join(packageDir, name));
     ponerLoDeCodex(packageDir);
     writeFileSync(join(packageDir, '.env'), 'must-not-ship\n');
     mkdirSync(join(packageDir, '.vibe'));
@@ -200,7 +200,7 @@ test('FALSIFICACIÓN · un archivo ignorado adentro de un directorio empaquetado
     mkdirSync(scriptsDir, { recursive: true });
     mkdirSync(binDir, { recursive: true });
     for (const name of ['README.md', 'SECURITY.md', 'INSTALL.md', 'SKILL.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(join(packageDir, name), `${name}\n`);
-    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples']) mkdirSync(join(packageDir, name));
+    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples', 'phases']) mkdirSync(join(packageDir, name));
     writeFileSync(join(scriptsDir, 'build-zip.sh'), readFileSync(script, 'utf8'));
     ponerLoDeCodex(packageDir);
     // Un archivo versionado y uno ignorado, los dos ADENTRO de un directorio de la lista blanca.
@@ -244,7 +244,7 @@ test('el empaquetador falla cerrado si no puede saber que esta versionado', (t) 
     const scriptsDir = join(packageDir, 'scripts');
     mkdirSync(scriptsDir, { recursive: true });
     for (const name of ['README.md', 'SECURITY.md', 'INSTALL.md', 'SKILL.md', 'CHANGELOG.md', 'LICENSE']) writeFileSync(join(packageDir, name), `${name}\n`);
-    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples']) mkdirSync(join(packageDir, name));
+    for (const name of ['contracts', 'tests', 'skills', 'templates', 'examples', 'phases']) mkdirSync(join(packageDir, name));
     writeFileSync(join(scriptsDir, 'build-zip.sh'), readFileSync(script, 'utf8'));
     ponerLoDeCodex(packageDir);
     // Las herramientas SI estan: se ponen los mismos stubs que el resto de las pruebas para que el

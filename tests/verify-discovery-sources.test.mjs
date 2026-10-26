@@ -91,6 +91,23 @@ test('FALSIFICACIÓN · una línea más allá del final del archivo es rechazo',
   });
 });
 
+test('SKILL.md partido: una linea que ya no cabe en el nucleo pero si en el protocolo entero resuelve', () => {
+  fixture((raiz) => {
+    const nucleo = escribir(raiz, 'SKILL.md', 'uno\ndos\n');
+    escribir(raiz, 'phases/01-bootstrap.md', 'tres\ncuatro\ncinco\nseis\n');
+    assert.equal(classifySource(raiz, claimRepo({ path: 'SKILL.md', value: sha256(nucleo), line: 6 })).status, SOURCE_OK);
+    // Y sigue siendo rechazo si la linea no cabe ni en el protocolo entero.
+    assert.equal(classifySource(raiz, claimRepo({ path: 'SKILL.md', value: sha256(nucleo), line: 99999 })).status, SOURCE_OUT_OF_RANGE);
+  });
+});
+
+test('SKILL.md sin phases/: la linea se mide sobre el archivo solo, como siempre', () => {
+  fixture((raiz) => {
+    const cuerpo = escribir(raiz, 'SKILL.md', 'uno\ndos\n');
+    assert.equal(classifySource(raiz, claimRepo({ path: 'SKILL.md', value: sha256(cuerpo), line: 6 })).status, SOURCE_OUT_OF_RANGE);
+  });
+});
+
 // El contenido que cambió no es una mentira: es una fuente que envejeció. Se informa distinto.
 test('un archivo que existe pero cambió desde la captura se marca como derivado, no como falso', () => {
   fixture((raiz) => {

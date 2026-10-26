@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 
 import { EMPTY_PREFIX, esRuntimeInstalado } from './verify-runtime-sync.mjs';
 import { leidosConNombreViejo } from './schema-compat.mjs';
+import { leerProtocolo } from './protocolo.mjs';
 import { mismoSchema } from './schema-compat.mjs';
 
 export const USAGE = 'usage: verify-ia-stack-contract.mjs check';
@@ -401,7 +402,7 @@ export function main(args = process.argv.slice(2), cwd = '.', write = console.lo
     write(`${EMPTY_PREFIX}este contrato verifica los documentos de IA Stack, que el instalador no copia: adentro de un runtime instalado no hay nada que comparar`);
     return 0;
   }
-  const read = (path) => readFileSync(join(cwd, path), 'utf8');
+  const read = (path) => (path === 'SKILL.md' ? leerProtocolo(cwd) : readFileSync(join(cwd, path), 'utf8'));
   const violations = contractViolations(read);
   let limits = [];
   try {

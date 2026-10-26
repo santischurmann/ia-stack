@@ -359,6 +359,58 @@
       "class": "otro"
     },
     {
+      "path": "phases/00-reglas-extendidas.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/01-bootstrap.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/02-intake.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/03-research.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/04-spec.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/05-plan.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/06-build.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/07-triangulate.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/08-test.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/09-simplify.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/10-deploy.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/11-limpieza.md",
+      "class": "documento"
+    },
+    {
+      "path": "phases/12-menus-y-memoria.md",
+      "class": "documento"
+    },
+    {
       "path": "research/adversarial-productivity-audit-2026-08-23.md",
       "class": "evidencia"
     },
@@ -612,6 +664,10 @@
     },
     {
       "path": "scripts/pretooluse-red.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/protocolo.mjs",
       "class": "gate"
     },
     {
@@ -1172,6 +1228,10 @@
     },
     {
       "path": "tests/protocolo-produccion.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/protocolo.test.mjs",
       "class": "prueba"
     },
     {

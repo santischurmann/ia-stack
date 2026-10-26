@@ -1,0 +1,77 @@
+# Reglas extendidas — el detalle de § LAWS
+
+Se movió desde `SKILL.md` sin reescribirlo, para que el núcleo pese 20 KB o menos. Obliga igual
+que las leyes: el núcleo apunta acá en cada lugar de donde salió un párrafo.
+
+## LAW 6 — Soporte declarado
+
+   **Soporte declarado** responde una sola pregunta: *si un usuario dice que no le anda, ¿con qué se
+   lo diagnostica?* Son cuatro campos —`correlation`, `actor_on_writes`, `failure_visible`,
+   `diagnostic_command`— que ya vivían en `observability` del PRD (Phase 2) como una frase suelta que
+   nadie volvía a mirar; ahora son campos propios y entran al receipt. Cada uno admite
+   **`"ninguno — <motivo>"`**, nunca `ninguno` a secas: un producto puede no tener correlación de
+   peticiones y ser honesto, pero callarlo no.
+   **Por qué esto convive con 100% de cobertura, que es lo que lo hacía invisible:** la cobertura
+   mide **ejecución de tu código**; el soporte mide **observabilidad de tu producto**. Son ejes
+   ortogonales, y el DoD tenía uno solo. Medido en una corrida real: sin identificador de petición y
+   sin autor en las operaciones, con la cobertura en 100% y todos los gates en verde.
+
+## LAW 9 — Cuando un push despliega a producción
+
+   **Cuando un push despliega a producción** (`.vibe/PROJECT.md` § Producción: una rama que, al
+   recibir un push, publica la app sola), publicar son **dos pasos, a propósito**: el trabajo va en
+   otra rama, y la publicación única de esta ley es el push de ESA rama al cerrar el plan, que suele
+   crear la copia de prueba; llevarlo a la rama que despliega es otra cosa, que
+   se pide aparte, con su propio menú (8.1), recién después de mirar esa copia. Son dos corridas de CI en vez de una, y es el
+   precio de que la gente no vea un cambio que nadie miró.
+
+## Modo continuo y límites honestos de las decisiones por fase
+
+**Modo continuo** (decidido por el operador el 2026-10-04, respuesta IS1): cuando la persona aprueba
+**una versión concreta de un plan** —su hash, las fases, rutas y clases de cambio que cubre, y las
+acciones reservadas que deja afuera: `push`, `merge`, `deploy`, `payment`, `global-install`,
+`license` y `trading`— las fases incluidas se cierran solas apenas pasan sus gates, y se registran
+con `status: "authorized"` en lugar de un menú: una referencia a esa aprobación (`authorized_by`) y
+la evidencia de los gates (`evidence`). No se arma un menú 🔵 por fase para contentar al detector:
+eso sería registrar una elección que nadie hizo, y el gate lo rechaza como
+`PHASE_DECISION_FABRICATED_CHOICE`. El menú 🔵 sigue mandando para todo lo que el plan no incluye:
+una decisión nueva, un cambio de alcance, un conflicto, un bloqueo o una acción reservada. Si el
+plan se edita después de aprobado, o la fase está fuera del alcance, la aprobación **no se hereda**.
+Con varias funcionalidades o lotes en el mismo plan, cada una cierra con su commit local y su
+recibo, y **el push se pide una vez, al cerrar el plan entero** (LAW 9): nunca al cerrar un lote.
+**Límite honesto del modo continuo**: la aprobación se sella por contenido, no por voluntad. El gate
+prueba que el plan que se aprobó es el mismo que hay en disco y que cada fase cerrada estaba dentro
+de su alcance; no prueba que la persona haya dicho que sí. `approval_ref` es una referencia que el
+agente escribe, y un agente puede escribir una que no existe.
+**Límite honesto del gate**: demuestra que la decisión quedó registrada de forma coherente, no
+demuestra que la persona realmente haya querido esa opción ni que haya comprendido sus
+consecuencias — un agente puede registrar decisiones que nadie tomó y el gate las acepta.
+
+Cada decisión declara además **`shown_at`**: cuándo se le mostró el menú a la persona. Entre eso
+y el momento de la elección tienen que pasar al menos dos segundos. No prueba consentimiento — eso
+necesita un canal fuera de este proceso — pero sí agarra el caso concreto de un agente que fabrica
+el menú y la decisión en el mismo aliento. Un agente que espera igual pasa: detecta lo imposible,
+no lo mentiroso.
+
+## Tope de reintentos
+
+**Tope de reintentos** (item #43). Al **tercer intento fallido sobre el mismo problema** se frena y
+se consulta al usuario con un 🔵 que muestra qué se probó y por qué falló cada vez. No hay cuarto
+intento sin una decisión humana registrada. Tres alcanza para descartar un error tonto sin quemar
+la sesión en un callejón sin salida — y "probar otra cosa parecida" sigue siendo el mismo problema,
+no uno nuevo. Los intentos se anotan en `.vibe/SESSION.md` bajo `## Intentos fallidos`, uno por
+línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario como
+`- decisión humana: ...`. Detector: `verify-session-state.mjs check --session .vibe/SESSION.md`.
+
+## Al evolucionar este propio protocolo
+
+**Al evolucionar este propio protocolo** (source: `research/sources/protocolo-muralla.md` points
+#22/#23) — dos reglas meta que aplican a cualquier LAW/regla nueva que se agregue a `SKILL.md`/
+`skills/*.md` en el futuro:
+1. **Toda regla nueva trae su detector.** No "evitá el over-engineering" sino "over-engineering →
+   `verify-scope-diff.mjs` contra los writers declarados y el delta real de Git". Una regla sin método de
+   verificación es decorativa — se olvida en la primera sesión bajo presión de contexto.
+2. **El comentario de un gate cuenta la herida, con el número de veces que pasó.** Un gate que
+   nace de una buena práctica genérica se borra con el tiempo; uno que nace de un bug real
+   documentado se respeta — ver los comentarios de origen en `scripts/verify-receipt.mjs`,
+   `scripts/ratchet.mjs`, `scripts/pretooluse-red.mjs`.

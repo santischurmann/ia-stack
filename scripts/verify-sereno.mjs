@@ -24,6 +24,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { mismoSchema } from './schema-compat.mjs';
+import { leerProtocolo } from './protocolo.mjs';
 // La validacion de fecha no se reimplementa: el criterio correcto -- round-trip en UTC, para que
 // 2026-02-30 no ruede a marzo -- ya vive probado en el gate de lecciones.
 import { realDate } from './verify-lessons.mjs';
@@ -188,7 +189,7 @@ export function ultimoRegistro(nombres) {
 export function main(args = process.argv.slice(2), cwd = '.', write = console.log, writeError = console.error, io = {}) {
   const parsed = parseArguments(args);
   if (parsed === null) { writeError(USAGE); return 2; }
-  const { hay = existsSync, listar = readdirSync, leer = (p) => readFileSync(join(cwd, p), 'utf8'), hoy = null } = io;
+  const { hay = existsSync, listar = readdirSync, leer = (p) => (p === 'SKILL.md' ? leerProtocolo(cwd) : readFileSync(join(cwd, p), 'utf8')), hoy = null } = io;
   const fecha = parsed.hoy ?? hoy ?? new Date().toISOString().slice(0, 10);
 
   if (parsed.accion === 'due') {

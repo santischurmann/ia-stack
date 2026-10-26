@@ -20,9 +20,10 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const leer = (ruta) => readFileSync(join(repoRoot, ruta), 'utf8');
+const leer = (ruta) => (ruta === 'SKILL.md' ? leerProtocolo(repoRoot) : readFileSync(join(repoRoot, ruta), 'utf8'));
 const contrato = () => JSON.parse(leer('contracts/model-routing.json'));
 
 export const MODELOS = Object.freeze(['haiku', 'sonnet', 'opus', 'fable']);

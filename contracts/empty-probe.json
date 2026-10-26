@@ -511,6 +511,12 @@
       "why_runtime": "Desde el repositorio fuente mira su propio arbol y puede salir OK, por eso self. Desde un runtime INSTALADO escribe VACIO, y es correcto que cambie: el instalador no copia README.md ni INSTALL.md, que son los documentos donde viven los ejemplos de los dos instaladores. Acusar esos ejemplos como ausentes desde ahi mandaria a arreglar algo que no esta roto, y decir OK seria afirmar que se comprobaron documentos que no estan. Lo encontro el E2E que corre la sonda desde una instalacion real, que es donde tenia que encontrarse."
     },
     {
+      "script": "protocolo.mjs",
+      "args": [],
+      "expect": "skip",
+      "why": "No es un gate: es la biblioteca que lee el protocolo partido (SKILL.md mas phases/NN-*.md). No tiene CLI ni lee el directorio de trabajo, asi que no hay comportamiento sobre una carpeta vacia que probar. Lo que hace de verdad lo prueba tests/protocolo.test.mjs y los gates que la importan."
+    },
+    {
       "script": "schema-compat.mjs",
       "args": [],
       "expect": "skip",

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { checkActiveBindings, checkTestBinding, createCachedBindingCheck } from './verify-test-bindings.mjs';
 import { COPIED_DIRECTORIES, COPIED_FILES, esRuntimeInstalado } from './verify-runtime-sync.mjs';
 import { mismoSchema } from './schema-compat.mjs';
+import { leerProtocolo } from './protocolo.mjs';
 
 const RUNTIME_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 
@@ -408,7 +409,7 @@ export function docsContract(cwd) {
     ['templates/spec.md', /Discovery/u],
   ];
   const exigibles = esRuntimeInstalado(cwd) ? required.filter(([path]) => loCopiaElInstalador(path)) : required;
-  return exigibles.every(([path, pattern]) => existsSync(resolve(cwd, path)) && pattern.test(readFileSync(resolve(cwd, path), 'utf8')));
+  return exigibles.every(([path, pattern]) => existsSync(resolve(cwd, path)) && pattern.test(path === 'SKILL.md' ? leerProtocolo(cwd) : readFileSync(resolve(cwd, path), 'utf8')));
 }
 
 export function createCheckRegistry(cwd, inventory, { selfTest = runSelfTest, docsCheck = docsContract, bindingsCheck = checkActiveBindings } = {}) {

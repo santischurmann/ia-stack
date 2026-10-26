@@ -43,7 +43,7 @@ export { resolveBash } from '../scripts/verify-shell-coverage.mjs';
 // Lo que el instalador SI deja en la raiz del runtime. Cualquier otra cosa que una prueba lea desde
 // la raiz solo existe en el checkout fuente. La lista vive aca y en `COPIED_DIRECTORIES` de
 // scripts/verify-runtime-sync.mjs; tests/self-checks.test.mjs falla si se separan.
-export const COPIADO_A_LA_RAIZ = Object.freeze(['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'SKILL.md', 'SECURITY.md', 'AGENTS.md']);
+export const COPIADO_A_LA_RAIZ = Object.freeze(['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases', 'SKILL.md', 'SECURITY.md', 'AGENTS.md']);
 
 export function existeEnRuntimeInstalado(rutaRelativa) {
   const primero = rutaRelativa.replaceAll('\\', '/').split('/')[0];

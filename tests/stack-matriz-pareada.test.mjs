@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
@@ -36,7 +37,7 @@ const LEGIBLE = join('skills', 'stack.md');
 const LIMITES = join('contracts', 'free-tier-limits.json');
 const PROTOCOLO = 'SKILL.md';
 
-const leer = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
+const leer = (rel) => (rel === 'SKILL.md' ? leerProtocolo(repoRoot) : readFileSync(join(repoRoot, rel), 'utf8'));
 const leerJson = (rel) => JSON.parse(leer(rel));
 
 /** Las filas de la tabla legible, descubiertas por forma: toda línea de tabla cuya primera celda

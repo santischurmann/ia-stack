@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 // El instalador NO copia el README (sólo SKILL.md, SECURITY.md y AGENTS.md), así que adentro de una
@@ -73,7 +74,7 @@ test('todo comando que el protocolo publica corre: ninguno muere por uso incorre
   const rotos = [];
   let vistos = 0;
   for (const documento of PUBLICAN_COMANDOS) {
-    const { ejecutables } = comandosPublicados(readFileSync(join(repoRoot, documento), 'utf8'));
+    const { ejecutables } = comandosPublicados(documento === 'SKILL.md' ? leerProtocolo(repoRoot) : readFileSync(join(repoRoot, documento), 'utf8'));
     // La guía completa es detalle y no puerta: sus comandos se barren si los tiene, pero no se le exige un mínimo.
     if (documento !== 'docs/guia-completa.md') assert.ok(ejecutables.length >= 3, `${documento}: el barrido tiene que encontrar comandos, o no prueba nada`);
     vistos += ejecutables.length;

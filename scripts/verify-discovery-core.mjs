@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { mismoSchema } from './schema-compat.mjs';
+import { leerProtocolo } from './protocolo.mjs';
 
 export const DECISION_SCHEMA = 'ia.discovery-decision/3';
 export const PACKET_SCHEMA = 'ia.discovery-packet/1';
@@ -444,7 +445,10 @@ export function classifySource(projectRoot, claim, read = readFileSync) {
   }
   const texto = String(bytes);
   if (Object.hasOwn(locator, 'line')) {
-    const lineas = texto.split('\n').length;
+    // SKILL.md se partio en nucleo + phases/ (3.4.1): una cita a su linea N habla del protocolo entero,
+    // asi que el rango se mide sobre eso. Sin phases/ (un checkout viejo) es el archivo solo.
+    const citado = locator.path === 'SKILL.md' && existsSync(resolve(projectRoot, 'phases')) ? leerProtocolo(projectRoot) : texto;
+    const lineas = citado.split('\n').length;
     if (locator.line > lineas) return salida(SOURCE_OUT_OF_RANGE, `${locator.path}: cita la línea ${locator.line} y el archivo tiene ${lineas}`);
   }
   const actual = createHash('sha256').update(bytes).digest('hex');

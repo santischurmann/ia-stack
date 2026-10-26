@@ -42,7 +42,7 @@ cd "$OUTPUT_DIR"
 # los instaladores, asi que si un instalador empieza a copiar algo nuevo, esa prueba se pone roja.
 ALLOWLIST=(
   README.md SECURITY.md INSTALL.md SKILL.md CHANGELOG.md LICENSE AGENTS.md
-  scripts contracts tests skills templates examples .agents
+  scripts contracts tests skills templates examples .agents phases
 )
 for path in "${ALLOWLIST[@]}"; do
   if [ ! -e "$PACKAGE_DIR/$path" ]; then

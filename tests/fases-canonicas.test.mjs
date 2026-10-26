@@ -27,6 +27,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -50,7 +51,7 @@ export function fasesDelReadme(texto) {
 }
 
 test('SKILL.md declara once fases y ninguna se repite', SOLO_FUENTE, () => {
-  const fases = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const fases = fasesCanonicas(leerProtocolo(repoRoot));
   assert.equal(fases.length, 11, `el canónico declara ${fases.length} fases: ${fases.map((f) => f.numero).join(', ')}`);
   assert.deepEqual(
     fases.map((f) => f.numero),
@@ -61,7 +62,7 @@ test('SKILL.md declara once fases y ninguna se repite', SOLO_FUENTE, () => {
 });
 
 test('la tabla del README nombra las mismas fases que el canónico, con los mismos números', SOLO_FUENTE, () => {
-  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const canonicas = fasesCanonicas(leerProtocolo(repoRoot));
   const readme = fasesDelReadme(readFileSync(join(repoRoot, 'README.md'), 'utf8'));
   assert.ok(readme.length > 0, 'no se encontró ninguna fila de fase en el README: la comprobación no midió nada');
   assert.deepEqual(
@@ -92,7 +93,7 @@ export function cuentasDeFases(archivos, leer) {
 }
 
 test('eleccion-de-stack · AC10 · todo documento que dice cuántas fases son coincide con el canónico', SOLO_FUENTE, () => {
-  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const canonicas = fasesCanonicas(leerProtocolo(repoRoot));
   const versionados = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8' })
     .stdout.split('\n').map((l) => l.trim()).filter((f) => f.endsWith('.md'));
   assert.ok(versionados.length > 0, 'git ls-files vino vacío: la comprobación no midió nada');
@@ -200,7 +201,7 @@ export function cuerpoDeFase(texto, numero) {
 }
 
 test('los chequeos de período que dicen «al abrir sesión» están nombrados en Bootstrap', SOLO_FUENTE, () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const periodicos = comandosDeParaSiToca(skill);
   assert.ok(periodicos.length >= 3, `tiene que haber comandos de período, o esta prueba no mira nada (${periodicos.length})`);
   const bootstrap = cuerpoDeFase(skill, '1');
@@ -234,7 +235,7 @@ export function tarjetasDeFase(texto) {
 }
 
 test('el mapa del protocolo dibuja tantas fases como declara el canónico', SOLO_FUENTE, () => {
-  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const canonicas = fasesCanonicas(leerProtocolo(repoRoot));
   const htmls = spawnSync('git', ['ls-files', '*.html'], { cwd: repoRoot, encoding: 'utf8' })
     .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
   const conTarjetas = htmls.filter((f) => tarjetasDeFase(readFileSync(join(repoRoot, f), 'utf8')) > 0);
@@ -286,7 +287,7 @@ export function descripcionesDeFrontmatter(archivos, leer) {
 }
 
 test('el frontmatter de cada skill dice tantas fases como declara el canónico', SOLO_FUENTE, () => {
-  const canonicas = fasesCanonicas(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const canonicas = fasesCanonicas(leerProtocolo(repoRoot));
   const versionados = spawnSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' })
     .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
   assert.ok(versionados.length > 0, 'git ls-files vino vacío: la comprobación no midió nada');

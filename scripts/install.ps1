@@ -21,7 +21,7 @@ if ($ProjectOnly) {
 }
 
 function Copy-Runtime([string]$Destination) {
-  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills", "$Destination\.agents" | Out-Null
+  New-Item -ItemType Directory -Force -Path "$Destination\scripts", "$Destination\contracts", "$Destination\tests", "$Destination\templates", "$Destination\skills", "$Destination\.agents", "$Destination\phases" | Out-Null
   Copy-Item "$PackageDir\scripts\*" "$Destination\scripts" -Recurse -Force
   Copy-Item "$PackageDir\contracts\*" "$Destination\contracts" -Recurse -Force
   Copy-Item "$PackageDir\tests\*" "$Destination\tests" -Recurse -Force
@@ -30,6 +30,7 @@ function Copy-Runtime([string]$Destination) {
   # Ver el comentario equivalente en install.sh: lo que el instalador lee del paquete tiene que
   # estar en lo que copia, o el runtime instalado no puede reinstalarse.
   Copy-Item "$PackageDir\.agents\*" "$Destination\.agents" -Recurse -Force
+  Copy-Item "$PackageDir\phases\*" "$Destination\phases" -Recurse -Force
   Copy-Item "$PackageDir\SKILL.md" "$Destination\SKILL.md" -Force
   Copy-Item "$PackageDir\SECURITY.md" "$Destination\SECURITY.md" -Force
   Copy-Item "$PackageDir\AGENTS.md" "$Destination\AGENTS.md" -Force
@@ -57,7 +58,7 @@ function Copy-Runtime([string]$Destination) {
 function Move-Sobrantes([string]$Runtime, [string]$Archivo) {
   $total = 0
   $candidatos = @()
-  foreach ($dir in @('scripts', 'contracts', 'tests', 'templates', 'skills', '.agents')) {
+  foreach ($dir in @('scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases')) {
     $base = Join-Path $Runtime $dir
     if (-not (Test-Path -LiteralPath $base)) { continue }
     # Se junta la lista ANTES de mover: moviendo mientras se recorre, el recorrido ve una carpeta

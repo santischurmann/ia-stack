@@ -19,6 +19,7 @@ const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
 
 const script = join(repoRoot, 'scripts', 'verify-ia-stack-contract.mjs');
 import { mismoSchema } from '../scripts/schema-compat.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const {
   FORBIDDEN_PHRASES,
@@ -447,7 +448,7 @@ test('FALSIFICACIÓN · AC10 · debilitar una frase de límite honesto en README
 });
 
 test('el contrato real de límites honestos del repositorio verifica en verde, y cada archivo que nombra existe', SOLO_FUENTE, () => {
-  const readRepositoryFile = (path) => readFileSync(join(repoRoot, path), 'utf8');
+  const readRepositoryFile = (path) => (path === 'SKILL.md' ? leerProtocolo(repoRoot) : readFileSync(join(repoRoot, path), 'utf8'));
   const limits = readHonestLimits(readRepositoryFile);
   assert.deepEqual(honestLimitViolations(readRepositoryFile, limits), []);
   // Antes esta prueba fijaba los tres archivos por nombre. Dejó de valer cuando el README se acortó

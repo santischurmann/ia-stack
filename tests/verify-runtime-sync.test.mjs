@@ -35,6 +35,7 @@ const SOURCE_FILES = [
   ['templates/vibe/PROJECT.md', '# (fill in)\nStarted: YYYY-MM-DD\n'],
   ['skills/vibe-memory.md', '# memoria\n'],
   ['SKILL.md', '# skill\n'],
+  ['phases/01-bootstrap.md', '# fase\n'],
   ['SECURITY.md', '# security\n'],
   // Los punteros de Codex: el instalador los LEE del paquete, asi que tienen que viajar con el
   // runtime o una reinstalacion desde el runtime falla con "cannot stat".
@@ -84,7 +85,7 @@ test('la superficie comparada se deriva de lo que copia el instalador Bash', () 
   const files = [...body.matchAll(/cp "\$PACKAGE_DIR\/([^/"]+)" /gu)].map((match) => match[1]);
   // Pinned against the installer as it actually reads today: if copy_runtime() starts copying
   // something else, this goes red and the gate's surface must be re-derived, never guessed.
-  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']);
+  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases']);
   assert.deepEqual(files, ['SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   assert.deepEqual([...COPIED_DIRECTORIES], directories);
   assert.deepEqual([...COPIED_FILES], files);
@@ -102,7 +103,7 @@ test('el instalador PowerShell copia exactamente la misma superficie', () => {
   const body = installer.slice(start, cierre);
   const directories = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"]+)\\\*"/gu)].map((match) => match[1]);
   const files = [...body.matchAll(/Copy-Item "\$PackageDir\\([^\\"*]+)" /gu)].map((match) => match[1]);
-  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents']);
+  assert.deepEqual(directories, ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases']);
   assert.deepEqual(files, ['SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   assert.deepEqual([...COPIED_DIRECTORIES], directories);
   assert.deepEqual([...COPIED_FILES], files);
@@ -191,7 +192,7 @@ test('missingSourceRoots nombra cada pieza que el instalador necesitaría copiar
     writeFileSync(join(source, 'contracts'), 'no soy un directorio\n');
     assert.deepEqual(missingSourceRoots(source), ['contracts/', 'SECURITY.md']);
     mkdirSync(join(root, 'vacio'));
-    assert.deepEqual(missingSourceRoots(join(root, 'vacio')), ['scripts/', 'contracts/', 'tests/', 'templates/', 'skills/', '.agents/', 'SKILL.md', 'SECURITY.md', 'AGENTS.md']);
+    assert.deepEqual(missingSourceRoots(join(root, 'vacio')), ['scripts/', 'contracts/', 'tests/', 'templates/', 'skills/', '.agents/', 'phases/', 'SKILL.md', 'SECURITY.md', 'AGENTS.md']);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

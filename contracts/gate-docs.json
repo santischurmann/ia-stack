@@ -23,6 +23,11 @@
       "why": "Adaptador de vitest, mismo criterio que el de pytest: garantia menor declarada y acceso por despachador. La eleccion del adaptador sale del contrato de runners por igualdad exacta, nunca de lo que alguien copie de un documento."
     },
     {
+      "script": "protocolo.mjs",
+      "invoked_by": "los gates y pruebas que leen el protocolo partido, entre ellos verify-ia-stack-contract.mjs y verify-discovery-requirements.mjs",
+      "why": "Es una biblioteca sin CLI: exporta archivosProtocolo() y leerProtocolo(), que devuelven SKILL.md mas phases/NN-*.md en orden. Correrla a mano no imprime ni verifica nada. Lo que hace de verdad lo prueba tests/protocolo.test.mjs y cada gate que la importa."
+    },
+    {
       "script": "ratchet.mjs",
       "invoked_by": "los gates que importan safeProjectFile, entre ellos verify-menu-shape.mjs",
       "why": "Es una biblioteca de rutas seguras con un CLI minimo que sin subcomando valido sale 2. Lo que hace de verdad -confinar una ruta al proyecto y cortar un enlace simbolico que apunte afuera- lo ejercitan los gates que la importan y sus pruebas, no una invocacion a mano. Es lo mismo que ya declara contracts/empty-probe.json sobre este script."

@@ -50,7 +50,7 @@ fi
 
 copy_runtime() {
   local destination="$1"
-  mkdir -p "$destination/scripts" "$destination/contracts" "$destination/tests" "$destination/templates" "$destination/skills" "$destination/.agents"
+  mkdir -p "$destination/scripts" "$destination/contracts" "$destination/tests" "$destination/templates" "$destination/skills" "$destination/.agents" "$destination/phases"
   cp -R "$PACKAGE_DIR/scripts/." "$destination/scripts/"
   cp -R "$PACKAGE_DIR/contracts/." "$destination/contracts/"
   cp -R "$PACKAGE_DIR/tests/." "$destination/tests/"
@@ -61,6 +61,7 @@ copy_runtime() {
   # con "cannot stat" y se llevaba puestas diez pruebas. Todo lo que el instalador lee del paquete
   # tiene que estar en lo que el instalador copia -- es un punto fijo, y hay una prueba que lo exige.
   cp -R "$PACKAGE_DIR/.agents/." "$destination/.agents/"
+  cp -R "$PACKAGE_DIR/phases/." "$destination/phases/"
   cp "$PACKAGE_DIR/SKILL.md" "$destination/SKILL.md"
   cp "$PACKAGE_DIR/SECURITY.md" "$destination/SECURITY.md"
   cp "$PACKAGE_DIR/AGENTS.md" "$destination/AGENTS.md"
@@ -83,7 +84,7 @@ copy_runtime() {
 # Dos pasadas y no un array: con `set -u`, expandir un array vacio rompe en el bash 3.2 de macOS.
 apartar_sobrantes() {
   local runtime="$1" archivo="$2" total=0 sobran=0 apartados=0 dir f rel
-  for dir in scripts contracts tests templates skills .agents; do
+  for dir in scripts contracts tests templates skills .agents phases; do
     [ -d "$runtime/$dir" ] || continue
     while IFS= read -r -d '' f; do
       total=$((total + 1))
@@ -95,7 +96,7 @@ apartar_sobrantes() {
     echo "AVISO: la poda iba a apartar $sobran de los $total archivos del runtime, mas de la mitad, y eso no es una limpieza: es un defecto. No se movio nada." >&2
     return 0
   fi
-  for dir in scripts contracts tests templates skills .agents; do
+  for dir in scripts contracts tests templates skills .agents phases; do
     [ -d "$runtime/$dir" ] || continue
     while IFS= read -r -d '' f; do
       rel="${f#"$runtime"/}"

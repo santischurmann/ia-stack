@@ -8,6 +8,7 @@ import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
 import { EMPTY, LIMITS, RECORD_KEYS, SCHEMA, USAGE, VERDICTS, globToRegExp, loadScope, main, makeGitHas, normalizePath, pathCandidates, validateAblation } from '../scripts/verify-ablation.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -315,17 +316,21 @@ test('el comparador de rutas protegidas hace lo que dice, caso por caso', () => 
 
 test('FALSIFICACIÓN · ningún script del repo tiene bytes de control: eso oculta lo que el código hace', () => {
   const sospechosos = [];
-  for (const carpeta of ['scripts', 'tests']) {
-    for (const archivo of readdirSync(join(repoRoot, carpeta))) {
-      const bytes = readFileSync(join(repoRoot, carpeta, archivo));
+  // Baja a las subcarpetas (tests/fixtures): un directorio no se lee como archivo, sus archivos si.
+  const revisar = (relativa) => {
+    for (const entrada of readdirSync(join(repoRoot, relativa), { withFileTypes: true })) {
+      const ruta = `${relativa}/${entrada.name}`;
+      if (entrada.isDirectory()) { revisar(ruta); continue; }
+      const bytes = readFileSync(join(repoRoot, ruta));
       for (const byte of bytes) {
         if (byte === 0 || byte < 9 || (byte > 13 && byte < 32)) {
-          sospechosos.push(`${carpeta}/${archivo}`);
+          sospechosos.push(ruta);
           break;
         }
       }
     }
-  }
+  };
+  for (const carpeta of ['scripts', 'tests']) revisar(carpeta);
   assert.deepEqual(sospechosos, []);
 });
 
@@ -1329,14 +1334,14 @@ test('RA-03 · FALSIFICACIÓN · el lector de disco expande el home aunque la ru
 // rechaza. Un requisito que sólo vive en el código no es un protocolo: es una trampa.
 
 test('F13 · PHASE 9 nombra cada campo que el gate exige del registro', () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const fase = skill.slice(skill.indexOf('## PHASE 9'));
   const faltan = RECORD_KEYS.filter((campo) => !fase.includes(`\`${campo}\``));
   assert.deepEqual(faltan, []);
 });
 
 test('F13 · PHASE 9 nombra los tres veredictos y el campo que justifica cada prueba', () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const fase = skill.slice(skill.indexOf('## PHASE 9'));
   const faltan = [...VERDICTS, 'why_representative'].filter((t) => !fase.includes(t));
   assert.deepEqual(faltan, []);
@@ -1354,7 +1359,7 @@ test('F13 · FALSIFICACIÓN · la comprobación agarra un campo ausente', () => 
 // sus rutas internas y una vulnerabilidad con archivo y linea. Realismo sin redaccion.
 
 test('PHASE 9 dice que el registro se publica redactado, no solo que sea real', () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const fase = skill.slice(skill.indexOf('## PHASE 9'));
   const falta = [];
   if (!/redact/iu.test(fase)) falta.push('la palabra redactar');
@@ -1365,7 +1370,7 @@ test('PHASE 9 dice que el registro se publica redactado, no solo que sea real', 
 
 test('PHASE 9 conserva la exigencia de que las tareas sean reales', () => {
   // La regla nueva no puede cancelar la vieja: un set inventado se elige para que de bien.
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const fase = skill.slice(skill.indexOf('## PHASE 9'));
   assert.match(fase, /tareas tuyas reales/iu);
 });
@@ -1694,7 +1699,7 @@ export function versionEtiquetada(texto) {
 }
 
 test('la etiqueta de git que SKILL.md dice tener existe de verdad', SOLO_FUENTE, (t) => {
-  const v = versionEtiquetada(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'));
+  const v = versionEtiquetada(leerProtocolo(repoRoot));
   // Si el documento NO afirma llevar una etiqueta, no hay nada que verificar: la regla castiga la
   // afirmación falsa, nunca el silencio. Obligar a afirmar una sería empujar a inventarla.
   if (v === null) return t.skip('SKILL.md no afirma llevar ninguna etiqueta de git: no hay promesa que comprobar');

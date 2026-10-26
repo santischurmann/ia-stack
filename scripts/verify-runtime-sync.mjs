@@ -65,7 +65,7 @@ export function esRuntimeInstalado(root) {
 // Derived from copy_runtime() in scripts/install.sh and Copy-Runtime in scripts/install.ps1 — not
 // invented here. tests/verify-runtime-sync.test.mjs parses both installers and fails if either one
 // starts copying something this list does not name, so the surface can never drift into a guess.
-export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents'];
+export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases'];
 export const COPIED_FILES = ['SKILL.md', 'SECURITY.md', 'AGENTS.md'];
 
 // EL SELLO DE INSTALACION. Decidido por el operador el 2026-09-22: el instalador deja en la raiz del

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
+import { leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOLO_FUENTE = esRuntimeInstalado(repoRoot)
@@ -84,7 +85,7 @@ export function binariosDelCaminoObligatorio(texto) {
 }
 
 test('el camino obligatorio de SKILL.md no invoca ninguna herramienta externa', SOLO_FUENTE, () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   assert.deepEqual(
     binariosDelCaminoObligatorio(skill),
     [],

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { esRuntimeInstalado } from './_entorno.mjs';
 import { EMPTY, LIMITS, USAGE, main, parseMenus, parsePhases, validateMenus } from '../scripts/verify-menu-shape.mjs';
+import { archivosProtocolo, leerProtocolo } from '../scripts/protocolo.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -40,10 +41,16 @@ function corrida(texto, args = ['check', RUTA]) {
   }
 }
 
+/** Los archivos de fase (phases/NN-*.md) del protocolo partido, relativos a la raiz. Desde la 3.4.1 los
+ * menus viven ahi y no en SKILL.md: sin esto el barrido dejaba de mirarlos sin avisar. */
+function fasesDelProtocolo() {
+  return archivosProtocolo(repoRoot).map((r) => relative(repoRoot, r).replaceAll('\\', '/')).filter((r) => r !== 'SKILL.md');
+}
+
 // --- Falso rojo: los documentos reales del protocolo tienen que pasar --------------------------
 
 test('los documentos reales de IA Stack pasan: un gate que obliga a escribir mal es peor que ninguno', SOLO_FUENTE, () => {
-  const docs = ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
+  const docs = ['SKILL.md', ...fasesDelProtocolo(), 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)];
   const rojos = [];
   for (const doc of docs) {
     const errores = [];
@@ -208,7 +215,7 @@ test('un documento con CRLF se verifica igual que uno con LF', () => {
 });
 
 test('el propio README menciona el formato de menú que el gate exige', SOLO_FUENTE, () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   assert.match(skill, /La forma canónica es una lista Markdown/u);
 });
 
@@ -310,7 +317,7 @@ function documentosDelBarrido() {
   const punteros = existsSync(join(repoRoot, '.agents', 'skills'))
     ? readdirSync(join(repoRoot, '.agents', 'skills')).map((d) => `.agents/skills/${d}/SKILL.md`)
     : [];
-  return ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...punteros,
+  return ['SKILL.md', ...fasesDelProtocolo(), 'README.md', 'docs/guia-completa.md', 'AGENTS.md', ...punteros,
     ...readdirSync(join(repoRoot, 'skills')).filter((f) => f.endsWith('.md')).map((f) => `skills/${f}`)]
     .filter((doc) => existsSync(join(repoRoot, doc)));
 }
@@ -424,7 +431,7 @@ test('FR-2 · FALSIFICACIÓN · la marca de ejemplo no tapa el menú siguiente',
 // si está reservado: si se usa para avisos, un aviso correcto se ve como un menú roto.
 
 test('CONTR-1 · ningún documento promete más de lo que el gate comprueba', SOLO_FUENTE, () => {
-  const archivos = ['SKILL.md', 'README.md', 'docs/guia-completa.md', 'CHANGELOG.md'];
+  const archivos = ['SKILL.md', ...fasesDelProtocolo(), 'README.md', 'docs/guia-completa.md', 'CHANGELOG.md'];
   const excepcion = /salvo|excepto|marcad[oa] como ejemplo|declara.{0,20}ejemplo/iu;
   const promesa = /(todo|cada) bloque `?🔵/iu;
   const rotas = [];
@@ -450,7 +457,7 @@ test('CONTR-1 · FALSIFICACIÓN · la comprobación agarra una promesa sin su ex
 test('FR-4 · el emoji de decisión está declarado como reservado', SOLO_FUENTE, () => {
   // El gate rechaza un 🔵 que no sea un menú. Eso sólo es correcto si el documento dice que el
   // emoji es exclusivo de las decisiones: si no, un aviso legítimo se lee como un menú roto.
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   assert.match(skill, /🔵.{0,120}reservad/isu);
 });
 
@@ -571,7 +578,7 @@ test('una fase sin título se nombra igual, por su número y su línea', () => {
 });
 
 test('EL DOCUMENTO REAL declara un menú visible en cada una de sus fases', () => {
-  const skill = readFileSync(join(repoRoot, 'SKILL.md'), 'utf8');
+  const skill = leerProtocolo(repoRoot);
   const fases = parsePhases(skill);
   assert.ok(fases.length >= 11, `el protocolo declara ${fases.length} fase(s)`);
   assert.deepEqual(validateMenus(skill), []);
