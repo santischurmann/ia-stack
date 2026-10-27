@@ -224,7 +224,8 @@ externo, el export es `verify-obsidian-export.mjs check graphify-out/obsidian`.
 
 - El estimador de tokens es `ceil(caracteres / 4)`: aproximado a propósito, no es el tokenizador del modelo.
 - `context-guard` (hook `UserPromptSubmit`) avisa, no cierra la sesión solo y sale siempre con 0. El
-  instalador no toca hooks: hay que cablearlo a mano en `settings.json`.
+  instalador no toca hooks: hay que cablearlo a mano en `settings.json`. Los subagentes (`Agent`) no
+  disparan `UserPromptSubmit`: su tope de 60K no lo controla un hook. El rol de subsesión va por `IA_STACK_ROL`.
 - Dos `append` simultáneos a `.vibe/tokens.jsonl` rompen la cadena: se registra de a uno.
 - La prueba de «no duplicar la tabla de ruteo» sólo mira las plantillas del repo, no tu `CLAUDE.md` global.
 - Los detectores de prosa larga y de topes son heurísticas acotadas, no un análisis de lenguaje.

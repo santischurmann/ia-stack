@@ -3,6 +3,7 @@
 //
 // Usage (hook UserPromptSubmit de Claude Code; recibe por stdin el JSON con `transcript_path`):
 //   node .vibe/ia-stack-runtime/scripts/context-guard.mjs --rol orquestador
+//   IA_STACK_ROL=subsesion node .vibe/ia-stack-runtime/scripts/context-guard.mjs
 //   node scripts/context-guard.mjs --transcript <transcript.jsonl> [--rol orquestador|subsesion]
 //
 // Los topes y el umbral salen de contracts/model-routing.json § contexto (tope_orquestador,
@@ -15,7 +16,10 @@
 //
 // LÍMITES HONESTOS: estima con ceil(caracteres / 4) sobre el texto de los mensajes user/assistant
 // (tool_use y tool_result serializados), no con el tokenizador del modelo. No cuenta los ~80K fijos
-// de la sesión (conectores, memoria, instrucciones): el tope se mide sobre mensajes. Y NO actúa solo:
+// de la sesión (conectores, memoria, instrucciones): el tope se mide sobre mensajes. Un hook
+// UserPromptSubmit sólo corre en sesiones con prompt de usuario: los subagentes (Agent) NO lo disparan,
+// así que el tope de 60K en subagentes lo controla el brief, no este hook. El rol de una subsesión se
+// fija con la variable de entorno IA_STACK_ROL=subsesion (o --rol). Y NO actúa solo:
 // no commitea, no compacta ni corta la sesión; sólo dice qué hacer, y si el agente lo ignora, sigue.
 
 import { readFileSync } from 'node:fs';
@@ -36,7 +40,11 @@ function charsDeContenido(content) {
   return chars;
 }
 
-/** Tokens estimados de los mensajes user/assistant de un transcript JSONL (ignora lo que no sea JSON). */
+/**
+ * Tokens estimados de los mensajes user/assistant de un transcript JSONL (ignora lo que no sea JSON).
+ * Reinicia el conteo en cada `compact_boundary` / `isCompactSummary` (lo anterior ya no está en el
+ * contexto) y saltea las líneas `isSidechain` (subagentes: no son contexto del orquestador).
+ */
 export function contarTokens(jsonl) {
   let tokens = 0;
   for (const linea of jsonl.split('\n')) {
@@ -46,7 +54,9 @@ export function contarTokens(jsonl) {
     } catch {
       continue;
     }
+    if (obj?.subtype === 'compact_boundary' || obj?.isCompactSummary === true) tokens = 0;
     if (obj?.type !== 'user' && obj?.type !== 'assistant') continue;
+    if (obj.isSidechain === true) continue;
     tokens += Math.ceil(charsDeContenido(obj.message?.content) / 4);
   }
   return tokens;
@@ -82,8 +92,13 @@ export function evaluar(tokens, rol, contrato) {
   return null;
 }
 
-export function parsearArgs(argv) {
+/** Rol: `--rol` gana; si no, la variable IA_STACK_ROL (los subagentes/subsesiones la heredan); si no, orquestador. */
+export function parsearArgs(argv, env = process.env) {
   const args = { transcript: undefined, rol: 'orquestador' };
+  if (env.IA_STACK_ROL !== undefined && env.IA_STACK_ROL !== '') {
+    if (!ROLES.includes(env.IA_STACK_ROL)) throw new Error(`IA_STACK_ROL inválido (${ROLES.join('|')}): ${env.IA_STACK_ROL}`);
+    args.rol = env.IA_STACK_ROL;
+  }
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--transcript') {
       args.transcript = argv[(i += 1)];

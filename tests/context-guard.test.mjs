@@ -164,7 +164,7 @@ test('ia-stack-3-4-1-tokens · AC6 · los topes salen de contracts/model-routing
 
 test('ia-stack-3-4-1-tokens · AC6 · parsearArgs', () => {
   assert.deepEqual(parsearArgs(['--transcript', 'a', '--rol', 'subsesion']), { transcript: 'a', rol: 'subsesion' });
-  assert.deepEqual(parsearArgs([]), { transcript: undefined, rol: 'orquestador' });
+  assert.deepEqual(parsearArgs([], {}), { transcript: undefined, rol: 'orquestador' });
   assert.throws(() => parsearArgs(['--rol', 'otro']), /rol/);
   assert.throws(() => parsearArgs(['--transcript']), /transcript/);
   assert.throws(() => parsearArgs(['--rol']), /rol/);
@@ -216,4 +216,44 @@ test('ia-stack-3-4-1-tokens · AC6 · ejecutar devuelve salida y errores sin toc
   });
   assert.equal(e.stdout, '');
   assert.match(e.stderr, /context-guard:.*stdin/);
+});
+
+// ---- Revisión N3 3.4.1: compactación, sidechain y rol por entorno ----
+const frontera = () => JSON.stringify({ type: 'system', subtype: 'compact_boundary', content: 'Conversation compacted' });
+const resumen = (tokens) => JSON.stringify({ type: 'user', isCompactSummary: true, message: { role: 'user', content: 'x'.repeat(tokens * 4) } });
+
+test('revision-n3 · ALTA 1 · tras compact_boundary el conteo reinicia: 130K antes + resumen de 2K queda bajo el aviso', () => {
+  const lineas = [...sintetico(130000), frontera(), resumen(2000), msg(500)];
+  assert.equal(contarTokens(lineas.join('\n')), 2500);
+  conTranscript(lineas, (f) => {
+    const r = run(['--transcript', f]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout, '');
+  });
+});
+
+test('revision-n3 · ALTA 1 · se reinicia en el ÚLTIMO boundary y un resumen sin boundary también corta', () => {
+  const dos = [...sintetico(50000), frontera(), ...sintetico(30000), frontera(), resumen(10), msg(5)];
+  assert.equal(contarTokens(dos.join('\n')), 15);
+  const soloResumen = [...sintetico(50000), resumen(10), msg(5)];
+  assert.equal(contarTokens(soloResumen.join('\n')), 15);
+});
+
+test('revision-n3 · MEDIA 2 · las líneas isSidechain no cuentan como contexto del orquestador', () => {
+  const lado = JSON.stringify({ type: 'assistant', isSidechain: true, message: { role: 'assistant', content: 'x'.repeat(4000) } });
+  assert.equal(contarTokens([msg(10), lado, msg(5)].join('\n')), 15);
+});
+
+test('revision-n3 · MEDIA 3 · el rol sale de IA_STACK_ROL si no hay --rol; --rol gana; valor inválido falla', () => {
+  assert.deepEqual(parsearArgs([], { IA_STACK_ROL: 'subsesion' }), { transcript: undefined, rol: 'subsesion' });
+  assert.deepEqual(parsearArgs(['--rol', 'orquestador'], { IA_STACK_ROL: 'subsesion' }), { transcript: undefined, rol: 'orquestador' });
+  assert.deepEqual(parsearArgs([], { IA_STACK_ROL: '' }), { transcript: undefined, rol: 'orquestador' });
+  assert.throws(() => parsearArgs([], { IA_STACK_ROL: 'otro' }), /IA_STACK_ROL/);
+  conTranscript(sintetico(60000), (f) => {
+    const env = { ...process.env, IA_STACK_ROL: 'subsesion' };
+    delete env.NODE_TEST_CONTEXT;
+    const r = spawnSync(process.execPath, [guard, '--transcript', f], { encoding: 'utf8', env });
+    assert.match(r.stdout, /ORDEN/);
+    assert.match(r.stdout, /rol subsesion/);
+  });
 });

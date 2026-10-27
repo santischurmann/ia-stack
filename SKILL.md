@@ -57,6 +57,8 @@ La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica 
   pendientes, cómo retomar), y se compacta o se pasa a una sesión nueva; nunca se espera al
   autocompact. Haiku sólo en tareas cortas y subagentes con contexto nuevo (`regla_haiku`). Tampoco
   se gastan turnos en avisar que algo «sigue corriendo».
+  El hook `context-guard` no cubre a los subagentes (no disparan `UserPromptSubmit`): su tope de 60K
+  lo fija el brief, no un hook; el rol de una subsesión va por `IA_STACK_ROL=subsesion`.
 - **Límite honesto.** Un host sin parámetro `model` (por ejemplo, un agente que sólo lee
   `AGENTS.md`) ignora el ruteo, y el protocolo no puede cambiar el modelo de su propia sesión: eso
   lo elige la persona. En ese host el orquestador lo dice **una vez**, en el reporte de Bootstrap

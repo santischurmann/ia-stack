@@ -68,7 +68,8 @@ apartar ahí escribiría archivos en un repositorio que no es el del proyecto.
 **Desde la 3.4.1:** el instalador no toca hooks. `scripts/context-guard.mjs` (aviso de contexto al 80 %
 del tope, sale 0 siempre y no cierra la sesión solo) hay que cablearlo a mano como hook
 `UserPromptSubmit` en tu `settings.json`:
-`node .vibe/ia-stack-runtime/scripts/context-guard.mjs --rol orquestador`.
+`node .vibe/ia-stack-runtime/scripts/context-guard.mjs --rol orquestador`. Una subsesión fija
+`IA_STACK_ROL=subsesion` en su entorno; los subagentes no disparan este hook.
 
 Los comandos de protocolo se ejecutan desde el proyecto:
 
