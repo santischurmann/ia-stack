@@ -164,5 +164,211 @@
     "registrar-tokens.mjs append": "phases/06-build.md",
     "registrar-tokens.mjs check": "phases/11-limpieza.md",
     "informe-tokens.mjs": "phases/11-limpieza.md"
+  },
+  "conteo_por_archivo_3.4.1": {
+    "verify-phase-decisions.mjs check": {
+      "SKILL.md": 1,
+      "phases/10-deploy.md": 1,
+      "phases/12-menus-y-memoria.md": 1
+    },
+    "tablero.mjs due": {
+      "phases/01-bootstrap.md": 1,
+      "phases/11-limpieza.md": 1
+    },
+    "verify-sereno.mjs due": {
+      "phases/01-bootstrap.md": 1,
+      "phases/11-limpieza.md": 1
+    },
+    "verify-ablation.mjs due": {
+      "phases/01-bootstrap.md": 1,
+      "phases/11-limpieza.md": 1
+    },
+    "verify-resume-state.mjs check": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-feature-activa.mjs check": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-session-state.mjs check": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-capability-matrix.mjs check": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-scavenge.mjs check": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-spec-wordcap.mjs check": {
+      "phases/01-bootstrap.md": 1,
+      "phases/04-spec.md": 2
+    },
+    "context-guard.mjs": {
+      "phases/01-bootstrap.md": 1
+    },
+    "verify-intake.mjs check": {
+      "phases/02-intake.md": 1
+    },
+    "verify-stack-matrix.mjs check": {
+      "phases/02-intake.md": 1
+    },
+    "verify-research-candidates.mjs check": {
+      "phases/03-research.md": 1
+    },
+    "verify-product-diagnostics.mjs check": {
+      "phases/03-research.md": 1
+    },
+    "verify-discovery-core.mjs check": {
+      "phases/03-research.md": 1
+    },
+    "verify-discovery-views.mjs render": {
+      "phases/03-research.md": 1
+    },
+    "verify-discovery-views.mjs check": {
+      "phases/03-research.md": 1
+    },
+    "verify-test-bindings.mjs check": {
+      "phases/03-research.md": 1
+    },
+    "verify-evidence-trace.mjs claims": {
+      "phases/03-research.md": 3,
+      "phases/08-test.md": 1
+    },
+    "verify-adr.mjs check": {
+      "phases/05-plan.md": 1
+    },
+    "verify-plan-conflicts.mjs check": {
+      "phases/05-plan.md": 1
+    },
+    "verify-task-shape.mjs check": {
+      "phases/05-plan.md": 1
+    },
+    "verify-brief-size.mjs check": {
+      "phases/06-build.md": 1
+    },
+    "registrar-tokens.mjs append": {
+      "phases/06-build.md": 1
+    },
+    "verify-red.sh": {
+      "phases/06-build.md": 3
+    },
+    "verify-red.ps1": {
+      "phases/06-build.md": 2
+    },
+    "verify-assert-order.mjs check": {
+      "phases/06-build.md": 1
+    },
+    "verify-scope-diff.mjs check": {
+      "phases/06-build.md": 1
+    },
+    "pretooluse-red.mjs emit": {
+      "phases/06-build.md": 1
+    },
+    "verify-handoff-report.mjs check": {
+      "phases/06-build.md": 1
+    },
+    "verify-triangulate.mjs check": {
+      "phases/07-triangulate.md": 2
+    },
+    "verify-repo-clean.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-private-names.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-shell-coverage.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-security-baseline.mjs check": {
+      "phases/08-test.md": 1,
+      "phases/10-deploy.md": 1
+    },
+    "verify-threat-model.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-evidence-trace.mjs criteria": {
+      "phases/08-test.md": 1
+    },
+    "verify-evidence-runner.mjs run": {
+      "phases/08-test.md": 1
+    },
+    "verify-evidence-runner.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-empty-probe.mjs check": {
+      "phases/08-test.md": 1
+    },
+    "verify-receipt.mjs check": {
+      "phases/08-test.md": 1,
+      "phases/10-deploy.md": 1
+    },
+    "verify-deploy.mjs check": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-deploy.mjs health": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-receipt.mjs commit": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-receipt.mjs recheck": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-receipt.mjs inspect-legacy": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-audit-chain.mjs history": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-receipt.mjs custody": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-ia-stack-index.mjs record": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-ia-stack-index.mjs check": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-ia-stack-contract.mjs check": {
+      "phases/10-deploy.md": 1
+    },
+    "verify-lessons.mjs check": {
+      "phases/10-deploy.md": 1
+    },
+    "tablero.mjs build": {
+      "phases/11-limpieza.md": 1
+    },
+    "tablero-servidor.mjs serve": {
+      "phases/11-limpieza.md": 1
+    },
+    "verify-sereno.mjs check": {
+      "phases/11-limpieza.md": 1
+    },
+    "registrar-tokens.mjs check": {
+      "phases/11-limpieza.md": 1
+    },
+    "informe-tokens.mjs": {
+      "phases/11-limpieza.md": 1
+    },
+    "autolimpieza.mjs listar": {
+      "phases/11-limpieza.md": 1
+    },
+    "autolimpieza.mjs aplicar": {
+      "phases/11-limpieza.md": 1
+    },
+    "autolimpieza.mjs purgar": {
+      "phases/11-limpieza.md": 1
+    },
+    "verify-autolimpieza.mjs check": {
+      "phases/11-limpieza.md": 1
+    },
+    "verify-ablation.mjs check": {
+      "phases/11-limpieza.md": 1
+    },
+    "verify-menu-shape.mjs check": {
+      "phases/12-menus-y-memoria.md": 1
+    },
+    "verify-phase-menu.mjs check": {
+      "phases/12-menus-y-memoria.md": 1
+    }
   }
 }

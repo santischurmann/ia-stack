@@ -118,3 +118,17 @@ test('ia-stack-3-4-1-tokens · AC5 · leerProtocolo devuelve el nucleo y las fas
     desde = pos + contenido.length;
   }
 });
+
+test('revision-n3 · BAJA · el conteo POR ARCHIVO de cada comando coincide con el fixture (un comando no puede mudarse entre fases con el mismo total)', () => {
+  const porArchivo = fixture['conteo_por_archivo_3.4.1'];
+  assert.ok(porArchivo && typeof porArchivo === 'object', 'el fixture no trae conteo_por_archivo_3.4.1');
+  assert.deepEqual(Object.keys(porArchivo).sort(), Object.keys(esperados).sort());
+  const real = {};
+  for (const f of archivosLeidos()) {
+    for (const [k, n] of Object.entries(contar(leer(f)))) (real[k] ??= {})[f] = n;
+  }
+  assert.deepEqual(real, porArchivo);
+  for (const [k, archivos] of Object.entries(porArchivo)) {
+    assert.equal(Object.values(archivos).reduce((s, n) => s + n, 0), esperados[k], `${k}: la suma por archivo no da el total declarado`);
+  }
+});
