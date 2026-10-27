@@ -7,6 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+Correcciones de la revisión N3 de la 3.4.1 (26-10-2026):
+
+- **`context-guard`:** el conteo reinicia en el último `compact_boundary` / `isCompactSummary` (antes
+  seguía dando ORDEN tras compactar) y saltea las líneas `isSidechain`. El rol de una subsesión se
+  fija con `IA_STACK_ROL=subsesion`. Límite declarado: los subagentes (`Agent`) no disparan
+  `UserPromptSubmit`, así que su tope de 60K no lo controla un hook.
+- **Detalle de subagentes** en `.vibe/handoffs/detalle/`, fuera de la carpeta de reportes de gate.
+  `verify-handoff-report` sale 1 (no 2) si no puede leer el reporte, como `verify-brief-size`.
+- **`informe-tokens`:** «últimos 7 días» son 7 (antes 8) y `|` se escapa en las tablas.
+  **`registrar-tokens`:** `--modelo` se normaliza y se valida contra `niveles.*.modelo`.
+- Punteros a las fases corregidos (`phases/` en vez de «SKILL.md Phase N»); pruebas más estrictas
+  (conteo por archivo de cada gate, modo breve sobre `skills/subagent-*.md` y `templates/`).
+
 ---
 
 ## [3.4.1] — 26-10-2026

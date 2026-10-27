@@ -191,7 +191,7 @@ sea la decisión correcta, ni que la persona la haya entendido.
 
 | Documento | Qué tiene |
 |---|---|
-| **[`SKILL.md`](SKILL.md)** | El protocolo completo, fase por fase. Es lo que lee el agente. |
+| **[`SKILL.md`](SKILL.md)** | El núcleo + mapa de lectura; cada fase vive en [`phases/`](phases/). Es lo que lee el agente. |
 | **[`skills/gates.md`](skills/gates.md)** | Todos los chequeos, qué comprueba cada uno y qué **no** puede comprobar. |
 | **[`skills/research.md`](skills/research.md)** | **Research: investigar antes de especificar** — la pasada de Discovery. |
 | **[`skills/verificar-ia-stack.md`](skills/verificar-ia-stack.md)** | Cómo verificar el propio repositorio de IA Stack. |

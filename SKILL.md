@@ -69,7 +69,8 @@ La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica 
 No se lee el protocolo entero de una vez: son unos 40.000 tokens que después viajan en cada
 mensaje. Al empezar se lee este núcleo (`SKILL.md`: el § INTERNAL ORCHESTRATION CONTRACT, las
 leyes y este mapa); después, **sólo el archivo de la fase en curso**, y las sub-skills sólo cuando
-esa fase las nombra.
+esa fase las nombra. En un proyecto con el runtime instalado, las fases están en
+`.vibe/ia-stack-runtime/phases/` (en este repo, `phases/`).
 
 - `phases/00-reglas-extendidas.md` — el detalle de las leyes: soporte declarado, push que despliega, modo continuo, tope de reintentos.
 - `phases/01-bootstrap.md` — § PHASE 1 — BOOTSTRAP — al abrir o retomar una sesión.

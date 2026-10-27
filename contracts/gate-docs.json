@@ -5,7 +5,7 @@
     {
       "script": "verify-red.mjs",
       "invoked_by": "verify-red.sh y verify-red.ps1",
-      "why": "Es el despachador de test rojo, y lo que se corre son los dos envoltorios. El despachador resuelve el comando del runner contra contracts/red-adapters.json por igualdad exacta y lanza el adaptador declarado: un ejemplo suelto invitaria a saltear esa resolucion, que es justo la pieza que impide leer el reporte de un runner con el clasificador de otro. La fase 5.1 de SKILL.md trae el comando del envoltorio, que es el que hay que copiar."
+      "why": "Es el despachador de test rojo, y lo que se corre son los dos envoltorios. El despachador resuelve el comando del runner contra contracts/red-adapters.json por igualdad exacta y lanza el adaptador declarado: un ejemplo suelto invitaria a saltear esa resolucion, que es justo la pieza que impide leer el reporte de un runner con el clasificador de otro. La fase 5.1 (phases/06-build.md) trae el comando del envoltorio, que es el que hay que copiar."
     },
     {
       "script": "verify-red-node.mjs",

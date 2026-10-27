@@ -266,7 +266,7 @@ After each task reaches GREEN, run `node .vibe/ia-stack-runtime/scripts/verify-s
 
 ## RESUME AFTER RESTART / COMPACTION
 
-1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 1 🔵 conflict/legacy menu in `SKILL.md`, wait for the user, apply only that decision, then re-run the gate.
+1. Establish the requested lowercase-kebab-case feature slug and run `node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vibe/SESSION.md --feature <feature-slug>`. Only exit `0` permits a resume. On exit `1`, present the Phase 1 🔵 conflict/legacy menu in `phases/01-bootstrap.md`, wait for the user, apply only that decision, then re-run the gate.
 2. Re-read: `.vibe/SESSION.md` (gate ledger) → `docs/tasks.json` (status).
 3. First task not `done` = current. Re-detect phase with evidence: run its tests (FAIL=pre-GREEN, PASS=post-GREEN). Never trust memory.
 4. `git diff` its test files — changed since RED = violation, stop, report.

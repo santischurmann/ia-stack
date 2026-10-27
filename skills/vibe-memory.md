@@ -352,7 +352,7 @@ node .vibe/ia-stack-runtime/scripts/verify-resume-state.mjs check --session .vib
 ```
 
 Only exit `0` permits reading the ledger bottom-up. Exit `1` is a fail-closed identity conflict:
-never resume it silently. Present the Phase 1 🔵 menu in `SKILL.md` (archive cleanly, continue its
+never resume it silently. Present the Phase 1 🔵 menu in `phases/01-bootstrap.md` (archive cleanly, continue its
 declared feature, explicitly retag with a recorded user reason, or inspect). A legacy/malformed
 session has `UNKNOWN` identity and gets its own assign/archive/inspect menu. After the user
 chooses, re-run this command; do not proceed until it exits `0`.
