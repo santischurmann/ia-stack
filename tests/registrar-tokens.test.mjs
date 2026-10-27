@@ -354,7 +354,7 @@ test('revision-n3 · BAJA · --modelo se normaliza y se valida contra niveles.*.
     }
     const lineas = readFileSync(file, 'utf8').trim().split('\n');
     assert.deepEqual(lineas.map((l) => JSON.parse(l.replace(SELLO, '')).modelo), ['sonnet-5.5', 'opus', 'fable-5.1']);
-    for (const malo of ['gpt-4', 'sonnetx', 'sonnet 5', 'm', 'haiku|x']) {
+    for (const malo of ['gpt-4', 'sonnetx', 'sonnet 5', 'm', 'haiku|x', 'sonnet-5 5', 'opus-a|b']) {
       const c = cap();
       assert.equal(registrar([...con(malo), '--file', file], { ahora: AHORA }, c.write, c.writeError), 1, malo);
       assert.match(c.err.join(), /--modelo/u, malo);
