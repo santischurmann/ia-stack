@@ -38,10 +38,23 @@ export function lineasConProsaLarga(texto) {
   return hallazgos;
 }
 
+function archivosDe(dir) {
+  const salida = [];
+  for (const e of readdirSync(join(raiz, dir), { withFileTypes: true })) {
+    const ruta = `${dir}/${e.name}`;
+    if (e.isDirectory()) salida.push(...archivosDe(ruta));
+    else salida.push(ruta);
+  }
+  return salida.sort();
+}
+
 const documentosDeFases = () => [
   'SKILL.md',
   'skills/orchestrator-opus.md',
   ...readdirSync(join(raiz, 'phases')).filter((f) => /^\d\d-.*\.md$/u.test(f)).sort().map((f) => `phases/${f}`),
+  // Revisión N3 3.4.1: los briefs de los subagentes y las plantillas también viajan entre agentes.
+  ...readdirSync(join(raiz, 'skills')).filter((f) => /^subagent-.*\.md$/u.test(f)).sort().map((f) => `skills/${f}`),
+  ...archivosDe('templates').filter((f) => /\.(md|json)$/u.test(f)),
 ];
 
 test('ia-stack-3-4-1-tokens · AC3 · modo-breve.md declara el nivel full entre agentes', () => {

@@ -216,3 +216,18 @@ test('ia-stack-3-4-1-tokens · AC4 · los detectores ven un rol sin ruta y una t
   assert.deepEqual(filasDeRolesEn('| `a` | N1 |\n| `b` | N2 |', roles), ['a', 'b']);
   assert.deepEqual(filasDeRolesEn('texto `a` y `b`', roles), []);
 });
+
+// Revisión N3 3.4.1: `planificador` sube a N3 con riesgo alto (`con_riesgo_alto`) pero NO declara un
+// `esfuerzo_con_riesgo_alto`. Decisión (la mínima y coherente): al subir de nivel hereda el esfuerzo
+// del NIVEL destino, porque el orquestador pasa `effort=niveles[nivel].esfuerzo` (orchestrator-opus.md),
+// no el esfuerzo del rol. Esta prueba fija esa herencia y que nunca baje respecto del esfuerzo base.
+test('revision-n3 · BAJA · planificador con riesgo alto hereda el esfuerzo del nivel destino, y no baja', () => {
+  const c = contrato();
+  const ruta = c.roles.planificador;
+  assert.equal('esfuerzo_con_riesgo_alto' in ruta, false, 'si se agrega esfuerzo_con_riesgo_alto, esta prueba y el orquestador deben usarlo');
+  assert.ok(c.niveles[ruta.con_riesgo_alto], 'con_riesgo_alto debe ser un nivel del contrato');
+  const heredado = c.niveles[ruta.con_riesgo_alto].esfuerzo;
+  assert.ok(ESFUERZOS.includes(heredado));
+  assert.ok(ESFUERZOS.indexOf(heredado) >= ESFUERZOS.indexOf(ruta.esfuerzo), 'subir de nivel no puede bajar el esfuerzo');
+  assert.ok(ORDEN.indexOf(ruta.con_riesgo_alto) > ORDEN.indexOf(ruta.nivel), 'con_riesgo_alto debe subir de nivel');
+});
