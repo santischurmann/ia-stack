@@ -20,6 +20,15 @@
       "why": "Sale 0 SIEMPRE por diseno (un hook que falla no puede trabar la sesion): sin transcript lo dice por stderr y no avisa nada. No mira el directorio de trabajo, solo el transcript que se le pasa; el aviso y la orden de cerrar los prueba tests/context-guard.test.mjs con transcripts sinteticos de 96K, 120K y 130K."
     },
     {
+      "script": "informe-tokens.mjs",
+      "args": [
+        "--file",
+        "tokens.jsonl"
+      ],
+      "expect": "empty",
+      "why": "Sin tokens.jsonl dice VACÍO: sin registros y sale 0: una semana sin subagentes es un estado legítimo, no un fallo. Con el archivo presente, tests/registrar-tokens.test.mjs ejercita el informe por rol, modelo y escaladas, y los rechazos por sello roto o JSON inválido."
+    },
+    {
       "script": "pretooluse-red.mjs",
       "args": [
         "check"
@@ -34,6 +43,16 @@
       ],
       "expect": "usage",
       "why": "Es una biblioteca de rutas seguras con un CLI minimo; sin subcomando valido sale 2. Lo que hace de verdad -confinar rutas al proyecto- lo prueban los gates que la importan, no esta sonda."
+    },
+    {
+      "script": "registrar-tokens.mjs",
+      "args": [
+        "check",
+        "--file",
+        "tokens.jsonl"
+      ],
+      "expect": "empty",
+      "why": "Sin tokens.jsonl no hay cadena que verificar: dice VACÍO: sin registros y sale 0 sin disfrazarlo de verificado. `append` no entra en la sonda porque escribiría en el directorio; lo prueba tests/registrar-tokens.test.mjs."
     },
     {
       "script": "tablero-modelo.mjs",

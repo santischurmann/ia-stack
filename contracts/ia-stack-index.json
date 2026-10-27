@@ -655,6 +655,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/informe-tokens.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/install.ps1",
       "class": "gate"
     },
@@ -676,6 +680,10 @@
     },
     {
       "path": "scripts/ratchet.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/registrar-tokens.mjs",
       "class": "gate"
     },
     {
@@ -1264,6 +1272,10 @@
     },
     {
       "path": "tests/readme-comandos.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/registrar-tokens.test.mjs",
       "class": "prueba"
     },
     {

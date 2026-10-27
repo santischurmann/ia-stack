@@ -51,6 +51,19 @@ Las cuatro reglas, y por qué cada una:
 **Lo que este gate NO puede hacer:** comprueba que la propuesta tenga origen, no que valga la pena. Y
 que el texto citado esté ahí, no que signifique lo que la propuesta dice que significa.
 
+**9.0.3 El informe de tokens** (mismo período de 7 días). Lee `.vibe/tokens.jsonl`, que el
+orquestador llena al cerrar cada subagente (Phase 5, `registrar-tokens.mjs append`), y arma en
+Markdown los tokens in/out y la cantidad por rol y por modelo, más la lista de escaladas (tarea, rol,
+modelo). Se pega en `docs/lecciones-modelos.md` y con eso se revisa la tabla de ruteo
+(`contracts/model-routing.json`): un tipo de tarea que escala dos veces sube de nivel o se corrige su doc.
+```bash
+node .vibe/ia-stack-runtime/scripts/registrar-tokens.mjs check
+node .vibe/ia-stack-runtime/scripts/informe-tokens.mjs --desde AAAA-MM-DD --hasta AAAA-MM-DD
+```
+Sin `--desde`/`--hasta` toma los últimos 7 días. Sin registros dice «sin registros» y sale `0`; con un
+sello roto o una línea inválida sale distinto de `0`. **Límite honesto:** los tokens son los que declaró
+quien registró; el sello prueba que nadie los editó después, no que sean ciertos.
+
 
 **9.0.2 La autolimpieza** (mismo período de 7 días, al abrir sesión). Un proyecto acumula carpetas que
 nadie ejecuta ni lee: copias viejas, temporales de corridas matadas, lo que una poda aparta. La regla es

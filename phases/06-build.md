@@ -30,6 +30,16 @@ se parte la tarea, no se lanza. El reporte que vuelve tiene 40 líneas o menos; 
 node .vibe/ia-stack-runtime/scripts/verify-brief-size.mjs check <brief.md>
 ```
 
+**Al cerrar cada subagente**, el orquestador registra lo que gastó, con el rol de
+`contracts/model-routing.json` y `--escalo si` si la tarea tuvo que subir de nivel:
+```bash
+node .vibe/ia-stack-runtime/scripts/registrar-tokens.mjs append --tarea <id> --rol <rol> --modelo <m> --in <n> --out <n> --escalo si|no
+```
+Cada línea de `.vibe/tokens.jsonl` queda sellada con el mismo encadenado que `.vibe/AUDIT.md`. Un rol
+desconocido o un número inválido sale distinto de `0` y no escribe nada. Registrá de a uno: dos
+`append` simultáneos pueden romper la cadena. Los números los declara quien registra. El informe
+semanal está en la limpieza (Phase 9, 9.0.3).
+
 Cada subagente tiene un papel con nombre, no es "un subagente cualquiera". Eso endurece la
 frontera de **quién puede certificar qué**:
 
