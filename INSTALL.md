@@ -65,6 +65,11 @@ apartar ahí escribiría archivos en un repositorio que no es el del proyecto.
    no importa `@AGENTS.md`: con la configuración predeterminada, Claude Code no lee `AGENTS.md` cuando
    hay un `CLAUDE.md`. No lo reescribe: es tuyo.
 
+**Desde la 3.4.1:** el instalador no toca hooks. `scripts/context-guard.mjs` (aviso de contexto al 80 %
+del tope, sale 0 siempre y no cierra la sesión solo) hay que cablearlo a mano como hook
+`UserPromptSubmit` en tu `settings.json`:
+`node .vibe/ia-stack-runtime/scripts/context-guard.mjs --rol orquestador`.
+
 Los comandos de protocolo se ejecutan desde el proyecto:
 
 ```bash

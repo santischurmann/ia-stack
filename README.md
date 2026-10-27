@@ -208,11 +208,26 @@ node .vibe/ia-stack-runtime/scripts/verify-sereno.mjs due
 node .vibe/ia-stack-runtime/scripts/verify-adr.mjs check
 node .vibe/ia-stack-runtime/scripts/verify-scope-diff.mjs check --tasks docs/tasks.json --task T01 --base HEAD
 node .vibe/ia-stack-runtime/scripts/verify-backup-state.mjs check .vibe/backup.json
+node .vibe/ia-stack-runtime/scripts/registrar-tokens.mjs check
+node .vibe/ia-stack-runtime/scripts/informe-tokens.mjs
 ```
+
+Desde la 3.4.1 también están `verify-brief-size.mjs check <brief.md>` (brief de subagente: 4K tokens y 3
+archivos como máximo) y `verify-handoff-report.mjs check <reporte.md>` (40 líneas como máximo), que
+recibe cada uno su archivo y por eso no figuran en el bloque de arriba.
 
 Una prueba **corre** los comandos de este archivo y falla si alguno muere con `usage:` — hasta el
 2026-09-04, dos de los tres que publicaba no arrancaban. Y si usás la integración con un grafo
 externo, el export es `verify-obsidian-export.mjs check graphify-out/obsidian`.
+
+**Límites de la 3.4.1 (contexto y tokens), dichos sin adorno:**
+
+- El estimador de tokens es `ceil(caracteres / 4)`: aproximado a propósito, no es el tokenizador del modelo.
+- `context-guard` (hook `UserPromptSubmit`) avisa, no cierra la sesión solo y sale siempre con 0. El
+  instalador no toca hooks: hay que cablearlo a mano en `settings.json`.
+- Dos `append` simultáneos a `.vibe/tokens.jsonl` rompen la cadena: se registra de a uno.
+- La prueba de «no duplicar la tabla de ruteo» sólo mira las plantillas del repo, no tu `CLAUDE.md` global.
+- Los detectores de prosa larga y de topes son heurísticas acotadas, no un análisis de lenguaje.
 
 ---
 

@@ -9,6 +9,32 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ---
 
+## [3.4.1] — 26-10-2026
+
+**Parche sobre la 3.4.0: menos contexto por turno.** Cada turno relee todo el contexto; medido el
+26-10-2026, ~80K fijos por sesión, una sesión llegó a 910K y `SKILL.md` pesaba 165 KB.
+
+- **`SKILL.md` partido.** Núcleo de 20 KB como máximo más `phases/00..12-*.md`; el lector es
+  `scripts/protocolo.mjs` y sólo se lee la fase en curso. Cada gate de la 3.4.0 vive en exactamente
+  los archivos donde vivía (inventario congelado en `tests/fixtures/gates-3.4.0.json`).
+- **Presupuesto de contexto sobre mensajes:** orquestador 120K, subsesión 60K (antes 200K/100K sobre
+  el total). Aviso desde el 80 %.
+- **`verify-brief-size`:** brief de subagente de 4K tokens estimados y 3 archivos como máximo (línea
+  `ARCHIVOS:`). **`verify-handoff-report`:** reporte de 40 líneas como máximo.
+- **`context-guard`:** hook `UserPromptSubmit` que avisa al llegar al umbral y ordena cerrar en el tope.
+  Avisa, no cierra solo, sale 0 siempre.
+- **`.vibe/tokens.jsonl`** sellado con la cadena de `verify-audit-chain` (`registrar-tokens`) y el
+  informe semanal `informe-tokens`.
+- **`contracts/model-routing.json`** como fuente única, con esfuerzo por rol y la regla de Haiku;
+  `skills/modo-breve.md` en nivel full, con excepciones (código, commits, seguridad, irreversibles).
+
+**Límites honestos.** El estimador `ceil(caracteres / 4)` es aproximado. `context-guard` no se cablea
+solo: el instalador no toca hooks. Dos `append` simultáneos rompen la cadena: se registra de a uno. La
+prueba de «no duplicar la tabla» sólo mira plantillas del repo, no el `CLAUDE.md` global. Los
+detectores de prosa larga y de topes son heurísticas acotadas.
+
+---
+
 ## [3.4.0] — 2026-10-23
 
 **Versión menor, con un retiro.** Lo nuevo cuida lo que ya usa gente real y hace que la skill cargue
