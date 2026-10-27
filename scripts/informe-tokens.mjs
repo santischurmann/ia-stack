@@ -51,7 +51,7 @@ function agrupar(registros, clave) {
     g.tout += r.tokens_out;
     grupos.set(r[clave], g);
   }
-  return [...grupos.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
+  return [...grupos.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 function tabla(titulo, columna, registros, clave) {

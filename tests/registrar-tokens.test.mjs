@@ -95,6 +95,9 @@ test('ia-stack-3-4-1-tokens · AC8 · valores inválidos salen ≠0 con mensaje 
       [[...base(), '--raro', 'x'], /desconocido/u],
       [[...base(), '--tarea'], /--tarea/u],
       [['append', 'suelto'], /inesperado/u],
+      [base().filter((x, i, a) => x !== '--in' && a[i - 1] !== '--in'), /falta --in/u],
+      [['check', '--tarea', 'x'], /check sólo acepta/u],
+      [reemplazo('T01', 'x'.repeat(4100)), /sellar/u],
       [['append', '--in', '1', '--in', '2'], /repetido/u],
       [[], /usage/u],
       [['borrar'], /usage/u],
@@ -105,6 +108,9 @@ test('ia-stack-3-4-1-tokens · AC8 · valores inválidos salen ≠0 con mensaje 
       assert.match(r.stderr, patron, args.join(' '));
     }
     assert.equal(existsSync(file), false);
+    const c = cap();
+    assert.equal(registrar(['append', '--tarea'], {}, c.write, c.writeError), 1);
+    assert.match(c.err.join(), /falta el valor de --tarea/u);
   });
 });
 
@@ -193,6 +199,8 @@ test('ia-stack-3-4-1-tokens · AC8 · leerRegistros rechaza líneas selladas que
 test('ia-stack-3-4-1-tokens · AC8 · leerRoles lee los roles del contrato y falla con mensaje si el contrato es ilegible', () => {
   conDir((root) => {
     assert.throws(() => leerRoles(join(root, 'no-existe.json')), /contrato/u);
+    writeFileSync(join(root, 'c0.json'), '{}');
+    assert.throws(() => leerRoles(join(root, 'c0.json')), /roles/u);
     writeFileSync(join(root, 'c.json'), '{"roles":{}}');
     assert.throws(() => leerRoles(join(root, 'c.json')), /roles/u);
     writeFileSync(join(root, 'c2.json'), '{"roles":{"x":{}}}');
@@ -264,6 +272,9 @@ test('ia-stack-3-4-1-tokens · AC8 · sin --desde/--hasta toma los últimos 7 d�
 
 test('ia-stack-3-4-1-tokens · AC8 · archivo vacío o inexistente: dice «sin registros» y sale 0', () => {
   conDir((root, file) => {
+    const sinArgs = run(INF, [], root);
+    assert.equal(sinArgs.status, 0, sinArgs.stderr);
+    assert.match(sinArgs.stdout, /^VACÍO: sin registros/u);
     const noExiste = run(INF, ['--file', file]);
     assert.equal(noExiste.status, 0, noExiste.stderr);
     assert.match(noExiste.stdout, /sin registros/u);
