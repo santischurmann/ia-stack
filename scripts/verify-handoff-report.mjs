@@ -15,11 +15,11 @@ const DECLARATION = /^NOT_REVIEWED:[ \t]*(.*)$/gm;
 export const MAX_LINES = 40;
 const PLACEHOLDERS = new Set(['n/a', 'unknown', 'nothing']);
 
-// Un salto de línea final no cuenta como línea. El detalle de más de 40 líneas va a .vibe/handoffs/.
+// Un salto de línea final no cuenta como línea. El detalle de más de 40 líneas va a .vibe/handoffs/detalle/ (carpeta aparte: no es un informe de gate).
 export function validateLength(reportText) {
   const lines = reportText.replace(/\r?\n$/, '').split(/\r?\n/).length;
   if (lines > MAX_LINES) {
-    return { ok: false, reason: `el reporte tiene ${lines} líneas, tope ${MAX_LINES}: el detalle va a .vibe/handoffs/ y el reporte lleva sólo la conclusión` };
+    return { ok: false, reason: `el reporte tiene ${lines} líneas, tope ${MAX_LINES}: el detalle va a .vibe/handoffs/detalle/ y el reporte lleva sólo la conclusión` };
   }
   return { ok: true };
 }
@@ -69,7 +69,8 @@ function main() {
   try {
     reportText = readFileSync(reportPath, 'utf8');
   } catch (error) {
-    usage(`cannot read handoff report at ${JSON.stringify(reportPath)}: ${error.message}`);
+    console.error(`REJECTED: no se pudo leer el reporte ${JSON.stringify(reportPath)}: ${error.message}`);
+    process.exit(1);
   }
 
   const length = validateLength(reportText);

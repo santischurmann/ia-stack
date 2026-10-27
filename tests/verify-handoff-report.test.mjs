@@ -68,8 +68,14 @@ test('FALSIFICACIÓN · placeholders and malformed none claims cannot hide what 
   }
 });
 
-test('CLI rejects missing or unreadable report arguments as usage', () => {
-  for (const args of [[], ['other'], ['check'], ['check', join(tmpdir(), 'ia-stack-handoff-report-does-not-exist.md')]]) {
+test('revision-n3 · BAJA · un reporte que no se puede leer sale 1 con REJECTED (alineado con verify-brief-size), no 2', () => {
+  const result = run(['check', join(tmpdir(), 'ia-stack-handoff-report-does-not-exist.md')]);
+  assert.equal(result.status, 1, result.output);
+  assert.match(result.output, /REJECTED:.*(leer|read)/i);
+});
+
+test('CLI rejects missing report arguments as usage (exit 2)', () => {
+  for (const args of [[], ['other'], ['check']]) {
     const result = run(args);
     assert.equal(result.status, 2, `${args.join(' ')}\n${result.output}`);
     assert.match(result.output, /usage:/i);
@@ -100,7 +106,15 @@ test('ia-stack-3-4-1-tokens · AC7 · rechaza un reporte de 41 líneas y manda e
       const result = run(['check', report]);
       assert.equal(result.status, 1, result.output);
       assert.match(result.output, /REJECTED:.*41 líneas.*40/);
-      assert.match(result.output, /\.vibe\/handoffs\//);
+      assert.match(result.output, /\.vibe\/handoffs\/detalle\//);
     });
   }
+});
+
+test('revision-n3 · MEDIA 4 · phases/06-build.md manda el detalle a .vibe/handoffs/detalle/, no a la carpeta de los reportes de gate', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+  const texto = readFileSync(fileURLToPath(new URL('../phases/06-build.md', import.meta.url)), 'utf8');
+  assert.match(texto, /el detalle va a\s+`\.vibe\/handoffs\/detalle\//);
+  assert.doesNotMatch(texto, /el detalle va a\s+`\.vibe\/handoffs\/`/);
 });

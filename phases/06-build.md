@@ -25,7 +25,8 @@ de escritura no serializado; un `SERIALIZED` conserva su orden topológico.
 (`ceil(caracteres/4)`, aproximado; el subgrafo de `graphify query` pegado cuenta) y 3 archivos como
 máximo, declarados en una línea `ARCHIVOS: a, b, c` (`ARCHIVOS: ninguno` = 0). Salida distinta de `0`:
 se parte la tarea, no se lanza. El reporte que vuelve tiene 40 líneas o menos; el detalle va a
-`.vibe/handoffs/` (lo verifica el gate de entrega de más abajo).
+`.vibe/handoffs/detalle/<feature-slug>-<task-id>.md` (carpeta propia: no es un informe de gate y no
+pasa por el tope de 40 líneas; el reporte de gate de más abajo sí).
 ```bash
 node .vibe/ia-stack-runtime/scripts/verify-brief-size.mjs check <brief.md>
 ```
