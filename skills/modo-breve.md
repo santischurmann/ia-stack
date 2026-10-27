@@ -13,6 +13,9 @@ porque viaja en el contexto. Medido entre el 12 y el 15-10-2026 en los proyectos
 mensajes eran avisos de menos de 150 tokens que no decían nada nuevo. El estilo telegráfico lo daba
 un plugin externo; ahora es parte del protocolo y no se instala nada.
 
+**Nivel: full** entre agentes. Es el único nivel: ni más suave (se paga de más) ni más seco (se pierde
+el porqué). Las excepciones de abajo son parte del contrato, no sugerencias.
+
 **No hay que leer este archivo para usarlo.** Las dos reglas que importan van adentro de la
 plantilla de cada subagente (`skills/orchestrator-opus.md` § DELEGATION PATTERN, bloque
 `## MODO BREVE`). Esto es la referencia completa.
@@ -33,13 +36,18 @@ plantilla de cada subagente (`skills/orchestrator-opus.md` § DELEGATION PATTERN
 - `EVIDENCE`, `NOT_REVIEWED` y una falla **nunca** se comprimen: van enteros. Si pasan de 4.096
   bytes, va el final en línea y la ruta al archivo con la salida completa.
 
-## Dónde no rige, nunca
+## Lenguaje normal, nunca breve
 
-- **Hacia la persona manda el lenguaje simple**: breve, pero cada término técnico explicado la
-  primera vez que aparece. El estilo breve nunca recorta una explicación.
-- Menús de decisión, advertencias de seguridad y confirmaciones de algo que no se puede deshacer:
-  ahí una frase cortada se puede leer al revés.
-- Código, mensajes de commit y documentación que va a leer otra persona.
+Cuatro excepciones, cada una con su nombre. En ellas se escribe con oraciones completas y cada
+término técnico explicado la primera vez que aparece; el estilo breve nunca recorta nada de esto.
+
+- **Código**: identificadores, comentarios y mensajes de error de lo que se escribe. Código y comentarios que otra persona va a mantener.
+- **Commits**: el mensaje de commit, y la documentación que va a leer otra persona.
+- **Seguridad**: advertencias, hallazgos del Security-Officer y todo lo que explica un riesgo. Una frase cortada se puede leer al revés.
+- **Acciones irreversibles**: pedir o confirmar borrar, publicar, pushear, gastar o sobrescribir algo que no se puede deshacer, y los menús de decisión.
+
+**Hacia la persona manda el lenguaje simple**: breve, pero cada término técnico explicado la
+primera vez que aparece.
 
 ## Límite honesto
 

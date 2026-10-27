@@ -50,14 +50,14 @@ function contar(texto) {
 }
 const archivosLeidos = () => ['SKILL.md', ...FASES].filter((f) => existsSync(join(raiz, f)));
 
-test('el fixture de la 3.4.0 tiene la forma esperada', () => {
+test('ia-stack-3-4-1-tokens · AC5 · el fixture de la 3.4.0 tiene la forma esperada', () => {
   assert.equal(fixture.schema, 'ia.gates-inventario/1');
   assert.ok(Object.keys(fixture.comandos).length > 0);
   assert.deepEqual(Object.keys(fixture.comandos), Object.keys(fixture.fase_de_cada_comando));
   assert.equal(fixture.leyes_extendidas, 'phases/00-reglas-extendidas.md');
 });
 
-test('los comandos nuevos de la 3.4.1 no pisan los congelados y declaran su fase', () => {
+test('ia-stack-3-4-1-tokens · AC5 · los comandos nuevos de la 3.4.1 no pisan los congelados y declaran su fase', () => {
   assert.deepEqual(Object.keys(nuevos), Object.keys(faseNuevos));
   for (const k of Object.keys(nuevos)) {
     assert.ok(!(k in fixture.comandos), `${k} ya estaba en la 3.4.0: no va en comandos_nuevos`);
@@ -66,11 +66,11 @@ test('los comandos nuevos de la 3.4.1 no pisan los congelados y declaran su fase
   }
 });
 
-test('SKILL.md pesa 20 KB o menos', () => {
+test('ia-stack-3-4-1-tokens · AC5 · SKILL.md pesa 20 KB o menos', () => {
   assert.ok(Buffer.byteLength(leer('SKILL.md'), 'utf8') <= 20480);
 });
 
-test('cada comando de gate suma las ocurrencias de la 3.4.0 mas exactamente los nuevos declarados', () => {
+test('ia-stack-3-4-1-tokens · AC5 · cada comando de gate suma las ocurrencias de la 3.4.0 mas exactamente los nuevos declarados', () => {
   const total = {};
   for (const f of archivosLeidos()) {
     for (const [k, n] of Object.entries(contar(leer(f)))) total[k] = (total[k] ?? 0) + n;
@@ -78,7 +78,7 @@ test('cada comando de gate suma las ocurrencias de la 3.4.0 mas exactamente los 
   assert.deepEqual(total, esperados);
 });
 
-test('cada comando aparece solo en los archivos donde vivia', () => {
+test('ia-stack-3-4-1-tokens · AC5 · cada comando aparece solo en los archivos donde vivia', () => {
   for (const f of archivosLeidos()) {
     for (const k of Object.keys(contar(leer(f)))) {
       const dest = [faseDe[k]].flat();
@@ -87,7 +87,7 @@ test('cada comando aparece solo en los archivos donde vivia', () => {
   }
 });
 
-test('existen los 13 archivos de fases y el MAPA DE LECTURA nombra cada uno', () => {
+test('ia-stack-3-4-1-tokens · AC5 · existen los 13 archivos de fases y el MAPA DE LECTURA nombra cada uno', () => {
   const skill = leer('SKILL.md');
   const idx = skill.indexOf('MAPA DE LECTURA');
   assert.ok(idx >= 0, 'SKILL.md perdio el MAPA DE LECTURA');
@@ -98,7 +98,7 @@ test('existen los 13 archivos de fases y el MAPA DE LECTURA nombra cada uno', ()
   }
 });
 
-test('archivosProtocolo devuelve el nucleo y las fases en orden, como rutas', () => {
+test('ia-stack-3-4-1-tokens · AC5 · archivosProtocolo devuelve el nucleo y las fases en orden, como rutas', () => {
   const rutas = archivosProtocolo(raiz);
   assert.equal(rutas.length, 1 + FASES.length);
   assert.ok(rutas[0].endsWith('SKILL.md'));
@@ -106,7 +106,7 @@ test('archivosProtocolo devuelve el nucleo y las fases en orden, como rutas', ()
   assert.deepEqual(fases, [...FASES].sort());
 });
 
-test('leerProtocolo devuelve el nucleo y las fases concatenados en orden', () => {
+test('ia-stack-3-4-1-tokens · AC5 · leerProtocolo devuelve el nucleo y las fases concatenados en orden', () => {
   const rutas = archivosProtocolo(raiz);
   const texto = leerProtocolo(raiz);
   assert.equal(typeof texto, 'string');

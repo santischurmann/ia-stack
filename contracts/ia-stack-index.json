@@ -1219,6 +1219,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/modo-breve.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/nombre-anterior.test.mjs",
       "class": "prueba"
     },
