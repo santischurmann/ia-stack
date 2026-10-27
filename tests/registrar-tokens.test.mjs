@@ -368,8 +368,10 @@ test('revision-n3 · BAJA · leerModelos lee los modelos de los niveles del cont
   conDir((root) => {
     const malo = join(root, 'c.json');
     assert.throws(() => leerModelos(malo), /contrato/u);
-    writeFileSync(malo, JSON.stringify({ niveles: {} }));
-    assert.throws(() => leerModelos(malo), /niveles/u);
+    for (const contrato of [{}, { niveles: {} }, { niveles: { N1: null, N2: {}, N3: { modelo: '' } } }]) {
+      writeFileSync(malo, JSON.stringify(contrato));
+      assert.throws(() => leerModelos(malo), /niveles/u);
+    }
     writeFileSync(malo, '{');
     assert.throws(() => leerModelos(malo), /contrato/u);
   });

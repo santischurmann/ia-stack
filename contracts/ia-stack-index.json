@@ -1271,6 +1271,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/punteros-fases.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/ratchet.test.mjs",
       "class": "prueba"
     },

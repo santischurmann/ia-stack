@@ -55,8 +55,7 @@ export function validateNotReviewed(reportText) {
   return { ok: true, declaration };
 }
 
-function usage(message) {
-  if (message) console.error(`usage: ${message}`);
+function usage() {
   console.error('usage: verify-handoff-report.mjs check <handoff-report.md>');
   process.exit(2);
 }
