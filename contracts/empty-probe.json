@@ -11,6 +11,15 @@
   },
   "gates": [
     {
+      "script": "context-guard.mjs",
+      "args": [
+        "--transcript",
+        "transcript.jsonl"
+      ],
+      "expect": "machine",
+      "why": "Sale 0 SIEMPRE por diseno (un hook que falla no puede trabar la sesion): sin transcript lo dice por stderr y no avisa nada. No mira el directorio de trabajo, solo el transcript que se le pasa; el aviso y la orden de cerrar los prueba tests/context-guard.test.mjs con transcripts sinteticos de 96K, 120K y 130K."
+    },
+    {
       "script": "pretooluse-red.mjs",
       "args": [
         "check"

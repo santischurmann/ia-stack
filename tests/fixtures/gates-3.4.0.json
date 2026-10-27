@@ -152,9 +152,11 @@
   },
   "leyes_extendidas": "phases/00-reglas-extendidas.md",
   "comandos_nuevos_3.4.1": {
-    "verify-brief-size.mjs check": 1
+    "verify-brief-size.mjs check": 1,
+    "context-guard.mjs": 1
   },
   "fase_de_cada_comando_nuevo": {
-    "verify-brief-size.mjs check": "phases/06-build.md"
+    "verify-brief-size.mjs check": "phases/06-build.md",
+    "context-guard.mjs": "phases/01-bootstrap.md"
   }
 }

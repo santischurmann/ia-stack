@@ -651,6 +651,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/context-guard.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/install.ps1",
       "class": "gate"
     },
@@ -1156,6 +1160,10 @@
     },
     {
       "path": "tests/ci-economico.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/context-guard.test.mjs",
       "class": "prueba"
     },
     {

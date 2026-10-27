@@ -240,4 +240,17 @@ Esperando tu respuesta antes de continuar.
    El verde **dice contra qué listado se comprobó** —`vía corta` o `vía completa`—, porque dos
    verdes que se leen igual y significan cosas distintas son peores que un rojo.
 
+**12. Guarda de contexto (opcional, la cablea la persona).** `context-guard` mide los tokens de
+*mensajes* de la sesión contra el tope de `contracts/model-routing.json` § contexto (120K
+orquestador, 60K subsesión): calla bajo el 80 %, avisa desde ahí y ordena cerrar en el tope —commit
+del estado, resumen en `.vibe/SESSION.md`, compactar o handoff—. Se cablea como hook
+`UserPromptSubmit` en `.claude/settings.json` del proyecto (`--rol subsesion` en las subsesiones):
+```json
+{ "hooks": { "UserPromptSubmit": [ { "hooks": [ { "type": "command",
+  "command": "node .vibe/ia-stack-runtime/scripts/context-guard.mjs --rol orquestador" } ] } ] } }
+```
+**Límite honesto: el instalador no cablea hooks**, y esta guarda tampoco actúa sola: no commitea ni
+compacta, sólo dice qué hacer. Sale `0` siempre; si falla, lo dice por stderr y no avisa nada. Mide
+con `ceil(caracteres/4)`, aproximado.
+
 ---
