@@ -45,6 +45,19 @@ export function leerRoles(ruta = CONTRATO) {
   return nombres;
 }
 
+/** Familias de modelo de contracts/model-routing.json § niveles (haiku, sonnet, opus, fable). */
+export function leerModelos(ruta = CONTRATO) {
+  let niveles;
+  try {
+    niveles = JSON.parse(readFileSync(ruta, 'utf8')).niveles;
+  } catch (error) {
+    throw new Error(`no se pudo leer el contrato ${ruta}: ${error.message}`);
+  }
+  const modelos = niveles && typeof niveles === 'object' ? Object.values(niveles).map((n) => n?.modelo).filter((m) => typeof m === 'string' && m !== '') : [];
+  if (modelos.length === 0) throw new Error(`el contrato ${ruta} no trae niveles con modelo`);
+  return modelos;
+}
+
 /** Argumentos de `append` o `check`: devuelve los campos crudos o lanza con el motivo. */
 function parsearOpciones(argv) {
   const dato = {};
@@ -72,11 +85,15 @@ const texto = (valor, flag) => {
 };
 
 /** Valida los campos de `append` contra los roles del contrato. */
-export function validarAppend(dato, roles) {
+export function validarAppend(dato, roles, modelos = null) {
   const tarea = texto(dato.tarea, '--tarea');
   const rol = texto(dato.rol, '--rol');
   if (!roles.includes(rol)) throw new Error(`--rol inválido (${roles.join('|')}): ${rol}`);
-  const modelo = texto(dato.modelo, '--modelo');
+  const modelo = texto(dato.modelo, '--modelo').toLowerCase();
+  if (modelos !== null && !modelos.some((m) => modelo === m || modelo.startsWith(`${m}-`))) {
+    throw new Error(`--modelo inválido (${modelos.join('|')}, con versión opcional como sonnet-5.5): ${modelo}`);
+  }
+  if (!/^[a-z0-9][a-z0-9.-]*$/u.test(modelo)) throw new Error(`--modelo inválido (sólo letras, dígitos, punto y guion): ${modelo}`);
   const tokensIn = entero(dato.in, '--in');
   const tokensOut = entero(dato.out, '--out');
   if (!['si', 'no'].includes(dato.escalo)) throw new Error(`--escalo debe ser si|no: ${dato.escalo ?? '(falta)'}`);
@@ -160,7 +177,7 @@ export function main(argv = process.argv.slice(2), options = {}, write = console
     }
     const previo = leerRegistros(content, roles);
     if (!previo.ok) throw new Error(`no se sella sobre un archivo inválido (${ruta}: ${previo.error})`);
-    const registro = aRegistro(validarAppend(dato, roles), options.ahora ?? new Date());
+    const registro = aRegistro(validarAppend(dato, roles, leerModelos()), options.ahora ?? new Date());
     const sellado = sealLineFor(content, JSON.stringify(registro));
     if (!sellado.ok) throw new Error(`no se pudo sellar la línea: ${sellado.reason}`);
     mkdirSync(dirname(ruta), { recursive: true });

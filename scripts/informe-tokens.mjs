@@ -2,7 +2,7 @@
 // informe-tokens.mjs — informe semanal de gasto por subagente, en Markdown, desde .vibe/tokens.jsonl.
 //
 // Usage: node .vibe/ia-stack-runtime/scripts/informe-tokens.mjs [--file .vibe/tokens.jsonl] [--desde AAAA-MM-DD] [--hasta AAAA-MM-DD]
-// Sin --desde/--hasta toma los últimos 7 días (hoy incluido, hora argentina). También acepta DD-MM-AAAA.
+// Sin --desde/--hasta toma los últimos 7 días (hoy y los 6 anteriores, hora argentina). También acepta DD-MM-AAAA.
 //
 // Imprime tokens in/out y cantidad por rol y por modelo, y la lista de escaladas (fecha, tarea, rol,
 // modelo). Está pensado para pegarse en docs/lecciones-modelos.md y revisar la tabla de ruteo.
@@ -54,8 +54,11 @@ function agrupar(registros, clave) {
   return [...grupos.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
+/** Escapa el `|` para que un valor libre no rompa la tabla markdown. */
+const celda = (v) => String(v).replaceAll('|', '\\|');
+
 function tabla(titulo, columna, registros, clave) {
-  const filas = agrupar(registros, clave).map(([k, g]) => `| ${k} | ${g.n} | ${g.tin} | ${g.tout} |`);
+  const filas = agrupar(registros, clave).map(([k, g]) => `| ${celda(k)} | ${g.n} | ${g.tin} | ${g.tout} |`);
   return [`### ${titulo}`, '', `| ${columna} | registros | tokens in | tokens out |`, '| --- | --- | --- | --- |', ...filas, ''];
 }
 
@@ -66,7 +69,7 @@ export function construirInforme(registros, desde, hasta) {
   const dentro = registros.filter((r) => fechaAR(r.fecha) >= desde && fechaAR(r.fecha) <= hasta);
   if (dentro.length === 0) return `${titulo}\n\nsin registros entre ${rango}.\n`;
   const escaladas = dentro.filter((r) => r.escalo);
-  const filasEscaladas = escaladas.map((r) => `| ${ddmmaaaa(fechaAR(r.fecha))} | ${r.tarea} | ${r.rol} | ${r.modelo} |`);
+  const filasEscaladas = escaladas.map((r) => `| ${ddmmaaaa(fechaAR(r.fecha))} | ${celda(r.tarea)} | ${celda(r.rol)} | ${celda(r.modelo)} |`);
   return [
     titulo, '',
     `Registros: ${dentro.length} · tokens in: ${dentro.reduce((s, r) => s + r.tokens_in, 0)} · tokens out: ${dentro.reduce((s, r) => s + r.tokens_out, 0)}`, '',
@@ -101,7 +104,7 @@ export function main(argv = process.argv.slice(2), options = {}, write = console
       return f;
     };
     const hasta = fecha(args.hasta, fechaAR(ahora), '--hasta');
-    const desde = fecha(args.desde, fechaAR(new Date(ahora.getTime() - 7 * DIA)), '--desde');
+    const desde = fecha(args.desde, fechaAR(new Date(ahora.getTime() - 6 * DIA)), '--desde');
     if (desde > hasta) throw new Error(`--desde (${ddmmaaaa(desde)}) es posterior a --hasta (${ddmmaaaa(hasta)})`);
     const ruta = args.file ?? ARCHIVO_DEFECTO;
     const { content, error } = leerArchivo(ruta);

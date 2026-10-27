@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { sealLineFor, verifyChain } from '../scripts/verify-audit-chain.mjs';
-import { aRegistro, checkArchivo, leerRegistros, leerRoles, main as registrar } from '../scripts/registrar-tokens.mjs';
+import { aRegistro, checkArchivo, leerModelos, leerRegistros, leerRoles, main as registrar } from '../scripts/registrar-tokens.mjs';
 import { construirInforme, fechaAR, main as informar, parsearFecha } from '../scripts/informe-tokens.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -255,7 +255,8 @@ test('ia-stack-3-4-1-tokens · AC8 · sin --desde/--hasta toma los últimos 7 d�
     const c = cap();
     assert.equal(informar(['--file', file], { ahora: new Date('2026-10-26T15:00:00.000Z') }, c.write, c.writeError), 0, c.err.join());
     const out = c.out.join('\n');
-    assert.match(out, /19-10-2026/u);
+    assert.match(out, /20-10-2026 a 26-10-2026/u, '7 días con hoy incluido: desde hoy-6');
+    assert.doesNotMatch(out, /19-10-2026/u);
     assert.match(out, /Escaladas/u);
     assert.match(out, /T02/u);
     assert.doesNotMatch(out, /T00/u);
@@ -318,4 +319,58 @@ test('ia-stack-3-4-1-tokens · AC8 · parsearFecha, fechaAR y construirInforme',
   assert.equal(parsearFecha('2026-10-1'), null);
   assert.equal(fechaAR('2026-10-27T01:00:00.000Z'), '2026-10-26', 'hora argentina: UTC-3');
   assert.match(construirInforme([], '2026-10-19', '2026-10-26'), /sin registros/u);
+});
+
+// ---- Revisión N3 3.4.1 ----
+
+test('revision-n3 · MEDIA 5 · «últimos 7 días» son 7 (hoy-6..hoy): el de hoy-7 queda afuera, el de hoy-6 entra', () => {
+  conDir((root, file) => {
+    sembrar(file, [
+      ['2026-10-19T15:00:00.000Z', 'T-FUERA', 'red', 'sonnet-5.5', 1, 1, 'no'],
+      ['2026-10-20T15:00:00.000Z', 'T-BORDE', 'green', 'sonnet-5.5', 2, 2, 'no'],
+    ]);
+    const c = cap();
+    assert.equal(informar(['--file', file], { ahora: new Date('2026-10-26T15:00:00.000Z') }, c.write, c.writeError), 0, c.err.join());
+    const out = c.out.join('\n');
+    assert.match(out, /\| green \| 1 \| 2 \| 2 \|/u);
+    assert.doesNotMatch(out, /\| red \|/u);
+  });
+});
+
+test('revision-n3 · BAJA · el informe escapa | en tarea y modelo para no romper la tabla markdown', () => {
+  const registros = [{ fecha: '2026-10-21T12:00:00.000Z', tarea: 'T|1', rol: 'green', modelo: 'sonnet|x', tokens_in: 1, tokens_out: 1, escalo: true }];
+  const out = construirInforme(registros, '2026-10-20', '2026-10-26');
+  assert.ok(out.includes('| T\\|1 |'), out);
+  assert.ok(out.includes('| sonnet\\|x |'), out);
+  assert.ok(!/[^\\]\|1 /u.test(out), out);
+});
+
+test('revision-n3 · BAJA · --modelo se normaliza y se valida contra niveles.*.modelo del contrato', () => {
+  conDir((root, file) => {
+    const con = (modelo) => base().map((x) => (x === 'sonnet-5.5' ? modelo : x));
+    for (const modelo of ['  Sonnet-5.5 ', 'OPUS', 'fable-5.1']) {
+      const c = cap();
+      assert.equal(registrar([...con(modelo), '--file', file], { ahora: AHORA }, c.write, c.writeError), 0, c.err.join());
+    }
+    const lineas = readFileSync(file, 'utf8').trim().split('\n');
+    assert.deepEqual(lineas.map((l) => JSON.parse(l.replace(SELLO, '')).modelo), ['sonnet-5.5', 'opus', 'fable-5.1']);
+    for (const malo of ['gpt-4', 'sonnetx', 'sonnet 5', 'm', 'haiku|x']) {
+      const c = cap();
+      assert.equal(registrar([...con(malo), '--file', file], { ahora: AHORA }, c.write, c.writeError), 1, malo);
+      assert.match(c.err.join(), /--modelo/u, malo);
+    }
+    assert.equal(readFileSync(file, 'utf8').trim().split('\n').length, 3);
+  });
+});
+
+test('revision-n3 · BAJA · leerModelos lee los modelos de los niveles del contrato y valida', () => {
+  assert.deepEqual(leerModelos(), ['haiku', 'sonnet', 'opus', 'fable']);
+  conDir((root) => {
+    const malo = join(root, 'c.json');
+    assert.throws(() => leerModelos(malo), /contrato/u);
+    writeFileSync(malo, JSON.stringify({ niveles: {} }));
+    assert.throws(() => leerModelos(malo), /niveles/u);
+    writeFileSync(malo, '{');
+    assert.throws(() => leerModelos(malo), /contrato/u);
+  });
 });
