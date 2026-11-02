@@ -8,7 +8,7 @@
 // cortaba jueves o viernes.
 //
 // QUE FIJA: la forma del contrato, que cada rol de subagente tenga ruta, los pisos (seguridad,
-// revision y refutacion nunca por debajo de N3), que N4 nunca se use solo, que el juez corra en un
+// revision y refutacion nunca por debajo de C5), que C8 nunca se use solo, que el juez corra en un
 // modelo distinto del constructor, que el dispatch no escriba modelos literales y que la tabla de
 // SKILL.md diga lo mismo que el contrato.
 //
@@ -28,7 +28,13 @@ const contrato = () => JSON.parse(leer('contracts/model-routing.json'));
 
 export const MODELOS = Object.freeze(['haiku', 'sonnet', 'opus', 'fable']);
 export const ESFUERZOS = Object.freeze(['low', 'medium', 'high', 'xhigh', 'max']);
-const ORDEN = Object.freeze(['N1', 'N2', 'N3', 'N4']);
+const ORDEN = Object.freeze(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']);
+const ORDEN_CODEX = Object.freeze(['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8']);
+const ESCALERA = Object.freeze({
+  C1: ['haiku', 'low'], C2: ['haiku', 'high'], C3: ['sonnet', 'low'], C4: ['sonnet', 'high'],
+  C5: ['opus', 'low'], C6: ['opus', 'high'], C7: ['fable', 'low'], C8: ['fable', 'high'],
+});
+const FAMILIAS_CODEX = Object.freeze(['luna', 'luna', 'terra', 'terra', 'sol', 'sol', 'astra', 'astra']);
 
 /** Los roles que tienen archivo propio en skills/: cada uno tiene que tener ruta. */
 function rolesConArchivo() {
@@ -38,7 +44,7 @@ function rolesConArchivo() {
     .sort();
 }
 
-test('el contrato de ruteo existe y declara cuatro niveles con modelo y esfuerzo validos', () => {
+test('el contrato de ruteo existe y declara ocho niveles con modelo y esfuerzo validos', () => {
   assert.ok(existsSync(join(repoRoot, 'contracts/model-routing.json')), 'falta contracts/model-routing.json');
   const c = contrato();
   assert.equal(c.schema, 'ia.model-routing/1');
@@ -49,18 +55,52 @@ test('el contrato de ruteo existe y declara cuatro niveles con modelo y esfuerzo
     assert.ok(ESFUERZOS.includes(nivel.esfuerzo), `${id}: esfuerzo desconocido ${nivel.esfuerzo}`);
     assert.equal(typeof nivel.automatico, 'boolean', `${id}: automatico tiene que ser booleano`);
   }
-  assert.equal(c.niveles.N1.modelo, 'haiku', 'la base es el modelo mas barato');
+  assert.equal(c.niveles.C1.modelo, 'haiku', 'la base es el modelo mas barato');
+  for (const [id, [modelo, esfuerzo]] of Object.entries(ESCALERA)) {
+    assert.equal(c.niveles[id].modelo, modelo, `${id}: modelo`);
+    assert.equal(c.niveles[id].esfuerzo, esfuerzo, `${id}: esfuerzo`);
+  }
 });
 
-test('N4 nunca es automatico y la escalada automatica topa en N3', () => {
+test('la escalera Codex G1..G8 sube luna, terra, sol, astra y usa siempre la version mas nueva que la cuenta acepta', () => {
   const c = contrato();
-  assert.equal(c.niveles.N4.automatico, false);
-  for (const id of ['N1', 'N2', 'N3']) assert.equal(c.niveles[id].automatico, true, id);
-  assert.equal(c.escalada.tope_automatico, 'N3');
+  assert.deepEqual(Object.keys(c.niveles_codex), ORDEN_CODEX);
+  assert.match(c.regla_codex ?? '', /más nueva/u);
+  assert.match(c.regla_codex ?? '', /generación anterior/u);
+  ORDEN_CODEX.forEach((id, i) => {
+    const g = c.niveles_codex[id];
+    assert.equal(g.familia, FAMILIAS_CODEX[i], `${id}: familia`);
+    assert.equal(g.esfuerzo, i % 2 === 0 ? 'low' : 'high', `${id}: esfuerzo`);
+    assert.match(g.id, new RegExp(`^gpt-[\\d.]+-${g.familia}$`, 'u'), `${id}: id`);
+    if (g.pendiente !== undefined) assert.equal(typeof g.pendiente, 'string', `${id}: pendiente es un motivo`);
+  });
+  assert.equal(c.niveles_codex.G3.id, 'gpt-6.1-terra');
+  assert.equal(c.niveles_codex.G5.id, 'gpt-6.1-sol');
+});
+
+test('C8 nunca es automatico, C7 sólo si falló C6, y la escalada automatica topa en C7', () => {
+  const c = contrato();
+  assert.equal(c.niveles.C8.automatico, false);
+  for (const id of ORDEN.slice(0, 7)) assert.equal(c.niveles[id].automatico, true, id);
+  assert.equal(c.niveles.C7.solo_si_fallo, 'C6');
+  assert.equal(c.niveles.C7.tope_cupo_semanal, 0.5);
+  assert.equal(c.niveles.C7.aviso_cupo_semanal, 0.3);
+  assert.equal(c.escalada.tope_automatico, 'C7');
   assert.equal(c.escalada.disparador_intentos_fallidos, 1);
   assert.equal(c.escalada.requiere_diagnostico_nuevo, true);
   assert.equal(c.escalada.vuelve_a_la_base, true);
-  assert.match(c.escalada.N4, /sí/u, 'N4 tiene que decir que pide el «sí» de la persona');
+  assert.deepEqual(c.escalada.repite_en_semana, { veces: 2, efecto: 'la base de ese tipo de tarea sube un nivel' });
+  assert.match(c.escalada.C8, /sí/u, 'C8 tiene que decir que pide el «sí» de la persona');
+  assert.match(c.escalada.pasa_la_falla, /comando/u);
+  assert.equal('N4' in c.escalada, false);
+});
+
+test('piso por riesgo: plata, seguridad, auth, .mq5, matematica quant/MT5 y migraciones arrancan en C5', () => {
+  const p = contrato().piso_por_riesgo;
+  assert.equal(p.nivel, 'C5');
+  for (const area of ['plata', 'seguridad', 'auth', '.mq5', 'matematica quant/MT5', 'migraciones']) {
+    assert.ok(p.areas.includes(area), `falta ${area}`);
+  }
 });
 
 test('cada subagente con archivo propio tiene ruta, y toda ruta apunta a un nivel que existe', () => {
@@ -68,18 +108,18 @@ test('cada subagente con archivo propio tiene ruta, y toda ruta apunta a un nive
   for (const rol of rolesConArchivo()) assert.ok(c.roles[rol], `skills/subagent-${rol}.md no tiene ruta en el contrato`);
   for (const [rol, ruta] of Object.entries(c.roles)) {
     assert.ok(ORDEN.includes(ruta.nivel), `${rol}: nivel ${ruta.nivel} no existe`);
-    assert.ok(ruta.nivel !== 'N4', `${rol}: ningun rol arranca en N4`);
+    assert.ok(ruta.nivel !== 'C8', `${rol}: ningun rol arranca en C8`);
     if (ruta.con_riesgo_alto) assert.ok(ORDEN.indexOf(ruta.con_riesgo_alto) > ORDEN.indexOf(ruta.nivel), `${rol}: con_riesgo_alto tiene que subir`);
     assert.equal(typeof ruta.para, 'string', `${rol}: falta para qué`);
   }
 });
 
-test('lectura, documentacion y tareas mecanicas van al nivel barato; seguridad, revision y refutacion nunca bajo N3', () => {
+test('lectura, documentacion y tareas mecanicas van al nivel barato; seguridad, revision y refutacion nunca bajo C5', () => {
   const c = contrato();
-  for (const rol of ['lector', 'docs', 'chore']) assert.equal(c.roles[rol].nivel, 'N1', rol);
-  for (const rol of ['red', 'green', 'triangulate', 'refactor']) assert.equal(c.roles[rol].nivel, 'N2', rol);
-  for (const rol of ['seguridad', 'revisor', 'refutador']) assert.ok(ORDEN.indexOf(c.roles[rol].nivel) >= 2, `${rol} bajo N3`);
-  assert.equal(c.roles.planificador.con_riesgo_alto, 'N3');
+  for (const rol of ['lector', 'docs', 'chore']) assert.equal(c.roles[rol].nivel, 'C1', rol);
+  for (const rol of ['red', 'green', 'triangulate', 'refactor', 'planificador']) assert.equal(c.roles[rol].nivel, 'C3', rol);
+  for (const rol of ['seguridad', 'revisor', 'refutador']) assert.equal(c.roles[rol].nivel, 'C5', rol);
+  assert.equal(c.roles.planificador.con_riesgo_alto, 'C5');
 });
 
 test('el juez corre en un modelo distinto del que construyo', () => {
@@ -128,8 +168,8 @@ test('la tabla de SKILL.md dice exactamente lo que dice el contrato', () => {
 
 test('filasDeLaTabla devuelve null sin delimitadores e ignora lo que no es fila de rol', () => {
   assert.equal(filasDeLaTabla('sin tabla'), null);
-  assert.deepEqual(filasDeLaTabla('<!-- ruteo:inicio -->\n| Rol | Nivel |\n|---|---|\n| `red` | N2 | sonnet | low |\n<!-- ruteo:fin -->'),
-    [['red', 'N2', 'sonnet', 'low']]);
+  assert.deepEqual(filasDeLaTabla('<!-- ruteo:inicio -->\n| Rol | Nivel |\n|---|---|\n| `red` | C3 | sonnet | low |\n<!-- ruteo:fin -->'),
+    [['red', 'C3', 'sonnet', 'low']]);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -197,7 +237,7 @@ test('ia-stack-3-4-1-tokens · AC4 · el contrato declara la regla de Haiku', ()
   assert.match(r, /tareas cortas/u);
   assert.match(r, /subagentes con contexto nuevo/u);
   assert.match(r, /60K/u);
-  assert.match(r, /N2 low/u);
+  assert.match(r, /C3 low/u);
 });
 
 test('ia-stack-3-4-1-tokens · AC4 · ninguna plantilla ni AGENTS.md duplica la tabla completa de roles', () => {

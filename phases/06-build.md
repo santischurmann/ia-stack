@@ -6,16 +6,16 @@ el resultado, y por eso lo único que se pregunta, es si una tarea puede escalar
 
 🔵 **BUILD CONFIG** (una vez, antes de la primera tarea):
 
-**¿Una tarea que falla una vez con un diagnóstico nuevo puede subir de nivel sola, hasta N3?**
+**¿Una tarea que falla una vez con un diagnóstico nuevo puede subir de nivel sola, hasta C7?**
 
 - **A)** Sí — te aviso en el reporte y vuelve a su nivel en la tarea siguiente — *(recomendado)*
 - **B)** No — si una tarea falla, freno y te pregunto antes de subir
 
 Esperando tu respuesta antes de continuar.
 
-> **Qué es cada cosa:** los *niveles* son modelos de más barato a más capaz —N1 Haiku, N2 Sonnet, N3
-> Opus—. Un *diagnóstico nuevo* es una explicación distinta de por qué falló: reintentar lo mismo no
-> cuenta. N4 (Fable) nunca se usa sin que digas que sí.
+> **Qué es cada cosa:** los *niveles* son modelos de más barato a más capaz —C1/C2 Haiku, C3/C4 Sonnet, C5/C6
+> Opus, C7/C8 Fable—. Un *diagnóstico nuevo* es una explicación distinta de por qué falló: reintentar lo mismo no
+> cuenta. C8 (Fable high) nunca se usa sin que digas que sí.
 
 Per task, topological order — full delegation pattern: `skills/orchestrator-opus.md`. Si Phase 4
 permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto

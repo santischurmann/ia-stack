@@ -26,26 +26,29 @@ La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica 
 <!-- ruteo:inicio -->
 | Rol | Nivel | Modelo | Esfuerzo |
 |---|---|---|---|
-| `lector` | `N1` | `haiku` | `low` |
-| `docs` | `N1` | `haiku` | `low` |
-| `chore` | `N1` | `haiku` | `low` |
-| `red` | `N2` | `sonnet` | `low` |
-| `green` | `N2` | `sonnet` | `low` |
-| `triangulate` | `N2` | `sonnet` | `low` |
-| `refactor` | `N2` | `sonnet` | `low` |
-| `planificador` | `N2` | `sonnet` | `low` |
-| `seguridad` | `N3` | `opus` | `medium` |
-| `revisor` | `N3` | `opus` | `medium` |
-| `refutador` | `N3` | `opus` | `medium` |
+| `lector` | `C1` | `haiku` | `low` |
+| `docs` | `C1` | `haiku` | `low` |
+| `chore` | `C1` | `haiku` | `low` |
+| `red` | `C3` | `sonnet` | `low` |
+| `green` | `C3` | `sonnet` | `low` |
+| `triangulate` | `C3` | `sonnet` | `low` |
+| `refactor` | `C3` | `sonnet` | `low` |
+| `planificador` | `C3` | `sonnet` | `low` |
+| `seguridad` | `C5` | `opus` | `low` |
+| `revisor` | `C5` | `opus` | `low` |
+| `refutador` | `C5` | `opus` | `low` |
 <!-- ruteo:fin -->
 
-- **Leer no es pensar.** Buscar código, leer logs, contar o resumir estado va a un `lector` (N1),
+- **Leer no es pensar.** Buscar código, leer logs, contar o resumir estado va a un `lector` (C1),
   no al contexto del orquestador: cada mensaje vuelve a pagar todo lo que el contexto ya tiene.
-- **Riesgo.** El `planificador` sube a N3 cuando el riesgo es `alto` o `critico`. Seguridad,
-  revisión y refutación arrancan en N3 y no bajan.
+- **Riesgo.** El `planificador` sube a C5 cuando el riesgo es `alto` o `critico`. Seguridad,
+  revisión y refutación arrancan en C5 y no bajan; plata, seguridad, auth, `.mq5`, matemática
+  quant/MT5 y migraciones también (`piso_por_riesgo`). La escalera completa es C1..C8 (Claude) y
+  G1..G8 (Codex, `niveles_codex`).
 - **Escalada mecánica.** **Un** intento fallido con un diagnóstico **nuevo** sube esa tarea un
-  nivel, hasta N3. Al resolver, la tarea siguiente vuelve a su base. N4 (`fable`) **nunca** es
-  automático: se pide con un menú que muestra la falla y los dos diagnósticos anteriores. Un 429 o
+  nivel, hasta C7 (Fable low, sólo si falló C6). Al resolver, la tarea siguiente vuelve a su base.
+  C8 (`fable` high) **nunca** es automático: se pide con un menú que muestra la falla y los
+  diagnósticos anteriores. Un 429 o
   un error de cupo no es una falla del modelo: se espera o se avisa, no se escala.
 - **El juez nunca es el modelo que construyó.** La revisión y la refutación corren en otro modelo
   que el de `green` (campo `juez_distinto_del_constructor`). Si el host tiene otro agente

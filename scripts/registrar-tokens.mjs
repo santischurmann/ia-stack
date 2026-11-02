@@ -55,7 +55,7 @@ export function leerModelos(ruta = CONTRATO) {
   }
   const modelos = Object.values(niveles ?? {}).map((n) => n?.modelo).filter((m) => typeof m === 'string' && m !== '');
   if (modelos.length === 0) throw new Error(`el contrato ${ruta} no trae niveles con modelo`);
-  return modelos;
+  return [...new Set(modelos)];
 }
 
 /** Argumentos de `append` o `check`: devuelve los campos crudos o lanza con el motivo. */

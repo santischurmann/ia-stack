@@ -2,36 +2,143 @@
   "schema": "ia.model-routing/1",
   "why": "Una sola fuente de qué modelo y qué esfuerzo usa cada rol. El orquestador pasa `model` y `effort` desde acá en cada invocación de subagente, nunca un literal: el `model` de la invocación pisa cualquier otra capa, así que un literal anula el ruteo entero. Meta: el modelo más barato que resuelva bien. Lo fija tests/model-routing.test.mjs.",
   "niveles": {
-    "N1": { "modelo": "haiku", "esfuerzo": "low", "automatico": true, "para": "leer, buscar, estado, logs, documentación y cambios mecánicos" },
-    "N2": { "modelo": "sonnet", "esfuerzo": "low", "automatico": true, "para": "escribir pruebas e implementación con un patrón conocido" },
-    "N3": { "modelo": "opus", "esfuerzo": "medium", "automatico": true, "para": "planes de riesgo alto, seguridad, revisión adversarial y refutación" },
-    "N4": { "modelo": "fable", "esfuerzo": "high", "automatico": false, "para": "sólo cuando N2 y N3 ya fallaron y la persona dijo que sí" }
+    "C1": {
+      "modelo": "haiku",
+      "esfuerzo": "low",
+      "automatico": true,
+      "para": "leer, buscar, estado, logs, documentación y cambios mecánicos"
+    },
+    "C2": {
+      "modelo": "haiku",
+      "esfuerzo": "high",
+      "automatico": true,
+      "para": "lo mismo que C1 cuando C1 falló o la lectura es enrevesada"
+    },
+    "C3": {
+      "modelo": "sonnet",
+      "esfuerzo": "low",
+      "automatico": true,
+      "para": "escribir pruebas e implementación con un patrón conocido"
+    },
+    "C4": {
+      "modelo": "sonnet",
+      "esfuerzo": "high",
+      "automatico": true,
+      "para": "refactors de varios archivos y depuración cuando C3 falló"
+    },
+    "C5": {
+      "modelo": "opus",
+      "esfuerzo": "low",
+      "automatico": true,
+      "para": "planes de riesgo alto, seguridad, revisión adversarial, refutación y todo lo del piso por riesgo"
+    },
+    "C6": {
+      "modelo": "opus",
+      "esfuerzo": "high",
+      "automatico": true,
+      "para": "lo de C5 cuando C5 falló"
+    },
+    "C7": {
+      "modelo": "fable",
+      "esfuerzo": "low",
+      "automatico": true,
+      "solo_si_fallo": "C6",
+      "tope_cupo_semanal": 0.5,
+      "aviso_cupo_semanal": 0.3,
+      "para": "automático sólo si falló C6; Fable no pasa del 50 % del cupo semanal y avisa al 30 %"
+    },
+    "C8": {
+      "modelo": "fable",
+      "esfuerzo": "high",
+      "automatico": false,
+      "para": "nunca automático: menú a la persona con la falla y los diagnósticos, sólo con su «sí»"
+    }
   },
   "roles": {
-    "lector": { "nivel": "N1", "esfuerzo": "low", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
-    "docs": { "nivel": "N1", "esfuerzo": "low", "para": "skills/subagent-docs.md: actualizar .vibe/ y documentación" },
-    "chore": { "nivel": "N1", "esfuerzo": "low", "para": "skills/subagent-chore.md: configuración, CI, dependencias" },
-    "red": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-red.md: la prueba roja de cada criterio" },
-    "green": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-green.md: el código mínimo que la pone en verde" },
-    "triangulate": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-triangulate.md: casos derivados" },
-    "refactor": { "nivel": "N2", "esfuerzo": "low", "para": "skills/subagent-refactor.md: simplificar sin cambiar conducta" },
-    "planificador": { "nivel": "N2", "esfuerzo": "low", "con_riesgo_alto": "N3", "para": "borrador de spec y plan; sube a N3 si el riesgo es alto o crítico" },
-    "seguridad": { "nivel": "N3", "esfuerzo": "medium", "para": "Security-Officer, fase 6.2" },
-    "revisor": { "nivel": "N3", "esfuerzo": "medium", "para": "revisores 4R de la fase 6.3" },
-    "refutador": { "nivel": "N3", "esfuerzo": "medium", "para": "refutación ciega de los hallazgos sobrevivientes" }
+    "lector": {
+      "nivel": "C1",
+      "esfuerzo": "low",
+      "para": "buscar código, leer logs, contar, resumir estado; nunca decide"
+    },
+    "docs": {
+      "nivel": "C1",
+      "esfuerzo": "low",
+      "para": "skills/subagent-docs.md: actualizar .vibe/ y documentación"
+    },
+    "chore": {
+      "nivel": "C1",
+      "esfuerzo": "low",
+      "para": "skills/subagent-chore.md: configuración, CI, dependencias"
+    },
+    "red": {
+      "nivel": "C3",
+      "esfuerzo": "low",
+      "para": "skills/subagent-red.md: la prueba roja de cada criterio"
+    },
+    "green": {
+      "nivel": "C3",
+      "esfuerzo": "low",
+      "para": "skills/subagent-green.md: el código mínimo que la pone en verde"
+    },
+    "triangulate": {
+      "nivel": "C3",
+      "esfuerzo": "low",
+      "para": "skills/subagent-triangulate.md: casos derivados"
+    },
+    "refactor": {
+      "nivel": "C3",
+      "esfuerzo": "low",
+      "para": "skills/subagent-refactor.md: simplificar sin cambiar conducta"
+    },
+    "planificador": {
+      "nivel": "C3",
+      "esfuerzo": "low",
+      "con_riesgo_alto": "C5",
+      "para": "borrador de spec y plan; sube a N3 si el riesgo es alto o crítico"
+    },
+    "seguridad": {
+      "nivel": "C5",
+      "esfuerzo": "low",
+      "para": "Security-Officer, fase 6.2"
+    },
+    "revisor": {
+      "nivel": "C5",
+      "esfuerzo": "low",
+      "para": "revisores 4R de la fase 6.3"
+    },
+    "refutador": {
+      "nivel": "C5",
+      "esfuerzo": "low",
+      "para": "refutación ciega de los hallazgos sobrevivientes"
+    }
   },
   "juez_distinto_del_constructor": [
-    ["refutador", "green"],
-    ["revisor", "green"],
-    ["seguridad", "green"]
+    [
+      "refutador",
+      "green"
+    ],
+    [
+      "revisor",
+      "green"
+    ],
+    [
+      "seguridad",
+      "green"
+    ]
   ],
-  "si_el_constructor_escalo_al_modelo_del_juez": "Si en una tarea green escaló hasta el mismo modelo que el juez, el juez de esa tarea no es independiente por modelo: se dice en NOT_REVIEWED, se suma un juez externo si el host tiene uno (por ejemplo la CLI de Codex) y nunca se sube a N4 sin el «sí» de la persona.",
+  "si_el_constructor_escalo_al_modelo_del_juez": "Si en una tarea green escaló hasta el mismo modelo que el juez, el juez de esa tarea no es independiente por modelo: se dice en NOT_REVIEWED, se suma un juez externo si el host tiene uno (por ejemplo la CLI de Codex) y nunca se sube a C8 sin el «sí» de la persona.",
   "escalada": {
     "disparador_intentos_fallidos": 1,
     "requiere_diagnostico_nuevo": true,
-    "tope_automatico": "N3",
+    "tope_automatico": "C7",
     "vuelve_a_la_base": true,
-    "N4": "Nunca automático: se pide con un menú que muestra la falla y los diagnósticos de N2 y N3, y sólo se usa con el «sí» explícito de la persona.",
+    "pasa_la_falla": "Al subir de nivel se le pasa la falla exacta: comando, salida, archivo:línea y lo ya probado.",
+    "repite_en_semana": {
+      "veces": 2,
+      "efecto": "la base de ese tipo de tarea sube un nivel"
+    },
+    "C7": "Automático sólo si falló C6; el uso de Fable no pasa del 50 % del cupo semanal y se avisa al llegar al 30 %.",
+    "C8": "Nunca automático: se pide con un menú que muestra la falla y los diagnósticos de los niveles anteriores, y sólo se usa con el «sí» explícito de la persona.",
     "no_es_falla": "Un 429 o un error de cupo no es una falla del modelo: se espera o se avisa, no se escala. El rojo buscado del TDD tampoco cuenta."
   },
   "contexto": {
@@ -41,5 +148,64 @@
     "aviso_desde": 0.8,
     "por_que": "Medido el 26-10-2026: una sesión llegó a 910K tokens de contexto y cada sesión arrastra ~80K fijos (conectores, memoria, instrucciones) que no se pueden recortar con el trabajo; una sesión a 910K cuesta ~8× por turno lo que una de 110K, porque cada turno vuelve a pagar todo lo anterior. Por eso el tope se mide sobre los mensajes (sin los ~80K fijos) y se cierra con estado commiteado y resumen antes de llegar, nunca en el autocompact. Antecedente del 12–15-10-2026: el 75 % del consumo venía de mensajes con más de 300.000 tokens de contexto."
   },
-  "regla_haiku": "Haiku sólo en tareas cortas y en subagentes con contexto nuevo. Una sesión que arranca con más de 60K fijos (conectores, memoria grande) arranca en N2 low, no en N1."
+  "regla_haiku": "Haiku sólo en tareas cortas y en subagentes con contexto nuevo. Una sesión que arranca con más de 60K fijos (conectores, memoria grande) arranca en C3 low, no en N1.",
+  "niveles_codex": {
+    "G1": {
+      "familia": "luna",
+      "id": "gpt-6-luna",
+      "esfuerzo": "low",
+      "pendiente": "gpt-6.1-luna rechazado por la cuenta ChatGPT de la persona (probado el 02-11-2026 con codex 0.166.0): se usa la anterior hasta que se acepte"
+    },
+    "G2": {
+      "familia": "luna",
+      "id": "gpt-6-luna",
+      "esfuerzo": "high",
+      "pendiente": "gpt-6.1-luna rechazado por la cuenta ChatGPT de la persona (probado el 02-11-2026 con codex 0.166.0): se usa la anterior hasta que se acepte"
+    },
+    "G3": {
+      "familia": "terra",
+      "id": "gpt-6.1-terra",
+      "esfuerzo": "low"
+    },
+    "G4": {
+      "familia": "terra",
+      "id": "gpt-6.1-terra",
+      "esfuerzo": "high"
+    },
+    "G5": {
+      "familia": "sol",
+      "id": "gpt-6.1-sol",
+      "esfuerzo": "low"
+    },
+    "G6": {
+      "familia": "sol",
+      "id": "gpt-6.1-sol",
+      "esfuerzo": "high"
+    },
+    "G7": {
+      "familia": "astra",
+      "id": "gpt-6-astra",
+      "esfuerzo": "low",
+      "pendiente": "gpt-6.1-astra rechazado por la cuenta ChatGPT de la persona (probado el 02-11-2026 con codex 0.166.0): se usa la anterior hasta que se acepte"
+    },
+    "G8": {
+      "familia": "astra",
+      "id": "gpt-6-astra",
+      "esfuerzo": "high",
+      "pendiente": "gpt-6.1-astra rechazado por la cuenta ChatGPT de la persona (probado el 02-11-2026 con codex 0.166.0): se usa la anterior hasta que se acepte"
+    }
+  },
+  "regla_codex": "Siempre la versión más nueva de cada familia que la cuenta acepte; las de generación anterior se eliminan en cuanto la nueva se acepta (campo `pendiente` mientras no). Probado con `codex exec -m <id> \"di ok\"`.",
+  "piso_por_riesgo": {
+    "nivel": "C5",
+    "areas": [
+      "plata",
+      "seguridad",
+      "auth",
+      ".mq5",
+      "matematica quant/MT5",
+      "migraciones"
+    ],
+    "para": "Lo que toca estas áreas arranca en C5, sin pasar por C1 ni C3. El .mq5 siempre sobre copias."
+  }
 }

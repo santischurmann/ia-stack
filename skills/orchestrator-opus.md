@@ -147,9 +147,9 @@ red_instructions = read_file("skills/subagent-red.md")
 route = routing["roles"]["red"]          # contracts/model-routing.json, read once per session
 nivel = route["nivel"]
 if risk in ("alto", "critico") and route.get("con_riesgo_alto"):
-    nivel = route["con_riesgo_alto"]     # planificador: N2 -> N3
+    nivel = route["con_riesgo_alto"]     # planificador: C3 -> C5
 if task.failed_with_new_diagnosis:
-    nivel = min(next_level(nivel), "N3")  # one level per failure, never N4 on its own
+    nivel = min(next_level(nivel), "C7")  # one level per failure, never C8 on its own
 level = routing["niveles"][nivel]
 
 Agent(
@@ -184,9 +184,9 @@ NOTES: <only if STATUS != pass; at most 80 words>
 **Routing, automatic.** Every spawn takes `model` and `effort` from `contracts/model-routing.json`
 by role (`lector`, `red`, `green`, `triangulate`, `refactor`, `docs`, `chore`, `planificador`,
 `seguridad`, `revisor`, `refutador`). Reading, searching, counting or summarizing state goes to a
-`lector` (N1) instead of the orchestrator's own context. Escalation is mechanical: **one** failed
-attempt with a **new** diagnosis raises that task one level, up to N3; when it resolves, the next
-task starts back at its base. N4 is never automatic (contract field `escalada.N4`). A 429 or a
+`lector` (C1) instead of the orchestrator's own context. Escalation is mechanical: **one** failed
+attempt with a **new** diagnosis raises that task one level, up to C7; when it resolves, the next
+task starts back at its base. C8 is never automatic (contract field `escalada.C8`). A 429 or a
 quota error is not a model failure. `task.model_effort` in `docs/tasks.json` is an optional
 override that can only raise the contract's effort; absent or `null` means "what the contract
 says". The judge never runs on the builder's model (`juez_distinto_del_constructor`).
@@ -210,7 +210,7 @@ node .vibe/ia-stack-runtime/scripts/verify-lock-vivo.mjs fence docs/tasks.json -
 
 Before accepting a subagent's writes, `fence` rejects a writer whose token is older than the current one: a worker that lost its lease and kept access is not the owner anymore. It does not stop a process that writes without presenting the token.
 
-If a task fails once with a new diagnosis → raise that task one routing level (contract `escalada`, top N3 automatic), note why in `.vibe/SESSION.md`; the next task starts back at its base.
+If a task fails once with a new diagnosis → raise that task one routing level (contract `escalada`, top C7 automatic), note why in `.vibe/SESSION.md`; the next task starts back at its base.
 
 ---
 
