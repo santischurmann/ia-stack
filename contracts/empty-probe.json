@@ -118,6 +118,17 @@
       "expect": "reject"
     },
     {
+      "script": "verify-aprobacion-humana.mjs",
+      "args": [
+        "preview",
+        ".vibe/APROBACIONES.md",
+        "--pieza",
+        "x"
+      ],
+      "expect": "reject",
+      "why": "Sale 1 porque el registro de aprobaciones no existe: sin preview aprobado no se construye (LAW 10), y un registro ausente nunca aprueba por defecto. Con el registro presente, tests/verify-aprobacion-humana.test.mjs ejercita preview, tareas y produccion."
+    },
+    {
       "script": "verify-brief-size.mjs",
       "args": [
         "check",
@@ -177,6 +188,15 @@
         "demo"
       ],
       "expect": "reject"
+    },
+    {
+      "script": "verify-egm-convergencia.mjs",
+      "args": [
+        "check",
+        "docs/egm/x.json"
+      ],
+      "expect": "reject",
+      "why": "Sale 1 porque el registro de rondas no existe: sin revision goldfish registrada no hay convergencia. Con el registro presente, tests/verify-egm-convergencia.test.mjs ejercita rondas limpias, paneles y el tope."
     },
     {
       "script": "verify-empty-probe.mjs",
