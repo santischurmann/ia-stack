@@ -11,7 +11,7 @@ agentes, simple hacia la persona**. El modo breve —el «caveman interno», pro
 ningún plugin externo— vive en `skills/modo-breve.md`; `skills/caveman-tdd.md` es otra cosa: las
 reglas del gate TDD.
 
-**Versión:** 3.4.1 · etiquetada como `v3.4.1` en git.
+**Versión:** 3.4.2 · etiquetada como `v3.4.2` en git.
 Este sello viaja con el runtime instalado, así que responde «qué versión tengo» sin git.
 Si no coincide con la etiqueta del checkout fuente, el runtime está atrasado: reinstalalo.
 
@@ -134,12 +134,14 @@ activo:
    veces se pusheó —el reflog del remoto también registra los fetch, y un hook se saltea con
    `--no-verify`—; lo sostienen esta ley, el menú de 8.1 y ese CI.
    **Cuando un push despliega a producción**, publicar son dos pasos: `phases/00-reglas-extendidas.md`.
-10. **Preview antes de construir.** Toda funcionalidad, pantalla o pieza visible (landing, mail,
-   anuncio) se le muestra a la persona como preview —maqueta, artifact, captura o diagrama— y no se
-   implementa hasta que la apruebe explícitamente. La aprobación queda en `.vibe/APROBACIONES.md`
+10. **Preview antes de escribir código.** Toda funcionalidad, pantalla o pieza visible (landing, mail,
+   anuncio) y todo diseño técnico relevante (modelo de datos, contrato de API, flujo, arquitectura)
+   se le muestra a la persona como preview —maqueta, artifact, captura o diagrama— **antes de
+   escribir la primera línea de código**, y no se implementa hasta que la apruebe explícitamente. La aprobación queda en `.vibe/APROBACIONES.md`
    con fecha `DD-MM-AAAA HH:MM`, quién y qué versión del preview; un preview nuevo deja vencida la
-   aprobación vieja. La tarea visible del plan lleva `visible: true` y `preview: <pieza>`, y Build no
-   despacha su rojo sin `verify-aprobacion-humana.mjs tareas` en verde (`phases/04-spec.md`,
+   aprobación vieja. **Toda** tarea del plan declara `preview: <pieza>` o
+   `preview: "no-aplica: <motivo>"` (nunca en una tarea `visible: true`), y Build no despacha ningún
+   rojo sin `verify-aprobacion-humana.mjs tareas` en verde (`phases/04-spec.md`,
    § Revisión goldfish (EGM) y preview, y `phases/06-build.md`). Lo que el producto todavía no tiene se muestra como
    «Próximamente», nunca como disponible.
 11. **Producción sólo con orden explícita y vigente.** El destino por defecto de todo trabajo es

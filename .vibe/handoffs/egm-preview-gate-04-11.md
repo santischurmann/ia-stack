@@ -48,3 +48,15 @@
 - `.vibe/APROBACIONES.md` queda en Markdown.
 - Push único a `main` con las dos ramas: el merge local está hecho; el push espera la confirmación
   directa del operador en su conversación (LAW 11: un «sí» reenviado por un agente no vale).
+
+## 3.4.2 (04-11-2026)
+
+- EGM revisado contra el plugin instalado `egm@egm` 0.1.0 (`~/.claude/plugins/cache/egm/egm/0.1.0`):
+  nombres reales de los revisores (`egm-zoom-out`, `egm-comprehension`, `egm-design`,
+  `egm-structural`, `egm-style`, `egm-implementation-readiness`, `egm-codebase-details`; tipo de
+  Agent `egm:<nombre>`), las cinco etapas en orden de `/egm:egm-review`, que la persona escribe las
+  skills (traen `disable-model-invocation`), `egm-review-loop`/`egm-resolve` leídos y seguidos en el
+  mismo hilo, directorio de artefactos, permisos de lectura del caché y Claude Code ≥ 2.1.271.
+- LAW 10 ampliada: preview antes de escribir código, también del diseño técnico; `tareas` exige
+  `preview` en toda tarea (pieza aprobada o `no-aplica: <motivo>`).
+- Versión 3.4.2 en `SKILL.md` y `CHANGELOG.md`; etiqueta `v3.4.2` local.

@@ -21,15 +21,16 @@ Per task, topological order — full delegation pattern: `skills/orchestrator-op
 permitió paralelo, sólo se despachan simultáneamente tareas que el preflight ya dejó sin conflicto
 de escritura no serializado; un `SERIALIZED` conserva su orden topológico.
 
-**Antes de despachar el rojo de una tarea visible** (LAW 10), su preview tiene que estar aprobado
-y vigente; el gate recorre todas las tareas con `visible: true` del plan:
+**Antes de despachar el rojo de cualquier tarea** (LAW 10: preview antes de escribir código), su
+preview tiene que estar aprobado y vigente, o declarado «no-aplica» con motivo; el gate recorre
+todas las tareas del plan:
 ```bash
 node .vibe/ia-stack-runtime/scripts/verify-aprobacion-humana.mjs tareas docs/tasks.json .vibe/APROBACIONES.md
 ```
 Si sale distinto de `0`, la tarea no se despacha: se le muestra el preview a la persona y se espera
 su respuesta. Si la implementación se aparta del preview aprobado, se muestra la diferencia y se
 registra una versión nueva antes de seguir. **Lo que el gate NO puede hacer:** no sabe qué tarea es
-visible si el plan no la marca.
+visible si el plan no la marca, ni si un «no-aplica» de verdad no tenía nada que mostrar.
 
 **Antes de lanzar cada subagente**, el brief pasa el tope de tamaño: 4000 tokens estimados
 (`ceil(caracteres/4)`, aproximado; el subgrafo de `graphify query` pegado cuenta) y 3 archivos como

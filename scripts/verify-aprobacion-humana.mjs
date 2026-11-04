@@ -7,6 +7,7 @@
 //   node scripts/verify-aprobacion-humana.mjs tareas <tasks.json> <APROBACIONES.md>
 //   node scripts/verify-aprobacion-humana.mjs produccion <APROBACIONES.md> --sha <sha>
 //
+// Desde la 3.4.2 `tareas` exige `preview` en TODA tarea: la pieza aprobada o «no-aplica: <motivo>».
 // El registro es una tabla Markdown de 8 columnas, una fila por decisión, sólo se agregan filas:
 //   | tipo | objeto | version | evidencia | mostrado | decidido | quien | estado |
 // tipo `preview`: objeto = id de la pieza, version = vN, evidencia = ruta o URL del preview mostrado.
@@ -20,8 +21,8 @@
 // permiso de publicar. Las dos reglas ya existían de palabra y se rompieron bajo presión.
 //
 // LÍMITE HONESTO: verifica lo REGISTRADO. No sabe si la persona vio de verdad el preview, ni si la
-// fila la escribió el orquestador sin preguntar; tampoco sabe qué tarea es visible si el plan no la
-// marca `visible: true`. Un registro ausente, vacío o ilegible nunca aprueba por defecto.
+// fila la escribió el orquestador sin preguntar; ni si una tarea marcada «no-aplica» de verdad no
+// tenía nada que mostrar. Un registro ausente, vacío o ilegible nunca aprueba por defecto.
 
 import { readFileSync } from 'node:fs';
 
@@ -99,15 +100,28 @@ export function checkProduccion(filas, sha) {
   return veredicto(propias[propias.length - 1], `orden de producción ${sha}`);
 }
 
+const NO_APLICA = /^no-aplica:(.*)$/su;
+
+/** 3.4.2: TODA tarea declara su preview antes de escribir código (LAW 10): una pieza aprobada, o
+ * «no-aplica: <motivo>» cuando no hay nada que mostrar. Una tarea visible nunca es «no-aplica». */
 export function checkTareas(plan, filas) {
   if (!Array.isArray(plan?.tasks)) return { ok: false, reason: 'el plan no tiene un arreglo tasks' };
-  const visibles = plan.tasks.filter((t) => t.visible === true);
-  for (const t of visibles) {
-    if (typeof t.preview !== 'string' || t.preview === '') return { ok: false, reason: `${t.id}: tarea visible sin campo preview` };
+  let conPreview = 0;
+  let noAplica = 0;
+  for (const t of plan.tasks) {
+    if (typeof t.preview !== 'string' || t.preview === '') return { ok: false, reason: `${t.id}: tarea sin campo preview (pieza aprobada o «no-aplica: <motivo>»)` };
+    const exento = NO_APLICA.exec(t.preview);
+    if (exento) {
+      if (exento[1].trim() === '') return { ok: false, reason: `${t.id}: «no-aplica» sin motivo escrito` };
+      if (t.visible === true) return { ok: false, reason: `${t.id}: una tarea visible no puede ser «no-aplica»` };
+      noAplica += 1;
+      continue;
+    }
     const r = checkPreview(filas, t.preview);
     if (!r.ok) return { ok: false, reason: `${t.id}: ${r.reason}` };
+    conPreview += 1;
   }
-  return { ok: true, visibles: visibles.length };
+  return { ok: true, conPreview, noAplica };
 }
 
 const USAGE = 'usage: verify-aprobacion-humana.mjs preview <APROBACIONES.md> --pieza <id> [--version <vN>] | tareas <tasks.json> <APROBACIONES.md> | produccion <APROBACIONES.md> --sha <sha>';
@@ -158,7 +172,7 @@ function main() {
   }
   if (args.cmd === 'preview') console.log(`OK: preview ${args.pieza} ${r.version} aprobado por ${r.quien} el ${r.decidido}`);
   else if (args.cmd === 'produccion') console.log(`OK: orden de producción para ${args.sha} (${r.objeto}) dada por ${r.quien} el ${r.decidido}; vale una vez: tras publicar, registrá la fila «usada»`);
-  else console.log(`OK: ${r.visibles} tarea(s) visible(s), todas con preview aprobado`);
+  else console.log(`OK: ${r.conPreview + r.noAplica} tarea(s): ${r.conPreview} con preview aprobado y ${r.noAplica} «no-aplica»`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('verify-aprobacion-humana.mjs')) main();

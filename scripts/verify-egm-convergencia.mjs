@@ -17,8 +17,8 @@
 // - Convergido = las últimas K rondas limpias seguidas. EGM pide K = 2. Se acepta K = 1 sólo con
 //   riesgo bajo o medio y `motivo_una_ronda` escrito; alto o critico (plata, auth, migraciones,
 //   seguridad) y toda pieza pública, siempre 2 (decisión del operador, 04-11-2026).
-// - Panel obligatorio: diseño = los 5 de EGM; pieza pública de riesgo alto = los 5 + audiencia (9);
-//   pieza pública de riesgo bajo o medio = audiencia + design_critic + implementation_readiness (6).
+// - Panel obligatorio: diseño = los 7 de EGM; pieza pública de riesgo alto = los 7 + audiencia (11);
+//   pieza pública de riesgo bajo o medio = audiencia + egm-design + egm-implementation-readiness (6).
 // - Tope de 5 rondas: más sólo con `decision_humana_tope` registrada.
 //
 // LA HERIDA (04-11-2026): en Grobit se aprobó un plan de landing que la sesión que lo escribió veía
@@ -31,12 +31,16 @@
 
 import { readFileSync } from 'node:fs';
 
-const DISENO = ['zoom_out', 'comprehension', 'design_critic', 'structural', 'implementation_readiness'];
+// Nombres reales del plugin `egm@egm` 0.1.0 (frontmatter `name` de .claude-plugin/agents/*.md; en Claude
+// Code el tipo de Agent es `egm:<nombre>`). El panel de diseño son los revisores de las cinco etapas
+// de /egm:egm-review: zoom-out, comprehension, design + structural + style, zoom-out (otra vez),
+// implementation-readiness + codebase-details + style.
+const DISENO = ['egm-zoom-out', 'egm-comprehension', 'egm-design', 'egm-structural', 'egm-style', 'egm-implementation-readiness', 'egm-codebase-details'];
 const AUDIENCIA = ['scroller', 'esceptico', 'primerizo', 'comprador'];
 export const PANELES = Object.freeze({
   diseno: DISENO,
   publico: [...DISENO, ...AUDIENCIA],
-  publico_medio: ['design_critic', 'implementation_readiness', ...AUDIENCIA],
+  publico_medio: ['egm-design', 'egm-implementation-readiness', ...AUDIENCIA],
 });
 
 /** Decisión del operador (04-11-2026): una pieza pública de riesgo bajo o medio corre 6 revisores por ronda, no 9. */

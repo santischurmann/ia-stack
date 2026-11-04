@@ -1,8 +1,9 @@
 # Panel de audiencia para la revisión goldfish (EGM)
 
 Lo usa § Revisión goldfish (EGM) y preview de `phases/04-spec.md` en toda pieza de cara al público (landing, anuncio, mail,
-onboarding), junto con revisores de EGM: los 5 de diseño con riesgo alto (9 por ronda), o sólo
-`design_critic` e `implementation_readiness` con riesgo bajo o medio (6 por ronda). Nació el 04-11-2026 con el plan de la landing de
+onboarding), junto con revisores de EGM: los 7 de diseño con riesgo alto (11 por ronda), o sólo
+`egm-design` e `egm-implementation-readiness` con riesgo bajo o medio (6 por ronda). Van en la etapa 7
+de `/egm:egm-review` y se lanzan como `Agent` nuevo general: no son agentes del plugin. Nació el 04-11-2026 con el plan de la landing de
 Grobit: los revisores de diseño juzgan si el plan se puede construir; nadie juzgaba si un visitante
 real lo entiende, le cree y llega a registrarse.
 

@@ -23,7 +23,11 @@ function run(args) {
   return { status: r.status, output: `${r.stdout ?? ''}${r.stderr ?? ''}` };
 }
 
-const DISENO = ['zoom_out', 'comprehension', 'design_critic', 'structural', 'implementation_readiness'];
+// Los nombres de los revisores son los del plugin instalado `egm@egm` 0.1.0 (frontmatter `name` de
+// .claude-plugin/agents/*.md; en Claude Code el tipo de Agent es `egm:<nombre>`), y el panel de diseño
+// es el de las cinco etapas de /egm:egm-review: zoom-out, comprehension, design + structural + style,
+// zoom-out, implementation-readiness + codebase-details + style.
+const DISENO = ['egm-zoom-out', 'egm-comprehension', 'egm-design', 'egm-structural', 'egm-style', 'egm-implementation-readiness', 'egm-codebase-details'];
 const revisores = (panel, extra = {}) => panel.map((nombre) => ({ nombre, agente_nuevo: true, estado: 'completed', ...extra[nombre] }));
 const ronda = (n, hallazgos = [], panel = DISENO, extra) => ({ n, revisores: revisores(panel, extra), hallazgos });
 const base = (rondas, cambios = {}) => ({
@@ -32,7 +36,7 @@ const base = (rondas, cambios = {}) => ({
 });
 const H = (id, severidad, resolucion) => ({ id, severidad, resolucion });
 
-test('paneles · diseño = los 5 de EGM; público = los 5 más el panel de audiencia', () => {
+test('paneles · diseño = los 7 de /egm:egm-review con sus nombres reales; público = los 5 más el panel de audiencia', () => {
   assert.deepEqual(PANELES.diseno, DISENO);
   assert.deepEqual(PANELES.publico, [...DISENO, 'scroller', 'esceptico', 'primerizo', 'comprador']);
 });
@@ -45,9 +49,9 @@ test('ronda limpia · sin Blocker/Major abiertos o arreglados; los asentados y l
 });
 
 test('ronda limpia · un revisor que no corrió, que no era nuevo o que falta, ensucia la ronda', () => {
-  assert.match(rondaLimpia(ronda(1, [], DISENO, { structural: { estado: 'not run' } }), DISENO).motivo, /structural.*not run/);
-  assert.match(rondaLimpia(ronda(1, [], DISENO, { zoom_out: { agente_nuevo: false } }), DISENO).motivo, /zoom_out.*nuevo/);
-  assert.match(rondaLimpia(ronda(1, [], DISENO.slice(1)), DISENO).motivo, /zoom_out.*falta/);
+  assert.match(rondaLimpia(ronda(1, [], DISENO, { 'egm-structural': { estado: 'not run' } }), DISENO).motivo, /egm-structural.*not run/);
+  assert.match(rondaLimpia(ronda(1, [], DISENO, { 'egm-zoom-out': { agente_nuevo: false } }), DISENO).motivo, /egm-zoom-out.*nuevo/);
+  assert.match(rondaLimpia(ronda(1, [], DISENO.slice(1)), DISENO).motivo, /egm-zoom-out.*falta/);
 });
 
 test('convergencia · riesgo alto pide 2 rondas limpias seguidas; bajo o medio se conforma con 1 con motivo', () => {
@@ -68,8 +72,8 @@ test('convergencia · una pieza pública exige el panel de audiencia', () => {
   assert.match(checkConvergencia(base([ronda(1)], { tipo: 'otro' })).reason, /tipo/);
 });
 
-test('decisión del operador 04-11-2026 · pieza pública de riesgo bajo o medio: panel de 6 (audiencia + design_critic + implementation_readiness)', () => {
-  const seis = ['design_critic', 'implementation_readiness', 'scroller', 'esceptico', 'primerizo', 'comprador'];
+test('decisión del operador 04-11-2026 · pieza pública de riesgo bajo o medio: panel de 6 (audiencia + egm-design + egm-implementation-readiness)', () => {
+  const seis = ['egm-design', 'egm-implementation-readiness', 'scroller', 'esceptico', 'primerizo', 'comprador'];
   assert.deepEqual(PANELES.publico_medio, seis);
   assert.deepEqual(panelRequerido('publico', 'medio'), seis);
   assert.deepEqual(panelRequerido('publico', 'bajo'), seis);
@@ -77,7 +81,7 @@ test('decisión del operador 04-11-2026 · pieza pública de riesgo bajo o medio
   assert.deepEqual(panelRequerido('diseno', 'medio'), DISENO);
   const medio = { tipo: 'publico', riesgo: 'medio', panel: seis };
   assert.equal(checkConvergencia(base([ronda(1, [], seis), ronda(2, [], seis)], medio)).ok, true);
-  assert.match(checkConvergencia(base([ronda(1, [], seis.slice(1)), ronda(2, [], seis)], medio)).reason, /design_critic.*falta/);
+  assert.match(checkConvergencia(base([ronda(1, [], seis.slice(1)), ronda(2, [], seis)], medio)).reason, /egm-design.*falta/);
 });
 
 test('decisión del operador 04-11-2026 · una pieza pública siempre pide 2 rondas limpias, aun con riesgo medio', () => {
@@ -101,8 +105,8 @@ test('convergencia · forma: schema, rondas en orden, ids únicos, severidad y r
   assert.match(checkConvergencia(base([ronda(1, [H('a', 'Nit', 'olvidado')])])).reason, /resolución/);
   assert.match(checkConvergencia(base([ronda(1, [H('a', 'Major', 'decline')])])).reason, /decline.*Nit/);
   assert.match(checkConvergencia(base([{ n: 1 }])).reason, /revisores/);
-  assert.match(checkConvergencia(base([ronda(1)], { panel: ['zoom_out'] })).reason, /comprehension/);
-  assert.match(checkConvergencia(base([ronda(1)], { panel: undefined })).reason, /exige zoom_out/);
+  assert.match(checkConvergencia(base([ronda(1)], { panel: ['egm-zoom-out'] })).reason, /egm-comprehension/);
+  assert.match(checkConvergencia(base([ronda(1)], { panel: undefined })).reason, /exige egm-zoom-out/);
 });
 
 test('CLI · converge sale 0, no converge sale 1, ilegible sale 1, mal uso sale 2', () => {

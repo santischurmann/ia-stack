@@ -64,11 +64,13 @@ tabla de `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL, que los
 hace meses. **Lo que el gate NO puede hacer:** comprueba forma y coherencia, nunca que la tarea haga
 lo que dice ni que la evidencia listada sea real.
 
-**Tareas visibles y revisión goldfish del plan.** Cada tarea que produce algo que la persona ve
-(pantalla, flujo, pieza pública) lleva `visible: true` y `preview: <pieza>`, el mismo id de su fila
-en `.vibe/APROBACIONES.md`; Build no despacha su rojo sin ese preview aprobado (LAW 10). Con riesgo
+**Preview de cada tarea y revisión goldfish del plan.** Toda tarea declara `preview`: el id de su fila
+en `.vibe/APROBACIONES.md` (la pantalla, la pieza o el diseño técnico que la persona aprobó), o
+`"no-aplica: <motivo>"` cuando no hay nada que mostrar (un renombre interno, una dependencia). La
+que produce algo que la persona ve lleva además `visible: true` y nunca puede ser «no-aplica». Build
+no despacha ningún rojo sin ese gate en verde (LAW 10). Con riesgo
 `medio` o más, el plan pasa por la misma revisión goldfish de § Revisión goldfish (EGM) y preview de `phases/04-spec.md` con
-`implementation_readiness` y `codebase_details` (Zero-Decision Rule: cualquier decisión de diseño
+`egm-implementation-readiness` y `egm-codebase-details` (Zero-Decision Rule: cualquier decisión de diseño
 que el plan le deja al implementador es un hallazgo) y su registro `docs/egm/<pieza>-plan.json`
 pasa `scripts/verify-egm-convergencia.mjs` antes de este menú.
 

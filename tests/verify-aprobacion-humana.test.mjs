@@ -126,21 +126,24 @@ test('produccion · orden aprobada para ese sha exacto: pasa; para otro sha, usa
   assert.match(checkProduccion(leerTabla(ledger(PROD_OK)), 'zz').reason, /sha/);
 });
 
-test('tareas · cada tarea visible necesita su preview aprobado; las no visibles no se miran', () => {
+test('3.4.2 · tareas · TODA tarea declara su preview antes de escribir código: pieza aprobada o «no-aplica: <motivo>»', () => {
   const tareas = (lista) => ({ tasks: lista });
-  assert.equal(checkTareas(tareas([{ id: 'T1' }, { id: 'T2', visible: true, preview: 'landing-home' }]), leerTabla(ledger(PREV_OK))).ok, true);
-  assert.match(checkTareas(tareas([{ id: 'T2', visible: true }]), []).reason, /T2.*preview/);
-  assert.match(checkTareas(tareas([{ id: 'T4', visible: true, preview: '' }]), []).reason, /T4.*preview/);
-  assert.match(checkTareas(tareas([{ id: 'T3', visible: true, preview: 'otra' }]), leerTabla(ledger(PREV_OK))).reason, /T3/);
-  const r = checkTareas(tareas([{ id: 'T1' }]), []);
-  assert.equal(r.ok, true);
-  assert.equal(r.visibles, 0);
+  const filas = leerTabla(ledger(PREV_OK));
+  const r = checkTareas(tareas([{ id: 'T1', preview: 'no-aplica: renombra una variable interna' }, { id: 'T2', visible: true, preview: 'landing-home' }, { id: 'T5', preview: 'landing-home' }]), filas);
+  assert.equal(r.ok, true, r.reason);
+  assert.equal(r.conPreview, 2);
+  assert.equal(r.noAplica, 1);
+  assert.match(checkTareas(tareas([{ id: 'T1' }]), []).reason, /T1.*sin campo preview/, 'una tarea sin preview ya no pasa en silencio');
+  assert.match(checkTareas(tareas([{ id: 'T4', preview: '' }]), []).reason, /T4.*sin campo preview/);
+  assert.match(checkTareas(tareas([{ id: 'T6', preview: 'no-aplica:   ' }]), []).reason, /T6.*motivo/);
+  assert.match(checkTareas(tareas([{ id: 'T7', visible: true, preview: 'no-aplica: es chiquito' }]), []).reason, /T7.*visible/);
+  assert.match(checkTareas(tareas([{ id: 'T3', preview: 'otra' }]), filas).reason, /T3/);
   assert.match(checkTareas({}, []).reason, /tasks/);
   assert.match(checkTareas(null, []).reason, /tasks/, 'un plan JSON null no aprueba');
 });
 
 test('CLI · preview, produccion y tareas salen 0 en verde y 1 en rojo', () => {
-  const plan = JSON.stringify({ tasks: [{ id: 'T2', visible: true, preview: 'landing-home' }] });
+  const plan = JSON.stringify({ tasks: [{ id: 'T2', visible: true, preview: 'landing-home' }, { id: 'T1', preview: 'no-aplica: chore' }] });
   conArchivos({ 'A.md': ledger(PREV_OK, PROD_OK), 'tasks.json': plan, 'malo.json': '{', 'roto.md': '| a | b |\n' }, (p) => {
     let r = run(['preview', p['A.md'], '--pieza', 'landing-home']);
     assert.equal(r.status, 0, r.output);
@@ -154,7 +157,7 @@ test('CLI · preview, produccion y tareas salen 0 en verde y 1 en rojo', () => {
     assert.equal(run(['produccion', p['A.md'], '--sha', 'ffffffff']).status, 1);
     r = run(['tareas', p['tasks.json'], p['A.md']]);
     assert.equal(r.status, 0, r.output);
-    assert.match(r.output, /1 tarea/);
+    assert.match(r.output, /2 tarea\(s\): 1 con preview aprobado y 1 «no-aplica»/);
     assert.equal(run(['tareas', p['malo.json'], p['A.md']]).status, 1);
     r = run(['preview', p['roto.md'], '--pieza', 'x']);
     assert.equal(r.status, 1, r.output);

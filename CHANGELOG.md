@@ -7,18 +7,48 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
-EGM y preview antes de construir (04-11-2026):
+## [3.4.2] — 04-11-2026
 
-- **LAW 10 — Preview antes de construir** y **LAW 11 — Producción sólo con orden explícita y vigente**,
-  leídas de `.vibe/APROBACIONES.md` por el gate nuevo `verify-aprobacion-humana` (`preview`, `tareas`,
-  `produccion`: el «sí» va atado al sha y vale una vez; un agente o una sesión no aprueban).
-- **Revisión goldfish (EGM)** dentro de PHASE 3 (y del plan con riesgo medio o más): Elefante redacta,
-  subagentes nuevos de sólo lectura revisan con el panel de diseño de EGM y, en piezas públicas, el
-  panel de audiencia (`skills/egm-panel-audiencia.md`); convergencia verificada por `verify-egm-convergencia`.
-- **`context-guard`:** el umbral baja del 80 % al 70 % y pide el handoff (02-11-2026).
-- Aprendizajes de oct-nov 2026 como tabla con su detector en `phases/00-reglas-extendidas.md`.
+EGM (Elephant-Goldfish Model) y preview antes de escribir código.
 
-Correcciones de la revisión N3 de la 3.4.1 (26-10-2026):
+**Agregado**
+
+- **LAW 10 — Preview antes de escribir código.** Toda funcionalidad, pantalla, pieza pública y diseño
+  técnico relevante se le muestra a la persona (maqueta, artifact, captura o diagrama) y se aprueba
+  antes de la primera línea de código. Toda tarea del plan declara `preview`: la pieza aprobada o
+  `no-aplica: <motivo>` (nunca en una tarea `visible: true`); Build no despacha ningún rojo sin
+  `verify-aprobacion-humana tareas` en verde.
+- **LAW 11 — Producción sólo con orden explícita y vigente.** El destino por defecto es desarrollo o
+  staging; la orden va atada al sha exacto, vale una vez y no la da un agente ni otra sesión
+  (`verify-aprobacion-humana produccion`). Se suma a LAW 9: un solo push, al final, con todo verde.
+- **Gate `verify-aprobacion-humana`** (`preview`, `tareas`, `produccion`) sobre `.vibe/APROBACIONES.md`
+  (tabla Markdown, fechas `DD-MM-AAAA HH:MM`).
+- **Revisión goldfish (EGM) dentro de PHASE 3**, alineada con el plugin `egm@egm` 0.1.0: las skills
+  `/egm:egm-brainstorm` → `/egm:egm-draft` → `/egm:egm-review` (cinco etapas en orden) →
+  `egm-resolve`, con `egm-review-loop` para las rondas; revisores `egm:egm-zoom-out`,
+  `egm:egm-comprehension`, `egm:egm-design`, `egm:egm-structural`, `egm:egm-style`,
+  `egm:egm-implementation-readiness` y `egm:egm-codebase-details`, cada uno un `Agent` nuevo de sólo
+  lectura con `omitClaudeMd` (Claude Code 2.1.271 o más nuevo). Sin subagentes frescos, EGM frena.
+- **Panel de audiencia** para piezas públicas (`skills/egm-panel-audiencia.md`: scroller, escéptico,
+  primerizo, comprador).
+- **Gate `verify-egm-convergencia`** sobre `docs/egm/<pieza>.json`: el panel obligatorio corrió con
+  agentes nuevos y las últimas rondas no dejan Blocker ni Major sin asentar. Dos rondas limpias con
+  riesgo alto y en toda pieza pública; una alcanza en spec o plan de riesgo bajo o medio, con motivo.
+  Pieza pública de riesgo bajo o medio: 6 revisores por ronda; de riesgo alto, 11.
+- Aprendizajes de oct-nov 2026 como tabla con su detector en `phases/00-reglas-extendidas.md`
+  (handoff al 70 %, un dueño por tarea, decisiones con hora, permisos que no escalan entre sesiones,
+  push único, RAM, migraciones entre ramas, artifacts, no inventar y «Próximamente»).
+
+**Cambiado**
+
+- **`context-guard`:** el aviso pasa del 80 % al 70 % del tope de mensajes y pide el handoff.
+
+**Pendiente**
+
+- Detectores de la tabla de Dueños, del choque de decisiones entre sesiones y de la reserva de
+  migraciones (`.vibe/DEBT.md`, `id:egm041`).
+
+### Correcciones de la revisión N3 de la 3.4.1 (26-10-2026), sin etiqueta propia: viajan en la 3.4.2
 
 - **`context-guard`:** el conteo reinicia en el último `compact_boundary` / `isCompactSummary` (antes
   seguía dando ORDEN tras compactar) y saltea las líneas `isSidechain`. El rol de una subsesión se

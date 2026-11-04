@@ -104,28 +104,52 @@ decisión de diseño, y en toda pieza de cara al público (landing, anuncio, mai
 un cambio de texto interno, una dependencia que sube de parche. El salteo se anota en
 `.vibe/SESSION.md` con su motivo; ante la duda, corre.
 
-**1. Brief (Elefante).** `/egm:egm-brainstorm <idea>` cuando el problema todavía no está claro
-(charla abierta → `concepts_brief.md`), o directo `/egm:egm-draft` sobre la spec. La salida es
-siempre un archivo: nada de volcar el borrador en el chat.
+**Cómo se invoca en Claude Code** (plugin `egm@egm` 0.1.0; Claude Code 2.1.271 o más nuevo, porque
+`omitClaudeMd` es lo que aísla al revisor y una versión anterior no cuenta como goldfish). Las
+skills del plugin traen `disable-model-invocation: true`: **las escribe la persona** al empezar el
+mensaje (`/egm:egm-brainstorm`, `/egm:egm-draft`, `/egm:egm-review`), y la herramienta `Skill` las
+rechaza. Cuando una skill necesita otra (`egm-review-loop` o `egm-resolve` en las etapas 7 y 9), el
+Elefante lee su `SKILL.md` en `${CLAUDE_PLUGIN_ROOT}/skills/` y la sigue en el mismo hilo. Los
+artefactos (`concepts_brief.md`, `design_draft.md`, los reportes) van al directorio de trabajo, o al
+que diga una línea `EGM artifact directory: <ruta>` del CLAUDE.md o AGENTS.md del proyecto; nunca
+al scratchpad de la sesión. Los revisores leen su persona y su estándar del caché del plugin: en
+corridas sin prompts se autoriza sólo la lectura de sus carpetas `agents/`, `docs/`, `resources/` y
+`skills/` (por ejemplo `Read(//c/Users/<vos>/.claude/plugins/cache/egm/egm/*/agents/**)`), nunca la
+escritura ni otros plugins. Un revisor que no puede leer su persona frena: no revisó.
 
-**2. Revisión (goldfish).** `/egm:egm-review <doc>` o `/egm:egm-review-loop` con el panel propio. Cada
-revisor es un `Agent` NUEVO por ronda —nunca un fork, nunca `SendMessage` a uno anterior—, de sólo
-lectura (`Read`, `Grep`, `Glob`), con `omitClaudeMd: true` donde el host lo soporte (Claude Code ≥
-2.1.271; si no, el brief le dice que ignore CLAUDE.md, memoria y logs). Se le pasa sólo la tarea, la
-ruta del documento, la ruta de su persona y su estándar, y la lista `GoldfishContext` explícita: ni
-la conversación, ni la memoria, ni otros documentos. No abre URLs: lo externo se guarda como archivo.
-Corre en el modelo del rol `revisor` (`contracts/model-routing.json`), distinto del que redactó.
+**1. Brief y draft (Elefante).** `/egm:egm-brainstorm <idea>` cuando el problema todavía no está claro:
+charla con preguntas abiertas hasta un resumen de la hipótesis en 2-3 frases, revisión de la idea
+y `concepts_brief.md`. Después `/egm:egm-draft`, que lee ese brief y escribe `design_draft.md`
+sección por sección —problema y metas, plan técnico, alternativas, implementación detallada—, con
+un resumen y un gate de una sola pregunta (aprobar o pedir cambios) después de cada sección; sin
+código de producción, sólo pseudocódigo o esquemas. Ese draft, o la spec, es lo que se revisa. La
+salida es siempre un archivo: nada de volcar el borrador en el chat.
 
-| Panel | Revisores | Cuándo |
+**2. Revisión (goldfish).** `/egm:egm-review <doc>` corre cinco etapas **en orden**, y sólo los
+revisores de una misma etapa van en paralelo: 5 `egm-zoom-out` sobre el documento entero; 6
+`egm-comprehension` (sin estándar ni contexto extra: el autor tiene que ver su paráfrasis); 7
+`egm-design` + `egm-structural` + `egm-style` sobre la parte de la funcionalidad; 8 `egm-zoom-out` otra
+vez, mirando lo agregado; 9 `egm-implementation-readiness` + `egm-codebase-details` + `egm-style` sobre
+el plan detallado. Una **ronda** del registro es una pasada entera por las cinco etapas. Cada
+revisor es un `Agent` NUEVO del tipo registrado por el plugin —`egm:egm-zoom-out`, `egm:egm-design`,
+etc.—, nunca un fork ni un `SendMessage` a uno anterior; ya viene de sólo lectura
+(`Read`, `Grep`, `Glob`) y con `omitClaudeMd: true`. Se le pasa sólo la tarea, la ruta absoluta del
+documento, las de su persona y su estándar y la lista `GoldfishContext` explícita: ni la
+conversación, ni la memoria, ni otros documentos. No abre URLs: lo externo se guarda como archivo.
+El `model` del `Agent` sale del rol `revisor` (`contracts/model-routing.json`), distinto del que
+redactó. Los revisores de audiencia no son del plugin: se lanzan como `Agent` nuevo general con su
+persona de `skills/egm-panel-audiencia.md`, en la etapa 7.
+
+| Panel | Revisores (nombre del registro) | Cuándo |
 |---|---|---|
-| Diseño (los de EGM) | `zoom_out`, `comprehension`, `design_critic`, `structural`, `implementation_readiness` | toda spec y todo plan; `codebase_details` se suma cuando el plan cita código existente |
-| Audiencia (`skills/egm-panel-audiencia.md`) | `scroller` (5 s en el celular), `esceptico`, `primerizo`, `comprador` | en toda pieza de cara al público: con riesgo alto, junto a los 5 de diseño (9 por ronda); con riesgo bajo o medio, junto a `design_critic` e `implementation_readiness` (6 por ronda) |
+| Diseño (los 7 de `/egm:egm-review`) | `egm-zoom-out`, `egm-comprehension`, `egm-design`, `egm-structural`, `egm-style`, `egm-implementation-readiness`, `egm-codebase-details` | toda spec y todo plan, y toda pieza pública de riesgo alto |
+| Audiencia (`skills/egm-panel-audiencia.md`) | `scroller` (5 s en el celular), `esceptico`, `primerizo`, `comprador` | toda pieza de cara al público: con riesgo alto, junto a los 7 de diseño (11); con riesgo bajo o medio, sólo junto a `egm-design` y `egm-implementation-readiness` (6 por ronda, decisión del operador del 04-11-2026) |
 
 Cada hallazgo: severidad **Blocker** (no se puede construir así), **Major** (se construiría algo
 equivocado o frágil) o **Nit**; alcance (sección o línea) y recomendación. Un revisor que falla o no
 devuelve informe se reintenta una vez; si repite, queda «not run» y **la ronda no es limpia**.
 
-**3. Resolve (Elefante + persona).** `/egm:egm-resolve` en esta misma sesión: cada hallazgo recibe una
+**3. Resolve (Elefante + persona).** El `egm-resolve` que dispara la revisión (o `/egm:egm-resolve`), en esta misma sesión: cada hallazgo recibe una
 sola categoría —`fixed` (se arregla), `contest` (se refuta con evidencia que el revisor pudo leer),
 `riesgo-aceptado` (lo decide la persona), `decline` (sólo un Nit)—. Un hueco de comprensión nunca
 se contesta: si un lector fresco no siguió, falta contexto en el documento. Lo que necesita una
@@ -144,10 +168,10 @@ sin asentar (`contest` o `riesgo-aceptado`; un `fixed` lo confirma la ronda sigu
 nuevos y el documento re-escaneado). EGM pide **2 rondas limpias seguidas**, y es lo obligatorio con
 riesgo `alto` o `critico` (plata, auth, migraciones, seguridad) y en **toda pieza pública**.
 **Alcanza 1** en una spec o un plan de riesgo `bajo` o `medio`, con el motivo escrito en
-`motivo_una_ronda`: una ronda de diseño son cinco agentes, y la segunda en un cambio acotado casi
+`motivo_una_ronda`: una ronda de diseño son siete agentes en cinco etapas, y la segunda en un cambio acotado casi
 nunca encuentra un Major nuevo (decisión del operador, 04-11-2026).
 Tope: 5 rondas; pasado el tope o ante churn, un 🔵 con los abiertos (aceptar y seguir, una ronda
-más, volver a redactar). Las rondas quedan en `docs/egm/<pieza>.json` (schema `ia.egm-rondas/1`):
+más, volver a redactar). Lo hace el `egm-review-loop` del plugin; las rondas quedan en `docs/egm/<pieza>.json` (schema `ia.egm-rondas/1`):
 ```bash
 node .vibe/ia-stack-runtime/scripts/verify-egm-convergencia.mjs check docs/egm/<pieza>.json
 ```
@@ -156,7 +180,8 @@ sido de verdad agentes sin contexto ni que hayan leído el documento.
 
 **Sin subagentes frescos, EGM frena.** Si el host no puede lanzar un subagente nuevo (sin `Agent`,
 sin cupo, o sólo puede hacer fork del contexto), no hay revisión goldfish: una revisión en el mismo
-contexto no es una revisión goldfish. Se dice así en el reporte, el registro no se escribe y la fase
+contexto no es una revisión goldfish —así lo dice el propio `egm-review`—. Tampoco cuenta un Claude Code
+anterior a la 2.1.271. Se dice así en el reporte, el registro no se escribe y la fase
 espera un 🔵: abrir una sesión nueva de Claude Code o Codex sólo con el documento y el brief del
 revisor (es lo más cercano a un goldfish), o aceptar el riesgo de construir sin revisión, anotado.
 
