@@ -44,21 +44,22 @@ const sintetico = (n) => {
   return l;
 };
 
-const CONTRATO = { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.8 };
+const CONTRATO = { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.7 };
 
-test('ia-stack-3-4-1-tokens · AC6 · 96K de 120K (80 %) avisa con tokens y tope, sale 0', () => {
-  conTranscript(sintetico(96000), (f) => {
+test('egm-preview-04-11 · handoff al 70 % · 84K de 120K avisa con tokens y tope y pide handoff, sale 0', () => {
+  conTranscript(sintetico(84000), (f) => {
     const r = run(['--transcript', f]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /AVISO/);
-    assert.match(r.stdout, /96000/);
+    assert.match(r.stdout, /84000/);
+    assert.match(r.stdout, /handoff/i);
     assert.match(r.stdout, /120000/);
     assert.doesNotMatch(r.stdout, /ORDEN/);
   });
 });
 
-test('ia-stack-3-4-1-tokens · AC6 · 95999 tokens (bajo el 80 %) calla', () => {
-  conTranscript(sintetico(95999), (f) => {
+test('egm-preview-04-11 · handoff al 70 % · 83999 tokens (bajo el 70 %) calla', () => {
+  conTranscript(sintetico(83999), (f) => {
     const r = run(['--transcript', f]);
     assert.equal(r.status, 0);
     assert.equal(r.stdout, '');
@@ -91,8 +92,8 @@ test('ia-stack-3-4-1-tokens · AC6 · 130K también ordena cerrar y sale 0', () 
   });
 });
 
-test('ia-stack-3-4-1-tokens · AC6 · la subsesión usa el tope de 60K: 48K avisa, 60K ordena, y 60K en orquestador calla', () => {
-  conTranscript(sintetico(48000), (f) => {
+test('ia-stack-3-4-1-tokens · AC6 · la subsesión usa el tope de 60K: 42K avisa, 60K ordena, y 60K en orquestador calla', () => {
+  conTranscript(sintetico(42000), (f) => {
     const r = run(['--transcript', f, '--rol', 'subsesion']);
     assert.match(r.stdout, /AVISO/);
     assert.match(r.stdout, /60000/);
@@ -134,8 +135,8 @@ test('ia-stack-3-4-1-tokens · AC6 · cuenta tool_use y tool_result serializados
 
 test('ia-stack-3-4-1-tokens · AC6 · evaluar: silencio, aviso y orden según el ratio', () => {
   assert.equal(evaluar(0, 'orquestador', CONTRATO), null);
-  assert.equal(evaluar(95999, 'orquestador', CONTRATO), null);
-  assert.match(evaluar(96000, 'orquestador', CONTRATO), /AVISO/);
+  assert.equal(evaluar(83999, 'orquestador', CONTRATO), null);
+  assert.match(evaluar(84000, 'orquestador', CONTRATO), /AVISO/);
   assert.match(evaluar(119999, 'orquestador', CONTRATO), /AVISO/);
   assert.match(evaluar(120000, 'orquestador', CONTRATO), /ORDEN/);
   assert.match(evaluar(60000, 'subsesion', CONTRATO), /ORDEN/);

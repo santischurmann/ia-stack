@@ -71,7 +71,8 @@ test('ia-stack-3-4-1-tokens · AC1 · el contrato mide el contexto sobre mensaje
   assert.equal(c.medido_sobre, 'mensajes');
   assert.equal(c.tope_orquestador, 120000);
   assert.equal(c.tope_subsesion, 60000);
-  assert.equal(c.aviso_desde, 0.8);
+  assert.equal(c.aviso_desde, 0.7, 'handoff al 70 % (Santi, 02-11-2026: diez sesiones cortadas al 98-171 %)');
+  assert.match(c.por_que, /02-11-2026/u, 'por_que tiene que contar la herida del 70 %');
   assert.equal(c.handoff_tokens, undefined, 'el tope viejo sobre el total no puede quedar');
   assert.equal(c.handoff_tokens_si_la_sesion_es_haiku, undefined);
   for (const dato of ['26-10-2026', '910K', '80K']) assert.ok(c.por_que.includes(dato), `por_que no cita ${dato}`);

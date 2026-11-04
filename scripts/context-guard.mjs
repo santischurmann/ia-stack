@@ -78,7 +78,7 @@ export function leerContrato(ruta = CONTRATO) {
   return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde };
 }
 
-/** null por debajo del umbral; AVISO desde el umbral; ORDEN de cerrar desde el tope. */
+/** null por debajo del umbral; AVISO de handoff desde el umbral (70 %, 02-11-2026: diez sesiones cortadas al 98-171 %); ORDEN de cerrar desde el tope. */
 export function evaluar(tokens, rol, contrato) {
   const tope = rol === 'subsesion' ? contrato.tope_subsesion : contrato.tope_orquestador;
   const ratio = tokens / tope;
@@ -87,7 +87,7 @@ export function evaluar(tokens, rol, contrato) {
     return `ORDEN: contexto al tope, ${dato}. Cerrá ya: 1) commit del estado; 2) resumen en .vibe/SESSION.md con decisiones, archivos clave, pendientes y cómo retomar; 3) compactar o handoff a una sesión nueva. No sigas trabajando sobre este contexto.`;
   }
   if (ratio >= contrato.aviso_desde) {
-    return `AVISO: ${dato}. Cerrá la fase en curso y preparate para commitear el estado y escribir el resumen en .vibe/SESSION.md antes de llegar al tope.`;
+    return `AVISO: ${dato}. Umbral de handoff: cerrá la tarea en curso, commiteá el estado, escribí el resumen en .vibe/SESSION.md (decisiones, archivos clave, pendientes, cómo retomar) y hacé el handoff o compactá ahora, no en el tope.`;
   }
   return null;
 }

@@ -242,7 +242,7 @@ Esperando tu respuesta antes de continuar.
 
 **12. Guarda de contexto (opcional, la cablea la persona).** `context-guard` mide los tokens de
 *mensajes* de la sesión contra el tope de `contracts/model-routing.json` § contexto (120K
-orquestador, 60K subsesión): calla bajo el 80 %, avisa desde ahí y ordena cerrar en el tope —commit
+orquestador, 60K subsesión): calla bajo el 70 %, desde ahí pide el handoff y en el tope ordena cerrar y no seguir —commit
 del estado, resumen en `.vibe/SESSION.md`, compactar o handoff—. Se cablea como hook
 `UserPromptSubmit` en `.claude/settings.json` del proyecto. El rol por defecto es orquestador; una subsesión lo cambia con la variable de entorno `IA_STACK_ROL=subsesion` (o `--rol subsesion`), porque no hay un `settings.json` por subsesión:
 ```json

@@ -55,8 +55,8 @@ La tabla de abajo es la del contrato, y `tests/model-routing.test.mjs` verifica 
   instalado —por ejemplo la CLI de Codex—, se puede sumar como juez externo; si no, se declara
   ausente y alcanza con el modelo distinto.
 - **Presupuesto de contexto.** Se mide sobre los mensajes, sin los ~80K fijos de cada sesión:
-  120.000 tokens el orquestador, 60.000 cada subsesión (`contexto` en el contrato). Al llegar (aviso
-  desde el 80 %), estado commiteado y resumen en `.vibe/SESSION.md` (decisiones, archivos clave,
+  120.000 tokens el orquestador, 60.000 cada subsesión (`contexto` en el contrato). **Handoff al 70 %** (aviso
+  desde el 70 %; pasado el tope no se sigue), estado commiteado y resumen en `.vibe/SESSION.md` (decisiones, archivos clave,
   pendientes, cómo retomar), y se compacta o se pasa a una sesión nueva; nunca se espera al
   autocompact. Haiku sólo en tareas cortas y subagentes con contexto nuevo (`regla_haiku`). Tampoco
   se gastan turnos en avisar que algo «sigue corriendo».
