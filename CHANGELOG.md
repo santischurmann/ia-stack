@@ -7,6 +7,17 @@ Format: [Keep a Changelog](https://keepachangelog.com) — Semantic Versioning.
 
 ## [Unreleased]
 
+EGM y preview antes de construir (04-11-2026):
+
+- **LAW 10 — Preview antes de construir** y **LAW 11 — Producción sólo con orden explícita y vigente**,
+  leídas de `.vibe/APROBACIONES.md` por el gate nuevo `verify-aprobacion-humana` (`preview`, `tareas`,
+  `produccion`: el «sí» va atado al sha y vale una vez; un agente o una sesión no aprueban).
+- **Revisión goldfish (EGM)** dentro de PHASE 3 (y del plan con riesgo medio o más): Elefante redacta,
+  subagentes nuevos de sólo lectura revisan con el panel de diseño de EGM y, en piezas públicas, el
+  panel de audiencia (`skills/egm-panel-audiencia.md`); convergencia verificada por `verify-egm-convergencia`.
+- **`context-guard`:** el umbral baja del 80 % al 70 % y pide el handoff (02-11-2026).
+- Aprendizajes de oct-nov 2026 como tabla con su detector en `phases/00-reglas-extendidas.md`.
+
 Correcciones de la revisión N3 de la 3.4.1 (26-10-2026):
 
 - **`context-guard`:** el conteo reinicia en el último `compact_boundary` / `isCompactSummary` (antes

@@ -42,3 +42,16 @@ dependencia que el protocolo ya no necesita. Mitigación mientras tanto: copiar 
 etiquetas antes de cada update.
 
 ---
+
+## [04-11-2026] Debt: tres aprendizajes de oct-nov 2026 sin detector mecánico `id:egm041`
+
+**Location:** `phases/00-reglas-extendidas.md` § Aprendizajes de octubre y noviembre de 2026
+**Severity:** medium
+**Description:** La tabla «Dueños» de `.vibe/SESSION.md` (un dueño por tarea y por artifact), el
+choque de decisiones entre sesiones (re-preguntar mostrando las dos versiones) y la reserva de
+números de migración entre ramas paralelas son reglas escritas sin gate que las lea.
+**Why deferred:** El pedido del 04-11-2026 fue EGM + preview aprobado; los tres detectores piden
+formatos nuevos (tabla de Dueños con forma fija, lectura de ramas remotas) que conviene decidir con
+la persona antes de fijarlos. Hasta entonces los sostiene el texto de la fase.
+
+---

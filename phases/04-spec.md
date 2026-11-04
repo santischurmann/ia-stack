@@ -75,6 +75,9 @@ Ese modo exige las secciones canónicas, al menos un AC único con gramática
 
 **No acota el largo del documento: una spec entera en tablas o código pasa.** El tope cuenta narración, que es lo que nadie lee cuando sobra; una spec de diez mil palabras escrita toda en tablas cumple el gate.
 
+**Antes de este menú corre § Revisión goldfish (EGM) y preview** (abajo) cuando aplica: la revisión goldfish y el preview
+aprobado. La persona aprueba una spec que ya sobrevivió a lectores sin contexto, no un borrador.
+
 🔵 **Revisión de la spec**
 
 - **A)** Aprobada — seguir a Plan — *(recomendado si los gates están en verde)*
@@ -84,5 +87,89 @@ Ese modo exige las secciones canónicas, al menos un AC único con gramática
 Esperando tu respuesta antes de continuar.
 
 `.vibe/SESSION.md` += what/why specced + resumen de Forcing Questions.
+
+### Revisión goldfish (EGM) y preview
+
+Viene del Elephant-Goldfish Model de Google (EGM, Apache 2.0, instalado como plugin `egm@egm`). El
+**Elefante** es esta sesión: tiene todo el contexto y redacta. Los **goldfish** son subagentes
+**nuevos**, sin la conversación, que leen sólo el documento y los archivos que se les pasan, y buscan
+lo que el Elefante ya no ve: supuestos sin decir, términos sin definir, decisiones que el plan le deja
+al implementador. La herida: el 04-11-2026 el plan de la landing de Grobit parecía completo para la
+sesión que lo escribió, y siete revisores sin contexto encontraron Blockers (testimonios inventados,
+funciones que el producto no tiene presentadas como disponibles).
+
+**Cuándo corre.** En toda spec o plan de riesgo `medio` o más, en toda funcionalidad que tome una
+decisión de diseño, y en toda pieza de cara al público (landing, anuncio, mail, onboarding).
+**Cuándo se saltea**: un arreglo chico con causa reproducida y una sola forma razonable de hacerlo,
+un cambio de texto interno, una dependencia que sube de parche. El salteo se anota en
+`.vibe/SESSION.md` con su motivo; ante la duda, corre.
+
+**1. Brief (Elefante).** `/egm:egm-brainstorm <idea>` cuando el problema todavía no está claro
+(charla abierta → `concepts_brief.md`), o directo `/egm:egm-draft` sobre la spec. La salida es
+siempre un archivo: nada de volcar el borrador en el chat.
+
+**2. Revisión (goldfish).** `/egm:egm-review <doc>` o `/egm:egm-review-loop` con el panel propio. Cada
+revisor es un `Agent` NUEVO por ronda —nunca un fork, nunca `SendMessage` a uno anterior—, de sólo
+lectura (`Read`, `Grep`, `Glob`), con `omitClaudeMd: true` donde el host lo soporte (Claude Code ≥
+2.1.271; si no, el brief le dice que ignore CLAUDE.md, memoria y logs). Se le pasa sólo la tarea, la
+ruta del documento, la ruta de su persona y su estándar, y la lista `GoldfishContext` explícita: ni
+la conversación, ni la memoria, ni otros documentos. No abre URLs: lo externo se guarda como archivo.
+Corre en el modelo del rol `revisor` (`contracts/model-routing.json`), distinto del que redactó.
+
+| Panel | Revisores | Cuándo |
+|---|---|---|
+| Diseño (los de EGM) | `zoom_out`, `comprehension`, `design_critic`, `structural`, `implementation_readiness` | toda spec y todo plan; `codebase_details` se suma cuando el plan cita código existente |
+| Audiencia (`skills/egm-panel-audiencia.md`) | `scroller` (5 s en el celular), `esceptico`, `primerizo`, `comprador` | además del de diseño, en toda pieza de cara al público |
+
+Cada hallazgo: severidad **Blocker** (no se puede construir así), **Major** (se construiría algo
+equivocado o frágil) o **Nit**; alcance (sección o línea) y recomendación. Un revisor que falla o no
+devuelve informe se reintenta una vez; si repite, queda «not run» y **la ronda no es limpia**.
+
+**3. Resolve (Elefante + persona).** `/egm:egm-resolve` en esta misma sesión: cada hallazgo recibe una
+sola categoría —`fixed` (se arregla), `contest` (se refuta con evidencia que el revisor pudo leer),
+`riesgo-aceptado` (lo decide la persona), `decline` (sólo un Nit)—. Un hueco de comprensión nunca
+se contesta: si un lector fresco no siguió, falta contexto en el documento. Lo que necesita una
+decisión humana va como menú 🔵 (LAW 7), uno por decisión:
+
+🔵 **Hallazgo <id> (<severidad>): <una línea>**
+
+- **A)** Aplicar el arreglo propuesto — *(recomendado cuando el hallazgo se verificó contra el documento)*
+- **B)** Aceptar el riesgo y dejarlo escrito en la spec
+- **C)** Refutar con evidencia — [cuál]
+
+Esperando tu respuesta antes de continuar.
+
+**Convergencia.** Ronda limpia = todo el panel corrió con agentes nuevos y no queda Blocker ni Major
+sin asentar (`contest` o `riesgo-aceptado`; un `fixed` lo confirma la ronda siguiente, con goldfish
+nuevos y el documento re-escaneado). EGM pide **2 rondas limpias seguidas**, y es lo obligatorio con
+riesgo `alto` o `critico` y en piezas públicas de riesgo alto. **Alcanza 1** con riesgo `bajo` o
+`medio` y el motivo escrito en `motivo_una_ronda`: una ronda de diseño son cinco agentes y una de
+pieza pública nueve, y la segunda ronda en un cambio acotado casi nunca encuentra un Major nuevo.
+Tope: 5 rondas; pasado el tope o ante churn, un 🔵 con los abiertos (aceptar y seguir, una ronda
+más, volver a redactar). Las rondas quedan en `docs/egm/<pieza>.json` (schema `ia.egm-rondas/1`):
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-egm-convergencia.mjs check docs/egm/<pieza>.json
+```
+**Lo que el gate NO puede hacer:** verifica el registro de las rondas, no que los revisores hayan
+sido de verdad agentes sin contexto ni que hayan leído el documento.
+
+**Sin subagentes frescos, EGM frena.** Si el host no puede lanzar un subagente nuevo (sin `Agent`,
+sin cupo, o sólo puede hacer fork del contexto), no hay revisión goldfish: una revisión en el mismo
+contexto no es una revisión goldfish. Se dice así en el reporte, el registro no se escribe y la fase
+espera un 🔵: abrir una sesión nueva de Claude Code o Codex sólo con el documento y el brief del
+revisor (es lo más cercano a un goldfish), o aceptar el riesgo de construir sin revisión, anotado.
+
+**4. Preview aprobado (LAW 10).** Si la spec trae algo visible, antes del menú de revisión de la spec
+se le muestra a la persona el preview —maqueta, artifact, captura o diagrama— y se registra su
+respuesta en `.vibe/APROBACIONES.md`, una fila por decisión, sólo se agregan:
+`| preview | <pieza> | v<N> | <ruta o URL> | DD-MM-AAAA HH:MM | DD-MM-AAAA HH:MM | <persona> | aprobado |`.
+El preview no inventa: ni funciones que el producto no tiene (van marcadas «Próximamente»), ni
+testimonios, cifras o logos sin fuente. Si se publica como artifact, el agente lee primero la
+versión vigente y la actualiza; nunca pisa la de otra sesión.
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-aprobacion-humana.mjs preview .vibe/APROBACIONES.md --pieza <pieza>
+```
+**Lo que el gate NO puede hacer:** verifica lo registrado; no sabe si la persona vio de verdad el
+preview, ni si la fila se escribió sin preguntarle.
 
 ---

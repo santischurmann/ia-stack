@@ -64,6 +64,20 @@ tabla de `skills/orchestrator-opus.md` § MINIMAL AI-COMPANY TASK MODEL, que los
 hace meses. **Lo que el gate NO puede hacer:** comprueba forma y coherencia, nunca que la tarea haga
 lo que dice ni que la evidencia listada sea real.
 
+**Tareas visibles y revisión goldfish del plan.** Cada tarea que produce algo que la persona ve
+(pantalla, flujo, pieza pública) lleva `visible: true` y `preview: <pieza>`, el mismo id de su fila
+en `.vibe/APROBACIONES.md`; Build no despacha su rojo sin ese preview aprobado (LAW 10). Con riesgo
+`medio` o más, el plan pasa por la misma revisión goldfish de § Revisión goldfish (EGM) y preview de `phases/04-spec.md` con
+`implementation_readiness` y `codebase_details` (Zero-Decision Rule: cualquier decisión de diseño
+que el plan le deja al implementador es un hallazgo) y su registro `docs/egm/<pieza>-plan.json`
+pasa `scripts/verify-egm-convergencia.mjs` antes de este menú.
+
+**Migraciones en ramas paralelas.** Si el plan crea una migración y hay otra rama viva que también
+lo hace, el número se reserva antes de escribirla: se listan las migraciones de todas las ramas
+vivas (`git branch -r` + el directorio de migraciones de cada una) y se anota la reserva en
+`.vibe/SESSION.md` § Dueños. Dos ramas que tomaron el mismo número (0148, Grobit, 10-2026) chocan al
+mergear y una de las dos tiene que renumerar algo que quizás ya corrió en staging.
+
 🔵 **Revisión del plan**
 
 - **A)** Aprobado — arrancar Build — *(recomendado si los gates están en verde)*

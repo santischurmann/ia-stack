@@ -156,14 +156,22 @@
     "context-guard.mjs": 1,
     "registrar-tokens.mjs append": 1,
     "registrar-tokens.mjs check": 1,
-    "informe-tokens.mjs": 1
+    "informe-tokens.mjs": 1,
+    "verify-egm-convergencia.mjs check": 1,
+    "verify-aprobacion-humana.mjs preview": 1,
+    "verify-aprobacion-humana.mjs tareas": 1,
+    "verify-aprobacion-humana.mjs produccion": 1
   },
   "fase_de_cada_comando_nuevo": {
     "verify-brief-size.mjs check": "phases/06-build.md",
     "context-guard.mjs": "phases/01-bootstrap.md",
     "registrar-tokens.mjs append": "phases/06-build.md",
     "registrar-tokens.mjs check": "phases/11-limpieza.md",
-    "informe-tokens.mjs": "phases/11-limpieza.md"
+    "informe-tokens.mjs": "phases/11-limpieza.md",
+    "verify-egm-convergencia.mjs check": "phases/04-spec.md",
+    "verify-aprobacion-humana.mjs preview": "phases/04-spec.md",
+    "verify-aprobacion-humana.mjs tareas": "phases/06-build.md",
+    "verify-aprobacion-humana.mjs produccion": "phases/10-deploy.md"
   },
   "conteo_por_archivo_3.4.1": {
     "verify-phase-decisions.mjs check": {
@@ -369,6 +377,18 @@
     },
     "verify-phase-menu.mjs check": {
       "phases/12-menus-y-memoria.md": 1
+    },
+    "verify-egm-convergencia.mjs check": {
+      "phases/04-spec.md": 1
+    },
+    "verify-aprobacion-humana.mjs preview": {
+      "phases/04-spec.md": 1
+    },
+    "verify-aprobacion-humana.mjs tareas": {
+      "phases/06-build.md": 1
+    },
+    "verify-aprobacion-humana.mjs produccion": {
+      "phases/10-deploy.md": 1
     }
   }
 }

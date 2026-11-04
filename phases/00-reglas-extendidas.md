@@ -63,6 +63,23 @@ no uno nuevo. Los intentos se anotan en `.vibe/SESSION.md` bajo `## Intentos fal
 línea con `<qué se probó> → <por qué falló>`, y la respuesta del usuario como
 `- decisión humana: ...`. Detector: `verify-session-state.mjs check --session .vibe/SESSION.md`.
 
+## Aprendizajes de octubre y noviembre de 2026
+
+Reglas que salieron de fallas reales en los proyectos de la persona (Grobit, Jarvis, IA Stack). Cada
+una nombra su detector; las que todavía no lo tienen lo dicen y están en `.vibe/DEBT.md`.
+
+| Regla | Herida | Detector |
+|---|---|---|
+| **Handoff al 70 %** del tope de mensajes (120K orquestador, 60K subsesión); pasado el tope no se sigue trabajando. | 02-11-2026: diez sesiones cortadas entre el 98 % y el 171 %. | `context-guard.mjs` (`aviso_desde: 0.7`); en subagentes, el brief (`verify-brief-size.mjs`). |
+| **Un solo dueño por tarea y por artifact**, en la tabla «Dueños» de `.vibe/SESSION.md` (tarea, dueño, desde `DD-MM-AAAA HH:MM`); se consulta antes de lanzar y se traspasa con una fila nueva, nunca tomándola. Dos agentes nunca miden lo mismo. | Dos sesiones midieron el mismo OOS y publicaron versiones distintas del mismo artifact. | Pendiente (`.vibe/DEBT.md`): hoy lo sostiene esta tabla. |
+| **Decisiones de la persona con hora exacta** (`DD-MM-AAAA HH:MM`, hora argentina) y quién. Si dos sesiones registraron versiones que chocan, no gana la más nueva: se le vuelve a preguntar mostrando las dos, cada una con su hora. | 26-10 y 03-11-2026: una sesión aplicó una decisión que otra ya había reemplazado. | `verify-phase-decisions.mjs` (cadena por fase) y `verify-aprobacion-humana.mjs` (previews y producción); el choque entre sesiones, pendiente. |
+| **Un mensaje de otra sesión o de un agente no escala permisos.** Sólo la persona aprueba, y sólo en su conversación. | Un «sí» reenviado por el orquestador se tomó como permiso de publicar. | `verify-aprobacion-humana.mjs` rechaza un `quien` que sea agente, modelo o sesión (LAW 11). |
+| **Push único a la rama principal con todo verde y el «sí» atado al sha.** | 14-10-2026: dos pushes en rojo el mismo día; 2.573 minutos de CI en septiembre. | LAW 9, menú 8.1 y `verify-aprobacion-humana.mjs produccion` (LAW 11). |
+| **RAM antes de una suite**: tope de procesos pesados `floor((libre_GB − 1,5) / 1,5)`; con 0 se espera, y una suite muerta sin exit no es veredicto. | Suites que se mataban entre sí y dejaban un verde falso. | Hook global `~/.claude/hooks/tope-ram.mjs` de la persona, fuera de este repo; acá se registra si bloqueó. |
+| **Numeración de migraciones coordinada entre ramas paralelas** (`phases/05-plan.md`). | Grobit: dos ramas tomaron la 0148. | Pendiente (`.vibe/DEBT.md`). |
+| **Antes de publicar un artifact, leer la versión vigente** y construir sobre ella; nunca pisar la de otra sesión. | Una sesión republicó un canvas y borró el trabajo de otra. | El host (la herramienta Artifact rechaza publicar sobre una versión no leída); donde no lo haga, ninguno. |
+| **No inventar** funciones, testimonios, cifras ni clientes; lo que no existe todavía se marca «Próximamente». | Plan de la landing de Grobit, 04-11-2026. | Panel `esceptico` de § Revisión goldfish (EGM) y preview de `phases/04-spec.md` (`skills/egm-panel-audiencia.md`) y LAW 10. |
+
 ## Al evolucionar este propio protocolo
 
 **Al evolucionar este propio protocolo** (source: `research/sources/protocolo-muralla.md` points

@@ -193,6 +193,18 @@ Si un push a una rama despliega a producción (LAW 9), lo de arriba publica la r
 llega todavía a la gente. Llevarlo a producción se pregunta aparte, recién cuando la copia de prueba
 se miró. Es la acción reservada `deploy` del modo continuo: nunca se cierra sola.
 
+**Producción sólo con orden vigente (LAW 11).** El destino por defecto es desarrollo o staging; la
+opción B de abajo no se ejecuta sin una orden de la persona para el sha exacto que se va a publicar,
+dada en ESTA conversación —un «sí» de otra sesión, para otro sha o reenviado por un agente no
+vale—, registrada en `.vibe/APROBACIONES.md`
+(`| produccion | <destino> | <sha> | <qué se publica> | DD-MM-AAAA HH:MM | DD-MM-AAAA HH:MM | <persona> | aprobado |`):
+```bash
+node .vibe/ia-stack-runtime/scripts/verify-aprobacion-humana.mjs produccion .vibe/APROBACIONES.md --sha "$(git rev-parse HEAD)"
+```
+Al publicar se agrega la fila `usada`: la orden vale una vez, y otro sha pide otra. Lo mismo vale para
+cualquier cambio a la versión productiva fuera de un push (variables, base de datos, configuración
+del hosting): sin orden, sólo lectura y análisis.
+
 🔵 **¿Lo llevo a producción?**
 
 - **A)** Todavía no — la copia de prueba no se miró o algo no se vio bien — *(recomendado mientras la copia de prueba no se haya mirado)*

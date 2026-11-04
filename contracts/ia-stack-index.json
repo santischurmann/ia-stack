@@ -51,6 +51,26 @@
       "class": "evidencia"
     },
     {
+      "path": ".vibe/handoffs/3.4.1-SESSION.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/handoffs/3.4.1-estado.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/handoffs/3.4.1-plan.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/handoffs/3.4.1-spec.md",
+      "class": "evidencia"
+    },
+    {
+      "path": ".vibe/handoffs/egm-preview-gate-04-11.md",
+      "class": "evidencia"
+    },
+    {
       "path": ".vibe/sessions/2026-09-04-lanzamiento-ia-stack.md",
       "class": "evidencia"
     },
@@ -711,6 +731,10 @@
       "class": "gate"
     },
     {
+      "path": "scripts/verify-aprobacion-humana.mjs",
+      "class": "gate"
+    },
+    {
       "path": "scripts/verify-assert-order.mjs",
       "class": "gate"
     },
@@ -752,6 +776,10 @@
     },
     {
       "path": "scripts/verify-discovery-views.mjs",
+      "class": "gate"
+    },
+    {
+      "path": "scripts/verify-egm-convergencia.mjs",
       "class": "gate"
     },
     {
@@ -948,6 +976,10 @@
     },
     {
       "path": "skills/deploy-zip.md",
+      "class": "skill"
+    },
+    {
+      "path": "skills/egm-panel-audiencia.md",
       "class": "skill"
     },
     {
@@ -1367,6 +1399,10 @@
       "class": "prueba"
     },
     {
+      "path": "tests/verify-aprobacion-humana.test.mjs",
+      "class": "prueba"
+    },
+    {
       "path": "tests/verify-assert-order-bootstrap-cli.test.mjs",
       "class": "prueba"
     },
@@ -1480,6 +1516,10 @@
     },
     {
       "path": "tests/verify-discovery-views.test.mjs",
+      "class": "prueba"
+    },
+    {
+      "path": "tests/verify-egm-convergencia.test.mjs",
       "class": "prueba"
     },
     {
