@@ -15,7 +15,10 @@
 //   Asentado = `contest` (refutado con evidencia legible) o `riesgo-aceptado` (lo decidió la persona).
 //   `fixed` NO asienta: el arreglo lo confirma la ronda siguiente. `decline` sólo vale para un Nit.
 // - Convergido = las últimas K rondas limpias seguidas. EGM pide K = 2. Se acepta K = 1 sólo con
-//   riesgo bajo o medio y `motivo_una_ronda` escrito; alto o critico, siempre 2.
+//   riesgo bajo o medio y `motivo_una_ronda` escrito; alto o critico (plata, auth, migraciones,
+//   seguridad) y toda pieza pública, siempre 2 (decisión del operador, 04-11-2026).
+// - Panel obligatorio: diseño = los 5 de EGM; pieza pública de riesgo alto = los 5 + audiencia (9);
+//   pieza pública de riesgo bajo o medio = audiencia + design_critic + implementation_readiness (6).
 // - Tope de 5 rondas: más sólo con `decision_humana_tope` registrada.
 //
 // LA HERIDA (04-11-2026): en Grobit se aprobó un plan de landing que la sesión que lo escribió veía
@@ -29,7 +32,18 @@
 import { readFileSync } from 'node:fs';
 
 const DISENO = ['zoom_out', 'comprehension', 'design_critic', 'structural', 'implementation_readiness'];
-export const PANELES = Object.freeze({ diseno: DISENO, publico: [...DISENO, 'scroller', 'esceptico', 'primerizo', 'comprador'] });
+const AUDIENCIA = ['scroller', 'esceptico', 'primerizo', 'comprador'];
+export const PANELES = Object.freeze({
+  diseno: DISENO,
+  publico: [...DISENO, ...AUDIENCIA],
+  publico_medio: ['design_critic', 'implementation_readiness', ...AUDIENCIA],
+});
+
+/** Decisión del operador (04-11-2026): una pieza pública de riesgo bajo o medio corre 6 revisores por ronda, no 9. */
+export function panelRequerido(tipo, riesgo) {
+  if (tipo === 'publico' && (riesgo === 'bajo' || riesgo === 'medio')) return PANELES.publico_medio;
+  return PANELES[tipo];
+}
 const SEVERIDADES = ['Blocker', 'Major', 'Nit'];
 const RESOLUCIONES = ['fixed', 'contest', 'riesgo-aceptado', 'decline', 'abierto'];
 const ASENTADAS = ['contest', 'riesgo-aceptado'];
@@ -50,9 +64,9 @@ export function rondaLimpia(ronda, panel) {
 
 function validar(reg) {
   if (reg?.schema !== 'ia.egm-rondas/1') return 'schema distinto de ia.egm-rondas/1';
-  const requerido = PANELES[reg.tipo];
-  if (!requerido) return `tipo inválido «${reg.tipo}» (diseno | publico)`;
+  if (reg.tipo !== 'diseno' && reg.tipo !== 'publico') return `tipo inválido «${reg.tipo}» (diseno | publico)`;
   if (!RIESGOS.includes(reg.riesgo)) return `riesgo inválido «${reg.riesgo}» (${RIESGOS.join(' | ')})`;
+  const requerido = panelRequerido(reg.tipo, reg.riesgo);
   const faltan = requerido.filter((n) => !(reg.panel ?? []).includes(n));
   if (faltan.length) return `el panel ${reg.tipo} exige ${faltan.join(', ')}`;
   if (!Array.isArray(reg.rondas) || reg.rondas.length === 0) return 'no hay ninguna ronda registrada';
@@ -77,6 +91,7 @@ export function checkConvergencia(reg) {
   const k = reg.rondas_limpias_requeridas ?? 2;
   if (k === 1) {
     if (reg.riesgo === 'alto' || reg.riesgo === 'critico') return { ok: false, reason: 'una sola ronda limpia no alcanza con riesgo alto o critico' };
+    if (reg.tipo === 'publico') return { ok: false, reason: 'una pieza pública siempre pide 2 rondas limpias (decisión del operador, 04-11-2026)' };
     if (typeof reg.motivo_una_ronda !== 'string' || reg.motivo_una_ronda.trim() === '') return { ok: false, reason: 'K = 1 exige motivo_una_ronda escrito' };
   }
   if (reg.rondas.length > TOPE_RONDAS && !reg.decision_humana_tope) {

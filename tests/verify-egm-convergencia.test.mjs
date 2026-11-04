@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { PANELES, checkConvergencia, rondaLimpia } from '../scripts/verify-egm-convergencia.mjs';
+import { PANELES, checkConvergencia, panelRequerido, rondaLimpia } from '../scripts/verify-egm-convergencia.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const gate = join(repoRoot, 'scripts', 'verify-egm-convergencia.mjs');
@@ -66,6 +66,24 @@ test('convergencia · una pieza pública exige el panel de audiencia', () => {
   assert.equal(checkConvergencia(base([ronda(1, [], PANELES.publico), ronda(2, [], PANELES.publico)], publico)).ok, true);
   assert.match(checkConvergencia(base([ronda(1), ronda(2)], { tipo: 'publico' })).reason, /scroller/);
   assert.match(checkConvergencia(base([ronda(1)], { tipo: 'otro' })).reason, /tipo/);
+});
+
+test('decisión del operador 04-11-2026 · pieza pública de riesgo bajo o medio: panel de 6 (audiencia + design_critic + implementation_readiness)', () => {
+  const seis = ['design_critic', 'implementation_readiness', 'scroller', 'esceptico', 'primerizo', 'comprador'];
+  assert.deepEqual(PANELES.publico_medio, seis);
+  assert.deepEqual(panelRequerido('publico', 'medio'), seis);
+  assert.deepEqual(panelRequerido('publico', 'bajo'), seis);
+  assert.deepEqual(panelRequerido('publico', 'alto'), PANELES.publico);
+  assert.deepEqual(panelRequerido('diseno', 'medio'), DISENO);
+  const medio = { tipo: 'publico', riesgo: 'medio', panel: seis };
+  assert.equal(checkConvergencia(base([ronda(1, [], seis), ronda(2, [], seis)], medio)).ok, true);
+  assert.match(checkConvergencia(base([ronda(1, [], seis.slice(1)), ronda(2, [], seis)], medio)).reason, /design_critic.*falta/);
+});
+
+test('decisión del operador 04-11-2026 · una pieza pública siempre pide 2 rondas limpias, aun con riesgo medio', () => {
+  const seis = PANELES.publico_medio;
+  const una = { tipo: 'publico', riesgo: 'medio', panel: seis, rondas_limpias_requeridas: 1, motivo_una_ronda: 'copy chico' };
+  assert.match(checkConvergencia(base([ronda(1, [], seis)], una)).reason, /pública/);
 });
 
 test('convergencia · tope de 5 rondas: la sexta sólo con decisión humana registrada', () => {

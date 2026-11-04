@@ -119,7 +119,7 @@ Corre en el modelo del rol `revisor` (`contracts/model-routing.json`), distinto 
 | Panel | Revisores | Cuándo |
 |---|---|---|
 | Diseño (los de EGM) | `zoom_out`, `comprehension`, `design_critic`, `structural`, `implementation_readiness` | toda spec y todo plan; `codebase_details` se suma cuando el plan cita código existente |
-| Audiencia (`skills/egm-panel-audiencia.md`) | `scroller` (5 s en el celular), `esceptico`, `primerizo`, `comprador` | además del de diseño, en toda pieza de cara al público |
+| Audiencia (`skills/egm-panel-audiencia.md`) | `scroller` (5 s en el celular), `esceptico`, `primerizo`, `comprador` | en toda pieza de cara al público: con riesgo alto, junto a los 5 de diseño (9 por ronda); con riesgo bajo o medio, junto a `design_critic` e `implementation_readiness` (6 por ronda) |
 
 Cada hallazgo: severidad **Blocker** (no se puede construir así), **Major** (se construiría algo
 equivocado o frágil) o **Nit**; alcance (sección o línea) y recomendación. Un revisor que falla o no
@@ -142,9 +142,10 @@ Esperando tu respuesta antes de continuar.
 **Convergencia.** Ronda limpia = todo el panel corrió con agentes nuevos y no queda Blocker ni Major
 sin asentar (`contest` o `riesgo-aceptado`; un `fixed` lo confirma la ronda siguiente, con goldfish
 nuevos y el documento re-escaneado). EGM pide **2 rondas limpias seguidas**, y es lo obligatorio con
-riesgo `alto` o `critico` y en piezas públicas de riesgo alto. **Alcanza 1** con riesgo `bajo` o
-`medio` y el motivo escrito en `motivo_una_ronda`: una ronda de diseño son cinco agentes y una de
-pieza pública nueve, y la segunda ronda en un cambio acotado casi nunca encuentra un Major nuevo.
+riesgo `alto` o `critico` (plata, auth, migraciones, seguridad) y en **toda pieza pública**.
+**Alcanza 1** en una spec o un plan de riesgo `bajo` o `medio`, con el motivo escrito en
+`motivo_una_ronda`: una ronda de diseño son cinco agentes, y la segunda en un cambio acotado casi
+nunca encuentra un Major nuevo (decisión del operador, 04-11-2026).
 Tope: 5 rondas; pasado el tope o ante churn, un 🔵 con los abiertos (aceptar y seguir, una ronda
 más, volver a redactar). Las rondas quedan en `docs/egm/<pieza>.json` (schema `ia.egm-rondas/1`):
 ```bash

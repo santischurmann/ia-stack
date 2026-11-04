@@ -39,9 +39,12 @@
    `.vibe/ia-stack-runtime/` traiga los gates nuevos.
 3. Detectores de `id:egm041` (Dueños, choque entre sesiones, reserva de migraciones).
 
-## Decisiones para el operador
+## Decisiones del operador (04-11-2026, vía el orquestador)
 
-- ¿K = 1 ronda limpia alcanza con riesgo bajo o medio, o se exige siempre 2 como pide EGM?
-- ¿El registro `.vibe/APROBACIONES.md` en Markdown con `DD-MM-AAAA HH:MM` está bien, o lo querés en JSON?
-- ¿Una pieza pública de riesgo medio también corre el panel de audiencia completo (9 agentes por ronda)?
-- ¿Se mergea esta rama junto con `feat/escalera-8-niveles` en un solo push?
+- K = 1 alcanza en spec o plan de riesgo bajo o medio; riesgo alto (plata, auth, migraciones,
+  seguridad) y toda pieza pública, siempre 2. Aplicado en `verify-egm-convergencia` con rojo primero.
+- Pieza pública de riesgo bajo o medio: 6 revisores por ronda (audiencia + `design_critic` +
+  `implementation_readiness`); riesgo alto, 9.
+- `.vibe/APROBACIONES.md` queda en Markdown.
+- Push único a `main` con las dos ramas: el merge local está hecho; el push espera la confirmación
+  directa del operador en su conversación (LAW 11: un «sí» reenviado por un agente no vale).
