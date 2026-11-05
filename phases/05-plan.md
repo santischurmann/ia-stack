@@ -77,7 +77,7 @@ pasa `scripts/verify-egm-convergencia.mjs` antes de este menú.
 **Migraciones en ramas paralelas.** Si el plan crea una migración y hay otra rama viva que también
 lo hace, el número se reserva antes de escribirla: se listan las migraciones de todas las ramas
 vivas (`git branch -r` + el directorio de migraciones de cada una) y se anota la reserva en
-`.vibe/SESSION.md` § Dueños. Dos ramas que tomaron el mismo número (0148, Grobit, 10-2026) chocan al
+`.vibe/SESSION.md` § Dueños. Dos ramas que tomaron el mismo número (0148, proyecto privado, 10-2026) chocan al
 mergear y una de las dos tiene que renumerar algo que quizás ya corrió en staging.
 
 🔵 **Revisión del plan**

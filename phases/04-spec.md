@@ -94,7 +94,7 @@ Viene del Elephant-Goldfish Model de Google (EGM, Apache 2.0, instalado como plu
 **Elefante** es esta sesión: tiene todo el contexto y redacta. Los **goldfish** son subagentes
 **nuevos**, sin la conversación, que leen sólo el documento y los archivos que se les pasan, y buscan
 lo que el Elefante ya no ve: supuestos sin decir, términos sin definir, decisiones que el plan le deja
-al implementador. La herida: el 04-11-2026 el plan de la landing de Grobit parecía completo para la
+al implementador. La herida: el 04-11-2026 el plan de la landing de un proyecto privado parecía completo para la
 sesión que lo escribió, y siete revisores sin contexto encontraron Blockers (testimonios inventados,
 funciones que el producto no tiene presentadas como disponibles).
 

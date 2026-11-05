@@ -1,6 +1,6 @@
 // verify-egm-convergencia — la revisión goldfish (EGM) de un documento convergió antes de construir.
 //
-// POR QUÉ EXISTE (04-11-2026): el plan de la landing de Grobit pasó por una revisión con subagentes
+// POR QUÉ EXISTE (04-11-2026): el plan de la landing de un proyecto privado pasó por una revisión con subagentes
 // sin contexto que encontró huecos que la sesión que lo escribió no veía. Esa revisión sólo vale si
 // los revisores fueron agentes NUEVOS, todos corrieron, y no quedó Blocker ni Major sin asentar.
 import assert from 'node:assert/strict';

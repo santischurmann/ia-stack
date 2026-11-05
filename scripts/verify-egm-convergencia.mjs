@@ -21,7 +21,7 @@
 //   pieza pública de riesgo bajo o medio = audiencia + egm-design + egm-implementation-readiness (6).
 // - Tope de 5 rondas: más sólo con `decision_humana_tope` registrada.
 //
-// LA HERIDA (04-11-2026): en Grobit se aprobó un plan de landing que la sesión que lo escribió veía
+// LA HERIDA (04-11-2026): en un proyecto privado se aprobó un plan de landing que la sesión que lo escribió veía
 // completo; siete revisores sin contexto encontraron Blockers (testimonios inventados, funciones que
 // el producto no tiene sin marcar «Próximamente»). Una revisión hecha en el mismo contexto no los veía.
 //

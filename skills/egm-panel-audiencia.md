@@ -4,7 +4,7 @@ Lo usa § Revisión goldfish (EGM) y preview de `phases/04-spec.md` en toda piez
 onboarding), junto con revisores de EGM: los 7 de diseño con riesgo alto (11 por ronda), o sólo
 `egm-design` e `egm-implementation-readiness` con riesgo bajo o medio (6 por ronda). Van en la etapa 7
 de `/egm:egm-review` y se lanzan como `Agent` nuevo general: no son agentes del plugin. Nació el 04-11-2026 con el plan de la landing de
-Grobit: los revisores de diseño juzgan si el plan se puede construir; nadie juzgaba si un visitante
+Proyecto privado: los revisores de diseño juzgan si el plan se puede construir; nadie juzgaba si un visitante
 real lo entiende, le cree y llega a registrarse.
 
 Cómo se usa: cada persona es un `Agent` NUEVO por ronda, de sólo lectura, en paralelo con el resto de
