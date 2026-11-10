@@ -1,0 +1,1044 @@
+#!/usr/bin/env node
+// verify-receipt.mjs — mechanical receipt gate for IA Stack Phase 8.1
+// Cross-platform (Node, no npm deps), works on Windows/macOS/Linux identically since it only
+// shells out to `git` and uses node:crypto/node:fs. The three that decide a commit are below;
+// `recheck` and `custody` look at a receipt that is ALREADY committed, and `inspect-legacy`
+// reads the archival formats. The three that decide:
+//
+//   node verify-receipt.mjs fingerprint [receipt-path-to-exclude]
+//       print {git_head, tree_fingerprint} for the current evaluated state.
+//   node verify-receipt.mjs check <receipt.json> [--require-clean-worktree]
+//       validate a receipt against that state (the receipt's own path is the only thing
+//       excluded from its own fingerprint — see EXCLUSION RULE below).
+//   node verify-receipt.mjs commit <receipt.json> --message "<message>"
+//       revalidate exactly what `check --require-clean-worktree` validates, write the commit in
+//       the same invocation, then confirm afterwards that what landed is what was validated.
+//       Bad arguments exit 2 here (`check` still answers its own usage errors with exit 1; that
+//       inconsistency is left alone rather than moving a contract 33 green tests already pin).
+//
+//       ITS HONEST LIMIT — carried in the command's own output, not just in this comment:
+//       running both halves together takes the gap between validating and writing from minutes
+//       down to milliseconds, but it does NOT close it. Another process can still write in that
+//       instant. The after-the-fact confirmation compares the tree that got committed against
+//       the index that was validated (`git write-tree` before the write vs `HEAD^{tree}` after),
+//       so what it proves is precisely "the commit contains the reviewed index" — never "no
+//       concurrent write happened". A write to the worktree during the gap is exactly the case
+//       it cannot see, and that residual hole is the reason the subcommand is called `commit`
+//       and nothing stronger.
+//
+//       Two deliberate non-behaviours. It never passes --no-verify: a gate that silently skips
+//       the operator's own hooks is worse than the problem it solves. And a failed confirmation
+//       never reverts anything — it reports what differs, LEAVES the commit in place, and prints
+//       the command a human can run to undo it. Rewriting history is the human's call, not this
+//       script's.
+//
+// Exit 0 = valid, ONLY when terminal_state is "approved" and the fingerprint matches exactly.
+// Exit 1 = rejected, reason printed to stderr. `escalated` is ALWAYS exit 1, unconditionally —
+// there is no override_note path through this script (see SKILL.md LAW 8).
+//
+// FINGERPRINT MODEL — three states, hashed separately, not just "final worktree bytes":
+//   HEAD → INDEX  (staged changes)    — `git diff --raw --cached --no-abbrev` (both sides are
+//                                        real git blobs, real hashes, real modes — no gaps).
+//   INDEX → WORKTREE (unstaged changes) — `git diff --raw --no-abbrev` gives the real mode for
+//                                        both sides, but git leaves the worktree-side blob hash
+//                                        as an all-zero placeholder (length matches the repo's
+//                                        hash algorithm — 40 zero-chars for SHA-1, 64 for
+//                                        SHA-256) for performance — it does NOT compute worktree
+//                                        content hashes itself. We replace that placeholder with
+//                                        `git hash-object <path>`, which computes the actual
+//                                        blob hash git would assign if the file were staged
+//                                        right now (same filters, same result, same algorithm as
+//                                        the repo — sha1/sha256 both handled, hash length is
+//                                        never hardcoded anywhere in this script).
+//   UNTRACKED (not ignored)           — path + sha256 of on-disk bytes, as before.
+//
+// Each changed tracked path is recorded under EXACTLY ONE bucket (staged or unstaged) per git's
+// own raw-diff output — a path with staged AND unstaged changes appears in both, correctly.
+// This is why `git add` on an already-modified-but-unstaged file invalidates a receipt taken
+// before the add even when the file's bytes never change: before `git add`, the path's entry
+// lives in the INDEX→WORKTREE bucket; after, the same content now lives in the HEAD→INDEX
+// bucket instead (and drops out of the unstaged bucket, since index now matches worktree) — the
+// combined string differs, so the hash differs. Same mechanism catches a chmod/mode-only change
+// with byte-identical content: raw diff still emits a line (old mode != new mode), so the mode
+// transition is part of what gets hashed even when the blob hash itself doesn't change.
+//
+// WHY NOT HASH `git diff` TEXT DIRECTLY (earlier, wrong approach): for binary files, plain
+// `git diff` prints a fixed message ("Binary files a/x and b/x differ") with no content — two
+// DIFFERENT binary modifications would produce IDENTICAL diff text and thus an identical
+// fingerprint. `--raw` mode avoids this entirely: it always deals in blob hashes, never
+// human-readable diff text, so it's content-addressed and binary-safe by construction.
+//
+// EXCLUSION RULE (precise, not directory-wide): the ONLY path ever excluded from a fingerprint
+// is the exact receipt file being written/checked (self-invalidation guard — a receipt can't
+// include its own not-yet-written bytes). Every OTHER file under .ia-stack/receipts/ — another
+// receipt, a stray untracked file, anything — is a normal untracked/tracked entry and DOES
+// invalidate the fingerprint like any other file. There is no directory-wide exemption.
+
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { mismoSchema } from './schema-compat.mjs';
+
+function git(args) {
+  return execFileSync('git', args, { encoding: 'utf8' }).replace(/\r\n/g, '\n');
+}
+
+// Deterministic content hash for one file's bytes (binary-safe — reads the raw buffer, never
+// decodes as text). Used for untracked files only; tracked file content is hashed via
+// `git hash-object` instead, so it matches git's own blob addressing exactly.
+export function isWithin(root, candidate) {
+  const remainder = relative(root, candidate);
+  return remainder !== '' && remainder !== '..' && !remainder.startsWith(`..${sep}`) && !isAbsolute(remainder);
+}
+
+// Git may list a path that is lexically inside the checkout but reaches outside through a
+// junction/symlink. Receipts must never follow it while calculating evidence: reject the whole
+// fingerprint rather than hashing an arbitrary external file and calling that project state.
+export function safeRegularFile(path, root) {
+  if (typeof path !== 'string' || path === '' || isAbsolute(path)) throw new Error(`unsafe repository path: ${path}`);
+  const file = resolve(root, path);
+  if (!isWithin(root, file)) throw new Error(`repository path escapes the checkout: ${path}`);
+  const stat = lstatSync(file);
+  if (stat.isSymbolicLink()) throw new Error(`repository path is a symbolic link: ${path}`);
+  if (!stat.isFile()) throw new Error(`repository path is not a regular file: ${path}`);
+  if (!isWithin(root, realpathSync(file))) throw new Error(`repository path resolves outside the checkout: ${path}`);
+  return file;
+}
+
+function hashFileContent(path, root) {
+  const buf = readFileSync(safeRegularFile(path, root));
+  return createHash('sha256').update(buf).digest('hex');
+}
+
+function gitHashObject(path, root) {
+  // `--` prevents a Git-tracked filename beginning with `-` from becoming an option.
+  safeRegularFile(path, root);
+  return git(['hash-object', '--', path]).trim();
+}
+
+// Normalize a filesystem path (possibly Windows backslashes, possibly with ./ prefix) to the
+// forward-slash, repo-relative form git's plumbing commands always emit, so exact string
+// comparison against those outputs works regardless of how the caller wrote the path.
+function toGitPath(p) {
+  return p.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+// Hash length is NOT fixed at 40 hex chars: a `--object-format=sha256` repo emits 64-char blob
+// hashes in `git diff --raw` output, same format otherwise. Match hex runs of any length so this
+// works unmodified on both SHA-1 (40 hex) and SHA-256 (64 hex) repos — never hardcode {40}.
+const RAW_HEADER = /^:(\d{6}) (\d{6}) ([0-9a-f]+) ([0-9a-f]+) ([A-Z])(\d*)$/;
+const isZeroSha = (sha) => /^0+$/.test(sha);
+
+// Shared by both the staged and unstaged sections of currentFingerprint() — extracted (instead
+// of duplicated inline per section) so each is a single, directly unit-testable unit instead of
+// two copies whose branches can only be exercised by whatever a real `git diff` happens to emit
+// (e.g. unstaged rename detection off by default with the flags this script uses — see tests).
+export const byPath = (a, b) => (a.path < b.path ? -1 : 1);
+export const formatEntry = (e) =>
+  `${e.path}\0${e.oldMode}:${e.oldSha}->${e.newMode}:${e.newSha}\0${e.status}` +
+  (e.renamedFrom ? `\0renamed-from:${e.renamedFrom}` : '');
+
+// Parse `git diff --raw --no-abbrev -z` output. MUST use -z (NUL-delimited), not plain newline
+// splitting: a rename/copy record (status R/C) carries TWO paths (source, destination), and
+// either path can itself contain characters that plain tab/newline parsing can't distinguish
+// from record boundaries. With -z, each record is unambiguous: a header token (no path, no
+// tab), followed by one path token (normal M/A/D/T/...) or two path tokens (R/C — old path,
+// then new path). We key every record on the DESTINATION path — for R/C that's the second path
+// token, which is what must actually exist on disk / in the index going forward. Using the
+// wrong path here (e.g. treating the whole raw line as one opaque path, or defaulting to the
+// source) means a later edit to the destination file can go undetected by existsSync()/
+// hash-object on a stale path, silently keeping a zero/absent placeholder — this is exactly the
+// gap that made a post-rename edit invisible to the fingerprint before this fix.
+
+// --- Custodia -----------------------------------------------------------------------------------
+//
+// El limite declarado de este gate era, textual, que nadie firma un recibo: una huella sin clave
+// no sirve porque quien edita el recibo recalcula la huella en la misma linea. Sigue siendo cierto
+// que IA Stack no puede crear ni custodiar claves. Lo que si puede es DEJAR DE CALLARSE: git ya trae
+// firma de commits, y su estado es un dato que este gate puede leer y poner en la salida.
+//
+// LIMITE HONESTO, impreso en cada corrida: si el agente puede correr `git commit -S`, firma como
+// vos. La custodia vale exactamente hasta donde tu clave exija presencia humana -una passphrase que
+// no este en el disco, una llave de hardware que haya que tocar-. Sin eso, la firma prueba que
+// alguien con acceso a la clave firmo, no que hayas sido vos.
+
+export const SIGNATURE_STATES = Object.freeze({
+  G: { texto: 'firma valida', confiable: true, rechaza: false },
+  U: { texto: 'firma valida pero de una clave no confiable', confiable: true, rechaza: false },
+  X: { texto: 'firma valida de una clave vencida', confiable: true, rechaza: false },
+  Y: { texto: 'firma hecha por una clave ya vencida', confiable: true, rechaza: false },
+  R: { texto: 'firma hecha por una clave revocada', confiable: false, rechaza: true },
+  B: { texto: 'la firma NO valida', confiable: false, rechaza: true },
+  E: { texto: 'firmado, pero falta la clave para verificarlo', confiable: false, rechaza: false },
+  N: { texto: 'sin firma', confiable: false, rechaza: false },
+});
+
+const CUSTODY_LIMIT = 'Limite: si el agente puede correr `git commit -S`, firma como vos. Esto prueba que alguien con acceso a la clave firmo, no quien.';
+
+/** Lee el commit que toco por ultima vez el recibo, y el estado de su firma. null si no hay. */
+export function readSignature(path, cwd, run) {
+  let salida;
+  try {
+    salida = run(['-C', cwd, 'log', '-1', '--format=%H%n%G?%n%GS%n%GK', '--', path]);
+  } catch (error) {
+    // Un repo sin ningun commit no es un fallo: es un proyecto que todavia no registro nada, y eso
+    // es el caso vacio. Pero correr esto FUERA de un repo si es no poder mirar, y tiene que verse.
+    let enRepo = true;
+    try { run(['-C', cwd, 'rev-parse', '--git-dir']); } catch { enRepo = false; }
+    if (!enRepo) throw error;
+    return null;
+  }
+  const partes = String(salida).split(String.fromCharCode(10));
+  // split siempre devuelve al menos un elemento, asi que partes[0] no puede faltar: un ?? aca
+  // seria una rama que ninguna prueba puede alcanzar, o sea codigo muerto con aspecto de cuidado.
+  const commit = partes[0].trim();
+  if (commit === '') return null;
+  return { commit, estado: (partes[1] ?? '').trim(), firmante: (partes[2] ?? '').trim(), clave: (partes[3] ?? '').trim() };
+}
+
+export function judgeSignature(firma, requiereFirma) {
+  const info = SIGNATURE_STATES[firma.estado];
+  const corto = firma.commit.slice(0, 7);
+  if (info === undefined) {
+    return { ok: false, mensaje: `git devolvio un estado de firma que este gate no conoce (${JSON.stringify(firma.estado)}) para el commit ${corto}: no se puede afirmar nada sobre la custodia.` };
+  }
+  if (info.rechaza) {
+    return { ok: false, mensaje: `el commit ${corto} lleva una firma que ${info.texto} (${firma.firmante || 'firmante desconocido'}): una firma rota es peor que ninguna.` };
+  }
+  if (requiereFirma && !info.confiable) {
+    return { ok: false, mensaje: `se pidio firma y el commit ${corto} esta ${info.texto}.` };
+  }
+  const quien = info.confiable ? ` por ${firma.firmante || 'firmante sin nombre'}${firma.clave ? ` (clave ${firma.clave})` : ''}` : '';
+  return { ok: true, mensaje: `el commit ${corto} que lleva este recibo esta ${info.texto}${quien}.` };
+}
+
+export function parseRawDiff(text) {
+  const tokens = text.split('\0');
+  const records = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const header = tokens[i];
+    if (!header) {
+      i++;
+      continue;
+    }
+    const m = header.match(RAW_HEADER);
+    if (!m) {
+      i++; // defensive skip of an unexpected token — never silently misparse as a path
+      continue;
+    }
+    const [, oldMode, newMode, oldSha, newSha, statusLetter] = m;
+    i++;
+    if (statusLetter === 'R' || statusLetter === 'C') {
+      const renamedFrom = tokens[i++];
+      const path = tokens[i++];
+      records.push({ oldMode, newMode, oldSha, newSha, status: statusLetter, path, renamedFrom });
+    } else {
+      const path = tokens[i++];
+      records.push({ oldMode, newMode, oldSha, newSha, status: statusLetter, path, renamedFrom: null });
+    }
+  }
+  return records;
+}
+
+function currentFingerprint(excludePath) {
+  const root = realpathSync('.');
+  const head = git(['rev-parse', 'HEAD']).trim();
+  const exclude = excludePath ? toGitPath(excludePath) : null;
+
+  // --- HEAD -> INDEX (staged) — both sides are real committed/staged blobs, hashes as-is.
+  // -z is required for correct R/C (rename/copy) parsing — see parseRawDiff.
+  const staged = parseRawDiff(git(['diff', '--raw', '--cached', '--no-abbrev', '-z']))
+    .filter((e) => e.path !== exclude)
+    .sort(byPath);
+  const stagedEntries = staged.map(formatEntry).join('\n');
+
+  // --- INDEX -> WORKTREE (unstaged) — mode is real; newSha is a placeholder (all zeros) that
+  // we replace with the actual current on-disk blob hash via `git hash-object`, read from the
+  // DESTINATION path (e.path — for a rename/copy record this is the new path, never the old
+  // one) — deleted files keep the zero/absent marker, nothing to hash.
+  const unstagedRaw = parseRawDiff(git(['diff', '--raw', '--no-abbrev', '-z']))
+    .filter((e) => e.path !== exclude)
+    .sort(byPath);
+  const unstaged = unstagedRaw.map((e) => {
+    const realNewSha = isZeroSha(e.newSha) && e.status !== 'D' ? gitHashObject(e.path, root) : e.newSha;
+    return { ...e, newSha: realNewSha };
+  });
+  const unstagedEntries = unstaged.map(formatEntry).join('\n');
+
+  // --- UNTRACKED (not ignored) — path + sha256 of on-disk bytes.
+  const untrackedList = git(['ls-files', '--others', '--exclude-standard'])
+    .split('\n')
+    .filter(Boolean)
+    .filter((p) => p !== exclude)
+    .sort();
+  const untrackedEntries = untrackedList.map((p) => `${p}\0${hashFileContent(p, root)}`).join('\n');
+
+  const combined =
+    `HEAD:${head}\n` +
+    `---STAGED(${staged.length})---\n${stagedEntries}\n` +
+    `---UNSTAGED(${unstaged.length})---\n${unstagedEntries}\n` +
+    `---UNTRACKED(${untrackedList.length})---\n${untrackedEntries}`;
+  const hash = createHash('sha256').update(combined).digest('hex');
+
+  return {
+    git_head: head,
+    tree_fingerprint: hash,
+    staged_count: staged.length,
+    unstaged_count: unstaged.length,
+    untracked_count: untrackedList.length,
+  };
+}
+
+function fail(reason) {
+  console.error(`REJECTED: ${reason}`);
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------------------------
+// ia.receipt/v2 — la base que v3 compone; ningún schema anterior autoriza por sí solo un commit for gates that authorize a commit/publish decision.
+//
+// HONEST SCOPE (do not oversell): `command`, `result`, `measurements` and `reproduction` are
+// structured, human-reviewable evidence — a record of what an author claims ran and what it
+// produced. Nothing in this validator re-executes a command or cryptographically proves it ran;
+// that is the same procedural-not-cryptographic disclosure this project already makes for
+// `evidence` on v1 (see SKILL.md). `scope.declared_paths` is a self-declared writer set inside
+// the receipt. The separate `verify-scope-diff.mjs` gate compares the task's planned writers
+// with the real Git delta; this validator deliberately stays focused on receipt integrity.
+// ---------------------------------------------------------------------------------------------
+
+const V2_SCHEMA = 'ia.receipt/v2';
+const V1_SCHEMA = 'ia.receipt/v1';
+const AC_VERDICTS = new Set(['COMPLIANT', 'FAILING', 'UNTESTED', 'PARTIAL']);
+const SHA256_HEX = /^[0-9a-f]{64}$/u;
+const NOT_REVIEWED_PLACEHOLDERS = new Set(['n/a', 'unknown', 'nothing']);
+
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '';
+}
+
+/** Same disclosure discipline as the handoff report's NOT_REVIEWED, applied to a
+ * plain string field instead of a markdown declaration line. */
+export function validateNotReviewedField(value) {
+  if (!nonEmptyString(value)) return { ok: false, reason: 'not_reviewed must be a non-empty string' };
+  const trimmed = value.trim();
+  const normalized = trimmed.toLowerCase();
+  if (NOT_REVIEWED_PLACEHOLDERS.has(normalized)) return { ok: false, reason: `not_reviewed placeholder ${JSON.stringify(trimmed)} hides review limits` };
+  if (normalized === 'none') return { ok: false, reason: 'not_reviewed cannot be bare "none"; state the reviewed scope after "none —"' };
+  if (normalized.startsWith('none') && !/^none\s*(?:—|-)\s*\S.*$/iu.test(trimmed)) {
+    return { ok: false, reason: 'not_reviewed uses "none" without a reviewed-scope basis' };
+  }
+  return { ok: true };
+}
+
+/**
+ * AC8 · Un comando que invoca un adaptador de test rojo, por el despachador o directo.
+ *
+ * POR QUE SE RECONOCE POR EL COMANDO. Desde que hay tres adaptadores, dos dan una garantia
+ * estrictamente MENOR: pytest y vitest ejecutan codigo de configuracion del proyecto con control
+ * sobre el reporte y sobre el codigo de salida, y los dos ataques estan falsificados y medidos en
+ * entorno virgen. Si el receipt anota los tres verdes igual, la diferencia desaparece justo en el
+ * documento que se archiva, que es el unico que alguien va a leer seis meses despues.
+ *
+ * LIMITE: esto reconoce la FORMA del comando escrito, no lo que se ejecuto. Un comando redactado a
+ * mano que no nombre el adaptador esquiva la regla, igual que el resto del receipt, que comprueba la
+ * forma de la declaracion y nunca que sea cierta.
+ */
+export function invocaAdaptadorDeRed(comando) {
+  return /\bverify-red(?:-[a-z0-9-]+)?\.(?:mjs|sh|ps1)\b/u.test(String(comando ?? ''));
+}
+
+/** Las formas de fin de linea de un mismo contenido: tal como esta, en LF y en CRLF, sin repetir.
+ *
+ * POR QUE EXISTE. `test_hash_sha256` se comparaba contra los bytes crudos del disco, y en Windows con
+ * `core.autocrlf=true` el MISMO test tiene bytes distintos segun quien lo escribio ultimo: git lo
+ * materializa en CRLF, una herramienta lo reescribe en LF. El gate decia «the test changed» sobre un
+ * test identico, y recomprobar un recibo en otra maquina -- o en Linux -- fallaba solo por eso.
+ * Medido en un proyecto real: de los hashes que coincidieron en su punto de sellado,
+ * veinte necesitaron la forma CRLF.
+ *
+ * Este repositorio ya se habia comido esta misma clase y la arreglo con un
+ * `.gitattributes` que materializa todo en LF -- para si mismo. El protocolo corre en repositorios
+ * ajenos, que no lo tienen. Y la asimetria estaba a la vista: el fingerprint del arbol usa
+ * `git hash-object`, que ya normaliza; solo el hash de cada criterio leia bytes crudos.
+ *
+ * LO QUE NO SE AFLOJA. Son tres formas del MISMO contenido y ninguna otra: un cambio de una letra
+ * rechaza en cualquiera de las tres. Y solo la secuencia CRLF es un fin de linea -- un CR suelto es
+ * contenido, y normalizarlo convertiria dos archivos distintos en el mismo.
+ *
+ * La primera forma es la cruda, tal cual la devolvio el lector y sin convertir: quien comparaba bytes
+ * iguales sigue comparando exactamente lo mismo. Se trabaja en latin1, que es biyectivo con los bytes,
+ * asi que ninguna conversion toca la codificacion del archivo. */
+export function formasDeFinDeLinea(contenido) {
+  const bytes = Buffer.isBuffer(contenido) ? contenido : Buffer.from(String(contenido));
+  const soloLf = Buffer.from(bytes.toString('latin1').replaceAll('\r\n', '\n'), 'latin1');
+  const conCrlf = Buffer.from(soloLf.toString('latin1').replaceAll('\n', '\r\n'), 'latin1');
+  const formas = [contenido];
+  const vistas = [bytes];
+  for (const forma of [soloLf, conCrlf]) {
+    if (!vistas.some((v) => v.equals(forma))) {
+      formas.push(forma);
+      vistas.push(forma);
+    }
+  }
+  return formas;
+}
+
+/** Si un archivo mezcla finales de linea: algun CRLF y algun LF suelto. Un CR suelto no cuenta -- es
+ * contenido, igual que en `formasDeFinDeLinea` --.
+ *
+ * POR QUE SE RECHAZA ANTES DE SELLAR. Decisión de diseño sobre un caso real: un
+ * test con 208 lineas CRLF y una LF, escrito por un script que reemplazaba texto con un salto de
+ * linea crudo sobre un archivo que git habia materializado en CRLF. El recibo se sello con el hash de
+ * esos bytes, `check` y `commit` pasaron porque comparan contra el disco, y git guardo el archivo
+ * UNIFORME: ninguna de las tres formas reproduce la mezcla, asi que ese recibo no se puede
+ * recomprobar desde un clon. Rechazarlo en `check` cuesta un minuto; despues del commit ya esta
+ * sellado, y solo lo ve `recheck`. */
+export function tieneFinesMezclados(contenido) {
+  const texto = (Buffer.isBuffer(contenido) ? contenido : Buffer.from(String(contenido))).toString('latin1');
+  return texto.includes('\r\n') && /(^|[^\r])\n/u.test(texto);
+}
+
+/** El contenido de un archivo tal como quedo en un commit, en BYTES; null si ese commit no lo tiene.
+ *
+ * Bytes y no texto a proposito: el helper `git()` de este archivo normaliza CRLF en su salida, que
+ * esta bien para leer plumbing y esta mal para hashear un blob. Y `git show` de un blob devuelve lo
+ * guardado, sin la conversion de fin de linea que se aplica recien al materializarlo en disco. */
+export function leerDelCommit(commit, ruta, cwd = '.', ejecutar = execFileSync) {
+  try {
+    return ejecutar('git', ['-C', cwd, 'show', `${commit}:./${toGitPath(ruta)}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch {
+    return null;
+  }
+}
+
+export const RECHECK_LIMIT = 'LIMIT: recomprueba que el test commiteado sea el que el recibo certifica, en cualquier forma de fin de linea. No vuelve a correr el test ni prueba que pase, y no mira la firma: para eso esta custody. Compara contra el ULTIMO COMMIT que toco el recibo, asi que si el recibo se edito despues de sellarlo, compara contra esa edicion.';
+
+/** Recomprobar un recibo YA COMMITEADO contra lo que quedo en ese mismo commit.
+ *
+ * POR QUE EXISTE. Medido en un proyecto real: seis recibos v3 con diez criterios cuyo
+ * hash no correspondia a NINGUNA version commiteada del test. No era un defecto de `commit`, que
+ * re-hashea el disco en el momento de escribir y exige arbol limpio: entraba por el otro camino que
+ * el protocolo publica como valido -- `check --require-clean-worktree` y despues `git commit` a
+ * mano --. Si entre los dos alguien cambia el test y lo vuelve a stagear, el recibo certifica una
+ * version que nunca se guardo. Y una vez commiteado, NADA volvia a mirarlo contra git: hubo que
+ * hacerlo a mano para encontrarlo.
+ *
+ * El recibo y los tests se leen del MISMO commit -- el ultimo que toco el recibo --, no del disco:
+ * lo que se recomprueba es lo guardado. Tres estados, como el resto del protocolo: `vacio` cuando no
+ * hay nada guardado que mirar, `rechazo` con el criterio y el motivo, `ok` nombrando el commit. */
+export function recomprobarRecibo(ruta, cwd = '.', { run = git, leer = leerDelCommit } = {}) {
+  const firma = readSignature(ruta, cwd, run);
+  if (firma === null) {
+    return { estado: 'vacio', lineas: [`${ruta} todavia no esta en ningun commit: no hay nada guardado que recomprobar.`] };
+  }
+  const corto = firma.commit.slice(0, 7);
+  const crudo = leer(firma.commit, ruta, cwd);
+  if (crudo === null) {
+    return { estado: 'vacio', lineas: [`el ultimo commit que toca ${ruta} (${corto}) lo borra: no hay recibo guardado que recomprobar.`] };
+  }
+  let recibo;
+  try {
+    recibo = JSON.parse(Buffer.from(crudo).toString('utf8'));
+  } catch (error) {
+    return { estado: 'rechazo', lineas: [`${ruta} en ${corto} no es JSON: ${error.message}`] };
+  }
+  if (mismoSchema(recibo?.schema, V1_SCHEMA) || mismoSchema(recibo?.schema, V2_SCHEMA)) {
+    return { estado: 'vacio', lineas: [`${ruta} es ${recibo.schema}, un formato archivistico sin criterios con hash: se lee con inspect-legacy, no se recomprueba.`] };
+  }
+  if (!mismoSchema(recibo?.schema, V3_SCHEMA)) {
+    return { estado: 'rechazo', lineas: [`${ruta} en ${corto} declara un schema desconocido: ${recibo?.schema}`] };
+  }
+  const criterios = (Array.isArray(recibo.acceptance_criteria) ? recibo.acceptance_criteria : [])
+    .filter((ac) => ac && nonEmptyString(ac.test_file) && SHA256_HEX.test(ac.test_hash_sha256 ?? ''));
+  if (criterios.length === 0) {
+    return { estado: 'vacio', lineas: [`${ruta} en ${corto} no tiene ningun criterio con test y hash: recomprobar nada no es aprobar.`] };
+  }
+  const malas = [];
+  for (const ac of criterios) {
+    const test = leer(firma.commit, ac.test_file, cwd);
+    if (test === null) {
+      malas.push(`${ac.ac_id}: ${ac.test_file} no esta en ${corto}, el commit que lleva el recibo — el recibo certifica un test que no se commiteo.`);
+      continue;
+    }
+    const coincide = formasDeFinDeLinea(test).some((forma) => createHash('sha256').update(forma).digest('hex') === ac.test_hash_sha256);
+    if (!coincide) {
+      malas.push(`${ac.ac_id}: ${ac.test_file} en ${corto} no es el test que el recibo certifica, en ninguna forma de fin de linea — cambio entre la validacion y el commit, y el recibo quedo certificando una version que nunca se guardo.`);
+    }
+  }
+  if (malas.length > 0) return { estado: 'rechazo', lineas: malas };
+  return { estado: 'ok', lineas: [`${criterios.length} criterio(s) de ${ruta}: el test de cada uno es, en ${corto}, exactamente el que el recibo certifica.`] };
+}
+
+/** One acceptance-criteria entry. `verdict !== 'COMPLIANT'` blocks by itself — a receipt with any
+ * UNTESTED/PARTIAL/FAILING AC can exist as a draft, but never reaches an approved `check`. */
+export function validateAcceptanceCriterion(ac, cwd, {
+  readFile = readFileSync,
+  resolveFile = safeRegularFile,
+  hashOf = (bytes) => createHash('sha256').update(bytes).digest('hex'),
+  readRedAdapters = (raiz) => JSON.parse(readFileSync(join(raiz, 'contracts', 'red-adapters.json'), 'utf8')),
+} = {}) {
+  if (!ac || typeof ac !== 'object' || Array.isArray(ac)) return { ok: false, reason: 'acceptance_criteria entry must be an object' };
+  if (!nonEmptyString(ac.ac_id)) return { ok: false, reason: 'acceptance_criteria entry missing ac_id' };
+  const label = ac.ac_id;
+  if (!nonEmptyString(ac.scenario)) return { ok: false, reason: `${label}: scenario must be a non-empty string` };
+  if (!AC_VERDICTS.has(ac.verdict)) return { ok: false, reason: `${label}: verdict must be one of ${[...AC_VERDICTS].join('|')}` };
+  if (ac.verdict !== 'COMPLIANT') return { ok: false, reason: `${label}: verdict is ${ac.verdict}, not COMPLIANT — an approved receipt requires every AC to be COMPLIANT` };
+  if (!nonEmptyString(ac.test_file)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty test_file` };
+  if (!SHA256_HEX.test(ac.test_hash_sha256 ?? '')) return { ok: false, reason: `${label}: test_hash_sha256 must be a full 64-character hex sha256` };
+  if (!nonEmptyString(ac.command)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty command` };
+  if (!nonEmptyString(ac.result)) return { ok: false, reason: `${label}: COMPLIANT requires a non-empty result` };
+  let file;
+  try {
+    file = resolveFile(ac.test_file, cwd);
+  } catch (error) {
+    return { ok: false, reason: `${label}: test_file is unsafe: ${error.message}` };
+  }
+  const contenido = readFile(file);
+  // Medido con git 2.55: despues de un `git add`, git ya cuenta el archivo mezclado como
+  // igual al indice y `git checkout --` no lo reescribe. Por eso el mensaje dice que el checkout NO
+  // alcanza: sugerirlo mandaria a hacer algo que no arregla nada.
+  if (tieneFinesMezclados(contenido)) {
+    return { ok: false, reason: `${label}: ${ac.test_file} mezcla finales de linea CRLF y LF, y un recibo sobre ese archivo no se puede recomprobar desde un clon: git lo guarda uniforme y ninguna forma reproduce la mezcla. Reescribilo entero con un solo tipo de fin de linea (todo LF o todo CRLF) y regenera el hash del criterio. git checkout -- <archivo> no alcanza: despues de un git add, git ya lo cuenta igual al indice y no lo reescribe.` };
+  }
+  const coincide = formasDeFinDeLinea(contenido).some((forma) => hashOf(forma) === ac.test_hash_sha256);
+  if (!coincide) {
+    return { ok: false, reason: `${label}: test_hash_sha256 does not match ${ac.test_file} on disk, in any line-ending form (raw, LF or CRLF) — the test changed since this AC was verified, regenerate the AC entry` };
+  }
+
+  // AC8 · Con que adaptador se obtuvo ESTE verde. La regla es condicional y mecanica: sólo aplica a
+  // los criterios cuyo comando invoca un adaptador de test rojo, asi que ningun receipt anterior
+  // cambia de veredicto por existir esta comprobacion.
+  if (!invocaAdaptadorDeRed(ac.command)) {
+    if (nonEmptyString(ac.red_adapter)) {
+      return { ok: false, reason: `${label}: declara red_adapter pero su command no invoca ningun adaptador de test rojo — o el comando esta mal escrito, o el adaptador no viene al caso` };
+    }
+    return { ok: true, testPath: file };
+  }
+
+  // La garantia NO se copia al receipt: se resuelve contra el contrato. Declararla a mano seria la
+  // forma obvia de borrar la distincion, escribiendo `fuerte` sobre un adaptador que es `menor`.
+  if ('red_guarantee' in ac) {
+    return { ok: false, reason: `${label}: la garantia no se declara en el receipt, se resuelve contra contracts/red-adapters.json. Sacá red_guarantee: escribirla a mano permitiria llamar fuerte a un adaptador que el contrato declara menor` };
+  }
+  if (!nonEmptyString(ac.red_adapter)) {
+    return { ok: false, reason: `${label}: su command invoca un adaptador de test rojo, asi que tiene que declarar red_adapter con el archivo que produjo el verde. Sin eso, un verde de garantia menor se lee igual que uno del adaptador nativo` };
+  }
+
+  let contrato;
+  try {
+    contrato = readRedAdapters(cwd);
+  } catch (error) {
+    return { ok: false, reason: `${label}: no se pudo leer contracts/red-adapters.json para resolver la garantia de ${ac.red_adapter}: ${error.message}. Sin el contrato no hay con que comparar, y dejar pasar seria aprobar sin mirar` };
+  }
+
+  const fila = (contrato?.adapters ?? []).find((a) => a?.script === ac.red_adapter);
+  if (!fila) {
+    const declarados = (contrato?.adapters ?? []).map((a) => a?.script).join(', ') || 'ninguno';
+    return { ok: false, reason: `${label}: red_adapter ${JSON.stringify(ac.red_adapter)} no está declarado en contracts/red-adapters.json. Los declarados son: ${declarados}` };
+  }
+
+  return { ok: true, testPath: file, guarantee: fila.guarantee };
+}
+
+/**
+ * AC8 · El resumen de un receipt valido. A NIVEL DE MODULO y exportado a proposito: vivia adentro de
+ * `main` como closure, y una rama que solo se puede ejecutar montando un repositorio git entero con
+ * un receipt aprobado es una rama que en la practica nadie comprueba.
+ *
+ * Un receipt con verdes de garantia menor NO imprime lo mismo que uno con verdes del adaptador
+ * nativo. Si se lee igual, es igual — y lo que queda archivado es este texto.
+ */
+export function validatedSummary(receipt, label) {
+  const base = `${label}: receipt valid for ${receipt.feature}/${receipt.task} — terminal_state=approved, ${receipt.acceptance_criteria.length} AC(s) COMPLIANT`;
+  const menores = receipt.acceptance_criteria.filter((ac) => invocaAdaptadorDeRed(ac?.command) && ac?.red_adapter && ac.red_adapter !== 'verify-red-node.mjs');
+  if (menores.length === 0) return base;
+  const cuales = menores.map((ac) => `${ac.ac_id} via ${ac.red_adapter}`).join(', ');
+  return `${base}. ATENCION — GARANTIA MENOR: ${menores.length} de esos verdes salieron de un adaptador de garantia menor (${cuales}), que NO equivale al nativo de Node: esos runners ejecutan codigo de configuracion del proyecto con control sobre el reporte y sobre el codigo de salida, y los dos ataques estan falsificados. Ver contracts/red-adapters.json`;
+}
+
+export function validateAcceptanceCriteria(acceptanceCriteria, cwd, options, declaredPaths) {
+  if (!Array.isArray(acceptanceCriteria) || acceptanceCriteria.length === 0) {
+    return { ok: false, reason: 'acceptance_criteria must be a non-empty array' };
+  }
+  const ids = new Set();
+  for (const ac of acceptanceCriteria) {
+    const result = validateAcceptanceCriterion(ac, cwd, options);
+    if (!result.ok) return result;
+    const id = ac.ac_id.trim();
+    if (ids.has(id)) return { ok: false, reason: `duplicate ac_id: ${id}` };
+    ids.add(id);
+    if (declaredPaths && !declaredPaths.has(result.testPath)) {
+      return { ok: false, reason: `${id}: test_file is not declared in scope.declared_paths` };
+    }
+  }
+  return { ok: true };
+}
+
+/** measured=false requires before/after pinned to -1 plus a non-empty reason — "-1" is only
+ * honest when it's paired with why nothing was measured, never a silent default. */
+export function validateMeasurements(measurements) {
+  if (!Array.isArray(measurements)) return { ok: false, reason: 'measurements must be an array' };
+  // Un recibo sin una sola medicion no es un recibo: es una afirmacion sin numero. `evidence` ya se
+  // exigia no vacio y `measurements` no, aunque los dos estaban en la lista de requeridos. Medido
+  // sobre el corpus: 15 recibos, 107 mediciones, ninguno con el array vacio.
+  if (measurements.length === 0) return { ok: false, reason: 'measurements requires al menos una medición: un recibo sin números no mide nada' };
+  for (const m of measurements) {
+    if (!m || typeof m !== 'object' || Array.isArray(m) || !nonEmptyString(m.metric)) {
+      return { ok: false, reason: 'measurement entry missing a non-empty metric name' };
+    }
+    if (typeof m.measured !== 'boolean') return { ok: false, reason: `${m.metric}: measured must be a boolean` };
+    if (m.measured) {
+      if (typeof m.before !== 'number' || typeof m.after !== 'number') {
+        return { ok: false, reason: `${m.metric}: measured=true requires numeric before/after` };
+      }
+      // -1 es el centinela de "no lo medi", y SKILL.md lo promete por escrito desde antes que el
+      // codigo lo hiciera: solo vale junto a measured:false y un motivo. Declararlo como MEDIDO es
+      // la forma exacta de vender una ausencia de medicion como medicion, y pasaba en verde --
+      // dos veces en recibos reales de este repositorio, encontradas.
+      if (m.before === -1 || m.after === -1) {
+        return { ok: false, reason: `${m.metric}: measured=true no admite el centinela -1; si no lo mediste, declaralo con measured=false y su motivo` };
+      }
+    } else {
+      if (m.before !== -1 || m.after !== -1) return { ok: false, reason: `${m.metric}: measured=false requires before and after to both be -1` };
+      if (!nonEmptyString(m.reason)) return { ok: false, reason: `${m.metric}: measured=false requires a non-empty reason` };
+    }
+  }
+  return { ok: true };
+}
+
+/** scope.declared_paths — project-local, regular, no symlink/junction escape. Self-declared by
+ * the receipt's own author; plan-vs-delta comparison belongs to verify-scope-diff.mjs. */
+export function validateScope(scope, cwd) {
+  if (!scope || typeof scope !== 'object' || Array.isArray(scope)) return { ok: false, reason: 'scope must be an object' };
+  if (!Array.isArray(scope.declared_paths) || scope.declared_paths.length === 0) {
+    return { ok: false, reason: 'scope.declared_paths must be a non-empty array' };
+  }
+  const declaredPaths = new Set();
+  for (const path of scope.declared_paths) {
+    if (!nonEmptyString(path)) return { ok: false, reason: 'scope.declared_paths entries must be non-empty strings' };
+    try {
+      declaredPaths.add(safeRegularFile(path, cwd));
+    } catch (error) {
+      return { ok: false, reason: `scope.declared_paths entry is unsafe: ${error.message}` };
+    }
+  }
+  return { ok: true, declaredPaths };
+}
+
+/** review_4r — shape-only: an object carrying the 4 named lenses. This gate does not grade
+ * their content (no invariant for that was specified), only that the record exists structurally
+ * so an approved receipt cannot omit the 4R pass entirely. */
+export function validateReview4r(review) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) return { ok: false, reason: 'review_4r must be an object' };
+  for (const lens of ['risk', 'readability', 'reliability', 'resilience']) {
+    if (!review[lens] || typeof review[lens] !== 'object' || Array.isArray(review[lens])) {
+      return { ok: false, reason: `review_4r.${lens} must be an object` };
+    }
+  }
+  return { ok: true };
+}
+
+// --- ia.receipt/v3 -----------------------------------------------------------------------------
+//
+// LA HERIDA (proyecto real, septiembre de 2026): un constructor puso un permiso correcto, midió que
+// eso dejaba a un rol sin una pantalla, lo escribió con precisión en el docstring —archivo, rango y
+// permiso— y entregó la tarea como hecha. La declaración era honesta y detallada, y ESO ES
+// JUSTAMENTE LO QUE LA HACE FACIL DE ACEPTAR SIN MIRARLA. Un límite se declara; una regresión se
+// resuelve o se revierte. `not_reviewed` no los separaba: es un solo string.
+export const V3_SCHEMA = 'ia.receipt/v3';
+export const REGRESSION_RESOLUTIONS = new Set(['fixed', 'reverted', 'accepted_by_user']);
+export const SUPPORT_FIELDS = Object.freeze(['correlation', 'actor_on_writes', 'failure_visible', 'diagnostic_command']);
+const LIMIT_FIELDS = Object.freeze(['id', 'what', 'why_acceptable', 'owner']);
+const REGRESSION_FIELDS = Object.freeze(['id', 'what', 'before', 'after', 'evidence']);
+
+/** Rellenos en los DOS idiomas. `validateNotReviewedField` sólo conoce los ingleses y su límite
+ * está declarado así en el protocolo; acá no se puede repetir ese hueco, porque estos campos
+ * los escribe alguien que trabaja en castellano y `ninguno` es exactamente lo que va a poner. */
+const DECLARED_PLACEHOLDERS = new Set(['n/a', 'na', 'unknown', 'nothing', 'none', 'ninguno', 'ninguna', 'nada', 'tbd', 'todo', 'pendiente', '-']);
+const NONE_PREFIX = /^(?:none|ninguno|ninguna)\b/iu;
+
+/** Un campo que admite «no hay» **con motivo**, y nunca «no hay» a secas. La forma es la misma que
+ * `not_reviewed` ya exige —`none — <base concreta>`— y se reusa citándola en vez de reescribirla,
+ * que es lo que manda la regla de redacción reutilizable del protocolo. */
+export function validateDeclaredField(value, field) {
+  if (!nonEmptyString(value)) return { ok: false, reason: `${field} must be a non-empty string` };
+  const trimmed = value.trim();
+  const normalized = trimmed.toLowerCase();
+  if (DECLARED_PLACEHOLDERS.has(normalized)) {
+    return { ok: false, reason: `${field}: ${JSON.stringify(trimmed)} is filler, not an answer — declare what exists, or "ninguno — <por qué>"` };
+  }
+  if (NONE_PREFIX.test(trimmed) && !/^\S+\s*(?:—|-)\s*\S.*$/u.test(trimmed)) {
+    return { ok: false, reason: `${field}: says there is none without saying why — write "ninguno — <motivo>"` };
+  }
+  return { ok: true };
+}
+
+function plainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function nonNegativeInteger(value) {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
+/** Un LIMITE: comportamiento intencional que este cambio no cubre. No bloquea nada. */
+export function validateLimits(limits) {
+  if (!Array.isArray(limits)) return { ok: false, reason: 'limits must be an array (empty is fine: not every change leaves a limit)' };
+  for (const entry of limits) {
+    if (!plainObject(entry)) return { ok: false, reason: 'limits entry must be an object' };
+    // EL DISCRIMINADOR, y es mecánico y no de criterio: un límite nunca anduvo, así que no tiene
+    // estado anterior. Si hay `before`, hubo algo que medir antes, y eso es una regresión.
+    if ('before' in entry) {
+      return { ok: false, reason: `limits entry ${JSON.stringify(entry.id ?? '(sin id)')} declares "before": something that used to work is a regression, not a limit — move it to regressions[] and give it a resolution` };
+    }
+    for (const field of LIMIT_FIELDS) {
+      if (!nonEmptyString(entry[field])) return { ok: false, reason: `limits entry ${JSON.stringify(entry.id ?? '(sin id)')}: ${field} must be a non-empty string` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Una REGRESION: comportamiento que antes andaba y ahora no. Se resuelve, se revierte, o la
+ * acepta una persona — y esa aceptación tiene que existir fuera del receipt. */
+export function validateRegressions(regressions, decisionSeals) {
+  if (!Array.isArray(regressions)) return { ok: false, reason: 'regressions must be an array (empty is fine)' };
+  for (const entry of regressions) {
+    if (!plainObject(entry)) return { ok: false, reason: 'regressions entry must be an object' };
+    for (const field of REGRESSION_FIELDS) {
+      if (!nonEmptyString(entry[field])) {
+        return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id ?? '(sin id)')}: ${field} must be a non-empty string — without "before" there is no previous state to compare against, and it is not a regression` };
+      }
+    }
+    if (!REGRESSION_RESOLUTIONS.has(entry.resolution)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: resolution must be one of ${[...REGRESSION_RESOLUTIONS].join('|')}, got ${JSON.stringify(entry.resolution ?? null)}` };
+    }
+    if (entry.resolution !== 'accepted_by_user') continue;
+    // Mismo modelo que LAW 8 usa para `escalated`: la salida no es un campo adentro del propio
+    // receipt, es una decisión humana registrada afuera y sellada por hash.
+    if (!nonEmptyString(entry.user_decision_ref)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: resolution accepted_by_user requires user_decision_ref — the seal of the decision that accepted it` };
+    }
+    if (!decisionSeals.has(entry.user_decision_ref)) {
+      return { ok: false, reason: `regressions entry ${JSON.stringify(entry.id)}: user_decision_ref does not resolve to a decided entry in docs/phase-decisions.json — an acceptance nobody recorded is not an acceptance` };
+    }
+  }
+  return { ok: true };
+}
+
+/** Los sellos de las decisiones VIGENTES. Una `superseded` ya no autoriza nada: fue reemplazada. */
+export function readDecisionSeals(document) {
+  const seals = new Set();
+  if (!plainObject(document) || !Array.isArray(document.decisions)) return seals;
+  for (const decision of document.decisions) {
+    if (plainObject(decision) && decision.status === 'decided' && nonEmptyString(decision.current_hash)) {
+      seals.add(decision.current_hash);
+    }
+  }
+  return seals;
+}
+
+/** SOPORTE: si alguien dice que no le anda, ¿con qué se lo diagnostica? La cobertura mide ejecución
+ * del código; esto mide observabilidad del producto, y son ejes distintos — en el proyecto real
+ * convivieron 100% de cobertura y cero forma de diagnosticar una queja. */
+export function validateSupport(support) {
+  if (!plainObject(support)) return { ok: false, reason: 'support must be an object with the four declared fields' };
+  for (const field of SUPPORT_FIELDS) {
+    const result = validateDeclaredField(support[field], `support.${field}`);
+    if (!result.ok) return result;
+  }
+  return { ok: true };
+}
+
+/** Cuántos hallazgos se propusieron y cuántos sobrevivieron al Refutador. Sin este conteo nadie
+ * puede saber después si el refutador corrió o fue teatro: en el proyecto real, de 60 hallazgos
+ * propuestos sobrevivieron 18. */
+export function validateRefutation(refutation) {
+  if (!plainObject(refutation)) return { ok: false, reason: 'refutation must be an object' };
+  for (const field of ['proposed', 'survived', 'refuted', 'inconclusive']) {
+    if (!nonNegativeInteger(refutation[field])) return { ok: false, reason: `refutation.${field} must be a non-negative integer, got ${JSON.stringify(refutation[field] ?? null)}` };
+  }
+  if (!plainObject(refutation.by_lens)) return { ok: false, reason: 'refutation.by_lens must be an object' };
+  for (const [lens, count] of Object.entries(refutation.by_lens)) {
+    if (!nonNegativeInteger(count)) return { ok: false, reason: `refutation.by_lens.${lens} must be a non-negative integer` };
+  }
+  const total = refutation.survived + refutation.refuted + refutation.inconclusive;
+  if (total !== refutation.proposed) {
+    return { ok: false, reason: `refutation does not add up: ${refutation.proposed} propuestos vs ${total} clasificados (survived+refuted+inconclusive) — refutar es un hecho contable, no una impresión` };
+  }
+  return { ok: true };
+}
+
+/** Full ia.receipt/v2 validation, everything the module header's honest-scope note applies to.
+ * Does NOT check git_head/tree_fingerprint — the caller compares those against a live
+ * fingerprint the same way it already does for v1. */
+export function validateReceiptV2(receipt, cwd, options) {
+  if (!receipt || typeof receipt !== 'object' || Array.isArray(receipt)) return { ok: false, reason: 'receipt must be an object' };
+  const required = ['feature', 'task', 'scope', 'acceptance_criteria', 'review_4r', 'measurements', 'reproduction', 'not_reviewed', 'evidence', 'git_head', 'tree_fingerprint', 'terminal_state'];
+  for (const f of required) {
+    if (!(f in receipt)) return { ok: false, reason: `missing required field: ${f}` };
+  }
+  if (!nonEmptyString(receipt.feature)) return { ok: false, reason: 'feature must be a non-empty string' };
+  if (!nonEmptyString(receipt.task)) return { ok: false, reason: 'task must be a non-empty string' };
+  if (!Array.isArray(receipt.evidence) || receipt.evidence.length === 0) return { ok: false, reason: 'evidence array is empty — no receipt without real evidence backing it' };
+  if (receipt.evidence.some((entry) => !nonEmptyString(entry))) return { ok: false, reason: 'evidence entries must be non-empty strings' };
+  if (!nonEmptyString(receipt.reproduction)) return { ok: false, reason: 'reproduction must be a non-empty string' };
+  if (!['approved', 'escalated'].includes(receipt.terminal_state)) return { ok: false, reason: `terminal_state must be approved|escalated, got: ${receipt.terminal_state}` };
+  if (receipt.terminal_state === 'escalated') {
+    return { ok: false, reason: 'terminal_state is escalated — this gate never passes an escalated receipt, regardless of override_note. Regenerate a NEW receipt with terminal_state:"approved" after explicit user sign-off (LAW 8).' };
+  }
+
+  const scope = validateScope(receipt.scope, cwd);
+  if (!scope.ok) return scope;
+  const ac = validateAcceptanceCriteria(receipt.acceptance_criteria, cwd, options, scope.declaredPaths);
+  if (!ac.ok) return ac;
+  const review = validateReview4r(receipt.review_4r);
+  if (!review.ok) return review;
+  const measurements = validateMeasurements(receipt.measurements);
+  if (!measurements.ok) return measurements;
+  const notReviewed = validateNotReviewedField(receipt.not_reviewed);
+  if (!notReviewed.ok) return notReviewed;
+
+  return { ok: true };
+}
+
+/** `ia.receipt/v3` = todo lo de v2 más los cuatro campos que el DoD pasó a exigir. Se compone en
+ * vez de duplicarse: si mañana cambia una regla de v2, cambia en un solo lugar. */
+export function validateReceiptV3(receipt, cwd, options = {}) {
+  const base = validateReceiptV2(receipt, cwd, options);
+  if (!base.ok) return base;
+  for (const field of ['limits', 'regressions', 'support', 'refutation']) {
+    if (!(field in receipt)) return { ok: false, reason: `missing required field: ${field}` };
+  }
+  const limits = validateLimits(receipt.limits);
+  if (!limits.ok) return limits;
+  const regressions = validateRegressions(receipt.regressions, options.decisionSeals ?? new Set());
+  if (!regressions.ok) return regressions;
+  const support = validateSupport(receipt.support);
+  if (!support.ok) return support;
+  return validateRefutation(receipt.refutation);
+}
+
+// CLI entry point — guarded so tests can `import` this module's functions (parseRawDiff, etc.)
+// without triggering process.exit() as a side effect of the import.
+if (process.argv[1] && process.argv[1].endsWith('verify-receipt.mjs')) {
+  const [, , cmd, arg] = process.argv;
+
+  // git plumbing throws (e.g. `git rev-parse HEAD` on a repo with zero commits) rather than
+  // returning an error value; wrap both CLI call sites so that case is a clean `REJECTED:`
+  // message on stderr with exit 1, not an uncaught stack trace leaking internal paths.
+  function safeFingerprint(exclude) {
+    try {
+      return currentFingerprint(exclude);
+    } catch (error) {
+      fail(`unable to evaluate the current repository state: ${error.message}`);
+    }
+  }
+
+  /** Los sellos de las decisiones vigentes. Sin el archivo devuelve el conjunto vacío en vez de
+   * fallar: un receipt sin ninguna regresión aceptada no tiene por qué exigir que exista un
+   * registro de fases. Lo que NO puede pasar es que una regresión aceptada resuelva contra la
+   * nada — de eso se encarga `validateRegressions`, que rechaza si el sello no está. */
+  function loadDecisionSeals() {
+    const path = 'docs/phase-decisions.json';
+    if (!existsSync(path)) return new Set();
+    try {
+      return readDecisionSeals(JSON.parse(readFileSync(path, 'utf8')));
+    } catch (error) {
+      fail(`docs/phase-decisions.json is unreadable, so an accepted regression cannot be resolved against it: ${error.message}`);
+    }
+  }
+
+  if (cmd === 'fingerprint') {
+    console.log(JSON.stringify(safeFingerprint(arg), null, 2));
+    process.exit(0);
+  }
+
+  // Shared by `check` and `inspect-legacy`: resolve+read the receipt path safely, parse JSON.
+  // Same TOCTOU disclosure as before — see the module header note near safeRegularFile.
+  function readReceiptSafely(path) {
+    if (!existsSync(path)) fail(`receipt not found: ${path}`);
+    let safePath;
+    try {
+      safePath = safeRegularFile(path, realpathSync('.'));
+    } catch (error) {
+      fail(`receipt path is unsafe: ${error.message}`);
+    }
+    try {
+      return JSON.parse(readFileSync(safePath, 'utf8'));
+    } catch (e) {
+      fail(`receipt is not valid JSON: ${e.message}`);
+    }
+  }
+
+  // The whole "may this receipt authorize anything" question, in one place. `check` and `commit`
+  // share it verbatim so the commit boundary can never drift from what `check` means — a second
+  // copy of these rules would be free to rot in one direction. Every rejection is a fail() (exit
+  // 1) naming the exact reason; the parsed receipt comes back only when nothing rejected it.
+  function validateReceiptOrFail(path, requireCleanWorktree) {
+    const receipt = readReceiptSafely(path);
+
+    // v1 is archival only — it can never authorize a `check`-gated commit/publish decision,
+    // regardless of its content. Point the caller at the read-only inspector instead of leaving
+    // it looking like a transient rejection.
+    if (mismoSchema(receipt.schema, V1_SCHEMA) || mismoSchema(receipt.schema, V2_SCHEMA)) {
+      fail(`schema ${receipt.schema} is archival-only and cannot pass check; inspect it read-only with: node verify-receipt.mjs inspect-legacy ${path}`);
+    }
+    if (!mismoSchema(receipt.schema, V3_SCHEMA)) fail(`unknown schema: ${receipt.schema}`);
+
+    const shape = validateReceiptV3(receipt, realpathSync('.'), { decisionSeals: loadDecisionSeals() });
+    if (!shape.ok) fail(shape.reason);
+
+    // Exclude ONLY this exact receipt's own path from its own fingerprint (self-invalidation
+    // guard) — every other file, including siblings in the same receipts/ directory, still counts.
+    const now = safeFingerprint(path);
+    if (receipt.git_head !== now.git_head) {
+      fail(`stale receipt: git_head is ${receipt.git_head}, current HEAD is ${now.git_head}`);
+    }
+    if (receipt.tree_fingerprint !== now.tree_fingerprint) {
+      fail('stale receipt: tree_fingerprint does not match current evaluated state (staged, unstaged, or untracked content/mode changed since the receipt was written) — regenerate it');
+    }
+
+    if (requireCleanWorktree && (now.unstaged_count > 0 || now.untracked_count > 0)) {
+      fail(`release requires a clean worktree: ${now.unstaged_count} unstaged and ${now.untracked_count} untracked path(s) remain — stage or remove them so the reviewed tree is the committed tree`);
+    }
+    return receipt;
+  }
+
+
+
+  if (cmd === 'check') {
+    if (!arg) fail('usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]');
+    // Opt-in release strictness. A plain `check` attests whatever state was evaluated, including
+    // unstaged edits and untracked files — that is correct for a mid-task receipt. At the commit
+    // boundary the reviewed tree and the committed tree must be the same one, so 6.4 asks for this
+    // flag. It narrows, but does not close, the window between `check` and `git commit`: nothing
+    // stops a write landing in between. Unknown flags are rejected rather than silently ignored.
+    const extraFlags = process.argv.slice(4);
+    const requireCleanWorktree = extraFlags.includes('--require-clean-worktree');
+    const unknownFlag = extraFlags.find((flag) => flag !== '--require-clean-worktree');
+    if (unknownFlag) fail(`unknown option ${unknownFlag}; usage: verify-receipt.mjs check <receipt.json> [--require-clean-worktree]`);
+
+    const receipt = validateReceiptOrFail(arg, requireCleanWorktree);
+    const cleanliness = requireCleanWorktree ? ', clean worktree' : '';
+    console.log(`${validatedSummary(receipt, 'OK')}${cleanliness}`);
+    process.exit(0);
+  }
+
+  if (cmd === 'custody') {
+    const CUSTODY_USAGE = 'usage: verify-receipt.mjs custody <receipt.json> [--require-signature]';
+    // Exit 2, no 1: un argumento mal puesto es error de quien llama, nunca un veredicto sobre la
+    // custodia del recibo. Confundirlos haria que un typo se lea como "la firma esta mal".
+    if (!arg) { console.error(CUSTODY_USAGE); process.exit(2); }
+    const flags = process.argv.slice(4);
+    const desconocida = flags.find((f) => f !== '--require-signature');
+    if (desconocida) { console.error(`unknown option ${desconocida}; ${CUSTODY_USAGE}`); process.exit(2); }
+    const firma = readSignature(arg, '.', git);
+    if (firma === null) {
+      console.log(`VACIO: ${arg} todavia no esta en ningun commit: sin commit no hay firma que mirar.`);
+      console.log(CUSTODY_LIMIT);
+      process.exit(0);
+    }
+    const veredicto = judgeSignature(firma, flags.includes('--require-signature'));
+    if (!veredicto.ok) {
+      console.error(`REJECTED: RECEIPT_CUSTODY: ${veredicto.mensaje}`);
+      console.error(CUSTODY_LIMIT);
+      process.exit(1);
+    }
+    console.log(`OK: ${veredicto.mensaje}`);
+    console.log(CUSTODY_LIMIT);
+    process.exit(0);
+  }
+
+  // `recheck <receipt.json>` — ver `recomprobarRecibo`. Exit 2 ante un uso invalido, igual que
+  // custody: un argumento mal puesto es un error de quien llama, nunca un veredicto sobre el recibo.
+  if (cmd === 'recheck') {
+    const RECHECK_USAGE = 'usage: verify-receipt.mjs recheck <receipt.json>';
+    if (!arg || process.argv.length > 4) { console.error(RECHECK_USAGE); process.exit(2); }
+    let resultado;
+    try {
+      resultado = recomprobarRecibo(arg, '.');
+    } catch (error) {
+      fail(`no se puede leer la historia de git para recomprobar ${arg}: ${error.message.trim()}`);
+    }
+    if (resultado.estado === 'vacio') {
+      console.log(`VACIO: ${resultado.lineas.join(' ')}`);
+      console.log(RECHECK_LIMIT);
+      process.exit(0);
+    }
+    if (resultado.estado === 'rechazo') {
+      for (const linea of resultado.lineas) console.error(`REJECTED: RECEIPT_RECHECK: ${linea}`);
+      console.error(RECHECK_LIMIT);
+      process.exit(1);
+    }
+    console.log(`OK: ${resultado.lineas.join(' ')}`);
+    console.log(RECHECK_LIMIT);
+    process.exit(0);
+  }
+
+  if (cmd === 'inspect-legacy') {
+    if (!arg) fail('usage: verify-receipt.mjs inspect-legacy <receipt.json>');
+    const receipt = readReceiptSafely(arg);
+    if (!mismoSchema(receipt.schema, V1_SCHEMA) && !mismoSchema(receipt.schema, V2_SCHEMA)) {
+      fail(`inspect-legacy is for archival schemas (ia.receipt/v1, ia.receipt/v2), got: ${receipt.schema} — use check for ia.receipt/v3`);
+    }
+    // Read-only report — no fingerprint recomputation, no exit-1 path past this point, no write
+    // of any kind. This is archival evidence: it never authorizes a commit/publish decision.
+    console.log(`ARCHIVAL: ${receipt.schema} receipt for feature="${receipt.feature ?? '(missing)'}", terminal_state="${receipt.terminal_state ?? '(missing)'}".`);
+    console.log('This receipt predates the ia.receipt/v3 schema. It is archival evidence only —');
+    console.log('it cannot pass `check` and does not authorize any commit, publish, or gate decision.');
+    process.exit(0);
+  }
+
+  // `commit <receipt.json> --message "<msg>"` — see the module header for the full contract and
+  // for the limit this command is required to state in its own output.
+  const COMMIT_USAGE = 'usage: verify-receipt.mjs commit <receipt.json> --message "<message>"';
+  if (cmd === 'commit') {
+    // Exit 2, not 1: bad arguments are a caller mistake, never a verdict about the receipt.
+    // Destructuring the tail makes each rejection its own condition — a missing receipt, a flag
+    // that is not --message, a missing/blank message, and any extra argument.
+    const [flag, message, ...extra] = process.argv.slice(4);
+    if (!arg || flag !== '--message' || !nonEmptyString(message) || extra.length > 0) {
+      console.error(COMMIT_USAGE);
+      process.exit(2);
+    }
+
+    const receipt = validateReceiptOrFail(arg, true);
+
+    // The index git is about to turn into a commit, addressed as a real tree object BEFORE the
+    // write. This is the only value the after-the-fact confirmation can honestly compare against:
+    // it pins the reviewed INDEX, which is what a commit is made of.
+    const validatedTree = git(['write-tree']).trim();
+    const headTree = git(['rev-parse', 'HEAD^{tree}']).trim();
+    if (validatedTree === headTree) {
+      // Say this ourselves instead of letting `git commit` answer it: git's "nothing to commit"
+      // is written for an interactive user, and here it is a gate verdict.
+      fail('nothing to commit: the index is identical to HEAD, so there is no reviewed change to write — stage the work this receipt attests, then run commit again');
+    }
+
+    console.log(`${validatedSummary(receipt, 'VALIDATED')}, clean worktree`);
+    try {
+      // No --no-verify: the operator's hooks run exactly as they would by hand. A hook that
+      // rewrites the index is precisely what the confirmation below exists to catch.
+      git(['commit', '--message', message]);
+    } catch (error) {
+      fail(`git commit failed, so this run confirmed nothing: ${error.message.trim()}`);
+    }
+
+    const committed = git(['rev-parse', 'HEAD']).trim();
+    const committedTree = git(['rev-parse', 'HEAD^{tree}']).trim();
+    if (committedTree !== validatedTree) {
+      fail(`the committed tree does not match the index that was validated (validated ${validatedTree}, committed ${committedTree} in ${committed}) — something rewrote the index after the validation, a re-staging pre-commit hook being the usual cause. `
+        + `The commit was made and is left exactly as it is: this gate never rewrites history on its own. Review it and, if you want it gone, run it yourself: git reset --soft HEAD~1 (or git revert ${committed} if it is already published).`);
+    }
+
+    console.log(`COMMITTED: ${committed} — ${message}`);
+    console.log('CONFIRMED: the committed tree is the index this run validated (write-tree before the write == HEAD^{tree} after it).');
+    console.log('LIMIT: validating and writing in one run narrows the window between them from minutes to milliseconds, it does not close it — another process can still write inside that window. The confirmation above proves the commit contains the reviewed index; it cannot prove that no concurrent write happened.');
+    process.exit(0);
+  }
+
+  console.error('usage: verify-receipt.mjs fingerprint [exclude-path] | check <receipt.json> [--require-clean-worktree] | commit <receipt.json> --message "<message>" | recheck <receipt.json> | custody <receipt.json> [--require-signature] | inspect-legacy <receipt.json>');
+  process.exit(2);
+}

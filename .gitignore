@@ -1,0 +1,40 @@
+# Artefactos de distribución (se construyen en local, no se commitean)
+*.zip
+*.sha256
+checksums.txt
+dist/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# El estado del proyecto (.ia-stack/) se versiona: es la evidencia de que IA Stack corrió sobre sí mismo.
+# El runtime instalado no: es una copia de este mismo repositorio y lo duplicaría.
+.ia-stack/runtime/
+# Lo que el instalador poda del runtime tampoco es código del proyecto.
+.ia-stack/archivo/
+# Lo que la autolimpieza mueve a la cuarentena puede ser cualquier cosa del proyecto: no se versiona.
+.ia-stack/cuarentena/
+
+# Editor
+.vscode/
+.idea/
+
+# Copias de seguridad locales (no son parte del producto)
+_backups/
+
+# Cachés y índices generados (no son código fuente)
+.ua/
+graphify-out/
+
+# Fase 9 (limpieza): lo que la limpieza archiva. No es código del proyecto, y puede
+# contener configuración con datos propios: no se commitea nunca.
+.claude-archive/
+
+# La configuración local de Claude Code: allowlists de permisos, rutas de esta máquina y config de
+# MCP. No viaja con el repositorio: en un clon de otra persona un `git add -A` la publicaría.
+.claude/
+
+# La cobertura cruda que el CI fusiona entre plataformas. Es un insumo, no código del proyecto.
+cobertura/
+cobertura-bajada/

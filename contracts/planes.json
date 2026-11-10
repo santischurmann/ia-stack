@@ -1,0 +1,42 @@
+{
+  "schema": "ia.planes/1",
+  "why": "Qué sabe el protocolo de cada tipo de plan. No trae cifras: los límites cambian y una cifra vieja se lee igual que una cierta. El cupo se lee del host; si no se puede, queda «desconocido» y nunca se estima.",
+  "campos": {
+    "ventana_5h": "tiene una ventana móvil de 5 horas",
+    "limite_semanal": "tiene un límite semanal",
+    "lectura_del_cupo": "cómo se lee lo que queda"
+  },
+  "planes": {
+    "free": {
+      "ventana_5h": null,
+      "limite_semanal": null,
+      "lectura_del_cupo": "preguntar a la persona; sin herramienta del host queda desconocido"
+    },
+    "pro": {
+      "ventana_5h": true,
+      "limite_semanal": true,
+      "lectura_del_cupo": "herramienta del host (get_usage en Claude Code de escritorio); si no hay, desconocido"
+    },
+    "max": {
+      "ventana_5h": true,
+      "limite_semanal": true,
+      "lectura_del_cupo": "herramienta del host (get_usage en Claude Code de escritorio); si no hay, desconocido"
+    },
+    "team": {
+      "ventana_5h": true,
+      "limite_semanal": true,
+      "lectura_del_cupo": "herramienta del host; el cupo puede ser de la cuenta y no de la persona, preguntar si no se ve"
+    },
+    "api": {
+      "ventana_5h": false,
+      "limite_semanal": false,
+      "lectura_del_cupo": "no hay ventana ni semana: se mide el gasto en la consola del proveedor; el protocolo sólo avisa"
+    }
+  },
+  "sin_herramienta": {
+    "pregunta": "una vez, cuál es el plan",
+    "guarda_en": ".ia-stack/plan.json",
+    "cupo": "desconocido",
+    "gate": "sólo avisa"
+  }
+}

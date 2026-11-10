@@ -1,0 +1,92 @@
+{
+  "schema": "ia.model-routing/2",
+  "why": "Una sola fuente de qué modelo usa cada nivel. El esfuerzo es `low` siempre: no existen `medium` ni `high`. El orquestador pasa `model` y `effort` desde acá en cada invocación de subagente, nunca un literal. Meta: el modelo más barato que resuelva bien.",
+  "por_defecto": "barato",
+  "script": "Sin IA: contar, medir, validar forma, limpiar, consultar versiones. Siempre se prueba primero.",
+  "niveles": {
+    "barato": {
+      "modelo": "haiku",
+      "esfuerzo": "low",
+      "codex": { "familia": "luna", "esfuerzo": "low" },
+      "para": "leer, buscar, logs, git, edición mecánica, documentación"
+    },
+    "medio": {
+      "modelo": "sonnet",
+      "esfuerzo": "low",
+      "codex": { "familia": "terra", "esfuerzo": "low" },
+      "para": "tests, pantallas, funcionalidades con patrón conocido"
+    },
+    "fuerte": {
+      "modelo": "opus",
+      "esfuerzo": "low",
+      "codex": { "familia": "sol", "esfuerzo": "low" },
+      "para": "marca, spec, áreas de riesgo, revisión antes de publicar"
+    },
+    "orquestador": {
+      "modelo": "fable",
+      "esfuerzo": "low",
+      "codex": { "familia": "astra", "esfuerzo": "low" },
+      "para": "sólo la sesión que reparte trabajo a subsesiones; no construye"
+    }
+  },
+  "roles": {
+    "lector": { "nivel": "barato", "esfuerzo": "low", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
+    "docs": { "nivel": "barato", "esfuerzo": "low", "para": "actualizar .ia-stack/ y documentación" },
+    "red": { "nivel": "medio", "esfuerzo": "low", "para": "la prueba roja de cada criterio" },
+    "green": { "nivel": "medio", "esfuerzo": "low", "para": "el código mínimo que la pone en verde" },
+    "refactor": { "nivel": "medio", "esfuerzo": "low", "para": "simplificar sin cambiar la conducta" },
+    "planificador": { "nivel": "fuerte", "esfuerzo": "low", "para": "marca, spec y plan" },
+    "seguridad": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión de seguridad antes de publicar" },
+    "revisor": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión antes de publicar; un nivel fuerte distinto del que construyó (otra sesión u otro host; si no hay, revisa la persona)" },
+    "orquestador": { "nivel": "orquestador", "esfuerzo": "low", "para": "reparte tareas y recibe conclusiones; no lee código" }
+  },
+  "complejidad": {
+    "gate": "scripts/clasificar-tarea.mjs",
+    "clases": {
+      "mecanica": "barato",
+      "patron_conocido": "medio",
+      "alto_requisito": "fuerte"
+    },
+    "regla": "El piso por riesgo sólo sube, nunca baja. Sin señal clara, patrón conocido."
+  },
+  "piso_por_riesgo": {
+    "nivel": "fuerte",
+    "areas": ["plata", "seguridad", "autenticación", "migraciones de datos"],
+    "para": "Lo que toca estas áreas arranca en el nivel fuerte, sin pasar por los de abajo."
+  },
+  "escalada": {
+    "intentos_fallidos": 1,
+    "sube": "un nivel por vez",
+    "pasa_la_falla": "Al subir se le pasa el comando, la salida, archivo:línea y lo ya probado.",
+    "tope": "fuerte",
+    "si_falla_el_fuerte": "se frena y se le pregunta a la persona",
+    "tercer_intento": "al tercer intento fallido sobre el mismo problema se frena",
+    "no_es_falla": "Un 429 o un error de cupo no es una falla del modelo: se espera o se avisa, no se escala. El rojo buscado del TDD tampoco cuenta."
+  },
+  "revisor_distinto_del_constructor": true,
+  "contexto": {
+    "medido_sobre": "mensajes",
+    "tope_orquestador": 120000,
+    "tope_subsesion": 60000,
+    "aviso_desde": 0.7,
+    "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. Sin dato del host, el relevo es sólo al cambiar de etapa."
+  },
+  "encargo": {
+    "modo_breve_entre_agentes": "full",
+    "brief_max_tokens": 4000,
+    "brief_max_archivos": 3,
+    "reporte_max_lineas": 40,
+    "handoff_desde": 0.7,
+    "detalle_a": ".ia-stack/handoffs/",
+    "sesiones": "subagentes con contexto nuevo; hasta 4 en paralelo; un dueño por tarea; un proceso pesado a la vez"
+  },
+  "presupuesto": {
+    "por_dia": 0.14,
+    "por_hora_ventana_5h": 0.2,
+    "freno_ventana_5h": 0.85,
+    "medir_con": "get_usage en Claude Code de escritorio; sin herramienta, el cupo queda desconocido y el gate sólo avisa",
+    "si_va_encima": "barato y medio bajan un nivel o esperan; fuerte nunca baja, se pausa",
+    "en_freno": "al 85 % de la ventana de 5 h se frena todo lo que no sea la tarea en curso y se avisa la hora de reinicio",
+    "gate": "scripts/clasificar-tarea.mjs ritmoPresupuesto"
+  }
+}

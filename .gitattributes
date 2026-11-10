@@ -1,0 +1,9 @@
+# Todo el arbol se materializa en LF. Los gates hashean bytes de archivo: los mismos bytes tienen
+# que llegar a toda maquina. Sin esta regla, `text=auto` a secas deja que core.autocrlf decida y un
+# clon en Windows recibe CRLF con el mismo commit.
+# Lo fija tests/tracked-bytes.test.mjs.
+* text=auto eol=lf
+
+# Shell necesita LF para bash en Linux/Mac; PowerShell necesita CRLF.
+*.sh text eol=lf
+*.ps1 text eol=crlf

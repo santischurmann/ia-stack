@@ -1,0 +1,69 @@
+{
+  "schema": "ia.platform-scope/1",
+  "why": "El CI de este repositorio corrio por primera vez fuera de una maquina local y nueve pruebas salieron rojas: la suite asumia Windows y el runner era Ubuntu. No era una regresion, era el estreno. Una prueba que no corre en una plataforma tiene que decirlo, y el salteo no puede vivir adentro de la prueba que se saltea: ahi no lo revisa nadie, y una prueba que se saltea en todos lados se ve igual que una que corre. Aca se declara, y el gate lo comprueba en los dos sentidos. Y el subcomando `simetria` encontro la otra mitad del mismo problema: diez pruebas se salteaban en Ubuntu y CORRIAN en Windows sin declararlo. Nueve eran defectos -- comparaban `existsSync` contra una ruta de Git Bash de Windows, que en Linux da false, apagando justo las pruebas de shell en la plataforma donde el shell es EL camino -- y una sola era de plataforma de verdad. Un salteo sin declarar dentro de una plataforma no se ve; comparando las dos, si.",
+  "solo_en": [
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "fresh PowerShell installation produces the same project-local runtime",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
+      "que_queda_sin_verificar": "El instalador de PowerShell no se comprueba fuera de Windows: `install.ps1` queda sin correr, y con el la rama de instalacion entera. Que `install.sh` pase no dice nada sobre la otra."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/verify-red-gate.test.mjs",
+      "prueba": "PowerShell: classifies genuine RED evidence and known false positives",
+      "por_que": "Invoca `powershell.exe` por nombre para correr `verify-red.ps1`. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
+      "que_queda_sin_verificar": "La variante PowerShell del gate de LAW 1 -- la regla mas dura del protocolo, «sin test rojo visible no hay implementacion» -- no se comprueba fuera de Windows. Que la variante de shell clasifique bien la evidencia roja no dice nada sobre la otra: son dos implementaciones distintas del mismo criterio."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "la poda no vacia el runtime cuando el proyecto llega por una ruta corta 8.3",
+      "por_que": "Los nombres cortos 8.3 son de Windows: la prueba le pide a Windows el nombre corto de una carpeta y se lo pasa al instalador de PowerShell, que tampoco existe fuera de Windows.",
+      "que_queda_sin_verificar": "Nada que exista en otra plataforma: fuera de Windows no hay rutas 8.3 ni powershell.exe. La poda del instalador de bash se comprueba aparte, en install-runtime.test.mjs, y ahi `find` devuelve el prefijo tal cual se le pasa, asi que ese defecto no existe."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "una poda desproporcionada no mueve nada, tampoco en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "La red de seguridad del instalador de PowerShell no se comprueba fuera de Windows. La de bash si: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "un .gitignore sin salto de línea final no pierde su última regla, tampoco en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "Fuera de Windows no se comprueba que el instalador de PowerShell termine la ultima linea de un .gitignore antes de agregarle reglas. El de bash si se comprueba: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "un AGENTS.md que escribió el instalador se actualiza, y el .gitignore CRLF no mezcla finales, también en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "Fuera de Windows no se comprueba que el instalador de PowerShell reconozca por su hash un AGENTS.md que el mismo escribio, ni que agregue reglas a un .gitignore CRLF sin mezclar finales. El de bash si se comprueba: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-runtime-powershell.test.mjs",
+      "prueba": "un CLAUDE.md sin @AGENTS.md se avisa, también en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe.",
+      "que_queda_sin_verificar": "Fuera de Windows no se comprueba que el instalador de PowerShell avise un CLAUDE.md sin @AGENTS.md. El de bash si se comprueba: su prueba corre en las dos plataformas."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-project-only.test.mjs",
+      "prueba": "-ProjectOnly instala el runtime en el proyecto y no escribe nada fuera de el, tambien en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
+      "que_queda_sin_verificar": "El modo -ProjectOnly de install.ps1 no se comprueba fuera de Windows: queda sin correr, y con el la garantia de que ese instalador no escribe fuera del proyecto. Que `--project-only` de install.sh pase no dice nada sobre la otra."
+    },
+    {
+      "plataforma": "win32",
+      "archivo": "tests/install-project-only.test.mjs",
+      "prueba": "FALSIFICACION · -ProjectOnly rechaza lo que no tiene sentido, tambien en PowerShell",
+      "por_que": "Invoca `powershell.exe` por nombre. Fuera de Windows ese ejecutable no existe -- PowerShell Core se llama `pwsh` y no acepta los mismos parametros --, asi que la prueba no puede correr.",
+      "que_queda_sin_verificar": "El modo -ProjectOnly de install.ps1 no se comprueba fuera de Windows: queda sin correr, y con el la garantia de que ese instalador no escribe fuera del proyecto. Que `--project-only` de install.sh pase no dice nada sobre la otra."
+    }
+  ]
+}

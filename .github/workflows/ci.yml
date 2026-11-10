@@ -1,0 +1,72 @@
+# Los gates de este protocolo corren también en un clon limpio, en Linux y en Windows. Sin esto,
+# lo que se publica queda verificado en una sola máquina y nadie que clone puede comprobarlo sin
+# correrlo a mano.
+#
+# Una prueba que no corre en una plataforma se declara en `contracts/platform-scope.json` y se
+# saltea como VACÍO, nunca como OK. No publica nada, no despliega nada y no toca ningún secreto:
+# el token sólo puede leer.
+
+name: CI
+
+# CORRE CUANDO HAY ALGO QUE PUBLICAR, NO CON CADA PUSH. Un push a una rama de trabajo no dispara
+# nada: el CI llega con el PR o con main. Este flujo es el molde que el agente copia en proyectos
+# privados, donde cada corrida son minutos facturables. `cancel-in-progress` sólo vale para PR: un
+# commit de main cancelado a mitad puede terminar etiquetado sin CI. Lo fija el gate 8
+# (`scripts/verify-ci-push.mjs`) y `tests/ci-economico.test.mjs`.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Mínimo privilegio: este flujo lee el código y nada más.
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Suite y gates sobre un clon limpio (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      # `fail-fast: false` a propósito: si Ubuntu falla, queremos ver igual qué hizo Windows.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Traer el código
+        uses: actions/checkout@v5
+        with:
+          # El historial completo: varios gates comparan contra la base de la rama, y con un clon
+          # superficial esa comparación no existe y se leería como «no hay nada que revisar».
+          fetch-depth: 0
+
+      - name: Node 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Sin dependencias, a propósito
+        # `shell: bash` explícito: en el runner de Windows el shell por omisión es PowerShell.
+        shell: bash
+        run: |
+          test ! -f package.json || (echo "Este protocolo se declara sin dependencias externas y apareció un package.json" && exit 1)
+          node --version
+
+      # LA SUITE CORRE UNA SOLA VEZ, y va primero: si un gate de abajo falla el trabajo se corta,
+      # y una suite puesta al final quedaría sin correr con su rojo escondido detrás del gate.
+      - name: Suite completa
+        run: node --test
+
+      - name: Cada prueba que no corre en esta plataforma está declarada
+        run: node scripts/verify-platform-scope.mjs check
+
+      - name: El repositorio no publica la identidad de quien lo escribió
+        run: node scripts/verify-repo-clean.mjs check
+
+      - name: El CI sólo corre cuando hay algo que publicar
+        run: node scripts/verify-ci-push.mjs check

@@ -1,0 +1,98 @@
+// Donde estoy corriendo, y por que importa.
+//
+// El instalador copia tests/ ENTERO al proyecto de otra persona, en
+// `<proyecto>/.ia-stack/runtime/tests/`. Ahi adentro conviven dos cosas que no son lo mismo:
+//
+//   - pruebas OPERATIVAS, que ejercitan los gates y tienen sentido en cualquier proyecto;
+//   - SELF-CHECKS del repositorio de IA Stack, que leen el README, el CHANGELOG, docs/ o examples/
+//     para comprobar que ESTE repositorio es consistente consigo mismo.
+//
+// Los segundos no tienen nada que preguntarle al proyecto de quien instala, y ademas fallan: el
+// instalador no copia esos archivos. Medido contra un proyecto ficticio de un tercero: 41 fallos
+// sobre 1090, casi todos por leer un README que ahi no existe. El repositorio verde y todas las
+// instalaciones en rojo.
+//
+// Un self-check llego a hacer algo peor que fallar: corria `git remote get-url origin` DENTRO del
+// repositorio ajeno para despues exigir que el README de IA Stack lo nombrara.
+//
+// La deteccion es por FORMA y no por una lista de rutas: un runtime instalado siempre vive en
+// `<algo>/.ia-stack/runtime`. Y nada se saltea en silencio -- se saltea diciendo por que, que es la
+// diferencia entre declarar un limite y esconder un hueco.
+
+// La guarda NO se define aca: se reexporta la del gate, que la deriva de DEFAULT_RUNTIME_PATH.
+// Tenerla dos veces es tener dos guardas que se desincronizan, y eso ya costo un rojo en este
+// repositorio. Los scripts no pueden importar de tests/, pero tests/ si puede importar de scripts/.
+// Se importa Y se reexporta: `export … from` no deja binding local, y `saltarSiEsRuntimeInstalado`
+// de más abajo la necesita.
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const RUTAS_DE_RUNTIME = Object.freeze(['.ia-stack/runtime']);
+const WINDOWS_GIT_BASH = 'C:\\Program Files\\Git\\bin\\bash.exe';
+
+// Una ruta ES un runtime instalado si termina en alguna de las carpetas de runtime (forma, no lista).
+export function esRuntimeInstalado(root) {
+  const partes = resolve(root).split(/[\\/]/u).filter(Boolean);
+  return RUTAS_DE_RUNTIME.some((ruta) => {
+    const esperadas = ruta.split('/');
+    return partes.length >= esperadas.length
+      && partes.slice(-esperadas.length).join('/') === esperadas.join('/');
+  });
+}
+
+// En Windows prefiere Git Bash sobre el shim de WSL; fuera de Windows devuelve `bash`.
+export function resolveBash(env = process.env, exists = existsSync, platform = process.platform) {
+  if (platform !== 'win32') return 'bash';
+  const declarado = typeof env.IA_STACK_BASH_PATH === 'string' && env.IA_STACK_BASH_PATH.trim() !== ''
+    ? env.IA_STACK_BASH_PATH : undefined;
+  const configured = declarado ?? WINDOWS_GIT_BASH;
+  return exists(configured) ? configured : 'bash';
+}
+
+export const COPIED_DIRECTORIES = ['scripts', 'contracts', 'tests', 'templates', 'skills', '.agents', 'phases'];
+export const COPIED_FILES = ['SKILL.md', 'SECURITY.md', 'AGENTS.md'];
+
+
+// EL BASH DEL SISTEMA, por el mismo motivo: no se resuelve dos veces. `resolveBash` ya elige bien en
+// las dos plataformas -- en Windows prefiere Git Bash sobre el shim de WSL, que puede existir sin
+// distro; fuera de Windows devuelve `bash` a secas, que está en el PATH --.
+//
+// ESTO NO ES COSMETICO. Nueve pruebas comprobaban `existsSync('C:\\Program Files\\Git\\bin\\bash.exe')`
+// para decidir si correr, y en Linux eso da false: se salteaban enteras. El instalador de bash, el
+// empaquetador y el gestor de memoria -- todo lo que es shell, y que en Linux es EL camino, no el
+// alternativo -- nunca corrieron ahí. Lo encontró `verify-platform-scope simetria`, en
+// su primera corrida sobre la matriz, comparando qué saltea cada plataforma contra lo que la otra
+// corre. Un salteo simétrico no rompe nada; uno asimétrico es un hueco que sólo una plataforma tiene.
+
+// Lo que el instalador SI deja en la raiz del runtime. Cualquier otra cosa que una prueba lea desde
+// la raiz solo existe en el checkout fuente. La lista vive aca y en `COPIED_DIRECTORIES`
+// de arriba; tests/self-checks.test.mjs falla si se separan.
+export const COPIADO_A_LA_RAIZ = Object.freeze([...COPIED_DIRECTORIES, ...COPIED_FILES]);
+
+export function existeEnRuntimeInstalado(rutaRelativa) {
+  const primero = rutaRelativa.replaceAll('\\', '/').split('/')[0];
+  return COPIADO_A_LA_RAIZ.includes(primero);
+}
+
+// Marca una prueba como self-check del repositorio. Devuelve true si hay que cortar.
+export function saltarSiEsRuntimeInstalado(t, root, que) {
+  if (!esRuntimeInstalado(root)) return false;
+  t.skip(`runtime instalado: «${que}» es un self-check del repositorio de IA Stack, no del proyecto de quien instala`);
+  return true;
+}
+
+// --- Plataforma --------------------------------------------------------------------------------
+//
+// UNA PRUEBA QUE NO CORRE EN UNA PLATAFORMA SE SALTEA COMO **VACIO**, NUNCA COMO OK. Es el
+// vocabulario del propio protocolo: «no habia nada que comparar» no es «compare y paso». Y el
+// salteo NO se decide con un `if` suelto adentro de la prueba: se declara en
+// `contracts/platform-scope.json` y `verify-platform-scope.mjs` lo comprueba en los dos sentidos.
+// Un salteo que nadie revisa se ve igual que una prueba que corre.
+//
+// El argumento no es «por que»: es QUE QUEDA SIN VERIFICAR en las demas plataformas. Esa es la
+// mitad que alguien necesita leer para decidir si le alcanza.
+
+export function soloEnWindows(queQuedaSinVerificar) {
+  if (process.platform === 'win32') return {};
+  return { skip: `VACÍO en ${process.platform}: ${queQuedaSinVerificar}. No es un OK: es que acá no había nada que comparar.` };
+}

@@ -1,0 +1,17 @@
+{
+  "feature": "<nombre>",
+  "spec": "docs/spec.md",
+  "tasks": [
+    {
+      "id": "T01",
+      "description": "Una acción: una función o un módulo",
+      "files_to_create": ["src/modulo.js"],
+      "files_to_modify": [],
+      "test_files": ["tests/modulo.test.js"],
+      "depends_on": [],
+      "visible": false,
+      "preview": "no-aplica: <motivo>; si la tarea cambia algo visible, va la pieza boceto o preview aprobada",
+      "status": "pending"
+    }
+  ]
+}

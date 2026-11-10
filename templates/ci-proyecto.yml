@@ -1,0 +1,28 @@
+# CI economico de un proyecto: main, PR y a mano; un solo sistema; una corrida de la suite.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tests with coverage
+        run: <test_command_with_coverage>
+      - name: Lint
+        run: <lint_command>
+      - name: Typecheck
+        run: <typecheck_command>
+      - name: Coverage gate
+        run: <coverage_gate_command>  # fail if any range is neither covered nor exempted with owner, reason and evidence
