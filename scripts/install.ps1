@@ -242,7 +242,7 @@ if ($ProjectDir) {
   if (-not (Test-Path -LiteralPath $ProjectAgents)) {
     Copy-Item $PackageAgents $ProjectAgents -Force
     Write-Output "OK: AGENTS.md creado -> Codex ya ve el protocolo"
-  } elseif ((Get-FileHash -LiteralPath $PackageAgents).Hash -eq (Get-FileHash -LiteralPath $ProjectAgents).Hash) {
+  } elseif ([Linq.Enumerable]::SequenceEqual([IO.File]::ReadAllBytes($PackageAgents), [IO.File]::ReadAllBytes($ProjectAgents))) {
     # Ya es el de esta version.
   } elseif ($Publicados -contains (Get-HashGitLf $ProjectAgents)) {
     Copy-Item $PackageAgents $ProjectAgents -Force
