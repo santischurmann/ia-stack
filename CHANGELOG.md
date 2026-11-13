@@ -7,6 +7,9 @@
 - El instalador sella también el runtime global (`INSTALADO.json`), en bash y PowerShell.
 - Ventana de contexto de 300K como máximo en toda sesión, orquestador o anidada (`contexto.ventana_max`); llena, se compacta. `context-guard.mjs` lo ordena e `INSTALL.md` dice cómo fijarla en Claude Code y Codex.
 - **Cambio de contrato** en `verify-egm-convergencia.mjs`: `spec`, `plan-*`, `publicar` y `protocolo` pasan al régimen de ronda (5 a 10 rondas, la última limpia, o la décima con `decide_persona`); `preview` conserva el régimen de 3.4.4; una pieza fuera de las listas de `rondas.egm` falla.
+- **Cambio de contrato** en `verify-aprobacion-humana.mjs tareas`: cada tarea lleva `id` único y `description`, y una de alto requisito exige su ronda EGM convergida en la pieza `plan-<id>` (`--metricas`, `--tamano`).
+- Handoff antes de compactar: a los 180.000 tokens de mensajes `context-guard.mjs` ordena escribir `.ia-stack/handoffs/ULTIMO.md` (plantilla `templates/estado/HANDOFF.md`, hasta 40 líneas); `scripts/handoff.mjs check|mostrar` lo valida y lo devuelve al contexto después de compactar.
+- `scripts/ventana.mjs check|aplicar`: el instalador deja en `.claude/settings.local.json` la variable de compactación en 300000 y los dos hooks; `--sin-ventana` / `-SinVentana` lo saltea y `arranque.mjs` avisa si falta.
 - `siguienteNivel` en `clasificar-tarea.mjs` y plantilla de falla en `skills/encargo.md`.
 - Enrutamiento por falla explícito en `escalada.por_falla`: barato pasa a medio y medio a fuerte, con la falla exacta.
 
