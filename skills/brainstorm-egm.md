@@ -61,3 +61,15 @@ El lector de diseño sube a nivel fuerte sólo si hay un área de riesgo.
 --altos <n> --medios <n> --bajos <n>`. Si decide la persona, sumá `--decide-persona`.
 
 **Comprobación:** `node scripts/verify-egm-convergencia.mjs check --pieza <nombre> --tamano <medio|grande>` lee ese registro; no sabe si el lector leyó el documento.
+
+## Ronda de brainstormings + EGM (pedida por la persona)
+
+Regla fija para todos los proyectos. Siempre nivel fuerte (Opus, `low`): es la excepción al «modelo
+más barato que resuelva bien» (`contracts/model-routing.json` § rondas, rol `ronda_brainstorm_egm`).
+- **Ronda de brainstormings = 5 pasos, en este orden y sin saltear:** brainstorming, adversarial,
+  brainstorming, adversarial, brainstorming final. Cada paso recibe la salida del anterior; el
+  adversarial ataca, no elogia.
+- **Rondas de EGM:** mínimo 5. Si la quinta aún trae mejoras o correcciones, seguir hasta una
+  ronda limpia; máximo 10. Lectores sin contexto sobre el documento ya corregido por la anterior.
+- Se hace completa, sin recortar. Se aplica lo hallado; no se resume.
+- Esto reemplaza el tope de 2 rondas de arriba sólo cuando la persona pide la ronda.

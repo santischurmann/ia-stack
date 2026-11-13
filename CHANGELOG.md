@@ -1,5 +1,10 @@
 # Cambios
 
+## [Sin publicar] - 13-11-2026
+
+- Regla fija «ronda de brainstormings + EGM» (`skills/brainstorm-egm.md`, `contracts/model-routing.json` § rondas): 5 pasos en orden, EGM de 5 a 10 rondas, siempre Opus; excepción al modelo más barato.
+- Enrutamiento por falla explícito en `escalada.por_falla`: barato pasa a medio y medio a fuerte, con la falla exacta.
+
 ## [3.4.4] - 10-11-2026
 
 Protocolo rehecho de cero: más corto, con menos IA y con el cupo de la persona al mando.

@@ -37,6 +37,7 @@
     "refactor": { "nivel": "medio", "esfuerzo": "low", "para": "simplificar sin cambiar la conducta" },
     "planificador": { "nivel": "fuerte", "esfuerzo": "low", "para": "marca, spec y plan" },
     "seguridad": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión de seguridad antes de publicar" },
+    "ronda_brainstorm_egm": { "nivel": "fuerte", "esfuerzo": "low", "para": "ronda de brainstormings y rondas de EGM (skills/brainstorm-egm.md); nunca en barato ni medio" },
     "revisor": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión antes de publicar; un nivel fuerte distinto del que construyó (otra sesión u otro host; si no hay, revisa la persona)" },
     "orquestador": { "nivel": "orquestador", "esfuerzo": "low", "para": "reparte tareas y recibe conclusiones; no lee código" }
   },
@@ -57,11 +58,19 @@
   "escalada": {
     "intentos_fallidos": 1,
     "sube": "un nivel por vez",
+    "por_falla": { "barato": "medio", "medio": "fuerte" },
     "pasa_la_falla": "Al subir se le pasa el comando, la salida, archivo:línea y lo ya probado.",
     "tope": "fuerte",
     "si_falla_el_fuerte": "se frena y se le pregunta a la persona",
     "tercer_intento": "al tercer intento fallido sobre el mismo problema se frena",
     "no_es_falla": "Un 429 o un error de cupo no es una falla del modelo: se espera o se avisa, no se escala. El rojo buscado del TDD tampoco cuenta."
+  },
+  "rondas": {
+    "nivel": "fuerte",
+    "excepcion_a": "el_modelo_mas_barato",
+    "vale_para": "todos los proyectos",
+    "brainstorming": { "pasos": ["brainstorming", "adversarial", "brainstorming", "adversarial", "brainstorming final"], "orden_fijo": true },
+    "egm": { "minimo": 5, "maximo": 10, "hasta": "una ronda limpia, sin mejoras ni correcciones" }
   },
   "revisor_distinto_del_constructor": true,
   "contexto": {

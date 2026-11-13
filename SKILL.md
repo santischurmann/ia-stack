@@ -21,7 +21,7 @@ siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado
 
 ## Glosario
 - **CAIO:** diagnóstico de procesos para decidir qué automatizar con código.
-- **EGM:** lectores sin contexto que revisan un documento (`skills/brainstorm-egm.md`).
+- **EGM:** lectores sin contexto que revisan un documento; la ronda de brainstormings + EGM es siempre Opus (`skills/brainstorm-egm.md`).
 - **Recibo:** evidencia de comandos reales de una tarea (`skills/recibo-y-seguridad.md`).
 - **sha:** identificador del commit.
 - **Hook:** script que el host corre solo ante un evento, como un mensaje tuyo.

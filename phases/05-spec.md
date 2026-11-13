@@ -23,7 +23,8 @@ pueda implementarlo.
 6. Registrá cada ronda: `node scripts/metricas.mjs egm --pieza spec --lectores <n> --ronda <n>
    --altos <n> --medios <n> --bajos <n>`. Máximo 2 rondas; la segunda sólo si quedaron altos.
 7. Si después de la ronda 2 quedan altos, decide la persona.
-8. Actualizá `.ia-stack/ESTADO.md`.
+8. Si la persona pidió la ronda de brainstormings + EGM: completa, en Opus (`skills/brainstorm-egm.md`).
+9. Actualizá `.ia-stack/ESTADO.md`.
 
 ## Entrega
 `docs/spec.md` en borrador, sin hallazgos altos abiertos, o con altos que la persona aceptó.
