@@ -169,6 +169,12 @@ test('ronda · sólo cuenta la última serie (desde el último ronda: 1)', () =>
   assert.match(checkConvergencia([...serie(5), R(1, [1, 0, 0])], 'spec', 'grande').reason, /1 rondas: el mínimo es 5/);
 });
 
+test('ronda · otra pieza intercalada no corta la serie; pieza en las dos listas va al régimen ronda', () => {
+  const mezcla = serie(5).flatMap((f) => [f, R(1, [9, 9, 9], { pieza: 'publicar' })]);
+  assert.equal(checkConvergencia(mezcla, 'spec', 'grande').ok, true);
+  assert.equal(regimenDe('spec', { ...EGM, piezas_simples: ['preview', 'spec'] }), 'ronda');
+});
+
 test('ronda · spec en chico pasa aun con registros malos; sin registros falla', () => {
   assert.equal(checkConvergencia([R(3, [9, 9, 9])], 'spec', 'chico').ok, true);
   assert.match(checkConvergencia([], 'spec', 'medio').reason, /sin rondas EGM registradas para «spec»/);

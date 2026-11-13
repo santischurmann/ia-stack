@@ -17,22 +17,22 @@ pueda implementarlo.
    - tecnología con versiones fijadas (las del radar);
    - criterios de aceptación numerados y medibles, los del pedido más los técnicos.
 3. Marcala como borrador. No se congela hasta que la persona apruebe el preview (fase 6).
-4. Corré el panel EGM según el tamaño (`skills/brainstorm-egm.md`): medio 2 lectores, grande 4.
-   Cada lector recibe sólo la spec.
-5. Resolvé cada hallazgo: aplicalo o descartalo con el motivo en una línea.
-6. Registrá cada ronda: `node scripts/metricas.mjs egm --pieza spec --lectores <n> --ronda <n>
-   --altos <n> --medios <n> --bajos <n>`. Máximo 2 rondas; la segunda sólo si quedaron altos.
-7. Si después de la ronda 2 quedan altos, decide la persona.
-8. Ronda de brainstormings sobre la spec y rondas de EGM (medio y grande; chico no): completas, en Opus (`skills/brainstorm-egm.md`).
+4. Ronda de brainstormings sobre la spec: los 5 pasos de `skills/brainstorm-egm.md`, en nivel fuerte.
+5. Rondas de EGM con lectores de nivel fuerte: 2 en medio, 4 en grande. Cada lector recibe sólo la
+   spec. Mínimo 5 rondas; si la quinta trae algo, se sigue hasta una limpia; máximo 10.
+6. Resolvé cada hallazgo: aplicalo o descartalo con el motivo en una línea.
+7. Registrá cada ronda: `node scripts/metricas.mjs egm --pieza spec --lectores <n> --ronda <n>
+   --altos <n> --medios <n> --bajos <n>` (sólo los hallazgos aplicados).
+8. Si la ronda 10 no sale limpia, decide la persona: se registra con `--decide-persona`.
 9. Actualizá `.ia-stack/ESTADO.md`.
 
 ## Entrega
-`docs/spec.md` en borrador, sin hallazgos altos abiertos, o con altos que la persona aceptó.
+`docs/spec.md` en borrador, con la última ronda de EGM limpia, o con la décima aceptada por la persona.
 
 ## Gate
-`node scripts/verify-egm-convergencia.mjs check --pieza spec --tamano <medio|grande>`: pasa si la
-última ronda no tiene altos o si la persona decidió.
+`node scripts/verify-egm-convergencia.mjs check --pieza spec --tamano <medio|grande>`: pasa con 5 a
+10 rondas y la última limpia, o con la décima si la persona decidió.
 
 ## Modelo
-Nivel fuerte para escribirla. Lectores EGM: barato y medio; el de diseño sube a fuerte sólo si
-hay área de riesgo.
+Nivel fuerte para escribirla, para la ronda de brainstormings y para los lectores EGM. En tamaño
+chico esta fase no se recorre.

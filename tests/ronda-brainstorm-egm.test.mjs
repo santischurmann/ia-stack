@@ -77,3 +77,12 @@ test('la versión es 3.4.5 en SKILL.md y README', () => {
   assert.match(leer('README.md'), /Versión \*\*3\.4\.5\*\*/u);
   assert.match(leer('CHANGELOG.md'), /^## \[3\.4\.5\] - 13-11-2026/mu);
 });
+
+test('fase 5 · la spec corre la ronda completa: sin tope de 2 rondas ni lectores baratos', () => {
+  const t = readFileSync(new URL('../phases/05-spec.md', import.meta.url), 'utf8');
+  assert.ok(!/M[aá]ximo 2 rondas/iu.test(t), 'sigue diciendo «Máximo 2 rondas»');
+  assert.ok(!/ronda 2 quedan altos/u.test(t), 'sigue cerrando en la ronda 2');
+  assert.ok(t.includes('--pieza spec'));
+  assert.ok(!/Lectores EGM: barato/u.test(t), 'sigue nombrando lectores baratos');
+  assert.match(t, /decide la persona/u);
+});
