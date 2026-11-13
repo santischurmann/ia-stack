@@ -45,21 +45,28 @@ Los comandos se ejecutan desde el proyecto:
 node .ia-stack/runtime/scripts/arranque.mjs
 ```
 
-## Hook de contexto
-
-El instalador no toca hooks. Para recibir el aviso de relevo al 70 % del contexto, agregá a mano en
-tu `settings.json` un hook `UserPromptSubmit` con
-`node .ia-stack/runtime/scripts/context-guard.mjs --rol orquestador`. Una subsesión fija
-`IA_STACK_ROL=subsesion`. El script sale siempre con 0 y no cierra la sesión solo.
-
-## Ventana de contexto de 300K
+## Ventana de 300K y hooks de contexto
 
 Toda sesión con IA Stack, orquestador o anidada, trabaja con una ventana de 300.000 tokens como
-máximo y compacta apenas se llena (`contracts/model-routing.json` § contexto). El host la aplica:
-- **Claude Code:** `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" }` en `settings.json`.
-- **Codex:** `model_auto_compact_token_limit = 300000` en `config.toml`.
+máximo y compacta apenas se llena (`contracts/model-routing.json` § contexto). Al instalar en un
+proyecto, el instalador corre `node .ia-stack/runtime/scripts/ventana.mjs aplicar` y deja en
+`.claude/settings.local.json` (el local, no el compartido):
+- `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" }`: Claude Code compacta ahí. Un valor
+  válido más chico (desde 100000) se respeta.
+- Un hook `UserPromptSubmit` con `context-guard.mjs`: avisa el relevo al 70 % del tope y, a los
+  180.000 tokens de mensajes, ordena escribir el handoff en `.ia-stack/handoffs/ULTIMO.md`
+  (plantilla `templates/estado/HANDOFF.md`, hasta 40 líneas). Una subsesión fija `IA_STACK_ROL=subsesion`.
+- Un hook `SessionStart` con matcher `compact` y `handoff.mjs mostrar`: después de compactar, el
+  handoff vuelve al contexto.
 
-El hook de contexto ordena compactar si una sesión llega igual a la ventana.
+`--sin-ventana` (bash) o `-SinVentana` (PowerShell) saltea las tres cosas. Si el archivo no es JSON
+estricto, el instalador avisa `ventana no aplicada` y sigue. `ventana.mjs check` dice qué falta.
+
+Límites: la orden de handoff sale cuando la persona manda un mensaje; en un turno autónomo largo o
+en un subagente sólo cubre la variable. Los hooks corren con bash, también en Windows. Fuera de un
+proyecto instalado, la variable se fija a mano en el `settings.json` propio. Los scripts salen
+siempre con 0 y no cierran la sesión solos.
+- **Codex:** `model_auto_compact_token_limit = 300000` en `config.toml`, a mano.
 
 ## Hook de aprobaciones
 

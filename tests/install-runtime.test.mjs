@@ -6,10 +6,11 @@
 // tiene que seguir contando.
 
 import assert from 'node:assert/strict';
-import { rmSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
 
-import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+import { assertVentana, assertVentanaNoAplicada, plantarSettingsInvalido, plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -88,6 +89,30 @@ test('una poda desproporcionada no mueve nada: es un defecto, no una limpieza', 
     const r = run(gitBash, ['-lc', command], { env: { HOME: toBash(root) } });
     assert.equal(r.status, 0, r.output);
     assertNadaApartado(project, cuantos, r.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// 3.4.5 · tres instalaciones con --project-only (no tocan lo global): con la ventana, sin ella y
+// con un settings.local.json que no es JSON estricto.
+test('3.4.5 · el instalador deja la ventana y los dos hooks, salvo con --sin-ventana; un settings inválido se avisa y no corta', { skip: !hayBash }, () => {
+  const { root, project } = fixture();
+  const sin = join(root, 'sin');
+  const roto = join(root, 'roto');
+  try {
+    for (const p of [sin, roto]) mkdirSync(p);
+    const instalar = (p, extra = '') => run(gitBash, ['-lc', `'${toBash(installSh)}' --project-only --project '${toBash(p)}' ${extra}`], { env: { HOME: toBash(root) } });
+    const a = instalar(project);
+    assert.equal(a.status, 0, a.output);
+    assertVentana(project, true);
+    const b = instalar(sin, '--sin-ventana');
+    assert.equal(b.status, 0, b.output);
+    assertVentana(sin, false);
+    plantarSettingsInvalido(roto);
+    const c = instalar(roto);
+    assert.equal(c.status, 0, c.output);
+    assertVentanaNoAplicada(roto, c.output);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

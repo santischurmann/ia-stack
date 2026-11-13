@@ -7,7 +7,7 @@
     { "n": 3, "nombre": "preview aprobado y EGM convergido (ronda o simple, según la pieza)", "protegido": true, "fase": 6, "scripts": ["verify-aprobacion-humana.mjs", "verify-egm-convergencia.mjs"], "comandos": ["node scripts/verify-aprobacion-humana.mjs preview .ia-stack/APROBACIONES.md --pieza <pieza> --version <vN>", "node scripts/verify-aprobacion-humana.mjs tareas docs/tasks.json .ia-stack/APROBACIONES.md"] },
     { "n": 4, "nombre": "verificación con recibo: suites, seguridad base, repo limpio", "protegido": true, "fase": 8, "scripts": ["verify-receipt.mjs", "verify-security-baseline.mjs", "verify-repo-clean.mjs"] },
     { "n": 5, "nombre": "producción atada al sha aprobado", "protegido": true, "fase": 8, "scripts": ["verify-aprobacion-humana.mjs"], "modo": "produccion", "comandos": ["node scripts/verify-aprobacion-humana.mjs produccion .ia-stack/APROBACIONES.md --sha <sha>", "node scripts/aprobar.mjs usar --sha <sha>"] },
-    { "n": 6, "nombre": "cupo y contexto", "protegido": false, "fase": 0, "scripts": ["context-guard.mjs", "verify-brief-size.mjs"] },
+    { "n": 6, "nombre": "cupo y contexto", "protegido": false, "fase": 0, "scripts": ["context-guard.mjs", "verify-brief-size.mjs", "ventana.mjs", "handoff.mjs"] },
     { "n": 7, "nombre": "versiones de stack estables y compatibles", "protegido": false, "fase": 3, "scripts": ["verify-stack-matrix.mjs"] },
     { "n": 8, "nombre": "CI sólo en el push único o en un push de corrección con recibo nuevo", "protegido": false, "fase": 8, "scripts": ["verify-ci-push.mjs"] }
   ]

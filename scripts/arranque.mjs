@@ -6,7 +6,7 @@
 //
 // Lee `.ia-stack/ESTADO.md`, `plan.json` (opcional) y `LECCIONES.md` (opcional). Imprime fase y tamaño,
 // tareas en curso y pendientes, cupo, avisos (ventana ≥85 % = frenar lo no crítico; causas de lecciones
-// repetidas en 30 días) y sesiones huérfanas. `--sesiones` recibe `[{id, tarea}]`.
+// repetidas en 30 días; ventana de contexto u hooks sin aplicar, según `ventana.mjs`) y sesiones huérfanas. `--sesiones` recibe `[{id, tarea}]`.
 // Exit 0 ok (también sin ESTADO.md, o con la plantilla sin llenar: proyecto nuevo), 1 si ESTADO.md pasa de 60 líneas, 2 uso incorrecto.
 // LÍMITE HONESTO: el cupo es el que le pasan por argumento; sin argumento dice «desconocido», nunca
 // lo estima. Una sesión huérfana sólo se detecta si quien invoca la lista en `--sesiones`.
@@ -16,6 +16,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { MAX_LINEAS, parseEstado } from './estado.mjs';
 import { causasRepetidas } from './leccion.mjs';
+import { planDeProyecto } from './ventana.mjs';
 
 export const UMBRAL_VENTANA = 85;
 
@@ -32,7 +33,7 @@ export function huerfanas(cola, sesiones) {
 const lista = (items, max = 3) => (items.length > max ? `${items.slice(0, max).join('; ')}; +${items.length - max}` : items.join('; '));
 const pct = (v) => (v === null || v === undefined ? 'desconocido' : `${v}%`);
 
-export function resumenArranque({ estado, ventana, semana, repetidas, huerfanas: huer, plan = null }) {
+export function resumenArranque({ estado, ventana, semana, repetidas, huerfanas: huer, plan = null, compactacion = null }) {
   const enCurso = estado.cola.filter((t) => t.estado === 'en curso');
   const pendientes = estado.cola.filter((t) => t.estado === 'pendiente');
   const lineas = [];
@@ -42,6 +43,7 @@ export function resumenArranque({ estado, ventana, semana, repetidas, huerfanas:
   const avisos = [];
   if (typeof ventana === 'number' && ventana >= UMBRAL_VENTANA) avisos.push(`ventana al ${ventana}%: frenar todo lo no crítico hasta el reinicio`);
   if (repetidas.length > 0) avisos.push(`lecciones repetidas: ${lista(repetidas.map((r) => `${r.causa} (${r.veces})`), 2)}`);
+  if (compactacion) avisos.push(compactacion);
   if (avisos.length > 0) lineas.push(`AVISO: ${avisos.join(' · ')}`);
   if (huer.length > 0) lineas.push(`Huérfanas (${huer.length}): ${lista(huer.map((h) => `${h.id} → ${h.tarea}`))}`);
   return lineas;
@@ -58,6 +60,17 @@ function leerPlan(proyecto) {
     }
   }
   return null;
+}
+
+/** Aviso si falta la ventana de contexto o un hook en el proyecto; null si está todo. Nunca corta el arranque. */
+export function avisoVentana(proyecto) {
+  try {
+    const plan = planDeProyecto(proyecto);
+    if (plan.accion === 'invalido') return 'ventana: settings.local.json inválido';
+    return plan.faltan.length > 0 ? `ventana: falta ${plan.faltan.join(', ')} (node scripts/ventana.mjs aplicar --proyecto .)` : null;
+  } catch {
+    return null;
+  }
 }
 
 function usage() {
@@ -109,7 +122,7 @@ function main() {
   }
   const rutaLecciones = join(proyecto, '.ia-stack', 'LECCIONES.md');
   const repetidas = existsSync(rutaLecciones) ? causasRepetidas(readFileSync(rutaLecciones, 'utf8'), { dias: 30 }) : [];
-  const lineas = resumenArranque({ estado, ventana, semana, repetidas, huerfanas: huerfanas(estado.cola, sesiones), plan: leerPlan(proyecto) });
+  const lineas = resumenArranque({ estado, ventana, semana, repetidas, huerfanas: huerfanas(estado.cola, sesiones), plan: leerPlan(proyecto), compactacion: avisoVentana(proyecto) });
   console.log(lineas.join('\n'));
 }
 

@@ -174,3 +174,27 @@ test('arranque · CLI con la plantilla de ESTADO.md sin llenar también dice pro
     assert.match(r.out, /proyecto nuevo: empezá por la fase 1/);
   });
 });
+
+// ---- 3.4.5 · la ventana y los hooks, en el arranque ----
+test('3.4.5 · arranque avisa si falta la ventana o los hooks, o si settings.local.json es inválido; nunca corta', () => {
+  conProyecto(ESTADO, (root) => {
+    const falta = run(['--proyecto', root]);
+    assert.equal(falta.status, 0, falta.out);
+    assert.ok(falta.out.includes('ventana: falta ventana (node scripts/ventana.mjs aplicar --proyecto .)'), falta.out);
+    assert.ok(falta.out.trim().split(/\r?\n/).length <= 5);
+    mkdirSync(join(root, '.claude'), { recursive: true });
+    writeFileSync(join(root, '.claude', 'settings.local.json'), '{ // mío\n}');
+    const invalido = run(['--proyecto', root]);
+    assert.equal(invalido.status, 0, invalido.out);
+    assert.ok(invalido.out.includes('ventana: settings.local.json inválido'), invalido.out);
+    writeFileSync(join(root, '.claude', 'settings.local.json'), '{ "env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" } }');
+    const bien = run(['--proyecto', root]);
+    assert.doesNotMatch(bien.out, /ventana: (falta|settings)/u);
+    mkdirSync(join(root, '.ia-stack', 'runtime', 'scripts'), { recursive: true });
+    for (const f of ['context-guard.mjs', 'handoff.mjs']) writeFileSync(join(root, '.ia-stack', 'runtime', 'scripts', f), '');
+    const conRuntime = run(['--proyecto', root]);
+    assert.ok(conRuntime.out.includes('ventana: falta hook-contexto, hook-handoff ('), conRuntime.out);
+  });
+  const lineas = resumenArranque({ estado: parseEstado(ESTADO), ventana: 90, semana: null, repetidas: [], huerfanas: [], compactacion: 'ventana: falta ventana' });
+  assert.match(lineas.join('\n'), /AVISO: .*frenar.* · ventana: falta ventana/u);
+});

@@ -13,11 +13,13 @@ PROJECT_DIR=""
 # fuera de el. Antes, `--project` igual copiaba la skill y el runtime GLOBALES a ~/.claude, asi que
 # probar el instalador en una carpeta no era aislamiento. El comportamiento por defecto no cambia.
 PROJECT_ONLY=0
+# `--sin-ventana`: no escribir la ventana de contexto ni los hooks en .claude/settings.local.json.
+SIN_VENTANA=0
 TARGET_EXPLICIT=0
 RUNTIME_EXPLICIT=0
 
 usage() {
-  echo "Usage: install.sh [--target-dir <dir>] [--runtime-dir <dir>] [--project <project-root>] [--project-only]" >&2
+  echo "Usage: install.sh [--target-dir <dir>] [--runtime-dir <dir>] [--project <project-root>] [--project-only] [--sin-ventana]" >&2
 }
 
 while [ "$#" -gt 0 ]; do
@@ -26,6 +28,7 @@ while [ "$#" -gt 0 ]; do
     --runtime-dir) RUNTIME_DIR="${2:?--runtime-dir needs a path}"; RUNTIME_EXPLICIT=1; shift 2 ;;
     --project) PROJECT_DIR="${2:?--project needs a path}"; shift 2 ;;
     --project-only) PROJECT_ONLY=1; shift ;;
+    --sin-ventana) SIN_VENTANA=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *) usage; exit 2 ;;
   esac
@@ -249,6 +252,18 @@ if [ -n "$PROJECT_DIR" ]; then
   apartar_sobrantes "$STATE_DIR/runtime" "$ARCHIVO_DIR/runtime"
   sellar_runtime "$STATE_DIR/runtime"
   echo "OK: project runtime -> $STATE_DIR/runtime"
+  # LA VENTANA DE CONTEXTO Y LOS DOS HOOKS, con el ventana.mjs del runtime recien copiado. Va al final:
+  # el runtime ya esta, asi que los hooks apuntan a archivos que existen. Si no se puede (sin node, o un
+  # settings.local.json que no es JSON estricto) se avisa y la instalacion sigue: no falla por esto.
+  if [ "$SIN_VENTANA" -eq 0 ]; then
+    if ! command -v node >/dev/null 2>&1; then
+      echo "aviso: ventana no aplicada (node no esta disponible)"
+    elif VENTANA_OUT="$(node "$STATE_DIR/runtime/scripts/ventana.mjs" aplicar --proyecto "$PROJECT_DIR" 2>&1)"; then
+      echo "$VENTANA_OUT"
+    else
+      echo "aviso: ventana no aplicada ($VENTANA_OUT)"
+    fi
+  fi
 else
   echo "NOTE: no project initialized. Run this command from the package with --project <project-root>."
 fi

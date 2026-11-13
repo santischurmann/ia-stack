@@ -256,3 +256,31 @@ export function assertRuntime(project, target, runtime) {
   const check = run(process.execPath, ['.ia-stack/runtime/scripts/verify-red-node.mjs'], { cwd: project });
   assert.equal(check.status, 2, check.output);
 }
+
+// --- 3.4.5 · LA VENTANA Y LOS DOS HOOKS -------------------------------------------
+// El instalador corre `ventana.mjs aplicar` del runtime recién copiado. Las dos ramas tienen que
+// dejar lo mismo en `.claude/settings.local.json`, o nada con la bandera que lo saltea.
+export const settingsLocal = (project) => join(project, '.claude', 'settings.local.json');
+
+export function assertVentana(project, presente) {
+  if (!presente) {
+    assert.equal(existsSync(settingsLocal(project)), false, 'con la bandera no se escribe settings.local.json');
+    return;
+  }
+  const s = JSON.parse(readFileSync(settingsLocal(project), 'utf8'));
+  assert.equal(s.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW, '300000');
+  assert.deepEqual(s.hooks.UserPromptSubmit, [{ hooks: [{ type: 'command', command: 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/context-guard.mjs"' }] }]);
+  assert.deepEqual(s.hooks.SessionStart, [{ matcher: 'compact', hooks: [{ type: 'command', command: 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/handoff.mjs" mostrar --proyecto "$CLAUDE_PROJECT_DIR"' }] }]);
+}
+
+export const SETTINGS_INVALIDO = '{\n  // comentario de la persona\n  "env": {}\n}\n';
+
+export function plantarSettingsInvalido(project) {
+  mkdirSync(join(project, '.claude'), { recursive: true });
+  writeFileSync(settingsLocal(project), SETTINGS_INVALIDO);
+}
+
+export function assertVentanaNoAplicada(project, salida) {
+  assert.match(salida, /aviso: ventana no aplicada/u);
+  assert.equal(readFileSync(settingsLocal(project), 'utf8'), SETTINGS_INVALIDO, 'un archivo inválido no se toca');
+}

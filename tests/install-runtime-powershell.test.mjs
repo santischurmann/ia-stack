@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { soloEnWindows } from './_entorno.mjs';
-import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
+import { assertVentana, assertVentanaNoAplicada, plantarSettingsInvalido, plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla, tampoco en PowerShell', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();
@@ -115,6 +115,30 @@ test('una poda desproporcionada no mueve nada, tampoco en PowerShell', soloEnWin
     const r = run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-TargetDir', target, '-RuntimeDir', runtime, '-ProjectDir', project]);
     assert.equal(r.status, 0, r.output);
     assertNadaApartado(project, cuantos, r.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// 3.4.5 · tres instalaciones con -ProjectOnly (no tocan lo global): con la ventana, sin ella y con
+// un settings.local.json que no es JSON estricto.
+test('3.4.5 · el instalador deja la ventana y los dos hooks, salvo con -SinVentana; un settings inválido se avisa y no corta', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la ventana y los hooks que deja'), () => {
+  const { root, project } = fixture();
+  const sin = join(root, 'sin');
+  const roto = join(root, 'roto');
+  try {
+    for (const p of [sin, roto]) mkdirSync(p);
+    const instalar = (p, ...extra) => run('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', installPs, '-ProjectOnly', '-ProjectDir', p, ...extra]);
+    const a = instalar(project);
+    assert.equal(a.status, 0, a.output);
+    assertVentana(project, true);
+    const b = instalar(sin, '-SinVentana');
+    assert.equal(b.status, 0, b.output);
+    assertVentana(sin, false);
+    plantarSettingsInvalido(roto);
+    const c = instalar(roto);
+    assert.equal(c.status, 0, c.output);
+    assertVentanaNoAplicada(roto, c.output);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

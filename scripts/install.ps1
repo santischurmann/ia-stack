@@ -4,7 +4,9 @@ param(
   [string]$RuntimeDir = "$HOME\.claude\ia-stack-runtime",
   [string]$ProjectDir,
   # Decisión de diseño: instalar en UN proyecto sin escribir nada fuera de el. Ver install.sh.
-  [switch]$ProjectOnly
+  [switch]$ProjectOnly,
+  # No escribir la ventana de contexto ni los hooks en .claude\settings.local.json. Ver install.sh.
+  [switch]$SinVentana
 )
 
 $ErrorActionPreference = 'Stop'
@@ -257,6 +259,20 @@ if ($ProjectDir) {
   Move-Sobrantes "$StateDir\runtime" (Join-Path $archivoDir 'runtime')
   Set-Sello "$StateDir\runtime"
   Write-Host "OK: project runtime -> $StateDir\runtime" -ForegroundColor Green
+  # LA VENTANA DE CONTEXTO Y LOS DOS HOOKS: ver el comentario equivalente en install.sh.
+  if (-not $SinVentana) {
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+      Write-Output 'aviso: ventana no aplicada (node no esta disponible)'
+    } else {
+      # Con 'Stop', lo que node escribe en stderr cortaria el instalador: se baja solo para esta llamada.
+      $prevEap = $ErrorActionPreference
+      $ErrorActionPreference = 'Continue'
+      $ventanaOut = (& node "$StateDir\runtime\scripts\ventana.mjs" aplicar --proyecto $ProjectDir 2>&1 | ForEach-Object { "$_" }) -join "`n"
+      $ventanaExit = $LASTEXITCODE
+      $ErrorActionPreference = $prevEap
+      if ($ventanaExit -eq 0) { Write-Output $ventanaOut } else { Write-Output "aviso: ventana no aplicada ($ventanaOut)" }
+    }
+  }
 } else {
   Write-Host 'NOTE: no project initialized. Re-run with -ProjectDir <project-root>.' -ForegroundColor Yellow
 }
