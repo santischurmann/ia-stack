@@ -53,7 +53,7 @@ la fase 3 corre sólo el radar de versiones.
 | Descubrir | 2 CAIO (grande) | qué programar, qué con IA, qué manual | `docs/caio.md` |
 | Descubrir | 3 Research | competidores, buenas prácticas, versiones | `docs/research.md` |
 | Definir | 4 Marca | atributos, paleta, tipografías, tono | `docs/marca.md` |
-| Definir | 5 Spec | una página, revisada por lectores sin contexto | `docs/spec.md` |
+| Definir | 5 Spec | una página, con ronda de brainstormings y EGM | `docs/spec.md` |
 | Definir | 6 Preview | maqueta navegable, hasta 3 rondas | preview aprobado |
 | Construir | 7 Build | rojo, código, verde, commit local | código y tests |
 | Entregar | 8 Publicar | suites, seguridad, revisión, recibo, un push | recibo y push |
@@ -78,11 +78,43 @@ mensaje del usuario) la registra en `.ia-stack/APROBACIONES.md`.
 
 Un gate es un script que frena si algo no se cumple (`contracts/gates.json`).
 
-1. Test rojo visto antes del código. 2. El diff toca sólo los archivos de la tarea.
-3. Preview aprobado. 4. Verificación con recibo. 5. Producción atada al sha aprobado.
-6. Cupo y contexto. 7. Versiones de stack estables y compatibles. 8. CI sólo en el push único.
+| Gate | Qué exige | Fase | Protegido |
+|---|---|---|---|
+| 1 | Test rojo visto antes del código | 7 | sí |
+| 2 | El diff toca sólo los archivos de la tarea | 7 | no |
+| 3 | Preview aprobado y EGM convergido | 6 | sí |
+| 4 | Verificación con recibo: suites, seguridad base, repo limpio | 8 | sí |
+| 5 | Producción atada al sha aprobado | 8 | sí |
+| 6 | Cupo y contexto | 0 | no |
+| 7 | Versiones de stack estables y compatibles | 3 | no |
+| 8 | CI sólo en el push único, o en uno de corrección con recibo nuevo | 8 | no |
 
-Los gates 1, 3, 4 y 5 están protegidos: ninguna poda los saca.
+Los gates protegidos no se sacan con ninguna poda.
+
+## Rondas de brainstorming y EGM
+
+En las decisiones que pesan, el método no confía en una sola pasada (`skills/brainstorm-egm.md`).
+
+- **Ronda de brainstormings:** 5 pasos fijos, en orden: brainstorming, adversarial, brainstorming,
+  adversarial y brainstorming final. Cada paso recibe la salida del anterior.
+- **EGM:** lectores que reciben sólo el documento, sin el contexto del autor. De 5 a 10 rondas,
+  hasta que una salga limpia; si la décima no converge, decidís vos.
+- **Cuándo:** fases 2, 4, 5 y 8, y en la fase 7 por cada tarea de alto requisito. Chico no las
+  corre, salvo en una tarea de alto requisito.
+- **Con qué modelo:** siempre el nivel fuerte. Es la única excepción a «el más barato que resuelva».
+
+## Contexto y handoff
+
+- **Relevo** al 70 % del tope de contexto (120.000 tokens de mensajes en el orquestador, 60.000 en
+  una subsesión): se guarda el estado y sigue una sesión nueva.
+- **Ventana de 300.000 tokens** como máximo en toda sesión. El instalador la fija en
+  `.claude/settings.local.json`; llena, el host compacta.
+- **Handoff antes de compactar:** a los 180.000 tokens de mensajes un hook ordena escribir
+  `.ia-stack/handoffs/ULTIMO.md` (hasta 40 líneas). Después de compactar, otro hook lo devuelve al
+  contexto.
+
+La orden sale cuando mandás un mensaje: en un turno autónomo largo sólo cubre la ventana. Detalle
+y forma de saltearlo en [`INSTALL.md`](INSTALL.md).
 
 ## Modelos
 
@@ -96,8 +128,9 @@ Siempre con esfuerzo `low`. El modelo nunca se te pregunta.
 | fuerte | Opus | Sol | marca, spec, áreas de riesgo, revisión |
 | orquestador | Fable | Astra | sólo la sesión que reparte trabajo |
 
-Si una prueba sigue fallando tras un intento, la tarea sube un nivel. Si falla el fuerte, se frena y
-se te pregunta. Revisa un nivel fuerte distinto del que construyó (otra sesión u otro host; si no
+Si una prueba sigue fallando tras un intento, la tarea sube un nivel (barato a medio, medio a
+fuerte) y lleva la falla exacta: comando, salida, archivo y línea, y lo ya probado. Si falla el
+fuerte, se frena y se te pregunta. Revisa un nivel fuerte distinto del que construyó (otra sesión u otro host; si no
 hay, revisás vos). Fuente: `contracts/model-routing.json`.
 
 ## Tu cupo
@@ -116,6 +149,8 @@ ventana de 5 horas frena lo que no sea la tarea en curso y te dice cuándo se re
 | `.ia-stack/metricas.jsonl` | cupo y modelo por bloque |
 | `.ia-stack/LECCIONES.md` | cada escalada y cada retrabajo |
 | `.ia-stack/historial.md` | lo que salió de `ESTADO.md` |
+| `.ia-stack/handoffs/ULTIMO.md` | el resumen que la sesión escribe antes de compactar |
+| `.claude/settings.local.json` | ventana de contexto y los dos hooks (salvo `--sin-ventana`) |
 | `docs/` | pedido, caio, research, marca, spec y plan |
 | `.claude/skills/ia-stack/`, `.agents/skills/ia-stack/` | punteros a la skill |
 
@@ -136,7 +171,7 @@ phases/       10 fases, hasta 60 líneas cada una
 skills/       6 apoyos: brainstorm-egm, encargo, modo-breve, recibo-y-seguridad, stack, tdd
 contracts/    ruteo de modelos, gates, planes, matriz de stack
 templates/    pedido, caio, research, marca, spec, plan y estado
-scripts/      gates (verify-*.mjs), arranque, tamaño, métricas, instaladores
+scripts/      gates (verify-*.mjs), arranque, tamaño, métricas, ventana, handoff, instaladores
 tests/        la suite de node:test
 ```
 
