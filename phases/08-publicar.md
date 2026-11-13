@@ -26,7 +26,9 @@ Comprobar que todo anda con evidencia real, y publicar una sola vez.
 8. Producción sólo con la orden de la persona: **«apruebo produccion <sha del commit>»**. Verificala
    con `node scripts/verify-aprobacion-humana.mjs produccion .ia-stack/APROBACIONES.md --sha <sha>`
    y, después de desplegar, `node scripts/aprobar.mjs usar --sha <sha>`: la orden vale una vez.
-9. En tamaño grande o con área de riesgo, rondas de EGM sobre el diff y la spec antes del push (`skills/brainstorm-egm.md`): mínimo 5, siempre Opus.
+9. En tamaño grande o con área de riesgo, rondas de EGM antes del push sobre el diff y las secciones
+   de la spec que toca (`skills/brainstorm-egm.md`), registradas con `--pieza publicar`: 5 a 10, nivel
+   fuerte. Suma una lectura sin contexto; no reemplaza al revisor.
 
 ## Entrega
 Recibo verificado y un push. La publicación a producción, sólo con orden.

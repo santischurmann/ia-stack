@@ -86,3 +86,20 @@ test('fase 5 · la spec corre la ronda completa: sin tope de 2 rondas ni lectore
   assert.ok(!/Lectores EGM: barato/u.test(t), 'sigue nombrando lectores baratos');
   assert.match(t, /decide la persona/u);
 });
+
+test('fase 8 · EGM sobre lo que se publica con su pieza, sin reemplazar al revisor', () => {
+  const t = leer('phases/08-publicar.md');
+  assert.ok(t.includes('--pieza publicar'));
+  assert.ok(t.includes('no reemplaza al revisor'));
+});
+
+test('skill · plantilla única de los 5 pasos, en el orden del contrato', () => {
+  const t = leer('skills/brainstorm-egm.md');
+  assert.ok(!t.includes('pedida por la persona'), 'la ronda corre sola en las fases, no sólo a pedido');
+  for (const campo of ['paso:', 'entrada:', 'entrega:']) assert.ok(t.includes(campo), `falta ${campo}`);
+  const pasos = contrato.rondas.brainstorming.pasos;
+  const lineas = t.split(/\r?\n/u).filter((l) => /^paso: \d /u.test(l.trim())).map((l) => l.trim());
+  assert.deepEqual(lineas, pasos.map((nombre, i) => `paso: ${i + 1} ${nombre}`));
+  assert.match(t, /piezas simples/iu, 'el tope de 2 rondas queda sólo para las piezas simples');
+  assert.match(t, /limpia/iu);
+});
