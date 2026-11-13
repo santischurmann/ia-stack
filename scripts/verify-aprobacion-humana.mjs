@@ -4,10 +4,14 @@
 //
 // Usage:
 //   node scripts/verify-aprobacion-humana.mjs preview <APROBACIONES.md> --pieza <id> [--version <vN>]
-//   node scripts/verify-aprobacion-humana.mjs tareas <tasks.json> <APROBACIONES.md>
+//   node scripts/verify-aprobacion-humana.mjs tareas <tasks.json> <APROBACIONES.md> [--metricas <ruta>] [--tamano chico|medio|grande]
 //   node scripts/verify-aprobacion-humana.mjs produccion <APROBACIONES.md> --sha <sha>
 //
 // Desde la 3.4.2 `tareas` exige `preview` en TODA tarea: la pieza aprobada o «no-aplica: <motivo>».
+// Desde la 3.4.5 `tareas` exige además, por cada tarea que `clasificarTarea(description)` da como
+// `alto_requisito`, la ronda de EGM convergida en la pieza `plan-<id>` (verify-egm-convergencia).
+// `--metricas` por defecto: `metricas.jsonl` junto a APROBACIONES.md. `--tamano` por defecto: el de
+// `ESTADO.md` de esa carpeta. Sin tareas de alto requisito no se lee ninguno de los dos.
 // El registro es una tabla Markdown de 8 columnas, una fila por decisión, sólo se agregan filas:
 //   | tipo | objeto | version | evidencia | mostrado | decidido | quien | estado |
 // tipo pedido | research | marca | boceto | spec | preview: objeto = id de la pieza, version = vN.
@@ -26,7 +30,11 @@
 // fila la escribió el orquestador sin preguntar; ni si una tarea marcada «no-aplica» de verdad no
 // tenía nada que mostrar. Un registro ausente, vacío o ilegible nunca aprueba por defecto.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { clasificarTarea } from './clasificar-tarea.mjs';
+import { parseEstado } from './estado.mjs';
+import { LECTORES_MINIMOS, checkConvergencia, leerMetricas } from './verify-egm-convergencia.mjs';
 
 const COLUMNAS = ['tipo', 'objeto', 'version', 'evidencia', 'mostrado', 'decidido', 'quien', 'estado'];
 // Fix aprobaciones: el tipo de cada fila es explícito. Sólo `produccion` lleva sha y estados revocado/usada;
@@ -127,11 +135,16 @@ const NO_APLICA = /^no-aplica:(.*)$/su;
 
 /** 3.4.2: TODA tarea declara su preview antes de escribir código (LAW 10): una pieza aprobada, o
  * «no-aplica: <motivo>» cuando no hay nada que mostrar. Una tarea visible nunca es «no-aplica». */
-export function checkTareas(plan, filas) {
+export function checkTareas(plan, filas, egm) {
   if (!Array.isArray(plan?.tasks)) return { ok: false, reason: 'el plan no tiene un arreglo tasks' };
   let conPreview = 0;
   let noAplica = 0;
+  const ids = new Set();
   for (const t of plan.tasks) {
+    if (typeof t?.id !== 'string' || t.id.trim() === '') return { ok: false, reason: 'tarea sin id' };
+    if (ids.has(t.id)) return { ok: false, reason: `${t.id}: id repetido` };
+    ids.add(t.id);
+    if (typeof t.description !== 'string' || t.description.trim() === '') return { ok: false, reason: `${t.id}: tarea sin description` };
     if (typeof t.preview !== 'string' || t.preview === '') return { ok: false, reason: `${t.id}: tarea sin campo preview (pieza aprobada o «no-aplica: <motivo>»)` };
     const exento = NO_APLICA.exec(t.preview);
     if (exento) {
@@ -144,14 +157,33 @@ export function checkTareas(plan, filas) {
     if (!r.ok) return { ok: false, reason: `${t.id}: ${r.reason}` };
     conPreview += 1;
   }
-  return { ok: true, conPreview, noAplica };
+  // 3.4.5: `egm` = { leer: () => registros, tamano }. Perezoso: sin tareas importantes no se consulta.
+  const importantes = egm ? plan.tasks.filter((t) => clasificarTarea(t.description).clase === 'alto_requisito') : [];
+  if (importantes.length > 0) {
+    if (!egm.tamano) return { ok: false, reason: 'sin tamaño declarado: pasá --tamano' };
+    const registros = egm.leer();
+    for (const t of importantes) {
+      const r = checkConvergencia(registros, `plan-${t.id}`, egm.tamano);
+      if (!r.ok) return { ok: false, reason: `${t.id}: tarea de alto requisito sin ronda EGM convergida en plan-${t.id}: ${r.reason}` };
+    }
+  }
+  return { ok: true, conPreview, noAplica, conRonda: importantes.length };
 }
 
-const USAGE = 'usage: verify-aprobacion-humana.mjs preview <APROBACIONES.md> --pieza <id> [--version <vN>] | tareas <tasks.json> <APROBACIONES.md> | produccion <APROBACIONES.md> --sha <sha>';
+const USAGE = 'usage: verify-aprobacion-humana.mjs preview <APROBACIONES.md> --pieza <id> [--version <vN>] | tareas <tasks.json> <APROBACIONES.md> [--metricas <ruta>] [--tamano chico|medio|grande] | produccion <APROBACIONES.md> --sha <sha>';
 
 export function parsear(argv) {
   const [cmd, ...resto] = argv;
-  if (cmd === 'tareas') return resto.length === 2 ? { cmd, plan: resto[0], ledger: resto[1] } : null;
+  if (cmd === 'tareas') {
+    const [plan, ledger, ...flags] = resto;
+    if (!plan || !ledger || flags.length % 2 !== 0) return null;
+    const args = { cmd, plan, ledger };
+    for (let i = 0; i < flags.length; i += 2) {
+      if (flags[i] !== '--metricas' && flags[i] !== '--tamano') return null;
+      args[flags[i].slice(2)] = flags[i + 1];
+    }
+    return args;
+  }
   if (cmd !== 'preview' && cmd !== 'produccion') return null;
   const [ledger, ...flags] = resto;
   if (!ledger || flags.length % 2 !== 0) return null;
@@ -174,6 +206,19 @@ function leer(ruta, qué) {
   }
 }
 
+/** Fuente de la ronda por tarea: métricas perezosas y tamaño de la bandera o de ESTADO.md. */
+function egmDe(args) {
+  if (args.tamano !== undefined && !(args.tamano in LECTORES_MINIMOS)) throw new Error(`tamaño inválido «${args.tamano}»`);
+  const carpeta = dirname(args.ledger);
+  const estado = join(carpeta, 'ESTADO.md');
+  return {
+    leer: () => leerMetricas(args.metricas ?? join(carpeta, 'metricas.jsonl')),
+    get tamano() {
+      return args.tamano ?? (existsSync(estado) ? parseEstado(readFileSync(estado, 'utf8')).tamano : null);
+    },
+  };
+}
+
 function main() {
   const args = parsear(process.argv.slice(2));
   if (!args) {
@@ -185,7 +230,7 @@ function main() {
     const filas = leerTabla(leer(args.ledger, 'el registro'));
     if (args.cmd === 'preview') r = checkPreview(filas, args.pieza, args.version);
     else if (args.cmd === 'produccion') r = checkProduccion(filas, args.sha);
-    else r = checkTareas(JSON.parse(leer(args.plan, 'el plan')), filas);
+    else r = checkTareas(JSON.parse(leer(args.plan, 'el plan')), filas, egmDe(args));
   } catch (error) {
     r = { ok: false, reason: error.message };
   }
@@ -195,7 +240,7 @@ function main() {
   }
   if (args.cmd === 'preview') console.log(`OK: preview ${args.pieza} ${r.version} aprobado por ${r.quien} el ${r.decidido}`);
   else if (args.cmd === 'produccion') console.log(`OK: orden de producción para ${args.sha} (${r.objeto}) dada por ${r.quien} el ${r.decidido}; vale una vez: tras publicar, registrá la fila «usada»`);
-  else console.log(`OK: ${r.conPreview + r.noAplica} tarea(s): ${r.conPreview} con preview aprobado y ${r.noAplica} «no-aplica»`);
+  else console.log(`OK: ${r.conPreview + r.noAplica} tarea(s): ${r.conPreview} con preview aprobado y ${r.noAplica} «no-aplica»${r.conRonda > 0 ? `; ${r.conRonda} con ronda EGM convergida` : ''}`);
 }
 
 if (process.argv[1] && process.argv[1].endsWith('verify-aprobacion-humana.mjs')) main();

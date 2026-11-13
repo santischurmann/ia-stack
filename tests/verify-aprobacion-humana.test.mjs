@@ -129,21 +129,21 @@ test('produccion · orden aprobada para ese sha exacto: pasa; para otro sha, usa
 test('3.4.2 · tareas · TODA tarea declara su preview antes de escribir código: pieza aprobada o «no-aplica: <motivo>»', () => {
   const tareas = (lista) => ({ tasks: lista });
   const filas = leerTabla(ledger(PREV_OK));
-  const r = checkTareas(tareas([{ id: 'T1', preview: 'no-aplica: renombra una variable interna' }, { id: 'T2', visible: true, preview: 'landing-home' }, { id: 'T5', preview: 'landing-home' }]), filas);
+  const r = checkTareas(tareas([{ id: 'T1', description: 'ajuste de ejemplo', preview: 'no-aplica: renombra una variable interna' }, { id: 'T2', description: 'ajuste de ejemplo', visible: true, preview: 'landing-home' }, { id: 'T5', description: 'ajuste de ejemplo', preview: 'landing-home' }]), filas);
   assert.equal(r.ok, true, r.reason);
   assert.equal(r.conPreview, 2);
   assert.equal(r.noAplica, 1);
-  assert.match(checkTareas(tareas([{ id: 'T1' }]), []).reason, /T1.*sin campo preview/, 'una tarea sin preview ya no pasa en silencio');
-  assert.match(checkTareas(tareas([{ id: 'T4', preview: '' }]), []).reason, /T4.*sin campo preview/);
-  assert.match(checkTareas(tareas([{ id: 'T6', preview: 'no-aplica:   ' }]), []).reason, /T6.*motivo/);
-  assert.match(checkTareas(tareas([{ id: 'T7', visible: true, preview: 'no-aplica: es chiquito' }]), []).reason, /T7.*visible/);
-  assert.match(checkTareas(tareas([{ id: 'T3', preview: 'otra' }]), filas).reason, /T3/);
+  assert.match(checkTareas(tareas([{ id: 'T1', description: 'ajuste de ejemplo' }]), []).reason, /T1.*sin campo preview/, 'una tarea sin preview ya no pasa en silencio');
+  assert.match(checkTareas(tareas([{ id: 'T4', description: 'ajuste de ejemplo', preview: '' }]), []).reason, /T4.*sin campo preview/);
+  assert.match(checkTareas(tareas([{ id: 'T6', description: 'ajuste de ejemplo', preview: 'no-aplica:   ' }]), []).reason, /T6.*motivo/);
+  assert.match(checkTareas(tareas([{ id: 'T7', description: 'ajuste de ejemplo', visible: true, preview: 'no-aplica: es chiquito' }]), []).reason, /T7.*visible/);
+  assert.match(checkTareas(tareas([{ id: 'T3', description: 'ajuste de ejemplo', preview: 'otra' }]), filas).reason, /T3/);
   assert.match(checkTareas({}, []).reason, /tasks/);
   assert.match(checkTareas(null, []).reason, /tasks/, 'un plan JSON null no aprueba');
 });
 
 test('CLI · preview, produccion y tareas salen 0 en verde y 1 en rojo', () => {
-  const plan = JSON.stringify({ tasks: [{ id: 'T2', visible: true, preview: 'landing-home' }, { id: 'T1', preview: 'no-aplica: chore' }] });
+  const plan = JSON.stringify({ tasks: [{ id: 'T2', description: 'ajuste de ejemplo', visible: true, preview: 'landing-home' }, { id: 'T1', description: 'ajuste de ejemplo', preview: 'no-aplica: chore' }] });
   conArchivos({ 'A.md': ledger(PREV_OK, PROD_OK), 'tasks.json': plan, 'malo.json': '{', 'roto.md': '| a | b |\n' }, (p) => {
     let r = run(['preview', p['A.md'], '--pieza', 'landing-home']);
     assert.equal(r.status, 0, r.output);
@@ -212,11 +212,11 @@ test('fix aprobaciones · defecto 5: un boceto aprobado vale como preview (gate 
   assert.equal(checkPreview(filas, 'tarjeta').ok, true);
   assert.equal(checkPreview(filas, 'tarjeta', 'v1').ok, true);
   assert.match(checkPreview(filas, 'otra').reason, /no hay preview/);
-  const r = checkTareas({ tasks: [{ id: 'T1', visible: true, preview: 'tarjeta' }, { id: 'T2', visible: true, preview: 'landing-home' }, { id: 'T3', preview: 'no-aplica: interno' }] }, filas);
+  const r = checkTareas({ tasks: [{ id: 'T1', description: 'ajuste de ejemplo', visible: true, preview: 'tarjeta' }, { id: 'T2', description: 'ajuste de ejemplo', visible: true, preview: 'landing-home' }, { id: 'T3', description: 'ajuste de ejemplo', preview: 'no-aplica: interno' }] }, filas);
   assert.equal(r.ok, true, r.reason);
   assert.equal(r.conPreview, 2);
-  assert.match(checkTareas({ tasks: [{ id: 'T4', visible: true, preview: 'otra' }] }, filas).reason, /T4/);
-  assert.match(checkTareas({ tasks: [{ id: 'T5', visible: true, preview: 'no-aplica: chico' }] }, filas).reason, /T5.*visible/);
+  assert.match(checkTareas({ tasks: [{ id: 'T4', description: 'ajuste de ejemplo', visible: true, preview: 'otra' }] }, filas).reason, /T4/);
+  assert.match(checkTareas({ tasks: [{ id: 'T5', description: 'ajuste de ejemplo', visible: true, preview: 'no-aplica: chico' }] }, filas).reason, /T5.*visible/);
 });
 
 test('fix aprobaciones · templates/tasks.json trae el campo preview y pasa el gate de tareas', () => {
@@ -252,4 +252,89 @@ test('3.4.4 · leerTabla · acepta el sello encadenado de aprobar.mjs como noven
   assert.equal(filas[0].estado, 'aprobado');
   assert.throws(() => leerTabla(`| ${PROD_OK.join(' | ')} | chain:corto`), /9 columnas|columnas/);
   assert.throws(() => leerTabla(`| ${PROD_OK.join(' | ')} | extra`), /columnas/);
+});
+
+// ---- 3.4.5 · ronda de EGM por tarea de alto requisito (pieza plan-<id>) ----
+const RONDA = (pieza, ronda, lectores, hallazgos = 0) => ({ tipo: 'egm', pieza, lectores, ronda, altos: 0, medios: 0, bajos: hallazgos });
+const cincoRondas = (pieza, lectores) => [1, 2, 3, 4, 5].map((n) => RONDA(pieza, n, lectores, n === 5 ? 0 : 1));
+const jsonl = (filas) => `${filas.map((x) => JSON.stringify(x)).join('\n')}\n`;
+const T_RIESGO = { id: 'T01', description: 'migración de la tabla de pagos', preview: 'no-aplica: sin pantalla' };
+const T_SIMPLE = { id: 'T02', description: 'corregir un texto', preview: 'no-aplica: sin pantalla' };
+const ESTADO = (tamano) => `# Estado\n\n## Fase\n7\n\n## Tamaño\n${tamano}\n\n## Cola\n`;
+
+test('3.4.5 · tareas · toda tarea trae id único y description', () => {
+  const base = { preview: 'no-aplica: chore' };
+  assert.match(checkTareas({ tasks: [{ ...base, description: 'x' }] }, []).reason, /tarea sin id/);
+  assert.match(checkTareas({ tasks: [{ ...base, id: 'T1' }] }, []).reason, /T1: tarea sin description/);
+  assert.match(checkTareas({ tasks: [{ ...base, id: 'T1', description: 'a' }, { ...base, id: 'T1', description: 'b' }] }, []).reason, /T1: id repetido/);
+});
+
+test('3.4.5 · tareas · una tarea de alto requisito exige su ronda EGM convergida en plan-<id>', () => {
+  const egm = (registros, tamano) => ({ leer: () => registros, tamano });
+  assert.match(checkTareas({ tasks: [T_RIESGO] }, [], egm([], 'medio')).reason, /T01: tarea de alto requisito sin ronda EGM convergida en plan-T01: sin rondas EGM/);
+  const r = checkTareas({ tasks: [T_RIESGO, T_SIMPLE] }, [], egm(cincoRondas('plan-T01', 2), 'medio'));
+  assert.equal(r.ok, true, r.reason);
+  assert.equal(r.conRonda, 1);
+  assert.match(checkTareas({ tasks: [T_RIESGO] }, [], egm(cincoRondas('plan-T01', 2), 'grande')).reason, /2 lectores y se exigen 4/);
+  assert.match(checkTareas({ tasks: [T_RIESGO] }, [], egm(cincoRondas('plan-T01', 2), null)).reason, /sin tamaño declarado: pasá --tamano/);
+  let leyo = false;
+  const perezoso = { leer: () => { leyo = true; return []; }, tamano: null };
+  assert.equal(checkTareas({ tasks: [T_SIMPLE] }, [], perezoso).ok, true);
+  assert.equal(leyo, false, 'sin tareas importantes no se leen las métricas ni se pide tamaño');
+});
+
+test('3.4.5 · CLI tareas · --metricas y --tamano, con defaults junto a APROBACIONES.md', () => {
+  const plan = (...t) => JSON.stringify({ tasks: t });
+  conArchivos({ 'A.md': ledger(PREV_OK), 'riesgo.json': plan(T_RIESGO), 'simple.json': plan(T_SIMPLE), 'otras.jsonl': jsonl(cincoRondas('plan-T01', 2)) }, (p) => {
+    const dir = dirname(p['A.md']);
+    const metricas = join(dir, 'metricas.jsonl');
+    const estado = join(dir, 'ESTADO.md');
+    // sin registros
+    let r = run(['tareas', p['riesgo.json'], p['A.md'], '--tamano', 'medio']);
+    assert.equal(r.status, 1, r.output);
+    assert.match(r.output, /T01: tarea de alto requisito sin ronda EGM convergida en plan-T01/);
+    // --metricas explícito
+    r = run(['tareas', p['riesgo.json'], p['A.md'], '--tamano', 'medio', '--metricas', p['otras.jsonl']]);
+    assert.equal(r.status, 0, r.output);
+    assert.match(r.output, /1 con ronda EGM convergida/);
+    // default: metricas.jsonl junto a APROBACIONES.md
+    writeFileSync(metricas, jsonl(cincoRondas('plan-T01', 2)));
+    assert.equal(run(['tareas', p['riesgo.json'], p['A.md'], '--tamano', 'medio']).status, 0);
+    assert.equal(run(['tareas', p['riesgo.json'], p['A.md'], '--tamano', 'grande']).status, 1);
+    // sin bandera ni ESTADO.md
+    r = run(['tareas', p['riesgo.json'], p['A.md']]);
+    assert.equal(r.status, 1);
+    assert.match(r.output, /sin tamaño declarado: pasá --tamano/);
+    // tamaño desde ESTADO.md
+    writeFileSync(estado, ESTADO('grande'));
+    r = run(['tareas', p['riesgo.json'], p['A.md']]);
+    assert.equal(r.status, 1);
+    assert.match(r.output, /se exigen 4/);
+    writeFileSync(estado, ESTADO('medio'));
+    assert.equal(run(['tareas', p['riesgo.json'], p['A.md']]).status, 0);
+    writeFileSync(estado, ESTADO('enorme'));
+    assert.match(run(['tareas', p['riesgo.json'], p['A.md']]).output, /sin tamaño declarado/);
+    // bandera inválida: siempre, aun sin tareas importantes
+    for (const plan_ of ['riesgo.json', 'simple.json']) {
+      r = run(['tareas', p[plan_], p['A.md'], '--tamano', 'enorme']);
+      assert.equal(r.status, 1, plan_);
+      assert.match(r.output, /tamaño inválido «enorme»/);
+    }
+    // métricas rotas: fallan con tarea importante, no sin ella
+    writeFileSync(metricas, '{rota\n');
+    r = run(['tareas', p['riesgo.json'], p['A.md'], '--tamano', 'medio']);
+    assert.equal(r.status, 1);
+    assert.match(r.output, /metricas inválidas: línea 1/);
+    r = run(['tareas', p['simple.json'], p['A.md']]);
+    assert.equal(r.status, 0, r.output);
+  });
+  for (const args of [['tareas', 'a.json', 'a.md', '--raro', 'x'], ['tareas', 'a.json', 'a.md', '--tamano']]) {
+    assert.equal(run(args).status, 2, args.join(' '));
+  }
+});
+
+test('3.4.5 · fase 7 nombra la pieza plan-<id> y que el gate la exige', () => {
+  const t = readFileSync(join(repoRoot, 'phases', '07-build.md'), 'utf8');
+  assert.ok(t.includes('--pieza plan-<id>'));
+  assert.match(t, /no se recorta/u);
 });
