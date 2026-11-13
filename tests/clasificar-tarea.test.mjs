@@ -93,3 +93,25 @@ test('clasificarTarea: las áreas de riesgo salen de contracts/tamano.json y son
   assert.doesNotMatch(fuente, /RIESGO = \//u, 'las palabras de riesgo no se escriben en el script');
   assert.equal(clasificarTarea('backtest de la estrategia').por_riesgo, false);
 });
+
+test('siguienteNivel: una falla sube un nivel según escalada.por_falla del contrato', async () => {
+  const { siguienteNivel } = await import('../scripts/clasificar-tarea.mjs');
+  assert.equal(siguienteNivel('barato'), 'medio');
+  assert.equal(siguienteNivel('medio'), 'fuerte');
+});
+
+test('siguienteNivel: sin siguiente devuelve null (frenar y preguntarle a la persona)', async () => {
+  const { siguienteNivel } = await import('../scripts/clasificar-tarea.mjs');
+  for (const n of ['fuerte', 'x', undefined, '__proto__', 'constructor']) assert.equal(siguienteNivel(n), null);
+});
+
+test('siguienteNivel: un contrato sin escalada.por_falla lanza', async () => {
+  const { siguienteNivel } = await import('../scripts/clasificar-tarea.mjs');
+  assert.throws(() => siguienteNivel('barato', { escalada: {} }), /contrato sin escalada\.por_falla/u);
+  assert.throws(() => siguienteNivel('barato', {}), /contrato sin escalada\.por_falla/u);
+});
+
+test('skills/encargo.md trae la plantilla de falla para subir de nivel', () => {
+  const texto = readFileSync(new URL('../skills/encargo.md', import.meta.url), 'utf8');
+  for (const campo of ['comando:', 'salida:', 'archivo:línea:', 'ya probado:']) assert.ok(texto.includes(campo), `falta ${campo}`);
+});

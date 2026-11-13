@@ -28,7 +28,17 @@ REPORTE: conclusión, archivo:línea, salida del comando.
 - Medio: pruebas, pantallas, un patrón que ya existe en el código.
 - Fuerte: marca, spec, plata, seguridad, autenticación, migraciones, revisión antes de publicar.
 - El orquestador reparte; no construye ni lee código.
-- Si el encargo falla: ver Escalada en `SKILL.md`.
+- Si el encargo falla: subí un nivel (barato → medio → fuerte; `siguienteNivel` de
+  `scripts/clasificar-tarea.mjs`) y pegá la falla exacta al encargo nuevo. Si falla el fuerte, frená
+  y preguntale a la persona. Un error de cupo no es una falla: se espera.
+
+```
+FALLA
+comando: <el que se corrió>
+salida: <hasta 20 líneas, sin recortar el error>
+archivo:línea: <dónde rompe>
+ya probado: <qué se intentó y por qué no alcanzó>
+```
 
 ## Formato del reporte
 ```

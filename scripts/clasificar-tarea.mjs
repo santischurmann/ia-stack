@@ -32,6 +32,16 @@ export function clasificarTarea(texto) {
   return { clase, nivel, modelo, esfuerzo: contrato.niveles[nivel].esfuerzo, por_riesgo: porRiesgo };
 }
 
+/**
+ * Nivel al que se sube cuando un encargo falla (`escalada.por_falla`), o `null` si no hay siguiente:
+ * `null` significa frenar y preguntarle a la persona. `c` existe para probar un contrato roto.
+ */
+export function siguienteNivel(nivel, c = contrato) {
+  const mapa = c?.escalada?.por_falla;
+  if (!mapa || typeof mapa !== 'object') throw new Error('contrato sin escalada.por_falla');
+  return typeof nivel === 'string' && Object.hasOwn(mapa, nivel) ? mapa[nivel] : null;
+}
+
 /** El esfuerzo es `low` siempre: no existen `medium` ni `high`. */
 export function esfuerzoPermitido({ esfuerzo }) {
   return esfuerzo === 'low';
