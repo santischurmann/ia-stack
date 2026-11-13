@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// contraste.mjs — relación de contraste WCAG 2.x entre dos colores hex (IA Stack 3.4.4).
+// contraste.mjs — relación de contraste WCAG 2.x entre dos colores hex (IA Stack 3.4.5).
 //
 // Usage: node scripts/contraste.mjs <hex> <hex>      (#rrggbb, rrggbb, #rgb)
 // Imprime la relación (p. ej. 4,54:1). Exit 0 si llega a 4,5:1 (texto normal), 1 si no, 2 si el uso es incorrecto.

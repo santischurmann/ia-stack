@@ -1,4 +1,4 @@
-// Regla fija «ronda de brainstormings + EGM» (Santi, 13-11-2026): siempre nivel fuerte (Opus),
+// Regla fija «ronda de brainstormings + EGM» (13-11-2026): siempre nivel fuerte (Opus),
 // 5 pasos en orden, EGM de 5 a 10 rondas, y enrutamiento por falla barato -> medio -> fuerte.
 
 import assert from 'node:assert/strict';
@@ -45,4 +45,35 @@ test('la skill, la fase 5 y SKILL.md nombran la ronda', () => {
   assert.match(leer('skills/brainstorm-egm.md'), /mínimo 5/iu);
   assert.match(leer('phases/05-spec.md'), /ronda de brainstormings/iu);
   assert.match(leer('SKILL.md'), /ronda de brainstormings/iu);
+});
+
+const FASES_RONDA = ['02-caio', '04-marca', '05-spec', '07-build', '08-publicar'];
+
+test('el contrato dice en qué fases va la ronda, y cada fase lo nombra', () => {
+  const f = contrato.rondas.fases;
+  assert.deepEqual(Object.keys(f), FASES_RONDA);
+  for (const fase of FASES_RONDA) {
+    assert.ok(f[fase].cuando && f[fase].que, fase);
+    const texto = leer(`phases/${fase}.md`);
+    assert.match(texto, /ronda/iu, `${fase} no nombra la ronda`);
+    assert.ok(texto.includes('skills/brainstorm-egm.md'), fase);
+  }
+});
+
+test('chico no corre rondas; la tarea de alto requisito sí, una por tarea', () => {
+  assert.equal(contrato.rondas.chico, 'no corre');
+  assert.match(contrato.rondas.fases['07-build'].cuando, /alto_requisito/u);
+});
+
+test('las skills son nativas: ninguna fase ni skill depende de un plugin externo', () => {
+  for (const rel of ['SKILL.md', ...FASES_RONDA.map((f) => `phases/${f}.md`), 'skills/brainstorm-egm.md']) {
+    assert.ok(!/\b(egm|caveman|superpowers|graphify):[a-z]/iu.test(leer(rel)), rel);
+  }
+  assert.match(leer('skills/brainstorm-egm.md'), /nativ/iu);
+});
+
+test('la versión es 3.4.5 en SKILL.md y README', () => {
+  assert.match(leer('SKILL.md'), /\*\*Versión:\*\* 3\.4\.5 · etiquetada como `v3\.4\.5`/u);
+  assert.match(leer('README.md'), /Versión \*\*3\.4\.5\*\*/u);
+  assert.match(leer('CHANGELOG.md'), /^## \[3\.4\.5\] - 13-11-2026/mu);
 });

@@ -1,7 +1,7 @@
 # Brainstorming y EGM
 
-Dos rondas de pensamiento que el método trae incorporadas. No dependen de ningún plugin: si el
-host tiene agentes EGM instalados se usan; si no, subagentes genéricos con el encargo de abajo.
+Dos rondas de pensamiento que el método trae incorporadas. Son nativas: no dependen de ningún plugin;
+las hace un subagente genérico con el encargo de abajo.
 
 ## Brainstorming: abrir antes de elegir
 
@@ -72,4 +72,5 @@ más barato que resuelva bien» (`contracts/model-routing.json` § rondas, rol `
 - **Rondas de EGM:** mínimo 5. Si la quinta aún trae mejoras o correcciones, seguir hasta una
   ronda limpia; máximo 10. Lectores sin contexto sobre el documento ya corregido por la anterior.
 - Se hace completa, sin recortar. Se aplica lo hallado; no se resume.
+- Fases donde corre: `contracts/model-routing.json` § rondas.fases (2, 4, 5, 7 por tarea de alto requisito, 8).
 - Esto reemplaza el tope de 2 rondas de arriba sólo cuando la persona pide la ronda.

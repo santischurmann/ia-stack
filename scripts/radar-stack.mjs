@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// radar-stack.mjs — última versión ESTABLE de paquetes npm y PyPI (IA Stack 3.4.4, fase de stack).
+// radar-stack.mjs — última versión ESTABLE de paquetes npm y PyPI (IA Stack 3.4.5, fase de stack).
 //
 // Usage:
 //   node scripts/radar-stack.mjs [--json] [--dias-minimos 14] npm:<paquete> pypi:<paquete> ...

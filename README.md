@@ -1,7 +1,7 @@
 # IA Stack
 
 Un método para construir software con un agente de IA gastando lo mínimo y sin romper lo que
-ya anda. Versión **3.4.4**.
+ya anda. Versión **3.4.5**.
 
 ## Qué es
 

@@ -146,6 +146,7 @@ else
   mkdir -p "$TARGET_DIR/$SKILL_NAME"
   cp "$PACKAGE_DIR/.agents/skills/ia-stack/SKILL.md" "$TARGET_DIR/$SKILL_NAME/SKILL.md"
   copy_runtime "$RUNTIME_DIR"
+  sellar_runtime "$RUNTIME_DIR"
   chmod +x "$RUNTIME_DIR/scripts/"*.sh
   echo "OK: skill, sub-skills, and self-contained runtime installed."
 fi

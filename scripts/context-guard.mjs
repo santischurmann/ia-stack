@@ -8,6 +8,7 @@
 //
 // Los topes y el umbral salen de contracts/model-routing.json § contexto (tope_orquestador,
 // tope_subsesion, aviso_desde), buscado junto al script (../contracts/): ninguna cifra vive acá.
+// Con la ventana (ventana_max) llena ordena compactar ya, en cualquier rol.
 // Con menos del umbral calla. Desde el umbral avisa con tokens y tope. En el tope ordena cerrar:
 // commit del estado, resumen en .ia-stack/ESTADO.md y compactar o handoff.
 //
@@ -75,7 +76,11 @@ export function leerContrato(ruta = CONTRATO) {
     if (!Number.isFinite(contexto[campo]) || contexto[campo] <= 0) throw new Error(`contexto.${campo} del contrato debe ser un número positivo`);
   }
   if (!(contexto.aviso_desde > 0 && contexto.aviso_desde <= 1)) throw new Error('contexto.aviso_desde del contrato debe estar en (0, 1]');
-  return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde };
+  const ventana = contexto.ventana_max;
+  if (ventana !== undefined && !(Number.isFinite(ventana) && ventana >= contexto.tope_orquestador && ventana >= contexto.tope_subsesion)) {
+    throw new Error('contexto.ventana_max del contrato debe ser un número no menor que los topes');
+  }
+  return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde, ventana_max: ventana };
 }
 
 /** null por debajo del umbral; AVISO de handoff desde el umbral (70 %); ORDEN de cerrar desde el tope. */
@@ -83,6 +88,9 @@ export function evaluar(tokens, rol, contrato) {
   const tope = rol === 'subsesion' ? contrato.tope_subsesion : contrato.tope_orquestador;
   const ratio = tokens / tope;
   const dato = `${tokens} de ${tope} tokens de mensajes (${Math.floor(ratio * 100)} %, rol ${rol})`;
+  if (contrato.ventana_max !== undefined && tokens >= contrato.ventana_max) {
+    return `ORDEN: ventana de ${contrato.ventana_max} tokens llena, ${dato}. Guardá el estado en .ia-stack/ESTADO.md y compactá ya (/compact): ninguna sesión trabaja con más contexto que la ventana.`;
+  }
   if (ratio >= 1) {
     return `ORDEN: contexto al tope, ${dato}. Cerrá ya: 1) commit del estado; 2) resumen en .ia-stack/ESTADO.md con decisiones, archivos clave, pendientes y cómo retomar; 3) compactar o handoff a una sesión nueva. No sigas trabajando sobre este contexto.`;
   }

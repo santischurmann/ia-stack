@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import { soloEnWindows } from './_entorno.mjs';
-import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
+import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, installPs, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla, tampoco en PowerShell', soloEnWindows('el instalador de PowerShell no se comprueba: install.ps1 queda sin correr, y con él la rama de instalación que usa la mitad de los usuarios del protocolo'), () => {
   const { root, project, target, runtime } = fixture();
@@ -70,6 +70,7 @@ test('fresh PowerShell installation produces the same project-local runtime', so
     assertRuntime(project, target, runtime);
     assertApartado(project);
     assertSellado(project);
+    assertSelladoGlobal(runtime);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

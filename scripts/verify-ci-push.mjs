@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// verify-ci-push.mjs — gate 8: el CI corre cuando hay algo que publicar, no con cada push (IA Stack 3.4.4).
+// verify-ci-push.mjs — gate 8: el CI corre cuando hay algo que publicar, no con cada push (IA Stack 3.4.5).
 //
 // Usage:
 //   node scripts/verify-ci-push.mjs check [--workflows .github/workflows] [--principal main,master]

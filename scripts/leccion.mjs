@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// leccion.mjs — anota lecciones en `.ia-stack/LECCIONES.md` y detecta causas repetidas (IA Stack 3.4.4).
+// leccion.mjs — anota lecciones en `.ia-stack/LECCIONES.md` y detecta causas repetidas (IA Stack 3.4.5).
 //
 // Usage:
 //   node scripts/leccion.mjs anotar --tipo escalada|retrabajo --sintoma <t> --causa <t> --archivo <ruta> [--desde <barato|medio|fuerte> --hasta <barato|medio|fuerte>] [--proyecto <dir>]

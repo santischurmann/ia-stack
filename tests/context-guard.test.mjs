@@ -44,7 +44,7 @@ const sintetico = (n) => {
   return l;
 };
 
-const CONTRATO = { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.7 };
+const CONTRATO = { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.7, ventana_max: 300000 };
 
 test('egm-preview-04-11 · handoff al 70 % · 84K de 120K avisa con tokens y tope y pide handoff, sale 0', () => {
   conTranscript(sintetico(84000), (f) => {
@@ -154,6 +154,8 @@ test('ia-stack-3-4-1-tokens · AC6 · los topes salen de contracts/model-routing
     assert.throws(() => leerContrato(malo), /tope_subsesion/);
     writeFileSync(malo, JSON.stringify({ contexto: { tope_orquestador: 1, tope_subsesion: 1, aviso_desde: 2 } }));
     assert.throws(() => leerContrato(malo), /aviso_desde/);
+    writeFileSync(malo, JSON.stringify({ contexto: { tope_orquestador: 10, tope_subsesion: 1, aviso_desde: 0.7, ventana_max: 5 } }));
+    assert.throws(() => leerContrato(malo), /ventana_max/);
     writeFileSync(malo, '{');
     assert.throws(() => leerContrato(malo), /contrato/i);
     writeFileSync(malo, JSON.stringify({}));

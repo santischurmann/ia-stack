@@ -1,8 +1,11 @@
 # Cambios
 
-## [Sin publicar] - 13-11-2026
+## [3.4.5] - 13-11-2026
 
 - Regla fija «ronda de brainstormings + EGM» (`skills/brainstorm-egm.md`, `contracts/model-routing.json` § rondas): 5 pasos en orden, EGM de 5 a 10 rondas, siempre Opus; excepción al modelo más barato.
+- Las rondas se aplican en las fases 2, 4, 5, 7 (por tarea de alto requisito) y 8 (`rondas.fases`); chico no corre.
+- El instalador sella también el runtime global (`INSTALADO.json`), en bash y PowerShell.
+- Ventana de contexto de 300K como máximo en toda sesión, orquestador o anidada (`contexto.ventana_max`); llena, se compacta. `context-guard.mjs` lo ordena e `INSTALL.md` dice cómo fijarla en Claude Code y Codex.
 - Enrutamiento por falla explícito en `escalada.por_falla`: barato pasa a medio y medio a fuerte, con la falla exacta.
 
 ## [3.4.4] - 10-11-2026

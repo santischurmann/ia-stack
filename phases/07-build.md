@@ -22,6 +22,7 @@ Convertir la spec en código que funciona, de a una tarea, siempre con la prueba
    `node scripts/leccion.mjs anotar --tipo retrabajo ...`.
 7. Si una prueba falla, ver Escalada en `SKILL.md`.
 8. Al terminar un grupo, archivá la subsesión y actualizá `ESTADO.md`.
+9. Tarea de clase `alto_requisito` o en área de riesgo: ronda de brainstormings del diseño y EGM sobre su plan, antes del rojo (`skills/brainstorm-egm.md`). Siempre Opus; una por tarea, no por paso.
 
 ## Entrega
 Código y pruebas en commits locales. Nada se publica todavía.

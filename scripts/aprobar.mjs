@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// aprobar.mjs — registro sellado de las aprobaciones de la persona (IA Stack 3.4.4).
+// aprobar.mjs — registro sellado de las aprobaciones de la persona (IA Stack 3.4.5).
 //
 // Usage:
 //   node scripts/aprobar.mjs registrar --tipo <pedido|research|marca|boceto|spec|preview|produccion> --ref <vN|sha> --texto <texto literal> [--pieza <id>] [--quien <nombre>] [--proyecto <dir>]

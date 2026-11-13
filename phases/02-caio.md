@@ -24,6 +24,7 @@ Se hace antes de elegir tecnología.
    - dato faltante: lo que hay que preguntar.
 5. Los datos faltantes van en una sola tanda de preguntas a la persona.
 6. Escribí `docs/caio.md` con `templates/caio.md`.
+7. En tamaño grande, antes del veredicto, ronda de brainstormings sobre qué automatizar (`skills/brainstorm-egm.md`): siempre Opus; la persona elige.
 
 ## Entrega
 `docs/caio.md`: tabla de procesos con veredicto, y los hallazgos en sus cuatro cajas.

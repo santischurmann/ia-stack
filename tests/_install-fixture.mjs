@@ -187,12 +187,22 @@ export function assertSellado(project) {
   // El sello dice la versión del protocolo que instaló, la misma que declara SKILL.md.
   const declarada = /\*\*Versión:\*\*\s*(\d+\.\d+\.\d+)/u.exec(readFileSync(join(repoRoot, 'SKILL.md'), 'utf8'))[1];
   assert.equal(sello.version, declarada);
-  assert.equal(sello.version, '3.4.4');
+  assert.equal(sello.version, '3.4.5');
   assert.match(sello.instalado, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u, `fecha ISO en UTC: ${sello.instalado}`);
   // Se instala desde ESTE repositorio, que es un checkout: tiene que nombrar su commit.
   assert.equal(sello.desde, 'checkout');
   assert.match(sello.commit, /^[0-9a-f]{40,64}$/u, `el commit de origen: ${sello.commit}`);
   assert.equal(typeof sello.arbol_limpio, 'boolean', 'y si el checkout tenia cambios sin commitear');
+}
+
+/** El runtime global también queda sellado: sin sello no se sabe qué versión hay instalada. */
+export function assertSelladoGlobal(runtime) {
+  const ruta = join(runtime, 'INSTALADO.json');
+  assert.equal(existsSync(ruta), true, 'el runtime global tiene que quedar sellado');
+  const sello = JSON.parse(readFileSync(ruta, 'utf8').replace(/^﻿/u, ''));
+  assert.equal(sello.schema, 'ia.runtime-instalado/1');
+  assert.equal(sello.version, '3.4.5');
+  assert.match(sello.instalado, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/u);
 }
 
 /** El puntero canonico: la unica fuente de las tres copias que instala el instalador. */

@@ -52,6 +52,15 @@ tu `settings.json` un hook `UserPromptSubmit` con
 `node .ia-stack/runtime/scripts/context-guard.mjs --rol orquestador`. Una subsesión fija
 `IA_STACK_ROL=subsesion`. El script sale siempre con 0 y no cierra la sesión solo.
 
+## Ventana de contexto de 300K
+
+Toda sesión con IA Stack, orquestador o anidada, trabaja con una ventana de 300.000 tokens como
+máximo y compacta apenas se llena (`contracts/model-routing.json` § contexto). El host la aplica:
+- **Claude Code:** `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" }` en `settings.json`.
+- **Codex:** `model_auto_compact_token_limit = 300000` en `config.toml`.
+
+El hook de contexto ordena compactar si una sesión llega igual a la ventana.
+
 ## Hook de aprobaciones
 
 Para que tus frases `apruebo pedido v1`, `apruebo preview v1`, etc. queden registradas, agregá a

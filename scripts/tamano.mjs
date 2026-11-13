@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// tamano.mjs — clasifica el trabajo en chico | medio | grande y dice qué fases recorrer (IA Stack 3.4.4).
+// tamano.mjs — clasifica el trabajo en chico | medio | grande y dice qué fases recorrer (IA Stack 3.4.5).
 //
 // Usage:
 //   node scripts/tamano.mjs --archivos <n> [--pantalla-nueva] [--proyecto-nuevo] [--riesgo plata|seguridad|auth|migracion]

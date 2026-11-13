@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { rmSync } from 'node:fs';
 import test from 'node:test';
 
-import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
+import { plantarClaudeMd, assertAvisoClaudeMd, assertAgentsActualizado, assertApartado, assertGitignoreIntacto, assertGitignoreSinMezcla, assertNadaApartado, assertRuntime, assertSellado, assertSelladoGlobal, fixture, gitBash, hayBash, installSh, plantarAgentsPublicado, plantarGitignoreCrlf, plantarGitignoreSinSaltoFinal, plantarSobrante, plantarSobrantesDeMas, run, toBash } from './_install-fixture.mjs';
 
 test('un .gitignore sin salto de línea final no pierde su última regla', { skip: !hayBash }, () => {
   const { root, project, target, runtime } = fixture();
@@ -70,6 +70,7 @@ test('fresh Bash installation produces a project-local runtime whose gate comman
     assertRuntime(project, target, runtime);
     assertApartado(project);
     assertSellado(project);
+    assertSelladoGlobal(runtime);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

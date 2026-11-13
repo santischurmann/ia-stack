@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// metricas.mjs — métricas del protocolo en `.ia-stack/metricas.jsonl`, una línea JSON por llamada (IA Stack 3.4.4).
+// metricas.mjs — métricas del protocolo en `.ia-stack/metricas.jsonl`, una línea JSON por llamada (IA Stack 3.4.5).
 //
 // Usage:
 //   node scripts/metricas.mjs bloque --fase <n> --modelo <m> [--ventana <pct>] [--semana <pct>]

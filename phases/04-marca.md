@@ -20,6 +20,7 @@ Definir cómo se ve y cómo suena el producto antes de dibujar pantallas, para n
 6. Convertí todo en tokens de diseño (colores, tipografías, espaciados, radios), escribí
    `docs/marca.md` con `templates/marca.md`, armá una hoja de marca que se abra en el navegador,
    mostrala y aceptá una sola ronda de cambios.
+7. En tamaño grande, ronda de brainstormings sobre la identidad (`skills/brainstorm-egm.md`): siempre Opus; la persona elige.
 
 ## Entrega
 `docs/marca.md` y la hoja de marca, con los tokens listos para usar en el preview.

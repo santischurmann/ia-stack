@@ -70,6 +70,14 @@
     "excepcion_a": "el_modelo_mas_barato",
     "vale_para": "todos los proyectos",
     "brainstorming": { "pasos": ["brainstorming", "adversarial", "brainstorming", "adversarial", "brainstorming final"], "orden_fijo": true },
+    "chico": "no corre",
+    "fases": {
+      "02-caio": { "cuando": "tamaño grande, al decidir qué automatizar", "que": "ronda de brainstormings" },
+      "04-marca": { "cuando": "tamaño grande, al fijar la identidad", "que": "ronda de brainstormings" },
+      "05-spec": { "cuando": "tamaño medio o grande, sobre la spec", "que": "ronda de brainstormings y rondas de EGM" },
+      "07-build": { "cuando": "cada tarea de clase alto_requisito o en área de riesgo", "que": "ronda de brainstormings del diseño y EGM sobre su plan, antes del rojo" },
+      "08-publicar": { "cuando": "tamaño grande o área de riesgo", "que": "rondas de EGM sobre diff y spec antes del push" }
+    },
     "egm": { "minimo": 5, "maximo": 10, "hasta": "una ronda limpia, sin mejoras ni correcciones" }
   },
   "revisor_distinto_del_constructor": true,
@@ -78,7 +86,10 @@
     "tope_orquestador": 120000,
     "tope_subsesion": 60000,
     "aviso_desde": 0.7,
-    "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. Sin dato del host, el relevo es sólo al cambiar de etapa."
+    "ventana_max": 300000,
+    "ventana_vale_para": "toda sesión: orquestador y anidada",
+    "al_llenarse": "compactar",
+    "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. La ventana de 300K es el techo duro de toda sesión: el host compacta apenas se llena, nunca trabaja con más. Sin dato del host, el relevo es sólo al cambiar de etapa."
   },
   "encargo": {
     "modo_breve_entre_agentes": "full",

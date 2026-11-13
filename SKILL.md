@@ -5,7 +5,7 @@ description: "Método de trabajo para construir software con un agente LLM gasta
 
 # IA Stack
 
-**Versión:** 3.4.4 · etiquetada como `v3.4.4` en git.
+**Versión:** 3.4.5 · etiquetada como `v3.4.5` en git.
 
 Un método en 10 fases para construir software con un agente. Este archivo es el núcleo: se lee
 siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado `scripts/`, `skills/`,
@@ -89,8 +89,8 @@ Todo vive en `.ia-stack/`:
 | `metricas.jsonl` | `scripts/metricas.mjs` | cupo y modelo por bloque |
 | `LECCIONES.md` | `scripts/leccion.mjs` | cada escalada y cada retrabajo |
 
-- **Relevo** al 70 % del contexto y al cambiar de etapa: estado guardado, sesión nueva. Si el host
-  no informa el porcentaje, sólo al cambiar de etapa.
+- **Relevo** al 70 % del contexto y al cambiar de etapa (sin dato del host, sólo ahí): estado guardado,
+  sesión nueva. **Ventana de 300K** como máximo en toda sesión, orquestador o anidada: llena, compacta.
 - **Subsesión:** nace con un grupo de tareas, reporta en modo breve y se archiva. **Encargo**
   a un subagente: hasta 4.000 tokens y 3 archivos (`skills/encargo.md`).
 - **Huérfana:** su tarea está hecha o sin dueño. Se archiva, nunca se borra; lo pendiente vuelve a

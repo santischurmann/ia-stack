@@ -172,6 +172,7 @@ if ($ProjectOnly) {
   New-Item -ItemType Directory -Force -Path "$TargetDir\$SkillName" | Out-Null
   Copy-Item "$PackageDir\.agents\skills\ia-stack\SKILL.md" "$TargetDir\$SkillName\SKILL.md" -Force
   Copy-Runtime $RuntimeDir
+  Set-Sello $RuntimeDir
   Write-Host 'OK: skill, sub-skills, and self-contained runtime installed.' -ForegroundColor Green
 }
 
