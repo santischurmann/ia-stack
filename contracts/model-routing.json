@@ -89,6 +89,7 @@
     "ventana_max": 300000,
     "ventana_vale_para": "toda sesión: orquestador y anidada",
     "al_llenarse": "compactar",
+    "handoff": { "archivo": ".ia-stack/handoffs/ULTIMO.md", "max_lineas": 40, "max_caracteres": 6000, "max_horas": 24, "antes_de_compactar": 0.6 },
     "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. La ventana de 300K es el techo duro de toda sesión: el host compacta apenas se llena, nunca trabaja con más. Sin dato del host, el relevo es sólo al cambiar de etapa."
   },
   "encargo": {

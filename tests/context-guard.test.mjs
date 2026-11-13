@@ -44,7 +44,13 @@ const sintetico = (n) => {
   return l;
 };
 
-const CONTRATO = { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.7, ventana_max: 300000 };
+const CONTRATO = {
+  tope_orquestador: 120000,
+  tope_subsesion: 60000,
+  aviso_desde: 0.7,
+  ventana_max: 300000,
+  handoff: { archivo: '.ia-stack/handoffs/ULTIMO.md', max_lineas: 40, max_caracteres: 6000, max_horas: 24, antes_de_compactar: 0.6 },
+};
 
 test('egm-preview-04-11 · handoff al 70 % · 84K de 120K avisa con tokens y tope y pide handoff, sale 0', () => {
   conTranscript(sintetico(84000), (f) => {
@@ -259,4 +265,38 @@ test('revision-n3 · MEDIA 3 · el rol sale de IA_STACK_ROL si no hay --rol; --r
     assert.match(r.stdout, /ORDEN/);
     assert.match(r.stdout, /rol subsesion/);
   });
+});
+
+// ---- 3.4.5 · handoff antes de compactar ----
+const CON_HANDOFF = CONTRATO;
+
+test('3.4.5 · a 0,6 × ventana (180.000 tokens de mensajes) ordena escribir el handoff, en los dos roles', () => {
+  for (const rol of ['orquestador', 'subsesion']) {
+    assert.doesNotMatch(evaluar(179999, rol, CON_HANDOFF), /compactación es inminente/u, rol);
+    const m = evaluar(180000, rol, CON_HANDOFF);
+    assert.match(m, /^ORDEN: escribí el handoff en \.ia-stack\/handoffs\/ULTIMO\.md ahora: la compactación es inminente/u, rol);
+    const llena = evaluar(300000, rol, CON_HANDOFF);
+    assert.match(llena, /ventana de 300000 tokens llena/u);
+    assert.doesNotMatch(llena, /compactación es inminente/u);
+  }
+});
+
+test('3.4.5 · los avisos de relevo nombran el archivo de handoff y su plantilla', () => {
+  for (const tokens of [84000, 120000]) {
+    const m = evaluar(tokens, 'orquestador', CON_HANDOFF);
+    assert.ok(m.includes('.ia-stack/handoffs/ULTIMO.md'), m);
+    assert.ok(m.includes('templates/estado/HANDOFF.md'), m);
+  }
+});
+
+test('3.4.5 · leerContrato trae contexto.handoff y lo exige', () => {
+  assert.deepEqual(leerContrato().handoff, CON_HANDOFF.handoff);
+  const dir = mkdtempSync(join(tmpdir(), 'ia-guard-'));
+  try {
+    const ruta = join(dir, 'c.json');
+    writeFileSync(ruta, JSON.stringify({ contexto: { tope_orquestador: 10, tope_subsesion: 5, aviso_desde: 0.7, ventana_max: 20 } }));
+    assert.throws(() => leerContrato(ruta), /contrato sin contexto\.handoff/u);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

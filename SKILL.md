@@ -89,8 +89,8 @@ Todo vive en `.ia-stack/`:
 | `metricas.jsonl` | `scripts/metricas.mjs` | cupo y modelo por bloque |
 | `LECCIONES.md` | `scripts/leccion.mjs` | cada escalada y cada retrabajo |
 
-- **Relevo** al 70 % del contexto y al cambiar de etapa (sin dato del host, sólo ahí): estado guardado,
-  sesión nueva. **Ventana de 300K** como máximo en toda sesión, orquestador o anidada: llena, compacta.
+- **Relevo** al 70 % del contexto y al cambiar de etapa: estado guardado, sesión nueva. **Ventana de
+  300K** en toda sesión: llena, compacta; antes, handoff en `.ia-stack/handoffs/ULTIMO.md`.
 - **Subsesión:** nace con un grupo de tareas, reporta en modo breve y se archiva. **Encargo**
   a un subagente: hasta 4.000 tokens y 3 archivos (`skills/encargo.md`).
 - **Huérfana:** su tarea está hecha o sin dueño. Se archiva, nunca se borra; lo pendiente vuelve a

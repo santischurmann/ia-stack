@@ -8,7 +8,10 @@
 //
 // Los topes y el umbral salen de contracts/model-routing.json § contexto (tope_orquestador,
 // tope_subsesion, aviso_desde), buscado junto al script (../contracts/): ninguna cifra vive acá.
-// Con la ventana (ventana_max) llena ordena compactar ya, en cualquier rol.
+// Con la ventana (ventana_max) llena ordena compactar ya, en cualquier rol. Antes, a
+// handoff.antes_de_compactar × ventana_max, ordena escribir el handoff (contexto.handoff.archivo):
+// es la última oportunidad de la sesión que pasó de largo el relevo. Un solo mensaje, el del umbral
+// más alto alcanzado: ventana llena > handoff inminente > tope de relevo > aviso.
 // Con menos del umbral calla. Desde el umbral avisa con tokens y tope. En el tope ordena cerrar:
 // commit del estado, resumen en .ia-stack/ESTADO.md y compactar o handoff.
 //
@@ -29,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 
 const CONTRATO = join(dirname(fileURLToPath(import.meta.url)), '..', 'contracts', 'model-routing.json');
 const ROLES = ['orquestador', 'subsesion'];
+const PLANTILLA = 'templates/estado/HANDOFF.md';
 
 function charsDeContenido(content) {
   if (typeof content === 'string') return content.length;
@@ -80,7 +84,15 @@ export function leerContrato(ruta = CONTRATO) {
   if (ventana !== undefined && !(Number.isFinite(ventana) && ventana >= contexto.tope_orquestador && ventana >= contexto.tope_subsesion)) {
     throw new Error('contexto.ventana_max del contrato debe ser un número no menor que los topes');
   }
-  return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde, ventana_max: ventana };
+  // Misma validación que handoff.mjs leerTopes, repetida a propósito: este hook no importa otros scripts,
+  // así un runtime a medio copiar no lo rompe.
+  const h = contexto.handoff;
+  const entero = (v) => Number.isInteger(v) && v > 0;
+  if (!(h !== null && typeof h === 'object' && typeof h.archivo === 'string' && h.archivo !== '' && entero(h.max_lineas) && entero(h.max_caracteres) && entero(h.max_horas) && h.antes_de_compactar > 0 && h.antes_de_compactar <= 1)) {
+    throw new Error('contrato sin contexto.handoff');
+  }
+  const handoff = { archivo: h.archivo, max_lineas: h.max_lineas, max_caracteres: h.max_caracteres, max_horas: h.max_horas, antes_de_compactar: h.antes_de_compactar };
+  return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde, ventana_max: ventana, handoff };
 }
 
 /** null por debajo del umbral; AVISO de handoff desde el umbral (70 %); ORDEN de cerrar desde el tope. */
@@ -88,14 +100,19 @@ export function evaluar(tokens, rol, contrato) {
   const tope = rol === 'subsesion' ? contrato.tope_subsesion : contrato.tope_orquestador;
   const ratio = tokens / tope;
   const dato = `${tokens} de ${tope} tokens de mensajes (${Math.floor(ratio * 100)} %, rol ${rol})`;
+  const { archivo, antes_de_compactar: antes } = contrato.handoff;
+  const resumen = `el handoff en ${archivo} (plantilla ${PLANTILLA}: objetivo, decisiones, archivos clave, pendientes, cómo retomar)`;
   if (contrato.ventana_max !== undefined && tokens >= contrato.ventana_max) {
     return `ORDEN: ventana de ${contrato.ventana_max} tokens llena, ${dato}. Guardá el estado en .ia-stack/ESTADO.md y compactá ya (/compact): ninguna sesión trabaja con más contexto que la ventana.`;
   }
+  if (contrato.ventana_max !== undefined && tokens >= antes * contrato.ventana_max) {
+    return `ORDEN: escribí el handoff en ${archivo} ahora: la compactación es inminente, ${dato}. Plantilla: ${PLANTILLA}. Después de compactar el host te lo vuelve a mostrar; lo que no quede ahí se puede perder.`;
+  }
   if (ratio >= 1) {
-    return `ORDEN: contexto al tope, ${dato}. Cerrá ya: 1) commit del estado; 2) resumen en .ia-stack/ESTADO.md con decisiones, archivos clave, pendientes y cómo retomar; 3) compactar o handoff a una sesión nueva. No sigas trabajando sobre este contexto.`;
+    return `ORDEN: contexto al tope, ${dato}. Cerrá ya: 1) commit del estado; 2) resumen en .ia-stack/ESTADO.md y ${resumen}; 3) compactar o handoff a una sesión nueva. No sigas trabajando sobre este contexto.`;
   }
   if (ratio >= contrato.aviso_desde) {
-    return `AVISO: ${dato}. Umbral de handoff: cerrá la tarea en curso, commiteá el estado, escribí el resumen en .ia-stack/ESTADO.md (decisiones, archivos clave, pendientes, cómo retomar) y hacé el handoff o compactá ahora, no en el tope.`;
+    return `AVISO: ${dato}. Umbral de handoff: cerrá la tarea en curso, commiteá el estado, actualizá .ia-stack/ESTADO.md, escribí ${resumen} y hacé el handoff o compactá ahora, no en el tope.`;
   }
   return null;
 }
