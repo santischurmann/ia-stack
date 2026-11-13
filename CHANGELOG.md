@@ -6,6 +6,8 @@
 - Las rondas se aplican en las fases 2, 4, 5, 7 (por tarea de alto requisito) y 8 (`rondas.fases`); chico no corre.
 - El instalador sella también el runtime global (`INSTALADO.json`), en bash y PowerShell.
 - Ventana de contexto de 300K como máximo en toda sesión, orquestador o anidada (`contexto.ventana_max`); llena, se compacta. `context-guard.mjs` lo ordena e `INSTALL.md` dice cómo fijarla en Claude Code y Codex.
+- **Cambio de contrato** en `verify-egm-convergencia.mjs`: `spec`, `plan-*`, `publicar` y `protocolo` pasan al régimen de ronda (5 a 10 rondas, la última limpia, o la décima con `decide_persona`); `preview` conserva el régimen de 3.4.4; una pieza fuera de las listas de `rondas.egm` falla.
+- `siguienteNivel` en `clasificar-tarea.mjs` y plantilla de falla en `skills/encargo.md`.
 - Enrutamiento por falla explícito en `escalada.por_falla`: barato pasa a medio y medio a fuerte, con la falla exacta.
 
 ## [3.4.4] - 10-11-2026

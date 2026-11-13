@@ -78,7 +78,7 @@
       "07-build": { "cuando": "cada tarea de clase alto_requisito o en área de riesgo", "que": "ronda de brainstormings del diseño y EGM sobre su plan, antes del rojo" },
       "08-publicar": { "cuando": "tamaño grande o área de riesgo", "que": "rondas de EGM sobre diff y spec antes del push" }
     },
-    "egm": { "minimo": 5, "maximo": 10, "hasta": "una ronda limpia, sin mejoras ni correcciones" }
+    "egm": { "minimo": 5, "maximo": 10, "hasta": "una ronda limpia, sin mejoras ni correcciones", "piezas": ["spec", "plan-*", "publicar", "protocolo"], "piezas_simples": ["preview"] }
   },
   "revisor_distinto_del_constructor": true,
   "contexto": {
