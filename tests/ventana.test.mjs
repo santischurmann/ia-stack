@@ -357,10 +357,11 @@ test('CLI · la carpeta personal y una carpeta que no es proyecto salen 2; el ma
 });
 
 test('mismaCarpeta · en Windows no distingue mayúsculas; en las demás plataformas sí', () => {
-  assert.equal(mismaCarpeta('C:\\Users\\Ana', 'c:\\users\\ANA', 'win32'), true);
-  assert.equal(mismaCarpeta('C:\\Users\\Ana', 'C:\\Users\\Ana2', 'win32'), false);
-  assert.equal(mismaCarpeta('/home/Ana', '/home/ana', 'linux'), false);
-  assert.equal(mismaCarpeta('/home/ana', '/home/ana', 'darwin'), true);
+  // Rutas neutras a propósito: los gates de datos personales rechazan toda ruta con forma de carpeta de usuario.
+  assert.equal(mismaCarpeta('D:\\Datos\\Demo', 'd:\\datos\\DEMO', 'win32'), true);
+  assert.equal(mismaCarpeta('D:\\Datos\\Demo', 'D:\\Datos\\Demo2', 'win32'), false);
+  assert.equal(mismaCarpeta('/srv/Demo', '/srv/demo', 'linux'), false);
+  assert.equal(mismaCarpeta('/srv/demo', '/srv/demo', 'darwin'), true);
 });
 
 test('CLI · con el contrato sin ventana_max, o que no es JSON, sale 1 con el mensaje fijo y no escribe', () => {
