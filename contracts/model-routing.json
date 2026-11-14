@@ -70,7 +70,7 @@
     "excepcion_a": "el_modelo_mas_barato",
     "vale_para": "todos los proyectos",
     "brainstorming": { "pasos": ["brainstorming", "adversarial", "brainstorming", "adversarial", "brainstorming final"], "orden_fijo": true },
-    "chico": "no corre",
+    "chico": "no corre, salvo el plan de una tarea de alto requisito; publicar no llega a chico, porque un área de riesgo nunca es chico; protocolo corre siempre",
     "fases": {
       "02-caio": { "cuando": "tamaño grande, al decidir qué automatizar", "que": "ronda de brainstormings" },
       "04-marca": { "cuando": "tamaño grande, al fijar la identidad", "que": "ronda de brainstormings" },
@@ -87,10 +87,10 @@
     "tope_subsesion": 60000,
     "aviso_desde": 0.7,
     "ventana_max": 300000,
-    "ventana_vale_para": "toda sesión: orquestador y anidada",
+    "ventana_vale_para": "toda sesión abierta en un proyecto instalado; una anidada (subagente) queda cubierta sólo si el host le pasa la variable",
     "al_llenarse": "compactar",
     "handoff": { "archivo": ".ia-stack/handoffs/ULTIMO.md", "max_lineas": 40, "max_caracteres": 6000, "max_horas": 24, "antes_de_compactar": 0.6 },
-    "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. La ventana de 300K es el techo duro de toda sesión: el host compacta apenas se llena, nunca trabaja con más. Sin dato del host, el relevo es sólo al cambiar de etapa."
+    "por_que": "Cada turno vuelve a pagar todo el contexto. Al 70 % del tope se guarda el estado y se abre una sesión nueva; pasado el tope no se sigue trabajando. La ventana de 300K es el techo donde el host recibe la variable de ventana (la deja ventana.mjs en un proyecto instalado): ahí compacta apenas se llena. En las demás sesiones el respaldo es el guard, que mide sobre mensajes, sin el costo fijo de la sesión, y sólo avisa."
   },
   "encargo": {
     "modo_breve_entre_agentes": "full",

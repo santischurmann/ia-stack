@@ -17,6 +17,10 @@
 //
 // SIEMPRE sale 0: un hook que falla no puede trabar la sesión. Un error (transcript ilegible,
 // contrato roto, argumento inválido) va a stderr con el prefijo `context-guard:` y no avisa nada.
+// Una `ventana_max` presente e inválida (no numérica o menor que un tope) es contrato roto.
+// Excepción: si sólo falta o está roto `contexto.handoff`, o falta `ventana_max`, el relevo y la
+// ventana siguen avisando; se pierde la orden de handoff y stderr lo dice en cada corrida que llega a leer
+// el contrato, se haya llegado o no a un umbral y aunque después falle la lectura del transcript.
 //
 // LÍMITES HONESTOS: estima con ceil(caracteres / 4) sobre el texto de los mensajes user/assistant
 // (tool_use y tool_result serializados), no con el tokenizador del modelo. No cuenta los ~80K fijos
@@ -88,24 +92,29 @@ export function leerContrato(ruta = CONTRATO) {
   // así un runtime a medio copiar no lo rompe.
   const h = contexto.handoff;
   const entero = (v) => Number.isInteger(v) && v > 0;
-  if (!(h !== null && typeof h === 'object' && typeof h.archivo === 'string' && h.archivo !== '' && entero(h.max_lineas) && entero(h.max_caracteres) && entero(h.max_horas) && h.antes_de_compactar > 0 && h.antes_de_compactar <= 1)) {
-    throw new Error('contrato sin contexto.handoff');
-  }
-  const handoff = { archivo: h.archivo, max_lineas: h.max_lineas, max_caracteres: h.max_caracteres, max_horas: h.max_horas, antes_de_compactar: h.antes_de_compactar };
+  // Si el bloque falta o está roto, `handoff` es null: el relevo y la ventana siguen avisando y sólo
+  // se pierde la orden de handoff (ejecutar lo dice por stderr).
+  const valido = h !== null && typeof h === 'object' && typeof h.archivo === 'string' && h.archivo !== '' && entero(h.max_lineas) && entero(h.max_caracteres) && entero(h.max_horas) && typeof h.antes_de_compactar === 'number' && h.antes_de_compactar > 0 && h.antes_de_compactar <= 1;
+  const handoff = valido ? { archivo: h.archivo, max_lineas: h.max_lineas, max_caracteres: h.max_caracteres, max_horas: h.max_horas, antes_de_compactar: h.antes_de_compactar } : null;
   return { tope_orquestador: contexto.tope_orquestador, tope_subsesion: contexto.tope_subsesion, aviso_desde: contexto.aviso_desde, ventana_max: ventana, handoff };
 }
 
-/** null por debajo del umbral; AVISO de handoff desde el umbral (70 %); ORDEN de cerrar desde el tope. */
+/**
+ * El mensaje del umbral más alto alcanzado, o null si no se llegó a ninguno. De mayor a menor:
+ * ventana llena (ORDEN de compactar) · handoff inminente (ORDEN de escribirlo; sólo si el contrato
+ * trae `handoff`) · tope de relevo (ORDEN de cerrar) · 70 % del tope (AVISO).
+ */
 export function evaluar(tokens, rol, contrato) {
   const tope = rol === 'subsesion' ? contrato.tope_subsesion : contrato.tope_orquestador;
   const ratio = tokens / tope;
   const dato = `${tokens} de ${tope} tokens de mensajes (${Math.floor(ratio * 100)} %, rol ${rol})`;
-  const { archivo, antes_de_compactar: antes } = contrato.handoff;
-  const resumen = `el handoff en ${archivo} (plantilla ${PLANTILLA}: objetivo, decisiones, archivos clave, pendientes, cómo retomar)`;
+  const { archivo, antes_de_compactar: antes } = contrato.handoff ?? {};
+  const partes = 'objetivo, decisiones, archivos clave, pendientes, cómo retomar';
+  const resumen = contrato.handoff ? `el handoff en ${archivo} (plantilla ${PLANTILLA}: ${partes})` : `un resumen corto (${partes})`;
   if (contrato.ventana_max !== undefined && tokens >= contrato.ventana_max) {
     return `ORDEN: ventana de ${contrato.ventana_max} tokens llena, ${dato}. Guardá el estado en .ia-stack/ESTADO.md y compactá ya (/compact): ninguna sesión trabaja con más contexto que la ventana.`;
   }
-  if (contrato.ventana_max !== undefined && tokens >= antes * contrato.ventana_max) {
+  if (contrato.handoff && contrato.ventana_max !== undefined && tokens >= antes * contrato.ventana_max) {
     return `ORDEN: escribí el handoff en ${archivo} ahora: la compactación es inminente, ${dato}. Plantilla: ${PLANTILLA}. Después de compactar el host te lo vuelve a mostrar; lo que no quede ahí se puede perder.`;
   }
   if (ratio >= 1) {
@@ -140,9 +149,13 @@ export function parsearArgs(argv, env = process.env) {
 
 /** Corre el guard sin tocar el proceso: devuelve lo que hay que escribir en stdout y en stderr. */
 export function ejecutar(argv, leerStdin) {
+  // Se arma apenas se lee el contrato: sale también si después falla la lectura del transcript.
+  let sinHandoff = '';
   try {
     const args = parsearArgs(argv);
     const contrato = leerContrato();
+    const falta = contrato.handoff === null ? 'handoff' : contrato.ventana_max === undefined ? 'ventana_max' : null;
+    if (falta !== null) sinHandoff = `context-guard: contrato sin contexto.${falta}: no se ordena el handoff\n`;
     let ruta = args.transcript;
     if (ruta === undefined) {
       ruta = JSON.parse(leerStdin())?.transcript_path;
@@ -155,9 +168,9 @@ export function ejecutar(argv, leerStdin) {
       throw new Error(`no se pudo leer el transcript ${ruta}: ${error.message}`);
     }
     const mensaje = evaluar(contarTokens(texto), args.rol, contrato);
-    return { stdout: mensaje === null ? '' : `${mensaje}\n`, stderr: '' };
+    return { stdout: mensaje === null ? '' : `${mensaje}\n`, stderr: sinHandoff };
   } catch (error) {
-    return { stdout: '', stderr: `context-guard: ${error.message}\n` };
+    return { stdout: '', stderr: `${sinHandoff}context-guard: ${error.message}\n` };
   }
 }
 

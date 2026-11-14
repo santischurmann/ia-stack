@@ -88,7 +88,7 @@ test('CLI · converge sale 0, no converge sale 1, sin archivo sale 1 salvo chico
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  for (const args of [[], ['otro'], ['check'], ['check', '--pieza', 'a'], ['check', '--pieza', 'a', '--tamano', 'enorme']]) {
+  for (const args of [[], ['otro'], ['check'], ['check', '--pieza', 'a'], ['check', '--pieza', 'a', '--tamano', 'enorme'], ['check', '--pieza', 'spec', '--tamano', 'constructor']]) {
     const r = run(args);
     assert.equal(r.status, 2, args.join(' '));
     assert.match(r.output, /usage:/i);
@@ -115,6 +115,40 @@ test('contrato sin listas falla nombrando lo que falta, para cualquier pieza', (
   assert.equal(checkConvergencia([], 'spec', 'grande', null).reason, 'contrato sin rondas.egm');
   assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, piezas: undefined }).reason, 'contrato sin rondas.egm.piezas');
   assert.equal(checkConvergencia([], 'preview', 'grande', { ...EGM, piezas_simples: 'preview' }).reason, 'contrato sin rondas.egm.piezas_simples');
+  assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, piezas: ['spec', 7] }).reason, 'contrato sin rondas.egm.piezas');
+  assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, piezas_simples: [null] }).reason, 'contrato sin rondas.egm.piezas_simples');
+});
+
+test('contrato sin minimo o maximo enteros (1 <= minimo <= maximo) falla nombrando el campo', () => {
+  assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, minimo: undefined }).reason, 'contrato sin rondas.egm.minimo');
+  assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, minimo: 0 }).reason, 'contrato sin rondas.egm.minimo');
+  assert.equal(checkConvergencia([], 'preview', 'grande', { ...EGM, maximo: '10' }).reason, 'contrato sin rondas.egm.maximo');
+  assert.equal(checkConvergencia([], 'spec', 'grande', { ...EGM, minimo: 6, maximo: 5 }).reason, 'contrato sin rondas.egm.maximo');
+  assert.equal(checkConvergencia([R(1)], 'spec', 'grande', { ...EGM, minimo: undefined, maximo: undefined }).reason, 'contrato sin rondas.egm.minimo');
+});
+
+test('ronda · un contador que no es entero >= 0 es registro inválido, en cualquier ronda de la serie', () => {
+  assert.match(checkConvergencia(serie(5, [0, 0, 0], { altos: 'x' }), 'spec', 'grande').reason, /^registro inválido: altos «x»$/u);
+  assert.match(checkConvergencia(serie(5, [0, 0, 0], { medios: undefined }), 'spec', 'grande').reason, /^registro inválido: medios «undefined»$/u);
+  assert.match(checkConvergencia(serie(5, [0, 0, 0], { bajos: -1 }), 'spec', 'grande').reason, /^registro inválido: bajos «-1»$/u);
+  const medio = serie(5);
+  medio[1] = R(2, [1, 1.5, 0]);
+  assert.match(checkConvergencia(medio, 'spec', 'grande').reason, /^registro inválido: medios «1\.5»$/u);
+});
+
+test('lectores que no es entero >= 0 es registro inválido, en los dos regímenes', () => {
+  for (const [malo, texto] of [['4', '4'], [2.5, '2\\.5'], [undefined, 'undefined'], [-4, '-4']]) {
+    const esperado = new RegExp(`^registro inválido: lectores «${texto}»$`, 'u');
+    assert.match(checkConvergencia(serie(5).map((f) => ({ ...f, lectores: malo })), 'spec', 'grande').reason, esperado);
+    assert.match(checkConvergencia([L(1, 0, { lectores: malo })], 'preview', 'grande').reason, esperado);
+  }
+  assert.equal(checkConvergencia([L(1, 0, { lectores: '4' })], 'preview', 'chico').ok, true, 'simple en chico no mira registros');
+  const orden = serie(5, [0, 0, 0], { lectores: 'x', altos: 'y' });
+  assert.match(checkConvergencia(orden, 'spec', 'grande').reason, /^registro inválido: lectores «x»$/u, 'lectores va antes que los contadores');
+});
+
+test('ronda · la regla de rondas se mira en toda la serie antes que los contadores', () => {
+  assert.match(checkConvergencia([R(1, [0, 0, 0], { altos: 'x' }), R(3)], 'spec', 'grande').reason, /^rondas no contiguas: se esperaba 2 y vino 3$/u);
 });
 
 test('ronda · mínimo 5: 4 limpias falla, 5 con la quinta limpia pasa', () => {
@@ -140,6 +174,7 @@ test('ronda · cada ronda exige el mínimo de lectores; chico exige 2', () => {
   assert.equal(checkConvergencia(plan(2), 'plan-T01', 'chico').ok, true);
   assert.match(checkConvergencia(plan(2), 'plan-T01', 'enorme').reason, /tamaño inválido/);
   assert.match(checkConvergencia([], 'spec', 'enorme').reason, /tamaño inválido/);
+  for (const heredado of ['toString', 'constructor', 'valueOf']) assert.equal(checkConvergencia([], 'preview', heredado).reason, `tamaño inválido «${heredado}»`);
 });
 
 test('ronda · rondas contiguas desde 1 y campo ronda entero', () => {
@@ -177,6 +212,7 @@ test('ronda · otra pieza intercalada no corta la serie; pieza en las dos listas
 
 test('ronda · spec en chico pasa aun con registros malos; sin registros falla', () => {
   assert.equal(checkConvergencia([R(3, [9, 9, 9])], 'spec', 'chico').ok, true);
+  assert.deepEqual(checkConvergencia([], 'spec', 'chico'), { ok: true, rondas: 0 }, 'la regla 0 va antes que «sin rondas»');
   assert.match(checkConvergencia([], 'spec', 'medio').reason, /sin rondas EGM registradas para «spec»/);
   assert.match(checkConvergencia([], 'publicar', 'chico').reason, /sin rondas EGM registradas para «publicar»/);
 });
@@ -197,8 +233,10 @@ test('leerMetricas · ausente da [], saltea líneas vacías, línea rota lanza c
     assert.deepEqual(leerMetricas(ruta), []);
     writeFileSync(ruta, `${JSON.stringify(R(1))}\r\n\n  \n${JSON.stringify(R(2))}\n`);
     assert.equal(leerMetricas(ruta).length, 2);
-    writeFileSync(ruta, `${JSON.stringify(R(1))}\r\n\n{rota\n`);
-    assert.throws(() => leerMetricas(ruta), /metricas inválidas: línea 3/);
+    writeFileSync(ruta, `${JSON.stringify(R(1))}\r\n\n  \n{rota\n`);
+    assert.throws(() => leerMetricas(ruta), /metricas inválidas: línea 4/);
+    writeFileSync(ruta, `﻿${JSON.stringify(R(1))}\n`);
+    assert.deepEqual(leerMetricas(ruta), [R(1)], 'un BOM al principio no rompe la línea 1');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

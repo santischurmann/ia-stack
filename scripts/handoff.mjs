@@ -12,7 +12,8 @@
 // contexto.handoff, buscado junto al script: ninguna cifra vive acá.
 //
 // LÍMITES HONESTOS: comprueba la forma (cinco encabezados en orden, ninguno vacío, topes de líneas
-// y caracteres), no que el contenido sea cierto ni que alcance para retomar. No escribe el handoff:
+// y caracteres), no que el contenido sea cierto ni que alcance para retomar. No interpreta Markdown:
+// una línea que empieza con `## ` dentro de un bloque de código cuenta como encabezado. No escribe el handoff:
 // eso lo hace la sesión cuando context-guard.mjs se lo ordena, y si lo ignora se compacta sin él.
 
 import { readFileSync, statSync } from 'node:fs';
@@ -34,7 +35,7 @@ export function leerTopes(ruta = CONTRATO) {
   const entero = (v) => Number.isInteger(v) && v > 0;
   const ok = h !== null && typeof h === 'object' && typeof h.archivo === 'string' && h.archivo !== ''
     && entero(h.max_lineas) && entero(h.max_caracteres) && entero(h.max_horas)
-    && h.antes_de_compactar > 0 && h.antes_de_compactar <= 1;
+    && typeof h.antes_de_compactar === 'number' && h.antes_de_compactar > 0 && h.antes_de_compactar <= 1;
   if (!ok) throw new Error(SIN_BLOQUE);
   return { archivo: h.archivo, max_lineas: h.max_lineas, max_caracteres: h.max_caracteres, max_horas: h.max_horas, antes_de_compactar: h.antes_de_compactar };
 }
@@ -43,9 +44,11 @@ export function leerTopes(ruta = CONTRATO) {
 export function checkHandoff(texto, topes) {
   const no = (reason) => ({ ok: false, reason });
   if (texto === null || texto === undefined) return no('sin handoff');
-  const lineas = texto.split(/\r?\n/u);
+  const limpio = texto.replace(/^﻿/u, ''); // un BOM inicial no es contenido: no esconde `## Objetivo` ni cuenta como carácter
+  const lineas = limpio.split(/\r?\n/u);
   if (lineas.at(-1) === '') lineas.pop();
-  const titulos = lineas.map((l, i) => ({ t: l.trimEnd(), i })).filter(({ t }) => t.startsWith('## '));
+  // Encabezado = línea cruda que empieza con `## ` (también `## ` sin texto); se compara sin los espacios del final.
+  const titulos = lineas.map((l, i) => ({ l, t: l.trimEnd(), i })).filter(({ l }) => l.startsWith('## '));
   for (const e of ENCABEZADOS) if (!titulos.some(({ t }) => t === e)) return no(`falta ${e}`);
   const vistos = new Set();
   for (const { t } of titulos) {
@@ -58,7 +61,7 @@ export function checkHandoff(texto, topes) {
     if (!lineas.slice(i + 1, fin).some((l) => l.trim() !== '')) return no(`sección vacía: ${t}`);
   }
   if (lineas.length > topes.max_lineas) return no(`${lineas.length} líneas: el máximo es ${topes.max_lineas}`);
-  const caracteres = [...texto.replaceAll('\r', '')].length;
+  const caracteres = [...limpio.replaceAll('\r', '')].length;
   if (caracteres > topes.max_caracteres) return no(`${caracteres} caracteres: el máximo es ${topes.max_caracteres}`);
   return { ok: true };
 }

@@ -11,17 +11,21 @@
 // RÉGIMEN RONDA (`piezas`: spec, plan-<id>, publicar, protocolo). Mira sólo la última serie: los
 // registros desde el último con `ronda: 1`.
 // - `spec` en chico pasa (en chico no hay spec).
-// - Rondas 1, 2, …, n contiguas; cada una con el mínimo de lectores (chico 2, medio 2, grande 4).
-// - Entre `minimo` (5) y `maximo` (10) rondas.
+// - Rondas 1, 2, …, n contiguas; cada una con el mínimo de lectores (chico 2, medio 2, grande 4)
+//   y con `lectores`, `altos`, `medios` y `bajos` enteros no negativos (si no, `registro inválido`).
+//   Primero se mira `ronda` en toda la serie; después esos cuatro campos, registro por registro.
+// - Entre `minimo` (5) y `maximo` (10) rondas; el contrato sin esos dos enteros falla.
 // - Converge si la última es limpia: 0 hallazgos aplicados de cualquier severidad.
 // - La décima no limpia pasa sólo con `decide_persona: true`; más de 10 falla siempre.
 //
-// RÉGIMEN SIMPLE (`piezas_simples`: preview), igual que en 3.4.4.
-// - chico: pasa sin registro. Medio exige 2 lectores por ronda; grande, 4.
+// RÉGIMEN SIMPLE (`piezas_simples`: preview), como en 3.4.4.
+// - chico: pasa sin registro. Medio exige 2 lectores por ronda; grande, 4; `lectores` que no es
+//   un entero no negativo es `registro inválido` (único cambio frente a 3.4.4).
 // - Converge si la última ronda tiene 0 altos.
 // - Más de 2 rondas falla, salvo que la última línea traiga `decide_persona: true`.
 //
-// Exit 0 converge, 1 no converge o archivo ilegible, 2 uso incorrecto.
+// Exit 0 converge, 1 no converge o archivo ilegible, 2 uso incorrecto (incluye un `--tamano` que no
+// es chico, medio ni grande: el CLI lo corta antes; `tamaño inválido` lo devuelve sólo la función).
 // LÍMITE HONESTO: verifica el REGISTRO de las rondas, no que los lectores hayan leído el documento
 // ni qué modelo eran.
 
@@ -36,11 +40,11 @@ export const LECTORES_MINIMOS = Object.freeze({ chico: 0, medio: 2, grande: 4 })
 const LECTORES_RONDA = Object.freeze({ chico: 2, medio: 2, grande: 4 });
 const TOPE_RONDAS = 2;
 
-/** Objetos de un `metricas.jsonl`. Ausente → []. Saltea líneas vacías; una línea rota lanza con su número. */
+/** Objetos de un `metricas.jsonl`. Ausente → []. Quita un BOM inicial y saltea líneas vacías; una línea rota lanza con su número. */
 export function leerMetricas(ruta) {
   if (!existsSync(ruta)) return [];
   const lineas = [];
-  readFileSync(ruta, 'utf8').split(/\r?\n/u).forEach((l, i) => {
+  readFileSync(ruta, 'utf8').replace(/^﻿/u, '').split(/\r?\n/u).forEach((l, i) => {
     if (l.trim() === '') return;
     try {
       lineas.push(JSON.parse(l));
@@ -53,7 +57,10 @@ export function leerMetricas(ruta) {
 
 const coincide = (patron, pieza) => (patron.endsWith('-*') ? pieza.startsWith(patron.slice(0, -1)) && pieza.length > patron.length - 1 : patron === pieza);
 
-/** `'ronda'`, `'simple'` o `null` (pieza desconocida). Comparación exacta; `plan-*` exige un id. */
+/**
+ * `'ronda'`, `'simple'` o `null` (pieza desconocida). Comparación exacta; `plan-*` exige un id.
+ * Una pieza que trae `*` es siempre desconocida: el comodín es del contrato, no un nombre de pieza.
+ */
 export function regimenDe(pieza, egm) {
   if (typeof pieza !== 'string' || pieza.includes('*')) return null;
   if (egm.piezas.some((p) => coincide(p, pieza))) return 'ronda';
@@ -64,6 +71,8 @@ export function regimenDe(pieza, egm) {
 function checkSimple(rondas, pieza, tamano) {
   if (tamano === 'chico') return { ok: true, rondas: 0 };
   if (rondas.length === 0) return { ok: false, reason: `sin rondas EGM registradas para «${pieza}»` };
+  const malo = rondas.find((r) => !Number.isInteger(r.lectores) || r.lectores < 0);
+  if (malo) return { ok: false, reason: `registro inválido: lectores «${malo.lectores}»` };
   const minimo = LECTORES_MINIMOS[tamano];
   const pobre = rondas.find((r) => !(r.lectores >= minimo));
   if (pobre) return { ok: false, reason: `ronda ${pobre.ronda}: ${pobre.lectores} lectores y tamaño ${tamano} exige ${minimo}` };
@@ -83,13 +92,18 @@ function checkRonda(todas, pieza, tamano, egm) {
     if (!Number.isInteger(r.ronda) || r.ronda < 1) return { ok: false, reason: `registro inválido: ronda «${r.ronda}»` };
     if (r.ronda !== i + 1) return { ok: false, reason: `rondas no contiguas: se esperaba ${i + 1} y vino ${r.ronda}` };
   }
+  for (const r of serie) {
+    for (const campo of ['lectores', 'altos', 'medios', 'bajos']) {
+      if (!Number.isInteger(r[campo]) || r[campo] < 0) return { ok: false, reason: `registro inválido: ${campo} «${r[campo]}»` };
+    }
+  }
   const pobre = serie.find((r) => !(r.lectores >= minimo));
   if (pobre) return { ok: false, reason: `ronda ${pobre.ronda}: ${pobre.lectores} lectores y se exigen ${minimo}` };
   const n = serie.length;
   if (n > egm.maximo) return { ok: false, reason: `${n} rondas superan el máximo de ${egm.maximo}: decide la persona` };
   if (n < egm.minimo) return { ok: false, reason: `${n} rondas: el mínimo es ${egm.minimo}` };
   const u = serie.at(-1);
-  const [a, m, b] = [u.altos, u.medios, u.bajos].map((x) => (Number.isFinite(x) ? x : 1));
+  const [a, m, b] = [u.altos, u.medios, u.bajos];
   if (a + m + b === 0) return { ok: true, rondas: n };
   if (n === egm.maximo && u.decide_persona === true) return { ok: true, rondas: n, decide: true };
   return { ok: false, reason: `la ronda ${n} no es limpia (${a} altos, ${m} medios, ${b} bajos)${n === egm.maximo ? ': decide la persona' : ''}` };
@@ -97,11 +111,13 @@ function checkRonda(todas, pieza, tamano, egm) {
 
 /** `lineas`: objetos ya parseados de metricas.jsonl. `egm` existe para probar un contrato roto. */
 export function checkConvergencia(lineas, pieza, tamano, egm = contrato.rondas?.egm) {
-  if (!(tamano in LECTORES_MINIMOS)) return { ok: false, reason: `tamaño inválido «${tamano}»` };
+  if (!Object.hasOwn(LECTORES_MINIMOS, tamano)) return { ok: false, reason: `tamaño inválido «${tamano}»` };
   if (!egm || typeof egm !== 'object') return { ok: false, reason: 'contrato sin rondas.egm' };
   for (const lista of ['piezas', 'piezas_simples']) {
-    if (!Array.isArray(egm[lista])) return { ok: false, reason: `contrato sin rondas.egm.${lista}` };
+    if (!Array.isArray(egm[lista]) || !egm[lista].every((p) => typeof p === 'string')) return { ok: false, reason: `contrato sin rondas.egm.${lista}` };
   }
+  if (!Number.isInteger(egm.minimo) || egm.minimo < 1) return { ok: false, reason: 'contrato sin rondas.egm.minimo' };
+  if (!Number.isInteger(egm.maximo) || egm.maximo < egm.minimo) return { ok: false, reason: 'contrato sin rondas.egm.maximo' };
   const regimen = regimenDe(pieza, egm);
   if (regimen === null) return { ok: false, reason: `pieza desconocida «${pieza}»` };
   const rondas = lineas.filter((l) => l?.tipo === 'egm' && l.pieza === pieza);
@@ -122,7 +138,7 @@ function main() {
   } catch {
     usage();
   }
-  if (!v.pieza || !(v.tamano in LECTORES_MINIMOS)) usage();
+  if (!v.pieza || !Object.hasOwn(LECTORES_MINIMOS, v.tamano ?? '')) usage();
   let r;
   try {
     r = checkConvergencia(leerMetricas(join(v.proyecto ?? process.cwd(), '.ia-stack', 'metricas.jsonl')), v.pieza, v.tamano);

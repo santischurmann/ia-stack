@@ -2,20 +2,23 @@
 // ventana.mjs — deja la ventana de contexto y los dos hooks de relevo en el proyecto, sin tocar nada a mano.
 //
 // Usage:
-//   node scripts/ventana.mjs check   [--proyecto <dir>]   # 0 = está todo · 1 = falta algo o archivo inválido · 2 = uso
+//   node scripts/ventana.mjs check   [--proyecto <dir>]   # 0 = está todo · 1 · 2 = uso
 //   node scripts/ventana.mjs aplicar [--proyecto <dir>]   # 0 = quedó aplicado (o ya estaba) · 1 · 2
+//   Exit 1 = falta algo (sólo `check`), settings inválido, contrato sin ventana_max o no se pudo escribir.
 //
 // Escribe `<dir>/.claude/settings.local.json` (el local, no el compartido) con tres cosas:
 //   1. env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = contexto.ventana_max del contrato: el host compacta ahí;
 //   2. hook UserPromptSubmit que corre context-guard.mjs (avisa el relevo y ordena el handoff);
 //   3. hook SessionStart con matcher `compact` que corre `handoff.mjs mostrar` (devuelve el handoff
-//      al contexto justo después de compactar).
+//      al contexto justo después de compactar). Sólo cuenta como presente con el matcher `compact`
+//      exacto: con otro (`compact|startup`) se agrega el propio y el ajeno se conserva.
 // Los hooks se registran sólo si el runtime está instalado en el proyecto: nunca apuntan a un
-// archivo que no está. Una variable válida y menor que la ventana se respeta (gasta menos); los
+// archivo que no está; sin runtime, toda salida OK (de `check` o de `aplicar`) agrega la línea
+// `hooks: sin runtime instalado, no se registran`. Una variable válida y menor que la ventana se respeta (gasta menos); los
 // hooks ajenos, las demás claves, su orden y el fin de línea del archivo se conservan.
 //
 // LÍMITES HONESTOS: no comprueba que el host lea el archivo ni que compacte. Un settings.local.json
-// con comentarios no es JSON estricto: se informa y no se toca. No escribe en `settings.json`
+// con comentarios no es JSON estricto: se informa y no se toca; igual si existe y no se puede leer. No escribe en `settings.json`
 // compartido ni en la configuración global: eso impondría la ventana a otras personas o proyectos.
 // Los comandos de los hooks dependen de que el host los corra con bash (también en Windows).
 
@@ -29,11 +32,12 @@ export const VARIABLE = 'CLAUDE_CODE_AUTO_COMPACT_WINDOW';
 export const CMD_CONTEXTO = 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/context-guard.mjs"';
 export const CMD_HANDOFF = 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/handoff.mjs" mostrar --proyecto "$CLAUDE_PROJECT_DIR"';
 const MINIMO_DEL_HOST = 100000;
+const MAXIMO_DEL_HOST = 1000000;
 const INTENTOS = 3;
 const INVALIDO = Object.freeze({ accion: 'invalido', texto: null, faltan: [] });
 
 const esObjeto = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const tiene = (entrada, comando) => esObjeto(entrada) && Array.isArray(entrada.hooks) && entrada.hooks.some((h) => h?.command === comando);
+const tiene = (entrada, comando) => esObjeto(entrada) && Array.isArray(entrada.hooks) && entrada.hooks.some((h) => h?.type === 'command' && h.command === comando);
 const entrada = (comando, matcher) => ({ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command: comando }] });
 
 /**
@@ -92,17 +96,39 @@ export function escribirAtomico(ruta, texto, { rename = renameSync, esperar = es
 export const rutaSettings = (proyecto) => join(proyecto, '.claude', 'settings.local.json');
 export const hayRuntime = (proyecto) => ['context-guard.mjs', 'handoff.mjs'].every((f) => existsSync(join(proyecto, '.ia-stack', 'runtime', 'scripts', f)));
 
-function leerVentana(ruta = CONTRATO) {
-  const v = JSON.parse(readFileSync(ruta, 'utf8')).contexto?.ventana_max;
-  if (!Number.isInteger(v) || v < MINIMO_DEL_HOST) throw new Error('contrato sin contexto.ventana_max');
+/** `contexto.ventana_max` del contrato: un entero dentro del rango que acepta el host y no menor que los topes de relevo. Lanza si no. */
+export function leerVentana(ruta = CONTRATO) {
+  let v;
+  let piso = MINIMO_DEL_HOST;
+  try {
+    const c = JSON.parse(readFileSync(ruta, 'utf8')).contexto;
+    v = c?.ventana_max;
+    // Mismo piso que context-guard.mjs: una ventana menor que un tope de relevo deja mudo al guard.
+    for (const tope of [c?.tope_orquestador, c?.tope_subsesion]) if (Number.isFinite(tope)) piso = Math.max(piso, tope);
+  } catch {
+    v = undefined; // contrato ausente o que no es JSON: mismo mensaje que sin la clave
+  }
+  if (!Number.isInteger(v) || v < piso || v > MAXIMO_DEL_HOST) throw new Error('contrato sin contexto.ventana_max');
   return v;
 }
 
-/** Plan para un proyecto en disco: lo usan el CLI y arranque.mjs. */
+/** Plan para un proyecto en disco: lo usan el CLI y arranque.mjs. Un settings que existe y no se puede leer (carpeta, sin permiso) es `invalido`. */
 export function planDeProyecto(proyecto) {
   const ruta = rutaSettings(proyecto);
-  return planear(existsSync(ruta) ? readFileSync(ruta, 'utf8') : null, leerVentana(), hayRuntime(proyecto));
+  const ventana = leerVentana();
+  let texto = null;
+  if (existsSync(ruta)) {
+    try {
+      texto = readFileSync(ruta, 'utf8');
+    } catch {
+      return INVALIDO;
+    }
+  }
+  return planear(texto, ventana, hayRuntime(proyecto));
 }
+
+/** Dos rutas ya resueltas son la misma carpeta: en Windows, sin distinguir mayúsculas. */
+export const mismaCarpeta = (a, b, plataforma = process.platform) => (plataforma === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b);
 
 function esProyecto(dir) {
   let real;
@@ -113,8 +139,7 @@ function esProyecto(dir) {
   } catch {
     return false;
   }
-  const igual = process.platform === 'win32' ? real.toLowerCase() === casa.toLowerCase() : real === casa;
-  return !igual && (existsSync(join(real, '.git')) || existsSync(join(real, '.ia-stack')));
+  return !mismaCarpeta(real, casa) && (existsSync(join(real, '.git')) || existsSync(join(real, '.ia-stack')));
 }
 
 function parsearArgs(argv) {
@@ -131,7 +156,8 @@ function parsearArgs(argv) {
   return { comando, proyecto };
 }
 
-function main(argv) {
+/** El CLI sin tocar el proceso: devuelve el código de salida. `escribir` se inyecta para probar la falla. */
+export function main(argv, { escribir = escribirAtomico } = {}) {
   let args;
   try {
     args = parsearArgs(argv);
@@ -162,7 +188,7 @@ function main(argv) {
   const ruta = rutaSettings(args.proyecto);
   try {
     mkdirSync(dirname(ruta), { recursive: true });
-    escribirAtomico(ruta, plan.texto);
+    escribir(ruta, plan.texto);
   } catch {
     console.error('REJECTED: no se pudo escribir settings.local.json');
     return 1;

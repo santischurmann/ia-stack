@@ -289,14 +289,89 @@ test('3.4.5 · los avisos de relevo nombran el archivo de handoff y su plantilla
   }
 });
 
-test('3.4.5 · leerContrato trae contexto.handoff y lo exige', () => {
+const SIN_HANDOFF = { contexto: { tope_orquestador: 120000, tope_subsesion: 60000, aviso_desde: 0.7, ventana_max: 300000 } };
+
+test('3.4.5 · leerContrato trae contexto.handoff; si falta o está roto devuelve null, no lanza', () => {
   assert.deepEqual(leerContrato().handoff, CON_HANDOFF.handoff);
   const dir = mkdtempSync(join(tmpdir(), 'ia-guard-'));
   try {
     const ruta = join(dir, 'c.json');
-    writeFileSync(ruta, JSON.stringify({ contexto: { tope_orquestador: 10, tope_subsesion: 5, aviso_desde: 0.7, ventana_max: 20 } }));
-    assert.throws(() => leerContrato(ruta), /contrato sin contexto\.handoff/u);
+    writeFileSync(ruta, JSON.stringify(SIN_HANDOFF));
+    assert.equal(leerContrato(ruta).handoff, null);
+    writeFileSync(ruta, JSON.stringify({ contexto: { ...SIN_HANDOFF.contexto, handoff: { archivo: '' } } }));
+    assert.equal(leerContrato(ruta).handoff, null);
+    writeFileSync(ruta, JSON.stringify({ contexto: { ...SIN_HANDOFF.contexto, handoff: { ...CON_HANDOFF.handoff, antes_de_compactar: '0.6' } } }));
+    assert.equal(leerContrato(ruta).handoff, null);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('3.4.5 · sin contexto.handoff el relevo y la ventana siguen avisando; sólo falta la orden de handoff', () => {
+  const sin = { ...CONTRATO, handoff: null };
+  assert.equal(evaluar(83999, 'orquestador', sin), null);
+  const aviso = evaluar(84000, 'orquestador', sin);
+  assert.match(aviso, /^AVISO/u);
+  assert.doesNotMatch(aviso, /ULTIMO\.md|HANDOFF\.md/u);
+  assert.match(aviso, /objetivo, decisiones, archivos clave, pendientes, cómo retomar/u);
+  assert.match(evaluar(120000, 'orquestador', sin), /^ORDEN: contexto al tope/u);
+  assert.match(evaluar(180000, 'orquestador', sin), /^ORDEN: contexto al tope/u);
+  assert.match(evaluar(300000, 'orquestador', sin), /ventana de 300000 tokens llena/u);
+});
+
+test('3.4.5 · CLI con handoff pero sin ventana_max: da la orden de relevo y avisa por stderr que no hay orden de handoff', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ia-context-guard-sv-'));
+  try {
+    mkdirSync(join(root, 'scripts'));
+    mkdirSync(join(root, 'contracts'));
+    copyFileSync(guard, join(root, 'scripts', 'context-guard.mjs'));
+    const { ventana_max: _fuera, ...contexto } = { ...SIN_HANDOFF.contexto, handoff: CON_HANDOFF.handoff };
+    writeFileSync(join(root, 'contracts', 'model-routing.json'), JSON.stringify({ contexto }));
+    conTranscript(sintetico(190000), (f) => {
+      const r = run(['--transcript', f], { script: join(root, 'scripts', 'context-guard.mjs') });
+      assert.equal(r.status, 0);
+      assert.match(r.stdout, /^ORDEN: contexto al tope/u);
+      assert.equal(r.stderr, 'context-guard: contrato sin contexto.ventana_max: no se ordena el handoff\n');
+    });
+    conTranscript(sintetico(1000), (f) => {
+      const r = run(['--transcript', f], { script: join(root, 'scripts', 'context-guard.mjs') });
+      assert.equal(r.stdout, '', 'debajo de todo umbral no hay mensaje');
+      assert.equal(r.stderr, 'context-guard: contrato sin contexto.ventana_max: no se ordena el handoff\n', 'el aviso sale en cada corrida');
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('3.4.5 · CLI con un contrato sin contexto.handoff: da la orden de relevo y lo avisa por stderr', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ia-context-guard-sh-'));
+  try {
+    mkdirSync(join(root, 'scripts'));
+    mkdirSync(join(root, 'contracts'));
+    copyFileSync(guard, join(root, 'scripts', 'context-guard.mjs'));
+    writeFileSync(join(root, 'contracts', 'model-routing.json'), JSON.stringify(SIN_HANDOFF));
+    conTranscript(sintetico(130000), (f) => {
+      const r = run(['--transcript', f], { script: join(root, 'scripts', 'context-guard.mjs') });
+      assert.equal(r.status, 0);
+      assert.match(r.stdout, /^ORDEN: contexto al tope/u);
+      assert.equal(r.stderr, 'context-guard: contrato sin contexto.handoff: no se ordena el handoff\n');
+    });
+    conTranscript(sintetico(1000), (f) => {
+      const r = run(['--transcript', f], { script: join(root, 'scripts', 'context-guard.mjs') });
+      assert.equal(r.stdout, '', 'debajo de todo umbral no hay mensaje');
+      assert.equal(r.stderr, 'context-guard: contrato sin contexto.handoff: no se ordena el handoff\n', 'el aviso sale en cada corrida');
+    });
+    const malUso = run(['--raro'], { script: join(root, 'scripts', 'context-guard.mjs') });
+    assert.equal(malUso.status, 0);
+    assert.equal(malUso.stderr, 'context-guard: argumento desconocido: --raro\n', 'con argumentos inválidos el contrato no se lee: el aviso no sale');
+    const sinRuta = run([], { input: '{}', script: join(root, 'scripts', 'context-guard.mjs') });
+    assert.equal(sinRuta.status, 0);
+    assert.equal(sinRuta.stderr, 'context-guard: contrato sin contexto.handoff: no se ordena el handoff\ncontext-guard: el JSON de stdin no trae transcript_path\n');
+    const sinTranscript = run(['--transcript', join(root, 'no-existe.jsonl')], { script: join(root, 'scripts', 'context-guard.mjs') });
+    assert.equal(sinTranscript.status, 0);
+    assert.equal(sinTranscript.stdout, '');
+    assert.match(sinTranscript.stderr, /^context-guard: contrato sin contexto\.handoff: no se ordena el handoff\ncontext-guard: no se pudo leer el transcript .*\n$/u, 'el aviso sale también cuando después falla la lectura');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

@@ -61,7 +61,7 @@ test('el contrato dice en qué fases va la ronda, y cada fase lo nombra', () => 
 });
 
 test('chico no corre rondas; la tarea de alto requisito sí, una por tarea', () => {
-  assert.equal(contrato.rondas.chico, 'no corre');
+  assert.match(contrato.rondas.chico, /^no corre, salvo .*alto requisito.*publicar.*protocolo/u);
   assert.match(contrato.rondas.fases['07-build'].cuando, /alto_requisito/u);
 });
 

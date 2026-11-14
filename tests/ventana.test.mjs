@@ -2,16 +2,17 @@
 // del proyecto: la variable que hace compactar al host, el hook que mide el contexto en cada mensaje
 // y el que vuelve a mostrar el handoff después de compactar.
 //
-// LO QUE NO CUBRE: que el host lea ese archivo ni que compacte de verdad; el exit 1 del CLI cuando
-// el renombrado falla (no hay forma portable de forzarlo en un subproceso: se prueba la función).
+// LO QUE NO CUBRE: que el host lea ese archivo ni que compacte de verdad. El exit 1 del CLI cuando
+// no puede escribir se prueba por dos caminos: `main` con un `escribir` inyectado que falla, y el
+// subproceso con `.claude` como archivo. Los reintentos del renombrado se prueban en `escribirAtomico`.
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { CMD_CONTEXTO, CMD_HANDOFF, VARIABLE, escribirAtomico, planear } from '../scripts/ventana.mjs';
+import { CMD_CONTEXTO, CMD_HANDOFF, VARIABLE, escribirAtomico, leerVentana, main, mismaCarpeta, planear } from '../scripts/ventana.mjs';
 
 const raiz = dirname(dirname(fileURLToPath(import.meta.url)));
 const script = join(raiz, 'scripts', 'ventana.mjs');
@@ -118,6 +119,65 @@ test('planear · conserva hooks ajenos y entradas de forma rara, y no las cuenta
   assert.equal(conMatcher.accion, 'respetar', 'el mismo comando en una entrada con matcher cuenta');
 });
 
+test('planear · sólo cuenta el matcher "compact" exacto: con "compact|startup" agrega el suyo y conserva el otro', () => {
+  const o = completo();
+  o.hooks.SessionStart = [{ matcher: 'compact|startup', hooks: [hook(CMD_HANDOFF)] }];
+  const p = planear(json(o), V, true);
+  assert.deepEqual(p.faltan, ['hook-handoff']);
+  assert.deepEqual(JSON.parse(p.texto).hooks.SessionStart, [
+    { matcher: 'compact|startup', hooks: [hook(CMD_HANDOFF)] },
+    { matcher: 'compact', hooks: [hook(CMD_HANDOFF)] },
+  ]);
+});
+
+test('leerVentana · exige un entero dentro del rango del host, de 100.000 a 1.000.000', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ia-ventana-c-'));
+  try {
+    const ruta = join(dir, 'c.json');
+    const con = (v) => {
+      writeFileSync(ruta, JSON.stringify({ contexto: { ventana_max: v } }));
+      return ruta;
+    };
+    assert.equal(leerVentana(con(100000)), 100000);
+    assert.equal(leerVentana(con(1000000)), 1000000);
+    for (const v of [99999, 1000001, 300000.5, '300000', undefined]) assert.throws(() => leerVentana(con(v)), /^Error: contrato sin contexto\.ventana_max$/u, String(v));
+    const conTopes = (v) => {
+      writeFileSync(ruta, JSON.stringify({ contexto: { ventana_max: v, tope_orquestador: 120000, tope_subsesion: 60000 } }));
+      return ruta;
+    };
+    assert.throws(() => leerVentana(conTopes(110000)), /^Error: contrato sin contexto\.ventana_max$/u, 'menor que un tope: el guard la rechazaría');
+    assert.equal(leerVentana(conTopes(120000)), 120000);
+    writeFileSync(ruta, '{ roto');
+    assert.throws(() => leerVentana(ruta), /^Error: contrato sin contexto\.ventana_max$/u, 'contrato que no es JSON');
+    assert.throws(() => leerVentana(join(dir, 'no-existe.json')), /^Error: contrato sin contexto\.ventana_max$/u, 'contrato ausente');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('CLI · settings.local.json que no se puede leer (es una carpeta) es inválido: sale 1 y no se toca', () => {
+  conProyecto((dir, ruta) => {
+    mkdirSync(ruta, { recursive: true });
+    for (const comando of ['check', 'aplicar']) {
+      const r = run([comando, '--proyecto', dir]);
+      assert.equal(r.status, 1, comando);
+      assert.equal(r.output, 'REJECTED: settings.local.json inválido: no se toca\n', comando);
+    }
+    assert.deepEqual(readdirSync(ruta), []);
+  });
+});
+
+test('planear · un hook con el mismo comando y otro type no cuenta: se agrega el propio y el ajeno queda', () => {
+  const o = completo();
+  o.hooks.UserPromptSubmit = [{ hooks: [{ type: 'otro', command: CMD_CONTEXTO }] }];
+  o.hooks.SessionStart = [{ matcher: 'compact', hooks: [{ command: CMD_HANDOFF }] }];
+  const p = planear(json(o), V, true);
+  assert.deepEqual(p.faltan, ['hook-contexto', 'hook-handoff']);
+  const n = JSON.parse(p.texto);
+  assert.deepEqual(n.hooks.UserPromptSubmit, [{ hooks: [{ type: 'otro', command: CMD_CONTEXTO }] }, { hooks: [hook(CMD_CONTEXTO)] }]);
+  assert.deepEqual(n.hooks.SessionStart, [{ matcher: 'compact', hooks: [{ command: CMD_HANDOFF }] }, { matcher: 'compact', hooks: [hook(CMD_HANDOFF)] }]);
+});
+
 test('planear · sin runtime exige y deja sólo la variable', () => {
   assert.equal(planear(json({ env: { [VARIABLE]: '300000' } }), V, false).accion, 'respetar');
   const p = planear(json({ a: 1 }), V, false);
@@ -209,8 +269,20 @@ test('CLI · sin runtime deja sólo la variable, lo dice, y check sale 0', () =>
     assert.equal(r.status, 0, r.output);
     assert.match(r.output, /hooks: sin runtime instalado, no se registran/u);
     assert.deepEqual(JSON.parse(readFileSync(ruta, 'utf8')), { env: { [VARIABLE]: '300000' } });
-    assert.equal(run(['check', '--proyecto', dir]).status, 0);
+    for (const comando of ['check', 'aplicar']) {
+      const ya = run([comando, '--proyecto', dir]);
+      assert.equal(ya.status, 0, comando);
+      assert.match(ya.output, /^OK: ventana y hooks en su lugar .*\nhooks: sin runtime instalado, no se registran/u, `${comando} sin nada que escribir también lo dice`);
+    }
   }, { runtime: false });
+  conProyecto((dir) => {
+    const falta = run(['check', '--proyecto', dir]);
+    assert.equal(falta.status, 1);
+    assert.doesNotMatch(falta.output, /sin runtime instalado/u, 'un check que rechaza sólo dice qué falta');
+  }, { runtime: false });
+  conProyecto((dir) => {
+    assert.doesNotMatch(run(['aplicar', '--proyecto', dir]).output, /sin runtime instalado/u, 'con runtime la línea no sale');
+  });
 });
 
 test('CLI · "500000" pasa a "300000", "200000" queda, y un JSON con comentarios sale 1 con los bytes intactos', () => {
@@ -233,6 +305,37 @@ test('CLI · "500000" pasa a "300000", "200000" queda, y un JSON con comentarios
   }, { settings: roto });
 });
 
+test('main aplicar · si el renombrado falla siempre devuelve 1 con el mensaje y deja el original intacto', (t) => {
+  conProyecto((dir) => {
+    const ruta = join(dir, '.claude', 'settings.local.json');
+    const antes = readFileSync(ruta, 'utf8');
+    const errores = t.mock.method(console, 'error', () => {});
+    const falla = () => {
+      throw Object.assign(new Error('ocupado'), { code: 'EBUSY' });
+    };
+    const codigo = main(['aplicar', '--proyecto', dir], { escribir: (r, texto) => escribirAtomico(r, texto, { rename: falla, esperar: () => {} }) });
+    assert.equal(codigo, 1);
+    assert.deepEqual(errores.mock.calls.map((c) => c.arguments[0]), ['REJECTED: no se pudo escribir settings.local.json']);
+    assert.equal(readFileSync(ruta, 'utf8'), antes);
+    assert.deepEqual(readdirSync(join(dir, '.claude')), ['settings.local.json']);
+  }, { settings: '{}\n' });
+});
+
+test('CLI aplicar · si no puede crear .claude/ sale 1 con el mismo mensaje, sin temporal y sin tocar lo que había', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ia-ventana-'));
+  try {
+    mkdirSync(join(dir, '.ia-stack'));
+    writeFileSync(join(dir, '.claude'), 'no soy una carpeta');
+    const r = run(['aplicar', '--proyecto', dir]);
+    assert.equal(r.status, 1, r.output);
+    assert.match(r.output, /REJECTED: no se pudo escribir settings\.local\.json/u);
+    assert.equal(readFileSync(join(dir, '.claude'), 'utf8'), 'no soy una carpeta');
+    assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('CLI · la carpeta personal y una carpeta que no es proyecto salen 2; el mal uso también', () => {
   const casa = mkdtempSync(join(tmpdir(), 'ia-casa-'));
   const suelta = mkdtempSync(join(tmpdir(), 'ia-suelta-'));
@@ -240,17 +343,47 @@ test('CLI · la carpeta personal y una carpeta que no es proyecto salen 2; el ma
     mkdirSync(join(casa, '.git'));
     const r = run(['aplicar', '--proyecto', casa], { env: { HOME: casa, USERPROFILE: casa } });
     assert.equal(r.status, 2, r.output);
-    assert.match(r.output, /--proyecto no es un proyecto/u);
+    assert.equal(r.output, 'ventana: --proyecto no es un proyecto\n');
     assert.equal(existsSync(join(casa, '.claude')), false);
     const s = run(['aplicar', '--proyecto', suelta]);
     assert.equal(s.status, 2);
-    assert.match(s.output, /--proyecto no es un proyecto/u);
+    assert.equal(s.output, 'ventana: --proyecto no es un proyecto\n');
     assert.equal(run(['aplicar', '--proyecto', join(suelta, 'no-existe')]).status, 2);
   } finally {
     rmSync(casa, { recursive: true, force: true });
     rmSync(suelta, { recursive: true, force: true });
   }
   for (const args of [[], ['otro'], ['check', '--raro'], ['aplicar', '--proyecto']]) assert.equal(run(args).status, 2, args.join(' '));
+});
+
+test('mismaCarpeta · en Windows no distingue mayúsculas; en las demás plataformas sí', () => {
+  assert.equal(mismaCarpeta('C:\\Users\\Ana', 'c:\\users\\ANA', 'win32'), true);
+  assert.equal(mismaCarpeta('C:\\Users\\Ana', 'C:\\Users\\Ana2', 'win32'), false);
+  assert.equal(mismaCarpeta('/home/Ana', '/home/ana', 'linux'), false);
+  assert.equal(mismaCarpeta('/home/ana', '/home/ana', 'darwin'), true);
+});
+
+test('CLI · con el contrato sin ventana_max, o que no es JSON, sale 1 con el mensaje fijo y no escribe', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ia-ventana-cli-'));
+  try {
+    mkdirSync(join(root, 'scripts'));
+    mkdirSync(join(root, 'contracts'));
+    const copia = join(root, 'scripts', 'ventana.mjs');
+    copyFileSync(script, copia);
+    for (const contrato of [JSON.stringify({ contexto: {} }), '{ roto']) {
+      writeFileSync(join(root, 'contracts', 'model-routing.json'), contrato);
+      conProyecto((dir) => {
+        for (const comando of ['check', 'aplicar']) {
+          const r = spawnSync(process.execPath, [copia, comando, '--proyecto', dir], { encoding: 'utf8' });
+          assert.equal(r.status, 1, comando);
+          assert.equal(`${r.stdout}${r.stderr}`, 'REJECTED: contrato sin contexto.ventana_max\n', comando);
+        }
+        assert.equal(existsSync(join(dir, '.claude')), false);
+      });
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('el gate 6 nombra ventana.mjs y handoff.mjs, e INSTALL.md la bandera y el archivo', () => {

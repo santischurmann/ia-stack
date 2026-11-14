@@ -4,7 +4,7 @@
 //
 // LO QUE NO CUBRE: que la sesión escriba de verdad el handoff cuando el guard se lo ordena.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,6 +56,8 @@ test('leerTopes · un contrato sin contexto.handoff lanza', () => {
     assert.throws(() => leerTopes(ruta), /contrato sin contexto\.handoff/u);
     writeFileSync(ruta, JSON.stringify({ contexto: { handoff: { ...TOPES, max_lineas: 'x' } } }));
     assert.throws(() => leerTopes(ruta), /contrato sin contexto\.handoff/u);
+    writeFileSync(ruta, JSON.stringify({ contexto: { handoff: { ...TOPES, antes_de_compactar: '0.6' } } }));
+    assert.throws(() => leerTopes(ruta), /contrato sin contexto\.handoff/u);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -64,6 +66,11 @@ test('leerTopes · un contrato sin contexto.handoff lanza', () => {
 test('check · válido pasa, también con título antes de ## Objetivo y con CRLF en 40 líneas', () => {
   assert.equal(checkHandoff(valido(), TOPES).ok, true);
   assert.equal(checkHandoff(`# Handoff\n\n${valido()}`, TOPES).ok, true);
+  assert.equal(checkHandoff(`﻿${valido()}`, TOPES).ok, true, 'un BOM al principio no esconde ## Objetivo');
+  const justo = valido({ '## Objetivo': 'x'.repeat(6000 - [...valido({ '## Objetivo': '' })].length) });
+  assert.equal(checkHandoff(`﻿${justo}`, TOPES).ok, true, 'el BOM no cuenta como carácter');
+  assert.equal(checkHandoff(valido().replace('## Objetivo\n', '## Objetivo  \t\n'), TOPES).ok, true, 'espacios al final del encabezado se aceptan');
+  assert.equal(checkHandoff(valido().replace('## Objetivo\n', ' ## Objetivo\n'), TOPES).reason, 'falta ## Objetivo', 'con sangría no es encabezado');
   const cuarenta = `${valido()}${'relleno\n'.repeat(40 - valido().split('\n').length + 1)}`;
   assert.equal(cuarenta.split('\n').length - 1, 40);
   assert.equal(checkHandoff(cuarenta.replaceAll('\n', '\r\n'), TOPES).ok, true);
@@ -75,6 +82,9 @@ test('check · cada defecto da su motivo, en orden fijo', () => {
   assert.equal(checkHandoff(sinPendientes, TOPES).reason, 'falta ## Pendientes');
   assert.equal(checkHandoff(`${valido()}\n## Extra\nx\n`, TOPES).reason, 'encabezado de más: ## Extra');
   assert.equal(checkHandoff(`${valido()}\n## Objetivo\nx\n`, TOPES).reason, 'encabezado de más: ## Objetivo');
+  assert.equal(checkHandoff(`${valido()}\n## \nx\n`, TOPES).reason, 'encabezado de más: ##', 'un `## ` sin texto también es encabezado');
+  // Límite declarado: no se interpreta Markdown; una línea `## ` dentro de un bloque de código cuenta igual.
+  assert.equal(checkHandoff(`${valido()}\n\`\`\`md\n## Cita\n\`\`\`\n`, TOPES).reason, 'encabezado de más: ## Cita');
   const desordenado = [ENCABEZADOS[1], ENCABEZADOS[0], ...ENCABEZADOS.slice(2)].map((e) => seccion(e)).join('\n');
   assert.equal(checkHandoff(desordenado, TOPES).reason, 'encabezado fuera de orden: ## Decisiones');
   assert.equal(checkHandoff(valido({ '## Decisiones': '   ' }), TOPES).reason, 'sección vacía: ## Decisiones');
@@ -121,6 +131,36 @@ test('CLI mostrar · imprime el handoff, sale 0 siempre, y encuentra el proyecto
     assert.equal(r.status, 0);
     assert.match(r.output, /^handoff: falta ## Decisiones/u);
   });
+});
+
+test('CLI · con el contrato sin contexto.handoff, check sale 1 y mostrar sale 0, los dos con el motivo', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ia-handoff-c-'));
+  try {
+    mkdirSync(join(root, 'scripts'));
+    mkdirSync(join(root, 'contracts'));
+    const copia = join(root, 'scripts', 'handoff.mjs');
+    copyFileSync(script, copia);
+    writeFileSync(join(root, 'contracts', 'model-routing.json'), JSON.stringify({ contexto: {} }));
+    const correr = (args) => spawnSync(process.execPath, [copia, ...args], { encoding: 'utf8', cwd: root });
+    const check = correr(['check', '--proyecto', root]);
+    assert.equal(check.status, 1);
+    assert.equal(check.stderr, 'REJECTED: contrato sin contexto.handoff\n');
+    assert.equal(check.stdout, '');
+    const mostrar = correr(['mostrar', '--proyecto', root]);
+    assert.equal(mostrar.status, 0);
+    assert.equal(mostrar.stdout, 'handoff: contrato sin contexto.handoff\n');
+    assert.equal(mostrar.stderr, '');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI mostrar · con mal uso también sale 0 y lo dice en una línea handoff:', () => {
+  for (const [args, motivo] of [[['mostrar', '--raro'], 'argumento desconocido: --raro'], [['mostrar', '--proyecto'], 'falta el valor de --proyecto']]) {
+    const r = run(args);
+    assert.equal(r.status, 0, args.join(' '));
+    assert.equal(r.output, `handoff: ${motivo}\n`);
+  }
 });
 
 test('CLI mostrar · un handoff de hace 25 horas lleva primero el aviso de viejo', () => {

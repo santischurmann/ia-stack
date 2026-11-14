@@ -3,7 +3,8 @@
 // mensajes) siguen: el relevo ordenado llega antes; la ventana es el techo duro.
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -16,13 +17,35 @@ const contrato = JSON.parse(readFileSync(join(raiz, 'contracts/model-routing.jso
 test('el contrato fija la ventana en 300K para todo rol y manda compactar al llenarse', () => {
   const c = contrato.contexto;
   assert.equal(c.ventana_max, 300000);
-  assert.equal(c.ventana_vale_para, 'toda sesión: orquestador y anidada');
+  assert.match(c.ventana_vale_para, /^toda sesión abierta en un proyecto instalado/u);
+  assert.match(c.ventana_vale_para, /anidada.*si el host le pasa la variable/u);
   assert.equal(c.al_llenarse, 'compactar');
   assert.ok(c.ventana_max >= c.tope_orquestador && c.ventana_max >= c.tope_subsesion);
 });
 
 test('leerContrato devuelve la ventana y rechaza una ventana menor que un tope', () => {
   assert.equal(leerContrato().ventana_max, 300000);
+  const dir = mkdtempSync(join(tmpdir(), 'ia-ventana-contexto-'));
+  try {
+    const ruta = join(dir, 'model-routing.json');
+    writeFileSync(ruta, JSON.stringify({ contexto: { ...contrato.contexto, ventana_max: 50000 } }));
+    assert.throws(() => leerContrato(ruta), /ventana_max del contrato debe ser un número no menor que los topes/u);
+    // Presente e inválida es contrato roto (el guard calla y lo dice por stderr); sólo la ausente se tolera.
+    writeFileSync(ruta, JSON.stringify({ contexto: { ...contrato.contexto, ventana_max: '300000' } }));
+    assert.throws(() => leerContrato(ruta), /ventana_max del contrato debe ser un número no menor que los topes/u);
+    const { ventana_max: _fuera, ...sinVentana } = contrato.contexto;
+    writeFileSync(ruta, JSON.stringify({ contexto: sinVentana }));
+    assert.equal(leerContrato(ruta).ventana_max, undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('por_que no promete más que lo que se cumple: techo donde está la variable, y el guard como respaldo', () => {
+  const p = contrato.contexto.por_que;
+  assert.doesNotMatch(p, /Sin dato del host|nunca trabaja con más/u);
+  assert.match(p, /donde el host recibe la variable/u);
+  assert.match(p, /respaldo.*guard.*sobre mensajes/u);
 });
 
 test('con la ventana llena el guard ordena compactar ya, en cualquier rol', () => {
