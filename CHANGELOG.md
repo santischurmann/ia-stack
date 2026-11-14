@@ -1,5 +1,16 @@
 # Cambios
 
+## [3.4.6] - 13-11-2026
+
+Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto. Sin etiqueta en git todavía.
+
+- `verify-egm-convergencia.mjs`: cada registro exige `lectores`, `altos`, `medios` y `bajos` enteros de 0 o más (`registro inválido: <campo>`); el régimen simple rechaza `lectores` no entero; un BOM inicial en `metricas.jsonl` no rompe la lectura.
+- `context-guard.mjs`: un contrato sin `contexto.handoff` o con `ventana_max` inválida ya no apaga el guard; avisa que no hay handoff también cuando falla por otra causa.
+- `handoff.mjs`: un BOM inicial no esconde `## Objetivo` ni cuenta como carácter; una línea `## ` sin texto es un encabezado de más. Declara que no interpreta Markdown.
+- `ventana.mjs`: `leerVentana` responde `contrato sin contexto.ventana_max` ante un contrato ausente o que no es JSON, y exige una ventana no menor que los topes de relevo; un `settings.local.json` ilegible es `INVALIDO`; un hook cuenta sólo si es `type: command` con el comando exacto; `mismaCarpeta` recibe la plataforma.
+- `contracts/model-routing.json` § `contexto.por_que`: aclara que el techo rige donde el host recibe la variable y que el respaldo es el guard, que mide sobre mensajes.
+- Pruebas nuevas para cada caso; la de `mismaCarpeta` usa rutas neutras.
+
 ## [3.4.5] - 13-11-2026
 
 - Regla fija «ronda de brainstormings + EGM» (`skills/brainstorm-egm.md`, `contracts/model-routing.json` § rondas): 5 pasos en orden, EGM de 5 a 10 rondas, siempre Opus; excepción al modelo más barato.

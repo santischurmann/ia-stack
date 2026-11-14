@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// arranque.mjs — fase 0: resumen de arranque en 5 líneas como máximo (IA Stack 3.4.5).
+// arranque.mjs — fase 0: resumen de arranque en 5 líneas como máximo (IA Stack 3.4.6).
 //
 // Usage:
 //   node scripts/arranque.mjs [--proyecto <dir>] [--ventana <pct>] [--semana <pct>] [--sesiones <json>]
