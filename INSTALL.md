@@ -33,11 +33,11 @@ Además crea `.ia-stack/` con los archivos de estado (`ESTADO.md` y las plantill
 
 ## Después
 
-1. Reiniciá Claude Code.
-2. Abrí el proyecto.
-3. Invocá `/ia-stack`. Arranca la fase 0.
-4. Agregá los dos hooks a mano (§ Hooks a mano). Sin el de aprobaciones, registrá cada una con
+1. Agregá los dos hooks a mano (§ Hooks a mano). Sin el de aprobaciones, registrá cada una con
    `aprobar.mjs registrar`; el del gate 1 no tiene reemplazo.
+2. Reiniciá Claude Code.
+3. Abrí el proyecto.
+4. Invocá `/ia-stack`. Arranca la fase 0.
 
 Si el proyecto tiene un `CLAUDE.md` que no importa `@AGENTS.md`, el instalador avisa: con la
 configuración predeterminada, Claude Code no lee `AGENTS.md` cuando hay un `CLAUDE.md`. No lo

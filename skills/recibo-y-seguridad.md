@@ -35,7 +35,7 @@ exige de verdad; todo otro campo es opcional y no se valida.
 Reglas:
 - `approved` exige todos los criterios `COMPLIANT`. El hash del test tiene que coincidir con el
   archivo en disco; los finales de línea no cuentan.
-- `-1` en una medición sólo vale con `measured: false`, en `before` y `after`, y el motivo en `reason`.
+- `measured: false` exige `before` y `after` en `-1` y el motivo en `reason`; `-1` no vale con `measured: true`.
 - `not_reviewed` nunca es «n/a» ni vacío: dice qué no se miró y por qué.
 - Un límite (nunca anduvo, no se cubre) no bloquea. Una regresión (antes andaba) se corrige, se
   revierte o la acepta la persona con una decisión registrada.

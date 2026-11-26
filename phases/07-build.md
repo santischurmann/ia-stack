@@ -17,7 +17,8 @@ Convertir la spec en código que funciona, de a una tarea, siempre con la prueba
    (`skills/brainstorm-egm.md`), registrada con `--pieza plan-<id>`. Siempre nivel fuerte; una por
    tarea, no por paso. Si el presupuesto no alcanza, la tarea pasa a «en pausa» en la cola de
    `ESTADO.md` con el motivo, su entrada sale de `docs/tasks.json` hasta retomarla (si no, el paso 3
-   frena a todas) y las demás siguen: la ronda no se recorta.
+   frena a todas) y las demás siguen: la ronda no se recorta. Al retomarla, su entrada vuelve y se
+   corre de nuevo el paso 3 antes de su rojo.
 3. Antes del primer rojo, corré `node scripts/verify-aprobacion-humana.mjs tareas docs/tasks.json
    .ia-stack/APROBACIONES.md`. Mira todas las tareas: frena si una visible no tiene pieza aprobada o si
    una de alto requisito no tiene el EGM de `plan-<id>` convergido. Si `ESTADO.md` no declara el tamaño, sumá

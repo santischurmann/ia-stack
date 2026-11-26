@@ -20,7 +20,7 @@ NO TOCAR: <rutas o áreas prohibidas>
 CONTEXTO: <sólo lo necesario: criterio de aceptación, decisión tomada, fragmento del código>
 VERIFICAR: <comando exacto y salida esperada>
 NIVEL: barato | medio | fuerte
-REPORTE: con el «Formato del reporte» de abajo.
+REPORTE: <pegá acá el bloque de «Formato del reporte» de abajo>
 ```
 
 ## Elegir el nivel

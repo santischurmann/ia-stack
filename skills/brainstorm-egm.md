@@ -45,7 +45,7 @@ Elephant Goldfish Model. El autor (elefante) recuerda todo el contexto y no ve l
 papel. Los lectores (goldfish) reciben **sólo el documento**, ya corregido por la ronda anterior.
 
 **Lectores por ronda:** medio 2 (comprensión y alcance; implementación y diseño); grande 4 (uno por
-rol); chico (alto requisito o `publicar` en área de riesgo), 2. Siempre nuevos en cada ronda.
+rol); chico (alto requisito o `protocolo`), 2. Siempre nuevos en cada ronda.
 - **Comprensión:** términos sin explicar, pasos donde no sabría qué hacer, cifras que no cierran.
 - **Alcance:** qué sobra, qué se puede fusionar, qué promete de más.
 - **Implementación:** decisiones sin definir, criterios que no se pueden medir, dependencias dudosas.
