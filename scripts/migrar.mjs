@@ -8,8 +8,9 @@
 //      no cambia nada la segunda.
 //   2. Si <proyecto>/.ia-stack ya existe: no pisa nada, sale 1.
 //   3. Copia de respaldo entera: <proyecto>/.vibe.respaldo-DD-MM-AAAA (con -HHMM si ese día ya hay uno).
-//   4. Renombra .vibe a .ia-stack, y adentro `ia-stack-runtime` a `runtime` e `ia-stack-archive`
-//      a `archivo`.
+//   4. Renombra .vibe a .ia-stack y adentro `ia-stack-archive` a `archivo`. El runtime anterior
+//      (`ia-stack-runtime`) se mueve a `archivo/runtime-anterior-DD-MM-AAAA`: `runtime/` queda libre
+//      para el instalador, que hay que correr después.
 //   5. Arma .ia-stack/ESTADO.md (≤60 líneas: ## Fase, ## Cola, ## Cómo retomar) con lo útil de
 //      SESSION.md, y manda el resto de SESSION.md a .ia-stack/historial.md. SESSION.md queda donde
 //      estaba: los gates leen el slug de la feature de ahí.
@@ -17,7 +18,7 @@
 //
 // Este archivo y tests/migrar.test.mjs son los únicos del repositorio que nombran la carpeta anterior.
 
-import { cpSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -94,8 +95,18 @@ export function migrar(proyecto, ahora = new Date()) {
   cpSync(vieja, respaldo, { recursive: true, errorOnExist: true });
 
   renameSync(vieja, nueva);
-  for (const [de, a] of [['ia-stack-runtime', 'runtime'], ['ia-stack-archive', 'archivo']]) {
-    if (existsSync(join(nueva, de)) && !existsSync(join(nueva, a))) renameSync(join(nueva, de), join(nueva, a));
+  if (existsSync(join(nueva, 'ia-stack-archive')) && !existsSync(join(nueva, 'archivo'))) {
+    renameSync(join(nueva, 'ia-stack-archive'), join(nueva, 'archivo'));
+  }
+  // El runtime de la versión anterior se aparta, no se deja en runtime/: ahí el instalador tendría que
+  // podar más de la mitad, su guarda frena y queda un runtime mezclado de dos versiones (pasó en un
+  // proyecto real). runtime/ queda libre y el instalador escribe uno limpio.
+  let apartado = '';
+  if (existsSync(join(nueva, 'ia-stack-runtime'))) {
+    mkdirSync(join(nueva, 'archivo'), { recursive: true });
+    apartado = join(nueva, 'archivo', `runtime-anterior-${fechaDDMMAAAA(ahora)}`);
+    if (existsSync(apartado)) apartado = `${apartado}-${horaHHMM(ahora)}`;
+    renameSync(join(nueva, 'ia-stack-runtime'), apartado);
   }
 
   const sesion = join(nueva, 'SESSION.md');
@@ -106,7 +117,9 @@ export function migrar(proyecto, ahora = new Date()) {
 
   return {
     codigo: 0,
-    salida: `migrado: ${CARPETA_ANTERIOR} -> ${CARPETA_NUEVA}. Respaldo en ${respaldo}. Estado en ${CARPETA_NUEVA}/ESTADO.md, resto en ${CARPETA_NUEVA}/historial.md.`,
+    salida: `migrado: ${CARPETA_ANTERIOR} -> ${CARPETA_NUEVA}. Respaldo en ${respaldo}. Estado en ${CARPETA_NUEVA}/ESTADO.md, resto en ${CARPETA_NUEVA}/historial.md.`
+      + (apartado ? ` Runtime anterior apartado en ${apartado}.` : '')
+      + ' Falta correr el instalador sobre el proyecto para escribir el runtime nuevo.',
     error: '',
   };
 }

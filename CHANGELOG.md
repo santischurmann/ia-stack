@@ -2,7 +2,7 @@
 
 ## [3.4.6] - 26-11-2026
 
-Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-11-2026), y novedades de Claude Code (26-11-2026). Sin etiqueta en git todavía.
+Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-11-2026), y novedades de Claude Code (26-11-2026). Etiquetada como `v3.4.6` en git.
 
 - `verify-egm-convergencia.mjs`: cada registro exige `lectores`, `altos`, `medios` y `bajos` enteros de 0 o más (`registro inválido: <campo>`); el régimen simple rechaza `lectores` no entero; un BOM inicial en `metricas.jsonl` no rompe la lectura.
 - `context-guard.mjs`: un contrato sin `contexto.handoff` o con `ventana_max` inválida ya no apaga el guard; avisa que no hay handoff también cuando falla por otra causa.
@@ -30,6 +30,10 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - EGM del protocolo, ronda 4: la tarea «en pausa» sale de `docs/tasks.json` hasta retomarla, para no frenar el gate 3 de las demás; la orden de producción va con el sha del último commit pusheado con el CI en verde; la ronda de la fase 7 también corre en área de riesgo y la arma el nivel fuerte; el README suma los hooks a mano al paso 3; el recibo nombra los campos de cada medición.
 - EGM del protocolo, ronda 5: la tarea «en pausa» que se retoma vuelve a pasar el gate 3 antes de su rojo; `INSTALL.md` pone los hooks a mano antes de reiniciar, como el README; la plantilla del encargo pega el formato del reporte; el recibo dice que `measured: false` exige `-1` y `reason`; los lectores de chico cuentan `protocolo` en lugar de `publicar`.
 - EGM del protocolo, ronda 6: en fase 8, si la revisión cambia código se repiten los pasos 1 a 3 en cualquier tamaño, no sólo en grande o con área de riesgo; `INSTALL.md` aclara que con `--project-only` no se escribe la skill global.
+
+### Después de la etiqueta `v3.4.6` (sin publicar)
+
+- `migrar.mjs`: el runtime de la versión anterior ya no pasa a `.ia-stack/runtime/`; se mueve entero a `.ia-stack/archivo/runtime-anterior-<fecha>/`. Antes el instalador lo encontraba ahí, su guarda de poda frenaba (iba a apartar más de la mitad) y quedaba un runtime mezclado de dos versiones. La salida avisa que falta correr el instalador. `INSTALL.md` y README lo explican.
 
 ## [3.4.5] - 13-11-2026
 

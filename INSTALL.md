@@ -122,6 +122,12 @@ Hace una copia de respaldo, pasa la carpeta de estado anterior a `.ia-stack/`, a
 el formato nuevo y conserva las aprobaciones vigentes con su sha. Es idempotente: si no hay nada
 que migrar, lo dice y sale con 0. Si `.ia-stack/` ya existe, no pisa nada.
 
+El runtime de la versión anterior no se reusa: se mueve entero a
+`.ia-stack/archivo/runtime-anterior-<fecha>/` y `.ia-stack/runtime/` queda libre. Después de migrar
+hay que correr el instalador con `--project /ruta/a/mi-proyecto` para escribir el runtime nuevo. Las
+referencias a la carpeta anterior en el código, las pruebas y los documentos del proyecto no se
+reescriben: se cambian a mano.
+
 ## Problemas comunes
 
 - **La skill no aparece:** reiniciá Claude Code y mirá que exista `SKILL.md` dentro de

@@ -164,6 +164,8 @@ node scripts/migrar.mjs /ruta/a/mi-proyecto
 
 Hace una copia de respaldo, pasa el estado anterior a `.ia-stack/`, arma `ESTADO.md` con el
 formato nuevo y conserva tus aprobaciones vigentes con su sha. Correrlo dos veces no cambia nada.
+El runtime anterior queda apartado en `.ia-stack/archivo/`; después corré el instalador con
+`--project` para escribir el nuevo (detalle en `INSTALL.md`).
 
 ## Estructura del repositorio
 

@@ -88,8 +88,15 @@ test('migra: respaldo fechado, carpeta renombrada, ESTADO.md corto con las tres 
     assert.deepEqual(listado(join(root, respaldos[0])), antes, 'el respaldo es copia entera de lo que había');
 
     const nueva = join(root, '.ia-stack');
-    assert.equal(existsSync(join(nueva, 'runtime', 'scripts', 'gate.mjs')), true, 'el runtime instalado pasa a runtime/');
+    // El runtime de la versión anterior NO pasa a runtime/: el instalador, al encontrarlo ahí, tendría
+    // que apartar más de la mitad, su guarda frena y queda un runtime mezclado de dos versiones.
+    assert.equal(existsSync(join(nueva, 'runtime')), false, 'runtime/ queda libre para el instalador');
     assert.equal(existsSync(join(nueva, 'ia-stack-runtime')), false);
+    const apartados = readdirSync(join(nueva, 'archivo')).filter((n) => n.startsWith('runtime-anterior-'));
+    assert.equal(apartados.length, 1, `un runtime anterior apartado: ${apartados}`);
+    assert.match(apartados[0], /^runtime-anterior-\d{2}-\d{2}-\d{4}(-\d{4})?$/u, 'fecha DD-MM-AAAA');
+    assert.equal(existsSync(join(nueva, 'archivo', apartados[0], 'scripts', 'gate.mjs')), true, 'se mueve entero, no se borra');
+    assert.match(r.stdout, /instalador/u, 'la salida dice que falta correr el instalador');
     assert.equal(existsSync(join(nueva, 'receipts', 'r1.json')), true, 'el resto del estado se conserva');
     assert.equal(readFileSync(join(nueva, 'APROBACIONES.md'), 'utf8'), APROBACIONES, 'APROBACIONES.md queda tal cual');
 
