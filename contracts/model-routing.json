@@ -39,7 +39,7 @@
     "planificador": { "nivel": "fuerte", "esfuerzo": "medium", "para": "marca, spec y plan" },
     "seguridad": { "nivel": "fuerte", "esfuerzo": "medium", "para": "revisión de seguridad antes de publicar" },
     "ronda_brainstorm_egm": { "nivel": "fuerte", "esfuerzo": "medium", "para": "ronda de brainstormings y rondas de EGM (skills/brainstorm-egm.md); nunca en barato ni medio" },
-    "revisor": { "nivel": "fuerte", "esfuerzo": "medium", "para": "revisión antes de publicar; un nivel fuerte distinto del que construyó, en otra sesión que abre su rama sin su conversación (con `/code-review medium` si el host lo tiene); si no hay, revisa la persona" },
+    "revisor": { "nivel": "fuerte", "esfuerzo": "medium", "para": "revisión antes de publicar; una sesión de nivel fuerte distinta de la que construyó (puede ser el mismo modelo), que abre su rama sin su conversación (con `/code-review medium` si el host lo tiene); si no hay, revisa la persona" },
     "orquestador": { "nivel": "orquestador", "esfuerzo": "medium", "para": "reparte tareas y recibe conclusiones; no lee código" }
   },
   "complejidad": {

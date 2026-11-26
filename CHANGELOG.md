@@ -21,6 +21,10 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - Contexto: relevo al 70 % del tope (120K y 60K sobre mensajes); el handoff a 180K y la ventana de 300K quedan como respaldo, en `SKILL.md` e `INSTALL.md`.
 - Ritmo de cupo descripto como lo calcula `ritmoPresupuesto` (14 % por día corrido, 20 % por hora de la ventana); `presupuesto.si_va_encima` ya no baja de barato. Sale `escalada.tercer_intento`, que ningún script leía.
 - `INSTALL.md`: bash obligatorio para los hooks, la skill es un puntero, rutas globales por defecto; `SKILL.md` dice cómo correr `node scripts/<script>.mjs` en un proyecto instalado.
+- EGM del protocolo, ronda 2: la fase 8 aclara que lo que está con `git add` no ensucia el árbol (`.ia-stack/` se agrega antes del recibo, que va en `.ia-stack/receipts/`), cómo volver tras un cambio del EGM, la rama a otro host por `git bundle` y qué hacer con `.ia-stack/` después del push.
+- Revisor unificado en todos los textos: una sesión de nivel fuerte distinta de la que construyó, que puede ser el mismo modelo.
+- `INSTALL.md`: el instalador escribe tres cosas (también el runtime global) y lista las reglas de `.gitignore` que agrega; sección «Hooks a mano» con el JSON del hook de aprobaciones y del `PreToolUse` del gate 1, que el instalador no deja.
+- Fase 7: qué leen los lectores de `plan-<id>`, cuándo pasar `--tamano` y la tarea sin presupuesto queda «en pausa». EGM: una pieza de más de 3 rutas se lee en grupos de hasta 3. `leccion.mjs anotar` con sus campos obligatorios.
 
 ## [3.4.5] - 13-11-2026
 

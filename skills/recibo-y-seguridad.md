@@ -46,5 +46,5 @@ Reglas:
 5. Ya commiteado: `node scripts/verify-receipt.mjs recheck <receipt.json>`.
 
 ## Revisión
-Revisa un nivel fuerte distinto del que construyó (otra sesión u otro host; si no hay, revisa la
-persona), sin el contexto de la construcción: recibe el diff y la spec. Si no hay hallazgos que sobrevivan, el recibo lo dice en `refutation`.
+Revisa una sesión de nivel fuerte distinta de la que construyó (puede ser el mismo modelo; si no hay,
+revisa la persona), sin el contexto de la construcción: recibe el diff y la spec. Si no hay hallazgos que sobrevivan, el recibo lo dice en `refutation`.

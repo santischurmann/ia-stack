@@ -59,27 +59,27 @@ donde se pueda o se espera, nunca el esfuerzo. Modelo y esfuerzo nunca se le pre
 | Nivel | Claude | Para qué |
 |---|---|---|
 | script | sin IA | contar, medir, validar forma, limpiar, consultar versiones |
-| barato | Haiku medium | leer, buscar, logs, git, edición mecánica, documentación. **Es el default** |
+| barato | Haiku medium | leer, buscar, logs, git, edición mecánica, documentación. **Default**; código sin señal clara, medio |
 | medio | Sonnet medium | tests, pantallas, funcionalidades con patrón conocido |
 | fuerte | Opus medium | marca, spec, áreas de riesgo, revisión antes de publicar |
 | orquestador | Fable medium | sólo la sesión que reparte trabajo a subsesiones; no construye |
 
 - **Escalada:** si la prueba sigue fallando tras un intento, sube un nivel con el comando, la salida
   y lo ya probado; si falla el fuerte, se frena y se pregunta a la persona. Un error de cupo no es
-  falla: se espera. Se anota con `node scripts/leccion.mjs anotar --tipo escalada --desde <n> --hasta <n> ...`.
+  falla: se espera. Se anota con `node scripts/leccion.mjs anotar --tipo escalada --desde <n> --hasta
+  <n> --sintoma <t> --causa <t> --archivo <ruta>`.
 - **Revisor:** otra sesión de nivel fuerte (puede ser el mismo modelo), sin la conversación de quien
-  construyó (fase 8 paso 4); si no hay, revisa la persona. Si el host no deja elegir modelo, se le avisa una vez.
+  construyó (fase 8 paso 4); si no hay, revisa la persona. Si el host no deja elegir modelo, se le avisa una vez a la persona.
 
 ## Cupo
 - La fase 0 lee plan y cupo con la herramienta del host. Si no hay, pregunta el plan una vez
   (`.ia-stack/plan.json`) y el cupo queda «desconocido»: nunca se estima.
 - Al 85 % de la ventana de 5 horas se frena lo que no sea la tarea en curso y se avisa la hora de reinicio.
-- Ritmo (`ritmoPresupuesto`): va encima si lo gastado de la semana pasa de 14 % por día corrido, o lo
-  de la ventana de 5 h, de 20 % por hora. Encima, medio baja a barato o espera, barato espera y fuerte
-  nunca baja: se pausa. Ejemplo: el día 3 con 45 % de la semana gastado (más de 42 %), se espera.
+- Ritmo (`ritmoPresupuesto`): va encima si lo gastado de la semana pasa de 14 % por día desde el
+  reinicio semanal, o lo de la ventana de 5 h, de 20 % por hora. Encima, medio baja a barato o espera,
+  barato espera y fuerte se pausa. Ejemplo: día 3, 45 % gastado (más de 42 %): encima.
 
-## Estado y sesiones
-Todo vive en `.ia-stack/`:
+## Estado y sesiones (todo en `.ia-stack/`)
 
 | Archivo | Lo escribe | Qué guarda |
 |---|---|---|
@@ -89,8 +89,8 @@ Todo vive en `.ia-stack/`:
 | `LECCIONES.md` | `scripts/leccion.mjs` | cada escalada y cada retrabajo |
 
 - **Relevo** al 70 % del tope de contexto (orquestador 120K, subsesión 60K, sobre mensajes) y al
-  cambiar de etapa: estado guardado, sesión nueva; pasado el tope no se sigue. **Respaldo** si el relevo
-  no ocurrió: handoff en `.ia-stack/handoffs/ULTIMO.md` a los 180K y ventana de 300K, que llena compacta.
+  cambiar de etapa: estado guardado, sesión nueva; pasado el tope no se sigue. **Respaldo** si la sesión
+  siguió igual: handoff en `.ia-stack/handoffs/ULTIMO.md` a los 180K y ventana de 300K, que llena compacta.
 - **Subsesión:** nace con un grupo de tareas, reporta en modo breve y se archiva. **Encargo**
   a un subagente: hasta 4.000 tokens y 3 archivos (`skills/encargo.md`).
 - **Huérfana:** su tarea está hecha o sin dueño. Se archiva, nunca se borra; lo pendiente vuelve a

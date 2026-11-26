@@ -1,7 +1,6 @@
 # Brainstorming y EGM
 
-Rondas de pensamiento que el método trae incorporadas. Son nativas: no dependen de ningún plugin;
-las hace un subagente genérico con los encargos de abajo.
+Rondas de pensamiento nativas, sin plugins: las hace un subagente genérico con los encargos de abajo.
 
 ## Brainstorming simple: abrir antes de elegir
 
@@ -14,12 +13,11 @@ es obvia, se dice en una línea y se sigue.
 
 ## Ronda de brainstormings: 5 pasos fijos
 
-Regla fija. Siempre nivel fuerte (Opus, `medium`): es la excepción al «modelo más barato que resuelva
-bien» (`contracts/model-routing.json` § rondas, rol `ronda_brainstorm_egm`).
+Regla fija. Siempre nivel fuerte (Opus, `medium`), excepción al modelo más barato (contrato § rondas).
 
 **Cuándo:** sola, en las fases de `rondas.fases` del contrato (2, 4 y 5; 7 por cada tarea de alto
-requisito; la 8 corre sólo EGM) y al cambiar el propio protocolo; además, cuando la persona la pide. Chico no la corre,
-salvo la de una tarea de alto requisito.
+requisito; la 8 corre sólo EGM), al cambiar el propio protocolo y cuando la persona la pide. Chico
+no la corre, salvo la de una tarea de alto requisito y la del protocolo.
 
 **Cómo:** un subagente por paso, en este orden y sin saltear. Cada paso recibe la salida del
 anterior. Los pasos 2 y 4 atacan y no elogian. Se aplica lo hallado; no se resume.
@@ -53,7 +51,9 @@ rol); una tarea de alto requisito, 2 como mínimo aun en chico. Siempre nuevos e
 - **Implementación:** decisiones sin definir, criterios que no se pueden medir, dependencias dudosas.
 - **Diseño:** contradicciones, huecos donde algo falla sin salida, riesgos de lo que se saca.
 
-**Encargo a cada lector** (se copia tal cual, cambiando rol y rutas; en `publicar`, el diff exportado y la spec):
+**Encargo a cada lector** (se copia tal cual, cambiando rol y rutas; en `publicar`, el diff exportado y
+la spec). Si la pieza pasa de 3 rutas, como `protocolo`, va en grupos de hasta 3: un lector por grupo
+y rol, todos contados en `--lectores`; la ronda es limpia sólo si lo son todos:
 
 > Leé sólo `<rutas>` (hasta 3). No leas otros archivos. Sos el lector de `<rol>`. Reportá en 25 líneas o
 > menos, una por hallazgo: severidad (alta, media, baja), sección, problema y arreglo concreto.

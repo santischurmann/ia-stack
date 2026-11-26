@@ -19,21 +19,24 @@ cd ia-stack
 .\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto
 ```
 
-El instalador hace dos copias:
+El instalador escribe tres cosas:
 
 1. La skill, un `SKILL.md` puntero (no una copia del protocolo) en `~/.claude/skills/ia-stack/`, y
    el mismo puntero en `<proyecto>/.claude/skills/ia-stack/` y `<proyecto>/.agents/skills/ia-stack/` (Codex).
-2. Un runtime autocontenido en `<proyecto>/.ia-stack/runtime/`, con `SKILL.md`, `phases/`,
+2. Un runtime global en `~/.claude/ia-stack-runtime/` (salvo con `--project-only`).
+3. Un runtime autocontenido en `<proyecto>/.ia-stack/runtime/`, con `SKILL.md`, `phases/`,
    `skills/`, `contracts/`, `scripts/` y `templates/`.
 
 Además crea `.ia-stack/` con los archivos de estado (`ESTADO.md` y las plantillas de
-`templates/estado/`) y agrega `.ia-stack/runtime/` al `.gitignore` del proyecto.
+`templates/estado/`) y agrega `.ia-stack/runtime/`, `.ia-stack/archivo/` y `.claude-archive/` al
+`.gitignore` del proyecto. El resto de `.ia-stack/` se versiona.
 
 ## Después
 
 1. Reiniciá Claude Code.
 2. Abrí el proyecto.
 3. Invocá `/ia-stack`. Arranca la fase 0.
+4. Agregá los dos hooks a mano (§ Hooks a mano), o registrá cada aprobación con `aprobar.mjs registrar`.
 
 Si el proyecto tiene un `CLAUDE.md` que no importa `@AGENTS.md`, el instalador avisa: con la
 configuración predeterminada, Claude Code no lee `AGENTS.md` cuando hay un `CLAUDE.md`. No lo
@@ -72,11 +75,20 @@ proyecto instalado, la variable se fija a mano en el `settings.json` propio. Los
 siempre con 0 y no cierran la sesión solos.
 - **Codex:** `model_auto_compact_token_limit = 300000` y `model_reasoning_effort = "medium"` en `config.toml`, a mano.
 
-## Hook de aprobaciones
+## Hooks a mano
 
-Para que tus frases `apruebo pedido v1`, `apruebo preview v1`, etc. queden registradas, agregá a
-mano otro hook `UserPromptSubmit` (evento de mensaje del usuario) con
-`node .ia-stack/runtime/scripts/aprobar.mjs hook`. Sin hooks, `aprobar.mjs registrar` lo hace a mano.
+El instalador no deja estos dos; van en `.claude/settings.local.json`, sumados a los que ya haya en
+`"hooks"`:
+- **Aprobaciones:** para que tus frases `apruebo pedido v1`, `apruebo preview v1`, etc. queden
+  registradas, un hook `UserPromptSubmit` (evento de mensaje del usuario). Sin él,
+  `aprobar.mjs registrar` lo hace a mano.
+- **Gate 1:** un hook `PreToolUse` con matcher `Write|Edit`, que frena la escritura de código sin
+  test rojo visto.
+
+```json
+"UserPromptSubmit": [ { "hooks": [ { "type": "command", "command": "node .ia-stack/runtime/scripts/aprobar.mjs hook" } ] } ],
+"PreToolUse": [ { "matcher": "Write|Edit", "hooks": [ { "type": "command", "command": "node .ia-stack/runtime/scripts/pretooluse-red.mjs" } ] } ]
+```
 
 ## Opciones
 

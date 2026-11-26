@@ -130,7 +130,7 @@ Siempre con esfuerzo `medium` (en Claude Code lo deja el instalador; en Codex, v
 
 Si una prueba sigue fallando tras un intento, la tarea sube un nivel (barato a medio, medio a
 fuerte) y lleva la falla exacta: comando, salida, archivo y línea, y lo ya probado. Si falla el
-fuerte, se frena y se te pregunta. Revisa un nivel fuerte distinto del que construyó (otra sesión u otro host; si no
+fuerte, se frena y se te pregunta. Revisa una sesión de nivel fuerte distinta de la que construyó (puede ser el mismo modelo; si no
 hay, revisás vos). Fuente: `contracts/model-routing.json`.
 
 ## Tu cupo

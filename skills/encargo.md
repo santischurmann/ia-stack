@@ -28,8 +28,8 @@ REPORTE: conclusión, archivo:línea, salida del comando.
 - Medio: pruebas, pantallas, un patrón que ya existe en el código.
 - Fuerte: marca, spec, plata, seguridad, autenticación, migraciones, revisión antes de publicar.
 - El orquestador reparte; no construye ni lee código.
-- Si el encargo falla: subí un nivel (barato → medio → fuerte; `siguienteNivel` de
-  `scripts/clasificar-tarea.mjs`) y pegá la falla exacta al encargo nuevo. Si falla el fuerte, frená
+- Si el encargo falla: subí un nivel (barato → medio → fuerte, según `escalada.por_falla` del
+  contrato) y pegá la falla exacta al encargo nuevo. Si falla el fuerte, frená
   y preguntale a la persona. Un error de cupo no es una falla: se espera.
 
 ```
@@ -43,7 +43,8 @@ ya probado: <qué se intentó y por qué no alcanzó>
 ## Si el host lo tiene
 - Subagente: `model` y `effort` iguales al contrato; `maxTurns` sólo con el tope que fije la persona
   (el contrato no trae uno); `isolation: worktree` si escribe en paralelo con otro (con su puerto y
-  su base de prueba).
+  su base de prueba). Al terminar, su rama se mergea en local a la de trabajo, se corre
+  `node scripts/verify-scope-diff.mjs check` y se quita el worktree.
 - Workflows (`.claude/workflows/`): sólo si la persona lo pide; un agente por paso, en orden.
 - Code Mode: sólo si la persona lo activó (`CLAUDE_CODE_EXPERIMENTAL_CODE_MODE=1`, `claude` en terminal).
 - Advisor: no (factura aparte y saca a Fable del orquestador). Skills desde MCP: no (beta; el
@@ -59,5 +60,5 @@ SIGUE: <próximo paso o pregunta>
 ```
 - Largo y destino: `skills/modo-breve.md`.
 - Sin evidencia de un comando real, el estado no puede ser «hecho».
-- Quien construyó no revisa su propio trabajo: el revisor es un nivel fuerte distinto del que
-  construyó (otra sesión u otro host; si no hay, revisa la persona).
+- Quien construyó no revisa su propio trabajo: el revisor es una sesión de nivel fuerte distinta
+  de la que construyó (puede ser el mismo modelo; si no hay, revisa la persona).
