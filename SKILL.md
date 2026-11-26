@@ -5,7 +5,7 @@ description: "Método de trabajo para construir software con un agente LLM gasta
 
 # IA Stack
 
-**Versión:** 3.4.6 · 26-11-2026 · sin etiquetar en git; la última etiqueta es `v3.4.5`.
+**Versión:** 3.4.6 · 26-11-2026 · etiquetada como `v3.4.6` en git.
 
 Un método en 10 fases para construir software con un agente. Este archivo es el núcleo: se lee
 siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado, `scripts/`, `skills/`,
