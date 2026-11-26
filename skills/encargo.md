@@ -40,6 +40,14 @@ archivo:línea: <dónde rompe>
 ya probado: <qué se intentó y por qué no alcanzó>
 ```
 
+## Si el host lo tiene
+- Subagente: `model` y `effort` iguales al contrato; `maxTurns` como tope; `isolation: worktree` si
+  escribe en paralelo con otro (con su puerto y su base de prueba).
+- Workflows (`.claude/workflows/`): sólo si la persona lo pide; un agente por paso, en orden.
+- Code Mode: sólo si la persona lo activó (`CLAUDE_CODE_EXPERIMENTAL_CODE_MODE=1`, `claude` en terminal).
+- Advisor: no (factura aparte y saca a Fable del orquestador). Skills desde MCP: no (beta; el
+  protocolo se instala como archivos).
+
 ## Formato del reporte
 ```
 ESTADO: hecho | parcial | bloqueado

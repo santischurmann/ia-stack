@@ -3,7 +3,7 @@
 // POR QUE EXISTE. El contrato dice qué modelo hay en cada nivel, pero cada sesión elegía a ojo en
 // cuál arrancar. Esto clasifica el texto de la tarea en mecánica (barato), patrón conocido (medio)
 // o alto requisito (fuerte), con el piso por riesgo de contracts/model-routing.json, y dice si un
-// esfuerzo está permitido (sólo `low`) y si el gasto va al ritmo.
+// esfuerzo está permitido (sólo el `esfuerzo` del contrato) y si el gasto va al ritmo.
 //
 // LIMITE HONESTO. Son palabras clave, no un modelo: una tarea de riesgo descrita sin ninguna de las
 // palabras del piso sale como patrón conocido. Sólo puede SUBIR el nivel por riesgo, nunca bajarlo;
@@ -42,9 +42,9 @@ export function siguienteNivel(nivel, c = contrato) {
   return typeof nivel === 'string' && Object.hasOwn(mapa, nivel) ? mapa[nivel] : null;
 }
 
-/** El esfuerzo es `low` siempre: no existen `medium` ni `high`. */
+/** El esfuerzo permitido es el campo `esfuerzo` del contrato; ningún otro. */
 export function esfuerzoPermitido({ esfuerzo }) {
-  return esfuerzo === 'low';
+  return esfuerzo === contrato.esfuerzo;
 }
 
 /** semanal/ventana: fracción gastada (0–1); dias: días de la semana transcurridos; horas: de la ventana de 5 h. */

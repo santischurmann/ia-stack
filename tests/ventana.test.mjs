@@ -1,4 +1,4 @@
-// ventana — la ventana de 300K y los dos hooks quedan puestos solos en `.claude/settings.local.json`
+// ventana — la ventana de 300K, el esfuerzo y los dos hooks quedan puestos solos en `.claude/settings.local.json`
 // del proyecto: la variable que hace compactar al host, el hook que mide el contexto en cada mensaje
 // y el que vuelve a mostrar el handoff después de compactar.
 //
@@ -22,13 +22,16 @@ const hook = (command) => ({ type: 'command', command });
 const completo = (extra = {}) => ({
   env: { [VARIABLE]: '300000' },
   hooks: { UserPromptSubmit: [{ hooks: [hook(CMD_CONTEXTO)] }], SessionStart: [{ matcher: 'compact', hooks: [hook(CMD_HANDOFF)] }] },
+  effortLevel: 'medium',
   ...extra,
 });
 const json = (o) => `${JSON.stringify(o, null, 2)}\n`;
 
 function run(args, { cwd = raiz, env = {} } = {}) {
-  const e = { ...process.env, ...env };
+  const e = { ...process.env };
   delete e.NODE_TEST_CONTEXT;
+  delete e.CLAUDE_CODE_EFFORT_LEVEL;
+  Object.assign(e, env);
   const r = spawnSync(process.execPath, [script, ...args], { encoding: 'utf8', env: e, cwd });
   assert.equal(r.error, undefined);
   return { status: r.status, output: `${r.stdout ?? ''}${r.stderr ?? ''}` };
@@ -60,10 +63,10 @@ test('los comandos de los hooks son los del runtime del proyecto, con $CLAUDE_PR
   assert.equal(CMD_HANDOFF, 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/handoff.mjs" mostrar --proyecto "$CLAUDE_PROJECT_DIR"');
 });
 
-test('planear · sin archivo crea las tres cosas, con la forma anidada exacta, en LF y con salto final', () => {
-  const p = planear(null, V, true);
+test('planear · sin archivo crea las cuatro cosas, con la forma anidada exacta, en LF y con salto final', () => {
+  const p = planear(null, V, true, 'medium');
   assert.equal(p.accion, 'crear');
-  assert.deepEqual(p.faltan, TODO);
+  assert.deepEqual(p.faltan, [...TODO, 'esfuerzo']);
   assert.equal(p.texto, json(completo()));
   assert.ok(!p.texto.includes('\r'));
   const sin = planear(null, V, false);
@@ -130,6 +133,18 @@ test('planear · sólo cuenta el matcher "compact" exacto: con "compact|startup"
   ]);
 });
 
+test('planear · con esfuerzo agrega effortLevel si falta, reemplaza uno distinto y respeta el igual; con null no lo mira', () => {
+  const sinEsfuerzo = completo();
+  delete sinEsfuerzo.effortLevel;
+  const p = planear(json(sinEsfuerzo), V, true, 'medium');
+  assert.deepEqual([p.accion, p.faltan, p.texto], ['fijar', ['esfuerzo'], json(completo())]);
+  const alto = planear(json(completo({ effortLevel: 'high' })), V, true, 'medium');
+  assert.deepEqual([alto.accion, alto.faltan, alto.texto], ['fijar', ['esfuerzo'], json(completo())], 'se reemplaza en su lugar');
+  assert.equal(planear(json(completo()), V, true, 'medium').accion, 'respetar');
+  assert.equal(planear(json(completo({ effortLevel: 'high' })), V, true).accion, 'respetar');
+  assert.equal(planear(null, V, false, 'medium').texto, json({ env: { [VARIABLE]: '300000' }, effortLevel: 'medium' }));
+});
+
 test('leerVentana · exige un entero dentro del rango del host, de 100.000 a 1.000.000', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ia-ventana-c-'));
   try {
@@ -150,6 +165,25 @@ test('leerVentana · exige un entero dentro del rango del host, de 100.000 a 1.0
     writeFileSync(ruta, '{ roto');
     assert.throws(() => leerVentana(ruta), /^Error: contrato sin contexto\.ventana_max$/u, 'contrato que no es JSON');
     assert.throws(() => leerVentana(join(dir, 'no-existe.json')), /^Error: contrato sin contexto\.ventana_max$/u, 'contrato ausente');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('leerEsfuerzo · exige el esfuerzo del contrato dentro de los niveles del host', async () => {
+  const { NIVELES_DEL_HOST, leerEsfuerzo } = await import('../scripts/ventana.mjs');
+  assert.deepEqual(NIVELES_DEL_HOST, ['low', 'medium', 'high', 'xhigh', 'max']);
+  assert.equal(leerEsfuerzo(), 'medium');
+  const dir = mkdtempSync(join(tmpdir(), 'ia-ventana-e-'));
+  try {
+    const ruta = join(dir, 'c.json');
+    for (const c of [JSON.stringify({}), JSON.stringify({ esfuerzo: 'alto' }), JSON.stringify({ esfuerzo: 'LOW' }), '{ roto']) {
+      writeFileSync(ruta, c);
+      assert.throws(() => leerEsfuerzo(ruta), /^Error: contrato sin esfuerzo$/u, c);
+    }
+    assert.throws(() => leerEsfuerzo(join(dir, 'no-existe.json')), /^Error: contrato sin esfuerzo$/u, 'contrato ausente');
+    writeFileSync(ruta, JSON.stringify({ esfuerzo: 'high' }));
+    assert.equal(leerEsfuerzo(ruta), 'high');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -236,7 +270,7 @@ test('escribirAtomico · falla dos veces y anda la tercera: escribe; y sin inyec
   });
 });
 
-test('CLI aplicar · crea .claude/ y deja las tres cosas; check pasa después y aplicar de nuevo no cambia los bytes', () => {
+test('CLI aplicar · crea .claude/ y deja las cuatro cosas; check pasa después y aplicar de nuevo no cambia los bytes', () => {
   conProyecto((dir, ruta) => {
     assert.equal(run(['check', '--proyecto', dir]).status, 1);
     const r = run(['aplicar', '--proyecto', dir]);
@@ -249,8 +283,8 @@ test('CLI aplicar · crea .claude/ y deja las tres cosas; check pasa después y 
   });
 });
 
-test('CLI check · sale 1 y nombra lo que falta, sea cual sea de las tres', () => {
-  const casos = { ventana: (o) => delete o.env[VARIABLE], 'hook-contexto': (o) => delete o.hooks.UserPromptSubmit, 'hook-handoff': (o) => delete o.hooks.SessionStart };
+test('CLI check · sale 1 y nombra lo que falta, sea cual sea de las cuatro', () => {
+  const casos = { ventana: (o) => delete o.env[VARIABLE], 'hook-contexto': (o) => delete o.hooks.UserPromptSubmit, 'hook-handoff': (o) => delete o.hooks.SessionStart, esfuerzo: (o) => delete o.effortLevel };
   for (const [nombre, quitar] of Object.entries(casos)) {
     const o = completo();
     quitar(o);
@@ -263,12 +297,12 @@ test('CLI check · sale 1 y nombra lo que falta, sea cual sea de las tres', () =
   }
 });
 
-test('CLI · sin runtime deja sólo la variable, lo dice, y check sale 0', () => {
+test('CLI · sin runtime deja sólo la variable y el esfuerzo, lo dice, y check sale 0', () => {
   conProyecto((dir, ruta) => {
     const r = run(['aplicar', '--proyecto', dir]);
     assert.equal(r.status, 0, r.output);
     assert.match(r.output, /hooks: sin runtime instalado, no se registran/u);
-    assert.deepEqual(JSON.parse(readFileSync(ruta, 'utf8')), { env: { [VARIABLE]: '300000' } });
+    assert.deepEqual(JSON.parse(readFileSync(ruta, 'utf8')), { env: { [VARIABLE]: '300000' }, effortLevel: 'medium' });
     for (const comando of ['check', 'aplicar']) {
       const ya = run([comando, '--proyecto', dir]);
       assert.equal(ya.status, 0, comando);
@@ -285,14 +319,14 @@ test('CLI · sin runtime deja sólo la variable, lo dice, y check sale 0', () =>
   });
 });
 
-test('CLI · "500000" pasa a "300000", "200000" queda, y un JSON con comentarios sale 1 con los bytes intactos', () => {
+test('CLI · "500000" pasa a "300000", "200000" queda (se suma el esfuerzo), y un JSON con comentarios sale 1 con los bytes intactos', () => {
   conProyecto((dir, ruta) => {
     assert.equal(run(['aplicar', '--proyecto', dir]).status, 0);
     assert.equal(JSON.parse(readFileSync(ruta, 'utf8')).env[VARIABLE], '300000');
   }, { runtime: false, settings: json({ env: { [VARIABLE]: '500000' } }) });
   conProyecto((dir, ruta) => {
     assert.equal(run(['aplicar', '--proyecto', dir]).status, 0);
-    assert.equal(readFileSync(ruta, 'utf8'), json({ env: { [VARIABLE]: '200000' } }));
+    assert.equal(readFileSync(ruta, 'utf8'), json({ env: { [VARIABLE]: '200000' }, effortLevel: 'medium' }));
   }, { runtime: false, settings: json({ env: { [VARIABLE]: '200000' } }) });
   const roto = '{\n  // mío\n  "env": {}\n}\n';
   conProyecto((dir, ruta) => {
@@ -319,6 +353,19 @@ test('main aplicar · si el renombrado falla siempre devuelve 1 con el mensaje y
     assert.equal(readFileSync(ruta, 'utf8'), antes);
     assert.deepEqual(readdirSync(join(dir, '.claude')), ['settings.local.json']);
   }, { settings: '{}\n' });
+});
+
+const AVISO = 'aviso: CLAUDE_CODE_EFFORT_LEVEL=low pisa effortLevel y /effort';
+test('main · CLAUDE_CODE_EFFORT_LEVEL distinto avisa tras aplicar o respetar; igual o ausente no; no cambia la salida', (t) => {
+  conProyecto((dir) => {
+    const errores = t.mock.method(console, 'error', () => {});
+    t.mock.method(console, 'log', () => {});
+    assert.equal(main(['aplicar', '--proyecto', dir], { env: { CLAUDE_CODE_EFFORT_LEVEL: 'low' } }), 0);
+    assert.equal(main(['check', '--proyecto', dir], { env: { CLAUDE_CODE_EFFORT_LEVEL: 'low' } }), 0);
+    assert.equal(main(['check', '--proyecto', dir], { env: { CLAUDE_CODE_EFFORT_LEVEL: 'medium' } }), 0);
+    assert.equal(main(['check', '--proyecto', dir], { env: {} }), 0);
+    assert.deepEqual(errores.mock.calls.map((c) => c.arguments[0]), [AVISO, AVISO]);
+  });
 });
 
 test('CLI aplicar · si no puede crear .claude/ sale 1 con el mismo mensaje, sin temporal y sin tocar lo que había', () => {
@@ -393,6 +440,6 @@ test('el gate 6 nombra ventana.mjs y handoff.mjs, e INSTALL.md la bandera y el a
   const texto = JSON.stringify(seis);
   assert.ok(texto.includes('ventana.mjs') && texto.includes('handoff.mjs'), texto);
   const install = readFileSync(join(raiz, 'INSTALL.md'), 'utf8');
-  for (const pedazo of ['--sin-ventana', '-SinVentana', '.claude/settings.local.json', 'ventana.mjs aplicar']) assert.ok(install.includes(pedazo), pedazo);
-  assert.doesNotMatch(install, /se agrega a mano/u);
+  for (const pedazo of ['--sin-ventana', '-SinVentana', '.claude/settings.local.json', 'ventana.mjs aplicar', '"effortLevel": "medium"', 'se reemplaza', 'model_reasoning_effort = "medium"']) assert.ok(install.includes(pedazo), pedazo);
+  assert.doesNotMatch(install, /se agrega a mano|saltea las tres cosas/u);
 });

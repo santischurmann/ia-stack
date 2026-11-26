@@ -58,15 +58,18 @@ proyecto, el instalador corre `node .ia-stack/runtime/scripts/ventana.mjs aplica
   (plantilla `templates/estado/HANDOFF.md`, hasta 40 líneas). Una subsesión fija `IA_STACK_ROL=subsesion`.
 - Un hook `SessionStart` con matcher `compact` y `handoff.mjs mostrar`: después de compactar, el
   handoff vuelve al contexto.
+- `"effortLevel": "medium"` (`contracts/model-routing.json` § esfuerzo): es un setting, no la variable
+  `CLAUDE_CODE_EFFORT_LEVEL`, así que `/effort` sigue mandando en la sesión. Un `effortLevel` distinto
+  se reemplaza; si esa variable está puesta y difiere, `ventana.mjs` avisa.
 
-`--sin-ventana` (bash) o `-SinVentana` (PowerShell) saltea las tres cosas. Si el archivo no es JSON
+`--sin-ventana` (bash) o `-SinVentana` (PowerShell) saltea las cuatro cosas, esfuerzo incluido. Si el archivo no es JSON
 estricto, el instalador avisa `ventana no aplicada` y sigue. `ventana.mjs check` dice qué falta.
 
 Límites: la orden de handoff sale cuando la persona manda un mensaje; en un turno autónomo largo o
 en un subagente sólo cubre la variable. Los hooks corren con bash, también en Windows. Fuera de un
 proyecto instalado, la variable se fija a mano en el `settings.json` propio. Los scripts salen
 siempre con 0 y no cierran la sesión solos.
-- **Codex:** `model_auto_compact_token_limit = 300000` en `config.toml`, a mano.
+- **Codex:** `model_auto_compact_token_limit = 300000` y `model_reasoning_effort = "medium"` en `config.toml`, a mano.
 
 ## Hook de aprobaciones
 

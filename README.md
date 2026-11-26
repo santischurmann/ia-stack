@@ -118,7 +118,7 @@ y forma de saltearlo en [`INSTALL.md`](INSTALL.md).
 
 ## Modelos
 
-Siempre con esfuerzo `low`. El modelo nunca se te pregunta.
+Siempre con esfuerzo `medium` (en Claude Code lo deja el instalador; en Codex, ver INSTALL.md). El modelo nunca se te pregunta.
 
 | Nivel | Claude | Codex | Para qué |
 |---|---|---|---|
@@ -150,7 +150,7 @@ ventana de 5 horas frena lo que no sea la tarea en curso y te dice cuándo se re
 | `.ia-stack/LECCIONES.md` | cada escalada y cada retrabajo |
 | `.ia-stack/historial.md` | lo que salió de `ESTADO.md` |
 | `.ia-stack/handoffs/ULTIMO.md` | el resumen que la sesión escribe antes de compactar |
-| `.claude/settings.local.json` | ventana de contexto y los dos hooks (salvo `--sin-ventana`) |
+| `.claude/settings.local.json` | ventana de contexto, esfuerzo y los dos hooks (salvo `--sin-ventana`) |
 | `docs/` | pedido, caio, research, marca, spec y plan |
 | `.claude/skills/ia-stack/`, `.agents/skills/ia-stack/` | punteros a la skill |
 

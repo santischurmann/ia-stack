@@ -1,5 +1,5 @@
-// Ruteo de modelos (spec 3.4.4, criterio 3): cuatro niveles, todo esfuerzo `low`, el nivel más caro sólo
-// para el orquestador, y la tabla de SKILL.md igual al contrato.
+// Ruteo de modelos (spec 3.4.4, criterio 3): cuatro niveles, todo esfuerzo igual al campo raíz
+// `esfuerzo` (`medium`), el nivel más caro sólo para el orquestador, y la tabla de SKILL.md igual al contrato.
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -19,11 +19,17 @@ function esfuerzos(nodo, ruta = '$') {
   return [];
 }
 
-test('todo esfuerzo del contrato es low, y hay al menos uno por nivel', () => {
+test('todo esfuerzo del contrato es el campo raíz esfuerzo (medium), y hay al menos uno por nivel', () => {
+  assert.equal(contrato.esfuerzo, 'medium');
   const todos = esfuerzos(contrato);
-  assert.ok(todos.length >= 4);
-  for (const [ruta, valor] of todos) assert.equal(valor, 'low', ruta);
-  assert.ok(!/"(medium|high)"/u.test(crudo), 'el contrato no nombra medium ni high como valor');
+  assert.ok(todos.length >= 5);
+  for (const [ruta, valor] of todos) assert.equal(valor, contrato.esfuerzo, ruta);
+  assert.ok(!/"(low|high|xhigh|max)"/u.test(crudo), 'el contrato no nombra otro esfuerzo como valor');
+});
+
+test('el presupuesto no baja el esfuerzo y dice cuándo revisarlo', () => {
+  assert.match(contrato.presupuesto.si_va_encima, /el esfuerzo no baja/u);
+  assert.match(contrato.presupuesto.revisar_si, /dos ventanas de 5 h distintas/u);
 });
 
 test('hay exactamente los niveles barato, medio, fuerte y orquestador', () => {
@@ -60,7 +66,7 @@ test('la tabla de modelos de SKILL.md coincide con el contrato', () => {
   const filas = new Map();
   for (const l of skill.split(/\r?\n/u)) {
     const celdas = l.split('|').slice(1, -1).map((c) => c.trim());
-    if (celdas.length >= 3 && Object.hasOwn(contrato.niveles, celdas[0]) && /^[A-Z][a-z]+ low$/u.test(celdas[1])) filas.set(celdas[0], celdas[1]);
+    if (celdas.length >= 3 && Object.hasOwn(contrato.niveles, celdas[0]) && new RegExp(`^[A-Z][a-z]+ ${contrato.esfuerzo}$`, 'u').test(celdas[1])) filas.set(celdas[0], celdas[1]);
   }
   assert.deepEqual([...filas.keys()], Object.keys(contrato.niveles), 'SKILL.md no lista los cuatro niveles');
   for (const [nivel, def] of Object.entries(contrato.niveles)) {

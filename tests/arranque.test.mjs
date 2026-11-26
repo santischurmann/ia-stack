@@ -176,11 +176,11 @@ test('arranque · CLI con la plantilla de ESTADO.md sin llenar también dice pro
 });
 
 // ---- 3.4.5 · la ventana y los hooks, en el arranque ----
-test('3.4.5 · arranque avisa si falta la ventana o los hooks, o si settings.local.json es inválido; nunca corta', () => {
+test('3.4.5 · arranque avisa si falta la ventana, el esfuerzo o los hooks, o si settings.local.json es inválido; nunca corta', () => {
   conProyecto(ESTADO, (root) => {
     const falta = run(['--proyecto', root]);
     assert.equal(falta.status, 0, falta.out);
-    assert.ok(falta.out.includes('ventana: falta ventana (node scripts/ventana.mjs aplicar --proyecto .)'), falta.out);
+    assert.ok(falta.out.includes('ventana: falta ventana, esfuerzo (node scripts/ventana.mjs aplicar --proyecto .)'), falta.out);
     assert.ok(falta.out.trim().split(/\r?\n/).length <= 5);
     mkdirSync(join(root, '.claude'), { recursive: true });
     writeFileSync(join(root, '.claude', 'settings.local.json'), '{ // mío\n}');
@@ -188,6 +188,9 @@ test('3.4.5 · arranque avisa si falta la ventana o los hooks, o si settings.loc
     assert.equal(invalido.status, 0, invalido.out);
     assert.ok(invalido.out.includes('ventana: settings.local.json inválido'), invalido.out);
     writeFileSync(join(root, '.claude', 'settings.local.json'), '{ "env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" } }');
+    const sinEsfuerzo = run(['--proyecto', root]);
+    assert.ok(sinEsfuerzo.out.includes('ventana: falta esfuerzo ('), sinEsfuerzo.out);
+    writeFileSync(join(root, '.claude', 'settings.local.json'), '{ "env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" }, "effortLevel": "medium" }');
     const bien = run(['--proyecto', root]);
     assert.doesNotMatch(bien.out, /ventana: (falta|settings)/u);
     mkdirSync(join(root, '.ia-stack', 'runtime', 'scripts'), { recursive: true });

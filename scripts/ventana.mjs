@@ -1,17 +1,19 @@
 #!/usr/bin/env node
-// ventana.mjs — deja la ventana de contexto y los dos hooks de relevo en el proyecto, sin tocar nada a mano.
+// ventana.mjs — deja la ventana de contexto, el esfuerzo y los dos hooks de relevo en el proyecto, sin tocar nada a mano.
 //
 // Usage:
 //   node scripts/ventana.mjs check   [--proyecto <dir>]   # 0 = está todo · 1 · 2 = uso
 //   node scripts/ventana.mjs aplicar [--proyecto <dir>]   # 0 = quedó aplicado (o ya estaba) · 1 · 2
 //   Exit 1 = falta algo (sólo `check`), settings inválido, contrato sin ventana_max o no se pudo escribir.
 //
-// Escribe `<dir>/.claude/settings.local.json` (el local, no el compartido) con tres cosas:
+// Escribe `<dir>/.claude/settings.local.json` (el local, no el compartido) con cuatro cosas:
 //   1. env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = contexto.ventana_max del contrato: el host compacta ahí;
 //   2. hook UserPromptSubmit que corre context-guard.mjs (avisa el relevo y ordena el handoff);
 //   3. hook SessionStart con matcher `compact` que corre `handoff.mjs mostrar` (devuelve el handoff
 //      al contexto justo después de compactar). Sólo cuenta como presente con el matcher `compact`
 //      exacto: con otro (`compact|startup`) se agrega el propio y el ajeno se conserva.
+//   4. effortLevel = `esfuerzo` del contrato (setting, no la variable: `/effort` sigue mandando en la sesión). Uno distinto
+//      se reemplaza. Si CLAUDE_CODE_EFFORT_LEVEL existe y difiere, avisa por stderr tras aplicar o respetar: esa variable pisa todo.
 // Los hooks se registran sólo si el runtime está instalado en el proyecto: nunca apuntan a un
 // archivo que no está; sin runtime, toda salida OK (de `check` o de `aplicar`) agrega la línea
 // `hooks: sin runtime instalado, no se registran`. Una variable válida y menor que la ventana se respeta (gasta menos); los
@@ -29,6 +31,8 @@ import { fileURLToPath } from 'node:url';
 
 const CONTRATO = join(dirname(fileURLToPath(import.meta.url)), '..', 'contracts', 'model-routing.json');
 export const VARIABLE = 'CLAUDE_CODE_AUTO_COMPACT_WINDOW';
+export const VARIABLE_ESFUERZO = 'CLAUDE_CODE_EFFORT_LEVEL';
+export const NIVELES_DEL_HOST = Object.freeze(['low', 'medium', 'high', 'xhigh', 'max']);
 export const CMD_CONTEXTO = 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/context-guard.mjs"';
 export const CMD_HANDOFF = 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/handoff.mjs" mostrar --proyecto "$CLAUDE_PROJECT_DIR"';
 const MINIMO_DEL_HOST = 100000;
@@ -42,9 +46,9 @@ const entrada = (comando, matcher) => ({ ...(matcher ? { matcher } : {}), hooks:
 
 /**
  * Decide qué hacer con el settings.local.json. `texto` es su contenido o null; `conRuntime` dice si
- * los hooks aplican. Devuelve { accion: 'crear'|'fijar'|'respetar'|'invalido', texto, faltan }.
+ * los hooks aplican; `esfuerzo` (o null) es el del contrato. Devuelve { accion: 'crear'|'fijar'|'respetar'|'invalido', texto, faltan }.
  */
-export function planear(texto, ventana, conRuntime) {
+export function planear(texto, ventana, conRuntime, esfuerzo = null) {
   let o = {};
   if (texto !== null) {
     try {
@@ -62,11 +66,13 @@ export function planear(texto, ventana, conRuntime) {
     if (!(o.hooks?.UserPromptSubmit ?? []).some((e) => tiene(e, CMD_CONTEXTO))) faltan.push('hook-contexto');
     if (!(o.hooks?.SessionStart ?? []).some((e) => e?.matcher === 'compact' && tiene(e, CMD_HANDOFF))) faltan.push('hook-handoff');
   }
+  if (esfuerzo !== null && o.effortLevel !== esfuerzo) faltan.push('esfuerzo');
   if (texto !== null && faltan.length === 0) return { accion: 'respetar', texto, faltan };
   if (faltan.includes('ventana')) o.env = { ...o.env, [VARIABLE]: String(ventana) };
   if (faltan.some((f) => f.startsWith('hook-'))) o.hooks = { ...o.hooks };
   if (faltan.includes('hook-contexto')) o.hooks.UserPromptSubmit = [...(o.hooks.UserPromptSubmit ?? []), entrada(CMD_CONTEXTO)];
   if (faltan.includes('hook-handoff')) o.hooks.SessionStart = [...(o.hooks.SessionStart ?? []), entrada(CMD_HANDOFF, 'compact')];
+  if (faltan.includes('esfuerzo')) o.effortLevel = esfuerzo;
   const lf = `${JSON.stringify(o, null, 2)}\n`;
   const nuevo = texto !== null && texto.includes('\r\n') ? lf.replaceAll('\n', '\r\n') : lf;
   return { accion: texto === null ? 'crear' : 'fijar', texto: nuevo, faltan };
@@ -112,10 +118,23 @@ export function leerVentana(ruta = CONTRATO) {
   return v;
 }
 
+/** `esfuerzo` del contrato: uno de los niveles del host. Lanza si falta, si no es JSON o si no está en la lista. */
+export function leerEsfuerzo(ruta = CONTRATO) {
+  let e;
+  try {
+    e = JSON.parse(readFileSync(ruta, 'utf8')).esfuerzo;
+  } catch {
+    e = undefined;
+  }
+  if (!NIVELES_DEL_HOST.includes(e)) throw new Error('contrato sin esfuerzo');
+  return e;
+}
+
 /** Plan para un proyecto en disco: lo usan el CLI y arranque.mjs. Un settings que existe y no se puede leer (carpeta, sin permiso) es `invalido`. */
 export function planDeProyecto(proyecto) {
   const ruta = rutaSettings(proyecto);
   const ventana = leerVentana();
+  const esfuerzo = leerEsfuerzo();
   let texto = null;
   if (existsSync(ruta)) {
     try {
@@ -124,7 +143,7 @@ export function planDeProyecto(proyecto) {
       return INVALIDO;
     }
   }
-  return planear(texto, ventana, hayRuntime(proyecto));
+  return planear(texto, ventana, hayRuntime(proyecto), esfuerzo);
 }
 
 /** Dos rutas ya resueltas son la misma carpeta: en Windows, sin distinguir mayúsculas. */
@@ -156,8 +175,14 @@ function parsearArgs(argv) {
   return { comando, proyecto };
 }
 
+/** Aviso si la variable de entorno pisa el effortLevel del contrato. Sólo tras un éxito. */
+function avisarEsfuerzo(env) {
+  const valor = env[VARIABLE_ESFUERZO];
+  if (valor && valor !== leerEsfuerzo()) console.error(`aviso: ${VARIABLE_ESFUERZO}=${valor} pisa effortLevel y /effort`);
+}
+
 /** El CLI sin tocar el proceso: devuelve el código de salida. `escribir` se inyecta para probar la falla. */
-export function main(argv, { escribir = escribirAtomico } = {}) {
+export function main(argv, { escribir = escribirAtomico, env = process.env } = {}) {
   let args;
   try {
     args = parsearArgs(argv);
@@ -179,6 +204,7 @@ export function main(argv, { escribir = escribirAtomico } = {}) {
   const sinRuntime = hayRuntime(args.proyecto) ? '' : '\nhooks: sin runtime instalado, no se registran';
   if (plan.accion === 'respetar') {
     console.log(`OK: ventana y hooks en su lugar (.claude/settings.local.json)${sinRuntime}`);
+    avisarEsfuerzo(env);
     return 0;
   }
   if (args.comando === 'check') {
@@ -194,6 +220,7 @@ export function main(argv, { escribir = escribirAtomico } = {}) {
     return 1;
   }
   console.log(`OK: aplicado ${plan.faltan.join(', ')} en .claude/settings.local.json${sinRuntime}`);
+  avisarEsfuerzo(env);
   return 0;
 }
 

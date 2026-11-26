@@ -1,45 +1,46 @@
 {
   "schema": "ia.model-routing/2",
-  "why": "Una sola fuente de qué modelo usa cada nivel. El esfuerzo es `low` siempre: no existen `medium` ni `high`. El orquestador pasa `model` y `effort` desde acá en cada invocación de subagente, nunca un literal. Meta: el modelo más barato que resuelva bien.",
+  "why": "Una sola fuente de qué modelo usa cada nivel. El esfuerzo es el campo `esfuerzo` (`medium`, default del host) en todo nivel y rol; `low`, `high`, `xhigh` y `max` no se usan. El orquestador pasa `model` y `effort` desde acá en cada invocación de subagente. Si hace falta ahorrar, el orquestador delega más; el esfuerzo no baja. Meta: el modelo más barato que resuelva bien.",
   "por_defecto": "barato",
+  "esfuerzo": "medium",
   "script": "Sin IA: contar, medir, validar forma, limpiar, consultar versiones. Siempre se prueba primero.",
   "niveles": {
     "barato": {
       "modelo": "haiku",
-      "esfuerzo": "low",
-      "codex": { "familia": "luna", "esfuerzo": "low" },
+      "esfuerzo": "medium",
+      "codex": { "familia": "luna", "esfuerzo": "medium" },
       "para": "leer, buscar, logs, git, edición mecánica, documentación"
     },
     "medio": {
       "modelo": "sonnet",
-      "esfuerzo": "low",
-      "codex": { "familia": "terra", "esfuerzo": "low" },
+      "esfuerzo": "medium",
+      "codex": { "familia": "terra", "esfuerzo": "medium" },
       "para": "tests, pantallas, funcionalidades con patrón conocido"
     },
     "fuerte": {
       "modelo": "opus",
-      "esfuerzo": "low",
-      "codex": { "familia": "sol", "esfuerzo": "low" },
+      "esfuerzo": "medium",
+      "codex": { "familia": "sol", "esfuerzo": "medium" },
       "para": "marca, spec, áreas de riesgo, revisión antes de publicar"
     },
     "orquestador": {
       "modelo": "fable",
-      "esfuerzo": "low",
-      "codex": { "familia": "astra", "esfuerzo": "low" },
+      "esfuerzo": "medium",
+      "codex": { "familia": "astra", "esfuerzo": "medium" },
       "para": "sólo la sesión que reparte trabajo a subsesiones; no construye"
     }
   },
   "roles": {
-    "lector": { "nivel": "barato", "esfuerzo": "low", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
-    "docs": { "nivel": "barato", "esfuerzo": "low", "para": "actualizar .ia-stack/ y documentación" },
-    "red": { "nivel": "medio", "esfuerzo": "low", "para": "la prueba roja de cada criterio" },
-    "green": { "nivel": "medio", "esfuerzo": "low", "para": "el código mínimo que la pone en verde" },
-    "refactor": { "nivel": "medio", "esfuerzo": "low", "para": "simplificar sin cambiar la conducta" },
-    "planificador": { "nivel": "fuerte", "esfuerzo": "low", "para": "marca, spec y plan" },
-    "seguridad": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión de seguridad antes de publicar" },
-    "ronda_brainstorm_egm": { "nivel": "fuerte", "esfuerzo": "low", "para": "ronda de brainstormings y rondas de EGM (skills/brainstorm-egm.md); nunca en barato ni medio" },
-    "revisor": { "nivel": "fuerte", "esfuerzo": "low", "para": "revisión antes de publicar; un nivel fuerte distinto del que construyó (otra sesión u otro host; si no hay, revisa la persona)" },
-    "orquestador": { "nivel": "orquestador", "esfuerzo": "low", "para": "reparte tareas y recibe conclusiones; no lee código" }
+    "lector": { "nivel": "barato", "esfuerzo": "medium", "para": "buscar código, leer logs, contar, resumir estado; nunca decide" },
+    "docs": { "nivel": "barato", "esfuerzo": "medium", "para": "actualizar .ia-stack/ y documentación" },
+    "red": { "nivel": "medio", "esfuerzo": "medium", "para": "la prueba roja de cada criterio" },
+    "green": { "nivel": "medio", "esfuerzo": "medium", "para": "el código mínimo que la pone en verde" },
+    "refactor": { "nivel": "medio", "esfuerzo": "medium", "para": "simplificar sin cambiar la conducta" },
+    "planificador": { "nivel": "fuerte", "esfuerzo": "medium", "para": "marca, spec y plan" },
+    "seguridad": { "nivel": "fuerte", "esfuerzo": "medium", "para": "revisión de seguridad antes de publicar" },
+    "ronda_brainstorm_egm": { "nivel": "fuerte", "esfuerzo": "medium", "para": "ronda de brainstormings y rondas de EGM (skills/brainstorm-egm.md); nunca en barato ni medio" },
+    "revisor": { "nivel": "fuerte", "esfuerzo": "medium", "para": "revisión antes de publicar; un nivel fuerte distinto del que construyó, en otra sesión que abre su rama sin su conversación (con `/code-review medium` si el host lo tiene); si no hay, revisa la persona" },
+    "orquestador": { "nivel": "orquestador", "esfuerzo": "medium", "para": "reparte tareas y recibe conclusiones; no lee código" }
   },
   "complejidad": {
     "gate": "scripts/clasificar-tarea.mjs",
@@ -99,14 +100,16 @@
     "reporte_max_lineas": 40,
     "handoff_desde": 0.7,
     "detalle_a": ".ia-stack/handoffs/",
-    "sesiones": "subagentes con contexto nuevo; hasta 4 en paralelo; un dueño por tarea; un proceso pesado a la vez"
+    "sesiones": "subagentes con contexto nuevo; hasta 4 en paralelo; un dueño por tarea",
+    "suites_en_paralelo": "cada worktree con su puerto y su base de prueba; si el proyecto no lo permite, de a una. Nada se frena ni se mide por recursos de la máquina"
   },
   "presupuesto": {
     "por_dia": 0.14,
     "por_hora_ventana_5h": 0.2,
     "freno_ventana_5h": 0.85,
     "medir_con": "get_usage en Claude Code de escritorio; sin herramienta, el cupo queda desconocido y el gate sólo avisa",
-    "si_va_encima": "barato y medio bajan un nivel o esperan; fuerte nunca baja, se pausa",
+    "si_va_encima": "barato y medio bajan un nivel o esperan; fuerte nunca baja, se pausa; el esfuerzo no baja",
+    "revisar_si": "dos ventanas de 5 h distintas que llegaron al freno en 7 días, contadas a mano con la herramienta del host: la persona decide bajar de nivel donde se pueda o delegar más",
     "en_freno": "al 85 % de la ventana de 5 h se frena todo lo que no sea la tarea en curso y se avisa la hora de reinicio",
     "gate": "scripts/clasificar-tarea.mjs ritmoPresupuesto"
   }

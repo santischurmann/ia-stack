@@ -13,7 +13,7 @@ PROJECT_DIR=""
 # fuera de el. Antes, `--project` igual copiaba la skill y el runtime GLOBALES a ~/.claude, asi que
 # probar el instalador en una carpeta no era aislamiento. El comportamiento por defecto no cambia.
 PROJECT_ONLY=0
-# `--sin-ventana`: no escribir la ventana de contexto ni los hooks en .claude/settings.local.json.
+# `--sin-ventana`: no escribir la ventana de contexto, el esfuerzo ni los hooks en .claude/settings.local.json.
 SIN_VENTANA=0
 TARGET_EXPLICIT=0
 RUNTIME_EXPLICIT=0

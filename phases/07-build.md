@@ -16,13 +16,12 @@ Convertir la spec en código que funciona, de a una tarea, siempre con la prueba
 3. Agrupá las tareas. Cada grupo puede ir a una subsesión con un encargo (`skills/encargo.md`),
    revisado con `node scripts/verify-brief-size.mjs check <encargo.md>`.
 4. Por cada tarea seguí el orden de `skills/tdd.md`: rojo, verde, bordes, limpio, alcance y commit local.
-5. Antes de una suite o un build, medí la RAM y el disco libres.
-6. Si el diff real excede el tamaño fijado, frená: reclasificá con `node scripts/tamano.mjs --diff
+5. Si el diff real excede el tamaño fijado, frená: reclasificá con `node scripts/tamano.mjs --diff
    <base>`, subí la versión de `pedido.md`, o de `spec.md` si existe, y anotá el retrabajo con
    `node scripts/leccion.mjs anotar --tipo retrabajo ...`.
-7. Si una prueba falla, ver Escalada en `SKILL.md`.
-8. Al terminar un grupo, archivá la subsesión y actualizá `ESTADO.md`.
-9. Tarea de clase `alto_requisito` o en área de riesgo: ronda de brainstormings del diseño y EGM
+6. Si una prueba falla, ver Escalada en `SKILL.md`.
+7. Al terminar un grupo, archivá la subsesión y actualizá `ESTADO.md`.
+8. Tarea de clase `alto_requisito` o en área de riesgo: ronda de brainstormings del diseño y EGM
    sobre su plan antes del rojo (`skills/brainstorm-egm.md`), registrada con `--pieza plan-<id>`.
    Siempre nivel fuerte; una por tarea, no por paso. El gate del paso 2 la exige. Si el presupuesto
    no alcanza, la tarea queda bloqueada y se avisa: la ronda no se recorta.

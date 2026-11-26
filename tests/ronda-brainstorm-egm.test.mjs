@@ -73,9 +73,9 @@ test('las skills son nativas: ninguna fase ni skill depende de un plugin externo
 });
 
 test('la versión es 3.4.6 en SKILL.md, README y CHANGELOG, y la entrada de 3.4.5 sigue', () => {
-  assert.match(leer('SKILL.md'), /\*\*Versión:\*\* 3\.4\.6 · /u);
+  assert.match(leer('SKILL.md'), /\*\*Versión:\*\* 3\.4\.6 · 26-11-2026 · /u);
   assert.match(leer('README.md'), /Versión \*\*3\.4\.6\*\*/u);
-  assert.match(leer('CHANGELOG.md'), /^# Cambios\r?\n\r?\n## \[3\.4\.6\] - 13-11-2026/u);
+  assert.match(leer('CHANGELOG.md'), /^# Cambios\r?\n\r?\n## \[3\.4\.6\] - 26-11-2026/u);
   assert.match(leer('CHANGELOG.md'), /^## \[3\.4\.5\] - 13-11-2026/mu);
   for (const s of ['arranque', 'aprobar', 'contraste', 'leccion', 'metricas', 'radar-stack', 'verify-ci-push', 'tamano']) {
     assert.match(leer(`scripts/${s}.mjs`).split('\n')[1], /IA Stack 3\.4\.6/u, s);

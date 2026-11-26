@@ -5,7 +5,7 @@ description: "Método de trabajo para construir software con un agente LLM gasta
 
 # IA Stack
 
-**Versión:** 3.4.6 · sin etiquetar en git; la última etiqueta es `v3.4.5`.
+**Versión:** 3.4.6 · 26-11-2026 · sin etiquetar en git; la última etiqueta es `v3.4.5`.
 
 Un método en 10 fases para construir software con un agente. Este archivo es el núcleo: se lee
 siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado `scripts/`, `skills/`,
@@ -53,23 +53,23 @@ Un chico con cambio visible aprueba un boceto (`apruebo boceto v1`) y su tarea l
 | 9 Cierre | `phases/09-cierre.md` | 1 línea de métricas | script | — |
 
 ## Modelos
-Fuente única: `contracts/model-routing.json`. Esfuerzo `low` siempre. Modelo y esfuerzo nunca se le
-preguntan a la persona.
+Fuente única: `contracts/model-routing.json`. Esfuerzo `medium` siempre: con poco cupo baja el nivel
+donde se pueda o se espera, nunca el esfuerzo. Modelo y esfuerzo nunca se le preguntan a la persona.
 
 | Nivel | Claude | Para qué |
 |---|---|---|
 | script | sin IA | contar, medir, validar forma, limpiar, consultar versiones |
-| barato | Haiku low | leer, buscar, logs, git, edición mecánica, documentación. **Es el default** |
-| medio | Sonnet low | tests, pantallas, funcionalidades con patrón conocido |
-| fuerte | Opus low | marca, spec, áreas de riesgo, revisión antes de publicar |
-| orquestador | Fable low | sólo la sesión que reparte trabajo a subsesiones; no construye |
+| barato | Haiku medium | leer, buscar, logs, git, edición mecánica, documentación. **Es el default** |
+| medio | Sonnet medium | tests, pantallas, funcionalidades con patrón conocido |
+| fuerte | Opus medium | marca, spec, áreas de riesgo, revisión antes de publicar |
+| orquestador | Fable medium | sólo la sesión que reparte trabajo a subsesiones; no construye |
 
 - **Escalada:** si la prueba sigue fallando tras un intento, la tarea sube un nivel con el comando,
   la salida y lo ya probado. Si falla el nivel fuerte, o al tercer intento fallido sobre lo mismo,
   se frena y se le pregunta a la persona. Un error de cupo no es falla: se espera, no se escala. Se anota con
   `node scripts/leccion.mjs anotar --tipo escalada --desde <nivel> --hasta <nivel> ...`.
-- **Revisor:** un nivel fuerte distinto del que construyó: otra sesión u otro host; si no hay,
-  revisa la persona. Un host que no deja elegir modelo lo dice una vez.
+- **Revisor:** un nivel fuerte distinto del que construyó, en otra sesión sin su conversación (fase 8
+  paso 4); si no hay, revisa la persona. Un host que no deja elegir modelo lo dice una vez.
 
 ## Cupo
 - La fase 0 lee plan y cupo con la herramienta del host. Si no hay, pregunta el plan una vez
@@ -112,7 +112,7 @@ Un gate es un script que frena si algo no se cumple (lista y protegidos: `contra
 - **Publicar una vez.** Commits locales, todos los que hagan falta. Push, merge o tag: uno, al
   terminar, con todo verde. Las suites corren en local; nunca se dispara CI «para probar».
 - **Producción sólo con orden explícita** de la persona, atada al sha, usada una vez.
-- **Un proceso pesado a la vez**, midiendo la RAM libre antes. **Respaldo verificado antes de borrar.**
+- **Respaldo verificado antes de borrar.** Nada se frena ni se mide por recursos de la máquina.
 
 ## Automejora
 Cada escalada y cada retrabajo queda en `LECCIONES.md`; la fase 0 muestra las repetidas y la persona

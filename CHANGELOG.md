@@ -1,8 +1,8 @@
 # Cambios
 
-## [3.4.6] - 13-11-2026
+## [3.4.6] - 26-11-2026
 
-Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto. Sin etiqueta en git todavía.
+Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-11-2026), y novedades de Claude Code (26-11-2026). Sin etiqueta en git todavía.
 
 - `verify-egm-convergencia.mjs`: cada registro exige `lectores`, `altos`, `medios` y `bajos` enteros de 0 o más (`registro inválido: <campo>`); el régimen simple rechaza `lectores` no entero; un BOM inicial en `metricas.jsonl` no rompe la lectura.
 - `context-guard.mjs`: un contrato sin `contexto.handoff` o con `ventana_max` inválida ya no apaga el guard; avisa que no hay handoff también cuando falla por otra causa.
@@ -10,6 +10,12 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto. Sin
 - `ventana.mjs`: `leerVentana` responde `contrato sin contexto.ventana_max` ante un contrato ausente o que no es JSON, y exige una ventana no menor que los topes de relevo; un `settings.local.json` ilegible es `INVALIDO`; un hook cuenta sólo si es `type: command` con el comando exacto; `mismaCarpeta` recibe la plataforma.
 - `contracts/model-routing.json` § `contexto.por_que`: aclara que el techo rige donde el host recibe la variable y que el respaldo es el guard, que mide sobre mensajes.
 - Pruebas nuevas para cada caso; la de `mismaCarpeta` usa rutas neutras.
+- Esfuerzo `medium` único: campo raíz `esfuerzo` en `contracts/model-routing.json`, que leen `esfuerzoPermitido` y `ventana.mjs`; `low`, `high`, `xhigh` y `max` no se usan. Con poco cupo baja el nivel, nunca el esfuerzo; `presupuesto.revisar_si` da el umbral.
+- `ventana.mjs`: deja `"effortLevel": "medium"` en `.claude/settings.local.json` (uno distinto se reemplaza); `check` y `arranque.mjs` lo exigen; avisa si `CLAUDE_CODE_EFFORT_LEVEL` difiere. `--sin-ventana` / `-SinVentana` lo saltea con la ventana y los hooks. Codex: `model_reasoning_effort = "medium"`.
+- Fuera las reglas por recursos: RAM, disco y «un proceso pesado a la vez». Suites a la vez sólo con puerto y base de prueba propios (`encargo.suites_en_paralelo`).
+- Fase 8: el revisor abre la rama en otra sesión, sin la conversación del constructor, y si el host lo tiene corre `/code-review medium <rama>` sin `--fix`. `/ship` y `/steward` no se usan.
+- `skills/encargo.md` § «Si el host lo tiene»: `model`, `effort`, `maxTurns`, `isolation: worktree`, workflows y Code Mode con su condición; advisor y skills desde MCP, no.
+- Prueba nueva `tests/protocolo-host.test.mjs`; el caso con sabor a dominio de `clasificar-tarea.test.mjs` pasa a uno neutro.
 
 ## [3.4.5] - 13-11-2026
 

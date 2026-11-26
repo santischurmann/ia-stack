@@ -14,7 +14,7 @@ es obvia, se dice en una línea y se sigue.
 
 ## Ronda de brainstormings: 5 pasos fijos
 
-Regla fija. Siempre nivel fuerte (Opus, `low`): es la excepción al «modelo más barato que resuelva
+Regla fija. Siempre nivel fuerte (Opus, `medium`): es la excepción al «modelo más barato que resuelva
 bien» (`contracts/model-routing.json` § rondas, rol `ronda_brainstorm_egm`).
 
 **Cuándo:** sola, en las fases de `rondas.fases` del contrato (2, 4, 5, 7 por cada tarea de alto

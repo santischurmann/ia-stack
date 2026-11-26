@@ -9,18 +9,20 @@ Comprobar que todo anda con evidencia real, y publicar una sola vez.
 - El comando de cada suite, declarado en `.ia-stack/ESTADO.md` o en el README del proyecto.
 
 ## Pasos
-1. Antes de una suite o un build, medí la RAM y el disco libres. Corré las suites completas en
-   local, de a una. Guardá la salida y el código de salida en un archivo.
+1. Corré las suites completas en local; si van a la vez, cada una con su puerto y su base de prueba
+   (`contracts/model-routing.json` § encargo). Guardá la salida y el código de salida en un archivo.
 2. Seguridad base: `node scripts/verify-security-baseline.mjs check`. Revisá a mano los
    hallazgos nuevos.
 3. Repo limpio: `node scripts/verify-repo-clean.mjs check`. No deben quedar temporales,
    secretos ni archivos de más.
-4. Revisión: un nivel fuerte distinto del que construyó, en otra sesión u otro host; si no hay,
-   revisa la persona. El revisor recibe el diff y la spec, nada más.
+4. Revisión: un nivel fuerte distinto del que construyó, en otra sesión u otro host que abre la rama
+   del constructor sin su conversación, con la spec. Si el host lo tiene, corre `/code-review medium <rama>`,
+   sin `--fix`; otro nivel, sólo si la persona lo pide. Si no hay otra sesión, revisa la persona.
 5. Armá el recibo (la evidencia de los comandos reales corridos; `skills/recibo-y-seguridad.md`) y
    verificalo: `node scripts/verify-receipt.mjs check <receipt.json> --require-clean-worktree`.
 6. Antes del push: `node scripts/verify-ci-push.mjs check`. Hacé un solo push. Nunca dispares
-   CI «para probar».
+   CI «para probar». `/ship` y `/steward` no se usan: pushean sin recibo ni gate 8, el watch empuja
+   arreglos solo y la revisión de `/ship` es de la misma sesión que construyó.
 7. Si el CI falla, corregí en local, armá un recibo nuevo y hacé un único push de corrección.
    Es retrabajo: `node scripts/leccion.mjs anotar --tipo retrabajo ...` lo anota.
 8. Producción sólo con la orden de la persona: **«apruebo produccion <sha del commit>»**. Verificala

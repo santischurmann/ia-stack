@@ -1,12 +1,9 @@
-// Esfuerzo low obligatorio, presupuesto de tokens y detector de complejidad (regla).
+// Esfuerzo único del contrato (`medium`), presupuesto de tokens y detector de complejidad.
 //
-// POR QUE EXISTE. La escalera de 8 peldaños decía qué modelo usar pero no cuánto esfuerzo por
-// defecto ni cuánto cupo gastar por día y por hora; cada sesión elegía `effort` a ojo y el cupo
-// de la ventana de 5 h se iba antes de tiempo. La regla: low siempre, Opus medium
-// sólo para el orquestador que habla con la persona, presupuesto 14 %/día y 20 %/hora, freno al 85 %.
+// POR QUE EXISTE. El esfuerzo vive en una sola fuente (campo `esfuerzo` de contracts/model-routing.json);
+// el presupuesto (14 %/día, 20 %/hora, freno al 85 %) mide el gasto real de la ventana de 5 h.
 //
-// LO QUE NO CUBRE: que la sesión efectivamente llame set_session_effort o get_usage; eso pasa en la
-// conversación y ninguna prueba portable lo ve.
+// LO QUE NO CUBRE: que la sesión pase `effort` o lea el cupo; eso pasa en la conversación.
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -20,9 +17,10 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const contrato = () => JSON.parse(readFileSync(join(repoRoot, 'contracts/model-routing.json'), 'utf8'));
 const script = join(repoRoot, 'scripts/clasificar-tarea.mjs');
 
-test('el contrato fija esfuerzo low en todos los niveles y roles', () => {
-  for (const [id, nivel] of Object.entries(contrato().niveles)) assert.equal(nivel.esfuerzo, 'low', id);
-  for (const [id, rol] of Object.entries(contrato().roles)) assert.equal(rol.esfuerzo, 'low', id);
+test('el contrato fija el esfuerzo medium en el campo raíz y en todos los niveles y roles', () => {
+  assert.equal(contrato().esfuerzo, 'medium');
+  for (const [id, nivel] of Object.entries(contrato().niveles)) assert.equal(nivel.esfuerzo, 'medium', id);
+  for (const [id, rol] of Object.entries(contrato().roles)) assert.equal(rol.esfuerzo, 'medium', id);
 });
 
 test('el contrato fija el presupuesto diario, horario y el freno', () => {
@@ -42,11 +40,10 @@ test('el contrato declara el encargo: modo breve, brief, reporte y handoff', () 
   assert.equal(a.handoff_desde, contrato().contexto.aviso_desde);
 });
 
-test('esfuerzoPermitido: sólo low; medium y high no existen', () => {
-  assert.equal(esfuerzoPermitido({ modelo: 'haiku', esfuerzo: 'low' }), true);
-  assert.equal(esfuerzoPermitido({ modelo: 'sonnet', esfuerzo: 'high' }), false);
-  assert.equal(esfuerzoPermitido({ modelo: 'opus', esfuerzo: 'medium' }), false);
-  assert.equal(esfuerzoPermitido({ modelo: 'opus', esfuerzo: 'medium', primerNivel: true }), false);
+test('esfuerzoPermitido: sólo el esfuerzo del contrato', () => {
+  assert.equal(esfuerzoPermitido({ modelo: 'haiku', esfuerzo: 'medium' }), true);
+  for (const otro of ['low', 'high', 'xhigh', 'max']) assert.equal(esfuerzoPermitido({ modelo: 'opus', esfuerzo: otro }), false, otro);
+  assert.doesNotMatch(readFileSync(script, 'utf8'), /=== '(low|medium)'/u, 'compara contra el contrato, no contra un literal');
 });
 
 test('clasificarTarea: piso por riesgo manda a opus aunque el texto parezca mecánico', () => {
@@ -56,7 +53,7 @@ test('clasificarTarea: piso por riesgo manda a opus aunque el texto parezca mec�
     assert.equal(r.clase, 'alto_requisito', t);
     assert.equal(r.nivel, 'fuerte', t);
     assert.equal(r.modelo, 'opus', t);
-    assert.equal(r.esfuerzo, 'low', t);
+    assert.equal(r.esfuerzo, 'medium', t);
     assert.equal(r.por_riesgo, true, t);
   }
 });
@@ -91,7 +88,8 @@ test('clasificarTarea: las áreas de riesgo salen de contracts/tamano.json y son
   assert.deepEqual(Object.keys(tam.reglas.palabras_riesgo).sort(), [...tam.reglas.riesgos].sort());
   const fuente = readFileSync(script, 'utf8');
   assert.doesNotMatch(fuente, /RIESGO = \//u, 'las palabras de riesgo no se escriben en el script');
-  assert.equal(clasificarTarea('backtest de la estrategia').por_riesgo, false);
+  // Caso neutro: una tarea sin palabras de riesgo no sube el piso.
+  assert.equal(clasificarTarea('mejorar el algoritmo de búsqueda').por_riesgo, false);
 });
 
 test('siguienteNivel: una falla sube un nivel según escalada.por_falla del contrato', async () => {

@@ -269,6 +269,7 @@ export function assertVentana(project, presente) {
   }
   const s = JSON.parse(readFileSync(settingsLocal(project), 'utf8'));
   assert.equal(s.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW, '300000');
+  assert.equal(s.effortLevel, 'medium', 'el esfuerzo del contrato');
   assert.deepEqual(s.hooks.UserPromptSubmit, [{ hooks: [{ type: 'command', command: 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/context-guard.mjs"' }] }]);
   assert.deepEqual(s.hooks.SessionStart, [{ matcher: 'compact', hooks: [{ type: 'command', command: 'node "$CLAUDE_PROJECT_DIR/.ia-stack/runtime/scripts/handoff.mjs" mostrar --proyecto "$CLAUDE_PROJECT_DIR"' }] }]);
 }

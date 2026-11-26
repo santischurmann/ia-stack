@@ -5,7 +5,7 @@ param(
   [string]$ProjectDir,
   # Decisión de diseño: instalar en UN proyecto sin escribir nada fuera de el. Ver install.sh.
   [switch]$ProjectOnly,
-  # No escribir la ventana de contexto ni los hooks en .claude\settings.local.json. Ver install.sh.
+  # No escribir la ventana de contexto, el esfuerzo ni los hooks en .claude\settings.local.json. Ver install.sh.
   [switch]$SinVentana
 )
 
