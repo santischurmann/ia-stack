@@ -80,7 +80,7 @@ siempre con 0 y no cierran la sesión solos.
 
 El instalador no deja estos dos; van en `.claude/settings.local.json`, sumados a los que ya haya en
 `"hooks"`: el objeto de aprobaciones entra en el arreglo `UserPromptSubmit` que ya dejó el
-instalador, sin repetir la clave.
+instalador, sin repetir la clave (con `--sin-ventana` no lo dejó: creá vos `"hooks"` y el arreglo).
 - **Aprobaciones:** para que tus frases `apruebo pedido v1`, `apruebo preview v1`, etc. queden
   registradas, un hook `UserPromptSubmit` (evento de mensaje del usuario). Sin él,
   `aprobar.mjs registrar` lo hace a mano.

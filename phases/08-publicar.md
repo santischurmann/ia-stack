@@ -38,7 +38,8 @@ Comprobar que todo anda con evidencia real, y publicar una sola vez.
    Es retrabajo: `node scripts/leccion.mjs anotar --tipo retrabajo --sintoma <t> --causa <t> --archivo
    <ruta>`, y `LECCIONES.md` entra en el commit de la corrección. Si el CI de corrección también
    falla, se frena y decide la persona.
-9. Producción sólo con la orden de la persona: **«apruebo produccion <sha del commit>»**. Verificala
+9. Producción sólo con la orden de la persona: **«apruebo produccion <sha>»**, con el sha del último
+   commit pusheado con el CI en verde (el de corrección, si lo hubo). Verificala
    con `node scripts/verify-aprobacion-humana.mjs produccion .ia-stack/APROBACIONES.md --sha <sha>`
    y corré `node scripts/aprobar.mjs usar --sha <sha>` justo antes de desplegar: la orden vale una
    vez. Si el despliegue falla, se pide una orden nueva. Lo que `.ia-stack/` cambie después del push

@@ -26,7 +26,7 @@ REPORTE: con el «Formato del reporte» de abajo.
 ## Elegir el nivel
 - Barato: leer, buscar, logs, git, edición mecánica, documentación.
 - Medio: pruebas, pantallas, un patrón que ya existe en el código, y código sin señal clara.
-- Fuerte: marca, spec, plata, seguridad, autenticación, migraciones, revisión antes de publicar.
+- Fuerte: marca, spec, plan, rondas de brainstormings y de EGM, plata, seguridad, autenticación, migraciones, revisión antes de publicar.
 - El orquestador reparte; no construye ni lee código.
 - Si el encargo falla: subí un nivel (barato → medio → fuerte, según `escalada.por_falla` del
   contrato) y pegá la falla exacta al encargo nuevo. Si falla el fuerte, frená

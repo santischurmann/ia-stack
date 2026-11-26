@@ -28,7 +28,8 @@ un equipo. No hace falta saber programar para aprobar pedidos y previews; sí pa
 1. Cloná el repositorio y entrá: `git clone https://github.com/<tu-usuario>/ia-stack.git` y `cd ia-stack`.
 2. Instalalo en tu proyecto: `./scripts/install.sh --project /ruta/a/mi-proyecto`
    (en Windows: `.\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto`).
-3. Reiniciá Claude Code, abrí el proyecto e invocá `/ia-stack`.
+3. Agregá a mano los hooks de aprobaciones y del gate 1 (`INSTALL.md` § Hooks a mano; sin el del
+   gate 1, ese gate no frena), reiniciá Claude Code, abrí el proyecto e invocá `/ia-stack`.
 
 Detalle, opciones y problemas comunes en [`INSTALL.md`](INSTALL.md).
 
@@ -63,7 +64,7 @@ En contexto viajan `SKILL.md`, `ESTADO.md` y la fase en curso: unos 6.000 tokens
 
 ## Cómo aprobás
 
-Aprobás escribiendo en el chat una frase exacta; el hook `node scripts/aprobar.mjs hook` (evento de
+Aprobás escribiendo en el chat una frase exacta; el hook `node .ia-stack/runtime/scripts/aprobar.mjs hook` (evento de
 mensaje del usuario) la registra en `.ia-stack/APROBACIONES.md`. Ese hook se agrega a mano
 (`INSTALL.md` § Hooks a mano); sin él, cada frase se registra con `aprobar.mjs registrar`.
 
@@ -73,7 +74,7 @@ mensaje del usuario) la registra en `.ia-stack/APROBACIONES.md`. Ese hook se agr
 | 2 research | 3 | `apruebo research v1` |
 | 3 marca | 4 | `apruebo marca v1` |
 | 4 preview | 6 | `apruebo preview v1` (en un chico visible: `apruebo boceto v1`, en la fase 1) |
-| orden de producción | 8 | `apruebo produccion <sha del commit>` |
+| orden de producción | 8 | `apruebo produccion <sha>` (del último commit pusheado con el CI en verde) |
 
 ## Los 8 gates
 
@@ -100,7 +101,7 @@ En las decisiones que pesan, el método no confía en una sola pasada (`skills/b
   adversarial y brainstorming final. Cada paso recibe la salida del anterior.
 - **EGM:** lectores que reciben sólo el documento, sin el contexto del autor. De 5 a 10 rondas,
   hasta que una salga limpia; si la décima no converge, decidís vos.
-- **Cuándo:** fases 2, 4, 5 y 8, y en la fase 7 por cada tarea de alto requisito. Chico no las
+- **Cuándo:** fases 2, 4, 5 y 8, y en la fase 7 por cada tarea de alto requisito o en área de riesgo. Chico no las
   corre, salvo en una tarea de alto requisito.
 - **Con qué modelo:** siempre el nivel fuerte. Es la única excepción a «el más barato que resuelva».
 

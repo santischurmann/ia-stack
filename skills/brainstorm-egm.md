@@ -16,8 +16,8 @@ es obvia, se dice en una línea y se sigue.
 Regla fija. Siempre nivel fuerte (Opus, `medium`), excepción al modelo más barato (contrato § rondas).
 
 **Cuándo:** sola, en las fases de `rondas.fases` del contrato (2, 4 y 5; 7 por cada tarea de alto
-requisito; la 8 corre sólo EGM), al cambiar el propio protocolo y cuando la persona la pide. Chico
-no la corre, salvo la de una tarea de alto requisito y la del protocolo.
+requisito o en área de riesgo; la 8 corre sólo EGM), al cambiar el propio protocolo y cuando la
+persona la pide. Chico no la corre, salvo la de una tarea de alto requisito y la del protocolo.
 
 **Cómo:** un subagente por paso, en este orden y sin saltear. Cada paso recibe la salida del
 anterior. Los pasos 2 y 4 atacan y no elogian. Se aplica lo hallado; no se resume.

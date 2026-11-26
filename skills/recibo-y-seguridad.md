@@ -24,7 +24,9 @@ exige de verdad; todo otro campo es opcional y no se valida.
 - `acceptance_criteria`: por criterio, `ac_id`, `scenario`, `test_file`, `test_hash_sha256`,
   `command`, `result` y `verdict` en `COMPLIANT`. Más `red_adapter` si el comando usa un adaptador.
 - `review_4r`: los objetos `risk`, `readability`, `reliability` y `resilience` (su contenido no se valida).
-- `measurements` (al menos una), `reproduction`, `not_reviewed` y `evidence` (comandos reales corridos).
+- `measurements`: lista de al menos una, cada una con `metric`, `measured` (booleano) y `before` y
+  `after` numéricos. `reproduction` y `not_reviewed`: textos. `evidence`: lista no vacía de textos
+  (comandos reales corridos).
 - `limits` y `regressions`: listas, pueden ir vacías. `support`: cuatro textos (`correlation`,
   `actor_on_writes`, `failure_visible`, `diagnostic_command`). `refutation`: enteros `proposed`, `survived`, `refuted` e `inconclusive`
   (los tres últimos suman `proposed`) y el objeto `by_lens`.
@@ -33,7 +35,7 @@ exige de verdad; todo otro campo es opcional y no se valida.
 Reglas:
 - `approved` exige todos los criterios `COMPLIANT`. El hash del test tiene que coincidir con el
   archivo en disco; los finales de línea no cuentan.
-- `-1` en una medición sólo vale con `measured: false` y un motivo.
+- `-1` en una medición sólo vale con `measured: false`, en `before` y `after`, y el motivo en `reason`.
 - `not_reviewed` nunca es «n/a» ni vacío: dice qué no se miró y por qué.
 - Un límite (nunca anduvo, no se cubre) no bloquea. Una regresión (antes andaba) se corrige, se
   revierte o la acepta la persona con una decisión registrada.

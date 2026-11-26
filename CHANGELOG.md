@@ -27,6 +27,7 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - Fase 7: qué leen los lectores de `plan-<id>`, cuándo pasar `--tamano` y la tarea sin presupuesto queda «en pausa». EGM: una pieza de más de 3 rutas se lee en grupos de hasta 3. `leccion.mjs anotar` con sus campos obligatorios.
 - EGM del protocolo, ronda 3: el recibo se commitea con `verify-receipt.mjs commit` (paso nuevo en `skills/recibo-y-seguridad.md`, que además nombra los campos de `refutation`); la fase 8 cierra el bucle de revisión y la tarea «en pausa»; el worktree pasa el gate 2 antes del merge; el reporte del encargo tiene un solo formato.
 - `INSTALL.md` y README: el hook de aprobaciones va dentro del `UserPromptSubmit` existente, el del gate 1 no tiene reemplazo, desinstalar también limpia el proyecto y el boceto del chico se aprueba en la fase 1.
+- EGM del protocolo, ronda 4: la tarea «en pausa» sale de `docs/tasks.json` hasta retomarla, para no frenar el gate 3 de las demás; la orden de producción va con el sha del último commit pusheado con el CI en verde; la ronda de la fase 7 también corre en área de riesgo y la arma el nivel fuerte; el README suma los hooks a mano al paso 3; el recibo nombra los campos de cada medición.
 
 ## [3.4.5] - 13-11-2026
 
