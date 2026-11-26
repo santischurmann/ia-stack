@@ -8,8 +8,9 @@ description: "Método de trabajo para construir software con un agente LLM gasta
 **Versión:** 3.4.6 · 26-11-2026 · sin etiquetar en git; la última etiqueta es `v3.4.5`.
 
 Un método en 10 fases para construir software con un agente. Este archivo es el núcleo: se lee
-siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado `scripts/`, `skills/`,
-`templates/`, `contracts/` y `phases/` cuelgan de `.ia-stack/runtime/`.
+siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado, `scripts/`, `skills/`,
+`templates/`, `contracts/` y `phases/` cuelgan de `.ia-stack/runtime/`: `node scripts/<script>.mjs`
+se corre como `node .ia-stack/runtime/scripts/<script>.mjs` desde la raíz del proyecto.
 
 ## Principios
 1. **Menos IA.** Primero un script. Si no alcanza, el modelo más barato que resuelva.
@@ -23,8 +24,7 @@ siempre; de las fases, **sólo la que está en curso**. En un proyecto instalado
 - **CAIO:** diagnóstico de procesos para decidir qué automatizar con código.
 - **EGM:** lectores sin contexto que revisan un documento; la ronda de brainstormings + EGM es siempre Opus (`skills/brainstorm-egm.md`).
 - **Recibo:** evidencia de comandos reales de una tarea (`skills/recibo-y-seguridad.md`).
-- **sha:** identificador del commit.
-- **Hook:** script que el host corre solo ante un evento, como un mensaje tuyo.
+- **sha:** identificador del commit. **Hook:** script que el host corre solo ante un evento, como un mensaje tuyo.
 
 ## Recorrido
 `node scripts/tamano.mjs` calcula el tamaño (`contracts/tamano.json`). Ante la duda, el mayor.
@@ -48,7 +48,7 @@ Un chico con cambio visible aprueba un boceto (`apruebo boceto v1`) y su tarea l
 | 4 Mini marca | `phases/04-marca.md` | `docs/marca.md` | fuerte | aprobación 3: `apruebo marca v1` |
 | 5 Spec | `phases/05-spec.md` | `docs/spec.md` | fuerte | — |
 | 6 Preview | `phases/06-preview.md` | preview navegable | medio | aprobación 4: `apruebo preview v1`; congela spec y preview |
-| 7 Build | `phases/07-build.md` | código y tests | barato o medio | — |
+| 7 Build | `phases/07-build.md` | código y tests | medio (barato si es mecánico) | — |
 | 8 Verificar y publicar | `phases/08-publicar.md` | recibo y push | script + fuerte | orden: `apruebo produccion <sha>` |
 | 9 Cierre | `phases/09-cierre.md` | 1 línea de métricas | script | — |
 
@@ -64,20 +64,19 @@ donde se pueda o se espera, nunca el esfuerzo. Modelo y esfuerzo nunca se le pre
 | fuerte | Opus medium | marca, spec, áreas de riesgo, revisión antes de publicar |
 | orquestador | Fable medium | sólo la sesión que reparte trabajo a subsesiones; no construye |
 
-- **Escalada:** si la prueba sigue fallando tras un intento, la tarea sube un nivel con el comando,
-  la salida y lo ya probado. Si falla el nivel fuerte, o al tercer intento fallido sobre lo mismo,
-  se frena y se le pregunta a la persona. Un error de cupo no es falla: se espera, no se escala. Se anota con
-  `node scripts/leccion.mjs anotar --tipo escalada --desde <nivel> --hasta <nivel> ...`.
-- **Revisor:** un nivel fuerte distinto del que construyó, en otra sesión sin su conversación (fase 8
-  paso 4); si no hay, revisa la persona. Un host que no deja elegir modelo lo dice una vez.
+- **Escalada:** si la prueba sigue fallando tras un intento, sube un nivel con el comando, la salida
+  y lo ya probado; si falla el fuerte, se frena y se pregunta a la persona. Un error de cupo no es
+  falla: se espera. Se anota con `node scripts/leccion.mjs anotar --tipo escalada --desde <n> --hasta <n> ...`.
+- **Revisor:** otra sesión de nivel fuerte (puede ser el mismo modelo), sin la conversación de quien
+  construyó (fase 8 paso 4); si no hay, revisa la persona. Si el host no deja elegir modelo, se le avisa una vez.
 
 ## Cupo
 - La fase 0 lee plan y cupo con la herramienta del host. Si no hay, pregunta el plan una vez
   (`.ia-stack/plan.json`) y el cupo queda «desconocido»: nunca se estima.
 - Al 85 % de la ventana de 5 horas se frena lo que no sea la tarea en curso y se avisa la hora de reinicio.
-- Si el día pasa de semana ÷ 7, las tareas baratas y medias bajan un nivel o esperan. Las de
-  nivel fuerte nunca bajan: se pausan. Ejemplo: con la semana entera disponible (100 %), el tope
-  diario es 100 ÷ 7 ≈ 14 %; si hoy ya se gastó más que eso, se baja o se espera.
+- Ritmo (`ritmoPresupuesto`): va encima si lo gastado de la semana pasa de 14 % por día corrido, o lo
+  de la ventana de 5 h, de 20 % por hora. Encima, medio baja a barato o espera, barato espera y fuerte
+  nunca baja: se pausa. Ejemplo: el día 3 con 45 % de la semana gastado (más de 42 %), se espera.
 
 ## Estado y sesiones
 Todo vive en `.ia-stack/`:
@@ -89,8 +88,9 @@ Todo vive en `.ia-stack/`:
 | `metricas.jsonl` | `scripts/metricas.mjs` | cupo y modelo por bloque |
 | `LECCIONES.md` | `scripts/leccion.mjs` | cada escalada y cada retrabajo |
 
-- **Relevo** al 70 % del contexto y al cambiar de etapa: estado guardado, sesión nueva. **Ventana de
-  300K** en toda sesión: llena, compacta; antes, handoff en `.ia-stack/handoffs/ULTIMO.md`.
+- **Relevo** al 70 % del tope de contexto (orquestador 120K, subsesión 60K, sobre mensajes) y al
+  cambiar de etapa: estado guardado, sesión nueva; pasado el tope no se sigue. **Respaldo** si el relevo
+  no ocurrió: handoff en `.ia-stack/handoffs/ULTIMO.md` a los 180K y ventana de 300K, que llena compacta.
 - **Subsesión:** nace con un grupo de tareas, reporta en modo breve y se archiva. **Encargo**
   a un subagente: hasta 4.000 tokens y 3 archivos (`skills/encargo.md`).
 - **Huérfana:** su tarea está hecha o sin dueño. Se archiva, nunca se borra; lo pendiente vuelve a
@@ -104,13 +104,13 @@ Un gate es un script que frena si algo no se cumple (lista y protegidos: `contra
 - **1** Test rojo visto antes del código · **2** El diff toca sólo los archivos de la tarea
 - **3** Preview aprobado · **4** Verificación con recibo: suites, seguridad base, repo limpio
 - **5** Producción atada al sha aprobado · **6** Cupo y contexto
-- **7** Versiones de stack estables y compatibles · **8** CI sólo en el push único
+- **7** Versiones de stack estables y compatibles · **8** CI sólo en el push único o el de corrección
 
 ## Reglas fijas
 - **Evidencia.** Nada se declara terminado sin la salida real de un comando. «Debería andar» no es evidencia.
 - **Reproducir antes de diagnosticar.** Sin reproducción, un diagnóstico es una hipótesis.
-- **Publicar una vez.** Commits locales, todos los que hagan falta. Push, merge o tag: uno, al
-  terminar, con todo verde. Las suites corren en local; nunca se dispara CI «para probar».
+- **Publicar una vez.** Commits locales, los que hagan falta. Push, merge o tag: uno, al terminar, con
+  todo verde, más uno de corrección si falla el CI (fase 8). Suites en local; nunca CI «para probar».
 - **Producción sólo con orden explícita** de la persona, atada al sha, usada una vez.
 - **Respaldo verificado antes de borrar.** Nada se frena ni se mide por recursos de la máquina.
 

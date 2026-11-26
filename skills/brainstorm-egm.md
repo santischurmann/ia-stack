@@ -17,8 +17,8 @@ es obvia, se dice en una línea y se sigue.
 Regla fija. Siempre nivel fuerte (Opus, `medium`): es la excepción al «modelo más barato que resuelva
 bien» (`contracts/model-routing.json` § rondas, rol `ronda_brainstorm_egm`).
 
-**Cuándo:** sola, en las fases de `rondas.fases` del contrato (2, 4, 5, 7 por cada tarea de alto
-requisito, 8) y al cambiar el propio protocolo; además, cuando la persona la pide. Chico no la corre,
+**Cuándo:** sola, en las fases de `rondas.fases` del contrato (2, 4 y 5; 7 por cada tarea de alto
+requisito; la 8 corre sólo EGM) y al cambiar el propio protocolo; además, cuando la persona la pide. Chico no la corre,
 salvo la de una tarea de alto requisito.
 
 **Cómo:** un subagente por paso, en este orden y sin saltear. Cada paso recibe la salida del
@@ -36,7 +36,7 @@ paso: 5 brainstorming final
 
 ```
 paso: <n y nombre, de la lista de arriba>
-entrada: <ruta del documento, o la salida del paso anterior pegada entera>
+entrada: <ruta del documento, o de la salida del paso anterior en `.ia-stack/handoffs/`; nunca pegada>
 entrega: <brainstorming: propuesta completa y corregida | adversarial: fallas, una por línea,
          con severidad, lugar y arreglo concreto; sin elogios>
 ```
@@ -53,9 +53,9 @@ rol); una tarea de alto requisito, 2 como mínimo aun en chico. Siempre nuevos e
 - **Implementación:** decisiones sin definir, criterios que no se pueden medir, dependencias dudosas.
 - **Diseño:** contradicciones, huecos donde algo falla sin salida, riesgos de lo que se saca.
 
-**Encargo a cada lector** (se copia tal cual, cambiando rol y ruta):
+**Encargo a cada lector** (se copia tal cual, cambiando rol y rutas; en `publicar`, el diff exportado y la spec):
 
-> Leé sólo `<ruta>`. No leas otros archivos. Sos el lector de `<rol>`. Reportá en 25 líneas o
+> Leé sólo `<rutas>` (hasta 3). No leas otros archivos. Sos el lector de `<rol>`. Reportá en 25 líneas o
 > menos, una por hallazgo: severidad (alta, media, baja), sección, problema y arreglo concreto.
 > Sin elogios. Si no hay nada que corregir, decí «LIMPIA».
 
@@ -66,7 +66,7 @@ rol); una tarea de alto requisito, 2 como mínimo aun en chico. Siempre nuevos e
 | Pieza | Lectores | Rondas | Converge |
 |---|---|---|---|
 | `spec`, `plan-<id>`, `publicar`, `protocolo` | nivel fuerte | 5 a 10 | una ronda limpia: ningún hallazgo aplicado |
-| piezas simples (`preview`, sólo en grande) | barato y medio | hasta 2 | una ronda sin hallazgos altos |
+| piezas simples (`preview`, sólo en grande) | nivel fuerte | hasta 2 | una ronda sin hallazgos altos |
 
 Mínimo 5 rondas: si la quinta trae algo, se sigue hasta una limpia. Si la décima (o la segunda, en las piezas
 simples) no converge, decide la persona.
@@ -76,4 +76,5 @@ simples) no converge, decide la persona.
 sumá `--decide-persona`. Una pieza rehecha vuelve a empezar en `--ronda 1`.
 
 **Comprobación:** `node scripts/verify-egm-convergencia.mjs check --pieza <nombre> --tamano
-<chico|medio|grande>` lee ese registro; no sabe si el lector leyó el documento ni qué modelo era.
+<chico|medio|grande>` (el del cambio, también en `protocolo`) lee ese registro; no sabe si el
+lector leyó el documento ni qué modelo era.

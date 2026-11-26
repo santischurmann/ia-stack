@@ -16,6 +16,11 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - Fase 8: el revisor abre la rama en otra sesión, sin la conversación del constructor, y si el host lo tiene corre `/code-review medium <rama>` sin `--fix`. `/ship` y `/steward` no se usan.
 - `skills/encargo.md` § «Si el host lo tiene»: `model`, `effort`, `maxTurns`, `isolation: worktree`, workflows y Code Mode con su condición; advisor y skills desde MCP, no.
 - Prueba nueva `tests/protocolo-host.test.mjs`; el caso con sabor a dominio de `clasificar-tarea.test.mjs` pasa a uno neutro.
+- EGM del protocolo, ronda 1: la fase 7 pone la ronda de alto requisito antes del gate que la exige y dice que el gate verifica el EGM, no los 5 pasos; la fase 8 corre el EGM antes del recibo, guarda la salida de las suites fuera del árbol, frena si falla el push de corrección y consume la orden de producción antes de desplegar.
+- Rol del build en nivel medio (rojo, verde y limpio); barato sólo para lo mecánico. Los lectores de `preview` también van en nivel fuerte.
+- Contexto: relevo al 70 % del tope (120K y 60K sobre mensajes); el handoff a 180K y la ventana de 300K quedan como respaldo, en `SKILL.md` e `INSTALL.md`.
+- Ritmo de cupo descripto como lo calcula `ritmoPresupuesto` (14 % por día corrido, 20 % por hora de la ventana); `presupuesto.si_va_encima` ya no baja de barato. Sale `escalada.tercer_intento`, que ningún script leía.
+- `INSTALL.md`: bash obligatorio para los hooks, la skill es un puntero, rutas globales por defecto; `SKILL.md` dice cómo correr `node scripts/<script>.mjs` en un proyecto instalado.
 
 ## [3.4.5] - 13-11-2026
 

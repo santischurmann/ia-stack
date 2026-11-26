@@ -63,7 +63,6 @@
     "pasa_la_falla": "Al subir se le pasa el comando, la salida, archivo:línea y lo ya probado.",
     "tope": "fuerte",
     "si_falla_el_fuerte": "se frena y se le pregunta a la persona",
-    "tercer_intento": "al tercer intento fallido sobre el mismo problema se frena",
     "no_es_falla": "Un 429 o un error de cupo no es una falla del modelo: se espera o se avisa, no se escala. El rojo buscado del TDD tampoco cuenta."
   },
   "rondas": {
@@ -108,7 +107,7 @@
     "por_hora_ventana_5h": 0.2,
     "freno_ventana_5h": 0.85,
     "medir_con": "get_usage en Claude Code de escritorio; sin herramienta, el cupo queda desconocido y el gate sólo avisa",
-    "si_va_encima": "barato y medio bajan un nivel o esperan; fuerte nunca baja, se pausa; el esfuerzo no baja",
+    "si_va_encima": "medio baja a barato o espera; barato espera; fuerte nunca baja, se pausa; el esfuerzo no baja",
     "revisar_si": "dos ventanas de 5 h distintas que llegaron al freno en 7 días, contadas a mano con la herramienta del host: la persona decide bajar de nivel donde se pueda o delegar más",
     "en_freno": "al 85 % de la ventana de 5 h se frena todo lo que no sea la tarea en curso y se avisa la hora de reinicio",
     "gate": "scripts/clasificar-tarea.mjs ritmoPresupuesto"

@@ -1,7 +1,7 @@
 # Instalar IA Stack
 
-Necesitás Claude Code (o Codex), Git y Node 20 o más. Bash o PowerShell se usan sólo para el
-instalador y las entradas del gate rojo.
+Necesitás Claude Code (o Codex), Git, Node 20 o más y bash (Git Bash en Windows), que corre los
+hooks. Para el instalador y las entradas del gate rojo sirve bash o PowerShell.
 
 ## Instalación en un proyecto
 
@@ -21,8 +21,8 @@ cd ia-stack
 
 El instalador hace dos copias:
 
-1. La skill, en `~/.claude/skills/ia-stack/SKILL.md`, y el mismo puntero en
-   `<proyecto>/.claude/skills/ia-stack/` y `<proyecto>/.agents/skills/ia-stack/` (Codex).
+1. La skill, un `SKILL.md` puntero (no una copia del protocolo) en `~/.claude/skills/ia-stack/`, y
+   el mismo puntero en `<proyecto>/.claude/skills/ia-stack/` y `<proyecto>/.agents/skills/ia-stack/` (Codex).
 2. Un runtime autocontenido en `<proyecto>/.ia-stack/runtime/`, con `SKILL.md`, `phases/`,
    `skills/`, `contracts/`, `scripts/` y `templates/`.
 
@@ -47,14 +47,15 @@ node .ia-stack/runtime/scripts/arranque.mjs
 
 ## Ventana de 300K y hooks de contexto
 
-Toda sesión con IA Stack, orquestador o anidada, trabaja con una ventana de 300.000 tokens como
-máximo y compacta apenas se llena (`contracts/model-routing.json` § contexto). Al instalar en un
-proyecto, el instalador corre `node .ia-stack/runtime/scripts/ventana.mjs aplicar` y deja en
+Toda sesión abierta en un proyecto instalado (una anidada, sólo si el host le pasa la variable)
+trabaja con una ventana de 300.000 tokens como máximo y compacta apenas se llena
+(`contracts/model-routing.json` § contexto). Al instalar en un proyecto, el instalador corre `node .ia-stack/runtime/scripts/ventana.mjs aplicar` y deja en
 `.claude/settings.local.json` (el local, no el compartido):
 - `"env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000" }`: Claude Code compacta ahí. Un valor
   válido más chico (desde 100000) se respeta.
-- Un hook `UserPromptSubmit` con `context-guard.mjs`: avisa el relevo al 70 % del tope y, a los
-  180.000 tokens de mensajes, ordena escribir el handoff en `.ia-stack/handoffs/ULTIMO.md`
+- Un hook `UserPromptSubmit` con `context-guard.mjs`: avisa el relevo al 70 % del tope (orquestador
+  120K, subsesión 60K, sobre mensajes) y ordena cerrar al llegar. De respaldo, a los 180.000 tokens
+  de mensajes ordena escribir el handoff en `.ia-stack/handoffs/ULTIMO.md`
   (plantilla `templates/estado/HANDOFF.md`, hasta 40 líneas). Una subsesión fija `IA_STACK_ROL=subsesion`.
 - Un hook `SessionStart` con matcher `compact` y `handoff.mjs mostrar`: después de compactar, el
   handoff vuelve al contexto.
@@ -84,6 +85,7 @@ mano otro hook `UserPromptSubmit` (evento de mensaje del usuario) con
 ./scripts/install.sh --project-only --project /ruta/a/proyecto   # no escribe fuera del proyecto
 ```
 
+Por defecto la skill va a `~/.claude/skills/` y el runtime global a `~/.claude/ia-stack-runtime/`.
 En PowerShell: `-TargetDir`, `-RuntimeDir`, `-ProjectDir` y `-ProjectOnly`. `--project-only`
 exige `--project` y rechaza combinarse con `--target-dir` o `--runtime-dir`. En ese modo la skill
 global no se instala: `/ia-stack` anda sólo en ese proyecto.
