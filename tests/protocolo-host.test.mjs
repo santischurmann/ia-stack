@@ -1,4 +1,4 @@
-// Protocolo y host (IA Stack 3.4.6): sin reglas por recursos de la máquina, suites a la vez sólo con puerto y
+// Protocolo y host (IA Stack 3.4.7): sin reglas por recursos de la máquina, suites a la vez sólo con puerto y
 // base de prueba propios, revisor en otra sesión con /code-review medium, /ship y /steward fuera, opcionales del host.
 // LO QUE NO CUBRE: que el host tenga esos comandos ni que la sesión los use.
 import assert from 'node:assert/strict';
