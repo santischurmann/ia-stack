@@ -36,7 +36,8 @@ Además crea `.ia-stack/` con los archivos de estado (`ESTADO.md` y las plantill
 1. Reiniciá Claude Code.
 2. Abrí el proyecto.
 3. Invocá `/ia-stack`. Arranca la fase 0.
-4. Agregá los dos hooks a mano (§ Hooks a mano), o registrá cada aprobación con `aprobar.mjs registrar`.
+4. Agregá los dos hooks a mano (§ Hooks a mano). Sin el de aprobaciones, registrá cada una con
+   `aprobar.mjs registrar`; el del gate 1 no tiene reemplazo.
 
 Si el proyecto tiene un `CLAUDE.md` que no importa `@AGENTS.md`, el instalador avisa: con la
 configuración predeterminada, Claude Code no lee `AGENTS.md` cuando hay un `CLAUDE.md`. No lo
@@ -50,7 +51,7 @@ node .ia-stack/runtime/scripts/arranque.mjs
 
 ## Ventana de 300K y hooks de contexto
 
-Toda sesión abierta en un proyecto instalado (una anidada, sólo si el host le pasa la variable)
+Toda sesión abierta en un proyecto instalado (una anidada, sólo si el host le pasa `CLAUDE_CODE_AUTO_COMPACT_WINDOW`)
 trabaja con una ventana de 300.000 tokens como máximo y compacta apenas se llena
 (`contracts/model-routing.json` § contexto). Al instalar en un proyecto, el instalador corre `node .ia-stack/runtime/scripts/ventana.mjs aplicar` y deja en
 `.claude/settings.local.json` (el local, no el compartido):
@@ -71,14 +72,15 @@ estricto, el instalador avisa `ventana no aplicada` y sigue. `ventana.mjs check`
 
 Límites: la orden de handoff sale cuando la persona manda un mensaje; en un turno autónomo largo o
 en un subagente sólo cubre la variable. Los hooks corren con bash, también en Windows. Fuera de un
-proyecto instalado, la variable se fija a mano en el `settings.json` propio. Los scripts salen
+proyecto instalado, la variable se fija a mano en el `settings.json` propio. Los scripts de contexto salen
 siempre con 0 y no cierran la sesión solos.
 - **Codex:** `model_auto_compact_token_limit = 300000` y `model_reasoning_effort = "medium"` en `config.toml`, a mano.
 
 ## Hooks a mano
 
 El instalador no deja estos dos; van en `.claude/settings.local.json`, sumados a los que ya haya en
-`"hooks"`:
+`"hooks"`: el objeto de aprobaciones entra en el arreglo `UserPromptSubmit` que ya dejó el
+instalador, sin repetir la clave.
 - **Aprobaciones:** para que tus frases `apruebo pedido v1`, `apruebo preview v1`, etc. queden
   registradas, un hook `UserPromptSubmit` (evento de mensaje del usuario). Sin él,
   `aprobar.mjs registrar` lo hace a mano.
@@ -110,6 +112,8 @@ fuera de git. El sello `.ia-stack/runtime/INSTALADO.json` dice cuándo y desde q
 
 ## Migrar un proyecto de una versión anterior
 
+Desde la carpeta del clon de ia-stack:
+
 ```bash
 node scripts/migrar.mjs /ruta/a/mi-proyecto
 ```
@@ -136,3 +140,6 @@ ahí quedan decisiones y evidencia.
 mkdir -p ~/.claude/ia-stack-archive/desinstalado
 mv ~/.claude/skills/ia-stack ~/.claude/ia-stack-runtime ~/.claude/ia-stack-archive/desinstalado/
 ```
+
+En cada proyecto, mové `.claude/skills/ia-stack/` y `.agents/skills/ia-stack/` a `.claude-archive/`
+y sacá de `.claude/settings.local.json` los hooks que llaman a `.ia-stack/runtime/scripts/`.

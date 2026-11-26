@@ -49,7 +49,7 @@
       "patron_conocido": "medio",
       "alto_requisito": "fuerte"
     },
-    "regla": "El piso por riesgo sólo sube, nunca baja. Sin señal clara, patrón conocido."
+    "regla": "El piso por riesgo sólo sube, nunca baja. Código sin señal clara, patrón conocido; `por_defecto` vale para lo que no es código."
   },
   "piso_por_riesgo": {
     "nivel": "fuerte",
@@ -107,7 +107,7 @@
     "por_hora_ventana_5h": 0.2,
     "freno_ventana_5h": 0.85,
     "medir_con": "get_usage en Claude Code de escritorio; sin herramienta, el cupo queda desconocido y el gate sólo avisa",
-    "si_va_encima": "medio baja a barato o espera; barato espera; fuerte nunca baja, se pausa; el esfuerzo no baja",
+    "si_va_encima": "medio baja a barato o espera; barato espera; fuerte nunca baja, se pausa (la tarea en curso termina); el esfuerzo no baja",
     "revisar_si": "dos ventanas de 5 h distintas que llegaron al freno en 7 días, contadas a mano con la herramienta del host: la persona decide bajar de nivel donde se pueda o delegar más",
     "en_freno": "al 85 % de la ventana de 5 h se frena todo lo que no sea la tarea en curso y se avisa la hora de reinicio",
     "gate": "scripts/clasificar-tarea.mjs ritmoPresupuesto"

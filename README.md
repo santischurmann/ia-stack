@@ -25,7 +25,7 @@ un equipo. No hace falta saber programar para aprobar pedidos y previews; sí pa
 
 ## Instalación en 3 pasos
 
-1. Cloná el repositorio: `git clone https://github.com/<tu-usuario>/ia-stack.git`.
+1. Cloná el repositorio y entrá: `git clone https://github.com/<tu-usuario>/ia-stack.git` y `cd ia-stack`.
 2. Instalalo en tu proyecto: `./scripts/install.sh --project /ruta/a/mi-proyecto`
    (en Windows: `.\scripts\install.ps1 -ProjectDir C:\ruta\a\mi-proyecto`).
 3. Reiniciá Claude Code, abrí el proyecto e invocá `/ia-stack`.
@@ -64,14 +64,15 @@ En contexto viajan `SKILL.md`, `ESTADO.md` y la fase en curso: unos 6.000 tokens
 ## Cómo aprobás
 
 Aprobás escribiendo en el chat una frase exacta; el hook `node scripts/aprobar.mjs hook` (evento de
-mensaje del usuario) la registra en `.ia-stack/APROBACIONES.md`.
+mensaje del usuario) la registra en `.ia-stack/APROBACIONES.md`. Ese hook se agrega a mano
+(`INSTALL.md` § Hooks a mano); sin él, cada frase se registra con `aprobar.mjs registrar`.
 
 | Aprobación | Fase | Frase |
 |---|---|---|
 | 1 pedido | 1 | `apruebo pedido v1` |
 | 2 research | 3 | `apruebo research v1` |
 | 3 marca | 4 | `apruebo marca v1` |
-| 4 preview | 6 | `apruebo preview v1` (en un chico visible: `apruebo boceto v1`) |
+| 4 preview | 6 | `apruebo preview v1` (en un chico visible: `apruebo boceto v1`, en la fase 1) |
 | orden de producción | 8 | `apruebo produccion <sha del commit>` |
 
 ## Los 8 gates
@@ -150,7 +151,7 @@ ventana de 5 horas frena lo que no sea la tarea en curso y te dice cuándo se re
 | `.ia-stack/LECCIONES.md` | cada escalada y cada retrabajo |
 | `.ia-stack/historial.md` | lo que salió de `ESTADO.md` |
 | `.ia-stack/handoffs/ULTIMO.md` | el resumen que la sesión escribe antes de compactar |
-| `.claude/settings.local.json` | ventana de contexto, esfuerzo y los dos hooks (salvo `--sin-ventana`) |
+| `.claude/settings.local.json` | ventana de contexto, esfuerzo y los hooks de contexto (salvo `--sin-ventana`); los de aprobaciones y gate 1, a mano |
 | `docs/` | pedido, caio, research, marca, spec y plan |
 | `.claude/skills/ia-stack/`, `.agents/skills/ia-stack/` | punteros a la skill |
 

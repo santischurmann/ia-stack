@@ -4,7 +4,7 @@
 Comprobar que todo anda con evidencia real, y publicar una sola vez.
 
 ## Entra
-- Todas las tareas del plan hechas y con commit local.
+- Todas las tareas del plan hechas y con commit local; con una «en pausa», decide la persona.
 - Árbol de trabajo limpio.
 - El comando de cada suite, declarado en `.ia-stack/ESTADO.md` o en el README del proyecto. Si
   falta, se frena y se le pregunta a la persona.
@@ -26,10 +26,11 @@ Comprobar que todo anda con evidencia real, y publicar una sola vez.
    toca (`skills/brainstorm-egm.md`), registradas con `--pieza publicar`: 5 a 10, nivel fuerte. Suma
    una lectura sin contexto; no reemplaza al revisor. Si los pasos 4 o 5 cambian código, commit
    local, repetí los pasos 1 a 3 y seguí con la ronda siguiente, sin reiniciar la pieza; el paso 4
-   se repite una vez sobre el diff final. Lo nuevo o cambiado en `.ia-stack/` (métricas, estado,
+   se repite una vez sobre el diff final (si vuelve a cambiar código, decide la persona). Lo nuevo o cambiado en `.ia-stack/` (métricas, estado,
    lecciones, handoffs, recibos del rojo) va con `git add` antes del paso 6.
 6. Armá el recibo en `.ia-stack/receipts/` (la evidencia de los comandos reales corridos), en el
-   orden de `skills/recibo-y-seguridad.md`, y verificalo: `node scripts/verify-receipt.mjs check <receipt.json> --require-clean-worktree`.
+   orden de `skills/recibo-y-seguridad.md`: lo verifica con `--require-clean-worktree` y lo commitea
+   junto con lo que está con `git add`.
 7. Antes del push: `node scripts/verify-ci-push.mjs check`. Hacé un solo push. Nunca dispares
    CI «para probar». `/ship` y `/steward` no se usan: pushean sin recibo ni gate 8, el watch empuja
    arreglos solo y la revisión de `/ship` es de la misma sesión que construyó.

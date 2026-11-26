@@ -24,7 +24,7 @@ se corre como `node .ia-stack/runtime/scripts/<script>.mjs` desde la raíz del p
 - **CAIO:** diagnóstico de procesos para decidir qué automatizar con código.
 - **EGM:** lectores sin contexto que revisan un documento; la ronda de brainstormings + EGM es siempre Opus (`skills/brainstorm-egm.md`).
 - **Recibo:** evidencia de comandos reales de una tarea (`skills/recibo-y-seguridad.md`).
-- **sha:** identificador del commit. **Hook:** script que el host corre solo ante un evento, como un mensaje tuyo.
+- **sha:** identificador del commit.
 
 ## Recorrido
 `node scripts/tamano.mjs` calcula el tamaño (`contracts/tamano.json`). Ante la duda, el mayor.
@@ -36,7 +36,7 @@ Plata, seguridad, autenticación y migraciones de datos nunca son «chico».
 | medio | funcionalidad sobre un proyecto que ya existe | 0 1 3 5 6 7 8 9 |
 | grande | proyecto o módulo nuevo | 0 a 9 |
 
-Un chico con cambio visible aprueba un boceto (`apruebo boceto v1`) y su tarea lo declara en el campo
+Un chico con cambio visible aprueba un boceto en la fase 1 (`apruebo boceto v1`) y su tarea lo declara en el campo
 `preview` de `docs/tasks.json`. La fase 2 es sólo de tamaño grande.
 
 | Fase | Archivo | Entrega | Modelo | Aprueba la persona |
@@ -77,7 +77,7 @@ donde se pueda o se espera, nunca el esfuerzo. Modelo y esfuerzo nunca se le pre
 - Al 85 % de la ventana de 5 horas se frena lo que no sea la tarea en curso y se avisa la hora de reinicio.
 - Ritmo (`ritmoPresupuesto`): va encima si lo gastado de la semana pasa de 14 % por día desde el
   reinicio semanal, o lo de la ventana de 5 h, de 20 % por hora. Encima, medio baja a barato o espera,
-  barato espera y fuerte se pausa. Ejemplo: día 3, 45 % gastado (más de 42 %): encima.
+  barato espera y fuerte se pausa (la tarea en curso termina). Ejemplo: día 3, 45 % gastado (más de 42 %): encima.
 
 ## Estado y sesiones (todo en `.ia-stack/`)
 

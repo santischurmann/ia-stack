@@ -26,7 +26,8 @@ exige de verdad; todo otro campo es opcional y no se valida.
 - `review_4r`: los objetos `risk`, `readability`, `reliability` y `resilience` (su contenido no se valida).
 - `measurements` (al menos una), `reproduction`, `not_reviewed` y `evidence` (comandos reales corridos).
 - `limits` y `regressions`: listas, pueden ir vacías. `support`: cuatro textos (`correlation`,
-  `actor_on_writes`, `failure_visible`, `diagnostic_command`). `refutation`: contadores que suman.
+  `actor_on_writes`, `failure_visible`, `diagnostic_command`). `refutation`: enteros `proposed`, `survived`, `refuted` e `inconclusive`
+  (los tres últimos suman `proposed`) y el objeto `by_lens`.
 - `git_head`, `tree_fingerprint` y `terminal_state` (`approved`).
 
 Reglas:
@@ -41,9 +42,11 @@ Reglas:
 ## Orden
 1. `git add -- <rutas>` nombrando cada ruta; nunca el árbol entero.
 2. `node scripts/verify-receipt.mjs fingerprint <receipt.json>`.
-3. Escribí el recibo con ese `git_head` y `tree_fingerprint`, y agregalo con `git add`.
+3. Escribí el recibo con ese `git_head` y `tree_fingerprint`, y agregalo con `git add` (la huella
+   no incluye el propio recibo).
 4. `node scripts/verify-receipt.mjs check <receipt.json> --require-clean-worktree`.
-5. Ya commiteado: `node scripts/verify-receipt.mjs recheck <receipt.json>`.
+5. `node scripts/verify-receipt.mjs commit <receipt.json> --message "<mensaje>"`: revalida y commitea.
+6. Ya commiteado: `node scripts/verify-receipt.mjs recheck <receipt.json>`.
 
 ## Revisión
 Revisa una sesión de nivel fuerte distinta de la que construyó (puede ser el mismo modelo; si no hay,

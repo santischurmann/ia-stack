@@ -45,7 +45,7 @@ Elephant Goldfish Model. El autor (elefante) recuerda todo el contexto y no ve l
 papel. Los lectores (goldfish) reciben **sólo el documento**, ya corregido por la ronda anterior.
 
 **Lectores por ronda:** medio 2 (comprensión y alcance; implementación y diseño); grande 4 (uno por
-rol); una tarea de alto requisito, 2 como mínimo aun en chico. Siempre nuevos en cada ronda.
+rol); chico (alto requisito o `publicar` en área de riesgo), 2. Siempre nuevos en cada ronda.
 - **Comprensión:** términos sin explicar, pasos donde no sabría qué hacer, cifras que no cierran.
 - **Alcance:** qué sobra, qué se puede fusionar, qué promete de más.
 - **Implementación:** decisiones sin definir, criterios que no se pueden medir, dependencias dudosas.
@@ -68,12 +68,12 @@ y rol, todos contados en `--lectores`; la ronda es limpia sólo si lo son todos:
 | `spec`, `plan-<id>`, `publicar`, `protocolo` | nivel fuerte | 5 a 10 | una ronda limpia: ningún hallazgo aplicado |
 | piezas simples (`preview`, sólo en grande) | nivel fuerte | hasta 2 | una ronda sin hallazgos altos |
 
-Mínimo 5 rondas: si la quinta trae algo, se sigue hasta una limpia. Si la décima (o la segunda, en las piezas
+En las de 5 a 10, mínimo 5: si la quinta trae algo, se sigue hasta una limpia. Si la décima (o la segunda, en las piezas
 simples) no converge, decide la persona.
 
 **Registro:** por ronda, `node scripts/metricas.mjs egm --pieza <nombre> --lectores <n> --ronda <n>
 --altos <n> --medios <n> --bajos <n>`, contando sólo los hallazgos aplicados. Si decide la persona,
-sumá `--decide-persona`. Una pieza rehecha vuelve a empezar en `--ronda 1`.
+sumá `--decide-persona`. Una pieza rehecha (cambió su alcance; aplicar hallazgos no la rehace) vuelve a `--ronda 1`.
 
 **Comprobación:** `node scripts/verify-egm-convergencia.mjs check --pieza <nombre> --tamano
 <chico|medio|grande>` (el del cambio, también en `protocolo`) lee ese registro; no sabe si el

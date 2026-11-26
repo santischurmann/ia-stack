@@ -25,6 +25,8 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - Revisor unificado en todos los textos: una sesión de nivel fuerte distinta de la que construyó, que puede ser el mismo modelo.
 - `INSTALL.md`: el instalador escribe tres cosas (también el runtime global) y lista las reglas de `.gitignore` que agrega; sección «Hooks a mano» con el JSON del hook de aprobaciones y del `PreToolUse` del gate 1, que el instalador no deja.
 - Fase 7: qué leen los lectores de `plan-<id>`, cuándo pasar `--tamano` y la tarea sin presupuesto queda «en pausa». EGM: una pieza de más de 3 rutas se lee en grupos de hasta 3. `leccion.mjs anotar` con sus campos obligatorios.
+- EGM del protocolo, ronda 3: el recibo se commitea con `verify-receipt.mjs commit` (paso nuevo en `skills/recibo-y-seguridad.md`, que además nombra los campos de `refutation`); la fase 8 cierra el bucle de revisión y la tarea «en pausa»; el worktree pasa el gate 2 antes del merge; el reporte del encargo tiene un solo formato.
+- `INSTALL.md` y README: el hook de aprobaciones va dentro del `UserPromptSubmit` existente, el del gate 1 no tiene reemplazo, desinstalar también limpia el proyecto y el boceto del chico se aprueba en la fase 1.
 
 ## [3.4.5] - 13-11-2026
 
