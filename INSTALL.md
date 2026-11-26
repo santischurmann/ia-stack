@@ -21,7 +21,7 @@ cd ia-stack
 
 El instalador escribe tres cosas:
 
-1. La skill, un `SKILL.md` puntero (no una copia del protocolo) en `~/.claude/skills/ia-stack/`, y
+1. La skill, un `SKILL.md` puntero (no una copia del protocolo) en `~/.claude/skills/ia-stack/` (salvo con `--project-only`), y
    el mismo puntero en `<proyecto>/.claude/skills/ia-stack/` y `<proyecto>/.agents/skills/ia-stack/` (Codex).
 2. Un runtime global en `~/.claude/ia-stack-runtime/` (salvo con `--project-only`).
 3. Un runtime autocontenido en `<proyecto>/.ia-stack/runtime/`, con `SKILL.md`, `phases/`,

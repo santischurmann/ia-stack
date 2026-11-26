@@ -24,8 +24,8 @@ Comprobar que todo anda con evidencia real, y publicar una sola vez.
    sin `--fix`; otro nivel, sólo si la persona lo pide. Si no hay otra sesión, revisa la persona.
 5. En tamaño grande o con área de riesgo, rondas de EGM sobre el diff y las secciones de la spec que
    toca (`skills/brainstorm-egm.md`), registradas con `--pieza publicar`: 5 a 10, nivel fuerte. Suma
-   una lectura sin contexto; no reemplaza al revisor. Si los pasos 4 o 5 cambian código, commit
-   local, repetí los pasos 1 a 3 y seguí con la ronda siguiente, sin reiniciar la pieza; el paso 4
+   una lectura sin contexto; no reemplaza al revisor. En cualquier tamaño, si los pasos 4 o 5 cambian
+   código, commit local, repetí los pasos 1 a 3 y seguí con la ronda siguiente (si la hay), sin reiniciar la pieza; el paso 4
    se repite una vez sobre el diff final (si vuelve a cambiar código, decide la persona). Lo nuevo o cambiado en `.ia-stack/` (métricas, estado,
    lecciones, handoffs, recibos del rojo) va con `git add` antes del paso 6.
 6. Armá el recibo en `.ia-stack/receipts/` (la evidencia de los comandos reales corridos), en el

@@ -29,6 +29,7 @@ Correcciones de la ronda 10 de EGM y de diez pasadas de lector sin contexto (13-
 - `INSTALL.md` y README: el hook de aprobaciones va dentro del `UserPromptSubmit` existente, el del gate 1 no tiene reemplazo, desinstalar también limpia el proyecto y el boceto del chico se aprueba en la fase 1.
 - EGM del protocolo, ronda 4: la tarea «en pausa» sale de `docs/tasks.json` hasta retomarla, para no frenar el gate 3 de las demás; la orden de producción va con el sha del último commit pusheado con el CI en verde; la ronda de la fase 7 también corre en área de riesgo y la arma el nivel fuerte; el README suma los hooks a mano al paso 3; el recibo nombra los campos de cada medición.
 - EGM del protocolo, ronda 5: la tarea «en pausa» que se retoma vuelve a pasar el gate 3 antes de su rojo; `INSTALL.md` pone los hooks a mano antes de reiniciar, como el README; la plantilla del encargo pega el formato del reporte; el recibo dice que `measured: false` exige `-1` y `reason`; los lectores de chico cuentan `protocolo` en lugar de `publicar`.
+- EGM del protocolo, ronda 6: en fase 8, si la revisión cambia código se repiten los pasos 1 a 3 en cualquier tamaño, no sólo en grande o con área de riesgo; `INSTALL.md` aclara que con `--project-only` no se escribe la skill global.
 
 ## [3.4.5] - 13-11-2026
 
